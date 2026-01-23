@@ -1,0 +1,44 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import eslint from 'vite-plugin-eslint';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// https://vitejs.dev/config/
+const isDev = process.env.NODE_ENV === 'development';
+const shouldLint = process.env.SKIP_LINT !== 'true' && !isDev;
+
+const eslintPlugin = eslint({
+  include: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}', 'electron/**/*.{ts,tsx}'],
+  lintOnStart: false,
+  emitWarning: false,
+  emitError: false,
+  failOnWarning: false,
+  failOnError: false,
+});
+
+export default defineConfig({
+  plugins: [react(), ...(shouldLint ? [eslintPlugin] : [])],
+  base: './',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@core': path.resolve(__dirname, './src/core'),
+      '@shared': path.resolve(__dirname, './src/shared'),
+      '@workspaces': path.resolve(__dirname, './src/workspaces'),
+      '@app': path.resolve(__dirname, './src/app'),
+      '@cherryplay/components': path.resolve(__dirname, '../CherryPlayComponents/src'),
+    },
+  },
+});

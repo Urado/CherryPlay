@@ -1,0 +1,38 @@
+/* Cyberpunk Theme - Playlist Styles */
+
+[data-theme="cyberpunk"] .party-playlist-view {
+  background: #0a0a0a;
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+}
+
+[data-theme="cyberpunk"] .party-playlist-header {
+  background: #1a1a1a;
+  border-bottom: 2px solid var(--accent-color, #00ff00);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+[data-theme="cyberpunk"] .party-playlist-stats {
+  color: #00ff00;
+  text-shadow: 0 0 5px var(--accent-color, #00ff00);
+}
+
+[data-theme="cyberpunk"] .party-playlist-stats-separator {
+  color: #00ff88;
+}
+
+[data-theme="cyberpunk"] .party-playlist-items {
+  background: #0a0a0a;
+}
+
+[data-theme="cyberpunk"] .party-playlist-empty {
+  color: #666666;
+  text-shadow: none;
+}
+
+[data-theme="cyberpunk"] .party-playlist-group-items {
+  border-left: 1px solid rgba(0, 255, 0, 0.2);
+  margin-left: 10px;
+  padding-left: 10px;
+}
+

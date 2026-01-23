@@ -1,0 +1,69 @@
+/* Art Deco Theme - Complete Stylesheet */
+
+@import './playlist.css';
+@import './playlist-item.css';
+@import './player.css';
+
+/* CSS Variables for Art Deco Theme */
+[data-theme="art-deco"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: rgba(26, 26, 26, 0.6);
+  --bg-hover: rgba(45, 45, 45, 0.8);
+  --text-primary: #d4af37;
+  --text-secondary: #b8941f;
+  --text-tertiary: #8b6914;
+  --accent-primary: var(--gold-color, #d4af37);
+  --accent-primary-light: rgba(212, 175, 55, 0.15);
+  --border-color: rgba(212, 175, 55, 0.3);
+  --pattern-style: var(--pattern-style, 'geometric');
+}
+
+[data-theme="art-deco"] .party-display {
+  background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+  color: var(--text-primary);
+  position: relative;
+}
+
+[data-theme="art-deco"] .party-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212, 175, 55, 0.03) 10px, rgba(212, 175, 55, 0.03) 20px);
+  pointer-events: none;
+}
+
+[data-theme="art-deco"] .party-display-title {
+  color: var(--accent-primary);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+[data-theme="art-deco"] .party-display-session-indicator {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: var(--accent-primary);
+}
+
+[data-theme="art-deco"] .party-display-session-dot {
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+}
+
+[data-theme="art-deco"] .party-playlist-view {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="art-deco"] .party-current-track-display {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+

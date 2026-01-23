@@ -1,0 +1,55 @@
+/* Sakura Theme - Complete Stylesheet */
+
+@import './playlist.css';
+@import './playlist-item.css';
+@import './player.css';
+
+/* CSS Variables for Sakura Theme */
+[data-theme="sakura"] {
+  --bg-primary: #fff5f5;
+  --bg-secondary: rgba(255, 255, 255, 0.8);
+  --bg-tertiary: rgba(255, 255, 255, 0.5);
+  --bg-hover: rgba(255, 255, 255, 0.8);
+  --text-primary: #8b4a6b;
+  --text-secondary: #d4a5a5;
+  --text-tertiary: #b88a9e;
+  --accent-primary: var(--pink-tint, #ffb3d9);
+  --accent-primary-light: rgba(255, 182, 193, 0.2);
+  --border-color: rgba(255, 182, 193, 0.5);
+  --background-opacity: var(--background-opacity, 0.9);
+}
+
+[data-theme="sakura"] .party-display {
+  background: linear-gradient(135deg, #ffeef5 0%, #fff5f5 50%, #ffeef0 100%);
+  color: var(--text-primary);
+}
+
+[data-theme="sakura"] .party-display-title {
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="sakura"] .party-display-session-indicator {
+  background: rgba(255, 182, 193, 0.2);
+  border: 1px solid rgba(255, 182, 193, 0.4);
+  color: var(--accent-primary);
+}
+
+[data-theme="sakura"] .party-display-session-dot {
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px rgba(255, 182, 193, 0.6);
+}
+
+[data-theme="sakura"] .party-playlist-view {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="sakura"] .party-current-track-display {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+

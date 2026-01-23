@@ -1,0 +1,60 @@
+/* Art Deco Theme - Playlist Styles */
+
+[data-theme="art-deco"] .party-playlist-view {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #d4af37;
+  font-family: 'Playfair Display', 'Georgia', serif;
+}
+
+[data-theme="art-deco"] .party-playlist-header {
+  background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+  border-bottom: 3px solid var(--gold-color, #d4af37);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+  position: relative;
+}
+
+[data-theme="art-deco"] .playlist-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-color, #d4af37), transparent);
+}
+
+[data-theme="art-deco"] .party-playlist-stats {
+  color: #d4af37;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+[data-theme="art-deco"] .party-playlist-stats-separator {
+  color: #b8941f;
+}
+
+[data-theme="art-deco"] .party-playlist-items {
+  background: transparent;
+}
+
+[data-theme="art-deco"] .party-playlist-empty {
+  color: #8b6914;
+  font-style: italic;
+}
+
+[data-theme="art-deco"] .party-playlist-group-items {
+  border-left: 2px solid rgba(212, 175, 55, 0.3);
+  margin-left: 20px;
+  padding-left: 20px;
+  position: relative;
+}
+
+[data-theme="art-deco"] .playlist-group-items::before {
+  content: '└';
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  color: rgba(212, 175, 55, 0.5);
+}

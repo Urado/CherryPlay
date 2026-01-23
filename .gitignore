@@ -1,0 +1,105 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+dist-electron/
+dist-ssr/
+build/
+out/
+release/
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.sln.iml
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.ntvs*
+*.njsproj
+*.sw?
+
+# Electron
+out/
+release/
+
+# .NET / Visual Studio
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+.vs/
+*.nupkg
+*.snupkg
+**/packages/*
+artifacts/
+project.lock.json
+project.fragment.lock.json
+*.binlog
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio / Rider
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+.cr/
+.ionide/
+.mfractor/
+.localhistory/
+
+# Misc
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+__pycache__/
+*.pyc
+

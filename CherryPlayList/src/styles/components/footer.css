@@ -1,0 +1,12 @@
+/**
+ * App Footer Styles
+ */
+
+.app-footer {
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--ui-border);
+  height: 4px;
+  flex-shrink: 0;
+  width: 100%;
+}
+

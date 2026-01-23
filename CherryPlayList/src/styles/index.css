@@ -1,0 +1,25 @@
+/**
+ * Main styles entry point
+ * Imports all style modules in correct order
+ */
+
+/* 1. CSS Variables (must be first) */
+@import url('./variables.css');
+
+/* 2. Base styles (reset, scrollbar, root) */
+@import url('./base.css');
+
+/* 3. Utility classes (reusable patterns) */
+@import url('./utilities.css');
+
+/* 4. Component styles */
+@import url('./components/app.css');
+@import url('./components/header.css');
+@import url('./components/footer.css');
+@import url('./components/playlist.css');
+@import url('./components/fileBrowser.css');
+@import url('./components/modal.css');
+@import url('./components/notification.css');
+@import url('./components/spinner.css');
+@import url('./components/sources.css');
+@import url('./components/player.css');

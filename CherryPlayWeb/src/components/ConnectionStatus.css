@@ -1,0 +1,91 @@
+.connection-status-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.connection-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.connection-status-dot--connected {
+  background-color: #00ff00;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.connection-status-dot--connecting {
+  background-color: #ffaa00;
+  box-shadow: 0 0 4px rgba(255, 170, 0, 0.6);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.connection-status-dot--disconnected {
+  background-color: #ff4444;
+  box-shadow: 0 0 4px rgba(255, 68, 68, 0.6);
+}
+
+.connection-status-text {
+  font-weight: 500;
+  color: inherit;
+}
+
+.connection-status--connected {
+  color: #00ff00;
+}
+
+.connection-status--connecting {
+  color: #ffaa00;
+}
+
+.connection-status--disconnected {
+  color: #ff4444;
+}
+
+.connection-status-streaming {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.connection-status-streaming-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ff0000;
+  box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.connection-status-streaming-text {
+  font-weight: 500;
+  color: #ff0000;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

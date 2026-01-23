@@ -1,0 +1,47 @@
+/* Sakura Theme - Player Styles */
+
+[data-theme="sakura"] .party-current-track-display {
+  background: rgba(255, 255, 255, calc(var(--background-opacity, 0.9) * 1));
+  border-bottom: 2px solid rgba(255, 182, 193, 0.5);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+}
+
+[data-theme="sakura"] .party-current-track-empty {
+  color: #d4a5a5;
+  font-style: italic;
+}
+
+[data-theme="sakura"] .party-current-track-name {
+  color: #8b4a6b;
+  font-weight: 700;
+  font-style: italic;
+  text-shadow: 0 2px 4px rgba(255, 182, 193, 0.3);
+}
+
+[data-theme="sakura"] .party-current-track-meta {
+  color: #a85c7a;
+}
+
+[data-theme="sakura"] .party-current-track-status {
+  color: var(--pink-tint, #ffb3d9);
+  font-style: italic;
+}
+
+[data-theme="sakura"] .party-current-track-time {
+  color: #d4a5a5;
+  font-family: 'Georgia', serif;
+}
+
+[data-theme="sakura"] .party-current-track-progress {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  border-radius: 10px;
+  box-shadow: inset 0 2px 4px rgba(255, 182, 193, 0.2);
+}
+
+[data-theme="sakura"] .party-current-track-progress-bar {
+  background: linear-gradient(90deg, var(--pink-tint, #ffb3d9), #ff91c7);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.5);
+}

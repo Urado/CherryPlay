@@ -1,0 +1,659 @@
+/**
+ * Playlist View and Item Styles
+ */
+
+/* Playlist View */
+.playlist-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.playlist-header-section {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--ui-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.playlist-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.playlist-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.playlist-name-input-header {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  color: var(--text-primary);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heading);
+  padding: var(--spacing-sm) 12px;
+  border-radius: 4px;
+  flex: 1;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.playlist-header-action-icon {
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+  flex-shrink: 0;
+}
+
+.playlist-header-action-icon:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.playlist-header-action-icon.delete-button {
+  border-color: var(--state-error);
+  color: var(--state-error);
+}
+
+.playlist-header-action-icon.delete-button:hover {
+  background-color: var(--state-error);
+  color: var(--text-primary);
+}
+
+.collection-export-wrapper {
+  position: relative;
+}
+
+.collection-export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.collection-export-menu button {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  text-align: left;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-size-secondary);
+}
+
+.collection-export-menu button:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.playlist-name-input-header:focus {
+  border-color: var(--accent-primary);
+}
+
+.playlist-name-input-header::placeholder {
+  color: var(--text-disabled);
+}
+
+.playlist-stats-header {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  gap: 4px;
+}
+
+.playlist-actions {
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  gap: var(--spacing-sm);
+  border-bottom: 1px solid var(--ui-border);
+  flex-shrink: 0;
+}
+
+.action-button {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-size-body);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.action-button:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--accent-primary);
+}
+
+.action-button.delete-button {
+  background-color: var(--bg-tertiary);
+  border-color: var(--state-error);
+  color: var(--state-error);
+}
+
+.action-button.delete-button:hover {
+  background-color: var(--state-error);
+  color: var(--text-primary);
+}
+
+.playlist-tracks {
+  flex: 1;
+  overflow: hidden auto;
+  padding: var(--spacing-sm);
+}
+
+/* Playlist Item */
+.playlist-item {
+  display: flex;
+  align-items: center;
+  padding: var(--track-item-padding, 12px);
+  margin-bottom: var(--track-item-margin, 4px);
+  background-color: var(--bg-tertiary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  gap: var(--spacing-sm);
+}
+
+.playlist-item-play {
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.playlist-item-play:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.playlist-item-play.active {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background-color: rgba(100, 149, 237, 0.15);
+}
+
+.playlist-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.playlist-item.selected {
+  background-color: var(--selected-bg);
+  border: 2px solid var(--selected-border);
+}
+
+.playlist-item.dragging {
+  opacity: 0.5;
+}
+
+.playlist-item.drag-over {
+  background-color: var(--bg-hover);
+}
+
+.playlist-item-drag-handle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: grab;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.playlist-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.playlist-item-drag-handle .drag-icon {
+  font-size: 20px;
+}
+
+.playlist-item-checkbox {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.playlist-item-checkbox:hover {
+  color: var(--accent-primary);
+}
+
+.playlist-item-checkbox.checked {
+  color: var(--accent-primary);
+}
+
+.playlist-item-checkbox .checkbox-icon {
+  font-size: 20px;
+}
+
+.playlist-item-index {
+  color: var(--text-disabled);
+  font-size: var(--font-size-secondary);
+  min-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.playlist-item-name {
+  flex: 1;
+  font-size: var(--font-size-body);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-item-duration {
+  color: var(--text-secondary);
+  font-size: var(--font-size-secondary);
+  min-width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.playlist-item-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.playlist-item-delete:hover {
+  background-color: var(--state-error);
+  color: var(--text-primary);
+}
+
+.playlist-item-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.drag-insert-line {
+  height: 2px;
+  background-color: var(--accent-primary);
+  opacity: 0.6;
+  margin: 2px 0;
+  border-radius: 1px;
+}
+
+.playlist-hour-divider {
+  height: 3px;
+  background-color: var(--accent-primary);
+  margin: 8px 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+}
+
+.playlist-hour-divider--planned-end {
+  background-color: #f44336;
+  opacity: 1;
+}
+
+.playlist-hour-divider-label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-secondary);
+  padding: 2px 10px;
+  color: var(--text-primary);
+  font-size: var(--font-size-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid var(--accent-primary);
+  border-radius: 4px;
+}
+
+/* ItemList Component Styles */
+.item-list {
+  flex: 1;
+  overflow: hidden auto;
+  padding: var(--spacing-sm);
+  position: relative;
+}
+
+.item-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+}
+
+.item-list-drop-indicator {
+  height: 2px;
+  background-color: var(--accent-primary);
+  opacity: 0.6;
+  margin: 0;
+  position: absolute;
+  left: var(--spacing-sm);
+  right: var(--spacing-sm);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ListRow Component Styles */
+.list-row {
+  display: flex;
+  align-items: center;
+  padding: var(--track-item-padding, 12px);
+  margin-bottom: var(--track-item-margin, 4px);
+  background-color: var(--bg-tertiary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  gap: var(--spacing-sm);
+}
+
+.list-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.list-row.selected {
+  background-color: var(--selected-bg);
+  border: 2px solid var(--selected-border);
+}
+
+.list-row.dragging {
+  opacity: 0.5;
+}
+
+.list-row.drag-over {
+  background-color: var(--bg-hover);
+}
+
+.list-row--played {
+  opacity: 0.6;
+}
+
+.list-row--disabled {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.list-row--current {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 8px rgba(100, 149, 237, 0.3);
+}
+
+.list-row-play {
+  background: transparent;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.list-row-play:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.list-row-play.active {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background-color: rgba(100, 149, 237, 0.15);
+}
+
+.list-row-drag-handle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: grab;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.list-row-drag-handle:active {
+  cursor: grabbing;
+}
+
+.list-row-drag-handle .drag-icon {
+  font-size: 20px;
+}
+
+.list-row-checkbox {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.list-row-checkbox:hover {
+  color: var(--accent-primary);
+}
+
+.list-row-checkbox.checked {
+  color: var(--accent-primary);
+}
+
+.list-row-checkbox .checkbox-icon {
+  font-size: 20px;
+}
+
+.list-row-index {
+  color: var(--text-disabled);
+  font-size: var(--font-size-secondary);
+  min-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.list-row-name {
+  flex: 1;
+  font-size: var(--font-size-body);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-row-duration {
+  color: var(--text-secondary);
+  font-size: var(--font-size-secondary);
+  min-width: 60px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.list-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 4px);
+  flex-shrink: 0;
+}
+
+.list-row-action {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.list-row-action:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.list-row-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.list-row-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.list-row-delete:hover {
+  background-color: var(--state-error);
+  color: var(--text-primary);
+}
+
+.list-row-disable {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.list-row-disable:hover {
+  color: var(--state-warning);
+}
+
+.list-row-settings {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.list-row-settings:hover {
+  color: var(--accent-primary);
+}
+
+/* Empty State Styles */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.empty-state-icon {
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.empty-state-hint {
+  font-size: var(--font-size-secondary);
+  color: var(--text-disabled);
+  margin-top: var(--spacing-sm);
+}

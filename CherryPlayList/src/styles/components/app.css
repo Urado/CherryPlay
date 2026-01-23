@@ -1,0 +1,101 @@
+/**
+ * App Layout Styles
+ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Split Container System Styles */
+.split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.split-container.split-horizontal {
+  flex-direction: row;
+}
+
+.split-container.split-vertical {
+  flex-direction: column;
+}
+
+.split-zone {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-secondary);
+  position: relative;
+}
+
+.split-divider {
+  background-color: #000000;
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+  min-width: 6px;
+  min-height: 6px;
+}
+
+.split-divider:hover {
+  background-color: #1a1a1a;
+}
+
+.split-divider:hover svg {
+  opacity: 1;
+}
+
+.split-divider.resizing {
+  background-color: #000000;
+}
+
+.split-divider.resizing svg {
+  opacity: 1;
+  color: var(--accent-primary);
+}
+
+/* Увеличиваем область захвата для границ (невидимая область вокруг) */
+.split-divider::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  z-index: 1;
+  cursor: inherit;
+}
+
+.split-container-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+}
+
+/* Legacy panel styles - kept for backward compatibility */
+.panel-title {
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heading);
+  line-height: var(--line-height-heading);
+  color: var(--text-primary);
+  padding: var(--spacing-md);
+  margin: 0;
+  border-bottom: 1px solid var(--ui-border);
+}

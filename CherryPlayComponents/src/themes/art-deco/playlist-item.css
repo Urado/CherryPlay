@@ -1,0 +1,89 @@
+/* Art Deco Theme - Playlist Item Styles */
+
+[data-theme="art-deco"] .party-playlist-item {
+  background: rgba(26, 26, 26, 0.6);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  padding-left: 24px;
+}
+
+[data-theme="art-deco"] .playlist-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+[data-theme="art-deco"] .party-playlist-item:hover {
+  background: rgba(45, 45, 45, 0.8);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+}
+
+[data-theme="art-deco"] .party-playlist-item:hover::before {
+  background: var(--gold-color, #d4af37);
+}
+
+[data-theme="art-deco"] .party-playlist-item--current {
+  background: rgba(212, 175, 55, 0.15);
+  border-left: 4px solid var(--gold-color, #d4af37);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  font-weight: 700;
+}
+
+[data-theme="art-deco"] .party-playlist-item--current::before {
+  background: var(--gold-color, #d4af37);
+  width: 4px;
+  box-shadow: 0 0 10px var(--gold-color, #d4af37);
+}
+
+[data-theme="art-deco"] .party-playlist-item--played {
+  opacity: 0.5;
+  color: #8b6914;
+}
+
+[data-theme="art-deco"] .party-playlist-item--disabled {
+  opacity: 0.3;
+  text-decoration: line-through;
+  color: #5a4a1a;
+}
+
+[data-theme="art-deco"] .party-playlist-item-name {
+  color: #d4af37;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="art-deco"] .party-playlist-item-duration {
+  color: #b8941f;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+[data-theme="art-deco"] .party-playlist-item--group .party-playlist-item-name {
+  color: #f4d03f;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+
+[data-theme="art-deco"] .party-playlist-item-group-icon {
+  filter: drop-shadow(0 0 5px var(--gold-color, #d4af37));
+}
+
+/* Geometric pattern background for groups */
+[data-theme="art-deco"] .party-playlist-item--group {
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(212, 175, 55, 0.03) 10px,
+      rgba(212, 175, 55, 0.03) 20px
+    );
+}

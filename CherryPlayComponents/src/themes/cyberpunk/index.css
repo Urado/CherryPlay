@@ -1,0 +1,55 @@
+/* Cyberpunk Theme - Complete Stylesheet */
+
+@import './playlist.css';
+@import './playlist-item.css';
+@import './player.css';
+
+/* CSS Variables for Cyberpunk Theme */
+[data-theme="cyberpunk"] {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #0f0f0f;
+  --bg-hover: #1a1a1a;
+  --text-primary: #00ff00;
+  --text-secondary: #00ff88;
+  --text-tertiary: #666666;
+  --accent-primary: var(--accent-color, #00ff00);
+  --accent-primary-light: rgba(0, 255, 0, 0.1);
+  --border-color: rgba(0, 255, 0, 0.3);
+  --glow-intensity: var(--glow-intensity, 0.5);
+}
+
+[data-theme="cyberpunk"] .party-display {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: var(--text-primary);
+}
+
+[data-theme="cyberpunk"] .party-display-title {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 20px rgba(0, 255, 0, calc(var(--glow-intensity) * 0.5));
+}
+
+[data-theme="cyberpunk"] .party-display-session-indicator {
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  color: #00ff00;
+}
+
+[data-theme="cyberpunk"] .party-display-session-dot {
+  background: #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+}
+
+[data-theme="cyberpunk"] .party-playlist-view {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="cyberpunk"] .party-current-track-display {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+

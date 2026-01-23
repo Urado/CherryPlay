@@ -1,0 +1,53 @@
+/**
+ * CSS Custom Properties (Variables)
+ * Generated from TypeScript theme configuration
+ * Single source of truth for all theme values
+ */
+
+:root {
+  /* Background Colors */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --bg-tertiary: #2a2a2a;
+  --bg-hover: #323232;
+
+  /* Text Colors */
+  --text-primary: #fff;
+  --text-secondary: #b0b0b0;
+  --text-disabled: #666;
+
+  /* Accent Colors */
+  --accent-primary: #4a9eff;
+  --accent-secondary: #6495ed;
+
+  /* State Colors */
+  --state-success: #4caf50;
+  --state-error: #d32f2f;
+  --state-warning: #ff9800;
+  --state-info: #2196f3;
+  --selected-bg: #3a4a5a;
+  --selected-border: #6495ed;
+
+  /* UI Colors */
+  --ui-border: #3a3a3a;
+  --ui-shadow: rgba(0, 0, 0, 0.3);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* Typography */
+  --font-size-heading: 20px;
+  --font-size-body: 14px;
+  --font-size-secondary: 12px;
+  --font-size-small: 11px;
+  --font-weight-heading: 600;
+  --font-weight-body: 400;
+  --line-height-heading: 1.4;
+  --line-height-body: 1.5;
+  --line-height-secondary: 1.4;
+}

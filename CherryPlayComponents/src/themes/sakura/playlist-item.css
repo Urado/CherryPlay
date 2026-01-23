@@ -1,0 +1,54 @@
+/* Sakura Theme - Playlist Item Styles */
+
+[data-theme="sakura"] .party-playlist-item {
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 182, 193, 0.2);
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  margin: 2px 8px;
+}
+
+[data-theme="sakura"] .party-playlist-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+  transform: translateX(4px);
+}
+
+[data-theme="sakura"] .party-playlist-item--current {
+  background: rgba(255, 182, 193, 0.2);
+  border-left: 4px solid var(--pink-tint, #ffb3d9);
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
+  font-weight: 600;
+}
+
+[data-theme="sakura"] .party-playlist-item--played {
+  opacity: 0.6;
+  color: #b88a9e;
+}
+
+[data-theme="sakura"] .party-playlist-item--disabled {
+  opacity: 0.4;
+  text-decoration: line-through;
+  color: #c4a5b5;
+}
+
+[data-theme="sakura"] .party-playlist-item-name {
+  color: #8b4a6b;
+  font-weight: 400;
+}
+
+[data-theme="sakura"] .party-playlist-item-duration {
+  color: #d4a5a5;
+  font-size: 13px;
+  font-style: italic;
+}
+
+[data-theme="sakura"] .party-playlist-item--group .party-playlist-item-name {
+  color: #a85c7a;
+  font-weight: 600;
+  font-style: italic;
+}
+
+[data-theme="sakura"] .party-playlist-item-group-icon {
+  filter: drop-shadow(0 2px 4px rgba(255, 182, 193, 0.4));
+}

@@ -1,0 +1,8 @@
+{
+  "name": "example-plugin",
+  "version": "1.0.0",
+  "description": "Example plugin for CherryPlayList",
+  "main": "index.js",
+  "author": "",
+  "license": "MIT"
+}

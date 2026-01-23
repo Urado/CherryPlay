@@ -1,0 +1,80 @@
+.party-display {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  /* Подложка будет применяться через темы */
+}
+
+.party-display-header {
+  padding: 2rem;
+  padding-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.party-display-title {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  flex: 1;
+  /* Стилизация через темы */
+}
+
+.party-display-session-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  /* Стилизация через темы */
+}
+
+.party-display-session-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  /* Стилизация через темы */
+}
+
+.party-display-session-text {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+.party-display-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  padding: 0 2rem 2rem 2rem;
+}
+
+.party-display-player {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.party-display-playlist {
+  flex: 1;
+  overflow: hidden;
+}
+
