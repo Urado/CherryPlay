@@ -27,3 +27,4 @@
 ## Использование
 
 Все Zustand stores с `persist` middleware используют `electronStorage` для сохранения состояния между сессиями.
+

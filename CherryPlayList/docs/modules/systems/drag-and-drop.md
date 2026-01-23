@@ -146,3 +146,4 @@ Drop на Трек 4 (position: 'bottom'):
 **Исходящие (модуль использует):**
 - `projectStoreFactory` — через executor
 - `globalHistoryStore` — для записи истории операций
+

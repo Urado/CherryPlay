@@ -2,31 +2,44 @@
 
 Краткая документация по основным модулям проекта.
 
+Под **модулями** в этом разделе понимаются **только**:
+- **Workspaces** — самостоятельные рабочие области приложения.
+- **Systems** — крупные инфраструктурные подсистемы (drag-and-drop, undo/redo, streaming, demo player и т.п.).
+
+Stores, сервисы, хуки и утилиты считаются поддерживающей инфраструктурой и описаны отдельно.
+
 ## Список модулей
 
-### Workspaces
-- [Playlist](./playlist.md) - Модуль плейлиста
-- [Collections](./collections.md) - Коллекции (облегчённые плейлисты)
-- [File Browser](./file-browser.md) - Обозреватель файлов
-- [Player](./player.md) - Модуль плеера для автоматического воспроизведения
-- [Party](./party.md) - Модуль вечеринки с трансляцией
+### Workspaces (модули)
+- [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
+- [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
+- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов
+- [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
+- [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
+- [Test Zone](./workspaces/test-zone.md) - Тестовый модуль для проверки layout и реестра workspace
+
+### Systems (модули)
+- [Drag and Drop](./systems/drag-and-drop.md) - Система перетаскивания треков и групп между workspace
+- [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
+- [Layout System](./systems/layout-system.md) - Система управления layout интерфейса
+- [Storage](./systems/storage.md) - Система надёжного хранения данных
+- [Demo Player](./systems/demo-player.md) - Глобальная система предпрослушивания треков без очереди
+- [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
+- [Streaming](./systems/streaming.md) - Система трансляции состояния плейлиста для вечеринок
+
+## Supporting infrastructure (не модули в строгом смысле)
+
+Эти части системы не считаются модулями, но являются важной инфраструктурой, которую используют модули.
 
 ### Stores
-- [Project Store](./project-store.md) - Главный store проекта
-- [UI Store](./ui-store.md) - Глобальный store UI состояния
-- [Settings Store](./settings-store.md) - Store настроек приложения
-
-### Системы
-- [Drag and Drop](./drag-and-drop.md) - Система перетаскивания треков
-- [Undo/Redo](./undo-redo.md) - Система отмены и повтора действий
-- [Layout System](./layout-system.md) - Система управления layout интерфейса
-- [Storage](./storage.md) - Система надёжного хранения данных
+- [Project Store](./stores/project-store.md) - Главный store проекта с треками, группами и сессией
+- [UI Store](./stores/ui-store.md) - Глобальный store UI состояния и layout
+- [Settings Store](./stores/settings-store.md) - Store настроек приложения
 
 ### Сервисы
-- [Export](./export.md) - Модуль экспорта плейлистов
-- [IPC Service](./ipc-service.md) - Сервис IPC коммуникации
-- [Project Service](./project-service.md) - Сервис работы с проектами
+- [Export](./services/export.md) - Сервис экспорта плейлистов
+- [IPC Service](./services/ipc-service.md) - Сервис IPC коммуникации с Electron
+- [Project Service](./services/project-service.md) - Сервис работы с файлами проектов
 
 ### Hooks & Utils
-- [Keyboard Shortcuts](./keyboard-shortcuts.md) - Hook для клавиатурных сокращений
-- [Demo Player](./demo-player.md) - Демо-плеер для предпрослушивания треков
+- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Hook для клавиатурных сокращений

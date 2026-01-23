@@ -35,6 +35,9 @@
 - **projectStore/_applyCommand** — применение команд к состоянию
 - **historyCore** — утилиты клонирования (`cloneItem`, `cloneItems`)
 
+Детальное описание набора команд и их структуры см. в модуле  
+[Commands System](./commands-system.md).
+
 ## Команды
 
 | Команда | Описание |
@@ -84,3 +87,4 @@ App.tsx → useEffect:
   2. initializeGlobalHistory()        // связывает stores с globalHistoryStore
   3. registerErrorHandler()           // подключает notifications
 ```
+

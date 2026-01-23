@@ -53,68 +53,25 @@
 
 ## Использование
 
-### Инициализация (App.tsx)
+### Инициализация
 
-```typescript
-import { initializeShortcuts } from '@shared/shortcuts';
-import { useSettingsStore } from '@shared/stores';
+В `App.tsx` вызывается `initializeShortcuts` с колбэком, возвращающим текущие биндинги из `settingsStore.keyBindings`.
 
-useEffect(() => {
-  initializeShortcuts(() => useSettingsStore.getState().keyBindings);
-}, []);
-```
+### Глобальные шорткаты
 
-### Глобальные шорткаты (AppHeader.tsx)
+В `AppHeader.tsx` используется `useGlobalShortcuts` для регистрации обработчиков глобальных действий (save, saveAs, open, new).
 
-```typescript
-import { useGlobalShortcuts } from '@shared/shortcuts';
+### Шорткаты для списков
 
-useGlobalShortcuts({
-  'global.save': handleSave,
-  'global.saveAs': handleSaveAs,
-  'global.open': handleOpen,
-  'global.new': handleNew,
-});
-```
-
-### Шорткаты для списков (PlaylistView.tsx)
-
-```typescript
-import { useListShortcuts } from '@shared/shortcuts';
-
-useListShortcuts({
-  'list.undo': undo,
-  'list.redo': redo,
-  'list.delete': hasSelection ? removeSelected : undefined,
-  'list.selectAll': selectAll,
-  'list.escape': deselectAll,
-});
-```
+В компонентах списков (например, `PlaylistView.tsx`) используется `useListShortcuts` для регистрации обработчиков операций со списком (undo, redo, delete, selectAll, escape).
 
 ### Универсальный hook
 
-```typescript
-import { useShortcuts } from '@shared/shortcuts';
-
-useShortcuts({
-  'global.save': handleSave,
-  'list.undo': undo,
-}, { enabled: isActive });
-```
+`useShortcuts` позволяет регистрировать любые комбинации шорткатов с опциональным флагом `enabled` для условной активации.
 
 ## Кастомизация биндингов
 
-Пользовательские биндинги хранятся в `settingsStore.keyBindings`:
-
-```typescript
-// Изменить биндинг
-useSettingsStore.getState().setKeyBinding('list.delete', {
-  code: 'Backspace',
-});
-
-// Сбросить все биндинги
-useSettingsStore.getState().resetKeyBindings();
-```
+Пользовательские биндинги хранятся в `settingsStore.keyBindings`. Для изменения биндинга используется `setKeyBinding(id, binding)`, для сброса всех биндингов — `resetKeyBindings()`.
 
 ## Особенности
 
@@ -126,12 +83,8 @@ useSettingsStore.getState().resetKeyBindings();
 
 ## Утилиты
 
-```typescript
-import { formatKeyBinding, parseShortcutString, isMac } from '@shared/shortcuts';
+Доступны утилиты:
+- `formatKeyBinding(binding)` — форматирование биндинга для отображения в UI (возвращает "Ctrl+S" или "Cmd+S" на Mac).
+- `parseShortcutString(string)` — парсинг строки с комбинацией клавиш в объект биндинга.
+- `isMac` — проверка платформы macOS.
 
-// Форматирование для UI
-formatKeyBinding({ code: 'KeyS', ctrlKey: true }); // "Ctrl+S" или "Cmd+S" на Mac
-
-// Парсинг строки
-parseShortcutString('Ctrl+Shift+S'); // { code: 'KeyS', ctrlKey: true, shiftKey: true }
-```

@@ -12,9 +12,7 @@
 
 ## Основной метод
 
-```typescript
-invoke<T>(channel: string, payload?: any, showNotification?: boolean): Promise<T>
-```
+`invoke<T>(channel: string, payload?: any, showNotification?: boolean): Promise<T>` — универсальный метод для вызова IPC каналов с автоматической обработкой ошибок.
 
 ## Категории каналов
 
@@ -28,3 +26,4 @@ invoke<T>(channel: string, payload?: any, showNotification?: boolean): Promise<T
 ## Обработка ошибок
 
 Все ошибки автоматически логируются и показываются пользователю через уведомления (если `showNotification: true`).
+
