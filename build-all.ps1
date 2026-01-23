@@ -22,7 +22,7 @@ if (-not $nodeInstalled) {
 $buildErrors = @()
 
 # 1. Сборка компонентов
-Write-Host "[1/3] Сборка CherryPlayComponents..." -ForegroundColor Cyan
+Write-Host "[1/4] Сборка CherryPlayComponents..." -ForegroundColor Cyan
 Set-Location CherryPlayComponents
 try {
     if (-not (Test-Path "node_modules")) {
@@ -41,7 +41,7 @@ try {
 Set-Location ..
 
 # 2. Сборка сервера
-Write-Host "[2/3] Сборка CherryPlayServer..." -ForegroundColor Cyan
+Write-Host "[2/4] Сборка CherryPlayServer..." -ForegroundColor Cyan
 Set-Location CherryPlayServer
 try {
     dotnet build --configuration Release
@@ -56,7 +56,7 @@ try {
 Set-Location ..
 
 # 3. Сборка веб-приложения
-Write-Host "[3/3] Сборка CherryPlayWeb..." -ForegroundColor Cyan
+Write-Host "[3/4] Сборка CherryPlayWeb..." -ForegroundColor Cyan
 Set-Location CherryPlayWeb
 try {
     if (-not (Test-Path "node_modules")) {
@@ -74,6 +74,25 @@ try {
 }
 Set-Location ..
 
+# 4. Сборка десктопного приложения
+Write-Host "[4/4] Сборка CherryPlayList..." -ForegroundColor Cyan
+Set-Location CherryPlayList
+try {
+    if (-not (Test-Path "node_modules")) {
+        Write-Host "  Установка зависимостей..." -ForegroundColor Yellow
+        npm install
+    }
+    npm run build:electron
+    if ($LASTEXITCODE -ne 0) {
+        throw "Ошибка сборки десктопного приложения"
+    }
+    Write-Host "  ✓ Десктопное приложение собрано" -ForegroundColor Green
+} catch {
+    Write-Host "  ✗ Ошибка сборки десктопного приложения" -ForegroundColor Red
+    $buildErrors += "CherryPlayList"
+}
+Set-Location ..
+
 Write-Host ""
 if ($buildErrors.Count -eq 0) {
     Write-Host "=== Все проекты успешно собраны ===" -ForegroundColor Green
@@ -82,6 +101,7 @@ if ($buildErrors.Count -eq 0) {
     Write-Host "  - CherryPlayComponents: dist/" -ForegroundColor Gray
     Write-Host "  - CherryPlayServer: bin/Release/" -ForegroundColor Gray
     Write-Host "  - CherryPlayWeb: dist/" -ForegroundColor Gray
+    Write-Host "  - CherryPlayList: dist/ и dist-electron/" -ForegroundColor Gray
 } else {
     Write-Host "=== Сборка завершена с ошибками ===" -ForegroundColor Red
     Write-Host "Ошибки в проектах: $($buildErrors -join ', ')" -ForegroundColor Red

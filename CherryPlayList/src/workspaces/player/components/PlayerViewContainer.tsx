@@ -32,15 +32,10 @@ interface PlayerViewContainerProps {
   zoneId: string;
 }
 
-/**
- * Контейнер для PlayerView - содержит всю логику и состояние
- * Теперь использует useProjectStore вместо старых stores
- */
 export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   workspaceId: _workspaceId,
   zoneId,
 }) => {
-  // Используем projectStore для работы с группами
   const {
     name,
     items,
@@ -71,14 +66,11 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     isGroupDisabled,
   } = useProjectStore();
 
-  // Извлекаем нужные настройки
   const { plannedEndTime } = settings;
   const mode = sessionState.mode;
 
-  // Получаем плоский список для отображения
   const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
 
-  // Получаем все треки в правильном порядке для логики воспроизведения
   const allTracks = useMemo(() => {
     return getTracksFromDisplayItems(displayItems);
   }, [displayItems]);
@@ -113,7 +105,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     [addItem, loadDurationsForTracks],
   );
 
-  // Cross-workspace drag-drop executor
   const { executeMove, executeCopy } = useDragDropExecutor();
   const addNotification = useUIStore((state) => state.addNotification);
 
@@ -135,28 +126,22 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     onAddTracksAt: handleAddTracksAt,
     onTracksAdded: loadDurationsForTracks,
     loadFolderTracks: ipcService.findAudioFilesRecursive.bind(ipcService),
-    // Unified move/copy executors (handles both same-workspace and cross-workspace)
     onMove: executeMove,
     onCopy: executeCopy,
     onError: handleError,
   });
 
-  // Состояние вечеринки и SignalR соединения
   const { createdParty } = usePartyStore((state) => ({ createdParty: state.createdParty }));
   const [connectionState, setConnectionState] = useState<signalR.HubConnectionState | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Строки-ключи для отслеживания изменений состояния
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
   const playedTracksKey = sessionState.playedTrackIds.join(',');
 
   const isPreparationMode = mode === 'preparation';
 
-  // Настройки отсечек
-  const { showHourDividers } = useSettingsStore();
-
-  // Используем утилиты для проверки состояния
+  const { showHourDividers, enableStreaming } = useSettingsStore();
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
       return isTrackOrGroupDisabledUtil(
@@ -185,7 +170,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     [isTrackPlayed, isTrackOrGroupDisabled],
   );
 
-  // Плеер для режима сессии
   const { position: currentTrackPosition, currentTrack: activePlayerTrack } = usePlayerAudioStore();
   const activePlayerTrackId = activePlayerTrack?.id;
 
@@ -209,7 +193,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     openTrackSettingsModal({ trackId: null, groupId: null, isGlobal: true });
   }, [openTrackSettingsModal]);
 
-  // Используем хук для хелперов состояния
   const { getEffectiveTrackSettings, getNextActiveTrack } = usePlayerStateHelpers({
     allTracks,
     activePlayerTrackId,
@@ -218,7 +201,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     isTrackActive,
   });
 
-  // Используем утилиту для пометки пропущенных отключённых треков
   const markSkippedDisabledTracks = useCallback(
     (fromIndex: number, toIndex: number) => {
       markSkippedDisabledTracksUtil(
@@ -242,7 +224,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     ],
   );
 
-  // Используем хук для управления воспроизведением
   const { startTrackPlayback, pausePlayback, handleNext, activeTrackId, playerStatus } =
     usePlayerPlayback({
       allTracks,
@@ -253,13 +234,11 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       setCurrentTrack,
     });
 
-  // Используем хук для управления сессией
   const { handleStartSession, handleResetSession } = usePlayerSession({
     allTracks,
     isTrackActive,
   });
 
-  // Используем хук для управления отсечками
   const {
     calculateDividerMarkers,
     formatDividerLabel,
@@ -278,7 +257,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     displayItems,
   });
 
-  // Обработчик отключения/включения трека или группы
   const handleToggleDisabled = useCallback(
     (itemId: string) => {
       // Запрещаем отключение текущего трека
@@ -297,7 +275,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     [activePlayerTrackId, toggleTrackDisabled, toggleGroupDisabled, findItemById],
   );
 
-  // Обработчик расформирования группы
   const handleUngroupGroup = useCallback(
     (groupId: string) => {
       if (isPreparationMode) {
@@ -333,7 +310,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     ],
   );
 
-  // Обработчик экспорта треков в текстовый файл
   const handleExportTracksToText = useCallback(() => {
     try {
       const allTracksInOrder = getAllTracksInOrder(items);
@@ -360,7 +336,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
 
   const hasSelectedItems = selectedItemIds.size > 0;
 
-  // Используем утилиту для проверки возможности удаления
   const canRemoveSelectedItems = useMemo(() => {
     return canRemoveSelectedItemsUtil(
       selectedItemIds,
@@ -381,7 +356,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     playedTracksKey,
   ]);
 
-  // Обработчик удаления выбранных элементов с проверкой
   const handleRemoveSelectedItems = useCallback(() => {
     if (!canRemoveSelectedItems) {
       return;
@@ -389,7 +363,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     removeSelectedItems();
   }, [canRemoveSelectedItems, removeSelectedItems]);
 
-  // Мемоизация вычисления общей длительности с учетом пауз между треками
   const totalDuration = useMemo(() => {
     let total = 0;
     for (let i = 0; i < allTracks.length; i++) {
@@ -408,7 +381,6 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     return total;
   }, [allTracks, isTrackOrGroupDisabled, getEffectiveTrackSettings]);
 
-  // Используем утилиту для проверки соседних элементов
   const areItemsConsecutive = useCallback(
     (itemIds: string[]): boolean => {
       return areItemsConsecutiveUtil(itemIds, items, getItemPath, findItemById);
@@ -416,13 +388,11 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     [getItemPath, findItemById, items],
   );
 
-  // Проверка, можно ли создать группу из выбранных элементов
   const canCreateGroup = useMemo(() => {
     if (selectedItemIds.size < 2) return false;
     return areItemsConsecutive(Array.from(selectedItemIds));
   }, [selectedItemIds, areItemsConsecutive]);
 
-  // Обработчик создания группы
   const handleCreateGroup = useCallback(() => {
     if (selectedItemIds.size < 2) return;
 
@@ -437,8 +407,15 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     }
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
-  // Логика подключения к SignalR при создании вечеринки
   useEffect(() => {
+    if (!enableStreaming) {
+      if (signalRService.isServiceConnected()) {
+        signalRService.disconnect().catch(console.error);
+      }
+      setConnectionState(null);
+      return;
+    }
+
     if (!createdParty) {
       if (signalRService.isServiceConnected()) {
         signalRService.disconnect().catch(console.error);
@@ -448,7 +425,7 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     }
 
     const connectToSignalR = async () => {
-      if (!createdParty) {
+      if (!createdParty || !enableStreaming) {
         return;
       }
 
@@ -494,7 +471,7 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
         if (createdParty && reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        if (createdParty) {
+        if (createdParty && enableStreaming) {
           reconnectTimeoutRef.current = setTimeout(() => {
             connectToSignalR();
           }, 10000);
@@ -509,11 +486,10 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [createdParty, mode]);
+  }, [createdParty, mode, enableStreaming]);
 
-  // Обновление состояния соединения при изменении режима
   useEffect(() => {
-    if (!createdParty || !signalRService.isServiceConnected()) {
+    if (!enableStreaming || !createdParty || !signalRService.isServiceConnected()) {
       return;
     }
 
@@ -523,19 +499,22 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     } else {
       signalRService.stopPositionUpdates();
     }
-  }, [mode, createdParty]);
+  }, [mode, createdParty, enableStreaming]);
 
-  // Отслеживание состояния соединения
   useEffect(() => {
+    if (!enableStreaming) {
+      setConnectionState(null);
+      return;
+    }
+
     const interval = setInterval(() => {
       const state = signalRService.getConnectionState();
       setConnectionState(state);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [enableStreaming]);
 
-  // Очистка при размонтировании
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) {

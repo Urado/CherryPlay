@@ -11,13 +11,10 @@ interface SettingsState {
   trackItemSizePreset: 'small' | 'medium' | 'large';
   hourDividerInterval: number;
   showHourDividers: boolean;
-  // Audio device settings
   playerAudioDeviceId: string | null;
   demoPlayerAudioDeviceId: string | null;
-  // Keyboard shortcuts customization
   keyBindings: CustomKeyBindings;
-
-  // Actions
+  enableStreaming: boolean;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
@@ -26,9 +23,9 @@ interface SettingsState {
   setShowHourDividers: (show: boolean) => void;
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
   setDemoPlayerAudioDeviceId: (deviceId: string | null) => void;
-  // Keyboard shortcuts actions
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
   resetKeyBindings: () => void;
+  setEnableStreaming: (enable: boolean) => void;
 }
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
@@ -43,6 +40,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       playerAudioDeviceId: null,
       demoPlayerAudioDeviceId: null,
       keyBindings: {},
+      enableStreaming: false,
 
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
@@ -57,10 +55,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
           keyBindings: { ...state.keyBindings, [id]: binding },
         })),
       resetKeyBindings: () => set({ keyBindings: {} }),
+      setEnableStreaming: (enable) => set({ enableStreaming: enable }),
     }),
     {
       name: 'cherryplaylist-settings',
-      version: 4,
       storage: electronStorage,
       partialize: (state) => ({
         exportPath: state.exportPath,
@@ -72,36 +70,8 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         playerAudioDeviceId: state.playerAudioDeviceId,
         demoPlayerAudioDeviceId: state.demoPlayerAudioDeviceId,
         keyBindings: state.keyBindings,
+        enableStreaming: state.enableStreaming,
       }),
-      migrate: (persistedState: unknown, version: number) => {
-        const state = persistedState as Partial<SettingsState>;
-        if (version === 1) {
-          return {
-            ...state,
-            trackItemSizePreset: 'medium',
-            hourDividerInterval: 3600,
-            showHourDividers: true,
-            playerAudioDeviceId: null,
-            demoPlayerAudioDeviceId: null,
-            keyBindings: {},
-          };
-        }
-        if (version === 2) {
-          return {
-            ...state,
-            playerAudioDeviceId: null,
-            demoPlayerAudioDeviceId: null,
-            keyBindings: {},
-          };
-        }
-        if (version === 3) {
-          return {
-            ...state,
-            keyBindings: {},
-          };
-        }
-        return persistedState;
-      },
     },
   ),
 );

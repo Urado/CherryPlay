@@ -11,6 +11,7 @@ import * as signalR from '@microsoft/signalr';
 
 import { formatDuration } from '@shared/utils';
 import { signalRService } from '@shared/services';
+import { useSettingsStore } from '@shared/stores';
 
 interface PlayerHeaderProps {
   name: string;
@@ -55,12 +56,12 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   onExportTracksToText,
   connectionState,
 }) => {
-  // Получаем человекочитаемую причину ошибки
+  const { enableStreaming } = useSettingsStore();
+  
   const connectionErrorReason = signalRService.getConnectionErrorReason();
   const isConnected = connectionState === signalR.HubConnectionState.Connected;
   const isConnecting = connectionState === signalR.HubConnectionState.Connecting || connectionState === signalR.HubConnectionState.Reconnecting;
   
-  // Формируем текст для tooltip
   const getConnectionTooltip = () => {
     if (isConnected) {
       return 'Подключено к серверу';
@@ -84,27 +85,28 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           onChange={(e) => onNameChange(e.target.value)}
           placeholder="Player"
         />
-        {/* Индикатор соединения SignalR */}
-        <div
-          className={`player-connection-indicator ${
-            isConnected
-              ? 'player-connection-indicator--connected'
-              : isConnecting
-              ? 'player-connection-indicator--connecting'
-              : 'player-connection-indicator--disconnected'
-          }`}
-          title={getConnectionTooltip()}
-        >
-          <span
-            className={`player-connection-dot ${
+        {enableStreaming && (
+          <div
+            className={`player-connection-indicator ${
               isConnected
-                ? 'player-connection-dot--connected'
+                ? 'player-connection-indicator--connected'
                 : isConnecting
-                ? 'player-connection-dot--connecting'
-                : 'player-connection-dot--disconnected'
+                ? 'player-connection-indicator--connecting'
+                : 'player-connection-indicator--disconnected'
             }`}
-          />
-        </div>
+            title={getConnectionTooltip()}
+          >
+            <span
+              className={`player-connection-dot ${
+                isConnected
+                  ? 'player-connection-dot--connected'
+                  : isConnecting
+                  ? 'player-connection-dot--connecting'
+                  : 'player-connection-dot--disconnected'
+              }`}
+            />
+          </div>
+        )}
         {hasSelectedItems && (
           <>
             <button
@@ -162,7 +164,6 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
       </div>
 
       <div className="player-header-actions">
-        {/* Кнопка Начать сессию / Сбросить */}
         <div className="player-session-controls">
           {isPreparationMode ? (
             <button
@@ -182,7 +183,6 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           )}
         </div>
 
-        {/* Иконка глобальных настроек */}
         <button
           onClick={onOpenGlobalSettings}
           className="player-settings-icon"
@@ -191,7 +191,6 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           <SettingsIcon style={{ fontSize: '20px' }} />
         </button>
 
-        {/* Кнопка экспорта треков в текстовый файл */}
         <button
           onClick={onExportTracksToText}
           className="player-settings-icon"

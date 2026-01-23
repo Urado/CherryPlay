@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
 import { PlaybackState } from '@cherryplay/components';
-import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore } from '@shared/stores';
+import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore, useSettingsStore } from '@shared/stores';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
@@ -21,6 +21,7 @@ interface PartyViewProps {
 }
 
 export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId, zoneId: _zoneId }) => {
+  const { enableStreaming } = useSettingsStore();
   const items = useProjectStore((state) => state.items);
 
   // Получаем состояние сессии из projectStore
@@ -279,6 +280,18 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
     }
   };
 
+  if (!enableStreaming) {
+    return (
+      <div className="party-view">
+        <div className="party-view-header">
+          <h2>Создание вечеринки</h2>
+        </div>
+        <div className="party-view-content">
+          <p>Стриминг отключен в настройках</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="party-view">

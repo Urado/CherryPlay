@@ -35,7 +35,7 @@ export const AppHeader: React.FC = () => {
   } = useProjectStore();
 
   const { openModal, addNotification, focusFileInBrowser } = useUIStore();
-  const { setLastOpenedPlaylist } = useSettingsStore();
+  const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
   const { setLayoutPreset } = useLayoutStore();
   const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>('simple');
 
@@ -167,7 +167,7 @@ export const AppHeader: React.FC = () => {
       preset === 'collections' ||
       preset === 'collections-vertical' ||
       preset === 'player' ||
-      preset === 'party'
+      (preset === 'party' && enableStreaming)
     ) {
       setSelectedLayout(preset);
       setLayoutPreset(preset);
@@ -263,7 +263,7 @@ export const AppHeader: React.FC = () => {
                 Коллекции вертикально (Playlist + Collections + Browser)
               </option>
               <option value="player">Плеер (Player + Browser)</option>
-              <option value="party">Вечеринка (Player + Party)</option>
+              {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
             </select>
           </div>
         </div>

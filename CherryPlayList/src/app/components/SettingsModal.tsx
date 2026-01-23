@@ -9,13 +9,12 @@ import {
 } from '@shared/stores';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
-// Предустановленные интервалы отсечек
 const DIVIDER_INTERVALS = [
-  { value: 900, label: '15 минут' }, // 15 * 60
-  { value: 1800, label: '30 минут' }, // 30 * 60
-  { value: 3600, label: '1 час' }, // 60 * 60
-  { value: 7200, label: '2 часа' }, // 120 * 60
-  { value: 10800, label: '3 часа' }, // 180 * 60
+  { value: 900, label: '15 минут' },
+  { value: 1800, label: '30 минут' },
+  { value: 3600, label: '1 час' },
+  { value: 7200, label: '2 часа' },
+  { value: 10800, label: '3 часа' },
 ];
 
 export const SettingsModal: React.FC = () => {
@@ -31,6 +30,8 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     setPlayerAudioDeviceId,
     setDemoPlayerAudioDeviceId,
+    enableStreaming,
+    setEnableStreaming,
   } = useSettingsStore();
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
@@ -42,17 +43,15 @@ export const SettingsModal: React.FC = () => {
   const [localDemoPlayerDeviceId, setLocalDemoPlayerDeviceId] = useState<string | null>(
     demoPlayerAudioDeviceId,
   );
+  const [localEnableStreaming, setLocalEnableStreaming] = useState(enableStreaming);
 
-  // Состояние для аудиоустройств
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
 
   const prevModalRef = useRef(modal);
 
-  // Загружаем список устройств при открытии настроек
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
-      // Используем setTimeout для асинхронного обновления, чтобы избежать предупреждения линтера
       const timeoutId = setTimeout(() => {
         setLoadingDevices(true);
         getAudioOutputDevices()
@@ -69,18 +68,15 @@ export const SettingsModal: React.FC = () => {
     }
   }, [modal]);
 
-  // Синхронизируем локальные значения при открытии модального окна
-  // Это стандартный паттерн для модальных окон - синхронизация состояния при открытии
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
-      // Модальное окно только что открылось - синхронизируем значения из store
-      // Используем setTimeout для асинхронного обновления, чтобы избежать предупреждения линтера
       const timeoutId = setTimeout(() => {
         setLocalTrackItemSizePreset(trackItemSizePreset);
         setLocalHourDividerInterval(hourDividerInterval);
         setLocalShowHourDividers(showHourDividers);
         setLocalPlayerDeviceId(playerAudioDeviceId);
         setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
+        setLocalEnableStreaming(enableStreaming);
       }, 0);
       return () => clearTimeout(timeoutId);
     }
@@ -92,6 +88,7 @@ export const SettingsModal: React.FC = () => {
     showHourDividers,
     playerAudioDeviceId,
     demoPlayerAudioDeviceId,
+    enableStreaming,
   ]);
 
   if (modal !== 'settings') {
@@ -103,18 +100,14 @@ export const SettingsModal: React.FC = () => {
     setHourDividerInterval(localHourDividerInterval);
     setShowHourDividers(localShowHourDividers);
 
-    // Сохраняем выбранные устройства
     setPlayerAudioDeviceId(localPlayerDeviceId);
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
+    setEnableStreaming(localEnableStreaming);
 
-    // Применяем выбранные устройства к плеерам
-    // Важно: вызываем setAudioDevice всегда, даже если deviceId === null,
-    // чтобы применить устройство по умолчанию при переключении с конкретного устройства
     try {
       const playerStore = usePlayerAudioStore.getState();
       const demoPlayerStore = useDemoPlayerStore.getState();
 
-      // Применяем устройства параллельно для лучшей производительности
       await Promise.all([
         playerStore.setAudioDevice(localPlayerDeviceId),
         demoPlayerStore.setAudioDevice(localDemoPlayerDeviceId),
@@ -137,6 +130,7 @@ export const SettingsModal: React.FC = () => {
     setLocalShowHourDividers(showHourDividers);
     setLocalPlayerDeviceId(playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
+    setLocalEnableStreaming(enableStreaming);
     closeModal();
   };
 
@@ -273,6 +267,21 @@ export const SettingsModal: React.FC = () => {
                 ))}
               </select>
             )}
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-checkbox-group">
+              <input
+                type="checkbox"
+                className="settings-checkbox"
+                checked={localEnableStreaming}
+                onChange={(e) => setLocalEnableStreaming(e.target.checked)}
+                id="settings-enable-streaming"
+              />
+              <label className="settings-checkbox-label" htmlFor="settings-enable-streaming">
+                Включить стриминг
+              </label>
+            </div>
           </div>
         </div>
 

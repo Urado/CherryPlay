@@ -5,7 +5,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { partyApiService } from '../services/partyApiService';
 import type { PartyPlaylistData, PlaybackState } from '@cherryplay/components';
-import type { PartyPlaylistDto, PublicPartyDto } from '../types/api';
 
 export interface UsePartyStateOptions {
   shortCode?: string;
