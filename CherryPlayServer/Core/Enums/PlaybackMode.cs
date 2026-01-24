@@ -7,7 +7,7 @@ public enum PlaybackMode
 {
     [JsonStringEnumMemberName("preparation")]
     Preparation,
-    
+
     [JsonStringEnumMemberName("session")]
     Session
 }

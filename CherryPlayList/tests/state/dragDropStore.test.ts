@@ -62,9 +62,10 @@ describe('dragDropStore', () => {
 
       const state = useDragDropStore.getState();
       expect(state.draggedItems?.type).toBe('items');
-      if (state.draggedItems?.type === 'items') {
-        expect(state.draggedItems.isCopyMode).toBe(true);
-      }
+      expect(state.draggedItems).not.toBeNull();
+      expect(state.draggedItems?.type === 'items' ? state.draggedItems.isCopyMode : null).toBe(
+        true,
+      );
     });
 
     it('sets and clears hoverWorkspaceId', () => {
@@ -99,9 +100,7 @@ describe('dragDropStore', () => {
         items: [createTrack('s-1', 'alpha'), createTrack('s-2', 'beta')],
       });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareMoveCommand(['s-1'], SOURCE, TARGET, 0);
+      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, TARGET, 0);
 
       expect(result.success).toBe(true);
       expect(result.command).toEqual({
@@ -119,9 +118,7 @@ describe('dragDropStore', () => {
         initialName: 'Source',
       });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareMoveCommand(['s-1'], SOURCE, SOURCE);
+      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, SOURCE);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('same workspace');
@@ -147,9 +144,7 @@ describe('dragDropStore', () => {
         items: [createTrack('t-1', 'occupied')],
       });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareMoveCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, TARGET);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('full');
@@ -158,9 +153,7 @@ describe('dragDropStore', () => {
     it('returns error when workspace is not found', () => {
       ensureProjectStore({ workspaceId: SOURCE });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareMoveCommand(['missing'], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareMoveCommand(['missing'], SOURCE, TARGET);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('workspace not found');
@@ -170,9 +163,7 @@ describe('dragDropStore', () => {
       ensureProjectStore({ workspaceId: SOURCE });
       ensureProjectStore({ workspaceId: TARGET });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareMoveCommand([], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareMoveCommand([], SOURCE, TARGET);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('No tracks selected');
@@ -197,9 +188,7 @@ describe('dragDropStore', () => {
         items: [createTrack('s-1', 'alpha')],
       });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareCopyCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareCopyCommand(['s-1'], SOURCE, TARGET);
 
       expect(result.success).toBe(true);
       expect(result.command).toEqual({
@@ -231,9 +220,7 @@ describe('dragDropStore', () => {
         items: [createTrack('t-1', 'occupied')],
       });
 
-      const result = useDragDropStore
-        .getState()
-        .prepareCopyCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareCopyCommand(['s-1'], SOURCE, TARGET);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('full');

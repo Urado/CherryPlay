@@ -1,7 +1,7 @@
 /**
  * SignalR сервис для трансляции состояния воспроизведения
  * Использует @microsoft/signalr для подключения к серверу
- * 
+ *
  * Включает:
  * - Управление подключением с защитой от race conditions
  * - Автоматическое переподключение
@@ -10,9 +10,11 @@
  */
 
 import * as signalR from '@microsoft/signalr';
+
 import { apiConfig } from '../config/apiConfig';
 import { usePlayerAudioStore, useProjectStore } from '../stores';
 import { convertPlaylistForApi } from '../utils/partyUtils';
+
 import { partyService } from './partyService';
 
 export interface PlaybackStateDto {
@@ -47,7 +49,11 @@ const SignalREvents = {
 export type SessionStartedHandler = (partyId: string) => void;
 export type SessionEndedHandler = (partyId: string) => void;
 export type FullStateUpdatedHandler = (partyId: string, state: PlaybackStateDto) => void;
-export type PlaybackPositionUpdatedHandler = (partyId: string, trackId: string, position: number) => void;
+export type PlaybackPositionUpdatedHandler = (
+  partyId: string,
+  trackId: string,
+  position: number,
+) => void;
 export type StateChangedHandler = (partyId: string) => void;
 export type PlaylistChangedHandler = (partyId: string) => void;
 export type ErrorHandler = (error: Error) => void;
@@ -103,8 +109,7 @@ class SignalRService {
    */
   isServiceConnected(): boolean {
     return (
-      this.connection !== null &&
-      this.connection.state === signalR.HubConnectionState.Connected
+      this.connection !== null && this.connection.state === signalR.HubConnectionState.Connected
     );
   }
 
@@ -122,20 +127,23 @@ class SignalRService {
     if (!this.currentPartyId) {
       return 'Нет вечеринки';
     }
-    
+
     const state = this.getConnectionState();
     if (state === null) {
       return 'Нет вечеринки';
     }
-    
+
     if (state === signalR.HubConnectionState.Disconnected) {
       return 'Ошибка соединения';
     }
-    
-    if (state === signalR.HubConnectionState.Disconnecting || state === signalR.HubConnectionState.Reconnecting) {
+
+    if (
+      state === signalR.HubConnectionState.Disconnecting ||
+      state === signalR.HubConnectionState.Reconnecting
+    ) {
       return 'Ошибка соединения';
     }
-    
+
     return null; // Соединение установлено или неизвестная ошибка
   }
 
@@ -144,7 +152,7 @@ class SignalRService {
    */
   async connect(token?: string): Promise<void> {
     // Сохраняем токен для возможного переподключения
-    if (token !== undefined) {
+    if (typeof token !== 'undefined') {
       this.currentToken = token;
     }
     // Защита от race conditions
@@ -231,29 +239,33 @@ class SignalRService {
 
     this.connection.onreconnected(async (connectionId) => {
       console.log('[SignalR] Reconnected with connection ID:', connectionId);
-      
+
       // Восстанавливаем обработчики событий Hub (они могли быть потеряны при переподключении)
       this.setupHubEventHandlers();
-      
+
       // Восстанавливаем подписки и состояние после переподключения
       if (this.currentPartyId) {
         try {
           console.log('[SignalR] Restoring party connection after reconnect:', this.currentPartyId);
-          
+
           // Переподключаемся к вечеринке как организатор (без повторного connect)
           if (this.connection && this.isServiceConnected()) {
-            await this.invokeWithLogging('JoinPartyAsOrganizer', this.currentPartyId, this.currentToken || '');
+            await this.invokeWithLogging(
+              'JoinPartyAsOrganizer',
+              this.currentPartyId,
+              this.currentToken || '',
+            );
           }
-          
+
           // Восстанавливаем подписки на stores
           this.startStoreSubscriptions(this.currentPartyId);
-          
+
           // Восстанавливаем обновления позиции
           this.startPositionUpdates(this.currentPartyId);
-          
+
           // Отправляем текущее состояние
           this.sendFullStateUpdate(this.currentPartyId);
-          
+
           console.log('[SignalR] Party connection restored after reconnect');
         } catch (error) {
           console.error('[SignalR] Failed to restore party connection after reconnect:', error);
@@ -276,38 +288,47 @@ class SignalRService {
 
     if (this.eventHandlers.onSessionStarted) {
       this.connection.on(SignalREvents.OnSessionStarted, (partyId: string) => {
-        console.log('[SignalR] ← Received OnSessionStarted:', { partyId, timestamp: new Date().toISOString() });
+        console.log('[SignalR] ← Received OnSessionStarted:', {
+          partyId,
+          timestamp: new Date().toISOString(),
+        });
         this.eventHandlers.onSessionStarted!(partyId);
       });
     }
 
     if (this.eventHandlers.onSessionEnded) {
       this.connection.on(SignalREvents.OnSessionEnded, (partyId: string) => {
-        console.log('[SignalR] ← Received OnSessionEnded:', { partyId, timestamp: new Date().toISOString() });
+        console.log('[SignalR] ← Received OnSessionEnded:', {
+          partyId,
+          timestamp: new Date().toISOString(),
+        });
         this.eventHandlers.onSessionEnded!(partyId);
       });
     }
 
     if (this.eventHandlers.onFullStateUpdated) {
-      this.connection.on(SignalREvents.OnFullStateUpdated, (partyId: string, state: PlaybackStateDto) => {
-        console.log('[SignalR] ← Received OnFullStateUpdated:', {
-          partyId,
-          state: {
-            currentTrackId: state.currentTrackId,
-            status: state.status,
-            position: state.position,
-            duration: state.duration,
-            volume: state.volume,
-            mode: state.mode,
-            playedTrackIds: state.playedTrackIds?.length || 0,
-            disabledTrackIds: state.disabledTrackIds?.length || 0,
-            disabledGroupIds: state.disabledGroupIds?.length || 0,
-            lastUpdatedAt: state.lastUpdatedAt,
-          },
-          timestamp: new Date().toISOString(),
-        });
-        this.eventHandlers.onFullStateUpdated!(partyId, state);
-      });
+      this.connection.on(
+        SignalREvents.OnFullStateUpdated,
+        (partyId: string, state: PlaybackStateDto) => {
+          console.log('[SignalR] ← Received OnFullStateUpdated:', {
+            partyId,
+            state: {
+              currentTrackId: state.currentTrackId,
+              status: state.status,
+              position: state.position,
+              duration: state.duration,
+              volume: state.volume,
+              mode: state.mode,
+              playedTrackIds: state.playedTrackIds?.length || 0,
+              disabledTrackIds: state.disabledTrackIds?.length || 0,
+              disabledGroupIds: state.disabledGroupIds?.length || 0,
+              lastUpdatedAt: state.lastUpdatedAt,
+            },
+            timestamp: new Date().toISOString(),
+          });
+          this.eventHandlers.onFullStateUpdated!(partyId, state);
+        },
+      );
     }
 
     if (this.eventHandlers.onPlaybackPositionUpdated) {
@@ -327,21 +348,30 @@ class SignalRService {
 
     if (this.eventHandlers.onStateChanged) {
       this.connection.on(SignalREvents.OnStateChanged, (partyId: string) => {
-        console.log('[SignalR] ← Received OnStateChanged:', { partyId, timestamp: new Date().toISOString() });
+        console.log('[SignalR] ← Received OnStateChanged:', {
+          partyId,
+          timestamp: new Date().toISOString(),
+        });
         this.eventHandlers.onStateChanged!(partyId);
       });
     }
 
     if (this.eventHandlers.onPlaylistChanged) {
       this.connection.on(SignalREvents.OnPlaylistChanged, (partyId: string) => {
-        console.log('[SignalR] ← Received OnPlaylistChanged:', { partyId, timestamp: new Date().toISOString() });
+        console.log('[SignalR] ← Received OnPlaylistChanged:', {
+          partyId,
+          timestamp: new Date().toISOString(),
+        });
         this.eventHandlers.onPlaylistChanged!(partyId);
       });
     }
 
     if (this.eventHandlers.onError) {
       this.connection.on(SignalREvents.Error, (message: string) => {
-        console.log('[SignalR] ← Received Error:', { message, timestamp: new Date().toISOString() });
+        console.log('[SignalR] ← Received Error:', {
+          message,
+          timestamp: new Date().toISOString(),
+        });
         this.eventHandlers.onError!(new Error(message));
       });
     }
@@ -393,10 +423,7 @@ class SignalRService {
   /**
    * Вспомогательный метод для логирования вызовов сервера
    */
-  private async invokeWithLogging<T>(
-    methodName: string,
-    ...args: any[]
-  ): Promise<T> {
+  private async invokeWithLogging<T>(methodName: string, ...args: unknown[]): Promise<T> {
     if (!this.connection) {
       throw new Error('SignalR connection is null');
     }
@@ -537,7 +564,6 @@ class SignalRService {
       console.error('[SignalR] Failed to update full state:', error);
     }
   }
-
 
   /**
    * Подписывается на событие начала сессии
@@ -688,7 +714,7 @@ class SignalRService {
 
     // Подписка на изменения плейлиста (items)
     // Отправляет обновление плейлиста на сервер при ЛЮБОМ изменении в store
-    // Срабатывает при вызове любых методов: addItem, removeItem, moveItem, createGroup, 
+    // Срабатывает при вызове любых методов: addItem, removeItem, moveItem, createGroup,
     // ungroupGroup, setGroupName, addItemToGroup, removeItemFromGroup, moveItemInGroup,
     // updateTrackDuration, removeSelectedItems, moveSelectedItems и т.д.
     let isInitialCall = true;
@@ -711,7 +737,8 @@ class SignalRService {
         itemsCount: playlistForApi.items.length,
         timestamp: new Date().toISOString(),
       });
-      partyService.updatePartyPlaylist(partyId, playlistForApi)
+      partyService
+        .updatePartyPlaylist(partyId, playlistForApi)
         .then(() => {
           console.log('[SignalR] ✓ Playlist updated successfully');
         })
@@ -817,4 +844,3 @@ class SignalRService {
 }
 
 export const signalRService = new SignalRService();
-

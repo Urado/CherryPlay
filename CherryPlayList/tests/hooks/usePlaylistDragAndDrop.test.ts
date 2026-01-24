@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 import { renderHook, act } from '@testing-library/react';
 import type { DragEvent as ReactDragEvent } from 'react';
 
@@ -182,10 +184,13 @@ describe('usePlaylistDragAndDrop', () => {
     });
 
     act(() => {
-      result.current.handleDragOver(createMockDragEvent({ types: ['application/json'], clientY: 90 }), {
-        module: 'playlistItem',
-        targetId: '2',
-      });
+      result.current.handleDragOver(
+        createMockDragEvent({ types: ['application/json'], clientY: 90 }),
+        {
+          module: 'playlistItem',
+          targetId: '2',
+        },
+      );
     });
 
     act(() => {
@@ -312,8 +317,9 @@ describe('usePlaylistDragAndDrop', () => {
 
     const draggedItems = result.current.draggedItems;
     expect(draggedItems?.type).toBe('items');
-    if (draggedItems?.type === 'items') {
-      expect(draggedItems.sourceWorkspaceId).toBe('test-workspace');
-    }
+    expect(draggedItems).not.toBeNull();
+    expect(draggedItems?.type === 'items' ? draggedItems.sourceWorkspaceId : null).toBe(
+      'test-workspace',
+    );
   });
 });

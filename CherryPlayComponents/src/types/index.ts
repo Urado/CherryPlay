@@ -39,4 +39,3 @@ export interface PartyDisplayData<T extends ThemeId = ThemeId> {
   playbackState?: PlaybackState | null;
   isSessionActive: boolean;
 }
-

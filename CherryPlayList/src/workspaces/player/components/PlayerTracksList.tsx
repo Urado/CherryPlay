@@ -1,4 +1,3 @@
-import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React from 'react';
 
@@ -11,6 +10,7 @@ import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
 
+import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import { formatTimeFromTimestamp } from '../dividerUtils';
 import {
   getItemState,
@@ -116,14 +116,12 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
     if (isGroup) {
       const groupSettings = getGroupSettings(item.id);
       hasCustomSettings =
-        groupSettings.actionAfterTrack !== null &&
-        groupSettings.actionAfterTrack !== undefined;
+        groupSettings.actionAfterTrack !== null && groupSettings.actionAfterTrack !== undefined;
       settingsActionAfterTrack = groupSettings.actionAfterTrack || null;
     } else {
       const trackSettings = getTrackSettings(item.id);
       hasCustomSettings =
-        trackSettings.actionAfterTrack !== null &&
-        trackSettings.actionAfterTrack !== undefined;
+        trackSettings.actionAfterTrack !== null && trackSettings.actionAfterTrack !== undefined;
       settingsActionAfterTrack = trackSettings.actionAfterTrack || null;
     }
 
@@ -158,7 +156,9 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
       onDragLeave={playerDrag.handleDragLeave}
       onDragEnd={playerDrag.handleDragEnd}
       onDrop={playerDrag.handleDropOnContainer}
-      emptyState={<EmptyState message="Player is empty" hint="Перетащите треки сюда для воспроизведения" />}
+      emptyState={
+        <EmptyState message="Player is empty" hint="Перетащите треки сюда для воспроизведения" />
+      }
     >
       {displayItems.map((displayItem) => {
         const { item, level, displayIndex, flatIndex } = displayItem;
@@ -181,9 +181,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 
         // Check if we need to show divider for this track
         const hasPlannedEndDivider =
-          !isPreparationMode &&
-          plannedEndTime !== null &&
-          plannedEndDividerPosition === flatIndex;
+          !isPreparationMode && plannedEndTime !== null && plannedEndDividerPosition === flatIndex;
         const showDivider =
           showHourDividers &&
           isProjectTrack(item) &&
@@ -213,11 +211,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 
         // Calculate group duration with pauses
         const groupDurationWithPauses = isGroup
-          ? calculateGroupDurationWithPauses(
-              item,
-              getAllTracksInOrder,
-              getEffectiveTrackSettings,
-            )
+          ? calculateGroupDurationWithPauses(item, getAllTracksInOrder, getEffectiveTrackSettings)
           : undefined;
 
         // Determine mode for ProjectItemRow
@@ -229,9 +223,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             {/* Planned end divider before active track */}
             {showPlannedEndDividerBeforeActive && (
               <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-                <span className="playlist-hour-divider-label">
-                  {formatPlannedEndTimeLabel()}
-                </span>
+                <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
               </div>
             )}
             <ProjectItemRow
@@ -298,9 +290,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             {hasPlannedEndDivider && (
               <div className="playlist-hour-divider playlist-hour-divider--planned-end">
                 <span className="playlist-hour-divider-label">
-                  {mode === 'session'
-                    ? formatPlannedEndMarkerTime()
-                    : formatPlannedEndTimeLabel()}
+                  {mode === 'session' ? formatPlannedEndMarkerTime() : formatPlannedEndTimeLabel()}
                 </span>
               </div>
             )}

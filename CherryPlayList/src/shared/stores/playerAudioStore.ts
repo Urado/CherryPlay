@@ -216,8 +216,7 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
           useSettingsStore.getState().setPlayerAudioDeviceId(null);
           useUIStore.getState().addNotification({
             type: 'warning',
-            message:
-              'Выбранное аудиоустройство недоступно. Используется устройство по умолчанию.',
+            message: 'Выбранное аудиоустройство недоступно. Используется устройство по умолчанию.',
           });
           // Пробуем установить устройство по умолчанию
           if (audioElement) {

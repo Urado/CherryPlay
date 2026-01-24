@@ -52,11 +52,7 @@ export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): bool
  */
 export function isInputField(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement;
-  return (
-    target.tagName === 'INPUT' ||
-    target.tagName === 'TEXTAREA' ||
-    target.isContentEditable
-  );
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 }
 
 /**

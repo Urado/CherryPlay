@@ -13,7 +13,7 @@ public class PartyIdValidator : IPartyIdValidator
     public bool TryParsePartyId(string? partyId, out Guid partyGuid)
     {
         partyGuid = Guid.Empty;
-        
+
         if (string.IsNullOrWhiteSpace(partyId))
         {
             return false;

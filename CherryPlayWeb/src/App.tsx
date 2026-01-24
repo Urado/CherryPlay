@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { PartyView } from './pages/PartyView';
+
 import { PartyListPage } from './pages/PartyListPage';
+import { PartyView } from './pages/PartyView';
 import '@cherryplay/components/themes/index.css';
 import './App.css';
 
@@ -45,4 +46,3 @@ function App() {
 }
 
 export default App;
-

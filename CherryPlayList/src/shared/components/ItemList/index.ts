@@ -18,9 +18,9 @@ export { useItemDragOver } from './useItemDragOver';
 export type { UseItemDragOverOptions } from './useItemDragOver';
 
 // Compound component type with all sub-components attached
-import { ItemList as ItemListBase } from './ItemList';
 import { DropIndicator } from './DropIndicator';
 import { EmptyState } from './EmptyState';
+import { ItemList as ItemListBase } from './ItemList';
 
 /**
  * ItemList compound component with all sub-components attached

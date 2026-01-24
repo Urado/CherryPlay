@@ -175,11 +175,9 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       set({ name });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new SetNameCommand(oldName, name),
-          `Rename to "${name}"`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(workspaceId, new SetNameCommand(oldName, name), `Rename to "${name}"`);
       }
 
       get().markAsDirty();
@@ -249,11 +247,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new AddItemsCommand([cloneItem(newItem)], insertIndex),
-          `Add "${newItem.name}"`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new AddItemsCommand([cloneItem(newItem)], insertIndex),
+            `Add "${newItem.name}"`,
+          );
       }
 
       get().markAsDirty();
@@ -276,11 +276,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new AddItemsCommand(cloneItems(itemsWithIds), insertIndex),
-          `Add ${itemsWithIds.length} items`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new AddItemsCommand(cloneItems(itemsWithIds), insertIndex),
+            `Add ${itemsWithIds.length} items`,
+          );
       }
 
       get().markAsDirty();
@@ -302,11 +304,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new AddItemsCommand(cloneItems(itemsToAdd), insertIndex),
-          `Add ${itemsToAdd.length} items`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new AddItemsCommand(cloneItems(itemsToAdd), insertIndex),
+            `Add ${itemsToAdd.length} items`,
+          );
       }
 
       get().markAsDirty();
@@ -336,11 +340,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       }));
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new RemoveItemsCommand([cloneItem(itemToRemove)], [itemIndex]),
-          `Remove "${isProjectTrack(itemToRemove) ? itemToRemove.name : itemToRemove.name}"`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new RemoveItemsCommand([cloneItem(itemToRemove)], [itemIndex]),
+            `Remove "${isProjectTrack(itemToRemove) ? itemToRemove.name : itemToRemove.name}"`,
+          );
       }
 
       get().markAsDirty();
@@ -368,11 +374,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new MoveItemCommand(fromIndex, toIndex),
-          `Move item from ${fromIndex} to ${toIndex}`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new MoveItemCommand(fromIndex, toIndex),
+            `Move item from ${fromIndex} to ${toIndex}`,
+          );
       }
 
       get().markAsDirty();
@@ -447,18 +455,20 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       });
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new CreateGroupCommand(
-            groupId,
-            groupName,
-            itemIds,
-            insertIndex,
-            cloneItems(itemsToGroup),
-            sortedIndices,
-          ),
-          `Create group "${groupName}"`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new CreateGroupCommand(
+              groupId,
+              groupName,
+              itemIds,
+              insertIndex,
+              cloneItems(itemsToGroup),
+              sortedIndices,
+            ),
+            `Create group "${groupName}"`,
+          );
       }
 
       get().markAsDirty();
@@ -519,11 +529,13 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       }));
 
       if (!state._skipHistory) {
-        useGlobalHistoryStore.getState().pushCommand(
-          workspaceId,
-          new RenameGroupCommand(groupId, oldName, name),
-          `Rename group to "${name}"`,
-        );
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(
+            workspaceId,
+            new RenameGroupCommand(groupId, oldName, name),
+            `Rename group to "${name}"`,
+          );
       }
 
       get().markAsDirty();
@@ -645,8 +657,10 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       itemsWithInfo.sort((a, b) => a.flatIndex - b.flatIndex);
       const itemsToMove = itemsWithInfo.map((x) => cloneItem(x.item));
 
-      let newItems = [...state.items];
-      const sortedByIndexDesc = [...itemsWithInfo].sort((a, b) => b.indexInParent - a.indexInParent);
+      const newItems = [...state.items];
+      const sortedByIndexDesc = [...itemsWithInfo].sort(
+        (a, b) => b.indexInParent - a.indexInParent,
+      );
       sortedByIndexDesc.forEach((info) => {
         newItems.splice(info.indexInParent, 1);
       });
@@ -721,7 +735,9 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
           workspaceId,
           new MoveItemsCommand(
             cloneItems(itemsToMove),
-            itemIds.map((id) => state.items.findIndex((item) => item.id === id)).filter((i) => i !== -1),
+            itemIds
+              .map((id) => state.items.findIndex((item) => item.id === id))
+              .filter((i) => i !== -1),
             targetIndex,
           ),
           `Move ${itemsToMove.length} items to ${targetParentId ? 'group' : 'root'}`,
@@ -823,7 +839,8 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
 
       try {
         const currentState: ItemsState = { items: state.items, name: state.name };
-        const result = mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
+        const result =
+          mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
 
         if (result.success && result.newState) {
           set(result.newState);
@@ -862,15 +879,18 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
           },
         }),
         merge: (persistedState: unknown, currentState: ProjectStoreState) => {
-          const state = persistedState as Partial<{
-            name: string;
-            items: ProjectItem[];
-            settings: ProjectSettings;
-            trackSettings: Array<[string, ProjectTrackSettings]>;
-            groupSettings: Array<[string, ProjectGroupSettings]>;
-            sessionState: ProjectSessionState;
-            meta: ProjectMeta;
-          }> | null | undefined;
+          const state = persistedState as
+            | Partial<{
+                name: string;
+                items: ProjectItem[];
+                settings: ProjectSettings;
+                trackSettings: Array<[string, ProjectTrackSettings]>;
+                groupSettings: Array<[string, ProjectGroupSettings]>;
+                sessionState: ProjectSessionState;
+                meta: ProjectMeta;
+              }>
+            | null
+            | undefined;
 
           return {
             ...currentState,
@@ -935,7 +955,9 @@ export function useProjectStoreSelector<T>(
   return useStoreWithEqualityFn(store, selector, equalityFn);
 }
 
-let externalApplyHandler: ((workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean) | null = null;
+let externalApplyHandler:
+  | ((workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean)
+  | null = null;
 
 export function registerExternalApplyHandler(
   handler: (workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean,

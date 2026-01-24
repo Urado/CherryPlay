@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
+import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
@@ -7,8 +7,8 @@ import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useWorkspaceDragAndDrop, useTrackDuration, useDragDropExecutor } from '@shared/hooks';
 import { fileService, ipcService, signalRService } from '@shared/services';
-import { useUIStore, useSettingsStore, usePartyStore, useProjectStore } from '@shared/stores';
 import { partyService } from '@shared/services/partyService';
+import { useUIStore, useSettingsStore, usePartyStore, useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
@@ -313,7 +313,7 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   const handleExportTracksToText = useCallback(() => {
     try {
       const allTracksInOrder = getAllTracksInOrder(items);
-      
+
       if (allTracksInOrder.length === 0) {
         return;
       }
@@ -432,7 +432,9 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       try {
         const exists = await partyService.checkPartyExists(createdParty.id);
         if (!exists) {
-          console.warn('[PlayerViewContainer] Party does not exist on server, skipping SignalR connection');
+          console.warn(
+            '[PlayerViewContainer] Party does not exist on server, skipping SignalR connection',
+          );
           setConnectionState(signalR.HubConnectionState.Disconnected);
           return;
         }
@@ -456,18 +458,18 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
         await signalRService.connect();
         await signalRService.joinPartyAsOrganizer(createdParty.id);
         signalRService.startStoreSubscriptions(createdParty.id);
-        
+
         if (mode === 'session') {
           signalRService.startPositionUpdates(createdParty.id);
           await signalRService.startSession(createdParty.id);
         }
-        
+
         signalRService.sendFullStateUpdate(createdParty.id);
         setConnectionState(signalR.HubConnectionState.Connected);
       } catch (error) {
         console.error('[PlayerViewContainer] Failed to connect to SignalR:', error);
         setConnectionState(signalR.HubConnectionState.Disconnected);
-        
+
         if (createdParty && reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }

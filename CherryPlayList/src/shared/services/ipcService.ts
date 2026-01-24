@@ -38,8 +38,11 @@ class IPCService {
    * @param showNotification - Whether to show error notification (default: true)
    * @returns Promise with response data
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async invoke<T>(channel: string, payload?: any, showNotification: boolean = true): Promise<T> {
+  async invoke<T>(
+    channel: string,
+    payload?: unknown,
+    showNotification: boolean = true,
+  ): Promise<T> {
     if (!window.api) {
       const error = new Error('IPC API not available');
       if (showNotification) {

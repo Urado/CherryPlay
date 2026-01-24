@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { PlaybackState, PlayerItem, PartyPlaylistData } from '../../types';
 import { findTrack } from '../../core/utils/playlist';
 import { formatTime } from '../../core/utils/time';
+import { PlaybackState, PlayerItem, PartyPlaylistData } from '../../types';
 
 import '../../components/Player/CurrentTrackDisplay.css';
 
@@ -43,28 +43,21 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
   }
 
   const progress =
-    playbackState.duration > 0
-      ? (playbackState.position / playbackState.duration) * 100
-      : 0;
+    playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
 
   return (
     <div className={`party-current-track-display ${className}`} data-theme={themeId}>
       <div className="party-current-track-info">
         <div className="party-current-track-name">{currentTrack.name}</div>
         <div className="party-current-track-meta">
-          <span className="party-current-track-status">
-            {getStatusText(playbackState.status)}
-          </span>
+          <span className="party-current-track-status">{getStatusText(playbackState.status)}</span>
           <span className="party-current-track-time">
             {formatTime(playbackState.position)} / {formatTime(playbackState.duration)}
           </span>
         </div>
       </div>
       <div className="party-current-track-progress">
-        <div
-          className="party-current-track-progress-bar"
-          style={{ width: `${progress}%` }}
-        />
+        <div className="party-current-track-progress-bar" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );

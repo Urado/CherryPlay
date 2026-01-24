@@ -1,5 +1,6 @@
-import { ProjectItem, isProjectGroup, isProjectTrack } from '@core/types/project';
 import { PlayerItem as ComponentPlayerItem } from '@cherryplay/components/types';
+
+import { ProjectItem, isProjectGroup, isProjectTrack } from '@core/types/project';
 
 /**
  * Интерфейс для PlayerItem без path (для API)
@@ -48,9 +49,7 @@ export function convertToComponentPlayerItem(
 /**
  * Преобразует массив ProjectItem в формат для библиотеки компонентов
  */
-export function convertToComponentPlayerItems(
-  items: ProjectItem[],
-): ComponentPlayerItem[] {
+export function convertToComponentPlayerItems(items: ProjectItem[]): ComponentPlayerItem[] {
   return items.map((item, index) => convertToComponentPlayerItem(item, index, 0));
 }
 
@@ -146,7 +145,7 @@ export function convertPlaylistForApi(items: ProjectItem[]): {
 } {
   const apiItems = convertToApiPlayerItems(items);
   const metadata = calculatePlaylistMetadata(items);
-  
+
   return {
     items: apiItems,
     totalTracks: metadata.totalTracks,

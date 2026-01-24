@@ -15,7 +15,7 @@ public class ShortCodeGenerator : IShortCodeGenerator
         {
             var shortCode = GenerateShortCode();
             var isUnique = await uniquenessChecker(shortCode);
-            
+
             if (isUnique)
             {
                 return shortCode;

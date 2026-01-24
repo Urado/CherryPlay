@@ -59,13 +59,7 @@ export interface UsePlaybackPreviewReturn {
 export function usePlaybackPreview({
   workspaceId,
 }: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn {
-  const {
-    currentTrack,
-    status: playerStatus,
-    loadTrack,
-    play,
-    pause,
-  } = useDemoPlayerStore();
+  const { currentTrack, status: playerStatus, loadTrack, play, pause } = useDemoPlayerStore();
 
   const activeTrackId = currentTrack?.id;
 

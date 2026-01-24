@@ -1,5 +1,5 @@
+import { themes, type ThemeId, getThemeMetadata, getTheme } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
-import { themes, type ThemeId, getThemeMetadata } from '@cherryplay/components';
 
 import './PartyEditor.css';
 
@@ -9,7 +9,7 @@ interface PartyEditorProps {
   customizationSettings: Record<string, string | number>;
   eventDateTime: string;
   onPartyNameChange: (name: string) => void;
-  onThemeIdChange: (themeId: string) => void;
+  onThemeIdChange: (themeId: ThemeId) => void;
   onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
   onCreateParty: () => void;
@@ -84,13 +84,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const renderCustomizationOptions = () => {
     const metadata = getThemeMetadata(themeId);
+    const theme = getTheme(themeId);
     if (!metadata || metadata.customizationOptions.length === 0) {
       return null;
     }
 
     return (
       <div className="party-editor-section">
-        <label className="party-editor-label">Настройки {metadata.name || themeId}</label>
+        <label className="party-editor-label">Настройки {theme?.name || themeId}</label>
         <div className="party-editor-customization">
           {metadata.customizationOptions.map((option) => {
             const currentValue = customizationSettings[option.key] ?? option.defaultValue;
@@ -190,9 +191,12 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
       </div>
 
       <div className="party-editor-section">
-        <label className="party-editor-label">Стиль оформления</label>
+        <label htmlFor="theme-selector" className="party-editor-label">
+          Стиль оформления
+        </label>
         <div className="party-editor-dropdown" ref={dropdownRef}>
           <button
+            id="theme-selector"
             type="button"
             className="party-editor-dropdown-button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -217,7 +221,9 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                 >
                   <div className="party-editor-dropdown-item-content">
                     <div className="party-editor-dropdown-item-name">{style.name}</div>
-                    <div className="party-editor-dropdown-item-description">{style.description}</div>
+                    <div className="party-editor-dropdown-item-description">
+                      {style.description}
+                    </div>
                     <div className="party-editor-dropdown-item-preview">{style.preview}</div>
                   </div>
                   {themeId === style.id && (
@@ -244,9 +250,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
       {isCheckingParty && (
         <div className="party-editor-checking">
-          <div className="party-editor-checking-message">
-            Проверка соединения с сервером...
-          </div>
+          <div className="party-editor-checking-message">Проверка соединения с сервером...</div>
         </div>
       )}
 
@@ -257,9 +261,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           </div>
           <div className="party-editor-error-message">
             <p>{serverError}</p>
-            <p className="party-editor-error-hint">
-              Убедитесь, что сервер запущен и доступен.
-            </p>
+            <p className="party-editor-error-hint">Убедитесь, что сервер запущен и доступен.</p>
           </div>
           {onRetry && (
             <div className="party-editor-error-actions">
@@ -289,14 +291,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             <label className="party-editor-label">
               URL вечеринки
               <div className="party-editor-url-group">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={createdParty.url} 
-                  className="input-base party-editor-url-input" 
+                <input
+                  type="text"
+                  readOnly
+                  value={createdParty.url}
+                  className="input-base party-editor-url-input"
                 />
-                <button 
-                  className="action-button party-editor-url-button" 
+                <button
+                  className="action-button party-editor-url-button"
                   onClick={onCopyUrl}
                   type="button"
                 >
@@ -309,13 +311,10 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             <p className="party-editor-info-text">
               Плеер автоматически подключится к серверу при создании вечеринки.
             </p>
-            <p className="party-editor-info-text">
-              Статус соединения отображается в плеере.
-            </p>
+            <p className="party-editor-info-text">Статус соединения отображается в плеере.</p>
           </div>
         </div>
       )}
     </div>
   );
 };
-

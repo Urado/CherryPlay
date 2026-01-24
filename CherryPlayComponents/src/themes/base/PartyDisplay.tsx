@@ -1,10 +1,10 @@
 import React from 'react';
 
-import { PartyDisplayData } from '../../types';
-import type { ThemeId } from '../index';
 import { useThemeVars } from '../../core/hooks/useThemeVars';
-import { PlaylistView } from './PlaylistView';
+import { PartyDisplayData } from '../../types';
+
 import { CurrentTrackDisplay } from './CurrentTrackDisplay';
+import { PlaylistView } from './PlaylistView';
 import '../../components/PartyDisplay/PartyDisplay.css';
 
 export interface BasePartyDisplayProps {
@@ -21,11 +21,7 @@ export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
   const themeVars = useThemeVars(data.themeId, data.customizationSettings);
 
   return (
-    <div
-      className={`party-display ${className}`}
-      data-theme={data.themeId}
-      style={themeVars}
-    >
+    <div className={`party-display ${className}`} data-theme={data.themeId} style={themeVars}>
       <div className="party-display-header">
         <h1 className="party-display-title">{data.partyName}</h1>
         {data.isSessionActive && (

@@ -2,10 +2,11 @@
  * Страница со списком всех вечеринок
  */
 import React, { useEffect, useState, useCallback } from 'react';
+
+import { ErrorMessage } from '../components/ErrorMessage';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
 import './PartyListPage.css';
 
 interface PartyListPageProps {
@@ -36,9 +37,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       const data = await partyApiService.getAllParties();
       setParties(data);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке'
-      );
+      setError(err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке');
     } finally {
       setLoading(false);
     }
@@ -92,7 +91,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     // Фильтр по датам
     if (party.eventDateTime) {
       const eventDate = new Date(party.eventDateTime);
-      
+
       if (filters.dateFrom) {
         const fromDate = new Date(filters.dateFrom);
         fromDate.setHours(0, 0, 0, 0);
@@ -100,7 +99,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           return false;
         }
       }
-      
+
       if (filters.dateTo) {
         const toDate = new Date(filters.dateTo);
         toDate.setHours(23, 59, 59, 999);
@@ -108,7 +107,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           return false;
         }
       }
-      
+
       // Фильтр по дням недели
       if (filters.daysOfWeek.length > 0) {
         const dayOfWeek = eventDate.getDay(); // 0 = воскресенье, 1 = понедельник, ...
@@ -122,7 +121,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         return false;
       }
     }
-    
+
     return true;
   });
 
@@ -191,7 +190,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
               </button>
             )}
           </div>
-          
+
           {isFiltersExpanded && (
             <div className="party-list-filters-content">
               <div className="party-list-filters-group">
@@ -203,7 +202,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   onChange={(e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
                 />
               </div>
-              
+
               <div className="party-list-filters-group">
                 <label className="party-list-filters-label">Дата до</label>
                 <input
@@ -213,7 +212,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   onChange={(e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
                 />
               </div>
-              
+
               <div className="party-list-filters-group">
                 <label className="party-list-filters-label">Дни недели</label>
                 <div className="party-list-filters-days">
@@ -269,7 +268,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   <div className="party-list-card-info">
                     <div className="party-list-card-info-item">
                       <span className="party-list-card-info-label">Тема:</span>
-                      <span className="party-list-card-info-value">{getThemeName(party.themeId)}</span>
+                      <span className="party-list-card-info-value">
+                        {getThemeName(party.themeId)}
+                      </span>
                     </div>
                     <div className="party-list-card-info-item">
                       <span className="party-list-card-info-label">Треков:</span>

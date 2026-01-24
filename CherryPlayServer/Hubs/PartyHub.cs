@@ -12,7 +12,7 @@ public class PartyHub : Hub
     private readonly ILogger<PartyHub> _logger;
 
     public PartyHub(
-        IStreamingService streamingService, 
+        IStreamingService streamingService,
         IPartyIdValidator partyIdValidator,
         ILogger<PartyHub> logger)
     {
@@ -38,9 +38,9 @@ public class PartyHub : Hub
             return;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewer: shortCode={ShortCode}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewer: shortCode={ShortCode}, connectionId={ConnectionId}",
             shortCode, Context.ConnectionId);
-        
+
         try
         {
             var partyState = await _streamingService.GetPartyStateAsync(shortCode);
@@ -58,10 +58,10 @@ public class PartyHub : Hub
             }
 
             await Groups.AddToGroupAsync(Context.ConnectionId, partyState.PartyId);
-            
+
             if (partyState.PlaybackState != null)
             {
-                _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, connectionId={ConnectionId}", 
+                _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, connectionId={ConnectionId}",
                     partyState.PartyId, Context.ConnectionId);
                 await Clients.Caller.SendAsync("OnFullStateUpdated", partyState.PartyId, partyState.PlaybackState);
             }
@@ -81,9 +81,9 @@ public class PartyHub : Hub
             return null;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewerWithState: shortCode={ShortCode}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewerWithState: shortCode={ShortCode}, connectionId={ConnectionId}",
             shortCode, Context.ConnectionId);
-        
+
         try
         {
             var partyState = await _streamingService.GetPartyStateAsync(shortCode);
@@ -95,8 +95,8 @@ public class PartyHub : Hub
             }
 
             await Groups.AddToGroupAsync(Context.ConnectionId, partyState.PartyId);
-            
-            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
+
+            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}",
                 partyState.PartyId, partyState.PlaybackState != null);
             return partyState;
         }
@@ -116,9 +116,9 @@ public class PartyHub : Hub
             return null;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received RequestFullState: shortCode={ShortCode}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received RequestFullState: shortCode={ShortCode}, connectionId={ConnectionId}",
             shortCode, Context.ConnectionId);
-        
+
         try
         {
             var partyState = await _streamingService.GetPartyStateAsync(shortCode);
@@ -129,7 +129,7 @@ public class PartyHub : Hub
                 return null;
             }
 
-            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
+            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}",
                 partyState.PartyId, partyState.PlaybackState != null);
             return partyState;
         }
@@ -155,9 +155,9 @@ public class PartyHub : Hub
             return;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received UpdatePlaybackPosition: partyId={PartyId}, trackId={TrackId}, position={Position}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received UpdatePlaybackPosition: partyId={PartyId}, trackId={TrackId}, position={Position}, connectionId={ConnectionId}",
             partyId, trackId, position, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -169,7 +169,7 @@ public class PartyHub : Hub
             await _streamingService.UpdatePlaybackPositionAsync(partyGuid, trackId, position);
 
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnPlaybackPositionUpdated: partyId={PartyId}, trackId={TrackId}, position={Position}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnPlaybackPositionUpdated: partyId={PartyId}, trackId={TrackId}, position={Position}, group={Group}",
                 partyId, trackId, position, groupName);
             await Clients.Group(groupName).SendAsync("OnPlaybackPositionUpdated", partyId, trackId, position);
         }
@@ -197,9 +197,9 @@ public class PartyHub : Hub
 
     public async Task UpdateFullState(string partyId, PlaybackStateDto? state)
     {
-        _logger.LogInformation("[SignalR Server] <- Received UpdateFullState: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received UpdateFullState: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, connectionId={ConnectionId}",
             partyId, state?.CurrentTrackId, state?.Status, state?.Position, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -216,9 +216,9 @@ public class PartyHub : Hub
         try
         {
             await _streamingService.UpdateFullStateAsync(partyGuid, state);
-            
+
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, group={Group}",
                 partyId, state.CurrentTrackId, state.Status, state.Position, groupName);
             await Clients.Group(groupName).SendAsync("OnFullStateUpdated", partyId, state);
         }
@@ -236,9 +236,9 @@ public class PartyHub : Hub
 
     public async Task NotifyStateChanged(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] <- Received NotifyStateChanged: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received NotifyStateChanged: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -248,7 +248,7 @@ public class PartyHub : Hub
         try
         {
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnStateChanged: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnStateChanged: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnStateChanged", partyId);
         }
@@ -264,9 +264,9 @@ public class PartyHub : Hub
     /// </summary>
     public async Task NotifyPlaylistChanged(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] <- Received NotifyPlaylistChanged: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received NotifyPlaylistChanged: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -276,7 +276,7 @@ public class PartyHub : Hub
         try
         {
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
         }
@@ -293,15 +293,15 @@ public class PartyHub : Hub
         // Базовая валидация токена (проверка на наличие)
         if (string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without token: partyId={PartyId}, connectionId={ConnectionId}", 
+            _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without token: partyId={PartyId}, connectionId={ConnectionId}",
                 partyId, Context.ConnectionId);
             await SendErrorAsync("Authentication token is required");
             return;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsOrganizer: partyId={PartyId}, hasToken={HasToken}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsOrganizer: partyId={PartyId}, hasToken={HasToken}, connectionId={ConnectionId}",
             partyId, !string.IsNullOrEmpty(token), Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -312,7 +312,7 @@ public class PartyHub : Hub
         {
             var groupName = partyGuid.ToString();
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            _logger.LogInformation("[SignalR Server] Added connection to group: partyId={PartyId}, group={Group}, connectionId={ConnectionId}", 
+            _logger.LogInformation("[SignalR Server] Added connection to group: partyId={PartyId}, group={Group}, connectionId={ConnectionId}",
                 partyId, groupName, Context.ConnectionId);
         }
         catch (Exception ex)
@@ -324,9 +324,9 @@ public class PartyHub : Hub
 
     public async Task StartSession(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] <- Received StartSession: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received StartSession: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -338,7 +338,7 @@ public class PartyHub : Hub
             await _streamingService.StartSessionAsync(partyGuid);
 
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnSessionStarted: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnSessionStarted: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnSessionStarted", partyId);
         }
@@ -356,9 +356,9 @@ public class PartyHub : Hub
 
     public async Task EndSession(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] <- Received EndSession: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received EndSession: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
-        
+
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
@@ -368,9 +368,9 @@ public class PartyHub : Hub
         try
         {
             await _streamingService.EndSessionAsync(partyGuid);
-            
+
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnSessionEnded: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnSessionEnded: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnSessionEnded", partyId);
         }

@@ -340,11 +340,7 @@ export const FileBrowserView: React.FC<FileBrowserViewProps> = ({
         className="file-browser-list"
         showEmptyState={!loading}
         emptyState={
-          error ? (
-            <EmptyState message={`Ошибка: ${error}`} />
-          ) : (
-            <EmptyState message="Папка пуста" />
-          )
+          error ? <EmptyState message={`Ошибка: ${error}`} /> : <EmptyState message="Папка пуста" />
         }
       >
         {loading ? (

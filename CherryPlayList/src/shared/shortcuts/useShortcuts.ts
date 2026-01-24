@@ -29,10 +29,7 @@ import type { ShortcutHandlers, ShortcutId, UseShortcutsOptions } from './shortc
  * }, { enabled: true });
  * ```
  */
-export function useShortcuts(
-  handlers: ShortcutHandlers,
-  options: UseShortcutsOptions = {},
-): void {
+export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOptions = {}): void {
   const { enabled = true } = options;
 
   // Keep track of which handlers we've registered

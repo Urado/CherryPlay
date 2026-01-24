@@ -2,8 +2,8 @@
  * Store для состояния вечеринки
  * Сохраняет данные о созданной вечеринке и статусе трансляции
  */
-import { createWithEqualityFn } from 'zustand/traditional';
 import { persist } from 'zustand/middleware';
+import { createWithEqualityFn } from 'zustand/traditional';
 
 import { electronStorage } from '../storage/electronStorage';
 
@@ -51,4 +51,3 @@ export const usePartyStore = createWithEqualityFn<PartyState>()(
     },
   ),
 );
-

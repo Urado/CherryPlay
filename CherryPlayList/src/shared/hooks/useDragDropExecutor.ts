@@ -3,24 +3,24 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { isProjectGroup, ProjectItem } from '@core/types/project';
 
+import { DragDropCommand } from '../../modules/dragDrop/types';
 import {
   AddItemsAtPositionsCommand,
   ItemPosition,
   RemoveItemsAtPositionsCommand,
 } from '../commands';
-import { DragDropCommand } from '../../modules/dragDrop/types';
 import {
   useGlobalHistoryStore,
   createMoveDescription,
   createCopyDescription,
 } from '../stores/globalHistoryStore';
-import { getProjectStore } from '../stores/projectStoreFactory';
 import {
   findItemRecursive,
   findItemWithParent,
   removeItemsById,
   insertIntoGroup,
 } from '../stores/projectStoreCore';
+import { getProjectStore } from '../stores/projectStoreFactory';
 import { cloneItems } from '../utils/historyCore';
 import { logger } from '../utils/logger';
 
@@ -59,7 +59,8 @@ export function useDragDropExecutor() {
     }
 
     try {
-      const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } = command;
+      const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } =
+        command;
       const isSameWorkspace = sourceWorkspaceId === targetWorkspaceId;
 
       const sourceStore = getProjectStore(sourceWorkspaceId);
@@ -102,7 +103,9 @@ export function useDragDropExecutor() {
 
       const sourceItemsBefore = [...sourceState.items];
       // For same-workspace, source and target state are the same
-      const targetItemsBefore = isSameWorkspace ? sourceItemsBefore : [...targetStore.getState().items];
+      const targetItemsBefore = isSameWorkspace
+        ? sourceItemsBefore
+        : [...targetStore.getState().items];
 
       try {
         sourceStore.setState({ _skipHistory: true });
@@ -198,7 +201,8 @@ export function useDragDropExecutor() {
     }
 
     try {
-      const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } = command;
+      const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } =
+        command;
 
       const sourceStore = getProjectStore(sourceWorkspaceId);
       const targetStore = getProjectStore(targetWorkspaceId);

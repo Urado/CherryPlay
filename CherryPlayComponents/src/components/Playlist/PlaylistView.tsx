@@ -5,10 +5,10 @@
  */
 import React from 'react';
 
-import { PartyPlaylistData, PlayerItem } from '../../types';
-import { ThemeId } from '../../themes';
 import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import { formatDuration } from '../../core/utils/time';
+import { ThemeId } from '../../themes';
+import { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';
 import './PlaylistView.css';
@@ -35,14 +35,14 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   const renderItem = (item: PlayerItem, index: number, level: number = 0): React.ReactNode => {
     const isCurrent = item.id === currentTrackId;
     const isPlayed = playedTrackIds.includes(item.id);
-    const isDisabled = item.type === 'track' 
-      ? disabledTrackIds.includes(item.id)
-      : disabledGroupIds.includes(item.id);
+    const isDisabled =
+      item.type === 'track'
+        ? disabledTrackIds.includes(item.id)
+        : disabledGroupIds.includes(item.id);
 
     // Сортируем дочерние элементы группы по displayOrder
-    const sortedItems = item.type === 'group' && item.items 
-      ? sortItemsByDisplayOrder(item.items)
-      : null;
+    const sortedItems =
+      item.type === 'group' && item.items ? sortItemsByDisplayOrder(item.items) : null;
 
     return (
       <PlaylistItem
@@ -55,9 +55,12 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
         isDisabled={isDisabled}
       >
         {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
-          <div className="party-playlist-group-items" style={{ marginLeft: `${(level + 1) * 20}px` }}>
+          <div
+            className="party-playlist-group-items"
+            style={{ marginLeft: `${(level + 1) * 20}px` }}
+          >
             {sortedItems.map((childItem, childIndex) =>
-              renderItem(childItem, childIndex, level + 1)
+              renderItem(childItem, childIndex, level + 1),
             )}
           </div>
         )}
@@ -90,4 +93,3 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     </div>
   );
 };
-

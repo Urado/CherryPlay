@@ -1,7 +1,7 @@
 /**
  * Storage адаптер для Zustand persist middleware
  * Использует localforage (IndexedDB) вместо localStorage для надёжного хранения в Electron
- * 
+ *
  * Преимущества:
  * - Асинхронное хранение (не блокирует UI)
  * - Надёжное сохранение при спящем режиме

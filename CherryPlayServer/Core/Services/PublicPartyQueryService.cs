@@ -29,7 +29,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         }
 
         _logger.LogDebug("Getting public party by shortCode: {ShortCode}", shortCode);
-        
+
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
@@ -49,7 +49,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         }
 
         _logger.LogDebug("Getting playlist by shortCode: {ShortCode}", shortCode);
-        
+
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
@@ -63,7 +63,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
     public async Task<List<PublicPartyListItemDto>> GetAllPublicPartiesAsync()
     {
         _logger.LogDebug("Getting all public parties");
-        
+
         var parties = await _partyRepository.GetAllAsync();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
@@ -91,7 +91,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
     public async Task<PartyPlaylistDto?> GetFirstPartyPlaylistAsync()
     {
         _logger.LogDebug("Getting first party playlist");
-        
+
         var party = await _partyRepository.GetFirstAsync();
         if (party == null)
         {

@@ -7,7 +7,7 @@ public enum PlayerItemType
 {
     [JsonStringEnumMemberName("track")]
     Track,
-    
+
     [JsonStringEnumMemberName("group")]
     Group
 }

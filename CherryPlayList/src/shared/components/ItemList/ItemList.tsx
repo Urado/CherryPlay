@@ -66,13 +66,18 @@ export const ItemList: React.FC<ItemListProps> = ({
 
   useEffect(() => {
     if (!globalDragging) {
-      setDropIndex(null);
-      setIsDragging(false);
+      // Reset state when dragging stops - using setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        setDropIndex(null);
+        setIsDragging(false);
+      }, 0);
       return;
     }
     if (workspaceId && hoverWorkspaceId !== null && hoverWorkspaceId !== workspaceId) {
-      setDropIndex(null);
-      setIsDragging(false);
+      setTimeout(() => {
+        setDropIndex(null);
+        setIsDragging(false);
+      }, 0);
     }
   }, [hoverWorkspaceId, workspaceId, globalDragging]);
 
@@ -203,15 +208,13 @@ export const ItemList: React.FC<ItemListProps> = ({
         onDragLeave={handleDragLeave}
         onDragEnd={handleDragEnd}
       >
-        {isEmpty && showEmptyState ? (
-          emptyState || (
-            <div className={`${baseClassName}-empty`}>
-              <p>No items</p>
-            </div>
-          )
-        ) : (
-          children
-        )}
+        {isEmpty && showEmptyState
+          ? emptyState || (
+              <div className={`${baseClassName}-empty`}>
+                <p>No items</p>
+              </div>
+            )
+          : children}
       </div>
     </ItemListProvider>
   );

@@ -1,11 +1,14 @@
-/**
- * Хук для управления состоянием вечеринки
- * Объединяет данные плейлиста, состояние воспроизведения и информацию о вечеринке
- */
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { partyApiService } from '../services/partyApiService';
-import type { PartyPlaylistData, PlaybackState } from '@cherryplay/components';
+import type {
+  PartyPlaylistData,
+  PlaybackState,
+  ThemeId,
+  CustomizationSettings,
+} from '@cherryplay/components';
 import { isValidTheme } from '@cherryplay/components';
+import { useState, useCallback, useRef, useEffect } from 'react';
+
+import { partyApiService } from '../services/partyApiService';
+import type { PlayerItemDto } from '../types/api';
 
 export interface UsePartyStateOptions {
   shortCode?: string;
@@ -13,38 +16,28 @@ export interface UsePartyStateOptions {
 }
 
 export interface UsePartyStateReturn {
-  // Данные плейлиста
   playlist: PartyPlaylistData | null;
   loading: boolean;
   error: string | null;
-  
-  // Информация о вечеринке
   partyName: string | null;
   partyId: string | null;
-  themeId: string;
-  customizationSettings: Record<string, any>;
-  
-  // Состояние воспроизведения
+  themeId: ThemeId;
+  customizationSettings: CustomizationSettings<ThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
-  
-  // Методы
   loadPlaylist: () => Promise<void>;
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
   setError: (error: string | null) => void;
-  setThemeId: (themeId: string) => void;
-  setCustomizationSettings: (settings: Record<string, any>) => void;
+  setThemeId: (themeId: ThemeId) => void;
+  setCustomizationSettings: (settings: CustomizationSettings<ThemeId>) => void;
   setPartyName: (name: string | null) => void;
 }
 
-/**
- * Функция для нормализации элементов плейлиста
- */
-function normalizePlaylistItems(items: any[]): any[] {
+function normalizePlaylistItems(items: PlayerItemDto[]): PlayerItemDto[] {
   const sorted = [...items].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-  
-  return sorted.map(item => {
+
+  return sorted.map((item) => {
     if (item.type === 'group' && item.items) {
       return {
         ...item,
@@ -55,17 +48,16 @@ function normalizePlaylistItems(items: any[]): any[] {
   });
 }
 
-/**
- * Хук для управления состоянием вечеринки
- */
 export function usePartyState(options: UsePartyStateOptions = {}): UsePartyStateReturn {
   const { shortCode, isDemo = false } = options;
 
   const [playlist, setPlaylist] = useState<PartyPlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [themeId, setThemeId] = useState<string>('cyberpunk');
-  const [customizationSettings, setCustomizationSettings] = useState<Record<string, any>>({});
+  const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
+  const [customizationSettings, setCustomizationSettings] = useState<
+    CustomizationSettings<ThemeId>
+  >({} as CustomizationSettings<ThemeId>);
   const [partyName, setPartyName] = useState<string | null>(null);
   const [partyId, setPartyId] = useState<string | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
@@ -74,7 +66,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef<PartyPlaylistData | null>(null);
 
-  // Синхронизируем ref с state
   useEffect(() => {
     playbackStateRef.current = playbackState;
   }, [playbackState]);
@@ -91,7 +82,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
       let playlistData: PartyPlaylistData;
 
       if (isDemo || !shortCode) {
-        // Демо-режим: загружаем первый плейлист
         const dto = await partyApiService.getFirstPartyPlaylist();
         playlistData = {
           items: normalizePlaylistItems(dto.items),
@@ -99,7 +89,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
           totalTracks: dto.totalTracks,
         };
       } else {
-        // Режим с shortCode: загружаем плейлист по коду
         const dto = await partyApiService.getPartyPlaylist(shortCode);
         playlistData = {
           items: normalizePlaylistItems(dto.items),
@@ -107,7 +96,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
           totalTracks: dto.totalTracks,
         };
 
-        // Получаем информацию о вечеринке для стиля и названия
         try {
           const party = await partyApiService.getPublicParty(shortCode);
           if (party.name) {
@@ -120,10 +108,9 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
             setThemeId(party.themeId);
           }
           if (party.customizationSettings) {
-            setCustomizationSettings(party.customizationSettings);
+            setCustomizationSettings(party.customizationSettings as CustomizationSettings<ThemeId>);
           }
         } catch (err) {
-          // Игнорируем ошибку, используем дефолтный стиль
           console.warn('[usePartyState] Failed to load party info:', err);
         }
       }
@@ -139,7 +126,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     }
   }, [shortCode, isDemo]);
 
-  // Загружаем плейлист при монтировании или изменении shortCode
   useEffect(() => {
     loadPlaylist();
   }, [loadPlaylist]);

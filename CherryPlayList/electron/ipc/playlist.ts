@@ -1,5 +1,6 @@
-import { ipcMain } from 'electron';
 import fs from 'fs/promises';
+
+import { ipcMain } from 'electron';
 
 interface PlaylistData {
   name: string;

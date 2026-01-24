@@ -51,9 +51,8 @@ export { shortcutManager } from './ShortcutManager';
 export { useGlobalShortcuts, useListShortcuts, useShortcuts } from './useShortcuts';
 
 // Re-export CustomKeyBindings type for settingsStore
-import type { CustomKeyBindings } from './shortcutTypes';
-
 import { shortcutManager } from './ShortcutManager';
+import type { CustomKeyBindings } from './shortcutTypes';
 
 /**
  * Initialize the shortcut system.

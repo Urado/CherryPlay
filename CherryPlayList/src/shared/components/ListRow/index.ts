@@ -37,19 +37,19 @@ export { Secondary } from './content/Secondary';
 export type { SecondaryProps } from './content/Secondary';
 
 // Compound component type with all sub-components attached
-import { ListRow as ListRowBase } from './ListRow';
 import { Actions } from './Actions';
 import { ActionButton } from './actions/ActionButton';
-import { PlayButton } from './actions/PlayButton';
+import { Checkbox } from './actions/Checkbox';
 import { DeleteButton } from './actions/DeleteButton';
 import { DisableButton } from './actions/DisableButton';
 import { DragHandle } from './actions/DragHandle';
-import { Checkbox } from './actions/Checkbox';
+import { PlayButton } from './actions/PlayButton';
 import { SettingsButton } from './actions/SettingsButton';
 import { UngroupButton } from './actions/UngroupButton';
-import { Index } from './content/Index';
 import { Content } from './content/Content';
+import { Index } from './content/Index';
 import { Secondary } from './content/Secondary';
+import { ListRow as ListRowBase } from './ListRow';
 
 /**
  * ListRow compound component with all sub-components attached

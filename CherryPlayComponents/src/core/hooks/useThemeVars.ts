@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
+
 import type { ThemeId } from '../../themes';
 import { getThemeMetadata } from '../../themes/themeMetadata';
 
 export function useThemeVars(
   themeId: ThemeId,
-  customizationSettings?: Record<string, string | number>
+  customizationSettings?: Record<string, string | number>,
 ): React.CSSProperties {
   return useMemo(() => {
     const vars: Record<string, string> = {};
@@ -28,4 +29,3 @@ export function useThemeVars(
     return vars as React.CSSProperties;
   }, [themeId, customizationSettings]);
 }
-

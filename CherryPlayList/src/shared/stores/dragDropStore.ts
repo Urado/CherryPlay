@@ -6,8 +6,8 @@ import { WorkspaceId } from '@core/types/workspace';
 import { DraggedItems, DragDropResult, ItemDragState } from '../../modules/dragDrop/types';
 import { logger } from '../utils/logger';
 
-import { getProjectStore, getAllProjectStoreIds, ProjectStoreState } from './projectStoreFactory';
 import { findItemRecursive } from './projectStoreCore';
+import { getProjectStore, getAllProjectStoreIds, ProjectStoreState } from './projectStoreFactory';
 
 interface DragDropState {
   dragging: boolean;

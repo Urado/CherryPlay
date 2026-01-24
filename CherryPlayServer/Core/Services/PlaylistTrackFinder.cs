@@ -25,7 +25,7 @@ public class PlaylistTrackFinder : IPlaylistTrackFinder
             {
                 return item.Duration.HasValue ? (double)item.Duration.Value : null;
             }
-            
+
             if (item.Type == PlayerItemType.Group && item.Items != null)
             {
                 var duration = FindTrackDuration(item.Items, trackId);
@@ -35,7 +35,7 @@ public class PlaylistTrackFinder : IPlaylistTrackFinder
                 }
             }
         }
-        
+
         return null;
     }
 }

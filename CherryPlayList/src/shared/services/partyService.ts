@@ -4,7 +4,7 @@ import type { PlayerItemForApi } from '../utils/partyUtils';
 export interface CreatePartyDto {
   name: string;
   themeId: string;
-  customizationSettings?: Record<string, any>;
+  customizationSettings?: Record<string, string | number>;
   playlistData: {
     items: PlayerItemForApi[];
     totalDuration: number;
@@ -74,7 +74,7 @@ class PartyService {
     try {
       await this.getParty(partyId);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -83,7 +83,10 @@ class PartyService {
     throw new Error('Not implemented');
   }
 
-  async updatePartyPlaylist(partyId: string, playlist: { items: any[]; totalTracks: number; totalDuration: number }): Promise<void> {
+  async updatePartyPlaylist(
+    partyId: string,
+    playlist: { items: PlayerItemForApi[]; totalTracks: number; totalDuration: number },
+  ): Promise<void> {
     const response = await fetch(`${this.baseUrl}/parties/${partyId}/playlist`, {
       method: 'PUT',
       headers: {
@@ -109,4 +112,3 @@ class PartyService {
 }
 
 export const partyService = new PartyService();
-

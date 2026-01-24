@@ -2,12 +2,21 @@
  * Конфигурация API и SignalR
  */
 
+interface ElectronWindow extends Window {
+  electron?: {
+    api?: {
+      getServerUrl?: () => string;
+    };
+  };
+}
+
 // В Electron приложении используем переменные окружения или значения по умолчанию
 const getServerUrl = (): string => {
   // Для Electron можно использовать process.env или IPC для получения конфигурации
   // Пока используем значение по умолчанию для разработки
-  if (typeof window !== 'undefined' && (window as any).electron?.api?.getServerUrl) {
-    return (window as any).electron.api.getServerUrl();
+  const electronWindow = window as ElectronWindow;
+  if (typeof window !== 'undefined' && electronWindow.electron?.api?.getServerUrl) {
+    return electronWindow.electron.api.getServerUrl();
   }
 
   // Fallback на переменную окружения или значение по умолчанию

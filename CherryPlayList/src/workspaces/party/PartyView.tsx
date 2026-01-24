@@ -1,15 +1,26 @@
+import {
+  PlaybackState,
+  type ThemeId,
+  type CustomizationSettings,
+  getDefaultCustomizationSettings,
+} from '@cherryplay/components';
 import React, { useState, useMemo, useEffect } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
-import { PlaybackState, type ThemeId, getDefaultCustomizationSettings } from '@cherryplay/components';
-import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore, useSettingsStore } from '@shared/stores';
+import { partyService, CreatePartyDto } from '@shared/services/partyService';
+import {
+  useProjectStore,
+  usePlayerAudioStore,
+  usePartyStore,
+  useUIStore,
+  useSettingsStore,
+} from '@shared/stores';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
   countTotalTracks,
   convertPlaylistForApi,
 } from '@shared/utils';
-import { partyService, CreatePartyDto } from '@shared/services/partyService';
 
 import { PartyEditor } from './components/PartyEditor';
 import { PartyPreview } from './PartyPreview';
@@ -20,25 +31,25 @@ interface PartyViewProps {
   zoneId: string;
 }
 
-export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId, zoneId: _zoneId }) => {
+export const PartyView: React.FC<PartyViewProps> = ({
+  workspaceId: _workspaceId,
+  zoneId: _zoneId,
+}) => {
   const { enableStreaming } = useSettingsStore();
   const items = useProjectStore((state) => state.items);
 
   // Получаем состояние сессии из projectStore
   const sessionState = useProjectStore((state) => state.sessionState);
-  const {
-    mode,
-    currentTrackId,
-    playedTrackIds,
-    disabledTrackIds,
-    disabledGroupIds,
-  } = useMemo(() => ({
-    mode: sessionState.mode,
-    currentTrackId: sessionState.currentTrackId,
-    playedTrackIds: Array.from(sessionState.playedTrackIds),
-    disabledTrackIds: Array.from(sessionState.disabledTrackIds),
-    disabledGroupIds: Array.from(sessionState.disabledGroupIds),
-  }), [sessionState]);
+  const { mode, currentTrackId, playedTrackIds, disabledTrackIds, disabledGroupIds } = useMemo(
+    () => ({
+      mode: sessionState.mode,
+      currentTrackId: sessionState.currentTrackId,
+      playedTrackIds: Array.from(sessionState.playedTrackIds),
+      disabledTrackIds: Array.from(sessionState.disabledTrackIds),
+      disabledGroupIds: Array.from(sessionState.disabledGroupIds),
+    }),
+    [sessionState],
+  );
 
   // Получаем состояние аудио плеера
   const {
@@ -55,15 +66,15 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
 
   const [partyName, setPartyName] = useState('');
   const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
-  const [customizationSettings, setCustomizationSettings] = useState<Record<string, string | number>>(
-    getDefaultCustomizationSettings('cyberpunk')
-  );
+  const [customizationSettings, setCustomizationSettings] = useState<
+    Record<string, string | number>
+  >(getDefaultCustomizationSettings('cyberpunk'));
   const [eventDateTime, setEventDateTime] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [isCheckingParty, setIsCheckingParty] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [partyVerified, setPartyVerified] = useState(false);
-  
+
   // Используем store для сохранения состояния вечеринки
   const { createdParty, setCreatedParty } = usePartyStore((state) => ({
     createdParty: state.createdParty,
@@ -80,9 +91,9 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
     const converted = convertToComponentPlayerItems(items);
     // Убираем path из всех элементов для превью (как будет в вебе)
     const removePath = (items: typeof converted): typeof converted => {
-      return items.map(item => {
+      return items.map((item) => {
         if (item.type === 'track') {
-          const { path, ...trackWithoutPath } = item;
+          const { path: _path, ...trackWithoutPath } = item;
           return trackWithoutPath;
         } else if (item.type === 'group' && item.items) {
           return {
@@ -211,10 +222,10 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
       };
 
       const party = await partyService.createParty(createData);
-      
+
       // Проверяем, что вечеринка действительно создана на сервере
       const exists = await checkPartyExists(party.id);
-      
+
       if (!exists) {
         addNotification({
           type: 'error',
@@ -226,7 +237,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
       const url = partyService.getPartyUrl(party.shortCode);
       const partyData = { id: party.id, shortCode: party.shortCode, url };
       setCreatedParty(partyData);
-      
+
       addNotification({
         type: 'success',
         message: 'Вечеринка успешно создана',
@@ -307,7 +318,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
           <PartyPreview
             playlist={playlistData}
             themeId={themeId}
-            customizationSettings={customizationSettings}
+            customizationSettings={customizationSettings as CustomizationSettings<ThemeId>}
             playbackState={playbackState}
           />
         </div>

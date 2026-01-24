@@ -5,10 +5,10 @@
  */
 import React from 'react';
 
-import { PlaybackState, PlayerItem } from '../../types';
-import { ThemeId } from '../../themes';
 import { findTrack } from '../../core/utils/playlist';
 import { formatTime } from '../../core/utils/time';
+import { ThemeId } from '../../themes';
+import { PlaybackState, PlayerItem } from '../../types';
 
 import './CurrentTrackDisplay.css';
 
@@ -47,9 +47,8 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
     );
   }
 
-  const progress = playbackState.duration > 0 
-    ? (playbackState.position / playbackState.duration) * 100 
-    : 0;
+  const progress =
+    playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
 
   return (
     <div className={`party-current-track-display ${className}`} data-theme={themeId}>
@@ -63,10 +62,7 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
         </div>
       </div>
       <div className="party-current-track-progress">
-        <div 
-          className="party-current-track-progress-bar" 
-          style={{ width: `${progress}%` }}
-        />
+        <div className="party-current-track-progress-bar" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
@@ -84,4 +80,3 @@ function getStatusText(status: PlaybackState['status']): string {
       return '⏹ Ожидание';
   }
 }
-

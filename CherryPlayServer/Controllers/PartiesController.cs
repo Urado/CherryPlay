@@ -110,10 +110,10 @@ public class PartiesController : ControllerBase
             await _partyService.UpdatePartyPlaylistAsync(partyGuid, playlist);
 
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[PartiesController] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}, itemsCount={ItemsCount}, totalTracks={TotalTracks}", 
+            _logger.LogInformation("[PartiesController] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}, itemsCount={ItemsCount}, totalTracks={TotalTracks}",
                 partyId, groupName, playlist.Items?.Count ?? 0, playlist.TotalTracks);
             await _hubContext.Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
-            _logger.LogInformation("[PartiesController] OnPlaylistChanged sent successfully: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[PartiesController] OnPlaylistChanged sent successfully: partyId={PartyId}, group={Group}",
                 partyId, groupName);
 
             return NoContent();

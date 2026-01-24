@@ -7,13 +7,13 @@ public enum PlaybackStatus
 {
     [JsonStringEnumMemberName("idle")]
     Idle,
-    
+
     [JsonStringEnumMemberName("playing")]
     Playing,
-    
+
     [JsonStringEnumMemberName("paused")]
     Paused,
-    
+
     [JsonStringEnumMemberName("ended")]
     Ended
 }

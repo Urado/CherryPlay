@@ -361,22 +361,24 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       <ListRowCompound.Content
         editable={isGroup && !!onRenameGroup && !isLocked}
         onDoubleClick={isGroup ? handleStartEdit : undefined}
-        title={isGroup && onRenameGroup && !isLocked ? 'Двойной клик для переименования' : undefined}
+        title={
+          isGroup && onRenameGroup && !isLocked ? 'Двойной клик для переименования' : undefined
+        }
       >
         {isGroup ? renderGroupNameContent() : trackDisplayName}
       </ListRowCompound.Content>
 
       {/* Duration */}
-      {displayDuration && (
-        <ListRowCompound.Secondary>{displayDuration}</ListRowCompound.Secondary>
-      )}
+      {displayDuration && <ListRowCompound.Secondary>{displayDuration}</ListRowCompound.Secondary>}
 
       {/* Actions */}
       <ListRowCompound.Actions>
         {/* Settings button (for player modes) */}
-        {showSettingsButton && (settingsButton || (onOpenSettings && (
-          <ListRowCompound.SettingsButton onClick={() => onOpenSettings(item.id)} />
-        )))}
+        {showSettingsButton &&
+          (settingsButton ||
+            (onOpenSettings && (
+              <ListRowCompound.SettingsButton onClick={() => onOpenSettings(item.id)} />
+            )))}
 
         {/* Disable button (for session mode) */}
         {showDisableButton && onToggleDisabled && (

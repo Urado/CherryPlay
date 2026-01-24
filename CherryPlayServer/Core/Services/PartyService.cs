@@ -15,7 +15,7 @@ public class PartyService : IPartyService
     private readonly ILogger<PartyService> _logger;
 
     public PartyService(
-        IPartyRepository partyRepository, 
+        IPartyRepository partyRepository,
         IStreamingRepository streamingRepository,
         IShortCodeGenerator shortCodeGenerator,
         ILogger<PartyService> logger)
@@ -39,7 +39,7 @@ public class PartyService : IPartyService
         }
 
         _logger.LogInformation("Creating party: name={Name}, themeId={ThemeId}", dto.Name, dto.ThemeId);
-        
+
         var shortCode = await _shortCodeGenerator.GenerateUniqueShortCodeAsync(
             async code => await _partyRepository.GetByShortCodeAsync(code) == null);
 
@@ -66,7 +66,7 @@ public class PartyService : IPartyService
     public async Task<PartyDto?> GetPartyAsync(Guid partyId)
     {
         _logger.LogDebug("Getting party by id: {PartyId}", partyId);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -81,7 +81,7 @@ public class PartyService : IPartyService
     public async Task<PartyDto?> GetPartyByShortCodeAsync(string shortCode)
     {
         _logger.LogDebug("Getting party by shortCode: {ShortCode}", shortCode);
-        
+
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
@@ -96,7 +96,7 @@ public class PartyService : IPartyService
     public async Task<List<PartyDto>> GetAllPartiesAsync()
     {
         _logger.LogDebug("Getting all parties");
-        
+
         var parties = await _partyRepository.GetAllAsync();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
@@ -119,9 +119,9 @@ public class PartyService : IPartyService
             throw new ArgumentNullException(nameof(playlist));
         }
 
-        _logger.LogInformation("Updating playlist for party: {PartyId}, totalTracks={TotalTracks}", 
+        _logger.LogInformation("Updating playlist for party: {PartyId}, totalTracks={TotalTracks}",
             partyId, playlist.TotalTracks);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -131,7 +131,7 @@ public class PartyService : IPartyService
 
         party.Playlist = playlist.ToEntity();
         await _partyRepository.UpdateAsync(party);
-        
+
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
     }
 }

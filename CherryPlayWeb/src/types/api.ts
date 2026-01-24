@@ -22,7 +22,7 @@ export interface PublicPartyDto {
   id: string;
   name: string;
   themeId: string;
-  customizationSettings?: Record<string, any>;
+  customizationSettings?: Record<string, string | number>;
   hasActiveSession: boolean;
   sessionStartedAt?: string;
 }
@@ -59,4 +59,3 @@ export interface PublicPartyListItemDto {
   totalDuration: number;
   eventDateTime?: string;
 }
-

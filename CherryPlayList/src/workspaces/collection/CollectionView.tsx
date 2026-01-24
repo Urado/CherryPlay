@@ -1,11 +1,16 @@
-/* eslint-disable react-hooks/preserve-manual-memoization */
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
-import { ItemList, DropIndicator, ProjectItemRow, EmptyState, WorkspaceHeader } from '@shared/components';
+import {
+  ItemList,
+  DropIndicator,
+  ProjectItemRow,
+  EmptyState,
+  WorkspaceHeader,
+} from '@shared/components';
 import {
   useWorkspaceDragAndDrop,
   useTrackDuration,
@@ -15,10 +20,15 @@ import {
 } from '@shared/hooks';
 import { exportService, fileService, ipcService, playlistService } from '@shared/services';
 import { useListShortcuts } from '@shared/shortcuts';
-import { ensureProjectStore, useUIStore, useGlobalHistoryStore, ProjectStoreState } from '@shared/stores';
+import {
+  ensureProjectStore,
+  useUIStore,
+  useGlobalHistoryStore,
+  ProjectStoreState,
+} from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
-import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
 import { logger } from '@shared/utils';
+import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
 
 interface CollectionViewProps {
   workspaceId: WorkspaceId;
@@ -72,13 +82,10 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   // Get flat list of tracks for duration loading
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
-  const resolveTrackByPath = useCallback(
-    (path: string) => {
-      const storeItems = collectionStoreRef.current.getState().items;
-      return storeItems.filter(isProjectTrack).find((track: Track) => track.path === path);
-    },
-    [],
-  );
+  const resolveTrackByPath = useCallback((path: string) => {
+    const storeItems = collectionStoreRef.current.getState().items;
+    return storeItems.filter(isProjectTrack).find((track: Track) => track.path === path);
+  }, []);
 
   const { loadDurationsForTracks } = useTrackDuration({
     tracks,

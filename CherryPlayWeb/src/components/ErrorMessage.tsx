@@ -9,10 +9,7 @@ interface ErrorMessageProps {
   onRetry?: () => void;
 }
 
-export const ErrorMessage: React.FC<ErrorMessageProps> = ({
-  message,
-  onRetry,
-}) => {
+export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry }) => {
   return (
     <div className="error-message-container">
       <div className="error-message">
@@ -28,4 +25,3 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
     </div>
   );
 };
-

@@ -146,9 +146,7 @@ class ShortcutManager {
 
       // Check if event matches binding
       const matchesPrimary = matchKeyBinding(event, binding);
-      const matchesAlternate = alternateBinding
-        ? matchKeyBinding(event, alternateBinding)
-        : false;
+      const matchesAlternate = alternateBinding ? matchKeyBinding(event, alternateBinding) : false;
 
       if (matchesPrimary || matchesAlternate) {
         event.preventDefault();

@@ -6,17 +6,13 @@ import { WorkspaceId } from '@core/types/workspace';
 import { isCrossWorkspaceOperation } from '../../core/constants/workspace';
 import { Track } from '../../core/types/track';
 import {
-  DragDropCommand,
-  InsertPosition,
-  ItemDragState,
-} from '../../modules/dragDrop/types';
-import {
   getRootIdsForDrag,
   collectAllFlatIndices,
   isDropInsideDragged,
   calculateDropPosition,
   filterDisplayItems,
 } from '../../modules/dragDrop/dropPositionUtils';
+import { DragDropCommand, InsertPosition, ItemDragState } from '../../modules/dragDrop/types';
 import { useDragDropStore, isItemDragState } from '../stores/dragDropStore';
 import { getProjectStore } from '../stores/projectStoreFactory';
 import { logger } from '../utils/logger';
@@ -81,7 +77,9 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
 
   useEffect(() => {
     if (hoverWorkspaceId !== null && hoverWorkspaceId !== workspaceId) {
-      clearIndicators();
+      setTimeout(() => {
+        clearIndicators();
+      }, 0);
     }
   }, [hoverWorkspaceId, workspaceId, clearIndicators]);
 
@@ -160,7 +158,10 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         }
         e.dataTransfer.dropEffect = isCopyMode ? 'copy' : 'move';
 
-        if (!isCrossWorkspace && isDropInsideDragged(targetFlatIndex, draggedItems.allFlatIndices)) {
+        if (
+          !isCrossWorkspace &&
+          isDropInsideDragged(targetFlatIndex, draggedItems.allFlatIndices)
+        ) {
           e.dataTransfer.dropEffect = 'none';
           clearIndicators();
           return;
@@ -213,29 +214,39 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       setDragOverIndex(displayItems.length);
       setInsertPosition('top');
     },
-    [draggedItems, displayItems.length, hoverWorkspaceId, setDraggedItems, setHoverWorkspaceId, workspaceId],
+    [
+      draggedItems,
+      displayItems.length,
+      hoverWorkspaceId,
+      setDraggedItems,
+      setHoverWorkspaceId,
+      workspaceId,
+    ],
   );
 
-  const parseFileBrowserData = useCallback((rawData: string | undefined): { files: string[]; directories: string[] } => {
-    if (!rawData) {
+  const parseFileBrowserData = useCallback(
+    (rawData: string | undefined): { files: string[]; directories: string[] } => {
+      if (!rawData) {
+        return { files: [], directories: [] };
+      }
+      try {
+        const parsed = JSON.parse(rawData);
+        if (parsed.type === 'fileBrowser') {
+          return {
+            files: Array.isArray(parsed.paths) ? parsed.paths : [],
+            directories: Array.isArray(parsed.directories) ? parsed.directories : [],
+          };
+        }
+        if (parsed.type === 'files' && Array.isArray(parsed.paths)) {
+          return { files: parsed.paths, directories: [] };
+        }
+      } catch {
+        // ignore
+      }
       return { files: [], directories: [] };
-    }
-    try {
-      const parsed = JSON.parse(rawData);
-      if (parsed.type === 'fileBrowser') {
-        return {
-          files: Array.isArray(parsed.paths) ? parsed.paths : [],
-          directories: Array.isArray(parsed.directories) ? parsed.directories : [],
-        };
-      }
-      if (parsed.type === 'files' && Array.isArray(parsed.paths)) {
-        return { files: parsed.paths, directories: [] };
-      }
-    } catch {
-      // ignore
-    }
-    return { files: [], directories: [] };
-  }, []);
+    },
+    [],
+  );
 
   const addTracksFromPaths = useCallback(
     (paths: string[], parentId: string | null, localIndex: number) => {
@@ -245,7 +256,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       }
 
       const drafts = createTrackDrafts(filteredPaths);
-      
+
       if (parentId === null) {
         onAddTracksAt(drafts, localIndex);
       } else {
@@ -311,20 +322,18 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         targetDisplayItems = displayItems;
       }
 
-      const { parentId, localIndex } = calculateDropPosition(adjustedTargetIndex, position, targetDisplayItems);
+      const { parentId, localIndex } = calculateDropPosition(
+        adjustedTargetIndex,
+        position,
+        targetDisplayItems,
+      );
 
       // Unified execution path: always use prepareMoveCommand/prepareCopyCommand + executor
       const isCopyOperation = draggedItems.isCopyMode ?? false;
       const prepareCommand = isCopyOperation ? prepareCopyCommand : prepareMoveCommand;
       const executeCallback = isCopyOperation ? onCopy : onMove;
 
-      const result = prepareCommand(
-        rootIds,
-        sourceWorkspaceId,
-        workspaceId,
-        parentId,
-        localIndex,
-      );
+      const result = prepareCommand(rootIds, sourceWorkspaceId, workspaceId, parentId, localIndex);
 
       if (!result.success || !result.command) {
         if (result.error && onError) {
@@ -361,7 +370,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       e.stopPropagation();
 
       const currentPosition = insertPosition;
-      
+
       if (!draggedItems) {
         handleClearDragState();
         return;
@@ -376,7 +385,11 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         );
 
         const position = currentPosition ?? 'bottom';
-        const { parentId, localIndex } = calculateDropPosition(targetFlatIndex, position, displayItems);
+        const { parentId, localIndex } = calculateDropPosition(
+          targetFlatIndex,
+          position,
+          displayItems,
+        );
 
         if (files.length) {
           addTracksFromPaths(files, parentId, localIndex);

@@ -16,7 +16,7 @@ public class StreamingService : IStreamingService
     private readonly ILogger<StreamingService> _logger;
 
     public StreamingService(
-        IPartyRepository partyRepository, 
+        IPartyRepository partyRepository,
         IStreamingRepository streamingRepository,
         IPlaylistTrackFinder trackFinder,
         ILogger<StreamingService> logger)
@@ -35,7 +35,7 @@ public class StreamingService : IStreamingService
         }
 
         _logger.LogDebug("Getting party state for shortCode: {ShortCode}", shortCode);
-        
+
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
@@ -55,7 +55,7 @@ public class StreamingService : IStreamingService
     public async Task StartSessionAsync(Guid partyId)
     {
         _logger.LogInformation("Starting session for party: {PartyId}", partyId);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -80,7 +80,7 @@ public class StreamingService : IStreamingService
     public async Task EndSessionAsync(Guid partyId)
     {
         _logger.LogInformation("Ending session for party: {PartyId}", partyId);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -105,9 +105,9 @@ public class StreamingService : IStreamingService
             throw new ArgumentException("Position cannot be negative", nameof(position));
         }
 
-        _logger.LogDebug("Updating playback position: partyId={PartyId}, trackId={TrackId}, position={Position}", 
+        _logger.LogDebug("Updating playback position: partyId={PartyId}, trackId={TrackId}, position={Position}",
             partyId, trackId, position);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -147,9 +147,9 @@ public class StreamingService : IStreamingService
             throw new ArgumentNullException(nameof(stateDto));
         }
 
-        _logger.LogDebug("Updating full state: partyId={PartyId}, status={Status}, trackId={TrackId}", 
+        _logger.LogDebug("Updating full state: partyId={PartyId}, status={Status}, trackId={TrackId}",
             partyId, stateDto.Status, stateDto.CurrentTrackId);
-        
+
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
@@ -158,7 +158,7 @@ public class StreamingService : IStreamingService
         }
 
         var state = stateDto.ToEntity();
-        
+
         double duration = state.Duration;
         if (party.Playlist != null &&
             party.Playlist.Items != null &&
@@ -174,7 +174,7 @@ public class StreamingService : IStreamingService
 
         state.Duration = duration;
         state.LastUpdatedAt = DateTime.UtcNow;
-        
+
         await _streamingRepository.SetSessionStateAsync(partyId, state);
     }
 }

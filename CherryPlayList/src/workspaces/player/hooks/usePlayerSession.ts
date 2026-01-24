@@ -62,7 +62,15 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
         logger.error('Failed to start first track playback', error);
       }
     }
-  }, [startSession, allTracks, isTrackActive, loadPlayerTrack, setCurrentTrack, playPlayer, onSessionStart]);
+  }, [
+    startSession,
+    allTracks,
+    isTrackActive,
+    loadPlayerTrack,
+    setCurrentTrack,
+    playPlayer,
+    onSessionStart,
+  ]);
 
   const handleResetSession = useCallback(() => {
     clearPauseTimer(); // Очищаем таймер паузы при сбросе

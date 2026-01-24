@@ -18,6 +18,7 @@ import {
   WorkspaceZone,
   SplitDirection,
 } from '../../core/types/layout';
+import { electronStorage } from '../storage/electronStorage';
 import {
   findZoneById,
   findParentZone,
@@ -25,7 +26,6 @@ import {
   validateLayout,
 } from '../utils/layoutUtils';
 
-import { electronStorage } from '../storage/electronStorage';
 import { ensureProjectStore } from './projectStoreFactory';
 import { useUIStore } from './uiStore';
 
@@ -451,7 +451,13 @@ function createComplexLayout(): Layout {
 /**
  * Типы предустановленных layout
  */
-export type LayoutPreset = 'simple' | 'complex' | 'collections' | 'collections-vertical' | 'player' | 'party';
+export type LayoutPreset =
+  | 'simple'
+  | 'complex'
+  | 'collections'
+  | 'collections-vertical'
+  | 'player'
+  | 'party';
 
 /**
  * Создает layout для player workspace

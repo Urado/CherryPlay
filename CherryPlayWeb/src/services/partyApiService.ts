@@ -39,12 +39,9 @@ class PartyApiService {
    * Получает публичную информацию о вечеринке
    */
   async getPublicParty(shortCode: string): Promise<PublicPartyDto> {
-    const response = await fetch(
-      `${this.baseUrl}/api/parties/public/${shortCode}`,
-      {
-        cache: 'no-cache',
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}`, {
+      cache: 'no-cache',
+    });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -60,12 +57,9 @@ class PartyApiService {
    * Получает плейлист вечеринки по shortCode
    */
   async getPartyPlaylist(shortCode: string): Promise<PartyPlaylistDto> {
-    const response = await fetch(
-      `${this.baseUrl}/api/parties/public/${shortCode}/playlist`,
-      {
-        cache: 'no-cache',
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}/playlist`, {
+      cache: 'no-cache',
+    });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -81,12 +75,9 @@ class PartyApiService {
    * Получает полное состояние вечеринки
    */
   async getPartyState(shortCode: string): Promise<PartyStateDto> {
-    const response = await fetch(
-      `${this.baseUrl}/api/parties/public/${shortCode}/state`,
-      {
-        cache: 'no-cache',
-      }
-    );
+    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}/state`, {
+      cache: 'no-cache',
+    });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -115,4 +106,3 @@ class PartyApiService {
 }
 
 export const partyApiService = new PartyApiService();
-

@@ -49,7 +49,7 @@ public class PublicPartiesController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while retrieving the party");
         }
@@ -77,7 +77,7 @@ public class PublicPartiesController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while retrieving the playlist");
         }

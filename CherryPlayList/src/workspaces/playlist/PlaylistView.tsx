@@ -4,7 +4,13 @@ import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
-import { ItemList, DropIndicator, ProjectItemRow, EmptyState, WorkspaceHeader } from '@shared/components';
+import {
+  ItemList,
+  DropIndicator,
+  ProjectItemRow,
+  EmptyState,
+  WorkspaceHeader,
+} from '@shared/components';
 import {
   useWorkspaceDragAndDrop,
   useTrackDuration,
@@ -238,7 +244,8 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
             playlistDrag.draggedItems.allFlatIndices.has(flatIndex);
           const isActive = track ? activeTrackId === track.id : false;
           const isPlaying = isActive && playerStatus === 'playing';
-          const showDivider = isTrack && trackIndex >= 0 && calculateDividerMarkers.includes(trackIndex);
+          const showDivider =
+            isTrack && trackIndex >= 0 && calculateDividerMarkers.includes(trackIndex);
 
           return (
             <React.Fragment key={item.id}>

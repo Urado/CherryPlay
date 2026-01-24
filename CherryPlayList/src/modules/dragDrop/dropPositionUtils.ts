@@ -4,7 +4,10 @@ import { DisplayItem } from '../../shared/utils/playerItemsUtils';
 
 import { HierarchyPosition, InsertPosition } from './types';
 
-export function collectFlatIndicesForItem(itemId: string, displayItems: DisplayItem[]): Set<number> {
+export function collectFlatIndicesForItem(
+  itemId: string,
+  displayItems: DisplayItem[],
+): Set<number> {
   const indices = new Set<number>();
 
   const itemIndex = displayItems.findIndex((di) => di.item.id === itemId);
@@ -45,9 +48,8 @@ export function getRootIdsForDrag(
   selectedIds: Set<string>,
   displayItems: DisplayItem[],
 ): string[] {
-  const idsToProcess = selectedIds.has(itemId) && selectedIds.size > 1
-    ? selectedIds
-    : new Set([itemId]);
+  const idsToProcess =
+    selectedIds.has(itemId) && selectedIds.size > 1 ? selectedIds : new Set([itemId]);
 
   const allIndicesMap = new Map<string, Set<number>>();
   for (const id of idsToProcess) {

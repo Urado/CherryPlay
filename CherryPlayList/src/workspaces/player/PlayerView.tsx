@@ -1,5 +1,5 @@
-import React from 'react';
 import * as signalR from '@microsoft/signalr';
+import React from 'react';
 
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';

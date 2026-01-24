@@ -4,9 +4,10 @@ import '@workspaces/fileBrowser';
 import '@workspaces/testZone';
 import '@workspaces/player';
 import '@workspaces/party';
-import { App } from '@app';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
+import { App } from '@app';
 
 import './styles/index.css';
 import '@cherryplay/components/components/Playlist/PlaylistView.css';

@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import {
   ActionAfterTrack,
   DEFAULT_PROJECT_META,
@@ -18,7 +19,6 @@ import {
   ProjectTrackSettings,
 } from '@core/types/project';
 import { Track } from '@core/types/track';
-import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 
 import {
   HistoryCommand,
@@ -37,7 +37,6 @@ import { electronStorage } from '../storage/electronStorage';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
-import { registerExternalApplyHandler, registerProjectStore } from './projectStoreFactory';
 import {
   findItemRecursive,
   getAllTracksRecursive,
@@ -52,6 +51,7 @@ import {
   collectItemsById,
   insertIntoGroup,
 } from './projectStoreCore';
+import { registerExternalApplyHandler, registerProjectStore } from './projectStoreFactory';
 
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
 
@@ -176,7 +176,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
         try {
           const currentState: ItemsState = { items: state.items, name: state.name };
-          const result = mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
+          const result =
+            mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
 
           if (result.success && result.newState) {
             set(result.newState);
@@ -197,11 +198,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({ name });
 
         if (!state._skipHistory) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new SetNameCommand(oldName, name),
-            `Rename project to "${name}"`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new SetNameCommand(oldName, name),
+              `Rename project to "${name}"`,
+            );
         }
 
         get().markAsDirty();
@@ -271,11 +274,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         });
 
         if (!state._skipHistory) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new AddItemsCommand([cloneItem(newItem)], insertIndex),
-            `Add "${newItem.name}"`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new AddItemsCommand([cloneItem(newItem)], insertIndex),
+              `Add "${newItem.name}"`,
+            );
         }
 
         get().markAsDirty();
@@ -293,11 +298,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         });
 
         if (!state._skipHistory) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new AddItemsCommand(cloneItems(itemsWithIds), insertIndex),
-            `Add ${itemsWithIds.length} items`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new AddItemsCommand(cloneItems(itemsWithIds), insertIndex),
+              `Add ${itemsWithIds.length} items`,
+            );
         }
 
         get().markAsDirty();
@@ -350,11 +357,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         });
 
         if (!state._skipHistory) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new RemoveNestedItemCommand(cloneItem(itemToRemove), parentPath, indexInParent),
-            `Remove item`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new RemoveNestedItemCommand(cloneItem(itemToRemove), parentPath, indexInParent),
+              `Remove item`,
+            );
         }
 
         get().markAsDirty();
@@ -382,11 +391,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         });
 
         if (!state._skipHistory) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new MoveItemCommand(fromIndex, toIndex),
-            `Move item`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new MoveItemCommand(fromIndex, toIndex),
+              `Move item`,
+            );
         }
 
         get().markAsDirty();
@@ -513,18 +524,20 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({ items: newItems });
 
         if (!state._skipHistory && parentId === null) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new CreateGroupCommand(
-              groupId,
-              groupName,
-              itemIds,
-              insertIndex,
-              cloneItems(sortedItemsToGroup),
-              sortedIndices,
-            ),
-            `Create group "${groupName}"`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new CreateGroupCommand(
+                groupId,
+                groupName,
+                itemIds,
+                insertIndex,
+                cloneItems(sortedItemsToGroup),
+                sortedIndices,
+              ),
+              `Create group "${groupName}"`,
+            );
         }
 
         get().markAsDirty();
@@ -558,7 +571,12 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           items: ungroupRecursive(s.items),
         }));
 
-        if (!state._skipHistory && groupToUngroup && isProjectGroup(groupToUngroup) && groupIndex !== -1) {
+        if (
+          !state._skipHistory &&
+          groupToUngroup &&
+          isProjectGroup(groupToUngroup) &&
+          groupIndex !== -1
+        ) {
           useGlobalHistoryStore.getState().pushCommand(
             PROJECT_WORKSPACE_ID,
             new UngroupCommand(
@@ -594,11 +612,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         }));
 
         if (!state._skipHistory && oldName !== name) {
-          useGlobalHistoryStore.getState().pushCommand(
-            PROJECT_WORKSPACE_ID,
-            new RenameGroupCommand(groupId, oldName, name),
-            `Rename group to "${name}"`,
-          );
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new RenameGroupCommand(groupId, oldName, name),
+              `Rename group to "${name}"`,
+            );
         }
 
         get().markAsDirty();
@@ -834,7 +854,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
             PROJECT_WORKSPACE_ID,
             new MoveItemsCommand(
               cloneItems(itemsToMove),
-              itemIds.map((id) => state.items.findIndex((item) => item.id === id)).filter((i) => i !== -1),
+              itemIds
+                .map((id) => state.items.findIndex((item) => item.id === id))
+                .filter((i) => i !== -1),
               targetIndex,
             ),
             `Move ${itemsToMove.length} items to ${targetParentId ? 'group' : 'root'}`,
@@ -1035,19 +1057,19 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           lastSavedAt: state.meta.lastSavedAt,
         },
       }),
-      merge: (
-        persistedState: unknown,
-        currentState: ProjectState,
-      ) => {
-        const state = persistedState as Partial<{
-          name: string;
-          items: ProjectItem[];
-          settings: ProjectSettings;
-          trackSettings: Array<[string, ProjectTrackSettings]>;
-          groupSettings: Array<[string, ProjectGroupSettings]>;
-          sessionState: ProjectSessionState;
-          meta: ProjectMeta;
-        }> | null | undefined;
+      merge: (persistedState: unknown, currentState: ProjectState) => {
+        const state = persistedState as
+          | Partial<{
+              name: string;
+              items: ProjectItem[];
+              settings: ProjectSettings;
+              trackSettings: Array<[string, ProjectTrackSettings]>;
+              groupSettings: Array<[string, ProjectGroupSettings]>;
+              sessionState: ProjectSessionState;
+              meta: ProjectMeta;
+            }>
+          | null
+          | undefined;
 
         return {
           ...currentState,

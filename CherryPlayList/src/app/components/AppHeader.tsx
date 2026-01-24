@@ -1,8 +1,8 @@
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import SaveAsIcon from '@mui/icons-material/SaveAs';
 import SaveIcon from '@mui/icons-material/Save';
+import SaveAsIcon from '@mui/icons-material/SaveAs';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -82,7 +82,18 @@ export const AppHeader: React.FC = () => {
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
     }
-  }, [name, items, settings, trackSettings, groupSettings, sessionState, setFilePath, resetDirty, setLastOpenedPlaylist, addNotification]);
+  }, [
+    name,
+    items,
+    settings,
+    trackSettings,
+    groupSettings,
+    sessionState,
+    setFilePath,
+    resetDirty,
+    setLastOpenedPlaylist,
+    addNotification,
+  ]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -106,7 +117,18 @@ export const AppHeader: React.FC = () => {
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
     }
-  }, [meta.filePath, name, items, settings, trackSettings, groupSettings, sessionState, resetDirty, addNotification, handleSaveAs]);
+  }, [
+    meta.filePath,
+    name,
+    items,
+    settings,
+    trackSettings,
+    groupSettings,
+    sessionState,
+    resetDirty,
+    addNotification,
+    handleSaveAs,
+  ]);
 
   const handleLoad = useCallback(async () => {
     try {

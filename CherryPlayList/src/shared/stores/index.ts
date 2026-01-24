@@ -9,10 +9,18 @@ export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext 
 export { usePlayerAudioStore } from './playerAudioStore';
 export type { PlayerAudioStatus } from './playerAudioStore';
 export { usePartyStore } from './partyStore';
-export { useProjectStore, initializeProjectStoreHistory, PROJECT_WORKSPACE_ID } from './projectStore';
+export {
+  useProjectStore,
+  initializeProjectStoreHistory,
+  PROJECT_WORKSPACE_ID,
+} from './projectStore';
 
 // Global history store for unified undo/redo
-export { useGlobalHistoryStore, createMoveDescription, createCopyDescription } from './globalHistoryStore';
+export {
+  useGlobalHistoryStore,
+  createMoveDescription,
+  createCopyDescription,
+} from './globalHistoryStore';
 export type { CompositeAction, CommandPart } from './globalHistoryStore';
 
 // Project store factory for Collections and other workspaces
@@ -45,7 +53,4 @@ export {
   collectItemsById,
   insertIntoGroup,
 } from './projectStoreCore';
-export type {
-  ItemPositionInfo,
-  FlatListItem,
-} from './projectStoreCore';
+export type { ItemPositionInfo, FlatListItem } from './projectStoreCore';

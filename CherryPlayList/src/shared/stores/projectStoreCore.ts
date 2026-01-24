@@ -1,9 +1,4 @@
-import {
-  isProjectGroup,
-  isProjectTrack,
-  ProjectGroup,
-  ProjectItem,
-} from '@core/types/project';
+import { isProjectGroup, isProjectTrack, ProjectGroup, ProjectItem } from '@core/types/project';
 import { Track } from '@core/types/track';
 
 export interface ItemPositionInfo {
@@ -52,10 +47,7 @@ export function getItemPathRecursive(
   return null;
 }
 
-export function findItemWithParent(
-  items: ProjectItem[],
-  itemId: string,
-): ItemPositionInfo | null {
+export function findItemWithParent(items: ProjectItem[], itemId: string): ItemPositionInfo | null {
   const rootIndex = items.findIndex((item) => item.id === itemId);
   if (rootIndex !== -1) {
     return {

@@ -6,8 +6,7 @@
 declare global {
   interface Window {
     api: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      invoke: (channel: string, payload?: any) => Promise<any>;
+      invoke: <T = unknown>(channel: string, payload?: unknown) => Promise<T>;
     };
   }
 }

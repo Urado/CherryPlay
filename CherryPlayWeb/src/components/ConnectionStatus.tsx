@@ -43,10 +43,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   return (
     <div className="connection-status-container">
-      <div
-        className={`connection-status connection-status--${status}`}
-        title={getStatusTitle()}
-      >
+      <div className={`connection-status connection-status--${status}`} title={getStatusTitle()}>
         <span className={`connection-status-dot connection-status-dot--${status}`}></span>
         <span className="connection-status-text">{getStatusText()}</span>
       </div>

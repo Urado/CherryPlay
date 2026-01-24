@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { PartyPlaylistData, PlayerItem } from '../../types';
 import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import { formatDuration } from '../../core/utils/time';
+import { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';
 import '../../components/Playlist/PlaylistView.css';
@@ -80,9 +80,7 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
             <p>Плейлист пуст</p>
           </div>
         ) : (
-          sortItemsByDisplayOrder(playlist.items).map((item, index) =>
-            renderItem(item, index, 0),
-          )
+          sortItemsByDisplayOrder(playlist.items).map((item, index) => renderItem(item, index, 0))
         )}
       </div>
     </div>

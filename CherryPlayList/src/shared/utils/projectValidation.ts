@@ -154,10 +154,7 @@ function validateSavedItem(item: unknown, errors: string[]): item is SavedProjec
 /**
  * Валидирует ProjectSettings с graceful degradation
  */
-function validateSettings(
-  settings: unknown,
-  warnings: string[],
-): ProjectSettings {
+function validateSettings(settings: unknown, warnings: string[]): ProjectSettings {
   const result = { ...DEFAULT_PROJECT_SETTINGS };
 
   if (!isObject(settings)) {
@@ -172,7 +169,8 @@ function validateSettings(
   }
 
   if (isValidActionAfterTrack(settings.defaultActionAfterTrack)) {
-    result.defaultActionAfterTrack = settings.defaultActionAfterTrack as ProjectSettings['defaultActionAfterTrack'];
+    result.defaultActionAfterTrack =
+      settings.defaultActionAfterTrack as ProjectSettings['defaultActionAfterTrack'];
   } else if (settings.defaultActionAfterTrack !== undefined) {
     warnings.push('Invalid defaultActionAfterTrack, using default');
   }
@@ -189,10 +187,7 @@ function validateSettings(
 /**
  * Валидирует ProjectSessionState с graceful degradation
  */
-function validateSessionState(
-  sessionState: unknown,
-  warnings: string[],
-): ProjectSessionState {
+function validateSessionState(sessionState: unknown, warnings: string[]): ProjectSessionState {
   const result = { ...DEFAULT_SESSION_STATE };
 
   if (!isObject(sessionState)) {
@@ -257,7 +252,8 @@ function validateTrackSettings(
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
-      settings.actionAfterTrack = value.actionAfterTrack as ProjectTrackSettings['actionAfterTrack'];
+      settings.actionAfterTrack =
+        value.actionAfterTrack as ProjectTrackSettings['actionAfterTrack'];
     }
 
     result[key] = settings;
@@ -295,7 +291,8 @@ function validateGroupSettings(
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
-      settings.actionAfterTrack = value.actionAfterTrack as ProjectGroupSettings['actionAfterTrack'];
+      settings.actionAfterTrack =
+        value.actionAfterTrack as ProjectGroupSettings['actionAfterTrack'];
     }
 
     result[key] = settings;

@@ -96,9 +96,11 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   openModal: (type) => set({ modal: type }),
 
-  closeModal: () => set({ modal: null, trackSettingsContext: { trackId: null, groupId: null, isGlobal: false } }),
+  closeModal: () =>
+    set({ modal: null, trackSettingsContext: { trackId: null, groupId: null, isGlobal: false } }),
 
-  openTrackSettingsModal: (context) => set({ modal: 'trackSettings', trackSettingsContext: context }),
+  openTrackSettingsModal: (context) =>
+    set({ modal: 'trackSettings', trackSettingsContext: context }),
 
   addNotification: (notification) => {
     const id = `notification-${Date.now()}-${Math.random()}`;

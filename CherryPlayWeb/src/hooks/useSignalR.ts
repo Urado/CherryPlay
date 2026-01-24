@@ -3,8 +3,9 @@
  * Инкапсулирует логику подключения/отключения и подписки на события
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
+
 import { signalRService } from '../services/signalRService';
-import type { PlaybackStateDto } from '../types/api';
+import type { PlaybackStateDto, PartyStateDto } from '../types/api';
 
 export interface UseSignalROptions {
   shortCode?: string;
@@ -25,7 +26,7 @@ export interface UseSignalRReturn {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   joinPartyAsViewer: (shortCode: string) => Promise<void>;
-  requestFullState: (shortCode: string) => Promise<any>;
+  requestFullState: (shortCode: string) => Promise<PartyStateDto | null>;
 }
 
 /**
@@ -46,7 +47,9 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<
+    'disconnected' | 'connecting' | 'connected'
+  >('disconnected');
   const callbacksRef = useRef({
     onSessionStarted,
     onSessionEnded,
@@ -177,14 +180,14 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     try {
       setConnectionStatus('connecting');
       await signalRService.connect();
-      
+
       // Небольшая задержка для проверки соединения
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       if (!signalRService.isServiceConnected()) {
         throw new Error('Не удалось установить соединение');
       }
-      
+
       await signalRService.joinPartyAsViewer(shortCode);
       setConnectionStatus('connected');
       setIsConnected(true);
@@ -212,7 +215,13 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
   // Автоматическое подключение
   const autoConnectingRef = useRef(false);
   useEffect(() => {
-    if (autoConnect && shortCode && !isConnected && connectionStatus === 'disconnected' && !autoConnectingRef.current) {
+    if (
+      autoConnect &&
+      shortCode &&
+      !isConnected &&
+      connectionStatus === 'disconnected' &&
+      !autoConnectingRef.current
+    ) {
       autoConnectingRef.current = true;
       connect()
         .then(() => {

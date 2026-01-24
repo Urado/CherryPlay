@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { PlayerItem } from '../../types';
 import { formatDuration } from '../../core/utils/time';
+import { PlayerItem } from '../../types';
 
 import './PlaylistItem.css';
 
@@ -43,11 +43,12 @@ export const PlaylistItem: React.FC<PlaylistItemProps> = ({
             </span>
           )}
           <span className="party-playlist-item-name">{displayName}</span>
-          {displayDuration && <span className="party-playlist-item-duration">{displayDuration}</span>}
+          {displayDuration && (
+            <span className="party-playlist-item-duration">{displayDuration}</span>
+          )}
         </div>
       </div>
       {children}
     </div>
   );
 };
-

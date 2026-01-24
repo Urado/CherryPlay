@@ -19,4 +19,3 @@ workspaceRegistry.register(PartyModule);
 
 export { PartyView };
 export default PartyModule;
-

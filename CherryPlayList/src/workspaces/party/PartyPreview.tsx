@@ -1,13 +1,19 @@
+import {
+  PartyDisplay,
+  PartyDisplayData,
+  PartyPlaylistData,
+  PlaybackState,
+  type ThemeId,
+  type CustomizationSettings,
+} from '@cherryplay/components';
 import React, { useMemo } from 'react';
-
-import { PartyDisplay, PartyDisplayData, PartyPlaylistData, PlaybackState, type ThemeId } from '@cherryplay/components';
 
 import './PartyPreview.css';
 
 interface PartyPreviewProps {
   playlist: PartyPlaylistData;
   themeId: ThemeId;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: CustomizationSettings<ThemeId>;
   playbackState?: PlaybackState | null;
   partyName?: string;
   partyId?: string;
@@ -21,16 +27,18 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   partyName = 'Превью вечеринки',
   partyId = 'preview',
 }) => {
-  // Формируем единый объект данных для PartyDisplay
-  const displayData: PartyDisplayData<ThemeId> = useMemo(() => ({
-    partyId,
-    partyName,
-    themeId,
-    customizationSettings,
-    playlist,
-    playbackState: playbackState || null,
-    isSessionActive: playbackState !== null,
-  }), [partyId, partyName, themeId, customizationSettings, playlist, playbackState]);
+  const displayData: PartyDisplayData<ThemeId> = useMemo(
+    () => ({
+      partyId,
+      partyName,
+      themeId,
+      customizationSettings: customizationSettings as CustomizationSettings<ThemeId> | undefined,
+      playlist,
+      playbackState: playbackState || null,
+      isSessionActive: playbackState !== null,
+    }),
+    [partyId, partyName, themeId, customizationSettings, playlist, playbackState],
+  );
 
   return (
     <div className="party-preview">
@@ -38,4 +46,3 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
     </div>
   );
 };
-

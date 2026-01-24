@@ -143,7 +143,7 @@ export function getThemeMetadata(themeId: ThemeId): ThemeMetadata {
 }
 
 export function getDefaultCustomizationSettings<T extends ThemeId>(
-  themeId: T
+  themeId: T,
 ): ThemeCustomizationSettingsMap[T] {
   const metadata = THEME_METADATA[themeId];
   return metadata.defaultCustomizationSettings as ThemeCustomizationSettingsMap[T];
@@ -151,7 +151,7 @@ export function getDefaultCustomizationSettings<T extends ThemeId>(
 
 export function getCustomizationOption(
   themeId: ThemeId,
-  optionKey: string
+  optionKey: string,
 ): ThemeCustomizationOption | undefined {
   const metadata = THEME_METADATA[themeId];
   return metadata.customizationOptions.find((opt) => opt.key === optionKey);

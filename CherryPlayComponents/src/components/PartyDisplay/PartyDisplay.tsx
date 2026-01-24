@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { PartyDisplayData } from '../../types';
 import { getThemeOrDefault, ThemeId } from '../../themes';
+import { PartyDisplayData } from '../../types';
 
 export interface PartyDisplayProps {
   data: PartyDisplayData;
@@ -17,11 +17,5 @@ export const PartyDisplay: React.FC<PartyDisplayProps> = ({
   const theme = getThemeOrDefault(data.themeId as ThemeId);
   const ThemePartyDisplay = theme.components.PartyDisplay;
 
-  return (
-    <ThemePartyDisplay
-      data={data}
-      className={className}
-      showPlayer={showPlayer}
-    />
-  );
+  return <ThemePartyDisplay data={data} className={className} showPlayer={showPlayer} />;
 };
