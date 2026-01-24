@@ -1,34 +1,81 @@
-/* Cyberpunk Theme - Player Styles */
-
 [data-theme="cyberpunk"] .party-current-track-display {
   background: #1a1a1a;
-  border-bottom: 2px solid var(--accent-color, #00ff00);
-  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+  border-bottom: 3px solid var(--accent-color, #00ff00);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.4), inset 0 0 12px rgba(0, 0, 0, 0.5);
+  padding: 28px 32px;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+[data-theme="cyberpunk"] .party-current-track-display::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-color, #00ff00), transparent);
+  animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 [data-theme="cyberpunk"] .party-current-track-empty {
   color: #666666;
+  padding: 40px 32px;
+  text-align: center;
+  font-size: 15px;
+  font-family: 'Courier New', monospace;
 }
 
 [data-theme="cyberpunk"] .party-current-track-name {
   color: #00ff00;
-  font-weight: 700;
-  text-shadow: 0 0 10px var(--accent-color, #00ff00);
-  letter-spacing: 1px;
+  font-weight: 800;
+  text-shadow: 0 0 12px var(--accent-color, #00ff00), 0 0 24px var(--accent-color, #00ff00);
+  letter-spacing: 2px;
+  font-size: 22px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  line-height: 1.3;
 }
 
 [data-theme="cyberpunk"] .party-current-track-meta {
   color: #00ff88;
+  font-size: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: 'Courier New', monospace;
 }
 
 [data-theme="cyberpunk"] .party-current-track-status {
   color: var(--accent-color, #00ff00);
-  text-shadow: 0 0 5px var(--accent-color, #00ff00);
+  text-shadow: 0 0 8px var(--accent-color, #00ff00);
+  font-weight: 700;
+  padding: 6px 14px;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid rgba(0, 255, 0, 0.4);
+  border-radius: 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Courier New', monospace;
 }
 
 [data-theme="cyberpunk"] .party-current-track-time {
   color: #00ff88;
   font-family: 'Courier New', monospace;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 1px;
 }
 
 [data-theme="cyberpunk"] .party-current-track-progress {
@@ -51,4 +98,3 @@
     opacity: 0.8;
   }
 }
-

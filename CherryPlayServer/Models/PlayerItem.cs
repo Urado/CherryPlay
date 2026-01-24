@@ -6,7 +6,6 @@ public record PlayerItem(
     string Name,
     int DisplayOrder,
     int Level,
-    string? Path = null,
     int? Duration = null,
     List<PlayerItem>? Items = null
 );

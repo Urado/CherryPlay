@@ -5,6 +5,7 @@
 ## Содержание
 
 - [Обзор](#обзор)
+- [Архитектура](#архитектура)
 - [Доступные темы](#доступные-темы)
 - [Идентификаторы тем](#идентификаторы-тем)
 - [Настройки кастомизации](#настройки-кастомизации)
@@ -14,196 +15,201 @@
 
 ## Обзор
 
-CherryPlay использует систему изолированных тем для визуального оформления вечеринок. Каждая тема представляет собой полностью независимый модуль с собственными компонентами и стилями.
+CherryPlay использует систему тем на основе базовых компонентов с CSS-кастомизацией.
 
 **Основные принципы:**
-- Каждая тема изолирована и не зависит от других тем
-- Темы поддерживают кастомизацию через настройки
+- Базовые компоненты в `themes/base/` используются всеми темами по умолчанию
+- Темы реализуют уникальный внешний вид через CSS и атрибут `data-theme`
+- При необходимости тема может переопределить любой компонент через `overrides`
 - Все темы используют единый API и структуру данных
-- Темы доступны во всех проектах (CherryPlayServer, CherryPlayWeb, CherryPlayList)
+
+## Архитектура
+
+```
+themes/
+├── index.ts           # Реестр тем, фабрика createTheme, BASE_COMPONENTS
+├── index.css          # Импорты CSS всех тем
+├── base/              # Базовые компоненты (единственный набор)
+│   ├── PartyDisplay.tsx
+│   ├── PlaylistView.tsx
+│   ├── PlaylistItem.tsx
+│   ├── CurrentTrackDisplay.tsx
+│   └── index.ts
+├── cyberpunk/         # CSS-only тема
+│   ├── index.css
+│   ├── playlist.css
+│   ├── playlist-item.css
+│   └── player.css
+├── sakura/            # CSS-only тема
+│   └── *.css
+└── art-deco/          # CSS-only тема
+    └── *.css
+```
+
+### Как это работает
+
+1. `BASE_COMPONENTS` содержит единственный набор React компонентов
+2. `createTheme()` создает тему, используя базовые компоненты по умолчанию
+3. Темы отличаются только CSS стилями через `data-theme` атрибут
+4. Для уникальной логики тема может передать `overrides` в `createTheme()`
 
 ## Доступные темы
 
 ### 1. Cyberpunk (`cyberpunk`)
 
-**Описание:** Неоновая тема в стиле киберпанк с зелеными акцентами и эффектами свечения.
+Неоновая тема в стиле киберпанк с зелеными акцентами и эффектами свечения.
 
-**Визуальные характеристики:**
 - Цветовая схема: неон, темный фон
 - Шрифты: моноширинные, футуристические
 - Эффекты: свечение, анимации, неоновые границы
 
-**Иконка:** 💚
-
 ### 2. Sakura (`sakura`)
 
-**Описание:** Нежная пастельная тема с розовыми оттенками.
+Нежная пастельная тема с розовыми оттенками.
 
-**Визуальные характеристики:**
 - Цветовая схема: пастельные тона, розовый/белый
 - Шрифты: элегантные, с засечками
 - Эффекты: плавные переходы, цветочные элементы
 
-**Иконка:** 🌸
-
 ### 3. Art Deco (`art-deco`)
 
-**Описание:** Элегантная тема в стиле ар-деко с золотыми акцентами и геометрическими паттернами.
+Элегантная тема в стиле ар-деко с золотыми акцентами и геометрическими паттернами.
 
-**Визуальные характеристики:**
 - Цветовая схема: золотой, черный, белый
 - Шрифты: геометрические, стилизованные
 - Эффекты: геометрические паттерны, градиенты
 
-**Иконка:** ✨
+### 4. Базовый (`basic`)
+
+Простой и чистый стиль в духе основного приложения CherryPlayList.
+
+- Цветовая схема: темно-серый фон, белый текст, синий акцент
+- Шрифты: системные, стандартные
+- Эффекты: минимальные, простые переходы
 
 ## Идентификаторы тем
 
 ### TypeScript/JavaScript
 
-Тип `ThemeId` определен в `CherryPlayComponents/src/themes/index.ts` как union type со значениями: `'cyberpunk'`, `'sakura'`, `'art-deco'`.
+Тип `ThemeId` определен в `CherryPlayComponents/src/themes/index.ts`:
 
-**Допустимые значения:**
-- `'cyberpunk'` - тема Cyberpunk
-- `'sakura'` - тема Sakura
-- `'art-deco'` - тема Art Deco
+```typescript
+type ThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
+```
 
 ### C# (CherryPlayServer)
 
-Enum `ThemeId` определен в `CherryPlayServer.Core.Enums.ThemeId` со значениями: `Cyberpunk`, `Sakura`, `ArtDeco`.
+Enum `ThemeId` определен в `CherryPlayServer.Core.Enums.ThemeId`:
 
-**JSON сериализация:**
-- Enum автоматически сериализуется в строки при отправке на фронт
-- Фронт отправляет строки, которые автоматически конвертируются в enum
-- Для конвертации из строки используется `ThemeIdExtensions.ParseThemeIdOrDefault()`
+- `Cyberpunk`, `Sakura`, `ArtDeco`, `Basic`
+- Автоматическая JSON сериализация в строки
 
 ## Настройки кастомизации
 
-Каждая тема поддерживает уникальные настройки кастомизации, которые передаются через объект `customizationSettings`.
+Каждая тема поддерживает уникальные настройки кастомизации через `customizationSettings`.
 
 ### Cyberpunk
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|--------------|----------|
-| `accentColor` | string (hex) | `#00ff00` | Цвет акцента (неоновый зеленый) |
-| `glowIntensity` | number (0-100) | `50` | Интенсивность свечения (0 = нет свечения, 100 = максимальное свечение) |
+| `accentColor` | string (hex) | `#00ff00` | Цвет акцента |
+| `glowIntensity` | number (0-100) | `50` | Интенсивность свечения |
 
 ### Sakura
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|--------------|----------|
-| `pinkTint` | string (hex) | `#ffb3d9` | Оттенок розового цвета |
-| `backgroundOpacity` | number (0-100) | `80` | Прозрачность фона (0 = полностью прозрачный, 100 = непрозрачный) |
+| `pinkTint` | string (hex) | `#ffb3d9` | Оттенок розового |
+| `backgroundOpacity` | number (0-100) | `80` | Прозрачность фона |
 
 ### Art Deco
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|--------------|----------|
 | `goldColor` | string (hex) | `#d4af37` | Цвет золота |
-| `patternStyle` | string | `'geometric'` | Стиль паттерна: `'geometric'`, `'floral'`, `'linear'` |
+| `patternStyle` | string | `'geometric'` | Стиль паттерна |
+
+### Базовый
+
+Тема не поддерживает настройки кастомизации.
 
 ## Использование в проектах
 
 ### CherryPlayComponents (React/TypeScript)
 
-Импортируйте компонент `PartyDisplay` и тип `PartyDisplayData` из `@cherryplay/components`. Передайте данные через prop `data` с указанием `themeId` и `customizationSettings`. Для работы тем необходимо импортировать CSS файлы всех тем в `App.tsx` или `main.tsx`.
+```typescript
+import { PartyDisplay } from '@cherryplay/components';
+import '@cherryplay/components/themes/index.css';
 
-### CherryPlayWeb (React)
+<PartyDisplay data={partyDisplayData} />
+```
 
-Используйте компонент `PartyDisplay` из библиотеки `@cherryplay/components`. Получайте `themeId` и `customizationSettings` из API ответа и передавайте их в `PartyDisplayData`.
+### CherryPlayWeb и CherryPlayList
 
-### CherryPlayList (Electron)
+Используйте компонент `PartyDisplay` из библиотеки. Импортируйте CSS:
 
-Используйте `PartyDisplay` для превью вечеринок. Получайте `themeId` и `customizationSettings` из настроек вечеринки.
-
-### CherryPlayServer (C#)
-
-Создавайте вечеринки через `CreatePartyDto` с указанием `ThemeId` (enum `ThemeId`). Для чтения темы из существующей вечеринки используйте `ThemeIdExtensions.ParseThemeIdOrDefault()` для конвертации строки в enum.
+```typescript
+import '@cherryplay/components/themes/index.css';
+```
 
 ## API и типы данных
 
-### REST API
+### ThemeComponents
 
-**Создание вечеринки:** `POST /api/parties`
+```typescript
+interface ThemeComponents {
+  PartyDisplay: React.ComponentType<{ data: PartyDisplayData; ... }>;
+  PlaylistView: React.ComponentType<{ playlist: PartyPlaylistData; ... }>;
+  CurrentTrackDisplay: React.ComponentType<{ playbackState: PlaybackState; ... }>;
+}
+```
 
-Принимает JSON с полями: `name`, `themeId` (строка: "cyberpunk", "sakura", "art-deco"), `customizationSettings` (объект с настройками), `playlistData`, `eventDateTime`.
+### createTheme
 
-**Получение вечеринки:** `GET /api/parties/public/{shortCode}`
+```typescript
+function createTheme(config: CreateThemeConfig): Theme;
 
-Возвращает объект с полями: `id`, `name`, `themeId`, `customizationSettings`, `hasActiveSession`.
-
-### TypeScript типы
-
-Тип `ThemeId` определен как union type: `'cyberpunk' | 'sakura' | 'art-deco'`.
-
-Интерфейс `PartyDisplayData` содержит: `partyId`, `partyName`, `themeId`, `customizationSettings` (опционально), `playlist`, `playbackState`, `isSessionActive`.
-
-### C# типы
-
-Enum `ThemeId` со значениями: `Cyberpunk`, `Sakura`, `ArtDeco`.
-
-DTO `CreatePartyDto` содержит: `Name`, `ThemeId` (enum, по умолчанию `Cyberpunk`), `CustomizationSettings` (опционально), `PlaylistData` (опционально), `EventDateTime` (опционально).
-
-DTO `PartyDto` содержит: `Id`, `Name`, `ShortCode`, `ThemeId` (enum), `CreatedAt`, `HasActiveSession`, `EventDateTime` (опционально).
-
-## CSS переменные
-
-Каждая тема определяет CSS переменные через атрибут `data-theme`. Настройки кастомизации автоматически преобразуются в CSS переменные через хук `useThemeVars`.
-
-**Общие переменные:**
-- `--bg-primary`, `--bg-secondary`, `--bg-tertiary` - цвета фона
-- `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
-- `--accent-primary` - цвет акцента
-- `--border-color` - цвет границ
-
-**Специфичные для тем:**
-- Cyberpunk: `--accentColor`, `--glowIntensity`
-- Sakura: `--pinkTint`, `--backgroundOpacity`
-- Art Deco: `--goldColor`, `--patternStyle`
-
-**Преобразование значений:**
-- `glowIntensity` и `backgroundOpacity`: 0-100 → 0-1 (для rgba)
-- Цвета: передаются как есть (hex строки)
-- Остальные значения: преобразуются в строки
+interface CreateThemeConfig {
+  id: ThemeId;
+  name: string;
+  description: string;
+  cssPath: string;
+  customizationOptions?: string[];
+  overrides?: Partial<ThemeComponents>;
+}
+```
 
 ## Добавление новой темы
 
-### 1. Создание структуры темы
+### Краткая сводка
 
-**В CherryPlayComponents:** Создайте директорию `CherryPlayComponents/src/themes/<theme-id>/` со следующими файлами: `PartyDisplay.tsx`, `PlaylistView.tsx`, `PlaylistItem.tsx`, `CurrentTrackDisplay.tsx`, и поддиректорию `styles/` с файлами: `index.css`, `playlist.css`, `playlist-item.css`, `player.css`.
+Для добавления новой темы нужно:
+1. Создать CSS файлы в `CherryPlayComponents/src/themes/<theme-id>/`
+2. Зарегистрировать тему в `CherryPlayComponents/src/themes/index.ts`
+3. Добавить значение в C# enum `CherryPlayServer/Core/Enums/ThemeId.cs`
+4. Обновить документацию
 
-### 2. Регистрация темы
+**Важно**: После добавления темы в библиотеку компонентов, она автоматически становится доступной во всех приложениях благодаря централизованной системе. Дополнительные изменения в CherryPlayWeb и CherryPlayList не требуются (кроме опциональных превью).
 
-**В TypeScript:** Добавьте новый идентификатор в union type `ThemeId` и зарегистрируйте тему в `THEME_REGISTRY` с указанием компонентов, CSS пути и опций кастомизации.
+Подробная пошаговая инструкция по добавлению новой темы находится в отдельном файле:
 
-**В C#:** Добавьте новое значение в enum `ThemeId` с атрибутом `JsonPropertyName` для JSON сериализации.
+📖 **[ADDING_THEME.md](./ADDING_THEME.md)** - полная инструкция без примеров кода
 
-### 3. Обновление документации
+## CSS переменные
 
-- Добавьте описание темы в этот файл (THEMES.md)
-- Обновите примеры использования
-- Добавьте описание настроек кастомизации
+Каждая тема определяет CSS переменные через `[data-theme]`. Темы используют стандартный набор переменных для консистентности:
 
-### 4. Тестирование
+- **Фон**: `--bg-primary`, `--bg-secondary`, `--bg-tertiary`, `--bg-hover`
+- **Текст**: `--text-primary`, `--text-secondary`, `--text-tertiary`
+- **Акценты**: `--accent-primary`, `--accent-primary-light`
+- **Границы и выделение**: `--border-color`, `--selected-bg`, `--selected-border`
 
-- Проверьте работу темы во всех проектах
-- Убедитесь, что настройки кастомизации применяются корректно
-- Проверьте сериализацию/десериализацию в API
+Настройки кастомизации автоматически преобразуются в CSS переменные через хук `useThemeVars`.
 
-## Миграция и совместимость
+Для примеров использования CSS переменных смотрите существующие темы в `CherryPlayComponents/src/themes/`.
 
-### Обратная совместимость
-
-- Старые вечеринки с `themeId` как строка продолжают работать
-- `ThemeIdExtensions.ParseThemeIdOrDefault()` безопасно обрабатывает неизвестные значения
-- По умолчанию используется `ThemeId.Cyberpunk`
-
-### Миграция данных
-
-При необходимости миграции существующих данных используйте `ThemeIdExtensions.ParseThemeIdOrDefault()` для безопасной конвертации строки в enum.
 
 ## Полезные ссылки
 
-- [CherryPlayComponents README](../CherryPlayComponents/README.md) - документация библиотеки компонентов
-- [STREAMING_ARCHITECTURE.md](./STREAMING_ARCHITECTURE.md) - общая архитектура системы
-- [CherryPlayComponents/src/themes/README.md](../CherryPlayComponents/src/themes/README.md) - детальная документация по темам
+- [CherryPlayComponents README](./CherryPlayComponents/README.md)
+- [STREAMING_ARCHITECTURE.md](./STREAMING_ARCHITECTURE.md)

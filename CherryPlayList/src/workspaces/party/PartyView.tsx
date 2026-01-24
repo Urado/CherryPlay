@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
-import { PlaybackState } from '@cherryplay/components';
+import { PlaybackState, type ThemeId } from '@cherryplay/components';
 import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore, useSettingsStore } from '@shared/stores';
 import {
   convertToComponentPlayerItems,
@@ -54,7 +54,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
   }));
 
   const [partyName, setPartyName] = useState('');
-  const [themeId, setThemeId] = useState('cyberpunk');
+  const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
   const [customizationSettings, setCustomizationSettings] = useState<Record<string, any>>({
     accentColor: '#00ff00',
     glowIntensity: 50,
@@ -72,7 +72,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
   }));
 
   // Обновляем настройки по умолчанию при смене стиля
-  const handleThemeChange = (newThemeId: string) => {
+  const handleThemeChange = (newThemeId: ThemeId) => {
     setThemeId(newThemeId);
     // Устанавливаем значения по умолчанию для нового стиля
     if (newThemeId === 'cyberpunk') {
@@ -90,6 +90,8 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
         goldColor: '#d4af37',
         patternStyle: 'geometric',
       });
+    } else if (newThemeId === 'basic') {
+      setCustomizationSettings({});
     }
   };
 

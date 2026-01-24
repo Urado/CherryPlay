@@ -1,15 +1,12 @@
-/* Cyberpunk Theme - Complete Stylesheet */
-
 @import './playlist.css';
 @import './playlist-item.css';
 @import './player.css';
 
-/* CSS Variables for Cyberpunk Theme */
 [data-theme="cyberpunk"] {
   --bg-primary: #0a0a0a;
   --bg-secondary: #1a1a1a;
-  --bg-tertiary: #0f0f0f;
-  --bg-hover: #1a1a1a;
+  --bg-tertiary: rgba(0, 0, 0, 0.6);
+  --bg-hover: #252525;
   --text-primary: #00ff00;
   --text-secondary: #00ff88;
   --text-tertiary: #666666;
@@ -17,10 +14,12 @@
   --accent-primary-light: rgba(0, 255, 0, 0.1);
   --border-color: rgba(0, 255, 0, 0.3);
   --glow-intensity: var(--glow-intensity, 0.5);
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: var(--text-primary);
 }
 
 [data-theme="cyberpunk"] .party-display {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  background: transparent;
   color: var(--text-primary);
 }
 
@@ -30,26 +29,55 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 0 20px rgba(0, 255, 0, calc(var(--glow-intensity) * 0.5));
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
 }
 
 [data-theme="cyberpunk"] .party-display-session-indicator {
-  background: rgba(0, 255, 0, 0.1);
-  border: 1px solid rgba(0, 255, 0, 0.3);
+  background: rgba(0, 255, 0, 0.15);
+  border: 2px solid rgba(0, 255, 0, 0.5);
   color: #00ff00;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 700;
+  box-shadow: 0 0 16px rgba(0, 255, 0, 0.4), inset 0 0 8px rgba(0, 255, 0, 0.1);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 [data-theme="cyberpunk"] .party-display-session-dot {
   background: #00ff00;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+  box-shadow: 0 0 16px rgba(0, 255, 0, 1);
+  width: 10px;
+  height: 10px;
+  animation: pulse-neon 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-neon {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(0, 255, 0, 1);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 24px rgba(0, 255, 0, 0.6);
+  }
 }
 
 [data-theme="cyberpunk"] .party-playlist-view {
   background: var(--bg-primary);
   color: var(--text-primary);
+  border: 2px solid rgba(0, 255, 0, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(0, 255, 0, 0.2), inset 0 0 16px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="cyberpunk"] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
+  border-radius: 8px 8px 0 0;
 }
-

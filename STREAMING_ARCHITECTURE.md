@@ -123,7 +123,7 @@
 - `OrganizerId` (Guid, FK -> Users.Id, not null)
 - `Name` (string, not null)
 - `ShortCode` (string, unique, not null, index)
-- `themeId` (string, not null) - идентификатор стиля (cyberpunk, sakura, art-deco, etc.)
+- `themeId` (string, not null) - идентификатор стиля (cyberpunk, sakura, art-deco, basic, etc.)
 - `CustomizationSettings` (JSON, nullable) - настройки кастомизации для выбранного стиля
 - `IsActive` (bool, not null, default: true)
 - `CreatedAt` (DateTime, not null)
@@ -395,7 +395,6 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
   type: 'track' | 'group';
   name: string;
   // Для трека
-  path?: string;
   duration?: number;
   // Для группы
   items?: PlayerItemDto[];
@@ -535,7 +534,7 @@ CherryPlayWeb/
 
 ### 5.3 CherryPlayComponents (Библиотека)
 
-Библиотека построена на основе системы изолированных тем с единым фасадом для фронта.
+Библиотека построена на основе базовых компонентов с CSS-кастомизацией через темы.
 
 ```
 CherryPlayComponents/
@@ -548,40 +547,40 @@ CherryPlayComponents/
 │   │       └── useThemeVars.ts        # Хук для преобразования настроек в CSS переменные
 │   │
 │   ├── types/
-│   │   └── index.ts                   # TypeScript типы (PlayerItem, PlaybackState, PartyDisplayData и т.д.)
+│   │   └── index.ts                   # TypeScript типы
 │   │
-│   ├── components/                    # Универсальные компоненты (для обратной совместимости)
-│   │   ├── PartyDisplay/              # Фасадный компонент - единая точка входа для фронта
-│   │   │   ├── PartyDisplay.tsx       # Выбирает тему по themeId и проксирует данные
-│   │   │   └── PartyDisplay.css      # Базовые стили шапки
-│   │   ├── Playlist/
-│   │   │   ├── PlaylistView.tsx      # (deprecated - используйте PartyDisplay)
-│   │   │   └── PlaylistItem.tsx      # (deprecated - используйте PartyDisplay)
-│   │   └── Player/
-│   │       └── CurrentTrackDisplay.tsx # (deprecated - используйте PartyDisplay)
+│   ├── components/                    # Фасадный компонент и legacy
+│   │   ├── PartyDisplay/              # Фасадный компонент - единая точка входа
+│   │   │   ├── PartyDisplay.tsx       # Выбирает тему по themeId
+│   │   │   └── PartyDisplay.css       # Базовые стили
+│   │   ├── Playlist/                  # (deprecated)
+│   │   └── Player/                    # (deprecated)
 │   │
-│   └── themes/                        # Изолированные темы
-│       ├── index.ts                   # Реестр тем (THEME_REGISTRY) и фабрики
-│       ├── cyberpunk/                 # Тема Cyberpunk
-│       │   ├── PartyDisplay.tsx       # Компонент вечеринки для темы
-│       │   ├── PlaylistView.tsx       # Компонент плейлиста для темы
-│       │   ├── PlaylistItem.tsx       # Компонент элемента для темы
-│       │   ├── CurrentTrackDisplay.tsx # Компонент плеера для темы
-│       │   └── styles/
-│       │       ├── index.css
-│       │       ├── playlist.css
-│       │       ├── playlist-item.css
-│       │       └── player.css
-│       ├── sakura/                    # Тема Sakura (аналогичная структура)
-│       └── art-deco/                  # Тема Art Deco (аналогичная структура)
+│   └── themes/
+│       ├── index.ts                   # THEME_REGISTRY, createTheme, BASE_COMPONENTS
+│       ├── index.css                  # Импорты CSS всех тем
+│       ├── base/                      # Базовые компоненты (единственный набор)
+│       │   ├── PartyDisplay.tsx
+│       │   ├── PlaylistView.tsx
+│       │   ├── PlaylistItem.tsx
+│       │   ├── CurrentTrackDisplay.tsx
+│       │   └── index.ts
+│       ├── cyberpunk/                 # CSS-only тема
+│       │   ├── index.css
+│       │   ├── playlist.css
+│       │   ├── playlist-item.css
+│       │   └── player.css
+│       ├── sakura/                    # CSS-only тема
+│       └── art-deco/                  # CSS-only тема
 ```
 
 **Принципы архитектуры:**
 
-1. **Core-слой** - содержит общую логику (типы, утилиты форматирования, хуки), используемую всеми темами
-2. **Изоляция тем** - каждая тема имеет собственные компоненты и стили, полностью независимые от других тем
-3. **Фасадный компонент** - `PartyDisplay` принимает стандартизированные данные (`PartyDisplayData`) и автоматически выбирает нужную тему по `themeId`
-4. **Фронт не знает о темах** - фронт передаёт только данные и `themeId`, вся логика выбора темы инкапсулирована в библиотеке
+1. **BASE_COMPONENTS** - единственный набор базовых React компонентов в `themes/base/`
+2. **CSS-only темы** - темы реализуют уникальный вид только через CSS и `data-theme`
+3. **createTheme()** - фабрика создает тему с базовыми компонентами по умолчанию
+4. **Overrides** - при необходимости тема может переопределить любой компонент через `overrides`
+5. **Фасадный компонент** - `PartyDisplay` принимает `PartyDisplayData` и выбирает тему по `themeId`
 
 ### 5.4 CherryPlayServer (C#)
 ```
@@ -977,105 +976,89 @@ interface IPartyApiService {
 
 ## 8. Стили и кастомизация
 
-### 8.1 Система изолированных тем
+### 8.1 Система тем
 
-#### Архитектура тем
-- Каждая тема является **полностью изолированным модулем** со своими компонентами и стилями
-- Темы находятся в `CherryPlayComponents/src/themes/<themeId>/`
-- Каждая тема реализует собственные версии компонентов:
-  - `PartyDisplay` - главный компонент вечеринки
-  - `PlaylistView` - компонент плейлиста (может иметь уникальный дизайн)
-  - `PlaylistItem` - компонент элемента плейлиста (может иметь уникальный дизайн)
-  - `CurrentTrackDisplay` - компонент отображения текущего трека
-- Все темы используют общие утилиты из `core/utils` (форматирование времени, работа с плейлистом)
+#### Архитектура
+- **BASE_COMPONENTS** - единственный набор базовых React компонентов в `themes/base/`
+- Темы реализуют уникальный внешний вид через CSS и атрибут `data-theme`
+- При необходимости тема может переопределить любой компонент через `overrides`
+- Все темы используют общие утилиты из `core/utils`
 
 #### Регистрация тем
-- Темы регистрируются в `CherryPlayComponents/src/themes/index.ts` в `THEME_REGISTRY`
-- Каждая тема имеет:
-  - `id` - уникальный идентификатор темы
-  - `name` - отображаемое имя
-  - `description` - описание темы
-  - `customizationOptions` - список опций кастомизации
-  - `components` - ссылки на React компоненты темы
+Темы регистрируются через фабрику `createTheme()`:
+```typescript
+createTheme({
+  id: 'cyberpunk',
+  name: 'Cyberpunk',
+  description: 'Неоновая тема',
+  cssPath: './cyberpunk/index.css',
+  customizationOptions: ['accentColor', 'glowIntensity'],
+  overrides: { /* опционально */ },
+})
+```
 
-#### Структура темы
+#### Структура CSS-only темы
 ```
 themes/<themeId>/
-├── PartyDisplay.tsx          # Главный компонент темы
-├── PlaylistView.tsx          # Компонент плейлиста (уникальный для темы)
-├── PlaylistItem.tsx          # Компонент элемента (уникальный для темы)
-├── CurrentTrackDisplay.tsx   # Компонент плеера (уникальный для темы)
-└── styles/
-    ├── index.css             # Главный файл стилей темы
-    ├── playlist.css          # Стили плейлиста
-    ├── playlist-item.css     # Стили элементов
-    └── player.css            # Стили плеера
+├── index.css             # Главный файл, импортирует остальные
+├── playlist.css          # Стили плейлиста
+├── playlist-item.css     # Стили элементов
+└── player.css            # Стили плеера
 ```
 
-#### CustomizationOption
-```typescript
-{
-  key: string;
-  label: string;
-  type: 'color' | 'number' | 'string' | 'image' | 'select';
-  defaultValue: any;
-  options?: { value: any; label: string }[]; // для select
-  min?: number; // для number
-  max?: number; // для number
-}
+#### Структура темы с кастомными компонентами
+```
+themes/<themeId>/
+├── *.css                 # CSS файлы
+├── CustomComponent.tsx   # Кастомный компонент
+└── index.ts              # Экспорт компонентов
 ```
 
-### 8.2 Примеры тем
+### 8.2 Доступные темы
 
 #### Cyberpunk
 - Цветовая схема: неон, темный фон
-- Шрифты: моноширинные, футуристические
-- Эффекты: свечение, анимации
-- Настройки кастомизации: `accentColor`, `glowIntensity`
-- Компоненты: имеют неоновый стиль с эффектами свечения
+- Шрифты: моноширинные
+- Настройки: `accentColor`, `glowIntensity`
 
 #### Sakura
 - Цветовая схема: пастельные тона, розовый/белый
-- Шрифты: элегантные, с засечками
-- Эффекты: плавные переходы, цветочные элементы
-- Настройки кастомизации: `pinkTint`, `backgroundOpacity`
-- Компоненты: имеют нежный пастельный дизайн
+- Шрифты: с засечками
+- Настройки: `pinkTint`, `backgroundOpacity`
 
 #### Art-Deco
-- Цветовая схема: золотой, черный, белый
-- Шрифты: геометрические, стилизованные
-- Эффекты: геометрические паттерны, градиенты
-- Настройки кастомизации: `goldColor`, `patternStyle`
-- Компоненты: имеют элегантный дизайн в стиле ар-деко
+- Цветовая схема: золотой, черный
+- Шрифты: геометрические
+- Настройки: `goldColor`, `patternStyle`
+
+#### Базовый
+- Цветовая схема: темно-серый фон, белый текст, синий акцент
+- Шрифты: системные, стандартные
+- Настройки: не поддерживаются
 
 ### 8.3 Применение тем
 
-1. **В приложении (PartyEditor):**
-   - Организатор выбирает тему (`themeId`)
-   - Отображаются доступные настройки кастомизации для выбранной темы
+1. **В приложении:**
+   - Организатор выбирает `themeId`
+   - Настраивает `customizationSettings`
    - Превью обновляется в реальном времени
-   - Настройки сохраняются в `customizationSettings`
 
-2. **На веб-странице (CherryPlayWeb):**
-   - React приложение получает `PartyDisplayData` с `themeId` и `customizationSettings`
-   - Использует единый компонент `PartyDisplay` из библиотеки:
-     ```typescript
-     import { PartyDisplay } from '@cherryplay/components';
-     
-     <PartyDisplay data={partyDisplayData} />
-     ```
-   - Фасадный компонент `PartyDisplay` автоматически:
-     - Выбирает нужную тему по `themeId` из `THEME_REGISTRY`
-     - Преобразует `customizationSettings` в CSS переменные через `useThemeVars`
-     - Рендерит компоненты выбранной темы с примененными настройками
-   - **Фронт не знает о внутренней реализации тем** - просто передаёт стандартизированные данные
+2. **На веб-странице:**
+   ```typescript
+   import { PartyDisplay } from '@cherryplay/components';
+   import '@cherryplay/components/themes/index.css';
+   
+   <PartyDisplay data={partyDisplayData} />
+   ```
 
-3. **Добавление новой темы:**
-   - Создать директорию `CherryPlayComponents/src/themes/<theme-id>/`
-   - Реализовать компоненты темы (PartyDisplay, PlaylistView, PlaylistItem, CurrentTrackDisplay)
-   - Добавить CSS стили
-   - Зарегистрировать тему в `THEME_REGISTRY`
-   - Фронт автоматически получит доступ к новой теме через `PartyDisplay`
+3. **Добавление CSS-only темы:**
+   - Создать CSS файлы в `themes/<theme-id>/`
+   - Добавить `createTheme()` в `THEME_REGISTRY`
+   - Добавить импорт в `themes/index.css`
+
+4. **Добавление темы с кастомными компонентами:**
+   - Создать компоненты в `themes/<theme-id>/`
+   - Передать их в `overrides` при вызове `createTheme()`
 
 ## 9. Безопасность
 
@@ -1252,6 +1235,7 @@ const displayData: PartyDisplayData = {
 import '@cherryplay/components/themes/cyberpunk/index.css';
 import '@cherryplay/components/themes/sakura/index.css';
 import '@cherryplay/components/themes/art-deco/index.css';
+import '@cherryplay/components/themes/basic/index.css';
 ```
 
 ### 13.2 Использование в CherryPlayList
@@ -1280,6 +1264,7 @@ const displayData: PartyDisplayData = {
 import '@cherryplay/components/themes/cyberpunk/index.css';
 import '@cherryplay/components/themes/sakura/index.css';
 import '@cherryplay/components/themes/art-deco/index.css';
+import '@cherryplay/components/themes/basic/index.css';
 ```
 
 ### 13.3 Преимущества новой архитектуры

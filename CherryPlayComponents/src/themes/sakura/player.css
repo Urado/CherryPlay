@@ -1,36 +1,57 @@
-/* Sakura Theme - Player Styles */
-
 [data-theme="sakura"] .party-current-track-display {
   background: rgba(255, 255, 255, calc(var(--background-opacity, 0.9) * 1));
-  border-bottom: 2px solid rgba(255, 182, 193, 0.5);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+  border-bottom: 3px solid rgba(255, 182, 193, 0.5);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 24px rgba(255, 182, 193, 0.35);
+  padding: 32px 36px;
+  border-radius: 20px 20px 0 0;
 }
 
 [data-theme="sakura"] .party-current-track-empty {
   color: #d4a5a5;
   font-style: italic;
+  padding: 48px 36px;
+  text-align: center;
+  font-size: 16px;
 }
 
 [data-theme="sakura"] .party-current-track-name {
   color: #8b4a6b;
-  font-weight: 700;
+  font-weight: 800;
   font-style: italic;
-  text-shadow: 0 2px 4px rgba(255, 182, 193, 0.3);
+  text-shadow: 0 2px 6px rgba(255, 182, 193, 0.4);
+  font-size: 24px;
+  margin-bottom: 16px;
+  line-height: 1.4;
 }
 
 [data-theme="sakura"] .party-current-track-meta {
   color: #a85c7a;
+  font-size: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-style: italic;
 }
 
 [data-theme="sakura"] .party-current-track-status {
   color: var(--pink-tint, #ffb3d9);
   font-style: italic;
+  font-weight: 600;
+  padding: 6px 16px;
+  background: rgba(255, 182, 193, 0.2);
+  border: 1px solid rgba(255, 182, 193, 0.4);
+  border-radius: 16px;
+  font-size: 13px;
 }
 
 [data-theme="sakura"] .party-current-track-time {
   color: #d4a5a5;
   font-family: 'Georgia', serif;
+  font-weight: 500;
+  font-size: 15px;
+  font-style: italic;
 }
 
 [data-theme="sakura"] .party-current-track-progress {

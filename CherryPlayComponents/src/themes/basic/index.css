@@ -1,0 +1,65 @@
+@import './playlist.css';
+@import './playlist-item.css';
+@import './player.css';
+
+[data-theme="basic"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --bg-tertiary: #2a2a2a;
+  --bg-hover: #323232;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --accent-primary: #4a9eff;
+  --accent-primary-light: rgba(74, 158, 255, 0.15);
+  --border-color: rgba(74, 158, 255, 0.3);
+  --selected-bg: #3a4a5a;
+  --selected-border: #6495ed;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="basic"] .party-display {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+[data-theme="basic"] .party-display-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 2.75rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+[data-theme="basic"] .party-display-session-indicator {
+  background: var(--accent-primary-light);
+  border: 1px solid var(--border-color);
+  color: var(--accent-primary);
+  padding: 0.625rem 1.25rem;
+  border-radius: 16px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(74, 158, 255, 0.15);
+}
+
+[data-theme="basic"] .party-display-session-dot {
+  background: var(--accent-primary);
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.6);
+}
+
+[data-theme="basic"] .party-playlist-view {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="basic"] .party-current-track-display {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

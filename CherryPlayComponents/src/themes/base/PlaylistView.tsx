@@ -1,24 +1,23 @@
 import React from 'react';
 
 import { PartyPlaylistData, PlayerItem } from '../../types';
-import { ThemeId } from '../../themes';
 import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import { formatDuration } from '../../core/utils/time';
 
 import { PlaylistItem } from './PlaylistItem';
 import '../../components/Playlist/PlaylistView.css';
 
-export interface ArtDecoPlaylistViewProps {
+export interface BasePlaylistViewProps {
   playlist: PartyPlaylistData;
   currentTrackId?: string | null;
   playedTrackIds?: string[];
   disabledTrackIds?: string[];
   disabledGroupIds?: string[];
   className?: string;
-  themeId?: ThemeId;
+  themeId?: string;
 }
 
-export const PlaylistView: React.FC<ArtDecoPlaylistViewProps> = ({
+export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
   playlist,
   currentTrackId = null,
   playedTrackIds = [],
@@ -89,5 +88,3 @@ export const PlaylistView: React.FC<ArtDecoPlaylistViewProps> = ({
     </div>
   );
 };
-
-

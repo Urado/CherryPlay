@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { partyApiService } from '../services/partyApiService';
 import type { PartyPlaylistData, PlaybackState } from '@cherryplay/components';
+import { isValidTheme } from '@cherryplay/components';
 
 export interface UsePartyStateOptions {
   shortCode?: string;
@@ -32,6 +33,9 @@ export interface UsePartyStateReturn {
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
   setError: (error: string | null) => void;
+  setThemeId: (themeId: string) => void;
+  setCustomizationSettings: (settings: Record<string, any>) => void;
+  setPartyName: (name: string | null) => void;
 }
 
 /**
@@ -112,7 +116,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
           if (party.id) {
             setPartyId(party.id);
           }
-          if (party.themeId && ['cyberpunk', 'sakura', 'art-deco'].includes(party.themeId)) {
+          if (party.themeId && isValidTheme(party.themeId)) {
             setThemeId(party.themeId);
           }
           if (party.customizationSettings) {
@@ -154,5 +158,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     setPlaybackState,
     setIsSessionActive,
     setError,
+    setThemeId,
+    setCustomizationSettings,
+    setPartyName,
   };
 }

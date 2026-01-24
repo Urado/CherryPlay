@@ -5,12 +5,15 @@ namespace CherryPlayServer.Core.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ThemeId
 {
-    [JsonPropertyName("cyberpunk")]
+    [JsonStringEnumMemberName("cyberpunk")]
     Cyberpunk,
     
-    [JsonPropertyName("sakura")]
+    [JsonStringEnumMemberName("sakura")]
     Sakura,
     
-    [JsonPropertyName("art-deco")]
-    ArtDeco
+    [JsonStringEnumMemberName("art-deco")]
+    ArtDeco,
+    
+    [JsonStringEnumMemberName("basic")]
+    Basic
 }

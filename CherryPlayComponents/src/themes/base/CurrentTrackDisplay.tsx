@@ -1,20 +1,19 @@
 import React from 'react';
 
 import { PlaybackState, PlayerItem, PartyPlaylistData } from '../../types';
-import { ThemeId } from '../../themes';
 import { findTrack } from '../../core/utils/playlist';
 import { formatTime } from '../../core/utils/time';
 
 import '../../components/Player/CurrentTrackDisplay.css';
 
-export interface SakuraCurrentTrackDisplayProps {
+export interface BaseCurrentTrackDisplayProps {
   playbackState: PlaybackState | null;
   playlist: PartyPlaylistData | { items: PlayerItem[] };
   className?: string;
-  themeId?: ThemeId;
+  themeId?: string;
 }
 
-export const CurrentTrackDisplay: React.FC<SakuraCurrentTrackDisplayProps> = ({
+export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
   playbackState,
   playlist,
   className = '',
@@ -83,5 +82,3 @@ function getStatusText(status: PlaybackState['status']): string {
       return '⏹ Ожидание';
   }
 }
-
-

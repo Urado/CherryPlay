@@ -8,10 +8,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-size: 12px;
   user-select: none;
+  backdrop-filter: blur(10px);
 }
 
 .connection-status-dot {
@@ -23,20 +24,20 @@
 }
 
 .connection-status-dot--connected {
-  background-color: #00ff00;
-  box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+  background-color: var(--accent-primary, #00ff00);
+  box-shadow: 0 0 6px var(--accent-primary, rgba(0, 255, 0, 0.6));
   animation: pulse 2s ease-in-out infinite;
 }
 
 .connection-status-dot--connecting {
-  background-color: #ffaa00;
-  box-shadow: 0 0 4px rgba(255, 170, 0, 0.6);
+  background-color: var(--text-secondary, #ffaa00);
+  box-shadow: 0 0 6px var(--text-secondary, rgba(255, 170, 0, 0.6));
   animation: pulse 1s ease-in-out infinite;
 }
 
 .connection-status-dot--disconnected {
-  background-color: #ff4444;
-  box-shadow: 0 0 4px rgba(255, 68, 68, 0.6);
+  background-color: var(--text-tertiary, #ff4444);
+  box-shadow: 0 0 4px var(--text-tertiary, rgba(255, 68, 68, 0.6));
 }
 
 .connection-status-text {
@@ -45,40 +46,47 @@
 }
 
 .connection-status--connected {
-  color: #00ff00;
+  background: var(--accent-primary-light, rgba(0, 255, 0, 0.1));
+  border: 1px solid var(--border-color, rgba(0, 255, 0, 0.3));
+  color: var(--accent-primary, #00ff00);
 }
 
 .connection-status--connecting {
-  color: #ffaa00;
+  background: var(--bg-tertiary, rgba(255, 170, 0, 0.1));
+  border: 1px solid var(--border-color, rgba(255, 170, 0, 0.3));
+  color: var(--text-secondary, #ffaa00);
 }
 
 .connection-status--disconnected {
-  color: #ff4444;
+  background: var(--bg-tertiary, rgba(255, 68, 68, 0.1));
+  border: 1px solid var(--border-color, rgba(255, 68, 68, 0.3));
+  color: var(--text-tertiary, #ff4444);
 }
 
 .connection-status-streaming {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 8px;
   font-size: 12px;
-  background-color: rgba(255, 0, 0, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.3);
+  background: var(--accent-primary-light, rgba(255, 0, 0, 0.1));
+  border: 1px solid var(--border-color, rgba(255, 0, 0, 0.3));
+  backdrop-filter: blur(10px);
 }
 
 .connection-status-streaming-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #ff0000;
-  box-shadow: 0 0 4px rgba(255, 0, 0, 0.8);
+  background-color: var(--accent-primary, #ff0000);
+  box-shadow: 0 0 6px var(--accent-primary, rgba(255, 0, 0, 0.8));
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 .connection-status-streaming-text {
   font-weight: 500;
-  color: #ff0000;
+  color: var(--accent-primary, #ff0000);
 }
 
 @keyframes pulse {

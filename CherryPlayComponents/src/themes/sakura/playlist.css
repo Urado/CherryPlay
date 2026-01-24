@@ -1,5 +1,3 @@
-/* Sakura Theme - Playlist Styles */
-
 [data-theme="sakura"] .party-playlist-view {
   background: linear-gradient(135deg, #fff5f5 0%, #ffeef0 100%);
   color: #8b4a6b;
@@ -7,31 +5,42 @@
 }
 
 [data-theme="sakura"] .party-playlist-header {
-  background: rgba(255, 255, 255, 0.8);
-  border-bottom: 2px solid rgba(255, 182, 193, 0.5);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(255, 182, 193, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  border-bottom: 3px solid rgba(255, 182, 193, 0.5);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(255, 182, 193, 0.25);
+  padding: 28px 36px;
 }
 
 [data-theme="sakura"] .party-playlist-stats {
   color: #d4a5a5;
   font-style: italic;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 [data-theme="sakura"] .party-playlist-stats-separator {
   color: #ffb3d9;
+  margin: 0 12px;
+  font-weight: 400;
 }
 
 [data-theme="sakura"] .party-playlist-items {
   background: transparent;
+  padding: 20px 0;
 }
 
 [data-theme="sakura"] .party-playlist-empty {
   color: #d4a5a5;
+  padding: 64px 36px;
+  text-align: center;
+  font-size: 16px;
+  font-style: italic;
 }
 
 [data-theme="sakura"] .party-playlist-group-items {
-  border-left: 2px solid rgba(255, 182, 193, 0.3);
-  margin-left: 15px;
-  padding-left: 15px;
+  border-left: 3px solid rgba(255, 182, 193, 0.4);
+  margin-left: 24px;
+  padding-left: 24px;
+  margin-top: 16px;
 }

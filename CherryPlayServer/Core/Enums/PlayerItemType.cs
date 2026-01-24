@@ -5,9 +5,9 @@ namespace CherryPlayServer.Core.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PlayerItemType
 {
-    [JsonPropertyName("track")]
+    [JsonStringEnumMemberName("track")]
     Track,
     
-    [JsonPropertyName("group")]
+    [JsonStringEnumMemberName("group")]
     Group
 }

@@ -6,13 +6,13 @@ import { PlaylistView } from './PlaylistView';
 import { CurrentTrackDisplay } from './CurrentTrackDisplay';
 import '../../components/PartyDisplay/PartyDisplay.css';
 
-export interface ArtDecoPartyDisplayProps {
+export interface BasePartyDisplayProps {
   data: PartyDisplayData;
   className?: string;
   showPlayer?: boolean;
 }
 
-export const PartyDisplay: React.FC<ArtDecoPartyDisplayProps> = ({
+export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
   data,
   className = '',
   showPlayer = true,
@@ -40,7 +40,7 @@ export const PartyDisplay: React.FC<ArtDecoPartyDisplayProps> = ({
             <CurrentTrackDisplay
               playbackState={data.playbackState || null}
               playlist={data.playlist}
-              themeId={data.themeId as any}
+              themeId={data.themeId}
             />
           </div>
         )}
@@ -51,12 +51,10 @@ export const PartyDisplay: React.FC<ArtDecoPartyDisplayProps> = ({
             playedTrackIds={data.playbackState?.playedTrackIds || []}
             disabledTrackIds={data.playbackState?.disabledTrackIds || []}
             disabledGroupIds={data.playbackState?.disabledGroupIds || []}
-            themeId={data.themeId as any}
+            themeId={data.themeId}
           />
         </div>
       </div>
     </div>
   );
 };
-
-

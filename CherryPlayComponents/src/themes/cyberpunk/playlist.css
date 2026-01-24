@@ -1,5 +1,3 @@
-/* Cyberpunk Theme - Playlist Styles */
-
 [data-theme="cyberpunk"] .party-playlist-view {
   background: #0a0a0a;
   color: #00ff00;
@@ -8,31 +6,55 @@
 
 [data-theme="cyberpunk"] .party-playlist-header {
   background: #1a1a1a;
-  border-bottom: 2px solid var(--accent-color, #00ff00);
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  border-bottom: 3px solid var(--accent-color, #00ff00);
+  box-shadow: 0 0 16px rgba(0, 255, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.5);
+  padding: 24px 32px;
+  position: relative;
+}
+
+[data-theme="cyberpunk"] .party-playlist-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color, #00ff00), transparent);
+  animation: scan 2s linear infinite;
 }
 
 [data-theme="cyberpunk"] .party-playlist-stats {
   color: #00ff00;
-  text-shadow: 0 0 5px var(--accent-color, #00ff00);
+  text-shadow: 0 0 8px var(--accent-color, #00ff00);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 [data-theme="cyberpunk"] .party-playlist-stats-separator {
   color: #00ff88;
+  margin: 0 12px;
+  font-weight: 400;
 }
 
 [data-theme="cyberpunk"] .party-playlist-items {
   background: #0a0a0a;
+  padding: 16px 0;
 }
 
 [data-theme="cyberpunk"] .party-playlist-empty {
   color: #666666;
   text-shadow: none;
+  padding: 56px 32px;
+  text-align: center;
+  font-size: 15px;
+  font-family: 'Courier New', monospace;
 }
 
 [data-theme="cyberpunk"] .party-playlist-group-items {
-  border-left: 1px solid rgba(0, 255, 0, 0.2);
-  margin-left: 10px;
-  padding-left: 10px;
+  border-left: 2px solid rgba(0, 255, 0, 0.3);
+  margin-left: 24px;
+  padding-left: 24px;
+  margin-top: 12px;
 }
-

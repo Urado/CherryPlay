@@ -5,7 +5,7 @@ import { formatDuration } from '../../core/utils/time';
 
 import '../../components/Playlist/PlaylistItem.css';
 
-export interface ArtDecoPlaylistItemProps {
+export interface BasePlaylistItemProps {
   item: PlayerItem;
   index: number;
   level: number;
@@ -15,7 +15,7 @@ export interface ArtDecoPlaylistItemProps {
   children?: React.ReactNode;
 }
 
-export const PlaylistItem: React.FC<ArtDecoPlaylistItemProps> = ({
+export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
   item,
   index: _index,
   level,
@@ -37,11 +37,6 @@ export const PlaylistItem: React.FC<ArtDecoPlaylistItemProps> = ({
     >
       <div className="party-playlist-item-content">
         <div className="party-playlist-item-main">
-          {isGroup && (
-            <span className="party-playlist-item-group-icon" aria-label="Группа">
-              📁
-            </span>
-          )}
           <span className="party-playlist-item-name">{displayName}</span>
           {displayDuration && <span className="party-playlist-item-duration">{displayDuration}</span>}
         </div>
@@ -50,5 +45,3 @@ export const PlaylistItem: React.FC<ArtDecoPlaylistItemProps> = ({
     </div>
   );
 };
-
-

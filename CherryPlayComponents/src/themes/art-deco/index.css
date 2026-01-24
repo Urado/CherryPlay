@@ -1,15 +1,12 @@
-/* Art Deco Theme - Complete Stylesheet */
-
 @import './playlist.css';
 @import './playlist-item.css';
 @import './player.css';
 
-/* CSS Variables for Art Deco Theme */
 [data-theme="art-deco"] {
   --bg-primary: #1a1a1a;
   --bg-secondary: #2d2d2d;
-  --bg-tertiary: rgba(26, 26, 26, 0.6);
-  --bg-hover: rgba(45, 45, 45, 0.8);
+  --bg-tertiary: rgba(0, 0, 0, 0.6);
+  --bg-hover: rgba(60, 50, 30, 0.4);
   --text-primary: #d4af37;
   --text-secondary: #b8941f;
   --text-tertiary: #8b6914;
@@ -17,24 +14,26 @@
   --accent-primary-light: rgba(212, 175, 55, 0.15);
   --border-color: rgba(212, 175, 55, 0.3);
   --pattern-style: var(--pattern-style, 'geometric');
-}
-
-[data-theme="art-deco"] .party-display {
   background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
   color: var(--text-primary);
   position: relative;
 }
 
-[data-theme="art-deco"] .party-display::before {
+[data-theme="art-deco"]::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212, 175, 55, 0.03) 10px, rgba(212, 175, 55, 0.03) 20px);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212, 175, 55, 0.03) 10px, rgba(212, 175, 55, 0.03) 20px);
   pointer-events: none;
+}
+
+[data-theme="art-deco"] .party-display {
+  background: transparent;
+  color: var(--text-primary);
+  position: relative;
 }
 
 [data-theme="art-deco"] .party-display-title {
@@ -44,26 +43,41 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
 }
 
 [data-theme="art-deco"] .party-display-session-indicator {
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(212, 175, 55, 0.2);
+  border: 2px solid rgba(212, 175, 55, 0.4);
   color: var(--accent-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 20px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  letter-spacing: 0.1em;
 }
 
 [data-theme="art-deco"] .party-display-session-dot {
   background: var(--accent-primary);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.8);
+  width: 10px;
+  height: 10px;
 }
 
 [data-theme="art-deco"] .party-playlist-view {
   background: var(--bg-primary);
   color: var(--text-primary);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(212, 175, 55, 0.2);
 }
 
 [data-theme="art-deco"] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
+  border-radius: 16px 16px 0 0;
 }
-

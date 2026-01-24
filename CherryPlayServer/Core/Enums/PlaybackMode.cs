@@ -5,9 +5,9 @@ namespace CherryPlayServer.Core.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PlaybackMode
 {
-    [JsonPropertyName("preparation")]
+    [JsonStringEnumMemberName("preparation")]
     Preparation,
     
-    [JsonPropertyName("session")]
+    [JsonStringEnumMemberName("session")]
     Session
 }

@@ -5,15 +5,15 @@ namespace CherryPlayServer.Core.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PlaybackStatus
 {
-    [JsonPropertyName("idle")]
+    [JsonStringEnumMemberName("idle")]
     Idle,
     
-    [JsonPropertyName("playing")]
+    [JsonStringEnumMemberName("playing")]
     Playing,
     
-    [JsonPropertyName("paused")]
+    [JsonStringEnumMemberName("paused")]
     Paused,
     
-    [JsonPropertyName("ended")]
+    [JsonStringEnumMemberName("ended")]
     Ended
 }

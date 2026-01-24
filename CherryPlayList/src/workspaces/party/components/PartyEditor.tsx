@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { themes, type ThemeId } from '@cherryplay/components';
 
 import './PartyEditor.css';
 
 interface PartyEditorProps {
   partyName: string;
-  themeId: string;
+  themeId: ThemeId;
   customizationSettings: Record<string, any>;
   eventDateTime: string;
   onPartyNameChange: (name: string) => void;
@@ -20,26 +21,21 @@ interface PartyEditorProps {
   onRetry?: () => void;
 }
 
-const AVAILABLE_STYLES = [
-  { 
-    id: 'cyberpunk', 
-    name: 'Cyberpunk', 
-    description: 'Неоновая тема в стиле киберпанк',
-    preview: '💚 Неоновое свечение, темный фон, футуристический стиль'
-  },
-  { 
-    id: 'sakura', 
-    name: 'Sakura', 
-    description: 'Нежная пастельная тема',
-    preview: '🌸 Розовые оттенки, мягкие переходы, элегантный дизайн'
-  },
-  { 
-    id: 'art-deco', 
-    name: 'Art Deco', 
-    description: 'Элегантная тема в стиле ар-деко',
-    preview: '✨ Золотые акценты, геометрические паттерны, роскошный вид'
-  },
-];
+// Маппинг превью для тем (опциональные описания для UI)
+const THEME_PREVIEWS: Record<ThemeId, string> = {
+  cyberpunk: '💚 Неоновое свечение, темный фон, футуристический стиль',
+  sakura: '🌸 Розовые оттенки, мягкие переходы, элегантный дизайн',
+  'art-deco': '✨ Золотые акценты, геометрические паттерны, роскошный вид',
+  basic: '📋 Простой дизайн, темный фон, синий акцент',
+};
+
+// Используем темы из библиотеки компонентов
+const AVAILABLE_STYLES = themes.map((theme) => ({
+  id: theme.id,
+  name: theme.name,
+  description: theme.description,
+  preview: THEME_PREVIEWS[theme.id] || theme.description,
+}));
 
 export const PartyEditor: React.FC<PartyEditorProps> = ({
   partyName,
@@ -86,7 +82,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     });
   };
 
-  const handleStyleSelect = (themeId: string) => {
+  const handleStyleSelect = (themeId: ThemeId) => {
     onThemeIdChange(themeId);
     setIsDropdownOpen(false);
   };

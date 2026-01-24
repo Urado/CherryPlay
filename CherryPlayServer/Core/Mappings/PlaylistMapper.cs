@@ -52,7 +52,6 @@ public static class PlaylistMapper
             Name: entity.Name,
             DisplayOrder: entity.DisplayOrder,
             Level: entity.Level,
-            Path: entity.Path,
             Duration: entity.Duration,
             Items: entity.Items?.Select(ToDto).ToList()
         );
@@ -72,7 +71,6 @@ public static class PlaylistMapper
             Name = dto.Name,
             DisplayOrder = dto.DisplayOrder,
             Level = dto.Level,
-            Path = dto.Path,
             Duration = dto.Duration,
             Items = dto.Items?.Select(ToEntity).ToList()
         };

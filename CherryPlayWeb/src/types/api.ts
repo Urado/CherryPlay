@@ -12,7 +12,6 @@ export interface PlayerItemDto {
   id: string;
   type: 'track' | 'group';
   name: string;
-  path?: string;
   duration?: number;
   items?: PlayerItemDto[];
   displayOrder: number;

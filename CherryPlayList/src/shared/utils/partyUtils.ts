@@ -38,7 +38,6 @@ export function convertToComponentPlayerItem(
       id: item.id,
       type: 'track',
       name: item.name,
-      path: item.path,
       duration: item.duration,
       displayOrder,
       level,

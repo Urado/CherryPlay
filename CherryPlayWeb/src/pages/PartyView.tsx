@@ -406,7 +406,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }
 
   return (
-    <div className="party-view">
+    <div className="party-view" data-theme={themeId}>
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">
