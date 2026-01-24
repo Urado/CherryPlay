@@ -9,7 +9,6 @@ REM Проверка наличия .NET SDK
 where dotnet >nul 2>&1
 if %errorlevel% neq 0 (
     echo Ошибка: .NET SDK не найден. Установите .NET SDK.
-    pause
     exit /b 1
 )
 
@@ -17,7 +16,6 @@ REM Проверка наличия Node.js
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo Ошибка: Node.js не найден. Установите Node.js.
-    pause
     exit /b 1
 )
 
@@ -52,5 +50,4 @@ echo Сервер: http://localhost:5000
 echo Веб-приложение: http://localhost:3000
 echo.
 echo Закройте окна сервисов для их остановки.
-pause
 

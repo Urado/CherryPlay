@@ -4,11 +4,11 @@ import './PartyEditor.css';
 
 interface PartyEditorProps {
   partyName: string;
-  styleId: string;
+  themeId: string;
   customizationSettings: Record<string, any>;
   eventDateTime: string;
   onPartyNameChange: (name: string) => void;
-  onStyleIdChange: (styleId: string) => void;
+  onThemeIdChange: (themeId: string) => void;
   onCustomizationSettingsChange: (settings: Record<string, any>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
   onCreateParty: () => void;
@@ -43,11 +43,11 @@ const AVAILABLE_STYLES = [
 
 export const PartyEditor: React.FC<PartyEditorProps> = ({
   partyName,
-  styleId,
+  themeId,
   customizationSettings,
   eventDateTime,
   onPartyNameChange,
-  onStyleIdChange,
+  onThemeIdChange,
   onCustomizationSettingsChange,
   onEventDateTimeChange,
   onCreateParty,
@@ -77,7 +77,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     };
   }, [isDropdownOpen]);
 
-  const selectedStyle = AVAILABLE_STYLES.find((s) => s.id === styleId) || AVAILABLE_STYLES[0];
+  const selectedStyle = AVAILABLE_STYLES.find((s) => s.id === themeId) || AVAILABLE_STYLES[0];
 
   const handleCustomizationChange = (key: string, value: any) => {
     onCustomizationSettingsChange({
@@ -86,8 +86,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     });
   };
 
-  const handleStyleSelect = (styleId: string) => {
-    onStyleIdChange(styleId);
+  const handleStyleSelect = (themeId: string) => {
+    onThemeIdChange(themeId);
     setIsDropdownOpen(false);
   };
 
@@ -141,7 +141,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                 <button
                   key={style.id}
                   type="button"
-                  className={`party-editor-dropdown-item ${styleId === style.id ? 'party-editor-dropdown-item--selected' : ''}`}
+                  className={`party-editor-dropdown-item ${themeId === style.id ? 'party-editor-dropdown-item--selected' : ''}`}
                   onClick={() => handleStyleSelect(style.id)}
                 >
                   <div className="party-editor-dropdown-item-content">
@@ -149,7 +149,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                     <div className="party-editor-dropdown-item-description">{style.description}</div>
                     <div className="party-editor-dropdown-item-preview">{style.preview}</div>
                   </div>
-                  {styleId === style.id && (
+                  {themeId === style.id && (
                     <span className="party-editor-dropdown-item-check">✓</span>
                   )}
                 </button>
@@ -159,7 +159,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       </div>
 
-      {styleId === 'cyberpunk' && (
+      {themeId === 'cyberpunk' && (
         <div className="party-editor-section">
           <label className="party-editor-label">Настройки Cyberpunk</label>
           <div className="party-editor-customization">
@@ -191,7 +191,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {styleId === 'sakura' && (
+      {themeId === 'sakura' && (
         <div className="party-editor-section">
           <label className="party-editor-label">Настройки Sakura</label>
           <div className="party-editor-customization">
@@ -223,7 +223,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {styleId === 'art-deco' && (
+      {themeId === 'art-deco' && (
         <div className="party-editor-section">
           <label className="party-editor-label">Настройки Art Deco</label>
           <div className="party-editor-customization">

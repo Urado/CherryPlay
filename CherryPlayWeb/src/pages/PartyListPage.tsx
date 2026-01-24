@@ -74,13 +74,13 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     }
   };
 
-  const getThemeName = (styleId: string): string => {
+  const getThemeName = (themeId: string): string => {
     const themes: Record<string, string> = {
       cyberpunk: 'Cyberpunk',
       sakura: 'Sakura',
       'art-deco': 'Art Deco',
     };
-    return themes[styleId] || styleId;
+    return themes[themeId] || themeId;
   };
 
   const handleRetry = () => {
@@ -269,7 +269,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   <div className="party-list-card-info">
                     <div className="party-list-card-info-item">
                       <span className="party-list-card-info-label">Тема:</span>
-                      <span className="party-list-card-info-value">{getThemeName(party.styleId)}</span>
+                      <span className="party-list-card-info-value">{getThemeName(party.themeId)}</span>
                     </div>
                     <div className="party-list-card-info-item">
                       <span className="party-list-card-info-label">Треков:</span>

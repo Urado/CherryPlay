@@ -123,7 +123,7 @@
 - `OrganizerId` (Guid, FK -> Users.Id, not null)
 - `Name` (string, not null)
 - `ShortCode` (string, unique, not null, index)
-- `StyleId` (string, not null) - идентификатор стиля (cyberpunk, sakura, art-deco, etc.)
+- `themeId` (string, not null) - идентификатор стиля (cyberpunk, sakura, art-deco, etc.)
 - `CustomizationSettings` (JSON, nullable) - настройки кастомизации для выбранного стиля
 - `IsActive` (bool, not null, default: true)
 - `CreatedAt` (DateTime, not null)
@@ -318,7 +318,7 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
 ```typescript
 {
   name: string;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   playlistData: PlayerItemsData; // Текущее состояние playerItemsStore
   eventDateTime?: string; // ISO 8601 строка с датой и временем мероприятия
@@ -329,7 +329,7 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
 ```typescript
 {
   name?: string;
-  styleId?: string;
+  themeId?: string;
   customizationSettings?: Record<string, any>;
   playlistData?: PlayerItemsData;
 }
@@ -342,7 +342,7 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
   organizerId: string;
   name: string;
   shortCode: string;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   isActive: boolean;
   createdAt: string;
@@ -357,7 +357,7 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
 {
   id: string;
   name: string;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   hasActiveSession: boolean;
   sessionStartedAt?: string;
@@ -379,7 +379,7 @@ OnConnectionStatusChanged(partyId: Guid, isOnline: bool)
   id: string;
   name: string;
   shortCode: string;
-  styleId: string;
+  themeId: string;
   hasActiveSession: boolean;
   createdAt: string;
   totalTracks: number;
@@ -1265,7 +1265,7 @@ import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 const displayData: PartyDisplayData = {
   partyId,
   partyName,
-  themeId: styleId, // из настроек вечеринки
+  themeId: themeId, // из настроек вечеринки
   customizationSettings,
   playlist,
   playbackState: playbackState || null,

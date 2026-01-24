@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
-using CherryPlayServer.Data;
+using CherryPlayServer.Core.Exceptions;
+using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Hubs;
-using System.Text.Json;
 
 namespace CherryPlayServer.Controllers;
 
@@ -11,78 +11,77 @@ namespace CherryPlayServer.Controllers;
 [Route("api/parties")]
 public class PartiesController : ControllerBase
 {
-    private readonly InMemoryPartyStore _partyStore;
+    private readonly IPartyService _partyService;
     private readonly IHubContext<PartyHub> _hubContext;
     private readonly ILogger<PartiesController> _logger;
 
-    public PartiesController(InMemoryPartyStore partyStore, IHubContext<PartyHub> hubContext, ILogger<PartiesController> logger)
+    public PartiesController(IPartyService partyService, IHubContext<PartyHub> hubContext, ILogger<PartiesController> logger)
     {
-        _partyStore = partyStore;
-        _hubContext = hubContext;
-        _logger = logger;
+        _partyService = partyService ?? throw new ArgumentNullException(nameof(partyService));
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpPost]
-    public ActionResult<PartyDto> CreateParty([FromBody] CreatePartyDto dto)
+    public async Task<ActionResult<PartyDto>> CreateParty([FromBody] CreatePartyDto dto)
     {
-        var party = new Party
+        if (dto == null)
         {
-            Id = Guid.NewGuid(),
-            Name = dto.Name,
-            ShortCode = GenerateShortCode(),
-            StyleId = dto.StyleId,
-            CustomizationSettings = dto.CustomizationSettings,
-            Playlist = dto.PlaylistData,
-            CreatedAt = DateTime.UtcNow,
-            EventDateTime = dto.EventDateTime
-        };
+            return BadRequest("Request body cannot be null");
+        }
 
-        _partyStore.AddParty(party);
-
-        var partyDto = new PartyDto
+        if (!ModelState.IsValid)
         {
-            Id = party.Id.ToString(),
-            Name = party.Name,
-            ShortCode = party.ShortCode,
-            StyleId = party.StyleId,
-            CreatedAt = party.CreatedAt.ToString("O"),
-            HasActiveSession = false,
-            EventDateTime = party.EventDateTime?.ToString("O")
-        };
+            return BadRequest(ModelState);
+        }
 
-        return Ok(partyDto);
+        try
+        {
+            var partyDto = await _partyService.CreatePartyAsync(dto);
+            return Ok(partyDto);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating party");
+            return StatusCode(500, "An error occurred while creating the party");
+        }
     }
 
     /// <summary>
     /// Проверяет существование вечеринки по ID
     /// </summary>
     [HttpGet("{partyId}")]
-    public ActionResult<PartyDto> GetParty(string partyId)
+    public async Task<ActionResult<PartyDto>> GetParty(string partyId)
     {
+        if (string.IsNullOrWhiteSpace(partyId))
+        {
+            return BadRequest("Party ID cannot be empty");
+        }
+
         if (!Guid.TryParse(partyId, out var partyGuid))
         {
             return BadRequest("Invalid party ID format");
         }
 
-        var party = _partyStore.GetPartyById(partyGuid);
-        if (party == null)
+        try
         {
-            return NotFound($"Party with ID {partyId} not found");
+            var partyDto = await _partyService.GetPartyAsync(partyGuid);
+            if (partyDto == null)
+            {
+                return NotFound($"Party with ID {partyId} not found");
+            }
+
+            return Ok(partyDto);
         }
-
-        var state = _partyStore.GetSessionState(party.Id);
-        var partyDto = new PartyDto
+        catch (Exception ex)
         {
-            Id = party.Id.ToString(),
-            Name = party.Name,
-            ShortCode = party.ShortCode,
-            StyleId = party.StyleId,
-            CreatedAt = party.CreatedAt.ToString("O"),
-            HasActiveSession = state != null,
-            EventDateTime = party.EventDateTime?.ToString("O")
-        };
-
-        return Ok(partyDto);
+            _logger.LogError(ex, "Error getting party: {PartyId}", partyId);
+            return StatusCode(500, "An error occurred while retrieving the party");
+        }
     }
 
     /// <summary>
@@ -91,57 +90,46 @@ public class PartiesController : ControllerBase
     [HttpPut("{partyId}/playlist")]
     public async Task<ActionResult> UpdatePartyPlaylist(string partyId, [FromBody] PartyPlaylistDto playlist)
     {
+        if (string.IsNullOrWhiteSpace(partyId))
+        {
+            return BadRequest("Party ID cannot be empty");
+        }
+
         if (!Guid.TryParse(partyId, out var partyGuid))
         {
             return BadRequest("Invalid party ID format");
         }
 
-        var party = _partyStore.GetPartyById(partyGuid);
-        if (party == null)
+        if (playlist == null)
         {
-            return NotFound($"Party with ID {partyId} not found");
+            return BadRequest("Playlist cannot be null");
         }
 
-        // Обновляем плейлист в хранилище
-        party.Playlist = playlist;
+        try
+        {
+            await _partyService.UpdatePartyPlaylistAsync(partyGuid, playlist);
 
-        // Уведомляем всех зрителей через SignalR о необходимости обновить плейлист
-        var groupName = partyGuid.ToString();
-        _logger.LogInformation("[PartiesController] → Sending OnPlaylistChanged: partyId={PartyId}, group={Group}, itemsCount={ItemsCount}, totalTracks={TotalTracks}", 
-            partyId, groupName, playlist.Items?.Count ?? 0, playlist.TotalTracks);
-        await _hubContext.Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
-        _logger.LogInformation("[PartiesController] ✓ OnPlaylistChanged sent successfully: partyId={PartyId}, group={Group}", 
-            partyId, groupName);
+            var groupName = partyGuid.ToString();
+            _logger.LogInformation("[PartiesController] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}, itemsCount={ItemsCount}, totalTracks={TotalTracks}", 
+                partyId, groupName, playlist.Items?.Count ?? 0, playlist.TotalTracks);
+            await _hubContext.Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
+            _logger.LogInformation("[PartiesController] OnPlaylistChanged sent successfully: partyId={PartyId}, group={Group}", 
+                partyId, groupName);
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (PartyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating playlist for party: {PartyId}", partyId);
+            return StatusCode(500, "An error occurred while updating the playlist");
+        }
     }
-
-    private string GenerateShortCode()
-    {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        var random = new Random();
-        return new string(Enumerable.Repeat(chars, 6)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
-    }
 }
-
-public class CreatePartyDto
-{
-    public string Name { get; set; } = string.Empty;
-    public string StyleId { get; set; } = "cyberpunk";
-    public Dictionary<string, object>? CustomizationSettings { get; set; }
-    public PartyPlaylistDto PlaylistData { get; set; } = new();
-    public DateTime? EventDateTime { get; set; }
-}
-
-public class PartyDto
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string ShortCode { get; set; } = string.Empty;
-    public string StyleId { get; set; } = string.Empty;
-    public string CreatedAt { get; set; } = string.Empty;
-    public bool HasActiveSession { get; set; }
-    public string? EventDateTime { get; set; }
-}
-

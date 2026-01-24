@@ -1,0 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+using CherryPlayServer.Core.Enums;
+
+namespace CherryPlayServer.Models;
+
+public record CreatePartyDto
+{
+    [Required(ErrorMessage = "Party name is required")]
+    [StringLength(200, MinimumLength = 1, ErrorMessage = "Party name must be between 1 and 200 characters")]
+    public string Name { get; init; } = string.Empty;
+
+    public ThemeId ThemeId { get; init; } = ThemeId.Cyberpunk;
+
+    public Dictionary<string, object>? CustomizationSettings { get; init; }
+
+    public PartyPlaylistDto? PlaylistData { get; init; }
+
+    public DateTime? EventDateTime { get; init; }
+}

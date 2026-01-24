@@ -7,7 +7,7 @@ import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
   name: string;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   playlistData: {
     items: PlayerItemForApi[];
@@ -21,7 +21,7 @@ export interface PartyDto {
   id: string;
   name: string;
   shortCode: string;
-  styleId: string;
+  themeId: string;
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;

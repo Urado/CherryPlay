@@ -1,0 +1,15 @@
+using CherryPlayServer.Core.Enums;
+
+namespace CherryPlayServer.Models;
+
+public record PublicPartyListItemDto(
+    string Id,
+    string Name,
+    string ShortCode,
+    ThemeId ThemeId,
+    bool HasActiveSession,
+    string CreatedAt,
+    int TotalTracks,
+    int TotalDuration,
+    string? EventDateTime = null
+);

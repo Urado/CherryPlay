@@ -1,16 +1,17 @@
+using CherryPlayServer.Core.Enums;
+
 namespace CherryPlayServer.Models;
 
-public class PlaybackStateDto
+public record PlaybackStateDto
 {
-    public string? CurrentTrackId { get; set; }
-    public string Status { get; set; } = "idle"; // "idle", "playing", "paused", "ended"
-    public double Position { get; set; }
-    public double Duration { get; set; }
-    public double Volume { get; set; } = 0.8;
-    public string Mode { get; set; } = "preparation"; // "preparation" or "session"
-    public List<string> PlayedTrackIds { get; set; } = new();
-    public List<string> DisabledTrackIds { get; set; } = new();
-    public List<string> DisabledGroupIds { get; set; } = new();
-    public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+    public string? CurrentTrackId { get; init; }
+    public PlaybackStatus Status { get; init; } = PlaybackStatus.Idle;
+    public double Position { get; init; }
+    public double Duration { get; init; }
+    public double Volume { get; init; } = 0.8;
+    public PlaybackMode Mode { get; init; } = PlaybackMode.Preparation;
+    public List<string> PlayedTrackIds { get; init; } = [];
+    public List<string> DisabledTrackIds { get; init; } = [];
+    public List<string> DisabledGroupIds { get; init; } = [];
+    public DateTime LastUpdatedAt { get; init; } = DateTime.UtcNow;
 }
-

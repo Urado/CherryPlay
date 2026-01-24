@@ -54,7 +54,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
   }));
 
   const [partyName, setPartyName] = useState('');
-  const [styleId, setStyleId] = useState('cyberpunk');
+  const [themeId, setThemeId] = useState('cyberpunk');
   const [customizationSettings, setCustomizationSettings] = useState<Record<string, any>>({
     accentColor: '#00ff00',
     glowIntensity: 50,
@@ -72,20 +72,20 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
   }));
 
   // Обновляем настройки по умолчанию при смене стиля
-  const handleStyleChange = (newStyleId: string) => {
-    setStyleId(newStyleId);
+  const handleThemeChange = (newThemeId: string) => {
+    setThemeId(newThemeId);
     // Устанавливаем значения по умолчанию для нового стиля
-    if (newStyleId === 'cyberpunk') {
+    if (newThemeId === 'cyberpunk') {
       setCustomizationSettings({
         accentColor: '#00ff00',
         glowIntensity: 50,
       });
-    } else if (newStyleId === 'sakura') {
+    } else if (newThemeId === 'sakura') {
       setCustomizationSettings({
         pinkTint: '#ffb3d9',
         backgroundOpacity: 80,
       });
-    } else if (newStyleId === 'art-deco') {
+    } else if (newThemeId === 'art-deco') {
       setCustomizationSettings({
         goldColor: '#d4af37',
         patternStyle: 'geometric',
@@ -222,7 +222,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
 
       const createData: CreatePartyDto = {
         name: partyName,
-        styleId,
+        themeId,
         customizationSettings,
         playlistData: playlistForApi,
         eventDateTime: eventDateTime || undefined,
@@ -303,11 +303,11 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
         <div className="party-view-editor">
           <PartyEditor
             partyName={partyName}
-            styleId={styleId}
+            themeId={themeId}
             customizationSettings={customizationSettings}
             eventDateTime={eventDateTime}
             onPartyNameChange={setPartyName}
-            onStyleIdChange={handleStyleChange}
+            onThemeIdChange={handleThemeChange}
             onCustomizationSettingsChange={setCustomizationSettings}
             onEventDateTimeChange={setEventDateTime}
             onCreateParty={handleCreateParty}
@@ -324,7 +324,7 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
           <h3>Превью (как будет выглядеть в браузере)</h3>
           <PartyPreview
             playlist={playlistData}
-            styleId={styleId}
+            themeId={themeId}
             customizationSettings={customizationSettings}
             playbackState={playbackState}
           />

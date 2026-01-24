@@ -7,7 +7,6 @@ echo.
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo Ошибка: Node.js не найден. Установите Node.js.
-    pause
     exit /b 1
 )
 
@@ -28,10 +27,8 @@ if %errorlevel% equ 0 (
     echo.
     echo Ошибка сборки веб-приложения
     cd ..
-    pause
     exit /b 1
 )
 
 cd ..
-pause
 

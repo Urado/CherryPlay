@@ -22,7 +22,7 @@ export interface PlayerItemDto {
 export interface PublicPartyDto {
   id: string;
   name: string;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   hasActiveSession: boolean;
   sessionStartedAt?: string;
@@ -53,7 +53,7 @@ export interface PublicPartyListItemDto {
   id: string;
   name: string;
   shortCode: string;
-  styleId: string;
+  themeId: string;
   hasActiveSession: boolean;
   createdAt: string;
   totalTracks: number;

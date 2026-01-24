@@ -112,8 +112,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
           if (party.id) {
             setPartyId(party.id);
           }
-          if (party.styleId && ['cyberpunk', 'sakura', 'art-deco'].includes(party.styleId)) {
-            setThemeId(party.styleId);
+          if (party.themeId && ['cyberpunk', 'sakura', 'art-deco'].includes(party.themeId)) {
+            setThemeId(party.themeId);
           }
           if (party.customizationSettings) {
             setCustomizationSettings(party.customizationSettings);

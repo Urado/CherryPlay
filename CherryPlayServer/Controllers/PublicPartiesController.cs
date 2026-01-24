@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using CherryPlayServer.Models;
-using CherryPlayServer.Data;
+using CherryPlayServer.Core.Interfaces;
 
 namespace CherryPlayServer.Controllers;
 
@@ -8,91 +8,88 @@ namespace CherryPlayServer.Controllers;
 [Route("api/parties/public")]
 public class PublicPartiesController : ControllerBase
 {
-    private readonly InMemoryPartyStore _partyStore;
+    private readonly IPublicPartyQueryService _publicPartyQueryService;
 
-    public PublicPartiesController(InMemoryPartyStore partyStore)
+    public PublicPartiesController(IPublicPartyQueryService publicPartyQueryService)
     {
-        _partyStore = partyStore;
+        _publicPartyQueryService = publicPartyQueryService ?? throw new ArgumentNullException(nameof(publicPartyQueryService));
     }
 
     [HttpGet("first")]
-    public ActionResult<PartyPlaylistDto> GetFirstPartyPlaylist()
+    public async Task<ActionResult<PartyPlaylistDto>> GetFirstPartyPlaylist()
     {
-        var party = _partyStore.GetFirstParty();
-        if (party == null)
+        var playlist = await _publicPartyQueryService.GetFirstPartyPlaylistAsync();
+        if (playlist == null)
         {
             return NotFound("No parties found");
         }
 
-        return Ok(party.Playlist);
+        return Ok(playlist);
     }
 
     [HttpGet("{shortCode}")]
-    public ActionResult<PublicPartyDto> GetPublicParty(string shortCode)
+    public async Task<ActionResult<PublicPartyDto>> GetPublicParty(string shortCode)
     {
-        var party = _partyStore.GetPartyByShortCode(shortCode);
-        if (party == null)
+        if (string.IsNullOrWhiteSpace(shortCode))
         {
-            return NotFound("Party not found");
+            return BadRequest("Short code cannot be empty");
         }
 
-        var dto = new PublicPartyDto
+        try
         {
-            Id = party.Id.ToString(),
-            Name = party.Name,
-            StyleId = party.StyleId,
-            CustomizationSettings = party.CustomizationSettings,
-            HasActiveSession = _partyStore.GetSessionState(party.Id) != null
-        };
+            var party = await _publicPartyQueryService.GetPublicPartyAsync(shortCode);
+            if (party == null)
+            {
+                return NotFound("Party not found");
+            }
 
-        return Ok(dto);
+            return Ok(party);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while retrieving the party");
+        }
     }
 
     [HttpGet("{shortCode}/playlist")]
-    public ActionResult<PartyPlaylistDto> GetPartyPlaylist(string shortCode)
+    public async Task<ActionResult<PartyPlaylistDto>> GetPartyPlaylist(string shortCode)
     {
-        var party = _partyStore.GetPartyByShortCode(shortCode);
-        if (party == null)
+        if (string.IsNullOrWhiteSpace(shortCode))
         {
-            return NotFound("Party not found");
+            return BadRequest("Short code cannot be empty");
         }
 
-        return Ok(party.Playlist);
+        try
+        {
+            var playlist = await _publicPartyQueryService.GetPartyPlaylistByShortCodeAsync(shortCode);
+            if (playlist == null)
+            {
+                return NotFound("Party not found");
+            }
+
+            return Ok(playlist);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, "An error occurred while retrieving the playlist");
+        }
     }
 
     /// <summary>
     /// Получает список всех публичных вечеринок
     /// </summary>
     [HttpGet("list")]
-    public ActionResult<List<PublicPartyListItemDto>> GetAllParties()
+    public async Task<ActionResult<List<PublicPartyListItemDto>>> GetAllParties()
     {
-        var parties = _partyStore.GetAllParties();
-        var dtos = parties.Select(party => new PublicPartyListItemDto
-        {
-            Id = party.Id.ToString(),
-            Name = party.Name,
-            ShortCode = party.ShortCode,
-            StyleId = party.StyleId,
-            HasActiveSession = _partyStore.GetSessionState(party.Id) != null,
-            CreatedAt = party.CreatedAt.ToString("O"),
-            TotalTracks = party.Playlist?.TotalTracks ?? 0,
-            TotalDuration = party.Playlist?.TotalDuration ?? 0,
-            EventDateTime = party.EventDateTime?.ToString("O"),
-        }).ToList();
-
-        return Ok(dtos);
+        var parties = await _publicPartyQueryService.GetAllPublicPartiesAsync();
+        return Ok(parties);
     }
-}
-
-public class PublicPartyListItemDto
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string ShortCode { get; set; } = string.Empty;
-    public string StyleId { get; set; } = string.Empty;
-    public bool HasActiveSession { get; set; }
-    public string CreatedAt { get; set; } = string.Empty;
-    public int TotalTracks { get; set; }
-    public int TotalDuration { get; set; }
-    public string? EventDateTime { get; set; }
 }

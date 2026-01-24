@@ -6,7 +6,7 @@ import './PartyPreview.css';
 
 interface PartyPreviewProps {
   playlist: PartyPlaylistData;
-  styleId: string;
+  themeId: string;
   customizationSettings?: Record<string, any>;
   playbackState?: PlaybackState | null;
   partyName?: string;
@@ -15,7 +15,7 @@ interface PartyPreviewProps {
 
 export const PartyPreview: React.FC<PartyPreviewProps> = ({
   playlist,
-  styleId,
+  themeId,
   customizationSettings = {},
   playbackState = null,
   partyName = 'Превью вечеринки',
@@ -25,12 +25,12 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   const displayData: PartyDisplayData = useMemo(() => ({
     partyId,
     partyName,
-    themeId: styleId,
+    themeId,
     customizationSettings,
     playlist,
     playbackState: playbackState || null,
     isSessionActive: playbackState !== null,
-  }), [partyId, partyName, styleId, customizationSettings, playlist, playbackState]);
+  }), [partyId, partyName, themeId, customizationSettings, playlist, playbackState]);
 
   return (
     <div className="party-preview">

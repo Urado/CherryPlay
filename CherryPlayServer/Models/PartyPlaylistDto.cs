@@ -1,9 +1,11 @@
 namespace CherryPlayServer.Models;
 
-public class PartyPlaylistDto
+public record PartyPlaylistDto(
+    List<PlayerItem>? Items = null,
+    int TotalDuration = 0,
+    int TotalTracks = 0
+)
 {
-    public List<PlayerItem> Items { get; set; } = new();
-    public int TotalDuration { get; set; }
-    public int TotalTracks { get; set; }
+    public List<PlayerItem> Items { get; init; } = Items ?? [];
 }
 

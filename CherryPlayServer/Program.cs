@@ -1,32 +1,61 @@
+using System.Text.Json.Serialization;
 using CherryPlayServer.Hubs;
-using CherryPlayServer.Data;
+using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Infrastructure.Repositories;
+using CherryPlayServer.Core.Services;
+using CherryPlayServer.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
+
+// Configure CORS from appsettings
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("ConfiguredOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials(); // Необходимо для SignalR
+        if (corsOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
     });
 });
 
-// Add InMemory store as singleton
-builder.Services.AddSingleton<InMemoryPartyStore>();
+// Register repositories
+builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
+builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
+
+// Register services
+builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
+builder.Services.AddSingleton<IPartyIdValidator, PartyIdValidator>();
+builder.Services.AddSingleton<IPlaylistTrackFinder, PlaylistTrackFinder>();
+builder.Services.AddScoped<IPartyService, PartyService>();
+builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
+builder.Services.AddScoped<IStreamingService, StreamingService>();
+
+// Register data seeder
+builder.Services.AddSingleton<IDataSeeder, DataSeeder>();
+builder.Services.AddHostedService<DataSeederHostedService>();
 
 var app = builder.Build();
-
-// Initialize sample data
-var partyStore = app.Services.GetRequiredService<InMemoryPartyStore>();
-partyStore.InitializeWithSampleData();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
@@ -35,13 +64,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+app.UseCors("ConfiguredOrigins");
 app.UseRouting();
 
-// Отключаем кеширование для всех API запросов
+// Disable caching for all API requests
 app.Use(async (context, next) =>
 {
-    // Устанавливаем заголовки для отключения кеширования
+    // Set headers to disable caching
     context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
     context.Response.Headers.Append("Pragma", "no-cache");
     context.Response.Headers.Append("Expires", "0");

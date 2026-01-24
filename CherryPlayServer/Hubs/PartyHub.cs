@@ -1,202 +1,261 @@
 using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
-using CherryPlayServer.Data;
-using System;
+using CherryPlayServer.Core.Exceptions;
+using CherryPlayServer.Core.Interfaces;
 
 namespace CherryPlayServer.Hubs;
 
 public class PartyHub : Hub
 {
-    private readonly InMemoryPartyStore _partyStore;
+    private readonly IStreamingService _streamingService;
+    private readonly IPartyIdValidator _partyIdValidator;
     private readonly ILogger<PartyHub> _logger;
 
-    public PartyHub(InMemoryPartyStore partyStore, ILogger<PartyHub> logger)
+    public PartyHub(
+        IStreamingService streamingService, 
+        IPartyIdValidator partyIdValidator,
+        ILogger<PartyHub> logger)
     {
-        _partyStore = partyStore;
-        _logger = logger;
+        _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
+        _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    #region Helper Methods
+
+    private async Task SendErrorAsync(string message)
+    {
+        await Clients.Caller.SendAsync("Error", message);
+    }
+
+    #endregion
 
     public async Task JoinPartyAsViewer(string shortCode)
     {
-        _logger.LogInformation("[SignalR Server] ← Received JoinPartyAsViewer: shortCode={ShortCode}, connectionId={ConnectionId}", 
-            shortCode, Context.ConnectionId);
-        
-        var party = _partyStore.GetPartyByShortCode(shortCode);
-        if (party == null)
+        if (string.IsNullOrWhiteSpace(shortCode))
         {
-            _logger.LogWarning("[SignalR Server] → Sending Error: Party not found for shortCode={ShortCode}", shortCode);
-            await Clients.Caller.SendAsync("Error", "Party not found");
+            await SendErrorAsync("Short code cannot be empty");
             return;
         }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, party.Id.ToString());
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewer: shortCode={ShortCode}, connectionId={ConnectionId}", 
+            shortCode, Context.ConnectionId);
         
-        var state = _partyStore.GetSessionState(party.Id);
-        if (state != null)
+        try
         {
-            _logger.LogInformation("[SignalR Server] → Sending OnFullStateUpdated: partyId={PartyId}, connectionId={ConnectionId}", 
-                party.Id, Context.ConnectionId);
-            await Clients.Caller.SendAsync("OnFullStateUpdated", party.Id.ToString(), state);
+            var partyState = await _streamingService.GetPartyStateAsync(shortCode);
+            if (partyState == null)
+            {
+                _logger.LogWarning("[SignalR Server] -> Sending Error: Party not found for shortCode={ShortCode}", shortCode);
+                await SendErrorAsync("Party not found");
+                return;
+            }
+
+            if (!_partyIdValidator.TryParsePartyId(partyState.PartyId, out _))
+            {
+                await SendErrorAsync("Invalid party ID format");
+                return;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, partyState.PartyId);
+            
+            if (partyState.PlaybackState != null)
+            {
+                _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, connectionId={ConnectionId}", 
+                    partyState.PartyId, Context.ConnectionId);
+                await Clients.Caller.SendAsync("OnFullStateUpdated", partyState.PartyId, partyState.PlaybackState);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in JoinPartyAsViewer: shortCode={ShortCode}", shortCode);
+            await SendErrorAsync("An error occurred while joining the party");
         }
     }
 
-    public Task<PartyStateDto?> JoinPartyAsViewerWithState(string shortCode)
+    public async Task<PartyStateDto?> JoinPartyAsViewerWithState(string shortCode)
     {
-        _logger.LogInformation("[SignalR Server] ← Received JoinPartyAsViewerWithState: shortCode={ShortCode}, connectionId={ConnectionId}", 
-            shortCode, Context.ConnectionId);
-        
-        var party = _partyStore.GetPartyByShortCode(shortCode);
-        if (party == null)
+        if (string.IsNullOrWhiteSpace(shortCode))
         {
-            _logger.LogWarning("[SignalR Server] Party not found for shortCode={ShortCode}", shortCode);
-            return Task.FromResult<PartyStateDto?>(null);
+            await SendErrorAsync("Short code cannot be empty");
+            return null;
         }
 
-        Groups.AddToGroupAsync(Context.ConnectionId, party.Id.ToString());
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsViewerWithState: shortCode={ShortCode}, connectionId={ConnectionId}", 
+            shortCode, Context.ConnectionId);
         
-        var state = _partyStore.GetSessionState(party.Id);
-        _logger.LogInformation("[SignalR Server] → Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
-            party.Id, state != null);
-        return Task.FromResult<PartyStateDto?>(new PartyStateDto
+        try
         {
-            PartyId = party.Id.ToString(),
-            IsSessionActive = state != null,
-            PlaybackState = state,
-            Playlist = party.Playlist
-        });
+            var partyState = await _streamingService.GetPartyStateAsync(shortCode);
+            if (partyState == null)
+            {
+                _logger.LogWarning("[SignalR Server] Party not found for shortCode={ShortCode}", shortCode);
+                await SendErrorAsync("Party not found");
+                return null;
+            }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, partyState.PartyId);
+            
+            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
+                partyState.PartyId, partyState.PlaybackState != null);
+            return partyState;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in JoinPartyAsViewerWithState: shortCode={ShortCode}", shortCode);
+            await SendErrorAsync("An error occurred while joining the party");
+            return null;
+        }
     }
 
-    public Task<PartyStateDto> RequestFullState(string shortCode)
+    public async Task<PartyStateDto?> RequestFullState(string shortCode)
     {
-        _logger.LogInformation("[SignalR Server] ← Received RequestFullState: shortCode={ShortCode}, connectionId={ConnectionId}", 
-            shortCode, Context.ConnectionId);
-        
-        var party = _partyStore.GetPartyByShortCode(shortCode);
-        if (party == null)
+        if (string.IsNullOrWhiteSpace(shortCode))
         {
-            _logger.LogError("[SignalR Server] Party not found for shortCode={ShortCode}", shortCode);
-            throw new Exception("Party not found");
+            await SendErrorAsync("Short code cannot be empty");
+            return null;
         }
 
-        var state = _partyStore.GetSessionState(party.Id);
-        _logger.LogInformation("[SignalR Server] → Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
-            party.Id, state != null);
-        return Task.FromResult(new PartyStateDto
+        _logger.LogInformation("[SignalR Server] <- Received RequestFullState: shortCode={ShortCode}, connectionId={ConnectionId}", 
+            shortCode, Context.ConnectionId);
+        
+        try
         {
-            PartyId = party.Id.ToString(),
-            IsSessionActive = state != null,
-            PlaybackState = state,
-            Playlist = party.Playlist
-        });
+            var partyState = await _streamingService.GetPartyStateAsync(shortCode);
+            if (partyState == null)
+            {
+                _logger.LogWarning("[SignalR Server] Party not found for shortCode={ShortCode}", shortCode);
+                await SendErrorAsync("Party not found");
+                return null;
+            }
+
+            _logger.LogInformation("[SignalR Server] -> Returning PartyStateDto: partyId={PartyId}, hasState={HasState}", 
+                partyState.PartyId, partyState.PlaybackState != null);
+            return partyState;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in RequestFullState: shortCode={ShortCode}", shortCode);
+            await SendErrorAsync("An error occurred while requesting party state");
+            return null;
+        }
     }
 
     public async Task UpdatePlaybackPosition(string partyId, string trackId, double position)
     {
-        _logger.LogInformation("[SignalR Server] ← Received UpdatePlaybackPosition: partyId={PartyId}, trackId={TrackId}, position={Position}, connectionId={ConnectionId}", 
+        if (string.IsNullOrWhiteSpace(trackId))
+        {
+            await SendErrorAsync("Track ID cannot be empty");
+            return;
+        }
+
+        if (position < 0)
+        {
+            await SendErrorAsync("Position cannot be negative");
+            return;
+        }
+
+        _logger.LogInformation("[SignalR Server] <- Received UpdatePlaybackPosition: partyId={PartyId}, trackId={TrackId}, position={Position}, connectionId={ConnectionId}", 
             partyId, trackId, position, Context.ConnectionId);
         
-        if (!Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            await SendErrorAsync("Invalid party ID format");
             return;
         }
 
-        var party = _partyStore.GetPartyById(partyGuid);
-        var state = _partyStore.GetSessionState(partyGuid);
-        
-        if (state != null)
+        try
         {
-            state.Position = position;
-            state.CurrentTrackId = trackId;
-            state.LastUpdatedAt = DateTime.UtcNow;
-            
-            // Получаем duration из плейлиста, если он доступен
-            if (party != null && party.Playlist != null)
-            {
-                var trackDuration = FindTrackDuration(party.Playlist.Items, trackId);
-                if (trackDuration.HasValue && trackDuration.Value > 0)
-                {
-                    state.Duration = trackDuration.Value;
-                }
-            }
-            
-            _partyStore.SetSessionState(partyGuid, state);
-        }
+            await _streamingService.UpdatePlaybackPositionAsync(partyGuid, trackId, position);
 
-        var groupName = partyGuid.ToString();
-        _logger.LogInformation("[SignalR Server] → Sending OnPlaybackPositionUpdated: partyId={PartyId}, trackId={TrackId}, position={Position}, group={Group}", 
-            partyId, trackId, position, groupName);
-        await Clients.Group(groupName).SendAsync("OnPlaybackPositionUpdated", partyId, trackId, position);
+            var groupName = partyGuid.ToString();
+            _logger.LogInformation("[SignalR Server] -> Sending OnPlaybackPositionUpdated: partyId={PartyId}, trackId={TrackId}, position={Position}, group={Group}", 
+                partyId, trackId, position, groupName);
+            await Clients.Group(groupName).SendAsync("OnPlaybackPositionUpdated", partyId, trackId, position);
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (PartyNotFoundException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in UpdatePlaybackPosition: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while updating playback position");
+        }
     }
 
-    private double? FindTrackDuration(List<PlayerItem> items, string trackId)
+    public async Task UpdateFullState(string partyId, PlaybackStateDto? state)
     {
-        foreach (var item in items)
-        {
-            if (item.Type == "track" && item.Id == trackId)
-            {
-                return item.Duration.HasValue ? (double)item.Duration.Value : null;
-            }
-            if (item.Type == "group" && item.Items != null)
-            {
-                var duration = FindTrackDuration(item.Items, trackId);
-                if (duration.HasValue)
-                {
-                    return duration;
-                }
-            }
-        }
-        return null;
-    }
-
-    public async Task UpdateFullState(string partyId, PlaybackStateDto state)
-    {
-        _logger.LogInformation("[SignalR Server] ← Received UpdateFullState: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received UpdateFullState: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, connectionId={ConnectionId}", 
             partyId, state?.CurrentTrackId, state?.Status, state?.Position, Context.ConnectionId);
         
-        if (!Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            await SendErrorAsync("Invalid party ID format");
             return;
         }
 
-        // Если duration равен 0 или не установлен, пытаемся получить из плейлиста
-        var party = _partyStore.GetPartyById(partyGuid);
-        if (party != null && party.Playlist != null && 
-            state.Duration == 0 && 
-            !string.IsNullOrEmpty(state.CurrentTrackId))
+        if (state == null)
         {
-            var trackDuration = FindTrackDuration(party.Playlist.Items, state.CurrentTrackId);
-            if (trackDuration.HasValue && trackDuration.Value > 0)
-            {
-                state.Duration = trackDuration.Value;
-            }
+            _logger.LogWarning("[SignalR Server] State is null for partyId={PartyId}", partyId);
+            await SendErrorAsync("State cannot be null");
+            return;
         }
 
-        state.LastUpdatedAt = DateTime.UtcNow;
-        _partyStore.SetSessionState(partyGuid, state);
-        
-        var groupName = partyGuid.ToString();
-        _logger.LogInformation("[SignalR Server] → Sending OnFullStateUpdated: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, group={Group}", 
-            partyId, state?.CurrentTrackId, state?.Status, state?.Position, groupName);
-        await Clients.Group(groupName).SendAsync("OnFullStateUpdated", partyId, state);
+        try
+        {
+            await _streamingService.UpdateFullStateAsync(partyGuid, state);
+            
+            var groupName = partyGuid.ToString();
+            _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, group={Group}", 
+                partyId, state.CurrentTrackId, state.Status, state.Position, groupName);
+            await Clients.Group(groupName).SendAsync("OnFullStateUpdated", partyId, state);
+        }
+        catch (PartyNotFoundException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in UpdateFullState: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while updating full state");
+        }
     }
 
     public async Task NotifyStateChanged(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] ← Received NotifyStateChanged: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received NotifyStateChanged: partyId={PartyId}, connectionId={ConnectionId}", 
             partyId, Context.ConnectionId);
         
-        if (Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
+        {
+            await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        try
         {
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] → Sending OnStateChanged: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnStateChanged: partyId={PartyId}, group={Group}", 
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnStateChanged", partyId);
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            _logger.LogError(ex, "[SignalR Server] Error in NotifyStateChanged: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while notifying state change");
         }
     }
 
@@ -205,94 +264,125 @@ public class PartyHub : Hub
     /// </summary>
     public async Task NotifyPlaylistChanged(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] ← Received NotifyPlaylistChanged: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received NotifyPlaylistChanged: partyId={PartyId}, connectionId={ConnectionId}", 
             partyId, Context.ConnectionId);
         
-        if (Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
+        {
+            await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        try
         {
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] → Sending OnPlaylistChanged: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}", 
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            _logger.LogError(ex, "[SignalR Server] Error in NotifyPlaylistChanged: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while notifying playlist change");
         }
     }
 
     public async Task JoinPartyAsOrganizer(string partyId, string token)
     {
-        _logger.LogInformation("[SignalR Server] ← Received JoinPartyAsOrganizer: partyId={PartyId}, hasToken={HasToken}, connectionId={ConnectionId}", 
+        // TODO: Replace with proper auth/authorization once the module is added.
+        // Базовая валидация токена (проверка на наличие)
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without token: partyId={PartyId}, connectionId={ConnectionId}", 
+                partyId, Context.ConnectionId);
+            await SendErrorAsync("Authentication token is required");
+            return;
+        }
+
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsOrganizer: partyId={PartyId}, hasToken={HasToken}, connectionId={ConnectionId}", 
             partyId, !string.IsNullOrEmpty(token), Context.ConnectionId);
         
-        // В минимальной версии пропускаем проверку токена
-        if (Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
+        {
+            await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        try
         {
             var groupName = partyGuid.ToString();
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             _logger.LogInformation("[SignalR Server] Added connection to group: partyId={PartyId}, group={Group}, connectionId={ConnectionId}", 
                 partyId, groupName, Context.ConnectionId);
         }
-        else
+        catch (Exception ex)
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            _logger.LogError(ex, "[SignalR Server] Error in JoinPartyAsOrganizer: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while joining as organizer");
         }
     }
 
     public async Task StartSession(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] ← Received StartSession: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received StartSession: partyId={PartyId}, connectionId={ConnectionId}", 
             partyId, Context.ConnectionId);
         
-        // Пытаемся найти вечеринку по ID (Guid)
-        Party? party = null;
-        if (Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
-            party = _partyStore.GetPartyById(partyGuid);
-        }
-
-        if (party == null)
-        {
-            _logger.LogWarning("[SignalR Server] → Sending Error: Party not found for partyId={PartyId}", partyId);
-            await Clients.Caller.SendAsync("Error", "Party not found");
+            await SendErrorAsync("Invalid party ID format");
             return;
         }
 
-        // Создаем начальное состояние сессии
-        var initialState = new PlaybackStateDto
+        try
         {
-            Status = "idle",
-            Position = 0,
-            Duration = 0,
-            Volume = 0.8,
-            Mode = "session",
-            LastUpdatedAt = DateTime.UtcNow
-        };
-        _partyStore.SetSessionState(party.Id, initialState);
+            await _streamingService.StartSessionAsync(partyGuid);
 
-        var groupName = party.Id.ToString();
-        _logger.LogInformation("[SignalR Server] → Sending OnSessionStarted: partyId={PartyId}, group={Group}", 
-            partyId, groupName);
-        await Clients.Group(groupName).SendAsync("OnSessionStarted", party.Id.ToString());
+            var groupName = partyGuid.ToString();
+            _logger.LogInformation("[SignalR Server] -> Sending OnSessionStarted: partyId={PartyId}, group={Group}", 
+                partyId, groupName);
+            await Clients.Group(groupName).SendAsync("OnSessionStarted", partyId);
+        }
+        catch (PartyNotFoundException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in StartSession: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while starting session");
+        }
     }
 
     public async Task EndSession(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] ← Received EndSession: partyId={PartyId}, connectionId={ConnectionId}", 
+        _logger.LogInformation("[SignalR Server] <- Received EndSession: partyId={PartyId}, connectionId={ConnectionId}", 
             partyId, Context.ConnectionId);
         
-        if (Guid.TryParse(partyId, out var partyGuid))
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
+            await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        try
+        {
+            await _streamingService.EndSessionAsync(partyGuid);
+            
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] → Sending OnSessionEnded: partyId={PartyId}, group={Group}", 
+            _logger.LogInformation("[SignalR Server] -> Sending OnSessionEnded: partyId={PartyId}, group={Group}", 
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnSessionEnded", partyId);
         }
-        else
+        catch (PartyNotFoundException ex)
         {
-            _logger.LogWarning("[SignalR Server] Invalid partyId format: {PartyId}", partyId);
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in EndSession: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while ending session");
         }
     }
 }
-
