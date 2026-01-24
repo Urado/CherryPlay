@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
-import { PlaybackState, type ThemeId } from '@cherryplay/components';
+import { PlaybackState, type ThemeId, getDefaultCustomizationSettings } from '@cherryplay/components';
 import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore, useSettingsStore } from '@shared/stores';
 import {
   convertToComponentPlayerItems,
@@ -55,10 +55,9 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
 
   const [partyName, setPartyName] = useState('');
   const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
-  const [customizationSettings, setCustomizationSettings] = useState<Record<string, any>>({
-    accentColor: '#00ff00',
-    glowIntensity: 50,
-  });
+  const [customizationSettings, setCustomizationSettings] = useState<Record<string, string | number>>(
+    getDefaultCustomizationSettings('cyberpunk')
+  );
   const [eventDateTime, setEventDateTime] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   const [isCheckingParty, setIsCheckingParty] = useState(false);
@@ -71,28 +70,9 @@ export const PartyView: React.FC<PartyViewProps> = ({ workspaceId: _workspaceId,
     setCreatedParty: state.setCreatedParty,
   }));
 
-  // Обновляем настройки по умолчанию при смене стиля
   const handleThemeChange = (newThemeId: ThemeId) => {
     setThemeId(newThemeId);
-    // Устанавливаем значения по умолчанию для нового стиля
-    if (newThemeId === 'cyberpunk') {
-      setCustomizationSettings({
-        accentColor: '#00ff00',
-        glowIntensity: 50,
-      });
-    } else if (newThemeId === 'sakura') {
-      setCustomizationSettings({
-        pinkTint: '#ffb3d9',
-        backgroundOpacity: 80,
-      });
-    } else if (newThemeId === 'art-deco') {
-      setCustomizationSettings({
-        goldColor: '#d4af37',
-        patternStyle: 'geometric',
-      });
-    } else if (newThemeId === 'basic') {
-      setCustomizationSettings({});
-    }
+    setCustomizationSettings(getDefaultCustomizationSettings(newThemeId));
   };
 
   // Преобразуем items в формат для библиотеки компонентов (без path для превью)

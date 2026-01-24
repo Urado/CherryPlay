@@ -1,7 +1,3 @@
-/**
- * Сервис для работы с вечеринками через REST API
- */
-
 import { apiConfig } from '../config/apiConfig';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
@@ -32,9 +28,6 @@ class PartyService {
     return apiConfig.apiUrl;
   }
 
-  /**
-   * Создает новую вечеринку
-   */
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
     const response = await fetch(`${this.baseUrl}/parties`, {
       method: 'POST',
@@ -53,17 +46,10 @@ class PartyService {
     return response.json();
   }
 
-  /**
-   * Получает список вечеринок
-   */
   async getParties(): Promise<PartyDto[]> {
-    // В минимальной версии не реализовано
     return Promise.resolve([]);
   }
 
-  /**
-   * Получает вечеринку по ID
-   */
   async getParty(partyId: string): Promise<PartyDto> {
     const response = await fetch(`${this.baseUrl}/parties/${partyId}`, {
       method: 'GET',
@@ -84,9 +70,6 @@ class PartyService {
     return response.json();
   }
 
-  /**
-   * Проверяет существование вечеринки на сервере
-   */
   async checkPartyExists(partyId: string): Promise<boolean> {
     try {
       await this.getParty(partyId);
@@ -96,17 +79,10 @@ class PartyService {
     }
   }
 
-  /**
-   * Обновляет вечеринку
-   */
   async updateParty(_partyId: string, _data: Partial<CreatePartyDto>): Promise<PartyDto> {
-    // В минимальной версии не реализовано
     throw new Error('Not implemented');
   }
 
-  /**
-   * Обновляет плейлист вечеринки
-   */
   async updatePartyPlaylist(partyId: string, playlist: { items: any[]; totalTracks: number; totalDuration: number }): Promise<void> {
     const response = await fetch(`${this.baseUrl}/parties/${partyId}/playlist`, {
       method: 'PUT',
@@ -123,17 +99,10 @@ class PartyService {
     }
   }
 
-  /**
-   * Удаляет вечеринку
-   */
   async deleteParty(_partyId: string): Promise<void> {
-    // В минимальной версии не реализовано
     throw new Error('Not implemented');
   }
 
-  /**
-   * Генерирует URL для вечеринки
-   */
   getPartyUrl(shortCode: string): string {
     return `http://localhost:3000/?party=${shortCode}`;
   }

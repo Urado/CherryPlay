@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { PartyDisplayData } from '../../types';
+import type { ThemeId } from '../index';
 import { useThemeVars } from '../../core/hooks/useThemeVars';
 import { PlaylistView } from './PlaylistView';
 import { CurrentTrackDisplay } from './CurrentTrackDisplay';
@@ -17,7 +18,7 @@ export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
   className = '',
   showPlayer = true,
 }) => {
-  const themeVars = useThemeVars(data.customizationSettings);
+  const themeVars = useThemeVars(data.themeId, data.customizationSettings);
 
   return (
     <div

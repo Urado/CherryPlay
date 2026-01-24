@@ -11,7 +11,7 @@ export type ThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
 
 export interface ThemeComponents {
   PartyDisplay: React.ComponentType<{
-    data: PartyDisplayData;
+    data: PartyDisplayData<ThemeId>;
     className?: string;
     showPlayer?: boolean;
   }>;
@@ -125,3 +125,19 @@ export function getThemeOrDefault(themeId: string | undefined | null): Theme {
   }
   return THEME_REGISTRY['cyberpunk'];
 }
+
+export {
+  getThemeMetadata,
+  getDefaultCustomizationSettings,
+  getCustomizationOption,
+  type ThemeMetadata,
+  type ThemeCustomizationOption,
+  type CustomizationOptionType,
+  type SelectOption,
+  type ThemeCustomizationSettingsMap,
+  type CustomizationSettings,
+  type CyberpunkCustomizationSettings,
+  type SakuraCustomizationSettings,
+  type ArtDecoCustomizationSettings,
+  type BasicCustomizationSettings,
+} from './themeMetadata';

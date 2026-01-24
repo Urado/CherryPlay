@@ -1,40 +1,31 @@
-/**
- * Хук для преобразования customizationSettings в CSS переменные
- */
 import React, { useMemo } from 'react';
+import type { ThemeId } from '../../themes';
+import { getThemeMetadata } from '../../themes/themeMetadata';
 
 export function useThemeVars(
-  customizationSettings?: Record<string, any>
+  themeId: ThemeId,
+  customizationSettings?: Record<string, string | number>
 ): React.CSSProperties {
   return useMemo(() => {
     const vars: Record<string, string> = {};
+    const metadata = getThemeMetadata(themeId);
 
-    if (!customizationSettings) {
+    if (!customizationSettings || !metadata) {
       return vars as React.CSSProperties;
     }
 
-    for (const [key, value] of Object.entries(customizationSettings)) {
+    for (const option of metadata.customizationOptions) {
+      const value = customizationSettings[option.key];
       if (value !== undefined && value !== null) {
-        // Преобразуем значения для разных типов настроек
-        if (key === 'glowIntensity') {
-          // glowIntensity: 0-100 -> 0-1 для rgba
-          const intensity =
-            typeof value === 'number' ? value / 100 : parseFloat(String(value)) / 100;
-          vars[`--${key}`] = String(Math.max(0, Math.min(1, intensity)));
-        } else if (key === 'backgroundOpacity') {
-          // backgroundOpacity: 0-100 -> 0-1 для rgba
-          const opacity =
-            typeof value === 'number' ? value / 100 : parseFloat(String(value)) / 100;
-          vars[`--${key}`] = String(Math.max(0, Math.min(1, opacity)));
+        if (option.transform) {
+          vars[`--${option.key}`] = option.transform(value);
         } else {
-          // Для цветов и других значений просто преобразуем в строку
-          vars[`--${key}`] = String(value);
+          vars[`--${option.key}`] = String(value);
         }
       }
     }
 
     return vars as React.CSSProperties;
-  }, [customizationSettings]);
+  }, [themeId, customizationSettings]);
 }
-
 

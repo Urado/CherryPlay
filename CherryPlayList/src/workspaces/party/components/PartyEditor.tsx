@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { themes, type ThemeId } from '@cherryplay/components';
+import { themes, type ThemeId, getThemeMetadata } from '@cherryplay/components';
 
 import './PartyEditor.css';
 
 interface PartyEditorProps {
   partyName: string;
   themeId: ThemeId;
-  customizationSettings: Record<string, any>;
+  customizationSettings: Record<string, string | number>;
   eventDateTime: string;
   onPartyNameChange: (name: string) => void;
   onThemeIdChange: (themeId: string) => void;
-  onCustomizationSettingsChange: (settings: Record<string, any>) => void;
+  onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
   onCreateParty: () => void;
   isCreating: boolean;
@@ -75,11 +75,86 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const selectedStyle = AVAILABLE_STYLES.find((s) => s.id === themeId) || AVAILABLE_STYLES[0];
 
-  const handleCustomizationChange = (key: string, value: any) => {
+  const handleCustomizationChange = (key: string, value: string | number) => {
     onCustomizationSettingsChange({
       ...customizationSettings,
       [key]: value,
     });
+  };
+
+  const renderCustomizationOptions = () => {
+    const metadata = getThemeMetadata(themeId);
+    if (!metadata || metadata.customizationOptions.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="party-editor-section">
+        <label className="party-editor-label">Настройки {metadata.name || themeId}</label>
+        <div className="party-editor-customization">
+          {metadata.customizationOptions.map((option) => {
+            const currentValue = customizationSettings[option.key] ?? option.defaultValue;
+
+            return (
+              <label key={option.key} className="party-editor-customization-item">
+                {option.label}
+                {option.type === 'color' && (
+                  <input
+                    type="color"
+                    value={String(currentValue)}
+                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
+                  />
+                )}
+                {option.type === 'number' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <input
+                      type="range"
+                      min={option.min ?? 0}
+                      max={option.max ?? 100}
+                      step={option.step ?? 1}
+                      value={Number(currentValue)}
+                      onChange={(e) =>
+                        handleCustomizationChange(option.key, parseInt(e.target.value, 10))
+                      }
+                      style={{ flex: 1 }}
+                    />
+                    <span
+                      style={{
+                        minWidth: '40px',
+                        textAlign: 'right',
+                        fontSize: '14px',
+                        color: 'var(--text-secondary, #666666)',
+                      }}
+                    >
+                      {currentValue}
+                    </span>
+                  </div>
+                )}
+                {option.type === 'select' && option.options && (
+                  <select
+                    value={String(currentValue)}
+                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
+                  >
+                    {option.options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {option.type === 'text' && (
+                  <input
+                    type="text"
+                    value={String(currentValue)}
+                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
+                  />
+                )}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const handleStyleSelect = (themeId: ThemeId) => {
@@ -155,96 +230,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       </div>
 
-      {themeId === 'cyberpunk' && (
-        <div className="party-editor-section">
-          <label className="party-editor-label">Настройки Cyberpunk</label>
-          <div className="party-editor-customization">
-            <label className="party-editor-customization-item">
-              Цвет акцента
-              <input
-                type="color"
-                value={customizationSettings.accentColor || '#00ff00'}
-                onChange={(e) => handleCustomizationChange('accentColor', e.target.value)}
-              />
-            </label>
-            <label className="party-editor-customization-item">
-              Интенсивность свечения (0-100)
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={customizationSettings.glowIntensity || 50}
-                  onChange={(e) => handleCustomizationChange('glowIntensity', parseInt(e.target.value))}
-                  style={{ flex: 1 }}
-                />
-                <span style={{ minWidth: '40px', textAlign: 'right', fontSize: '14px', color: 'var(--text-secondary, #666666)' }}>
-                  {customizationSettings.glowIntensity || 50}
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {themeId === 'sakura' && (
-        <div className="party-editor-section">
-          <label className="party-editor-label">Настройки Sakura</label>
-          <div className="party-editor-customization">
-            <label className="party-editor-customization-item">
-              Оттенок розового
-              <input
-                type="color"
-                value={customizationSettings.pinkTint || '#ffb3d9'}
-                onChange={(e) => handleCustomizationChange('pinkTint', e.target.value)}
-              />
-            </label>
-            <label className="party-editor-customization-item">
-              Прозрачность фона (0-100)
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={customizationSettings.backgroundOpacity || 80}
-                  onChange={(e) => handleCustomizationChange('backgroundOpacity', parseInt(e.target.value))}
-                  style={{ flex: 1 }}
-                />
-                <span style={{ minWidth: '40px', textAlign: 'right', fontSize: '14px', color: 'var(--text-secondary, #666666)' }}>
-                  {customizationSettings.backgroundOpacity || 80}
-                </span>
-              </div>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {themeId === 'art-deco' && (
-        <div className="party-editor-section">
-          <label className="party-editor-label">Настройки Art Deco</label>
-          <div className="party-editor-customization">
-            <label className="party-editor-customization-item">
-              Цвет золота
-              <input
-                type="color"
-                value={customizationSettings.goldColor || '#d4af37'}
-                onChange={(e) => handleCustomizationChange('goldColor', e.target.value)}
-              />
-            </label>
-            <label className="party-editor-customization-item">
-              Стиль паттерна
-              <select
-                value={customizationSettings.patternStyle || 'geometric'}
-                onChange={(e) => handleCustomizationChange('patternStyle', e.target.value)}
-              >
-                <option value="geometric">Геометрический</option>
-                <option value="floral">Цветочный</option>
-                <option value="linear">Линейный</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
+      {renderCustomizationOptions()}
 
       <div className="party-editor-actions">
         <button

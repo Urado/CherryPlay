@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 
-import { PartyDisplay, PartyDisplayData, PartyPlaylistData, PlaybackState } from '@cherryplay/components';
+import { PartyDisplay, PartyDisplayData, PartyPlaylistData, PlaybackState, type ThemeId } from '@cherryplay/components';
 
 import './PartyPreview.css';
 
 interface PartyPreviewProps {
   playlist: PartyPlaylistData;
-  themeId: string;
-  customizationSettings?: Record<string, any>;
+  themeId: ThemeId;
+  customizationSettings?: Record<string, string | number>;
   playbackState?: PlaybackState | null;
   partyName?: string;
   partyId?: string;
@@ -22,7 +22,7 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   partyId = 'preview',
 }) => {
   // Формируем единый объект данных для PartyDisplay
-  const displayData: PartyDisplayData = useMemo(() => ({
+  const displayData: PartyDisplayData<ThemeId> = useMemo(() => ({
     partyId,
     partyName,
     themeId,
