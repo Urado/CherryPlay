@@ -1,0 +1,90 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: cherryplay-postgres
+    environment:
+      POSTGRES_DB: cherryplay
+      POSTGRES_USER: cherryplay
+      POSTGRES_PASSWORD: cherryplay_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cherryplay"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cherryplay-network
+
+  # pgAdmin - Web interface for PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cherryplay-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@cherryplay.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+
+  # Backend Server (.NET)
+  server:
+    build:
+      context: ./CherryPlayServer
+      dockerfile: Dockerfile
+    container_name: cherryplay-server
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
+      - Cors__AllowedOrigins__0=http://localhost:3000
+      - Cors__AllowedOrigins__1=http://web:80
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Web Application
+  web:
+    build:
+      context: .
+      dockerfile: ./CherryPlayWeb/Dockerfile
+    container_name: cherryplay-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - cherryplay-network
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+      - VITE_SIGNALR_URL=http://localhost:5000/partyHub
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  cherryplay-network:
+    driver: bridge

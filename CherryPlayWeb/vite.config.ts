@@ -10,6 +10,9 @@ export default defineConfig({
       '@cherryplay/themes': path.resolve(__dirname, '../CherryPlayComponents/src/themes'),
     },
   },
+  optimizeDeps: {
+    include: ['@cherryplay/components'],
+  },
   server: {
     port: 3000,
     proxy: {
