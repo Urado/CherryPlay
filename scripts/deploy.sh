@@ -8,6 +8,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Detect docker compose command (V2 uses 'docker compose', V1 uses 'docker-compose')
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif docker-compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo -e "${RED}❌ Error: docker compose or docker-compose not found${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}🚀 Starting deployment...${NC}"
 
 # Check required environment variables
@@ -97,13 +107,13 @@ fi
 
 # Stop existing containers gracefully
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
-docker-compose -f docker-compose.prod.yml down || {
+$DOCKER_COMPOSE -f docker-compose.prod.yml down || {
     echo -e "${YELLOW}⚠️  Warning: Some containers might not have been running${NC}"
 }
 
 # Start new containers
 echo -e "${YELLOW}🚀 Starting new containers with version $VERSION...${NC}"
-docker-compose -f docker-compose.prod.yml up -d
+$DOCKER_COMPOSE -f docker-compose.prod.yml up -d
 
 # Wait for services to be healthy
 echo -e "${YELLOW}⏳ Waiting for services to be healthy...${NC}"
@@ -116,7 +126,7 @@ if docker ps | grep -q cherryplay-server && docker ps | grep -q cherryplay-web; 
 else
     echo -e "${RED}❌ Error: Some containers failed to start${NC}"
     echo -e "${YELLOW}📋 Container logs:${NC}"
-    docker-compose -f docker-compose.prod.yml logs --tail=50
+    $DOCKER_COMPOSE -f docker-compose.prod.yml logs --tail=50
     exit 1
 fi
 
@@ -134,7 +144,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
         echo -e "${RED}❌ Error: Server health check failed after $MAX_RETRIES attempts${NC}"
-        docker-compose -f docker-compose.prod.yml logs server
+        $DOCKER_COMPOSE -f docker-compose.prod.yml logs server
         exit 1
     fi
     
