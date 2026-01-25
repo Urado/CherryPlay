@@ -76,7 +76,13 @@ const baseConfig = {
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.mjs', 'vite.config.ts'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'eslint.config.mjs',
+      'vite.config.ts',
+      'CherryPlayComponents/**', // Исключаем CherryPlayComponents из проверки
+    ],
   },
   ...compat.config(baseConfig),
 ];
