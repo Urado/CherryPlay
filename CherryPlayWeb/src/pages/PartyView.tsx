@@ -2,10 +2,10 @@
  * Страница просмотра вечеринки
  * Отображает плейлист и состояние воспроизведения
  */
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 
 import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 import type { PlaybackState, ThemeId } from '@cherryplay/components';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 
 import { ConnectionStatus } from '../components/ConnectionStatus';
 import { ErrorMessage } from '../components/ErrorMessage';
