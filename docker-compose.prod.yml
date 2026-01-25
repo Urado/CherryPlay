@@ -76,8 +76,9 @@ services:
     networks:
       - cherryplay-network
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://cherrypashkaparty.ru:5000/api}
-      - VITE_SIGNALR_URL=${VITE_SIGNALR_URL:-http://cherrypashkaparty.ru:5000/partyHub}
+      # В продакшене используем относительные пути через nginx
+      # VITE_API_URL и VITE_SIGNALR_URL не устанавливаем, чтобы использовать относительные пути
+      # Если нужен абсолютный URL, установите эти переменные явно
     restart: unless-stopped
 
 volumes:

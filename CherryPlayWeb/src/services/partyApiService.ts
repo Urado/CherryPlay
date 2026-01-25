@@ -8,7 +8,9 @@ import type {
   PublicPartyListItemDto,
 } from '../types/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// В продакшене используем относительные пути (nginx проксирует /api на backend)
+// В разработке используем VITE_API_URL или localhost:5000
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 class PartyApiService {
   private baseUrl: string;
