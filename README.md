@@ -11,31 +11,62 @@
 
 ## Быстрый старт
 
-### Запуск всех сервисов
+### 🐳 Запуск с Docker (рекомендуется)
+
+**Для запуска с Docker скрипты `build-all.ps1` и `start-all.ps1` не нужны!**
+
+Docker Compose автоматически соберет образы и запустит все сервисы:
 
 ```bash
-# PowerShell
-.\start-all.ps1
+# Запуск всех сервисов (автоматически соберет образы при первом запуске)
+docker-compose up -d
 
-# CMD
-start-all.bat
+# Просмотр логов
+docker-compose logs -f
+
+# Остановка всех сервисов
+docker-compose down
 ```
 
-Скрипт автоматически запустит:
-- CherryPlayServer (http://localhost:5000)
-- CherryPlayWeb (http://localhost:3000)
+После запуска будут доступны:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Swagger UI**: http://localhost:5000/swagger
+- **pgAdmin**: http://localhost:5050
+- **PostgreSQL**: localhost:5433
 
-### Сборка всех проектов
+Подробнее см. раздел [Docker](#docker) ниже.
 
+### 💻 Локальная разработка (без Docker)
+
+Если вы хотите запускать проекты локально без Docker:
+
+**Сервер (.NET):**
 ```bash
-# PowerShell
-.\build-all.ps1
-
-# CMD
-build-all.bat
+cd CherryPlayServer
+dotnet run
 ```
 
-Подробнее см. `QUICK_START.md` и `SCRIPTS.md`
+**Веб-приложение (React):**
+```bash
+cd CherryPlayWeb
+npm install
+npm run dev
+```
+
+**Компоненты (для разработки):**
+```bash
+cd CherryPlayComponents
+npm install
+npm run build
+```
+
+**Требования для локального запуска:**
+- Node.js установлен
+- .NET 9.0 SDK установлен
+- PostgreSQL установлен и запущен (или используйте Docker только для БД)
+
+Подробнее см. `QUICK_START.md`
 
 ## Структура
 
@@ -45,8 +76,8 @@ CherryPlay/
 ├── CherryPlayComponents/  # React компоненты библиотека
 ├── CherryPlayServer/     # Backend сервер (.NET)
 ├── CherryPlayWeb/        # Web приложение (React)
-├── build-all.ps1         # Скрипты сборки
-├── start-all.ps1         # Скрипты запуска
+├── docker-compose.yml    # Docker Compose для production
+├── docker-compose.debug.yml  # Docker Compose для отладки
 └── README.md             # Этот файл
 ```
 
@@ -57,16 +88,22 @@ CherryPlay/
 
 ## Docker
 
-### Быстрый запуск с Docker Compose
-
-Для запуска всего стека (сервер, фронтенд, PostgreSQL и pgAdmin) используйте Docker Compose:
+### Основные команды
 
 ```bash
-# Запуск всех сервисов
+# Запуск всех сервисов (автоматически соберет образы при первом запуске)
+docker-compose up -d
+
+# Принудительная пересборка образов
+docker-compose build
 docker-compose up -d
 
 # Просмотр логов
 docker-compose logs -f
+
+# Просмотр логов конкретного сервиса
+docker-compose logs -f server
+docker-compose logs -f web
 
 # Остановка всех сервисов
 docker-compose down
@@ -75,7 +112,9 @@ docker-compose down
 docker-compose down -v
 ```
 
-После запуска будут доступны:
+### Доступ к сервисам
+
+После запуска `docker-compose up -d` будут доступны:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
@@ -116,6 +155,8 @@ ASPNETCORE_ENVIRONMENT=Production
 
 ### Сборка образов
 
+**Примечание:** `docker-compose up` автоматически соберет образы при первом запуске. Ручная сборка нужна только при изменении Dockerfile или для принудительной пересборки:
+
 ```bash
 # Сборка всех образов
 docker-compose build
@@ -123,7 +164,50 @@ docker-compose build
 # Сборка конкретного сервиса
 docker-compose build server
 docker-compose build web
+
+# Сборка без кэша (для полной пересборки)
+docker-compose build --no-cache
 ```
+
+### Отладка сервера в Docker
+
+**Важно:** Для полноценной отладки с точками останова рекомендуется запускать сервер локально через `dotnet run` или `start-all.ps1`. Docker debug режим подходит для тестирования в контейнере и hot reload.
+
+Для отладки .NET сервера в контейнере используйте специальную конфигурацию:
+
+```bash
+# Запуск в режиме отладки (с hot reload)
+docker-compose -f docker-compose.debug.yml up
+
+# Или в фоновом режиме
+docker-compose -f docker-compose.debug.yml up -d
+
+# Просмотр логов
+docker-compose -f docker-compose.debug.yml logs -f server
+
+# Остановка debug контейнеров
+docker-compose -f docker-compose.debug.yml down
+```
+
+**Особенности debug режима:**
+- Используется `Development` окружение вместо `Production`
+- Исходники монтируются через volume для hot reload (изменения кода применяются автоматически)
+- Открыт порт `5678` для подключения отладчика (VS Code)
+- Используется `dotnet watch` для автоматической пересборки при изменениях
+- Веб-приложение также доступно (http://localhost:3000)
+
+**Подключение отладчика VS Code:**
+
+1. Установите расширение "C# Dev Kit" или "C# for Visual Studio Code"
+2. Конфигурация уже добавлена в `.vscode/launch.json` (`.NET Core Attach (Docker)`)
+3. Запустите контейнер: `docker-compose -f docker-compose.debug.yml up`
+4. В VS Code:
+   - Нажмите F5 или откройте панель Debug
+   - Выберите конфигурацию ".NET Core Attach (Docker)"
+   - При запросе выберите процесс `dotnet` в контейнере
+   - Установите точки останова в коде
+
+**Альтернатива:** Для простой отладки без attach можно использовать логи и точки останова через `Console.WriteLine` или логирование.
 
 ### Отдельные Dockerfile
 

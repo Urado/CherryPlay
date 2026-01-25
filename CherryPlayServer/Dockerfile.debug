@@ -1,0 +1,33 @@
+# Dockerfile для отладки
+# Использует SDK образ для возможности дебага и hot reload
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS debug
+WORKDIR /app
+
+# Устанавливаем VSDBG для отладки
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    unzip \
+    procps \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем .NET debugger (vsdbg)
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+# Копируем файл проекта для восстановления зависимостей
+COPY ["CherryPlayServer.csproj", "./"]
+RUN dotnet restore "CherryPlayServer.csproj"
+
+# Копируем остальные файлы (в debug режиме исходники монтируются через volume)
+# Но копируем для начальной сборки
+COPY . .
+
+# Открываем порты
+EXPOSE 8080
+EXPOSE 8081
+EXPOSE 5678  # Порт для VS Code debugger
+
+# В docker-compose.debug.yml команда переопределяется
+# По умолчанию запускаем в watch режиме для hot reload
+CMD ["dotnet", "watch", "run", "--urls", "http://+:8080", "--no-launch-profile"]

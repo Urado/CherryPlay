@@ -68,20 +68,21 @@ start-all.bat
 
 ## Сборка проектов
 
-Для сборки всех проектов используйте:
+**Для сервера и веб-приложения:** Используйте Docker Compose (см. [README.md](./README.md#docker))
 
+**Для компонентов:**
 ```bash
 # PowerShell
-.\build-all.ps1
+.\build-components.ps1
 
 # CMD
-build-all.bat
-```
+build-components.bat
 
-Для сборки отдельных проектов:
-- `build-components.bat` / `build-components.ps1` - только компоненты
-- `build-server.bat` / `build-server.ps1` - только сервер
-- `build-web.bat` / `build-web.ps1` - только веб-приложение
+# Или вручную
+cd CherryPlayComponents
+npm install
+npm run build
+```
 
 Подробнее см. `SCRIPTS.md`
 

@@ -1,0 +1,94 @@
+services:
+  # PostgreSQL Database (используем тот же что и в production)
+  postgres:
+    image: postgres:16-alpine
+    container_name: cherryplay-postgres-debug
+    environment:
+      POSTGRES_DB: cherryplay
+      POSTGRES_USER: cherryplay
+      POSTGRES_PASSWORD: cherryplay_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cherryplay"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cherryplay-network
+
+  # pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cherryplay-pgadmin-debug
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@cherryplay.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+
+  # Backend Server (.NET) - DEBUG режим
+  server:
+    build:
+      context: ./CherryPlayServer
+      dockerfile: Dockerfile.debug
+    container_name: cherryplay-server-debug
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
+      - Cors__AllowedOrigins__0=http://localhost:3000
+      - Cors__AllowedOrigins__1=http://web:80
+    ports:
+      - "5000:8080"
+      - "5678:5678"  # Порт для VS Code debugger
+    volumes:
+      # Монтируем исходники для hot reload
+      - ./CherryPlayServer:/app
+      - /app/bin
+      - /app/obj
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+    command: ["dotnet", "watch", "run", "--urls", "http://+:8080", "--no-launch-profile"]
+    # Для attach отладчика используйте:
+    # command: ["dotnet", "run", "--urls", "http://+:8080", "--no-launch-profile"]
+
+  # Frontend Web Application (опционально, можно запускать локально)
+  web:
+    build:
+      context: .
+      dockerfile: ./CherryPlayWeb/Dockerfile
+    container_name: cherryplay-web-debug
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - cherryplay-network
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+      - VITE_SIGNALR_URL=http://localhost:5000/partyHub
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  cherryplay-network:
+    driver: bridge

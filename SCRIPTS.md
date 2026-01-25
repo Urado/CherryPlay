@@ -1,77 +1,48 @@
-# Скрипты для запуска и сборки
+# Скрипты для сборки
 
-## Скрипты запуска
+> **Примечание:** Для запуска сервера и веб-приложения используйте Docker Compose (см. [README.md](./README.md#docker)). Скрипты ниже предназначены только для сборки компонентов, которые используются в CherryPlayList.
 
-### `start-all.bat` / `start-all.ps1`
-Запускает все сервисы параллельно:
-- CherryPlayServer (http://localhost:5000)
-- CherryPlayWeb (http://localhost:3000)
+## Сборка компонентов
 
-**Использование:**
-```bash
-# PowerShell
-.\start-all.ps1
-
-# CMD
-start-all.bat
-```
-
-Скрипт автоматически:
-- Проверяет наличие .NET SDK и Node.js
-- Устанавливает зависимости при необходимости
-- Запускает сервер и веб-приложение в отдельных окнах
-
-## Скрипты сборки
-
-### `build-all.bat` / `build-all.ps1`
-Собирает все проекты по порядку:
-1. CherryPlayComponents
-2. CherryPlayServer
-3. CherryPlayWeb
-
-**Использование:**
-```bash
-# PowerShell
-.\build-all.ps1
-
-# CMD
-build-all.bat
-```
-
-### Отдельные скрипты сборки
-
-- `build-components.bat` / `build-components.ps1` - сборка только компонентов
-- `build-server.bat` / `build-server.ps1` - сборка только сервера
-- `build-web.bat` / `build-web.ps1` - сборка только веб-приложения
+### `build-components.bat` / `build-components.ps1`
+Собирает библиотеку CherryPlayComponents, которая используется в CherryPlayList и CherryPlayWeb.
 
 **Использование:**
 ```bash
 # PowerShell
 .\build-components.ps1
-.\build-server.ps1
-.\build-web.ps1
 
 # CMD
 build-components.bat
-build-server.bat
-build-web.bat
 ```
+
+Скрипт автоматически:
+- Проверяет наличие Node.js
+- Устанавливает зависимости при необходимости
+- Собирает компоненты в `CherryPlayComponents/dist/`
 
 ## Результаты сборки
 
 После успешной сборки:
 - **CherryPlayComponents**: `CherryPlayComponents/dist/`
-- **CherryPlayServer**: `CherryPlayServer/bin/Release/`
-- **CherryPlayWeb**: `CherryPlayWeb/dist/`
 
 ## Требования
 
-- **.NET 8.0 SDK** - для сборки и запуска сервера
-- **Node.js** - для сборки и запуска веб-приложения и компонентов
+- **Node.js** - для сборки компонентов
 
 ## Примечания
 
 - PowerShell скрипты более функциональны и предоставляют цветной вывод
 - Batch скрипты (.bat) можно запускать двойным кликом
 - При первом запуске скрипты автоматически установят зависимости
+
+## Альтернатива: Ручная сборка
+
+Если скрипты не нужны, можно собрать компоненты вручную:
+
+```bash
+cd CherryPlayComponents
+npm install
+npm run build
+```
 
