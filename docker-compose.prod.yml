@@ -75,10 +75,9 @@ services:
       - server
     networks:
       - cherryplay-network
-    environment:
-      # В продакшене используем относительные пути через nginx
-      # VITE_API_URL и VITE_SIGNALR_URL не устанавливаем, чтобы использовать относительные пути
-      # Если нужен абсолютный URL, установите эти переменные явно
+    # В продакшене используем относительные пути через nginx
+    # VITE_API_URL и VITE_SIGNALR_URL не устанавливаем, чтобы использовать относительные пути
+    # Если нужен абсолютный URL, добавьте секцию environment с этими переменными
     restart: unless-stopped
 
 volumes:
