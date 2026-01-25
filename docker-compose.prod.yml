@@ -47,8 +47,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD:-cherryplay_password}
-      - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://localhost:3000}
-      - Cors__AllowedOrigins__1=${CORS_ORIGIN_1:-http://web:80}
+      - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
+      - Cors__AllowedOrigins__1=${CORS_ORIGIN_1:-http://www.cherrypashkaparty.ru}
+      - Cors__AllowedOrigins__2=${CORS_ORIGIN_2:-http://web:80}
     ports:
       - "5000:8080"
     depends_on:
@@ -69,14 +70,14 @@ services:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_WEB:-owner/repo/web}:${VERSION:-latest}
     container_name: cherryplay-web
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - server
     networks:
       - cherryplay-network
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
-      - VITE_SIGNALR_URL=${VITE_SIGNALR_URL:-http://localhost:5000/partyHub}
+      - VITE_API_URL=${VITE_API_URL:-http://cherrypashkaparty.ru:5000/api}
+      - VITE_SIGNALR_URL=${VITE_SIGNALR_URL:-http://cherrypashkaparty.ru:5000/partyHub}
     restart: unless-stopped
 
 volumes:
