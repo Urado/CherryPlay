@@ -6,8 +6,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_SERVER: ${{ github.repository }}/server
-  IMAGE_NAME_WEB: ${{ github.repository }}/web
 
 jobs:
   build-and-push:
@@ -31,6 +29,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare image names
+        id: image-names
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME_SERVER=$REPO_LOWER/server" >> $GITHUB_OUTPUT
+          echo "IMAGE_NAME_WEB=$REPO_LOWER/web" >> $GITHUB_OUTPUT
+          echo "Repository name (lowercase): $REPO_LOWER"
+
       - name: Extract version tag
         id: version
         run: |
@@ -45,8 +51,8 @@ jobs:
           file: ./CherryPlayServer/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_SERVER }}:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_SERVER }}:latest
+            ${{ env.REGISTRY }}/${{ steps.image-names.outputs.IMAGE_NAME_SERVER }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.image-names.outputs.IMAGE_NAME_SERVER }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -57,8 +63,8 @@ jobs:
           file: ./CherryPlayWeb/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest
+            ${{ env.REGISTRY }}/${{ steps.image-names.outputs.IMAGE_NAME_WEB }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.image-names.outputs.IMAGE_NAME_WEB }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -112,8 +118,8 @@ jobs:
             chmod +x deploy.sh
             export VERSION="${{ needs.build-and-push.outputs.version }}"
             export REGISTRY="${{ env.REGISTRY }}"
-            export IMAGE_NAME_SERVER="${{ env.IMAGE_NAME_SERVER }}"
-            export IMAGE_NAME_WEB="${{ env.IMAGE_NAME_WEB }}"
+            export IMAGE_NAME_SERVER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/server"
+            export IMAGE_NAME_WEB="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/web"
             export GITHUB_TOKEN="${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}"
             ./deploy.sh
           EOF

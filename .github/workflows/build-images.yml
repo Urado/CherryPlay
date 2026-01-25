@@ -25,8 +25,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_SERVER: ${{ github.repository }}/server
-  IMAGE_NAME_WEB: ${{ github.repository }}/web
 
 jobs:
   build-server:
@@ -50,11 +48,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare image name for server
+        id: image-name-server
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=$REPO_LOWER/server" >> $GITHUB_OUTPUT
+          echo "Repository name (lowercase): $REPO_LOWER"
+
       - name: Extract metadata for server
         id: meta-server
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_SERVER }}
+          images: ${{ env.REGISTRY }}/${{ steps.image-name-server.outputs.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -93,11 +98,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare image name for web
+        id: image-name-web
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=$REPO_LOWER/web" >> $GITHUB_OUTPUT
+          echo "Repository name (lowercase): $REPO_LOWER"
+
       - name: Extract metadata for web
         id: meta-web
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
+          images: ${{ env.REGISTRY }}/${{ steps.image-name-web.outputs.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
