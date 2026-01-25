@@ -16,9 +16,11 @@ workspaces/fileBrowser/
 ## Зависимости
 
 ### Core
+
 - `@core/types/workspace` - WorkspaceId
 
 ### Shared
+
 - `@shared/stores/demoPlayerStore` - предпросмотр аудио файлов
 - `@shared/stores/uiStore` - focus requests для навигации
 - `@shared/services/fileService` - работа с файловой системой

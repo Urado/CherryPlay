@@ -1,47 +1,85 @@
-/**
- * Конфигурация API и SignalR
- */
+import { getServerUrl, getServerUrlSync } from './serverConfig';
 
-interface ElectronWindow extends Window {
-  electron?: {
-    api?: {
-      getServerUrl?: () => string;
-    };
+let cachedApiConfig: {
+  serverUrl: string;
+  signalRUrl: string;
+  apiUrl: string;
+} | null = null;
+
+async function getApiConfigAsync(): Promise<{
+  serverUrl: string;
+  signalRUrl: string;
+  apiUrl: string;
+}> {
+  const serverUrl = await getServerUrl();
+  return {
+    serverUrl,
+    signalRUrl: `${serverUrl}/partyHub`,
+    apiUrl: `${serverUrl}/api`,
   };
 }
 
-// В Electron приложении используем переменные окружения или значения по умолчанию
-const getServerUrl = (): string => {
-  // Для Electron можно использовать process.env или IPC для получения конфигурации
-  // Пока используем значение по умолчанию для разработки
-  const electronWindow = window as ElectronWindow;
-  if (typeof window !== 'undefined' && electronWindow.electron?.api?.getServerUrl) {
-    return electronWindow.electron.api.getServerUrl();
+function getApiConfigSync(): {
+  serverUrl: string;
+  signalRUrl: string;
+  apiUrl: string;
+} {
+  if (cachedApiConfig) {
+    return cachedApiConfig;
   }
 
-  // Fallback на переменную окружения или значение по умолчанию
-  return import.meta.env.VITE_API_URL || 'http://localhost:5000';
-};
+  const serverUrl = getServerUrlSync();
+  cachedApiConfig = {
+    serverUrl,
+    signalRUrl: `${serverUrl}/partyHub`,
+    apiUrl: `${serverUrl}/api`,
+  };
+
+  return cachedApiConfig;
+}
 
 export const apiConfig = {
-  /**
-   * Базовый URL сервера API
-   */
   get serverUrl(): string {
-    return getServerUrl();
+    try {
+      return getApiConfigSync().serverUrl;
+    } catch (error) {
+      throw new Error(
+        `Failed to get server URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   },
 
-  /**
-   * URL для SignalR Hub
-   */
   get signalRUrl(): string {
-    return `${this.serverUrl}/partyHub`;
+    try {
+      return getApiConfigSync().signalRUrl;
+    } catch (error) {
+      throw new Error(
+        `Failed to get SignalR URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   },
 
-  /**
-   * URL для REST API
-   */
   get apiUrl(): string {
-    return `${this.serverUrl}/api`;
+    try {
+      return getApiConfigSync().apiUrl;
+    } catch (error) {
+      throw new Error(
+        `Failed to get API URL: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   },
 };
+
+export async function getApiConfig(): Promise<{
+  serverUrl: string;
+  signalRUrl: string;
+  apiUrl: string;
+}> {
+  const config = await getApiConfigAsync();
+  cachedApiConfig = config;
+  return config;
+}
+
+export function clearApiConfigCache(): void {
+  cachedApiConfig = null;
+}

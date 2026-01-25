@@ -7,11 +7,13 @@
 ## Зависимости
 
 ### Core
+
 - `@core/types/workspace` - WorkspaceId, WorkspaceType
 - `@core/types/track` - Track
 - `@core/types/project` - isProjectTrack
 
 ### Shared
+
 - `@shared/stores/projectStoreFactory` - создание store для коллекции
 - `@shared/stores/globalHistoryStore` - глобальная история undo/redo
 - `@shared/stores/uiStore` - уведомления

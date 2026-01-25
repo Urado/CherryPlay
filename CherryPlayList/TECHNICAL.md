@@ -134,6 +134,7 @@ CherryPlayList/
 - **`app/`** - компоненты уровня приложения (App, WorkspaceRenderer, модальные окна)
 
 Каждый модуль workspace:
+
 - Имеет собственную папку в `workspaces/`
 - Содержит `index.ts` - регистрирует модуль в `WorkspaceRegistry` при импорте
 - Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`, `FileBrowserView.tsx`)
@@ -141,6 +142,7 @@ CherryPlayList/
 - Имеет собственную документацию в `README.md`
 
 **Структура workspace модуля:**
+
 - `index.ts` - экспортирует модуль и регистрирует его в `WorkspaceRegistry`
 - `[WorkspaceName]View.tsx` - основной React компонент workspace
 - `README.md` - документация модуля (опционально другие файлы)
@@ -208,11 +210,13 @@ CherryPlayList/
 Приложение использует **localforage** (IndexedDB) для надёжного хранения состояния между сессиями через Zustand `persist` middleware.
 
 **Проблема, которую решает localforage:**
+
 - `localStorage` в Electron может терять данные при спящем режиме или аварийном завершении
 - `localStorage` синхронный и блокирует UI поток
 - Ограниченный объём хранения (~5-10 МБ)
 
 **Преимущества localforage:**
+
 - **Асинхронное хранение** - не блокирует UI поток
 - **Надёжность** - данные сохраняются на диск, не теряются при спящем режиме
 - **Больший объём** - до 50% свободного места на диске (vs ~5-10 МБ для localStorage)
@@ -221,6 +225,7 @@ CherryPlayList/
 
 **Обновлённые stores:**
 Все stores с `persist` middleware используют `electronStorage` (localforage):
+
 - `projectStore` - главный store проекта (треки, группы, настройки, undo/redo)
 - `playerSessionStore` - состояние сессии плеера
 - `playerItemsStore` - items и группы в плеере
@@ -231,5 +236,6 @@ CherryPlayList/
 - `partyStore` - состояние вечеринки
 
 **Расположение:**
+
 - Storage адаптер: `src/shared/storage/electronStorage.ts`
 - Подробнее: [STORAGE_MIGRATION.md](./STORAGE_MIGRATION.md)

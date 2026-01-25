@@ -57,4 +57,3 @@ Party workspace отвечает за **жизненный цикл вечери
 
 Подробнее о протоколах, потоках данных и серверной части см. модуль  
 [Streaming](../systems/streaming.md) и файл `STREAMING_ARCHITECTURE.md`.
-

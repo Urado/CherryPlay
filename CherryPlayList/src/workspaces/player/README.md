@@ -17,10 +17,12 @@ workspaces/player/
 ## Зависимости
 
 ### Core
+
 - `@core/types/workspace` - WorkspaceId, WorkspaceType
 - `@core/types/track` - Track
 
 ### Shared
+
 - `@shared/stores/playerStore` - store плеера с состоянием воспроизведения
 - `@shared/stores/demoPlayerStore` - интеграция с демо-плеером
 - `@shared/stores/settingsStore` - настройки приложения
@@ -106,4 +108,3 @@ workspaces/player/
 ## Layout
 
 Плеер доступен через layout preset, который включает плеер и браузер файлов для удобной работы.
-

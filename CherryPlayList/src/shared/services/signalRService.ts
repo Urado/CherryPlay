@@ -11,7 +11,7 @@
 
 import * as signalR from '@microsoft/signalr';
 
-import { apiConfig } from '../config/apiConfig';
+import { getApiConfig } from '../config/apiConfig';
 import { usePlayerAudioStore, useProjectStore } from '../stores';
 import { convertPlaylistForApi } from '../utils/partyUtils';
 
@@ -178,9 +178,10 @@ class SignalRService {
         await this.cleanupConnection();
       }
 
+      const config = await getApiConfig();
       const url = token
-        ? `${apiConfig.signalRUrl}?token=${encodeURIComponent(token)}`
-        : apiConfig.signalRUrl;
+        ? `${config.signalRUrl}?token=${encodeURIComponent(token)}`
+        : config.signalRUrl;
 
       console.log('[SignalR] Starting connection to:', url);
 

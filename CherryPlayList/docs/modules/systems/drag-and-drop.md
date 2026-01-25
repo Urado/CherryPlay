@@ -121,11 +121,11 @@ Drop на Трек 4 (position: 'bottom'):
 
 ### Same-workspace vs Cross-workspace
 
-| Аспект | Same-workspace | Cross-workspace |
-|--------|----------------|-----------------|
-| Корректировка индекса | Да (countAbove) | Нет |
-| Клонирование ID | Нет (сохраняются) | Да (новые UUID) |
-| История | CompositeAction (source=target) | CompositeAction |
+| Аспект                | Same-workspace                  | Cross-workspace |
+| --------------------- | ------------------------------- | --------------- |
+| Корректировка индекса | Да (countAbove)                 | Нет             |
+| Клонирование ID       | Нет (сохраняются)               | Да (новые UUID) |
+| История               | CompositeAction (source=target) | CompositeAction |
 
 ## Функциональность
 
@@ -141,9 +141,10 @@ Drop на Трек 4 (position: 'bottom'):
 ## Зависимости
 
 **Входящие (используют модуль):**
+
 - PlaylistView, CollectionView, PlayerTracksList
 
 **Исходящие (модуль использует):**
+
 - `projectStoreFactory` — через executor
 - `globalHistoryStore` — для записи истории операций
-

@@ -28,4 +28,3 @@
 - Использует `projectStore` для хранения данных
 - Интегрирован с `dragDropStore` для cross-workspace операций
 - Использует `demoPlayerStore` для предпрослушивания треков
-

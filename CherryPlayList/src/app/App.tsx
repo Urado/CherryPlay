@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { NotificationContainer } from '@shared/components';
+import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
 import { initializeShortcuts } from '@shared/shortcuts';
 import {
@@ -26,7 +27,10 @@ const App: React.FC = () => {
     initializeProjectStoreHistory();
     initializeGlobalHistory();
 
-    // Initialize keyboard shortcuts system
+    initializeServerConfig().catch((error: unknown) => {
+      console.warn('Failed to initialize server config:', error);
+    });
+
     initializeShortcuts(() => useSettingsStore.getState().keyBindings);
 
     useGlobalHistoryStore.getState().registerErrorHandler((message) => {
@@ -38,10 +42,8 @@ const App: React.FC = () => {
     });
   }, []);
 
-  // Инициализация CSS переменных для размеров строк треков
   useTrackItemSize();
 
-  // Проверка что rootZone - контейнер
   if (layout.rootZone.type !== 'container') {
     return (
       <div className="app">

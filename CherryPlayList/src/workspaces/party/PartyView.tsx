@@ -38,7 +38,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const { enableStreaming } = useSettingsStore();
   const items = useProjectStore((state) => state.items);
 
-  // Получаем состояние сессии из projectStore
   const sessionState = useProjectStore((state) => state.sessionState);
   const { mode, currentTrackId, playedTrackIds, disabledTrackIds, disabledGroupIds } = useMemo(
     () => ({
@@ -51,7 +50,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     [sessionState],
   );
 
-  // Получаем состояние аудио плеера
   const {
     status: audioStatus,
     position: audioPosition,
@@ -75,7 +73,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [serverError, setServerError] = useState<string | null>(null);
   const [partyVerified, setPartyVerified] = useState(false);
 
-  // Используем store для сохранения состояния вечеринки
   const { createdParty, setCreatedParty } = usePartyStore((state) => ({
     createdParty: state.createdParty,
     setCreatedParty: state.setCreatedParty,
@@ -86,10 +83,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setCustomizationSettings(getDefaultCustomizationSettings(newThemeId));
   };
 
-  // Преобразуем items в формат для библиотеки компонентов (без path для превью)
   const componentItems = useMemo(() => {
     const converted = convertToComponentPlayerItems(items);
-    // Убираем path из всех элементов для превью (как будет в вебе)
     const removePath = (items: typeof converted): typeof converted => {
       return items.map((item) => {
         if (item.type === 'track') {
@@ -107,7 +102,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     return removePath(converted);
   }, [items]);
 
-  // Вычисляем статистику плейлиста
   const playlistData = useMemo(
     () => ({
       items: componentItems,
@@ -117,7 +111,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     [componentItems, items],
   );
 
-  // Формируем PlaybackState для превью (только в режиме сессии)
   const playbackState: PlaybackState | null = useMemo(() => {
     if (mode !== 'session') {
       return null;
@@ -151,42 +144,40 @@ export const PartyView: React.FC<PartyViewProps> = ({
     addNotification: state.addNotification,
   }));
 
-  // Проверка существования вечеринки на сервере
-  const checkPartyExists = async (partyId: string): Promise<boolean> => {
-    try {
-      setIsCheckingParty(true);
-      setServerError(null);
-      const exists = await partyService.checkPartyExists(partyId);
-      setPartyVerified(exists);
-      if (!exists) {
+  const checkPartyExists = React.useCallback(
+    async (partyId: string): Promise<boolean> => {
+      try {
+        setIsCheckingParty(true);
+        setServerError(null);
+        const exists = await partyService.checkPartyExists(partyId);
+        setPartyVerified(exists);
+        if (!exists) {
+          setServerError('Сервер не найден');
+          setCreatedParty(null);
+        }
+        return exists;
+      } catch (error) {
+        console.error('Failed to check party existence:', error);
         setServerError('Сервер не найден');
+        setPartyVerified(false);
         setCreatedParty(null);
+        return false;
+      } finally {
+        setIsCheckingParty(false);
       }
-      return exists;
-    } catch (error) {
-      console.error('Failed to check party existence:', error);
-      setServerError('Сервер не найден');
-      setPartyVerified(false);
-      setCreatedParty(null);
-      return false;
-    } finally {
-      setIsCheckingParty(false);
-    }
-  };
+    },
+    [setCreatedParty],
+  );
 
-  // Обработчик переподключения
   const handleRetry = async () => {
     if (createdParty) {
-      // Если есть созданная вечеринка, проверяем её существование
       await checkPartyExists(createdParty.id);
     } else {
-      // Если вечеринки нет, просто очищаем ошибку и показываем форму создания
       setServerError(null);
       setPartyVerified(false);
     }
   };
 
-  // Проверка вечеринки при инициализации
   useEffect(() => {
     if (createdParty) {
       checkPartyExists(createdParty.id);
@@ -194,8 +185,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       setPartyVerified(false);
       setServerError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Только при монтировании компонента
+  }, [createdParty, checkPartyExists]);
 
   const handleCreateParty = async () => {
     if (!partyName.trim()) {
@@ -210,7 +200,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setServerError(null);
     setPartyVerified(false);
     try {
-      // Преобразуем плейлист для API (убираем path, вычисляем метаданные)
       const playlistForApi = convertPlaylistForApi(items);
 
       const createData: CreatePartyDto = {
@@ -223,7 +212,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       const party = await partyService.createParty(createData);
 
-      // Проверяем, что вечеринка действительно создана на сервере
       const exists = await checkPartyExists(party.id);
 
       if (!exists) {
@@ -234,7 +222,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         return;
       }
 
-      const url = partyService.getPartyUrl(party.shortCode);
+      const url = await partyService.getPartyUrl(party.shortCode);
       const partyData = { id: party.id, shortCode: party.shortCode, url };
       setCreatedParty(partyData);
 

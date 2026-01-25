@@ -16,11 +16,13 @@ workspaces/playlist/
 ## Зависимости
 
 ### Core
+
 - `@core/types/workspace` - WorkspaceId, WorkspaceType
 - `@core/types/track` - Track
 - `@core/constants/workspace` - DEFAULT_PLAYLIST_WORKSPACE_ID
 
 ### Shared
+
 - `@shared/stores/playlistStore` - store плейлиста с треками и операциями
 - `@shared/stores/demoPlayerStore` - управление воспроизведением
 - `@shared/stores/settingsStore` - настройки (отсечки по времени)

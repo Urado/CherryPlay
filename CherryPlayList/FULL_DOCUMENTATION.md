@@ -204,7 +204,7 @@ type ProjectItem = Track | ProjectGroup;
 interface ProjectGroup {
   id: string;
   name: string;
-  items: ProjectItem[];  // Nested items (recursive structure)
+  items: ProjectItem[]; // Nested items (recursive structure)
 }
 ```
 
@@ -256,6 +256,7 @@ interface ProjectGroup {
 - `canRedo()` - Check if redo is available
 
 Supported actions in history:
+
 - Add/remove items
 - Move items
 - Create/ungroup groups
@@ -329,13 +330,14 @@ The `draggedItems` state is stored globally in `uiStore` to enable cross-workspa
 ### File Browser Focus
 
 The `fileBrowserFocusRequest` state is used to request focusing a specific file in the FileBrowser component. When set, it contains:
+
 - `path: string` - Path to the file that should be focused
 - `timestamp: number` - Timestamp when the request was made (used to detect new requests)
 
 **Methods:**
+
 - `focusFileInBrowser(path: string)` - Requests focus on a file in FileBrowser. Sets `activeSource` to 'fileBrowser' and creates a focus request.
 - `acknowledgeFileBrowserFocus()` - Clears the focus request after it has been processed by FileBrowser component.
-
 
 ---
 
@@ -465,12 +467,12 @@ Handles app preferences including UI customization and export settings.
 ### Hour Divider Intervals
 
 Common interval values (in seconds):
+
 - `900` - 15 minutes
 - `1800` - 30 minutes
 - `3600` - 1 hour (default)
 - `7200` - 2 hours
 - `10800` - 3 hours
-
 
 ## 6.6 demoPlayerStore
 
@@ -505,6 +507,7 @@ Previously, application state could be lost when the system entered sleep mode b
 ### Solution: localforage
 
 **localforage** provides:
+
 - **Asynchronous storage** - does not block UI thread
 - **Reliability** - data is persisted to disk, survives sleep mode and unexpected shutdowns
 - **Larger capacity** - up to 50% of free disk space (vs ~5-10 MB for localStorage)
@@ -551,6 +554,7 @@ const storage = localforage.createInstance({
 ### Migration Notes
 
 When upgrading to this version:
+
 - Old data from `localStorage` is not automatically migrated
 - New data will be stored in IndexedDB via localforage
 - This is expected behavior - users can reload their playlists from saved files
@@ -807,6 +811,7 @@ After the workspace refactoring, the application uses a compound component archi
 A compound component for building list item rows with flexible composition.
 
 **Structure:**
+
 ```
 ListRow/
 ├── ListRow.tsx           # Main container
@@ -829,6 +834,7 @@ ListRow/
 ```
 
 **Usage:**
+
 ```tsx
 <ListRowCompound id={item.id} isSelected={true} isDragging={false}>
   <ListRowCompound.DragHandle />
@@ -850,6 +856,7 @@ ListRow/
 Container component with drop logic on the container level (not on individual items). This solves the "dead zone" bug where drops between items didn't work.
 
 **Structure:**
+
 ```
 ItemList/
 ├── ItemList.tsx          # Main container with drag events
@@ -860,6 +867,7 @@ ItemList/
 ```
 
 **Usage:**
+
 ```tsx
 <ItemList onDragOver={handleDragOver} onDrop={handleDrop}>
   {items.map((item, index) => (
@@ -877,11 +885,13 @@ ItemList/
 **Location**: `src/shared/components/rows/ProjectItemRow.tsx`
 
 Universal component for displaying tracks and groups. Supports three modes:
+
 - `'playlist'` - Basic mode with play, delete buttons
 - `'player-preparation'` - Player mode with settings button
 - `'player-session'` - Player mode with settings and disable buttons
 
 **Props:**
+
 - `item: ProjectItem` - Track or group
 - `index: number` - Display index
 - `level: number` - Nesting level (for groups)
@@ -924,6 +934,7 @@ Component for displaying a single track in a playlist. Supports drag-and-drop th
 **Track Item Sizing:**
 
 Track items use CSS variables for consistent sizing across playlist and file browser:
+
 - `--track-item-padding`: Controlled by `trackItemSizePreset` setting (8px/12px/16px)
 - `--track-item-margin`: Controlled by `trackItemSizePreset` setting (2px/4px/6px)
 - These variables are initialized by `useTrackItemSize` hook in App component
@@ -931,6 +942,7 @@ Track items use CSS variables for consistent sizing across playlist and file bro
 **Hour Dividers:**
 
 PlaylistView supports visual dividers showing accumulated time intervals:
+
 - Dividers appear after tracks when accumulated duration exceeds configured interval
 - Format: "hh:mm" (e.g., "1:30" for 1 hour 30 minutes)
 - Controlled by `showHourDividers` and `hourDividerInterval` settings
@@ -1021,6 +1033,7 @@ The hook is called once at the application root level (in App.tsx) to initialize
 **CSS Variables:**
 
 These variables are used by:
+
 - `.playlist-item` in `src/styles/components/playlist.css`
 - `.file-browser-item` in `src/styles/components/fileBrowser.css`
 
@@ -1037,11 +1050,13 @@ Track object contains: `id` (unique identifier), `path` (file path), `name` (tra
 Playlist JSON file contains an object with fields: `name` (playlist name) and `tracks` (array of track objects).
 
 Each track object in the `tracks` array can contain:
+
 - `path: string` - **Required**. File path to the track
 - `name?: string` - **Optional**. Track name (if not provided, extracted from path)
 - `duration?: number` - **Optional**. Track duration in seconds
 
 Example:
+
 ```json
 {
   "name": "My Playlist",
@@ -1062,14 +1077,14 @@ The `.cherry` format is the primary project file format, supporting tracks, grou
 
 ```typescript
 interface ProjectFile {
-  version: '2.0';                        // Format version
-  name: string;                          // Project name
-  items: SavedProjectItem[];             // All items (flat list with references)
-  rootItems: string[];                   // IDs of root-level items (order matters)
-  settings: ProjectSettings;             // Global settings
-  trackSettings: Record<string, ProjectTrackSettings>;  // Per-track settings
-  groupSettings: Record<string, ProjectGroupSettings>;  // Per-group settings
-  sessionState?: ProjectSessionState;    // Optional session state
+  version: '2.0'; // Format version
+  name: string; // Project name
+  items: SavedProjectItem[]; // All items (flat list with references)
+  rootItems: string[]; // IDs of root-level items (order matters)
+  settings: ProjectSettings; // Global settings
+  trackSettings: Record<string, ProjectTrackSettings>; // Per-track settings
+  groupSettings: Record<string, ProjectGroupSettings>; // Per-group settings
+  sessionState?: ProjectSessionState; // Optional session state
 }
 ```
 
@@ -1090,7 +1105,7 @@ interface SavedProjectGroup {
   type: 'group';
   id: string;
   name: string;
-  items: string[];  // Array of item IDs
+  items: string[]; // Array of item IDs
 }
 ```
 
@@ -1098,13 +1113,13 @@ interface SavedProjectGroup {
 
 ```typescript
 interface ProjectSettings {
-  defaultPauseBetweenTracks: number;     // Default pause in seconds
+  defaultPauseBetweenTracks: number; // Default pause in seconds
   defaultActionAfterTrack: 'next' | 'pause' | 'pauseAndNext';
-  plannedEndTime: number | null;         // Unix timestamp or null
+  plannedEndTime: number | null; // Unix timestamp or null
 }
 
 interface ProjectTrackSettings {
-  pauseBetweenTracks?: number | null;    // Override default
+  pauseBetweenTracks?: number | null; // Override default
   actionAfterTrack?: 'next' | 'pause' | 'pauseAndNext' | null;
 }
 ```
@@ -1129,8 +1144,20 @@ interface ProjectSessionState {
   "version": "2.0",
   "name": "My Party Playlist",
   "items": [
-    { "type": "track", "id": "t1", "path": "C:/Music/song1.mp3", "name": "Song 1", "duration": 180 },
-    { "type": "track", "id": "t2", "path": "C:/Music/song2.mp3", "name": "Song 2", "duration": 240 },
+    {
+      "type": "track",
+      "id": "t1",
+      "path": "C:/Music/song1.mp3",
+      "name": "Song 1",
+      "duration": 180
+    },
+    {
+      "type": "track",
+      "id": "t2",
+      "path": "C:/Music/song2.mp3",
+      "name": "Song 2",
+      "duration": 240
+    },
     { "type": "group", "id": "g1", "name": "Chill Set", "items": ["t1", "t2"] }
   ],
   "rootItems": ["g1"],
@@ -1147,6 +1174,7 @@ interface ProjectSessionState {
 ### Validation
 
 The `projectValidation.ts` module provides validation with graceful degradation:
+
 - `validateProjectFile(data)` - Validates structure, returns errors/warnings
 - `validateProjectIntegrity(projectFile)` - Checks reference integrity
 
@@ -1506,6 +1534,7 @@ The application supports multiple layout presets:
 Layout presets are defined in `layoutStore.ts` and can be selected via the header dropdown. The default layout is `'collections'`.
 
 Available presets:
+
 - `'simple'`: Playlist (50%) + FileBrowser (50%)
 - `'collections'`: Playlist (50%) + [Collections (horizontal, 50%) + FileBrowser (50%)]
 - `'collections-vertical'`: Playlist (33%) + Collections (vertical, 33%) + FileBrowser (34%)
@@ -2058,7 +2087,6 @@ All IPC channels are whitelisted in `electron/preload.ts`. Only channels in the 
 
 Content Security Policy (CSP) is configured in `index.html` via meta tag with http-equiv="Content-Security-Policy". The policy restricts:
 
-
 - Scripts to same origin and inline scripts (required for Vite)
 - Styles to same origin, inline styles, and Google Fonts
 - Fonts to same origin and Google Fonts
@@ -2177,7 +2205,7 @@ See `CHANGELOG.md` for a complete list of known issues identified during code re
 ### Medium Priority Issues
 
 3. **Potential Memory Leak**: Keyboard event handler dependencies could cause unnecessary re-registrations
-5. **Race Condition**: Track duration loading might update deleted tracks
+4. **Race Condition**: Track duration loading might update deleted tracks
 
 ### Low Priority Issues
 

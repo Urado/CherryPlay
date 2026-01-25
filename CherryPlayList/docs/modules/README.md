@@ -3,6 +3,7 @@
 Краткая документация по основным модулям проекта.
 
 Под **модулями** в этом разделе понимаются **только**:
+
 - **Workspaces** — самостоятельные рабочие области приложения.
 - **Systems** — крупные инфраструктурные подсистемы (drag-and-drop, undo/redo, streaming, demo player и т.п.).
 
@@ -11,6 +12,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 ## Список модулей
 
 ### Workspaces (модули)
+
 - [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
 - [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
 - [File Browser](./workspaces/file-browser.md) - Обозреватель файлов
@@ -19,6 +21,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [Test Zone](./workspaces/test-zone.md) - Тестовый модуль для проверки layout и реестра workspace
 
 ### Systems (модули)
+
 - [Drag and Drop](./systems/drag-and-drop.md) - Система перетаскивания треков и групп между workspace
 - [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
 - [Layout System](./systems/layout-system.md) - Система управления layout интерфейса
@@ -32,14 +35,17 @@ Stores, сервисы, хуки и утилиты считаются подде
 Эти части системы не считаются модулями, но являются важной инфраструктурой, которую используют модули.
 
 ### Stores
+
 - [Project Store](./stores/project-store.md) - Главный store проекта с треками, группами и сессией
 - [UI Store](./stores/ui-store.md) - Глобальный store UI состояния и layout
 - [Settings Store](./stores/settings-store.md) - Store настроек приложения
 
 ### Сервисы
+
 - [Export](./services/export.md) - Сервис экспорта плейлистов
 - [IPC Service](./services/ipc-service.md) - Сервис IPC коммуникации с Electron
 - [Project Service](./services/project-service.md) - Сервис работы с файлами проектов
 
 ### Hooks & Utils
+
 - [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Hook для клавиатурных сокращений

@@ -28,4 +28,3 @@
 - Выделение элементов (single, multiple, range)
 - Undo/Redo через globalHistoryStore
 - Сохранение/загрузка проектов (.cherry формат)
-

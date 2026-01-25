@@ -1,4 +1,4 @@
-import { apiConfig } from '../config/apiConfig';
+import { getApiConfig } from '../config/apiConfig';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
@@ -24,12 +24,14 @@ export interface PartyDto {
 }
 
 class PartyService {
-  private get baseUrl(): string {
-    return apiConfig.apiUrl;
+  private async getBaseUrl(): Promise<string> {
+    const config = await getApiConfig();
+    return config.apiUrl;
   }
 
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
-    const response = await fetch(`${this.baseUrl}/parties`, {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +53,8 @@ class PartyService {
   }
 
   async getParty(partyId: string): Promise<PartyDto> {
-    const response = await fetch(`${this.baseUrl}/parties/${partyId}`, {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +90,8 @@ class PartyService {
     partyId: string,
     playlist: { items: PlayerItemForApi[]; totalTracks: number; totalDuration: number },
   ): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/parties/${partyId}/playlist`, {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties/${partyId}/playlist`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -106,8 +110,26 @@ class PartyService {
     throw new Error('Not implemented');
   }
 
-  getPartyUrl(shortCode: string): string {
-    return `http://localhost:3000/?party=${shortCode}`;
+  async getPartyUrl(shortCode: string): Promise<string> {
+    const config = await getApiConfig();
+    const serverUrl = config.serverUrl;
+
+    try {
+      const url = new URL(serverUrl);
+      const protocol = url.protocol;
+      const hostname = url.hostname;
+
+      if (url.port && url.port !== '80' && url.port !== '443') {
+        const webPort = url.protocol === 'https:' ? '443' : '80';
+        return `${protocol}//${hostname}${webPort === '80' ? '' : `:${webPort}`}/?party=${shortCode}`;
+      }
+
+      return `${protocol}//${hostname}/?party=${shortCode}`;
+    } catch {
+      const cleanUrl = serverUrl.replace(/^https?:\/\//, '').split('/')[0];
+      const protocol = serverUrl.startsWith('https') ? 'https' : 'http';
+      return `${protocol}://${cleanUrl}/?party=${shortCode}`;
+    }
   }
 }
 

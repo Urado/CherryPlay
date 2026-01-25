@@ -27,7 +27,9 @@
   font-size: var(--font-size-body);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .player-session-button:disabled {
@@ -66,7 +68,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   margin-left: var(--spacing-sm);
 }
 
@@ -88,7 +92,9 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   min-width: 32px;
   height: 32px;
   position: relative;
@@ -262,7 +268,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   min-width: 32px;
   height: 32px;
   flex-shrink: 0;
@@ -323,7 +331,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -403,7 +412,9 @@
   flex-shrink: 0;
   border-radius: 4px;
   min-width: 32px;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .playlist-item-ungroup:hover:not(:disabled) {
@@ -445,4 +456,3 @@
 .group-header-expand-button:hover {
   color: var(--accent-primary);
 }
-

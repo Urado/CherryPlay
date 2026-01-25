@@ -26,4 +26,3 @@
 - Автоматическая очистка контейнеров с 1 дочерним элементом
 - Layout presets: simple, collections, collections-vertical, complex
 - Сохранение layout между сессиями (localforage)
-

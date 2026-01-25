@@ -26,4 +26,3 @@
 - `fileBrowser:listDirectory` - Список содержимого папки
 - `fileBrowser:findAudioFilesRecursive` - Рекурсивный поиск аудиофайлов
 - `fileBrowser:statFile` - Статистика файла/папки
-
