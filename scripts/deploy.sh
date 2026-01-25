@@ -36,15 +36,32 @@ echo "  Registry: $REGISTRY"
 echo "  Server image: $REGISTRY/$IMAGE_NAME_SERVER:$VERSION"
 echo "  Web image: $REGISTRY/$IMAGE_NAME_WEB:$VERSION"
 
-# Login to GitHub Container Registry if token is provided
-if [ -n "$GITHUB_TOKEN" ]; then
+# Login to GitHub Container Registry
+# IMPORTANT: Even public images in GHCR require authentication
+# Extract username from IMAGE_NAME_SERVER (format: owner/repo/server)
+GITHUB_USER=$(echo "$IMAGE_NAME_SERVER" | cut -d'/' -f1)
+
+# Use GHCR_TOKEN if provided, otherwise try GITHUB_TOKEN (for backward compatibility)
+TOKEN="${GHCR_TOKEN:-${GITHUB_TOKEN}}"
+
+if [ -n "$TOKEN" ]; then
     echo -e "${YELLOW}🔐 Logging in to GitHub Container Registry...${NC}"
-    # Extract username from IMAGE_NAME_SERVER (format: owner/repo/server)
-    GITHUB_USER=$(echo "$IMAGE_NAME_SERVER" | cut -d'/' -f1)
-    echo "$GITHUB_TOKEN" | docker login $REGISTRY -u "$GITHUB_USER" --password-stdin || {
-        echo -e "${YELLOW}⚠️  Warning: Failed to login to GHCR. Make sure GITHUB_TOKEN is valid.${NC}"
-        echo -e "${YELLOW}   If images are public, login might not be required.${NC}"
-    }
+    echo "  Username: $GITHUB_USER"
+    if echo "$TOKEN" | docker login $REGISTRY -u "$GITHUB_USER" --password-stdin; then
+        echo -e "${GREEN}✅ Successfully logged in to GHCR${NC}"
+    else
+        echo -e "${RED}❌ Failed to login to GHCR${NC}"
+        echo -e "${YELLOW}   Please check:${NC}"
+        echo -e "${YELLOW}   1. GHCR_TOKEN secret is set in GitHub Actions${NC}"
+        echo -e "${YELLOW}   2. Token has 'read:packages' permission${NC}"
+        echo -e "${YELLOW}   3. For public repos, any valid GitHub token should work${NC}"
+        exit 1
+    fi
+else
+    echo -e "${RED}❌ Error: GHCR_TOKEN is required${NC}"
+    echo -e "${YELLOW}   Even public images in GHCR require authentication.${NC}"
+    echo -e "${YELLOW}   Please set GHCR_TOKEN secret in GitHub Actions.${NC}"
+    exit 1
 fi
 
 # Pull new images

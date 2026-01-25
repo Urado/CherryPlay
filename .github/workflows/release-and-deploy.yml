@@ -120,7 +120,9 @@ jobs:
             export REGISTRY="${{ env.REGISTRY }}"
             export IMAGE_NAME_SERVER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/server"
             export IMAGE_NAME_WEB="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')/web"
-            export GITHUB_TOKEN="${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}"
+            # Use GHCR_TOKEN secret if available, otherwise use GITHUB_TOKEN (system token)
+            # Note: Custom secrets cannot start with GITHUB_, so we use GHCR_TOKEN
+            export GHCR_TOKEN="${{ secrets.GHCR_TOKEN || github.token }}"
             ./deploy.sh
           EOF
 
