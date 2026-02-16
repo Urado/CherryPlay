@@ -1,0 +1,24 @@
+.party-view-wrapper-disabled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--bg-primary, #ffffff);
+}
+
+.party-view-wrapper-message {
+  text-align: center;
+  color: var(--text-secondary, #666666);
+}
+
+.party-view-wrapper-message p {
+  margin: 8px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.party-view-wrapper-message p:first-child {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #000000);
+}

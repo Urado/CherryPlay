@@ -38,7 +38,6 @@ export interface UsePlaybackPreviewReturn {
  * Provides consistent playback preview behavior across all workspace views:
  * - PlaylistView
  * - CollectionView
- * - FileBrowserView
  *
  * Handles loading tracks, playing, pausing, and checking playback state.
  *

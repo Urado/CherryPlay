@@ -86,6 +86,22 @@
   gap: var(--spacing-sm);
 }
 
+.settings-planned-end-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-md);
+}
+
+.settings-planned-end-row .settings-input--planned-end,
+.settings-planned-end-row .settings-planned-end-clear {
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.settings-planned-end-row .settings-input--planned-end {
+  flex: 1;
+}
+
 .settings-input {
   flex: 1;
   background-color: var(--bg-tertiary);
@@ -104,6 +120,16 @@
 
 .settings-input::placeholder {
   color: var(--text-disabled);
+}
+
+.settings-input--no-spinner {
+  -moz-appearance: textfield;
+}
+
+.settings-input--no-spinner::-webkit-outer-spin-button,
+.settings-input--no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .settings-browse-button {

@@ -1,5 +1,5 @@
 import SettingsIcon from '@mui/icons-material/Settings';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -12,6 +12,7 @@ import { DisplayItem } from '@shared/utils/playerItemsUtils';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import { formatTimeFromTimestamp } from '../dividerUtils';
+import { TrackSettingsDropdown } from '../TrackSettingsDropdown';
 import {
   getItemState,
   isItemLocked,
@@ -102,13 +103,18 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 }) => {
   const { getGroupSettings, getTrackSettings } = useProjectStore();
 
-  // Use unified selection with modifiers hook
+  const [trackSettingsDropdown, setTrackSettingsDropdown] = useState<{
+    trackId: string;
+    anchorRect: DOMRect;
+  } | null>(null);
+
+  const closeTrackSettingsDropdown = useCallback(() => setTrackSettingsDropdown(null), []);
+
   const { handleToggleSelect } = useSelectionWithModifiers({
     toggleSelection: toggleItemSelection,
     selectRange,
   });
 
-  // Render settings button with indicator
   const renderSettingsButton = (item: ProjectItem, isGroup: boolean) => {
     let hasCustomSettings = false;
     let settingsActionAfterTrack: string | null = null;
@@ -130,7 +136,12 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
         className="playlist-item-settings"
         onClick={(e) => {
           e.stopPropagation();
-          handleOpenTrackSettings(item.id);
+          if (isGroup) {
+            handleOpenTrackSettings(item.id);
+          } else {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setTrackSettingsDropdown({ trackId: item.id, anchorRect: rect });
+          }
         }}
         title={isGroup ? 'Настройки группы' : 'Настройки трека'}
       >
@@ -149,164 +160,169 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   };
 
   return (
-    <ItemList
-      className="playlist-tracks"
-      workspaceId={DEFAULT_PLAYER_WORKSPACE_ID}
-      onDragOver={playerDrag.handleDragOverContainer}
-      onDragLeave={playerDrag.handleDragLeave}
-      onDragEnd={playerDrag.handleDragEnd}
-      onDrop={playerDrag.handleDropOnContainer}
-      emptyState={
-        <EmptyState message="Player is empty" hint="Перетащите треки сюда для воспроизведения" />
-      }
-    >
-      {displayItems.map((displayItem) => {
-        const { item, level, displayIndex, flatIndex } = displayItem;
-        const isGroup = isProjectGroup(item);
-        const track = isProjectTrack(item) ? item : null;
+    <>
+      {trackSettingsDropdown && (
+        <TrackSettingsDropdown
+          key={trackSettingsDropdown.trackId}
+          trackId={trackSettingsDropdown.trackId}
+          anchorRect={trackSettingsDropdown.anchorRect}
+          onClose={closeTrackSettingsDropdown}
+        />
+      )}
+      <ItemList
+        className="playlist-tracks"
+        workspaceId={DEFAULT_PLAYER_WORKSPACE_ID}
+        onDragOver={playerDrag.handleDragOverContainer}
+        onDragLeave={playerDrag.handleDragLeave}
+        onDragEnd={playerDrag.handleDragEnd}
+        onDrop={playerDrag.handleDropOnContainer}
+        emptyState={
+          <EmptyState message="Player is empty" hint="Перетащите треки сюда для воспроизведения" />
+        }
+      >
+        {displayItems.map((displayItem) => {
+          const { item, level, displayIndex, flatIndex } = displayItem;
+          const isGroup = isProjectGroup(item);
+          const track = isProjectTrack(item) ? item : null;
 
-        const isDraggedItem =
-          isItemDragState(playerDrag.draggedItems) &&
-          playerDrag.draggedItems.allFlatIndices.has(flatIndex);
-        const isActive = activeTrackId === item.id;
-        const isPlaying = isActive && playerStatus === 'playing';
+          const isDraggedItem =
+            isItemDragState(playerDrag.draggedItems) &&
+            playerDrag.draggedItems.allFlatIndices.has(flatIndex);
+          const isActive = activeTrackId === item.id;
+          const isPlaying = isActive && playerStatus === 'playing';
 
-        // Planned end divider before active track
-        const showPlannedEndDividerBeforeActive =
-          !isPreparationMode &&
+          const showPlannedEndDividerBeforeActive =
+            !isPreparationMode &&
+            plannedEndTime !== null &&
+            plannedEndDividerPosition === -1 &&
+            isActive &&
+            track !== null;
+
+          const hasPlannedEndDivider =
+            !isPreparationMode &&
+            plannedEndTime !== null &&
+            plannedEndDividerPosition === flatIndex;
+          const showDivider =
+            showHourDividers &&
+            isProjectTrack(item) &&
+            track !== null &&
+            calculateDividerMarkers.has(track.id) &&
+            !hasPlannedEndDivider;
+          const dividerTime = track ? (calculateDividerMarkers.get(track.id) ?? null) : null;
+
+          const itemState = getItemState(
+            item,
+            isTrackPlayed,
+            isGroupDisabled,
+            isTrackOrGroupDisabled,
+            getAllTracksInOrder,
+          );
+
+          const isCurrentTrack = track?.id === activePlayerTrackId;
+          const isLocked = isItemLocked(
+            item,
+            isPreparationMode,
+            activePlayerTrackId,
+            itemState,
+            getAllTracksInOrder,
+            isTrackPlayed,
+          );
+
+          const groupDurationWithPauses = isGroup
+            ? calculateGroupDurationWithPauses(item, getAllTracksInOrder, getEffectiveTrackSettings)
+            : undefined;
+
+          const rowMode = isPreparationMode ? 'player-preparation' : 'player-session';
+
+          return (
+            <React.Fragment key={item.id}>
+              <DropIndicator index={flatIndex} />
+              {showPlannedEndDividerBeforeActive && (
+                <div className="playlist-hour-divider playlist-hour-divider--planned-end">
+                  <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
+                </div>
+              )}
+              <ProjectItemRow
+                item={item}
+                index={displayIndex}
+                listIndex={flatIndex}
+                level={level}
+                mode={rowMode}
+                isSelected={selectedItemIds.has(item.id)}
+                isDragging={isDraggedItem}
+                isDragOver={playerDrag.dragOverIndex === flatIndex && !isDraggedItem}
+                insertPosition={
+                  playerDrag.dragOverIndex === flatIndex && !isDraggedItem
+                    ? playerDrag.insertPosition
+                    : null
+                }
+                isActive={isActive}
+                isPlaying={isPlaying}
+                isPlayed={itemState.isPlayed}
+                isDisabled={itemState.isDisabled}
+                isCurrent={isCurrentTrack}
+                isLocked={isLocked}
+                groupDuration={groupDurationWithPauses}
+                onToggleSelect={handleToggleSelect}
+                onRemove={removeItem}
+                onDragStart={(e) => playerDrag.handleDragStart(e, item.id)}
+                onDragOver={(e) => {
+                  if (isLocked) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'none';
+                    return;
+                  }
+                  playerDrag.handleDragOver(e, flatIndex);
+                }}
+                onDrop={(e) => {
+                  if (isLocked) {
+                    e.preventDefault();
+                    return;
+                  }
+                  playerDrag.handleDrop(e, flatIndex);
+                }}
+                onDragEnd={playerDrag.handleDragEnd}
+                onPlay={startTrackPlayback}
+                onPause={pausePlayback}
+                onToggleDisabled={handleToggleDisabled}
+                onRenameGroup={setGroupName}
+                onUngroupGroup={handleUngroupGroup}
+                settingsButton={renderSettingsButton(item, isGroup)}
+              />
+              {showDivider && track && (
+                <div className="playlist-hour-divider">
+                  <span className="playlist-hour-divider-label">
+                    {mode === 'session' &&
+                    dividerTime !== undefined &&
+                    dividerTime !== null &&
+                    dividerTime > 0
+                      ? formatTimeFromTimestamp(dividerTime)
+                      : formatDividerLabel(track.id)}
+                  </span>
+                </div>
+              )}
+              {hasPlannedEndDivider && (
+                <div className="playlist-hour-divider playlist-hour-divider--planned-end">
+                  <span className="playlist-hour-divider-label">
+                    {mode === 'session'
+                      ? formatPlannedEndMarkerTime()
+                      : formatPlannedEndTimeLabel()}
+                  </span>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+        <DropIndicator index={displayItems.length} />
+        {!isPreparationMode &&
           plannedEndTime !== null &&
-          plannedEndDividerPosition === -1 &&
-          isActive &&
-          track !== null;
-
-        // Check if we need to show divider for this track
-        const hasPlannedEndDivider =
-          !isPreparationMode && plannedEndTime !== null && plannedEndDividerPosition === flatIndex;
-        const showDivider =
-          showHourDividers &&
-          isProjectTrack(item) &&
-          track !== null &&
-          calculateDividerMarkers.has(track.id) &&
-          !hasPlannedEndDivider;
-        const dividerTime = track ? (calculateDividerMarkers.get(track.id) ?? null) : null;
-
-        // Get item state
-        const itemState = getItemState(
-          item,
-          isTrackPlayed,
-          isGroupDisabled,
-          isTrackOrGroupDisabled,
-          getAllTracksInOrder,
-        );
-
-        const isCurrentTrack = track?.id === activePlayerTrackId;
-        const isLocked = isItemLocked(
-          item,
-          isPreparationMode,
-          activePlayerTrackId,
-          itemState,
-          getAllTracksInOrder,
-          isTrackPlayed,
-        );
-
-        // Calculate group duration with pauses
-        const groupDurationWithPauses = isGroup
-          ? calculateGroupDurationWithPauses(item, getAllTracksInOrder, getEffectiveTrackSettings)
-          : undefined;
-
-        // Determine mode for ProjectItemRow
-        const rowMode = isPreparationMode ? 'player-preparation' : 'player-session';
-
-        return (
-          <React.Fragment key={item.id}>
-            <DropIndicator index={flatIndex} />
-            {/* Planned end divider before active track */}
-            {showPlannedEndDividerBeforeActive && (
-              <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-                <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
-              </div>
-            )}
-            <ProjectItemRow
-              item={item}
-              index={displayIndex}
-              listIndex={flatIndex}
-              level={level}
-              mode={rowMode}
-              isSelected={selectedItemIds.has(item.id)}
-              isDragging={isDraggedItem}
-              isDragOver={playerDrag.dragOverIndex === flatIndex && !isDraggedItem}
-              insertPosition={
-                playerDrag.dragOverIndex === flatIndex && !isDraggedItem
-                  ? playerDrag.insertPosition
-                  : null
-              }
-              isActive={isActive}
-              isPlaying={isPlaying}
-              isPlayed={itemState.isPlayed}
-              isDisabled={itemState.isDisabled}
-              isCurrent={isCurrentTrack}
-              isLocked={isLocked}
-              groupDuration={groupDurationWithPauses}
-              onToggleSelect={handleToggleSelect}
-              onRemove={removeItem}
-              onDragStart={(e) => playerDrag.handleDragStart(e, item.id)}
-              onDragOver={(e) => {
-                if (isLocked) {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'none';
-                  return;
-                }
-                playerDrag.handleDragOver(e, flatIndex);
-              }}
-              onDrop={(e) => {
-                if (isLocked) {
-                  e.preventDefault();
-                  return;
-                }
-                playerDrag.handleDrop(e, flatIndex);
-              }}
-              onDragEnd={playerDrag.handleDragEnd}
-              onPlay={startTrackPlayback}
-              onPause={pausePlayback}
-              onToggleDisabled={handleToggleDisabled}
-              onRenameGroup={setGroupName}
-              onUngroupGroup={handleUngroupGroup}
-              settingsButton={renderSettingsButton(item, isGroup)}
-            />
-            {/* Hour divider after track */}
-            {showDivider && track && (
-              <div className="playlist-hour-divider">
-                <span className="playlist-hour-divider-label">
-                  {mode === 'session' &&
-                  dividerTime !== undefined &&
-                  dividerTime !== null &&
-                  dividerTime > 0
-                    ? formatTimeFromTimestamp(dividerTime)
-                    : formatDividerLabel(track.id)}
-                </span>
-              </div>
-            )}
-            {/* Planned end divider */}
-            {hasPlannedEndDivider && (
-              <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-                <span className="playlist-hour-divider-label">
-                  {mode === 'session' ? formatPlannedEndMarkerTime() : formatPlannedEndTimeLabel()}
-                </span>
-              </div>
-            )}
-          </React.Fragment>
-        );
-      })}
-      <DropIndicator index={displayItems.length} />
-      {/* Planned end divider at the end */}
-      {!isPreparationMode &&
-        plannedEndTime !== null &&
-        plannedEndDividerPosition === null &&
-        displayItems.length > 0 && (
-          <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-            <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
-          </div>
-        )}
-    </ItemList>
+          plannedEndDividerPosition === null &&
+          displayItems.length > 0 && (
+            <div className="playlist-hour-divider playlist-hour-divider--planned-end">
+              <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
+            </div>
+          )}
+      </ItemList>
+    </>
   );
 };

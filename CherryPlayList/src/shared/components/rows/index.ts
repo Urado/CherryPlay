@@ -3,6 +3,3 @@
 
 export { ProjectItemRow } from './ProjectItemRow';
 export type { ProjectItemRowProps, ProjectItemRowMode } from './ProjectItemRow';
-
-export { FileRow } from './FileRow';
-export type { FileRowProps, FileItem } from './FileRow';

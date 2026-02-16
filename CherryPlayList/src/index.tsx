@@ -1,6 +1,5 @@
 import '@workspaces/playlist';
 import '@workspaces/collection';
-import '@workspaces/fileBrowser';
 import '@workspaces/testZone';
 import '@workspaces/player';
 import '@workspaces/party';

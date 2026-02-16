@@ -41,8 +41,8 @@ export type {
 } from './ListRow';
 
 // Row components - pre-configured compositions
-export { ProjectItemRow, FileRow } from './rows';
-export type { ProjectItemRowProps, ProjectItemRowMode, FileRowProps, FileItem } from './rows';
+export { ProjectItemRow } from './rows';
+export type { ProjectItemRowProps, ProjectItemRowMode } from './rows';
 
 // ItemList - Container with drop logic on container level
 export {

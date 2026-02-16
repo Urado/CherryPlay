@@ -198,11 +198,7 @@ CherryPlayList/
 │   │   │   ├── CollectionView.tsx
 │   │   │   ├── index.ts
 │   │   │   └── README.md
-│   │   ├── fileBrowser/  # Модуль браузера файлов
-│   │   │   ├── FileBrowserView.tsx
-│   │   │   ├── index.ts
-│   │   │   └── README.md
-│   │   └── testZone/     # Тестовые модули
+│   │   └── testZone/     # Тестовые модули (браузер файлов — FileBrowser в components/)
 │   │       ├── TestZoneView.tsx
 │   │       ├── index.ts
 │   │       └── README.md

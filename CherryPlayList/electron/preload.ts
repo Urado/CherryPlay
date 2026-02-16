@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
-  invoke: (channel: string, payload) => {
+  invoke: (channel: string, payload?: object) => {
     const validChannels = [
       'fileBrowser:listDirectory',
       'fileBrowser:statFile',
@@ -38,7 +38,7 @@ export {};
 declare global {
   interface Window {
     api: {
-      invoke: (channel: string, payload?) => ReturnType<typeof ipcRenderer.invoke>;
+      invoke: (channel: string, payload?: object) => ReturnType<typeof ipcRenderer.invoke>;
     };
   }
 }

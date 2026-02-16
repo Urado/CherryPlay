@@ -1,5 +1,5 @@
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { ActionAfterTrack } from '@core/types/project';
 import { useProjectStore, useUIStore } from '@shared/stores';
@@ -19,28 +19,45 @@ export const TrackSettingsModal: React.FC = () => {
 
   const { defaultPauseBetweenTracks, defaultActionAfterTrack, plannedEndTime } = settings;
 
-  // Получаем контекст из store
   const trackId = trackSettingsContext.trackId;
   const groupId = trackSettingsContext.groupId;
   const isGlobal = trackSettingsContext.isGlobal;
 
-  // Определяем тип настройки
-  const currentSettings = isGlobal
-    ? { pauseBetweenTracks: defaultPauseBetweenTracks, actionAfterTrack: defaultActionAfterTrack }
-    : groupId
-      ? getGroupSettings(groupId)
-      : trackId
-        ? getTrackSettings(trackId)
-        : {};
+  const getResolvedSettings = useCallback(
+    () =>
+      isGlobal
+        ? {
+            pauseBetweenTracks: defaultPauseBetweenTracks,
+            actionAfterTrack: defaultActionAfterTrack,
+          }
+        : groupId
+          ? getGroupSettings(groupId)
+          : trackId
+            ? getTrackSettings(trackId)
+            : {},
+    [
+      isGlobal,
+      groupId,
+      trackId,
+      defaultPauseBetweenTracks,
+      defaultActionAfterTrack,
+      getGroupSettings,
+      getTrackSettings,
+    ],
+  );
 
   const [localActionAfterTrack, setLocalActionAfterTrack] = useState<ActionAfterTrack | 'default'>(
-    currentSettings.actionAfterTrack || 'default',
+    () => getResolvedSettings().actionAfterTrack || 'default',
   );
-  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number>(
-    currentSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
+  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number | ''>(
+    () => getResolvedSettings().pauseBetweenTracks ?? defaultPauseBetweenTracks,
   );
 
-  // Конвертация timestamp в строку времени HH:MM
+  const effectivePause =
+    typeof localPauseBetweenTracks === 'number'
+      ? localPauseBetweenTracks
+      : defaultPauseBetweenTracks;
+
   const timestampToTimeString = (timestamp: number | null): string => {
     if (timestamp === null) return '';
     const date = new Date(timestamp);
@@ -49,7 +66,6 @@ export const TrackSettingsModal: React.FC = () => {
     return `${hours}:${minutes}`;
   };
 
-  // Конвертация строки времени HH:MM в timestamp для текущего дня
   const timeStringToTimestamp = (timeString: string): number | null => {
     if (!timeString) return null;
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -65,22 +81,12 @@ export const TrackSettingsModal: React.FC = () => {
 
   const prevModalRef = useRef<string | null>(null);
 
-  // Синхронизируем локальные значения при открытии модального окна
   useEffect(() => {
     if (modal === 'trackSettings' && prevModalRef.current !== 'trackSettings') {
       const timeoutId = setTimeout(() => {
-        const currentSettings = isGlobal
-          ? {
-              pauseBetweenTracks: defaultPauseBetweenTracks,
-              actionAfterTrack: defaultActionAfterTrack,
-            }
-          : groupId
-            ? getGroupSettings(groupId)
-            : trackId
-              ? getTrackSettings(trackId)
-              : {};
-        setLocalActionAfterTrack(currentSettings.actionAfterTrack || 'default');
-        setLocalPauseBetweenTracks(currentSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks);
+        const resolved = getResolvedSettings();
+        setLocalActionAfterTrack(resolved.actionAfterTrack || 'default');
+        setLocalPauseBetweenTracks(resolved.pauseBetweenTracks ?? defaultPauseBetweenTracks);
         if (isGlobal) {
           setLocalPlannedEndTime(timestampToTimeString(plannedEndTime));
         }
@@ -94,9 +100,7 @@ export const TrackSettingsModal: React.FC = () => {
     trackId,
     groupId,
     defaultPauseBetweenTracks,
-    defaultActionAfterTrack,
-    getTrackSettings,
-    getGroupSettings,
+    getResolvedSettings,
     plannedEndTime,
   ]);
 
@@ -109,24 +113,28 @@ export const TrackSettingsModal: React.FC = () => {
       setDefaultActionAfterTrack(
         localActionAfterTrack === 'default' ? defaultActionAfterTrack : localActionAfterTrack,
       );
-      setDefaultPauseBetweenTracks(localPauseBetweenTracks);
+      setDefaultPauseBetweenTracks(effectivePause);
       setPlannedEndTime(timeStringToTimestamp(localPlannedEndTime));
     } else if (groupId) {
       setGroupSettings(groupId, {
         actionAfterTrack: localActionAfterTrack === 'default' ? null : localActionAfterTrack,
-        pauseBetweenTracks:
-          localPauseBetweenTracks === defaultPauseBetweenTracks ? null : localPauseBetweenTracks,
+        pauseBetweenTracks: effectivePause === defaultPauseBetweenTracks ? null : effectivePause,
       });
     } else if (trackId) {
       setTrackSettings(trackId, {
         actionAfterTrack: localActionAfterTrack === 'default' ? null : localActionAfterTrack,
-        pauseBetweenTracks:
-          localPauseBetweenTracks === defaultPauseBetweenTracks ? null : localPauseBetweenTracks,
+        pauseBetweenTracks: effectivePause === defaultPauseBetweenTracks ? null : effectivePause,
       });
     }
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
+  };
+
+  const handlePauseInputFocus = () => {
+    if (localPauseBetweenTracks === defaultPauseBetweenTracks) {
+      setLocalPauseBetweenTracks('');
+    }
   };
 
   const handleCancel = () => {
@@ -193,9 +201,9 @@ export const TrackSettingsModal: React.FC = () => {
                     : 'Пауза после трека'}
                 )
               </option>
+              <option value="pause">Пауза после трека</option>
               <option value="next">Сплошное воспроизведение</option>
               <option value="pauseAndNext">Пауза между треками</option>
-              <option value="pause">Пауза после трека</option>
             </select>
           </div>
 
@@ -206,9 +214,17 @@ export const TrackSettingsModal: React.FC = () => {
               </label>
               <input
                 type="number"
-                className="settings-input"
+                className="settings-input settings-input--no-spinner"
                 value={localPauseBetweenTracks}
-                onChange={(e) => setLocalPauseBetweenTracks(Number(e.target.value) || 0)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '') {
+                    setLocalPauseBetweenTracks('');
+                  } else {
+                    setLocalPauseBetweenTracks(Number(v) || 0);
+                  }
+                }}
+                onFocus={handlePauseInputFocus}
                 id="track-settings-pause"
                 min="0"
                 step="1"
@@ -221,23 +237,25 @@ export const TrackSettingsModal: React.FC = () => {
               <label className="settings-label" htmlFor="track-settings-planned-end-time">
                 Плановое время окончания
               </label>
-              <input
-                type="time"
-                className="settings-input"
-                value={localPlannedEndTime}
-                onChange={(e) => setLocalPlannedEndTime(e.target.value)}
-                id="track-settings-planned-end-time"
-              />
-              <button
-                className="modal-button secondary"
-                onClick={() => {
-                  setLocalPlannedEndTime('');
-                  setPlannedEndTime(null);
-                }}
-                style={{ marginTop: '8px' }}
-              >
-                Очистить
-              </button>
+              <div className="settings-planned-end-row">
+                <input
+                  type="time"
+                  className="settings-input settings-input--planned-end"
+                  value={localPlannedEndTime}
+                  onChange={(e) => setLocalPlannedEndTime(e.target.value)}
+                  id="track-settings-planned-end-time"
+                />
+                <button
+                  type="button"
+                  className="modal-button secondary settings-planned-end-clear"
+                  onClick={() => {
+                    setLocalPlannedEndTime('');
+                    setPlannedEndTime(null);
+                  }}
+                >
+                  Очистить
+                </button>
+              </div>
             </div>
           )}
         </div>

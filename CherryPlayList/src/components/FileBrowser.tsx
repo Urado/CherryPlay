@@ -9,6 +9,7 @@ import React, { useState, useMemo, useEffect, KeyboardEvent, useCallback } from 
 import { fileService, ipcService } from '@shared/services';
 import { useDemoPlayerStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
+import { formatTrackDuration } from '@shared/utils/durationUtils';
 
 export const FileBrowser: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>('');
@@ -18,6 +19,7 @@ export const FileBrowser: React.FC = () => {
   const [items, setItems] = useState<
     Array<{ name: string; path: string; isDirectory: boolean; size?: number }>
   >([]);
+  const [durations, setDurations] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingRevealPath, setPendingRevealPath] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export const FileBrowser: React.FC = () => {
       setError(null);
       const contents = await fileService.listFolder(path);
       setItems(contents);
+      setDurations({});
     } catch (err) {
       setError((err as Error).message || 'Failed to load directory');
       logger.error('Failed to load directory', err);
@@ -74,7 +77,40 @@ export const FileBrowser: React.FC = () => {
     }
   };
 
-  // Reload directory when path changes
+  const DURATION_CONCURRENCY = 5;
+  useEffect(() => {
+    const audioPaths = items
+      .filter((item) => !item.isDirectory && fileService.isValidAudioFile(item.path))
+      .map((item) => item.path);
+    if (audioPaths.length === 0) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      for (let i = 0; i < audioPaths.length; i += DURATION_CONCURRENCY) {
+        if (cancelled) return;
+        const chunk = audioPaths.slice(i, i + DURATION_CONCURRENCY);
+        const results = await Promise.allSettled(chunk.map((p) => ipcService.getAudioDuration(p)));
+        if (cancelled) return;
+        setDurations((prev) => {
+          const next = { ...prev };
+          chunk.forEach((path, idx) => {
+            const result = results[idx];
+            if (result.status === 'fulfilled' && Number.isFinite(result.value)) {
+              next[path] = result.value;
+            }
+          });
+          return next;
+        });
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
   useEffect(() => {
     if (currentPath) {
       loadDirectory(currentPath);
@@ -282,6 +318,21 @@ export const FileBrowser: React.FC = () => {
     return `${kb.toFixed(1)} KB`;
   };
 
+  const DURATION_PLACEHOLDER = 'длительность…';
+  const formatFileMeta = (item: { path: string; size?: number }, isAudio: boolean): string => {
+    const parts: string[] = [];
+    const duration = durations[item.path];
+    if (duration != null && Number.isFinite(duration)) {
+      parts.push(formatTrackDuration(duration));
+    } else if (isAudio) {
+      parts.push(DURATION_PLACEHOLDER);
+    }
+    if (item.size != null && item.size > 0) {
+      parts.push(formatFileSize(item.size));
+    }
+    return parts.join(' • ');
+  };
+
   const handlePlayFile = useCallback(
     async (item: { path: string; name: string }) => {
       try {
@@ -395,8 +446,10 @@ export const FileBrowser: React.FC = () => {
                 </div>
                 <div className="file-browser-item-info">
                   <div className="file-browser-item-name">{item.name}</div>
-                  {!item.isDirectory && item.size && (
-                    <div className="file-browser-item-size">{formatFileSize(item.size)}</div>
+                  {!item.isDirectory && formatFileMeta(item, isAudioFile) && (
+                    <div className="file-browser-item-size">
+                      {formatFileMeta(item, isAudioFile)}
+                    </div>
                   )}
                 </div>
                 {isAudioFile && (

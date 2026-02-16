@@ -900,11 +900,7 @@ Universal component for displaying tracks and groups. Supports three modes:
 - `isActive`, `isPlaying`, `isPlayed`, `isDisabled`, `isCurrent`, `isLocked` - Playback states
 - Event handlers: `onToggleSelect`, `onRemove`, `onDragStart`, etc.
 
-#### FileRow
-
-**Location**: `src/shared/components/rows/FileRow.tsx`
-
-Component for displaying files and folders in FileBrowser.
+**File browser rows**: The file browser (`FileBrowser` in `src/components/FileBrowser.tsx`) renders file and folder rows inline (no separate row component). Rows use classes `file-browser-item`, `file-browser-item-name`, `file-browser-item-size`; see `src/styles/components/fileBrowser.css`. The former `FileRow` component was removed as unused.
 
 ---
 
@@ -1035,7 +1031,7 @@ The hook is called once at the application root level (in App.tsx) to initialize
 These variables are used by:
 
 - `.playlist-item` in `src/styles/components/playlist.css`
-- `.file-browser-item` in `src/styles/components/fileBrowser.css`
+- `.file-browser-item` in `src/styles/components/fileBrowser.css` (FileBrowser component)
 
 ---
 
