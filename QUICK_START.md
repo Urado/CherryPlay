@@ -1,76 +1,65 @@
 # Быстрый старт
 
-## Быстрый запуск всех сервисов
+## Запуск с Docker (рекомендуется)
 
-Используйте скрипты для автоматического запуска всех сервисов:
+Самый простой способ поднять сервер и веб-приложение:
 
 ```bash
-# PowerShell
-.\start-all.ps1
-
-# CMD
-start-all.bat
+docker-compose up -d
 ```
 
-Скрипт автоматически:
-- Проверяет наличие необходимых инструментов (.NET SDK, Node.js)
-- Устанавливает зависимости при необходимости
-- Запускает сервер и веб-приложение в отдельных окнах
+После запуска доступны:
+- **Сервер (API):** http://localhost:5000  
+- **Веб-приложение:** http://localhost:3000  
+- **Swagger:** http://localhost:5000/swagger  
+- **pgAdmin:** http://localhost:5050 (при наличии в docker-compose)
 
-**Результат:**
-- Сервер: http://localhost:5000
-- Веб-приложение: http://localhost:3000
+Подробнее: [README.md](./README.md#docker).
 
-## Ручной запуск
+## Ручной запуск (локальная разработка)
 
-### Запуск сервера (CherryPlayServer)
+### 1. Запуск сервера (CherryPlayServer)
 
-1. Перейдите в папку `CherryPlayServer`
-2. Установите зависимости (если нужно):
-   ```bash
-   dotnet restore
-   ```
-3. Запустите сервер:
-   ```bash
-   dotnet run
-   ```
+```bash
+cd CherryPlayServer
+dotnet restore   # при необходимости
+dotnet run
+```
 
-Сервер будет доступен по адресу: http://localhost:5000
+Сервер: http://localhost:5000
 
-## Запуск веб-приложения (CherryPlayWeb)
+### 2. Запуск веб-приложения (CherryPlayWeb)
 
-1. Перейдите в папку `CherryPlayWeb`
-2. Установите зависимости:
-   ```bash
-   npm install
-   ```
-3. Запустите приложение:
-   ```bash
-   npm run dev
-   ```
+```bash
+cd CherryPlayWeb
+npm install
+npm run dev
+```
 
-Веб-приложение будет доступно по адресу: http://localhost:3000
+Веб-приложение: http://localhost:3000
+
+### 3. Запуск десктопного приложения (CherryPlayList)
+
+```bash
+cd CherryPlayList
+npm install
+npm run electron:dev
+```
+
+Приложение организатора (Electron + Vite). URL сервера задаётся в настройках или в `serverConfig.json` (например, `http://localhost:5000`). Подробнее: [DEV_SETUP.md](./DEV_SETUP.md).
 
 ## Что делает приложение
 
-- **Сервер** предоставляет REST API для получения плейлистов и SignalR Hub для трансляции состояния
-- **Веб-приложение** отображает первый доступный плейлист на главной странице
+- **Сервер** — REST API для плейлистов и вечеринок, SignalR Hub для трансляции состояния.
+- **Веб-приложение** — просмотр плейлиста и состояния вечеринки (каталог и страница по shortCode).
+- **CherryPlayList** — создание вечеринок, управление эфиром, трансляция состояния на сервер.
 
-## API Endpoints
+Полный список API и контрактов: [CONTRACTS.md](./CONTRACTS.md). Кратко по эндпоинтам: [CherryPlayServer/README.md](./CherryPlayServer/README.md). SignalR Hub: `{baseUrl}/partyHub`, методы и события — в [CONTRACTS.md](./CONTRACTS.md) §2–3.
 
-- `GET /api/parties/public/first` - получить первый плейлист
-- `GET /api/parties/public/{shortCode}/playlist` - получить плейлист по shortCode
+## Сборка компонентов
 
-## SignalR Hub
+Для сборки библиотеки CherryPlayComponents (нужна для CherryPlayList и CherryPlayWeb):
 
-- Endpoint: `/partyHub`
-- Методы и события описаны в `CherryPlayServer/README.md`
-
-## Сборка проектов
-
-**Для сервера и веб-приложения:** Используйте Docker Compose (см. [README.md](./README.md#docker))
-
-**Для компонентов:**
 ```bash
 # PowerShell
 .\build-components.ps1
@@ -84,5 +73,4 @@ npm install
 npm run build
 ```
 
-Подробнее см. `SCRIPTS.md`
-
+Подробнее: [SCRIPTS.md](./SCRIPTS.md).

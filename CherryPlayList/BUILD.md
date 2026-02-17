@@ -13,7 +13,7 @@ npm install
    - `build/icon.icns` - для macOS
    - `build/icon.png` - для Linux
 
-   Подробнее см. `build/README.md`
+   Иконки опциональны: при их отсутствии electron-builder использует стандартные.
 
 ## Сборка проекта
 

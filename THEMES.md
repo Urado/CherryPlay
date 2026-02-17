@@ -212,4 +212,3 @@ interface CreateThemeConfig {
 ## Полезные ссылки
 
 - [CherryPlayComponents README](./CherryPlayComponents/README.md)
-- [STREAMING_ARCHITECTURE.md](./STREAMING_ARCHITECTURE.md)

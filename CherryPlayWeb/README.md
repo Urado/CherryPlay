@@ -36,8 +36,7 @@ npm run dev
 
 ## Настройка
 
-По умолчанию приложение подключается к серверу на `http://localhost:5000`.
-Можно изменить через переменную окружения `VITE_API_URL`.
+По умолчанию приложение подключается к серверу на `http://localhost:5000`. Можно изменить через переменную окружения **`VITE_API_URL`** (например, в файле `.env` в корне проекта: `VITE_API_URL=http://localhost:5000`). Полный список переменных окружения см. в [ENV.md](ENV.md).
 
 ## Демо-режим
 
@@ -52,10 +51,15 @@ npm run dev
 - `GET /api/parties/public/{shortCode}` - получение информации о вечеринке
 - `GET /api/parties/public/{shortCode}/state` - получение состояния вечеринки
 
+## Документация
+
+- [ENV.md](ENV.md) — переменные окружения (VITE_API_URL и др.)
+- [docs/pages.md](docs/pages.md) — страницы и маршрутизация, используемые API и SignalR
+
 ## Используемые библиотеки
 
-- **React** - UI библиотека
-- **TypeScript** - типизация
-- **Vite** - сборщик
-- **@cherryplay/components** - общие компоненты для плейлистов
-- **@microsoft/signalr** - для будущей интеграции с SignalR
+- **React** — UI библиотека
+- **TypeScript** — типизация
+- **Vite** — сборщик
+- **@cherryplay/components** — общие компоненты для плейлистов
+- **@microsoft/signalr** — интеграция с SignalR Hub

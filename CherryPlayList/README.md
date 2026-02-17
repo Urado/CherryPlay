@@ -146,7 +146,7 @@ npm run dist:linux  # Linux
 - `build/icon.icns` - для macOS
 - `build/icon.png` - для Linux
 
-Подробнее см. `BUILD.md` и `build/README.md`
+Подробнее см. [BUILD.md](BUILD.md).
 
 ## Качество кода
 

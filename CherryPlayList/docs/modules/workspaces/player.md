@@ -12,7 +12,7 @@ Workspace для автоматического последовательног
 - **TrackSettingsDropdown** (`src/workspaces/player/TrackSettingsDropdown.tsx`) — попап настроек трека (список, применение сразу)
 - **TrackSettingsModal** (`src/workspaces/player/TrackSettingsModal.tsx`) — модалка настроек группы/глобальных (Сохранить/Отмена)
 - **playerAudioStore** (`src/shared/stores/playerAudioStore.ts`) — store управления аудио
-- **playerItemsStore** — store данных плейлиста плеера
+- **projectStore** (`src/shared/stores/projectStore.ts`) — главный store проекта (данные плейлиста, группы, настройки, состояние сессии)
 
 ## Настройки треков и групп
 

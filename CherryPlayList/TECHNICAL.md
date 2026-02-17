@@ -67,8 +67,7 @@ CherryPlayList/
 │   │   │   │   ├── DropIndicator.tsx
 │   │   │   │   └── EmptyState.tsx
 │   │   │   ├── rows/         # Специализированные строки
-│   │   │   │   ├── ProjectItemRow.tsx  # Для треков и групп
-│   │   │   │   └── FileRow.tsx         # Для файлов
+│   │   │   │   └── ProjectItemRow.tsx  # Для треков и групп (FileRow удалён)
 │   │   │   └── ...           # Другие компоненты
 │   │   ├── services/     # Сервисы (IPC, File, Export, Project и т.д.)
 │   │   ├── stores/       # Zustand stores
@@ -94,11 +93,7 @@ CherryPlayList/
 │   │   │   ├── CollectionView.tsx
 │   │   │   ├── index.ts
 │   │   │   └── README.md
-│   │   ├── fileBrowser/   # Модуль браузера файлов
-│   │   │   ├── FileBrowserView.tsx
-│   │   │   ├── index.ts
-│   │   │   └── README.md
-│   │   └── testZone/     # Тестовые модули
+│   │   └── testZone/     # Тестовые модули (fileBrowser удалён — используется FileBrowser в components/)
 │   │       ├── TestZoneView.tsx
 │   │       ├── index.ts
 │   │       └── README.md
@@ -137,7 +132,7 @@ CherryPlayList/
 
 - Имеет собственную папку в `workspaces/`
 - Содержит `index.ts` - регистрирует модуль в `WorkspaceRegistry` при импорте
-- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`, `FileBrowserView.tsx`)
+- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`). Браузер файлов реализован отдельно: `FileBrowser` в `components/`, показывается через SourcesPanel при зоне типа `fileBrowser`.
 - Использует только `@core/` и `@shared/` для зависимостей
 - Имеет собственную документацию в `README.md`
 
@@ -205,6 +200,13 @@ CherryPlayList/
 
 Подробнее см. раздел 6.4 в [FULL_DOCUMENTATION.md](./FULL_DOCUMENTATION.md)
 
+### Интеграция с сервером и веб-клиентом
+
+Связь CherryPlayList с **CherryPlayServer** и **CherryPlayWeb** (авторизация, вечеринки, стриминг состояния) описана в разделе документации по интеграции и согласована с планом релиза v1:
+
+- **[Интеграция приложение — сервер — веб](../../docs/integration/README.md)** — обзор подсистем (Accounts & Auth, Party Management, Streaming), роли, ссылки на контракты и БД (общая документация в корне репозитория).
+- **[Оглавление документации](./docs/README.md)** — модули, интеграция, ссылки на корневые документы репозитория.
+
 ### Хранение данных
 
 Приложение использует **localforage** (IndexedDB) для надёжного хранения состояния между сессиями через Zustand `persist` middleware.
@@ -226,16 +228,16 @@ CherryPlayList/
 **Обновлённые stores:**
 Все stores с `persist` middleware используют `electronStorage` (localforage):
 
-- `projectStore` - главный store проекта (треки, группы, настройки, undo/redo)
-- `playerSessionStore` - состояние сессии плеера
-- `playerItemsStore` - items и группы в плеере
-- `playerSettingsStore` - настройки плеера
-- `trackWorkspaceStoreFactory` - используется для коллекций
-- `settingsStore` - общие настройки приложения
-- `layoutStore` - layout интерфейса
-- `partyStore` - состояние вечеринки
+- `projectStore` - главный store проекта (треки, группы, настройки, состояние сессии, undo/redo). Заменяет устаревшие `playlistStore` и `playerItemsStore`.
+- `playerAudioStore` - управление аудио воспроизведением в Player workspace
+- `playerSessionStore` - состояние сессии плеера (режим, проигранные треки, отключённые элементы)
+- `trackWorkspaceStoreFactory` - используется для коллекций (создаёт отдельные stores для каждого workspace)
+- `settingsStore` - общие настройки приложения (экспорт, размеры элементов, отсечки по времени)
+- `layoutStore` - layout интерфейса (расположение workspace зон)
+- `partyStore` - состояние вечеринки (созданная вечеринка, подключение к серверу)
+- `demoPlayerStore` - демо-плеер для предпрослушивания треков
 
 **Расположение:**
 
 - Storage адаптер: `src/shared/storage/electronStorage.ts`
-- Подробнее: [STORAGE_MIGRATION.md](./STORAGE_MIGRATION.md)
+- Подробнее: модуль [Storage](./docs/modules/systems/storage.md) в документации.

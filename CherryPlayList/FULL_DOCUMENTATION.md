@@ -559,7 +559,7 @@ When upgrading to this version:
 - New data will be stored in IndexedDB via localforage
 - This is expected behavior - users can reload their playlists from saved files
 
-For more details, see [STORAGE_MIGRATION.md](./STORAGE_MIGRATION.md).
+For more details, see [Storage](docs/modules/systems/storage.md) and the "Хранение данных" section in [TECHNICAL.md](./TECHNICAL.md).
 
 ---
 
@@ -2191,7 +2191,7 @@ logger.error('Error message', error);
 
 ## Known Issues
 
-See `CHANGELOG.md` for a complete list of known issues identified during code review. Key issues include:
+Key issues identified during code review include:
 
 ### Critical Issues
 

@@ -45,7 +45,7 @@ Workspace автоматически регистрируется при имп�
 ## Зависимости
 
 - `@cherryplay/components` - библиотека компонентов для отображения плейлиста
-- `@shared/stores/playerItemsStore` - store с данными плейлиста
+- `@shared/stores/projectStore` - главный store проекта (данные плейлиста, группы, настройки)
 - `@shared/services/partyService` - сервис для работы с вечеринками (пока моки)
 
 ## Моки

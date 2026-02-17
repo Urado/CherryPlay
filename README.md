@@ -13,9 +13,7 @@
 
 ### 🐳 Запуск с Docker (рекомендуется)
 
-**Для запуска с Docker скрипты `build-all.ps1` и `start-all.ps1` не нужны!**
-
-Docker Compose автоматически соберет образы и запустит все сервисы:
+Docker Compose автоматически соберёт образы и запустит все сервисы:
 
 ```bash
 # Запуск всех сервисов (автоматически соберет образы при первом запуске)
@@ -54,6 +52,13 @@ npm install
 npm run dev
 ```
 
+**Десктопное приложение (CherryPlayList):**
+```bash
+cd CherryPlayList
+npm install
+npm run electron:dev
+```
+
 **Компоненты (для разработки):**
 ```bash
 cd CherryPlayComponents
@@ -68,6 +73,23 @@ npm run build
 
 Подробнее см. `QUICK_START.md`
 
+## Документация
+
+- [DEV_SETUP.md](DEV_SETUP.md) — настройка окружения для разработки (порядок запуска, переменные)
+- [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы MVP, архитектура
+- [CONTRACTS.md](CONTRACTS.md) — REST API, SignalR Hub, DTO (Public и Organizer)
+- [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.)
+- [QUICK_START.md](QUICK_START.md) — быстрый старт (локальная разработка)
+- [SCRIPTS.md](SCRIPTS.md) — скрипты для сборки компонентов
+- [THEMES.md](THEMES.md) — документация по темам оформления
+- [ADDING_THEME.md](ADDING_THEME.md) — инструкция по добавлению новой темы
+- **CherryPlayList:** [docs/README.md](CherryPlayList/docs/README.md) — оглавление документации приложения
+  - [QUICK_START_BUILD.md](CherryPlayList/QUICK_START_BUILD.md) — быстрый старт сборки релиза
+- **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, Data and Contracts)
+- **CherryPlayServer:** [API.md](CherryPlayServer/API.md) (указатель на CONTRACTS), [OPS.md](CherryPlayServer/OPS.md), [DATABASE.md](CherryPlayServer/DATABASE.md)
+- **CherryPlayWeb:** [README.md](CherryPlayWeb/README.md), [ENV.md](CherryPlayWeb/ENV.md), [docs/pages.md](CherryPlayWeb/docs/pages.md)
+- **CherryPlayComponents:** [README.md](CherryPlayComponents/README.md)
+
 ## Структура
 
 ```
@@ -76,6 +98,16 @@ CherryPlay/
 ├── CherryPlayComponents/  # React компоненты библиотека
 ├── CherryPlayServer/     # Backend сервер (.NET)
 ├── CherryPlayWeb/        # Web приложение (React)
+├── docs/                  # Документация по интеграции
+│   └── integration/       # Подсистемы интеграции (Accounts & Auth, Party Management, Streaming)
+├── CONTRACTS.md          # Контракты API, SignalR и DTO для всех частей
+├── RELEASE_PLAN.md       # План релиза v1
+├── GLOSSARY.md           # Глоссарий терминов
+├── THEMES.md             # Документация по темам
+├── ADDING_THEME.md       # Инструкция по добавлению новой темы
+├── QUICK_START.md        # Быстрый старт (локальная разработка)
+├── DEV_SETUP.md          # Настройка окружения для разработки
+├── SCRIPTS.md            # Скрипты для сборки компонентов
 ├── docker-compose.yml    # Docker Compose для production
 ├── docker-compose.debug.yml  # Docker Compose для отладки
 └── README.md             # Этот файл
@@ -171,7 +203,7 @@ docker-compose build --no-cache
 
 ### Отладка сервера в Docker
 
-**Важно:** Для полноценной отладки с точками останова рекомендуется запускать сервер локально через `dotnet run` или `start-all.ps1`. Docker debug режим подходит для тестирования в контейнере и hot reload.
+**Важно:** Для полноценной отладки с точками останова рекомендуется запускать сервер локально через `dotnet run` (см. [QUICK_START.md](QUICK_START.md) или [DEV_SETUP.md](DEV_SETUP.md)). Docker debug режим подходит для тестирования в контейнере и hot reload.
 
 Для отладки .NET сервера в контейнере используйте специальную конфигурацию:
 
@@ -224,6 +256,8 @@ docker-compose -f docker-compose.debug.yml down
 - `CherryPlayComponents/README.md` - документация компонентов
 - `CherryPlayServer/README.md` - документация сервера
 - `CherryPlayWeb/README.md` - документация веб-приложения
+
+**Контракты** (REST API, SignalR Hub, DTO) между всеми частями проекта описаны в [`CONTRACTS.md`](CONTRACTS.md).
 
 ## CI/CD и Деплой
 

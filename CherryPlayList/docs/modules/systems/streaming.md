@@ -17,7 +17,7 @@ Streaming System связывает:
 - отправляет обновления состояния воспроизведения и плейлиста;
 - обрабатывает состояние соединения и переподключения.
 
-Подробная сквозная архитектура описана в файле `STREAMING_ARCHITECTURE.md`.
+Контракты SignalR и REST, потоки данных: [CONTRACTS.md](../../../../CONTRACTS.md) §2–4, §6; обзор стриминга в интеграции — [docs/integration/streaming.md](../../../../docs/integration/streaming.md).
 
 ## Основные компоненты (клиент CherryPlayList)
 
@@ -92,7 +92,7 @@ Streaming System связывает:
    - вызывает `partyService.updatePartyPlaylist(partyId, playlistForApi)`;
    - затем отправляет `sendFullStateUpdate(partyId)`.
 
-На стороне сервера это соответствует потокам 3–4 из `STREAMING_ARCHITECTURE.md` (трансляция позиции и полного состояния).
+На стороне сервера это соответствует контракту трансляции позиции и полного состояния ([CONTRACTS.md](../../../../CONTRACTS.md) §3.5, §4).
 
 ### 4. Обработка разрыва связи и переподключения
 

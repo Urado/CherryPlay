@@ -1,0 +1,397 @@
+# Контракты CherryPlay v1
+
+Документ описывает контракты между частями проекта **в соответствии с архитектурой из [RELEASE_PLAN.md](RELEASE_PLAN.md)**: цели релиза, границы v1 (MVP), подсистемы (Accounts & Auth, Party Management, Streaming, Branding, Ops) и разделение на **Public (viewer)** и **Organizer (authorized)**.
+
+Компоненты: **CherryPlayServer** (backend), **CherryPlayWeb** (зрители), **CherryPlayList** (организатор, desktop).
+
+---
+
+## 1. Роли и границы доступа (по плану §4.1)
+
+| Роль | Кто | Доступ |
+|------|-----|--------|
+| **viewer** | Зритель в CherryPlayWeb | Read-only: публичные API по `shortCode`, подключение к SignalR по `shortCode`, получение обновлений состояния. Не может отправлять write-события. |
+| **organizer** | Организатор (CherryPlayList или кабинет в Web) | Write: создание/редактирование/удаление вечеринок, публикация плейлиста, управление сессией и состоянием воспроизведения. Только к своим данным. |
+
+В v1 авторизация write-операций: **JWT** для REST и SignalR; в Web сессия через **httpOnly cookie**. Зрители — анонимные, без логина.
+
+---
+
+## 2. Контракты Public (viewer) — по плану §6.1
+
+Зритель работает только по **shortCode**. Без авторизации.
+
+### 2.1 Целевое поведение (план)
+
+- Получить вечеринку по `shortCode`: метаданные + флаг «в каталоге».
+- Получить плейлист по `shortCode`.
+- Получить список вечеринок **каталога** (только те, что организатор включил в каталог; по умолчанию вечеринка unlisted).
+- Подключиться к SignalR как viewer по `shortCode` и получать обновления состояния, если сессия активна.
+
+### 2.2 REST API (Public)
+
+Базовый URL сервера: по умолчанию `http://localhost:5000` (или из конфигурации).
+
+| Метод | Путь | Описание | Ответ |
+|-------|------|----------|--------|
+| GET | `/api/parties/public/{shortCode}` | Метаданные вечеринки по shortCode (в т.ч. флаг «в каталоге» по плану) | `PublicPartyDto` или 404 |
+| GET | `/api/parties/public/{shortCode}/playlist` | Плейлист вечеринки | `PartyPlaylistDto` или 404 |
+| GET | `/api/parties/public/list` | Список вечеринок **каталога** (только включённые организатором) | `PublicPartyListItemDto[]` |
+| GET | `/api/parties/public/first` | *(опционально)* Плейлист первой доступной вечеринки (демо) | `PartyPlaylistDto` или 404 |
+
+**Использует:** CherryPlayWeb (страница просмотра `party/<shortCode>`, каталог).
+
+### 2.3 SignalR (viewer)
+
+**URL Hub:** `{baseUrl}/partyHub`
+
+**Методы, вызываемые зрителем (invoke):**
+
+| Метод | Аргументы | Возвращает | Описание |
+|-------|-----------|------------|----------|
+| `JoinPartyAsViewer` | `shortCode: string` | — | Подключение к группе вечеринки; сервер может сразу отправить `OnFullStateUpdated`. |
+| `RequestFullState` | `shortCode: string` | `PartyStateDto \| null` | Запрос полного состояния (плейлист + сессия + playback state). |
+| `JoinPartyAsViewerWithState` | `shortCode: string` | `PartyStateDto \| null` | Подключение к группе + полное состояние в ответе. |
+
+**События от сервера (on)** — зритель подписывается и получает обновления:
+
+| Событие | Аргументы | Описание |
+|---------|-----------|----------|
+| `OnSessionStarted` | `partyId: string` | Сессия начата. |
+| `OnSessionEnded` | `partyId: string` | Сессия завершена. |
+| `OnFullStateUpdated` | `partyId: string`, `state: PlaybackStateDto` | Обновлено полное состояние воспроизведения. |
+| `OnPlaybackPositionUpdated` | `partyId: string`, `trackId: string`, `position: number` | Обновлена позиция текущего трека. |
+| `OnStateChanged` | `partyId: string` | Состояние изменилось; клиент может запросить полное состояние. |
+| `OnPlaylistChanged` | `partyId: string` | Плейлист вечеринки изменён. |
+| `Error` | `message: string` | Ошибка (например, вечеринка не найдена). |
+
+Зритель **не вызывает** методы write: `UpdatePlaybackPosition`, `UpdateFullState`, `NotifyStateChanged`, `StartSession`, `EndSession`, `JoinPartyAsOrganizer`.
+
+---
+
+## 3. Контракты Organizer (authorized) — по плану §6.2
+
+Все write-операции — только с валидной авторизацией (JWT). Организатор работает с вечеринками по **partyId** (GUID).
+
+### 3.1 Целевое поведение (план)
+
+- Логин/логаут (через Telegram, VK, Mail.ru в v1).
+- Управление профилем организатора (имя, логотип, ссылки).
+- CRUD вечеринок (создать / редактировать метаданные / удалить).
+- Toggle: unlisted ↔ в каталоге.
+- **Publish плейлиста** в режиме редактирования (по кнопке; локальный проект — источник истины).
+- **Live write** событий сессии и состояния в режиме сессии (только с авторизацией).
+
+### 3.2 Auth (логин/логаут)
+
+В v1 поддерживаются три OAuth 2.0 провайдера: **Telegram**, **VK**, **Mail.ru**. Все используют единый паттерн эндпоинтов с параметром `{provider}` (значения: `telegram`, `vk`, `mailru`).
+
+#### 3.2.1 OAuth Login (Desktop)
+
+Для CherryPlayList (desktop): универсальный поток логина через любой провайдер.
+
+| Метод | Путь | Описание | Тело | Ответ |
+|-------|------|----------|------|--------|
+| GET | `/auth/{provider}/start` | Начало логина через выбранный провайдер. `{provider}` = `telegram`, `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` (custom scheme `cherryplaylist://auth?...` или callback `http://127.0.0.1:<port>/callback`). После успешной авторизации провайдер делает redirect обратно с `code`. | — | Redirect на провайдер |
+| POST | `/auth/exchange` | Обмен одноразового `code` от провайдера на JWT токен. Сервер определяет провайдера по `provider` в теле запроса или по `state` из redirect (если провайдер передаёт его). | `{ code: string, provider: string }` | `{ accessToken: string }` или 401 |
+
+**Поток (Desktop):**
+1. Пользователь выбирает провайдера (Telegram, VK или Mail.ru) в UI приложения.
+2. Приложение открывает браузер на `GET /auth/{provider}/start` (например `/auth/vk/start`).
+3. Сервер перенаправляет на страницу авторизации провайдера.
+4. После авторизации провайдер делает redirect с `code` (и опционально `state` с информацией о провайдере) в query параметре.
+5. Приложение извлекает `code` и вызывает `POST /auth/exchange` с телом `{ code, provider }` (провайдер определяется из выбора пользователя или из `state`).
+6. Сервер валидирует `code` у провайдера, создаёт/находит организатора, возвращает `{ accessToken }` (JWT).
+
+#### 3.2.2 OAuth Login (Web)
+
+Для CherryPlayWeb (кабинет организатора): логин через любой провайдер с установкой httpOnly cookie.
+
+| Метод | Путь | Описание | Тело | Ответ |
+|-------|------|----------|------|--------|
+| GET | `/auth/{provider}/web` | Начало логина через провайдер для веба. `{provider}` = `telegram`, `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). После успешной авторизации провайдер делает redirect с `code`. | — | Redirect на провайдер |
+| GET | `/auth/{provider}/callback` | Callback от провайдера с `code`. Сервер обменивает `code` на JWT и устанавливает httpOnly cookie, затем делает redirect в кабинет организатора. | `code` (query) | Redirect в кабинет + httpOnly cookie |
+| POST | `/auth/logout` | Выход организатора. Удаляет httpOnly cookie (Web) или инвалидирует токен (Desktop). Требует авторизации. | — | 204 |
+
+**Поток (Web):**
+1. Пользователь выбирает провайдера на странице логина и открывает `/auth/{provider}/web` (например `/auth/vk/web`).
+2. Сервер перенаправляет на страницу авторизации провайдера.
+3. После авторизации провайдер делает redirect на `/auth/{provider}/callback?code=...`.
+4. Сервер обменивает `code` на JWT, устанавливает httpOnly cookie, делает redirect в кабинет.
+
+**Поддерживаемые провайдеры в v1:**
+- `telegram` — Telegram Login Widget
+- `vk` — VK OAuth 2.0
+- `mailru` — Mail.ru OAuth 2.0
+
+### 3.3 Profile (профиль организатора)
+
+Управление профилем организатора (имя, логотип, ссылки). По плану §4.2.
+
+| Метод | Путь | Описание | Тело | Ответ |
+|-------|------|----------|------|--------|
+| GET | `/api/organizer/me` | Получить профиль текущего организатора. | — | `OrganizerDto` или 401 |
+| PATCH | `/api/organizer/profile` | Обновить профиль организатора (имя, логотип, ссылки). | `UpdateOrganizerDto` | `OrganizerDto` или 401/400 |
+
+**OrganizerDto**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | GUID организатора. |
+| `name` | `string` | Название организации / отображаемое имя. |
+| `logoUrl` | `string \| null` | URL логотипа (опционально). |
+| `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
+| `defaultThemeId` | `string \| null` | Тема по умолчанию. |
+| `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
+| `createdAt` | `string` | ISO 8601. |
+| `updatedAt` | `string \| null` | ISO 8601. |
+
+**UpdateOrganizerDto**
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| `name` | `string` | нет | Название организации. |
+| `logoUrl` | `string` | нет | URL логотипа. |
+| `links` | `Record<string, string>` | нет | Ссылки (соцсети, сайт). |
+
+### 3.4 REST API (вечеринки)
+
+Все запросы с авторизацией (JWT в заголовке или cookie по плану).
+
+| Метод | Путь | Описание | Тело | Ответ |
+|-------|------|----------|------|--------|
+| POST | `/api/parties` | Создать вечеринку | `CreatePartyDto` | `PartyDto` |
+| GET | `/api/parties/{partyId}` | Получить вечеринку (свою) | — | `PartyDto` или 404 |
+| PUT | `/api/parties/{partyId}` | Редактировать метаданные вечеринки (в т.ч. описание, место, город, дата, расписание, флаг «в каталоге») | по модели вечеринки | 204 или 404 |
+| DELETE | `/api/parties/{partyId}` | Удалить вечеринку | — | 204 или 404 |
+| PUT | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию) | `PartyPlaylistDto` | 204 или 404 |
+
+**Использует:** CherryPlayList (создание, Publish, привязка partyId к проекту); кабинет организатора в Web (CRUD, toggle каталога).
+
+### 3.5 SignalR (organizer)
+
+**Методы, вызываемые организатором (invoke)** — все с авторизацией (JWT):
+
+| Метод | Аргументы | Описание |
+|-------|-----------|----------|
+| `JoinPartyAsOrganizer` | `partyId: string`, `token: string` | Подключение к группе вечеринки (token — JWT). |
+| `StartSession` | `partyId: string` | Начало сессии; сервер рассылает `OnSessionStarted`. |
+| `EndSession` | `partyId: string` | Окончание сессии; сервер рассылает `OnSessionEnded`. |
+| `UpdatePlaybackPosition` | `partyId: string`, `trackId: string`, `position: number` | Обновление позиции воспроизведения. |
+| `UpdateFullState` | `partyId: string`, `state: PlaybackStateDto` | Обновление полного состояния воспроизведения. |
+| `NotifyStateChanged` | `partyId: string` | Уведомление об изменении состояния. |
+
+Обновление плейлиста в session mode может идти через REST PUT `.../playlist` или по контракту «live» (по плану — изменения плейлиста и состояния в session идут live). Сервер при PUT плейлиста рассылает зрителям `OnPlaylistChanged`.
+
+---
+
+## 4. Streaming (Desktop ↔ Server ↔ Web) — по плану §4.3
+
+- **Write** — только от организатора (JWT).
+- **Viewer** подключается по `shortCode`, получает плейлист (REST) и/или последнее сохранённое состояние, живые обновления по SignalR при активной сессии.
+- Точность позиции: «в целом совпадает», без жёстких требований к секундам.
+- **Offline/freeze (по плану §2.1, §4.3):** при потере связи у зрителя — блок «сейчас играет» скрывается; плейлист и пометки проигранных остаются видимыми.
+
+Связь локального проекта и серверной вечеринки (§3.3 плана): создать на сервере → сохранить `partyId` в локальном проекте; при Publish в edit режиме локальный проект перетирает серверную версию плейлиста.
+
+---
+
+## 5. Идентичность вечеринки и ссылки — по плану §3.1
+
+- **Публичная ссылка для зрителя:** `party/<shortCode>` (просмотр плейлиста и сессии), `party/<shortCode>/info` (информация о вечеринке: описание, город, место, дата, расписание, ссылки).
+- **shortCode:** уникальный, короткий, устойчивый к похожим символам (0/O, 1/l); **неизменяемый** после создания; используется в каталоге и шаринге.
+- **partyId:** GUID вечеринки; используется в API и SignalR организатора. В публичных эндпоинтах и для зрителя идентификатор — только `shortCode`.
+
+*Примечание:* в текущей реализации веб может использовать `?party={shortCode}`; целевой формат по плану — path `party/<shortCode>` и `party/<shortCode>/info`.
+
+---
+
+## 6. Модели данных (DTO) — по плану §3.2 и текущая реализация
+
+Имена полей в JSON — **camelCase**.
+
+### 6.1 Данные на сервере (план §3.2)
+
+- **Вечеринка:** название, описание, организатор, место, город, дата/расписание, тема, флаг «в каталоге», shortCode.
+- **Плейлист:** только отображаемые поля (id, name/title, duration, структура групп), **без абсолютных путей** к файлам.
+- **Состояние сессии:** минимум для отображения зрителю (played/disabled, «сессия активна/нет», последнее известное состояние).
+
+### 6.2 Плейлист и элементы
+
+**PartyPlaylistDto**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `items` | `PlayerItem[]` | Элементы плейлиста (треки и группы). |
+| `totalDuration` | `number` | Общая длительность, сек. |
+| `totalTracks` | `number` | Количество треков. |
+
+**PlayerItem**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | Уникальный идентификатор. |
+| `type` | `"track" \| "group"` | Тип элемента. |
+| `name` | `string` | Название. |
+| `displayOrder` | `number` | Порядок отображения. |
+| `level` | `number` | Уровень вложенности. |
+| `duration` | `number \| null` | Длительность в сек. (для трека). |
+| `items` | `PlayerItem[] \| undefined` | Вложенные элементы (для группы). |
+
+### 6.3 Состояние воспроизведения
+
+**PlaybackStateDto**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `currentTrackId` | `string \| null` | ID текущего трека. |
+| `status` | `"idle" \| "playing" \| "paused" \| "ended"` | Статус плеера. |
+| `position` | `number` | Позиция, сек. |
+| `duration` | `number` | Длительность текущего трека, сек. |
+| `volume` | `number` | Громкость (0–1). |
+| `mode` | `"preparation" \| "session"` | Режим. |
+| `playedTrackIds` | `string[]` | ID отыгранных треков. |
+| `disabledTrackIds` | `string[]` | ID отключённых треков. |
+| `disabledGroupIds` | `string[]` | ID отключённых групп. |
+| `lastUpdatedAt` | `string` | ISO 8601. |
+
+### 6.4 Вечеринка (публичная и организаторская)
+
+**PublicPartyDto** (ответ публичного API; по плану — метаданные + флаг «в каталоге»)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | GUID вечеринки. |
+| `name` | `string` | Название. |
+| `themeId` | `ThemeId` | Тема. |
+| `customizationSettings` | `Record<string, string \| number> \| undefined` | Оформление. |
+| `hasActiveSession` | `boolean` | Идёт ли сессия. |
+| `sessionStartedAt` | `string \| undefined` | ISO 8601 начала сессии. |
+| *(по плану)* | `isListedInCatalog` | `boolean` | Включена ли в каталог. |
+| *(по плану)* | описание, место, город, дата/расписание, ссылки | — | Для страницы `/info`. |
+
+**PublicPartyListItemDto** (элемент каталога — только вечеринки, включённые в каталог)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | GUID. |
+| `name` | `string` | Название. |
+| `shortCode` | `string` | Короткий код. |
+| `themeId` | `ThemeId` | Тема. |
+| `hasActiveSession` | `boolean` | Активна ли сессия. |
+| `createdAt` | `string` | ISO 8601. |
+| `totalTracks` | `number` | Количество треков. |
+| `totalDuration` | `number` | Длительность, сек. |
+| `eventDateTime` | `string \| undefined` | ISO 8601 мероприятия. |
+
+**PartyDto** (API организатора)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | GUID. |
+| `name` | `string` | Название. |
+| `shortCode` | `string` | Неизменяемый короткий код. |
+| `themeId` | `ThemeId` | Тема. |
+| `createdAt` | `string` | ISO 8601. |
+| `hasActiveSession` | `boolean` | Активна ли сессия. |
+| `eventDateTime` | `string \| undefined` | ISO 8601 мероприятия. |
+| *(по плану)* | метаданные для info, `isListedInCatalog` | — | Для CRUD и каталога. |
+
+**CreatePartyDto** (тело POST `/api/parties`)
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| `name` | `string` | да | Название (1–200 символов). |
+| `themeId` | `ThemeId` | нет | По умолчанию `cyberpunk`. |
+| `customizationSettings` | `Record<string, string \| number>` | нет | Настройки темы. |
+| `playlistData` | `PartyPlaylistDto` | нет | Начальный плейлист. |
+| `eventDateTime` | `string` (ISO 8601) | нет | Дата/время мероприятия. |
+
+### 6.5 Профиль организатора
+
+**OrganizerDto** (ответ GET `/api/organizer/me`, PATCH `/api/organizer/profile`)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | `string` | GUID организатора. |
+| `name` | `string` | Название организации / отображаемое имя. |
+| `logoUrl` | `string \| null` | URL логотипа (опционально). |
+| `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
+| `defaultThemeId` | `string \| null` | Тема по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
+| `createdAt` | `string` | ISO 8601. |
+| `updatedAt` | `string \| null` | ISO 8601. |
+
+**UpdateOrganizerDto** (тело PATCH `/api/organizer/profile`)
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| `name` | `string` | нет | Название организации. |
+| `logoUrl` | `string` | нет | URL логотипа. |
+| `links` | `Record<string, string>` | нет | Ссылки (соцсети, сайт). |
+
+### 6.6 Состояние вечеринки (SignalR)
+
+**PartyStateDto**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `partyId` | `string` | GUID вечеринки. |
+| `isSessionActive` | `boolean` | Активна ли сессия. |
+| `playbackState` | `PlaybackStateDto \| undefined` | Текущее состояние воспроизведения. |
+| `playlist` | `PartyPlaylistDto` | Плейлист. |
+
+### 6.7 Перечисляемые типы
+
+**ThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"`  
+**PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
+**PlaybackMode:** `"preparation"` \| `"session"`
+
+---
+
+## 7. Branding (Organizer + Party) — по плану §4.4
+
+Модель двухуровневая: дефолт на уровне organizer, override на уровне party (опционально). В v1 в вебе: логотип + имя организатора + базовые поля info. Темы/кастомизация хранятся в модели; расширенные «приватные темы» — позже. Контракты профиля организатора и полей вечеринки для info уточняются в Epic C/D.
+
+---
+
+## 8. Ops — по плану §4.5, §2.1
+
+- **Health endpoint:** доступность сервиса (например GET `/health` или `/api/health`).
+- **Логи:** auth, create/update party, start/end session, подключение к Hub.
+- **Rate limiting:** на публичные ручки и Hub; лимиты по вечеринкам (антиспам каталога).
+- **Бэкап БД:** минимум еженедельный + инструкция восстановления.
+
+Эндпоинты и формат логов задаются при реализации Epic G.
+
+---
+
+## 9. Соответствие компонентов архитектуре
+
+| Компонент | Роль | REST | SignalR | Примечание |
+|-----------|------|------|---------|------------|
+| **CherryPlayServer** | — | Реализует Public и Organizer API, Hub | Рассылает события viewer/organizer | JWT для write; каталог = только isListedInCatalog |
+| **CherryPlayWeb** | viewer (+ кабинет organizer по плану) | GET public: party, playlist, list | JoinPartyAsViewer, RequestFullState; on: все события | Страницы `party/<shortCode>`, `party/<shortCode>/info`; freeze при потере связи |
+| **CherryPlayList** | organizer | POST/GET/PUT/DELETE parties, PUT playlist | JoinPartyAsOrganizer, StartSession, EndSession, Update*, Notify* | partyId в проекте; Publish в edit; live в session |
+
+---
+
+## 10. Версионирование и обратная совместимость
+
+- Изменения имён методов Hub, событий и полей DTO считаются ломающими.
+- Новые необязательные поля и новые события Hub — обратно совместимы.
+- Формат shortCode и маршруты `party/<shortCode>`, `party/<shortCode>/info` по плану — «дорогие изменения»; при смене нужна явная стратегия миграции.
+
+---
+
+*Контракты приведены в соответствие с [RELEASE_PLAN.md](RELEASE_PLAN.md). При изменении плана или реализации обновляйте этот файл.*
+
+---
+
+## Связанные документы
+
+- [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, архитектура подсистем.
+- [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.).
+- [CherryPlayServer/API.md](CherryPlayServer/API.md) — указатель на разделы этого документа (для разработки сервера).
+- [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md) — схема БД.
+- [docs/integration/README.md](docs/integration/README.md) — подсистемы интеграции приложение–сервер–веб.

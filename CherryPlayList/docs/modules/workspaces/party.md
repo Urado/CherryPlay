@@ -26,7 +26,7 @@ Workspace для создания и управления вечеринками
 ## Зависимости
 
 - `@cherryplay/components` - библиотека компонентов для отображения плейлиста
-- `playerItemsStore` - данные плейлиста для трансляции
+- `projectStore` - данные плейлиста для трансляции (projectStore заменяет устаревший playerItemsStore)
 
 ## Связь со Streaming System и Player
 
@@ -55,5 +55,4 @@ Party workspace отвечает за **жизненный цикл вечери
 2. **Player** — запускает сессию воспроизведения.
 3. **Streaming** — транслирует состояние для зрителей.
 
-Подробнее о протоколах, потоках данных и серверной части см. модуль  
-[Streaming](../systems/streaming.md) и файл `STREAMING_ARCHITECTURE.md`.
+Подробнее о протоколах, потоках данных и серверной части см. модуль [Streaming](../systems/streaming.md) и [docs/integration/streaming.md](../../../../docs/integration/streaming.md).

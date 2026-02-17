@@ -23,7 +23,7 @@ workspaces/playlist/
 
 ### Shared
 
-- `@shared/stores/playlistStore` - store плейлиста с треками и операциями
+- `@shared/stores/projectStore` - главный store проекта (треки, группы, настройки, undo/redo)
 - `@shared/stores/demoPlayerStore` - управление воспроизведением
 - `@shared/stores/settingsStore` - настройки (отсечки по времени)
 - `@shared/services/fileService` - работа с файлами
@@ -67,7 +67,7 @@ workspaces/playlist/
 
 ### Особенности реализации
 
-- Использует `usePlaylistStore()` для управления состоянием
+- Использует `useProjectStore()` для управления состоянием (projectStore заменяет устаревший playlistStore)
 - Поддерживает историю операций (undo/redo)
 - Автоматическая загрузка длительности треков
 - Горячие клавиши: Ctrl+Z (undo), Ctrl+Y/Ctrl+Shift+Z (redo)
