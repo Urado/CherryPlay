@@ -118,7 +118,11 @@ jobs:
             DOMAIN="${CORS_ORIGIN_0#*://}"
             DOMAIN="${DOMAIN%%/*}"
             DOMAIN="${DOMAIN%%:*}"
-            sed "s/YOUR_DOMAIN/${DOMAIN}/g" .github/nginx-cherryplay-https.conf > nginx-cherryplay-https.conf
+            if [ -n "$DOMAIN" ]; then
+              sed "s/YOUR_DOMAIN/${DOMAIN}/g" .github/nginx-cherryplay-https.conf > nginx-cherryplay-https.conf
+            else
+              cp .github/nginx-cherryplay-https.conf nginx-cherryplay-https.conf
+            fi
           else
             cp .github/nginx-cherryplay-https.conf nginx-cherryplay-https.conf
           fi
