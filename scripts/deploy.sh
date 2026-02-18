@@ -99,11 +99,20 @@ IMAGE_NAME_SERVER=$IMAGE_NAME_SERVER
 IMAGE_NAME_WEB=$IMAGE_NAME_WEB
 EOF
 
-# Load existing .env if it exists (for passwords and other configs)
+# Load .env.production first (for manual deploy or fallbacks)
 if [ -f .env.production ]; then
-    echo -e "${YELLOW}📋 Loading additional configuration from .env.production...${NC}"
+    echo -e "${YELLOW}📋 Loading configuration from .env.production...${NC}"
     cat .env.production >> .env
 fi
+
+# Override with secrets from GitHub Actions when set (so Actions secrets take precedence)
+[ -n "$JWT_SECRET_KEY" ] && echo "JWT_SECRET_KEY=$JWT_SECRET_KEY" >> .env
+[ -n "$POSTGRES_PASSWORD" ] && echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
+[ -n "$PGADMIN_EMAIL" ] && echo "PGADMIN_EMAIL=$PGADMIN_EMAIL" >> .env
+[ -n "$PGADMIN_PASSWORD" ] && echo "PGADMIN_PASSWORD=$PGADMIN_PASSWORD" >> .env
+[ -n "$CORS_ORIGIN_0" ] && echo "CORS_ORIGIN_0=$CORS_ORIGIN_0" >> .env
+[ -n "$CORS_ORIGIN_1" ] && echo "CORS_ORIGIN_1=$CORS_ORIGIN_1" >> .env
+[ -n "$CORS_ORIGIN_2" ] && echo "CORS_ORIGIN_2=$CORS_ORIGIN_2" >> .env
 
 # Stop existing containers gracefully
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
@@ -149,12 +158,12 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     
     # Method 1: Check from host if curl/wget is available
     if command -v curl > /dev/null 2>&1; then
-        if curl -f -s http://localhost:5000/swagger/index.html > /dev/null 2>&1; then
+        if curl -f -s http://localhost:5000/api/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Server is healthy (checked via curl)${NC}"
             break
         fi
     elif command -v wget > /dev/null 2>&1; then
-        if wget -q --spider http://localhost:5000/swagger/index.html 2>/dev/null; then
+        if wget -q --spider http://localhost:5000/api/health 2>/dev/null; then
             echo -e "${GREEN}✅ Server is healthy (checked via wget)${NC}"
             break
         fi

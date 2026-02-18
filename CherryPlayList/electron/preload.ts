@@ -19,10 +19,13 @@ contextBridge.exposeInMainWorld('api', {
       'dialog:showSaveDialog',
       'dialog:showOpenFileDialog',
       'system:getPath',
+      'system:openExternal',
       'config:getConfigPath',
       'config:getServerUrl',
       'config:setServerUrl',
       'config:getConfig',
+      'auth:openExternal',
+      'auth:registerCallback',
     ];
 
     if (validChannels.includes(channel)) {

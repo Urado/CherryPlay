@@ -1,3 +1,4 @@
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -11,6 +12,7 @@ import { ipcService, projectService } from '@shared/services';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
   LayoutPreset,
+  useAuthStore,
   useLayoutStore,
   useProjectStore,
   useSettingsStore,
@@ -37,6 +39,8 @@ export const AppHeader: React.FC = () => {
   const { openModal, addNotification, focusFileInBrowser } = useUIStore();
   const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
   const { setLayoutPreset } = useLayoutStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
+  const organizer = useAuthStore((state) => state.organizer);
   const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>('simple');
 
   // В production не позволяем использовать complex layout
@@ -174,6 +178,10 @@ export const AppHeader: React.FC = () => {
     openModal('settings');
   };
 
+  const handleAccount = () => {
+    openModal('account');
+  };
+
   const handleLayoutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const preset = e.target.value as LayoutPreset;
     const isDev = import.meta.env.DEV;
@@ -247,6 +255,36 @@ export const AppHeader: React.FC = () => {
             </div>
 
             <div className="action-group">
+              <button
+                className="header-button"
+                onClick={handleAccount}
+                title={
+                  isAuthenticated
+                    ? `Аккаунт: ${organizer?.name || 'Организатор'}`
+                    : 'Войти в аккаунт'
+                }
+                style={{
+                  position: 'relative',
+                  color: isAuthenticated ? '#4caf50' : undefined,
+                }}
+              >
+                <AccountCircleIcon style={{ fontSize: '32px' }} />
+                {isAuthenticated && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      width: '8px',
+                      height: '8px',
+                      backgroundColor: '#4caf50',
+                      borderRadius: '50%',
+                      border: '1px solid white',
+                    }}
+                    title="Авторизован"
+                  />
+                )}
+              </button>
               <button className="header-button" onClick={handleSettings} title="Настройки">
                 <SettingsIcon style={{ fontSize: '32px' }} />
               </button>

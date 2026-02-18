@@ -75,7 +75,7 @@
 
 ### 3.1 Целевое поведение (план)
 
-- Логин/логаут (через Telegram, VK, Mail.ru в v1).
+- Логин/логаут: по email+паролю и через OAuth (VK, Mail.ru в v1; **OAuth2 для Telegram откладывается**).
 - Управление профилем организатора (имя, логотип, ссылки).
 - CRUD вечеринок (создать / редактировать метаданные / удалить).
 - Toggle: unlisted ↔ в каталоге.
@@ -84,7 +84,14 @@
 
 ### 3.2 Auth (логин/логаут)
 
-В v1 поддерживаются три OAuth 2.0 провайдера: **Telegram**, **VK**, **Mail.ru**. Все используют единый паттерн эндпоинтов с параметром `{provider}` (значения: `telegram`, `vk`, `mailru`).
+В v1 поддерживаются: **вход по email+паролю** (логин/регистрация) и OAuth 2.0 провайдеры **VK**, **Mail.ru**. **OAuth2 для Telegram откладывается** на последующие версии. OAuth использует единый паттерн эндпоинтов с параметром `{provider}` (значения: `vk`, `mailru`). На все auth-эндпоинты действует rate limiting (при превышении — 429). Для Desktop OAuth допускаются только redirect URI: `cherryplaylist://auth` и `http://127.0.0.1`.
+
+#### 3.2.0 Email+пароль (логин и регистрация)
+
+| Метод | Путь | Описание | Тело | Ответ |
+|-------|------|----------|------|--------|
+| POST | `/auth/login` | Вход по email и паролю. Устанавливает httpOnly cookie (Web) или возвращает JWT в теле (Desktop). | `{ email: string, password: string }` | `{ accessToken: string }` или 401 |
+| POST | `/auth/register` | Регистрация организатора по email, паролю и имени. Устанавливает httpOnly cookie (Web) или возвращает JWT в теле. | `{ email: string, password: string, name: string }` | `{ accessToken: string }` или 400/409 |
 
 #### 3.2.1 OAuth Login (Desktop)
 
@@ -92,11 +99,11 @@
 
 | Метод | Путь | Описание | Тело | Ответ |
 |-------|------|----------|------|--------|
-| GET | `/auth/{provider}/start` | Начало логина через выбранный провайдер. `{provider}` = `telegram`, `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` (custom scheme `cherryplaylist://auth?...` или callback `http://127.0.0.1:<port>/callback`). После успешной авторизации провайдер делает redirect обратно с `code`. | — | Redirect на провайдер |
+| GET | `/auth/{provider}/start` | Начало логина через выбранный провайдер. `{provider}` = `vk` или `mailru`. Допустимый redirect задаётся сервером (только `cherryplaylist://auth` или `http://127.0.0.1`). После успешной авторизации провайдер делает redirect обратно с `code`. | — | Redirect на провайдер |
 | POST | `/auth/exchange` | Обмен одноразового `code` от провайдера на JWT токен. Сервер определяет провайдера по `provider` в теле запроса или по `state` из redirect (если провайдер передаёт его). | `{ code: string, provider: string }` | `{ accessToken: string }` или 401 |
 
 **Поток (Desktop):**
-1. Пользователь выбирает провайдера (Telegram, VK или Mail.ru) в UI приложения.
+1. Пользователь выбирает провайдера (VK или Mail.ru) в UI приложения.
 2. Приложение открывает браузер на `GET /auth/{provider}/start` (например `/auth/vk/start`).
 3. Сервер перенаправляет на страницу авторизации провайдера.
 4. После авторизации провайдер делает redirect с `code` (и опционально `state` с информацией о провайдере) в query параметре.
@@ -109,20 +116,21 @@
 
 | Метод | Путь | Описание | Тело | Ответ |
 |-------|------|----------|------|--------|
-| GET | `/auth/{provider}/web` | Начало логина через провайдер для веба. `{provider}` = `telegram`, `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). После успешной авторизации провайдер делает redirect с `code`. | — | Redirect на провайдер |
+| GET | `/auth/{provider}/web` | Начало логина через провайдер для веба. `{provider}` = `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). После успешной авторизации провайдер делает redirect с `code`. | — | Redirect на провайдер |
 | GET | `/auth/{provider}/callback` | Callback от провайдера с `code`. Сервер обменивает `code` на JWT и устанавливает httpOnly cookie, затем делает redirect в кабинет организатора. | `code` (query) | Redirect в кабинет + httpOnly cookie |
 | POST | `/auth/logout` | Выход организатора. Удаляет httpOnly cookie (Web) или инвалидирует токен (Desktop). Требует авторизации. | — | 204 |
 
 **Поток (Web):**
-1. Пользователь выбирает провайдера на странице логина и открывает `/auth/{provider}/web` (например `/auth/vk/web`).
+1. Пользователь выбирает провайдера (VK или Mail.ru) на странице логина и открывает `/auth/{provider}/web` (например `/auth/vk/web`).
 2. Сервер перенаправляет на страницу авторизации провайдера.
 3. После авторизации провайдер делает redirect на `/auth/{provider}/callback?code=...`.
 4. Сервер обменивает `code` на JWT, устанавливает httpOnly cookie, делает redirect в кабинет.
 
-**Поддерживаемые провайдеры в v1:**
-- `telegram` — Telegram Login Widget
+**Поддерживаемые OAuth-провайдеры в v1:**
 - `vk` — VK OAuth 2.0
 - `mailru` — Mail.ru OAuth 2.0
+
+**Отложено:** OAuth2 для Telegram (планируется в последующих версиях).
 
 ### 3.3 Profile (профиль организатора)
 

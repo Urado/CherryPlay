@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
+using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Hubs;
@@ -23,6 +24,7 @@ public class PartiesController : ControllerBase
     }
 
     [HttpPost]
+    [AuthorizeOrganizer]
     public async Task<ActionResult<PartyDto>> CreateParty([FromBody] CreatePartyDto dto)
     {
         if (dto == null)
@@ -40,6 +42,10 @@ public class PartiesController : ControllerBase
             var partyDto = await _partyService.CreatePartyAsync(dto);
             return Ok(partyDto);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
@@ -55,6 +61,7 @@ public class PartiesController : ControllerBase
     /// Проверяет существование вечеринки по ID
     /// </summary>
     [HttpGet("{partyId}")]
+    [AuthorizeOrganizer]
     public async Task<ActionResult<PartyDto>> GetParty(string partyId)
     {
         if (string.IsNullOrWhiteSpace(partyId))
@@ -77,6 +84,10 @@ public class PartiesController : ControllerBase
 
             return Ok(partyDto);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting party: {PartyId}", partyId);
@@ -88,6 +99,7 @@ public class PartiesController : ControllerBase
     /// Обновляет плейлист вечеринки и уведомляет всех зрителей через SignalR
     /// </summary>
     [HttpPut("{partyId}/playlist")]
+    [AuthorizeOrganizer]
     public async Task<ActionResult> UpdatePartyPlaylist(string partyId, [FromBody] PartyPlaylistDto playlist)
     {
         if (string.IsNullOrWhiteSpace(partyId))
@@ -117,6 +129,10 @@ public class PartiesController : ControllerBase
                 partyId, groupName);
 
             return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
         }
         catch (PartyNotFoundException ex)
         {

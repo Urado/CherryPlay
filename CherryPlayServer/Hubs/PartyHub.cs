@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
 using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Core;
+using CherryPlayServer.Core.Extensions;
 
 namespace CherryPlayServer.Hubs;
 
@@ -9,15 +11,18 @@ public class PartyHub : Hub
 {
     private readonly IStreamingService _streamingService;
     private readonly IPartyIdValidator _partyIdValidator;
+    private readonly IJwtService _jwtService;
     private readonly ILogger<PartyHub> _logger;
 
     public PartyHub(
         IStreamingService streamingService,
         IPartyIdValidator partyIdValidator,
+        IJwtService jwtService,
         ILogger<PartyHub> logger)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
         _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
+        _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -26,6 +31,51 @@ public class PartyHub : Hub
     private async Task SendErrorAsync(string message)
     {
         await Clients.Caller.SendAsync("Error", message);
+    }
+
+    private async Task<bool> RequireOrganizerAuthAsync()
+    {
+        var httpContext = Context.GetHttpContext();
+        if (httpContext == null)
+        {
+            await SendErrorAsync("Authentication required");
+            return false;
+        }
+
+        // Получаем токен из заголовка Authorization, query string (для WebSocket) или cookie
+        // Приоритет: Authorization header > query string > cookie
+        // WebSocket в браузере не может устанавливать кастомные заголовки,
+        // поэтому SignalR использует query string для передачи токена
+        var token = httpContext.Request.Query["access_token"].FirstOrDefault() ??
+                   httpContext.ExtractTokenFromRequest();
+
+        if (!await _jwtService.ValidateAndSetOrganizerContextAsync(httpContext, token))
+        {
+            await SendErrorAsync("Authentication required");
+            return false;
+        }
+
+        // Sync context items to SignalR context
+        if (httpContext.Items.TryGetValue("OrganizerId", out var organizerId))
+        {
+            Context.Items["OrganizerId"] = organizerId;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> ValidateOrganizerTokenAsync(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+
+        var result = await _jwtService.ValidateTokenAsync(token);
+        if (!result.IsValid || !result.OrganizerId.HasValue)
+            return false;
+
+        Context.Items["OrganizerId"] = result.OrganizerId.Value;
+        Context.Items["OrganizerName"] = result.Name;
+        return true;
     }
 
     #endregion
@@ -143,6 +193,11 @@ public class PartyHub : Hub
 
     public async Task UpdatePlaybackPosition(string partyId, string trackId, double position)
     {
+        if (!await RequireOrganizerAuthAsync())
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(trackId))
         {
             await SendErrorAsync("Track ID cannot be empty");
@@ -197,6 +252,11 @@ public class PartyHub : Hub
 
     public async Task UpdateFullState(string partyId, PlaybackStateDto? state)
     {
+        if (!await RequireOrganizerAuthAsync())
+        {
+            return;
+        }
+
         _logger.LogInformation("[SignalR Server] <- Received UpdateFullState: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, connectionId={ConnectionId}",
             partyId, state?.CurrentTrackId, state?.Status, state?.Position, Context.ConnectionId);
 
@@ -236,6 +296,11 @@ public class PartyHub : Hub
 
     public async Task NotifyStateChanged(string partyId)
     {
+        if (!await RequireOrganizerAuthAsync())
+        {
+            return;
+        }
+
         _logger.LogInformation("[SignalR Server] <- Received NotifyStateChanged: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
 
@@ -289,8 +354,6 @@ public class PartyHub : Hub
 
     public async Task JoinPartyAsOrganizer(string partyId, string token)
     {
-        // TODO: Replace with proper auth/authorization once the module is added.
-        // Базовая валидация токена (проверка на наличие)
         if (string.IsNullOrWhiteSpace(token))
         {
             _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without token: partyId={PartyId}, connectionId={ConnectionId}",
@@ -299,8 +362,16 @@ public class PartyHub : Hub
             return;
         }
 
-        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsOrganizer: partyId={PartyId}, hasToken={HasToken}, connectionId={ConnectionId}",
-            partyId, !string.IsNullOrEmpty(token), Context.ConnectionId);
+        if (!await ValidateOrganizerTokenAsync(token))
+        {
+            _logger.LogWarning("[SignalR Server] Invalid token in JoinPartyAsOrganizer: partyId={PartyId}, connectionId={ConnectionId}",
+                partyId, Context.ConnectionId);
+            await SendErrorAsync("Invalid authentication token");
+            return;
+        }
+
+        _logger.LogInformation("[SignalR Server] <- Received JoinPartyAsOrganizer: partyId={PartyId}, connectionId={ConnectionId}",
+            partyId, Context.ConnectionId);
 
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
@@ -324,6 +395,11 @@ public class PartyHub : Hub
 
     public async Task StartSession(string partyId)
     {
+        if (!await RequireOrganizerAuthAsync())
+        {
+            return;
+        }
+
         _logger.LogInformation("[SignalR Server] <- Received StartSession: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
 
@@ -356,6 +432,11 @@ public class PartyHub : Hub
 
     public async Task EndSession(string partyId)
     {
+        if (!await RequireOrganizerAuthAsync())
+        {
+            return;
+        }
+
         _logger.LogInformation("[SignalR Server] <- Received EndSession: partyId={PartyId}, connectionId={ConnectionId}",
             partyId, Context.ConnectionId);
 

@@ -3,12 +3,8 @@
  */
 import * as signalR from '@microsoft/signalr';
 
+import { API_ENDPOINTS, getSignalRUrl } from '../config/apiConfig';
 import type { PlaybackStateDto, PartyStateDto } from '../types/api';
-
-// В продакшене используем относительные пути (nginx проксирует /partyHub на backend)
-// В разработке используем VITE_API_URL или localhost:5000
-const SERVER_URL =
-  import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
@@ -29,7 +25,7 @@ class SignalRService {
     }
 
     // Используем прямой URL к серверу (CORS настроен на сервере)
-    const url = `${SERVER_URL}/partyHub`;
+    const url = getSignalRUrl(API_ENDPOINTS.SIGNALR.PARTY_HUB);
 
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(url)

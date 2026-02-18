@@ -12,7 +12,7 @@
 
 | Подсистема | Описание | Документ |
 |------------|----------|----------|
-| **Accounts & Auth** | Роли (organizer/viewer), JWT, Telegram login, хранение токенов в Desktop и Web | [Accounts and Auth](./accounts-and-auth.md) |
+| **Accounts & Auth** | Роли (organizer/viewer), JWT, вход по email+паролю и OAuth (VK, Mail.ru), хранение токенов в Desktop и Web; OAuth2 для Telegram отложен | [Accounts and Auth](./accounts-and-auth.md) |
 | **Party Management** | CRUD вечеринок, каталог, публикация плейлиста, лимиты, кабинет организатора | [Party Management](./party-management.md) |
 | **Streaming** | Трансляция состояния воспроизведения и плейлиста (SignalR + REST), freeze при потере связи | [Streaming](./streaming.md) |
 | **Данные и контракты** | Идентичность вечеринки (shortCode/partyId), DTO, REST и SignalR — ссылки на общую документацию | [Data and Contracts](./data-and-contracts.md) |

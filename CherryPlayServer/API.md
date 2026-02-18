@@ -13,7 +13,7 @@
 | Роли (viewer / organizer), границы доступа | §1 |
 | **REST Public** (эндпоинты по shortCode) | §2.2 |
 | **SignalR viewer** (методы invoke, события on) | §2.3 |
-| **Auth** (OAuth провайдеры: Telegram/VK/Mail.ru, exchange, logout) | §3.2 |
+| **Auth** (email+пароль: login/register; OAuth: VK/Mail.ru, exchange, logout; Telegram OAuth2 отложен) | §3.2 |
 | **Profile** (профиль организатора: GET me, PATCH profile) | §3.3 |
 | **REST Organizer** (CRUD вечеринок, playlist, JWT) | §3.4 |
 | **SignalR organizer** (StartSession, EndSession, Update*, JoinPartyAsOrganizer) | §3.5 |

@@ -46,9 +46,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
+      - EnableSwagger=true
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cherryplay-jwt-secret-minimum-32-characters-long}
       - Cors__AllowedOrigins__0=http://localhost:3000
       - Cors__AllowedOrigins__1=http://web:80
+      - Cors__AllowedOrigins__2=http://localhost:5173
     ports:
       - "5000:8080"
     depends_on:
@@ -68,6 +71,9 @@ services:
     build:
       context: .
       dockerfile: ./CherryPlayWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000
+        - VITE_SIGNALR_URL=http://localhost:5000/partyHub
     container_name: cherryplay-web
     ports:
       - "3000:80"
@@ -75,9 +81,6 @@ services:
       - server
     networks:
       - cherryplay-network
-    environment:
-      - VITE_API_URL=http://localhost:5000/api
-      - VITE_SIGNALR_URL=http://localhost:5000/partyHub
 
 volumes:
   postgres_data:

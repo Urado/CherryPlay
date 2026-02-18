@@ -9,6 +9,7 @@ export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext 
 export { usePlayerAudioStore } from './playerAudioStore';
 export type { PlayerAudioStatus } from './playerAudioStore';
 export { usePartyStore } from './partyStore';
+export { useAuthStore } from './authStore';
 export {
   useProjectStore,
   initializeProjectStoreHistory,

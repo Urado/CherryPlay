@@ -1,6 +1,7 @@
 /**
  * Сервис для работы с API вечеринок
  */
+import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import type {
   PartyPlaylistDto,
   PublicPartyDto,
@@ -8,23 +9,12 @@ import type {
   PublicPartyListItemDto,
 } from '../types/api';
 
-// В продакшене используем относительные пути (nginx проксирует /api на backend)
-// В разработке используем VITE_API_URL или localhost:5000
-const API_URL =
-  import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
-
 class PartyApiService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = API_URL;
-  }
-
   /**
    * Получает плейлист первого доступного вечеринки (для демо)
    */
   async getFirstPartyPlaylist(): Promise<PartyPlaylistDto> {
-    const response = await fetch(`${this.baseUrl}/api/parties/public/first`, {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.FIRST), {
       cache: 'no-cache',
     });
 
@@ -42,7 +32,7 @@ class PartyApiService {
    * Получает публичную информацию о вечеринке
    */
   async getPublicParty(shortCode: string): Promise<PublicPartyDto> {
-    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}`, {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.BY_CODE(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -60,7 +50,7 @@ class PartyApiService {
    * Получает плейлист вечеринки по shortCode
    */
   async getPartyPlaylist(shortCode: string): Promise<PartyPlaylistDto> {
-    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}/playlist`, {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.PLAYLIST(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -78,7 +68,7 @@ class PartyApiService {
    * Получает полное состояние вечеринки
    */
   async getPartyState(shortCode: string): Promise<PartyStateDto> {
-    const response = await fetch(`${this.baseUrl}/api/parties/public/${shortCode}/state`, {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.STATE(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -96,7 +86,7 @@ class PartyApiService {
    * Получает список всех публичных вечеринок
    */
   async getAllParties(): Promise<PublicPartyListItemDto[]> {
-    const response = await fetch(`${this.baseUrl}/api/parties/public/list`, {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.LIST), {
       cache: 'no-cache',
     });
 

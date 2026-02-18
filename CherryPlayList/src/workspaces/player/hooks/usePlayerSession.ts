@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
-import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
+import { usePlayerAudioStore, useProjectStore, useAuthStore } from '@shared/stores';
+import { handleAuthError } from '@shared/utils/authErrorHandler';
+import { isTokenExpired } from '@shared/utils/tokenUtils';
 import { logger } from '@shared/utils';
 
 interface UsePlayerSessionOptions {
@@ -32,6 +34,18 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     // Проверяем наличие активных (не отключённых) треков
     const hasActiveTracks = allTracks.some((track) => isTrackActive(track.id));
     if (!hasActiveTracks) {
+      return;
+    }
+
+    // Проверяем токен перед началом сессии
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      handleAuthError('Authentication required to start session');
+      return;
+    }
+
+    if (isTokenExpired(token)) {
+      handleAuthError('Authentication token has expired. Please login again.');
       return;
     }
 

@@ -1,0 +1,37 @@
+.email-auth-form {
+  width: 100%;
+}
+
+.email-auth-form-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--ui-border, #ddd);
+}
+
+.email-auth-form-tab {
+  flex: 1;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  font-size: 14px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.email-auth-form-tab:hover {
+  color: var(--text-primary, #333);
+}
+
+.email-auth-form-tab--active {
+  color: var(--accent-primary, #667eea);
+  border-bottom-color: var(--accent-primary, #667eea);
+}
+
+.email-auth-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

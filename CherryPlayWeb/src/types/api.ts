@@ -59,3 +59,6 @@ export interface PublicPartyListItemDto {
   totalDuration: number;
   eventDateTime?: string;
 }
+
+// OrganizerDto теперь экспортируется из @cherryplay/components
+export type { OrganizerDto } from '@cherryplay/components';

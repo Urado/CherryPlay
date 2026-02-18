@@ -63,8 +63,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix=sha-,enable={{is_not_pr}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
 
       - name: Build and push server image
         uses: docker/build-push-action@v5
@@ -113,8 +112,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix=sha-,enable={{is_not_pr}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
 
       - name: Build and push web image
         uses: docker/build-push-action@v5

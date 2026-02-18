@@ -20,6 +20,10 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
       // SignalR использует прямой URL (CORS настроен на сервере)
       // Proxy для WebSocket может работать нестабильно
     },

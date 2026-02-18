@@ -1,4 +1,6 @@
 import { getApiConfig } from '../config/apiConfig';
+import { useAuthStore } from '../stores/authStore';
+import { handleAuthError } from '../utils/authErrorHandler';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
@@ -29,20 +31,38 @@ class PartyService {
     return config.apiUrl;
   }
 
+  private getAuthHeaders(): Record<string, string> {
+    const token = useAuthStore.getState().accessToken;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
+  private async handleResponseError(response: Response, defaultMessage: string): Promise<never> {
+    if (response.status === 401) {
+      // Токен истек или невалиден
+      handleAuthError('Authentication token expired or invalid. Please login again.');
+      throw new Error('Authentication token expired or invalid. Please login again.');
+    }
+    const errorText = await response.text();
+    throw new Error(`${defaultMessage}: ${errorText}`);
+  }
+
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
       cache: 'no-cache',
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create party: ${errorText}`);
+      await this.handleResponseError(response, 'Failed to create party');
     }
 
     return response.json();
@@ -56,13 +76,14 @@ class PartyService {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/${partyId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: this.getAuthHeaders(),
       cache: 'no-cache',
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        await this.handleResponseError(response, 'Failed to get party');
+      }
       if (response.status === 404) {
         throw new Error('Party not found');
       }
@@ -93,14 +114,15 @@ class PartyService {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/${partyId}/playlist`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify(playlist),
       cache: 'no-cache',
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        await this.handleResponseError(response, 'Failed to update party playlist');
+      }
       const errorText = await response.text();
       throw new Error(`Failed to update party playlist: ${errorText}`);
     }

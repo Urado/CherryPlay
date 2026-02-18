@@ -1,4 +1,4 @@
-import { ipcMain, app } from 'electron';
+import { ipcMain, app, shell } from 'electron';
 
 /**
  * Get system path (documents, music, downloads, etc.)
@@ -45,6 +45,20 @@ export function registerSystemHandlers(): void {
       return {
         success: true,
         data: path,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  });
+
+  ipcMain.handle('system:openExternal', async (event, payload: { url: string }) => {
+    try {
+      await shell.openExternal(payload.url);
+      return {
+        success: true,
       };
     } catch (error) {
       return {

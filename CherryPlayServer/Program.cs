@@ -1,14 +1,20 @@
+using System.Threading.RateLimiting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Linq;
 using CherryPlayServer.Hubs;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Infrastructure.Repositories;
 using CherryPlayServer.Core.Services;
 using CherryPlayServer.Infrastructure.Data;
+using CherryPlayServer.Infrastructure.OAuth;
+using CherryPlayServer.Core.Middleware;
+using CherryPlayServer.Core.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -18,67 +24,158 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
+builder.Services.AddHttpClient();
 
-// Configure CORS from appsettings
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+if (corsOrigins.Length == 0)
+    corsOrigins = new[] { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ConfiguredOrigins", policy =>
     {
-        if (corsOrigins.Length > 0)
-        {
-            policy.WithOrigins(corsOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
-        }
-        else
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        }
+        policy.WithOrigins(corsOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
-// Register repositories
 builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
 builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
+builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
+builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
+builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
 
-// Register services
 builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
 builder.Services.AddSingleton<IPartyIdValidator, PartyIdValidator>();
 builder.Services.AddSingleton<IPlaylistTrackFinder, PlaylistTrackFinder>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 
-// Register data seeder
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
+
+builder.Services.AddTransient<VkOAuthClient>();
+builder.Services.AddTransient<MailRuOAuthClient>();
+builder.Services.AddTransient<TelegramOAuthClient>();
+
+builder.Services.AddTransient<IOAuthProviderClient>(sp => sp.GetRequiredService<VkOAuthClient>());
+builder.Services.AddTransient<IOAuthProviderClient>(sp => sp.GetRequiredService<MailRuOAuthClient>());
+builder.Services.AddTransient<IOAuthProviderClient>(sp => sp.GetRequiredService<TelegramOAuthClient>());
+
+builder.Services.AddSingleton<IOAuthService, OAuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("OrganizerOnly", policy =>
+        policy.Requirements.Add(new OrganizerRequirement()));
+});
+
+builder.Services.AddSingleton<IAuthorizationHandler, OrganizerAuthorizationHandler>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsync("Too many requests. Try again later.", cancellationToken);
+    };
+});
+
 builder.Services.AddSingleton<IDataSeeder, DataSeeder>();
 builder.Services.AddHostedService<DataSeederHostedService>();
 
 var app = builder.Build();
 
-// Configure pipeline
-if (app.Environment.IsDevelopment())
+// Validate OAuth credentials in production
+if (!app.Environment.IsDevelopment())
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    var configuration = app.Services.GetRequiredService<IConfiguration>();
+
+    var vkClientId = configuration["OAUTH_VK_CLIENT_ID"];
+    var vkClientSecret = configuration["OAUTH_VK_CLIENT_SECRET"];
+    var mailruClientId = configuration["OAUTH_MAILRU_CLIENT_ID"];
+    var mailruClientSecret = configuration["OAUTH_MAILRU_CLIENT_SECRET"];
+
+    var missingCredentials = new List<string>();
+
+    if (string.IsNullOrWhiteSpace(vkClientId) || vkClientId == "test_client_id")
+        missingCredentials.Add("OAUTH_VK_CLIENT_ID");
+    if (string.IsNullOrWhiteSpace(vkClientSecret) || vkClientSecret == "test_client_secret")
+        missingCredentials.Add("OAUTH_VK_CLIENT_SECRET");
+    if (string.IsNullOrWhiteSpace(mailruClientId) || mailruClientId == "test_client_id")
+        missingCredentials.Add("OAUTH_MAILRU_CLIENT_ID");
+    if (string.IsNullOrWhiteSpace(mailruClientSecret) || mailruClientSecret == "test_client_secret")
+        missingCredentials.Add("OAUTH_MAILRU_CLIENT_SECRET");
+
+    if (missingCredentials.Any())
+    {
+        logger.LogWarning("Missing or default OAuth credentials in production: {Missing}", string.Join(", ", missingCredentials));
+        logger.LogWarning("OAuth authentication may not work correctly. Please configure OAuth credentials.");
+    }
+    else
+    {
+        logger.LogInformation("OAuth credentials validated successfully");
+    }
+}
+
+var enableSwagger = app.Environment.IsDevelopment() ||
+                    app.Configuration.GetValue<bool>("EnableSwagger", false);
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("ConfiguredOrigins");
-app.UseRouting();
-
-// Disable caching for all API requests
+var allowedOrigins = new HashSet<string>(corsOrigins, StringComparer.OrdinalIgnoreCase);
 app.Use(async (context, next) =>
 {
-    // Set headers to disable caching
+    try
+    {
+        await next(context);
+    }
+    catch (Exception)
+    {
+        if (!context.Response.HasStarted)
+        {
+            var origin = context.Request.Headers.Origin.FirstOrDefault();
+            if (!string.IsNullOrEmpty(origin) && allowedOrigins.Contains(origin))
+            {
+                context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+                context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            }
+        }
+        throw;
+    }
+});
+
+app.UseRouting();
+app.UseCors("ConfiguredOrigins");
+app.UseRateLimiter();
+
+app.Use(async (context, next) =>
+{
     context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
     context.Response.Headers.Append("Pragma", "no-cache");
     context.Response.Headers.Append("Expires", "0");
 
     await next();
 });
+
+app.UseMiddleware<JwtAuthenticationMiddleware>();
 
 app.UseAuthorization();
 
