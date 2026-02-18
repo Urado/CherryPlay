@@ -113,6 +113,8 @@ fi
 [ -n "$CORS_ORIGIN_0" ] && echo "CORS_ORIGIN_0=$CORS_ORIGIN_0" >> .env
 [ -n "$CORS_ORIGIN_1" ] && echo "CORS_ORIGIN_1=$CORS_ORIGIN_1" >> .env
 [ -n "$CORS_ORIGIN_2" ] && echo "CORS_ORIGIN_2=$CORS_ORIGIN_2" >> .env
+[ -n "$OAUTH_VK_CLIENT_ID" ] && echo "OAUTH_VK_CLIENT_ID=$OAUTH_VK_CLIENT_ID" >> .env
+[ -n "$OAUTH_VK_CLIENT_SECRET" ] && echo "OAUTH_VK_CLIENT_SECRET=$OAUTH_VK_CLIENT_SECRET" >> .env
 
 # Stop existing containers gracefully
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"

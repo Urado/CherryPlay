@@ -35,6 +35,8 @@ GitHub Container Registry уже настроен и доступен автом
 |--------|----------|
 | `CORS_ORIGIN_0` | Первый разрешённый origin (для HTTPS укажите `https://yourdomain.com`). По нему же при деплое подставляется домен в конфиг Nginx. |
 | `CORS_ORIGIN_1` | Второй origin (например `https://www.yourdomain.com`) |
+| `OAUTH_VK_CLIENT_ID` | ID приложения VK (для входа через VK) |
+| `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK |
 | `GHCR_TOKEN` | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
 
 ### 3. Настройка SSH ключа
@@ -87,7 +89,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `CORS_ORIGIN_*`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера
@@ -103,6 +105,10 @@ PGADMIN_PASSWORD=your_admin_password
 # CORS (разрешённые origins для фронта)
 CORS_ORIGIN_0=https://yourdomain.com
 CORS_ORIGIN_1=https://www.yourdomain.com
+
+# VK OAuth (для входа через VK)
+OAUTH_VK_CLIENT_ID=your_vk_app_id
+OAUTH_VK_CLIENT_SECRET=your_vk_secure_key
 ```
 
 #### Настройка доступа к GHCR (для приватных репозиториев)

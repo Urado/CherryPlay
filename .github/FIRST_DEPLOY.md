@@ -26,6 +26,13 @@
 | `CORS_ORIGIN_0` | `https://yourdomain.com` |
 | `CORS_ORIGIN_1` | `https://www.yourdomain.com` |
 
+Для входа через VK добавьте:
+
+| Секрет | Значение |
+|--------|----------|
+| `OAUTH_VK_CLIENT_ID` | ID приложения VK (из настройки приложения VK) |
+| `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK |
+
 Публичный ключ от `SSH_PRIVATE_KEY` должен быть добавлен на сервер (`~/.ssh/authorized_keys` пользователя `DEPLOY_USER`).
 
 ### 1.2. Сервер
