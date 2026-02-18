@@ -66,12 +66,12 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # Frontend Web Application
+  # Frontend Web Application (порт 8080 на хосте — для проксирования через nginx на 80/443)
   web:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_WEB:-owner/repo/web}:${VERSION:-latest}
     container_name: cherryplay-web
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - server
     networks:

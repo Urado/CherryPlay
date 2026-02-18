@@ -90,14 +90,16 @@ sudo apt-get install -y nginx certbot python3-certbot-nginx
 cd ~/cherryplay-deploy
 docker compose -f docker-compose.prod.yml stop web
 
-sudo certbot certonly --standalone -d YOUR_DOMAIN -d www.YOUR_DOMAIN --non-interactive --agree-tos -m admin@YOUR_DOMAIN
+sudo certbot certonly --standalone -d cherrypashkaparty.ru -d www.cherrypashkaparty.ru --non-interactive --agree-tos -m samurai-94@mail.ru
 
 docker compose -f docker-compose.prod.yml start web
 ```
 
 ### 4.3. Установка конфига Nginx
 
-В `~/cherryplay-deploy/` после деплоя лежит `nginx-cherryplay-https.conf`. Если задан `CORS_ORIGIN_0`, домен в файле уже подставлен; иначе замените в нём `YOUR_DOMAIN` на свой домен.
+**Сначала обязательно выполните п. 4.2** (certbot) — nginx не запустится без существующих сертификатов по путям из конфига.
+
+В `~/cherryplay-deploy/` после деплоя лежит `nginx-cherryplay-https.conf`. Если задан `CORS_ORIGIN_0`, домен в файле уже подставлен; иначе замените в нём `YOUR_DOMAIN` на свой домен (тот же, для которого получен сертификат в 4.2).
 
 ```bash
 cd ~/cherryplay-deploy
@@ -105,8 +107,25 @@ sudo cp nginx-cherryplay-https.conf /etc/nginx/sites-available/cherryplay
 sudo ln -sf /etc/nginx/sites-available/cherryplay /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl enable nginx
-sudo systemctl reload nginx
+sudo systemctl restart nginx
 ```
+
+**Если nginx не стартует** (`Job for nginx.service failed`), посмотрите причину:
+
+```bash
+sudo journalctl -xeu nginx.service
+```
+
+Чаще всего:
+- **Сертификаты не найдены** — пути в конфиге вида `/etc/letsencrypt/live/<домен>/...` должны существовать. Сначала выполните п. 4.2 (certbot), затем снова копируйте конфиг и перезапускайте nginx.
+- **В конфиге остался YOUR_DOMAIN** — замените на свой домен:  
+  `sudo sed -i 's/YOUR_DOMAIN/cherrypashkaparty.ru/g' /etc/nginx/sites-available/cherryplay`
+- **Порт 80 занят** (`Address already in use`) — контейнер `cherryplay-web` слушает 80, nginx тоже нужен 80. В репозитории веб уже настроен на `127.0.0.1:8080`, nginx проксирует на 8080. На сервере: обновите `docker-compose.prod.yml` (порт веба `127.0.0.1:8080:80`) и конфиг nginx (`proxy_pass http://127.0.0.1:8080;`), затем:
+  ```bash
+  cd ~/cherryplay-deploy
+  docker compose -f docker-compose.prod.yml up -d --force-recreate web
+  sudo systemctl start nginx
+  ```
 
 ### 4.4. Проверка HTTPS
 
