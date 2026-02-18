@@ -47,6 +47,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD:-cherryplay_password}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
       - Cors__AllowedOrigins__1=${CORS_ORIGIN_1:-http://www.cherrypashkaparty.ru}
       - Cors__AllowedOrigins__2=${CORS_ORIGIN_2:-http://web:80}
@@ -58,7 +59,7 @@ services:
     networks:
       - cherryplay-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

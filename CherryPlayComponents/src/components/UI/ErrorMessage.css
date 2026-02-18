@@ -1,0 +1,9 @@
+.error-message {
+  padding: 12px;
+  background: var(--state-error-bg, rgba(211, 47, 47, 0.1));
+  border: 1px solid var(--state-error-border, rgba(211, 47, 47, 0.3));
+  border-radius: 8px;
+  color: var(--state-error, #d32f2f);
+  font-size: 14px;
+  margin-bottom: 16px;
+}

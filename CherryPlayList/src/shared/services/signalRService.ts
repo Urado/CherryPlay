@@ -12,7 +12,9 @@
 import * as signalR from '@microsoft/signalr';
 
 import { getApiConfig } from '../config/apiConfig';
-import { usePlayerAudioStore, useProjectStore } from '../stores';
+import { useAuthStore, usePlayerAudioStore, useProjectStore } from '../stores';
+import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
+import { isTokenExpired } from '../utils/tokenUtils';
 import { convertPlaylistForApi } from '../utils/partyUtils';
 
 import { partyService } from './partyService';
@@ -151,9 +153,19 @@ class SignalRService {
    * Подключается к SignalR Hub
    */
   async connect(token?: string): Promise<void> {
+    // Получаем токен из authStore, если не передан явно
+    let authToken = token || useAuthStore.getState().accessToken;
+
+    // Проверяем, не истек ли токен
+    if (authToken && isTokenExpired(authToken)) {
+      console.warn('[SignalR] Token expired, clearing auth');
+      handleAuthError('Authentication token has expired. Please login again.');
+      throw new Error('Authentication token has expired');
+    }
+
     // Сохраняем токен для возможного переподключения
-    if (typeof token !== 'undefined') {
-      this.currentToken = token;
+    if (authToken) {
+      this.currentToken = authToken;
     }
     // Защита от race conditions
     if (this.isConnecting) {
@@ -179,14 +191,24 @@ class SignalRService {
       }
 
       const config = await getApiConfig();
-      const url = token
-        ? `${config.signalRUrl}?token=${encodeURIComponent(token)}`
-        : config.signalRUrl;
 
-      console.log('[SignalR] Starting connection to:', url);
+      console.log('[SignalR] Starting connection to:', config.signalRUrl);
+
+      // Настройка опций подключения с передачей токена через accessTokenFactory
+      // SignalR автоматически добавит токен в query string (?access_token=...) для WebSocket
+      // или в заголовок Authorization для HTTP транспортов (Long Polling, Server-Sent Events)
+      const connectionOptions: signalR.IHttpConnectionOptions = {};
+      if (authToken) {
+        // Используем функцию, чтобы всегда получать актуальный токен
+        // SignalR вызывает эту функцию при каждом подключении/переподключении
+        connectionOptions.accessTokenFactory = () => {
+          const currentToken = useAuthStore.getState().accessToken || authToken;
+          return Promise.resolve(currentToken || '');
+        };
+      }
 
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(url)
+        .withUrl(config.signalRUrl, connectionOptions)
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (retryContext) => {
             if (retryContext.previousRetryCount < this.reconnectConfig.maxAttempts) {
@@ -241,6 +263,20 @@ class SignalRService {
     this.connection.onreconnected(async (connectionId) => {
       console.log('[SignalR] Reconnected with connection ID:', connectionId);
 
+      // Проверяем токен при переподключении
+      const currentToken = useAuthStore.getState().accessToken || this.currentToken;
+      if (currentToken && isTokenExpired(currentToken)) {
+        console.warn('[SignalR] Token expired during reconnect, clearing auth');
+        handleAuthError('Authentication token has expired. Please login again.');
+        await this.disconnect();
+        return;
+      }
+
+      // Обновляем токен для переподключения
+      if (currentToken) {
+        this.currentToken = currentToken;
+      }
+
       // Восстанавливаем обработчики событий Hub (они могли быть потеряны при переподключении)
       this.setupHubEventHandlers();
 
@@ -250,11 +286,11 @@ class SignalRService {
           console.log('[SignalR] Restoring party connection after reconnect:', this.currentPartyId);
 
           // Переподключаемся к вечеринке как организатор (без повторного connect)
-          if (this.connection && this.isServiceConnected()) {
+          if (this.connection && this.isServiceConnected() && this.currentToken) {
             await this.invokeWithLogging(
               'JoinPartyAsOrganizer',
               this.currentPartyId,
-              this.currentToken || '',
+              this.currentToken,
             );
           }
 
@@ -458,9 +494,16 @@ class SignalRService {
    * Подключается к вечеринке как организатор
    */
   async joinPartyAsOrganizer(partyId: string, token?: string): Promise<void> {
+    // Получаем токен из authStore, если не передан явно
+    const authToken = token || useAuthStore.getState().accessToken;
+
+    if (!authToken) {
+      throw new Error('Authentication token is required to join as organizer');
+    }
+
     if (!this.isServiceConnected()) {
       console.log('[SignalR] Connection not established, connecting...');
-      await this.connect(token);
+      await this.connect(authToken);
     }
 
     if (!this.connection || !this.isServiceConnected()) {
@@ -469,15 +512,19 @@ class SignalRService {
 
     console.log('[SignalR] Joining party as organizer:', {
       partyId,
-      hasToken: !!token,
+      hasToken: !!authToken,
     });
 
     try {
-      await this.invokeWithLogging('JoinPartyAsOrganizer', partyId, token || '');
+      await this.invokeWithLogging('JoinPartyAsOrganizer', partyId, authToken);
       this.currentPartyId = partyId;
       console.log('[SignalR] Successfully joined party as organizer');
     } catch (error) {
       console.error('[SignalR] Failed to join party as organizer:', error);
+      // Если ошибка авторизации, обрабатываем её
+      if (isAuthError(error)) {
+        handleAuthError(error instanceof Error ? error : String(error));
+      }
       throw error;
     }
   }
@@ -494,6 +541,20 @@ class SignalRService {
       throw new Error('SignalR connection is null');
     }
 
+    // Проверяем токен перед началом сессии
+    const token = useAuthStore.getState().accessToken || this.currentToken;
+    if (!token) {
+      const error = new Error('Authentication token is required to start session');
+      handleAuthError(error);
+      throw error;
+    }
+
+    if (isTokenExpired(token)) {
+      const error = new Error('Authentication token has expired');
+      handleAuthError(error);
+      throw error;
+    }
+
     console.log('[SignalR] Starting session:', { partyId });
 
     try {
@@ -501,6 +562,9 @@ class SignalRService {
       console.log('[SignalR] Session started successfully');
     } catch (error) {
       console.error('[SignalR] Failed to start session:', error);
+      if (isAuthError(error)) {
+        handleAuthError(error instanceof Error ? error : String(error));
+      }
       throw error;
     }
   }

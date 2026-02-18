@@ -1,8 +1,10 @@
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Exceptions;
+using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace CherryPlayServer.Core.Services;
@@ -12,17 +14,20 @@ public class PartyService : IPartyService
     private readonly IPartyRepository _partyRepository;
     private readonly IStreamingRepository _streamingRepository;
     private readonly IShortCodeGenerator _shortCodeGenerator;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<PartyService> _logger;
 
     public PartyService(
         IPartyRepository partyRepository,
         IStreamingRepository streamingRepository,
         IShortCodeGenerator shortCodeGenerator,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<PartyService> logger)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
         _shortCodeGenerator = shortCodeGenerator ?? throw new ArgumentNullException(nameof(shortCodeGenerator));
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -38,7 +43,17 @@ public class PartyService : IPartyService
             throw new ArgumentException("Party name cannot be null or empty", nameof(dto));
         }
 
-        _logger.LogInformation("Creating party: name={Name}, themeId={ThemeId}", dto.Name, dto.ThemeId);
+        var organizerId = _httpContextAccessor.HttpContext?.GetOrganizerId();
+        if (!organizerId.HasValue)
+        {
+            throw new UnauthorizedAccessException("Organizer ID is required to create a party");
+        }
+
+        _logger.LogInformation(
+            "Creating party: name={Name}, themeId={ThemeId}, organizerId={OrganizerId}",
+            dto.Name,
+            dto.ThemeId,
+            organizerId.Value);
 
         var shortCode = await _shortCodeGenerator.GenerateUniqueShortCodeAsync(
             async code => await _partyRepository.GetByShortCodeAsync(code) == null);
@@ -46,6 +61,7 @@ public class PartyService : IPartyService
         var party = new Party
         {
             Id = Guid.NewGuid(),
+            OrganizerId = organizerId.Value,
             Name = dto.Name,
             ShortCode = shortCode,
             ThemeId = dto.ThemeId,
@@ -57,7 +73,11 @@ public class PartyService : IPartyService
 
         await _partyRepository.AddAsync(party);
 
-        _logger.LogInformation("Party created: id={PartyId}, shortCode={ShortCode}", party.Id, party.ShortCode);
+        _logger.LogInformation(
+            "Party created: id={PartyId}, shortCode={ShortCode}, organizerId={OrganizerId}",
+            party.Id,
+            party.ShortCode,
+            organizerId.Value);
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
         return party.ToDto(state != null);
@@ -72,6 +92,13 @@ public class PartyService : IPartyService
         {
             _logger.LogDebug("Party not found: {PartyId}", partyId);
             return null;
+        }
+
+        // Если запрос от организатора, проверяем владение
+        var organizerId = _httpContextAccessor.HttpContext?.GetOrganizerId();
+        if (organizerId.HasValue)
+        {
+            await EnsurePartyOwnershipAsync(partyId, organizerId.Value);
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
@@ -119,8 +146,20 @@ public class PartyService : IPartyService
             throw new ArgumentNullException(nameof(playlist));
         }
 
-        _logger.LogInformation("Updating playlist for party: {PartyId}, totalTracks={TotalTracks}",
-            partyId, playlist.TotalTracks);
+        var organizerId = _httpContextAccessor.HttpContext?.GetOrganizerId();
+        if (!organizerId.HasValue)
+        {
+            throw new UnauthorizedAccessException("Organizer ID is required to update playlist");
+        }
+
+        _logger.LogInformation(
+            "Updating playlist for party: {PartyId}, totalTracks={TotalTracks}, organizerId={OrganizerId}",
+            partyId,
+            playlist.TotalTracks,
+            organizerId.Value);
+
+        // Проверяем владение перед обновлением
+        await EnsurePartyOwnershipAsync(partyId, organizerId.Value);
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
@@ -133,5 +172,26 @@ public class PartyService : IPartyService
         await _partyRepository.UpdateAsync(party);
 
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
+    }
+
+    /// <summary>
+    /// Проверяет, что вечеринка принадлежит указанному организатору
+    /// </summary>
+    private async Task EnsurePartyOwnershipAsync(Guid partyId, Guid organizerId)
+    {
+        var party = await _partyRepository.GetByIdAsync(partyId);
+        if (party == null)
+        {
+            throw new PartyNotFoundException(partyId);
+        }
+
+        if (party.OrganizerId != organizerId)
+        {
+            _logger.LogWarning(
+                "Access denied: party {PartyId} does not belong to organizer {OrganizerId}",
+                partyId,
+                organizerId);
+            throw new UnauthorizedAccessException("You do not have permission to access this party");
+        }
     }
 }

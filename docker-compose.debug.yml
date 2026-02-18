@@ -72,6 +72,9 @@ services:
     build:
       context: .
       dockerfile: ./CherryPlayWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000
+        - VITE_SIGNALR_URL=http://localhost:5000/partyHub
     container_name: cherryplay-web-debug
     ports:
       - "3000:80"
@@ -79,9 +82,6 @@ services:
       - server
     networks:
       - cherryplay-network
-    environment:
-      - VITE_API_URL=http://localhost:5000/api
-      - VITE_SIGNALR_URL=http://localhost:5000/partyHub
 
 volumes:
   postgres_data:

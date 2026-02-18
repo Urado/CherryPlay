@@ -22,7 +22,11 @@ const baseConfig = {
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: ['./tsconfig.json', './tsconfig.node.json'],
+    // Use only main tsconfig to avoid "multiple projects" warning
+    // tsconfig.node.json is still used by import/resolver for vite.config.ts
+    // Note: "Multiple projects" warning may still appear due to TypeScript project references
+    // This is a known limitation and doesn't affect linting functionality
+    project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -35,6 +39,7 @@ const baseConfig = {
     'import/resolver': {
       typescript: {
         project: ['./tsconfig.json', './tsconfig.node.json'],
+        alwaysTryTypes: true,
       },
     },
   },
@@ -80,7 +85,8 @@ export default [
       'dist/**',
       'node_modules/**',
       'eslint.config.mjs',
-      'vite.config.ts',
+      'vite.config.ts', // Использует tsconfig.node.json через references
+      'scripts/**', // Исключаем скрипты из проверки
       'CherryPlayComponents/**', // Исключаем CherryPlayComponents из проверки
     ],
   },

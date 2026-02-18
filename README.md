@@ -83,6 +83,7 @@ npm run build
 - [SCRIPTS.md](SCRIPTS.md) — скрипты для сборки компонентов
 - [THEMES.md](THEMES.md) — документация по темам оформления
 - [ADDING_THEME.md](ADDING_THEME.md) — инструкция по добавлению новой темы
+- [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) — документация по деплою (GitHub Secrets, автоматический деплой, ручной деплой, откат)
 - **CherryPlayList:** [docs/README.md](CherryPlayList/docs/README.md) — оглавление документации приложения
   - [QUICK_START_BUILD.md](CherryPlayList/QUICK_START_BUILD.md) — быстрый старт сборки релиза
 - **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, Data and Contracts)

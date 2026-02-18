@@ -4,11 +4,19 @@ import {
   type CustomizationSettings,
   getDefaultCustomizationSettings,
 } from '@cherryplay/components';
+import { AuthForm } from '@cherryplay/components';
 import React, { useState, useMemo, useEffect } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { authService } from '@shared/services/authService';
 import { partyService, CreatePartyDto } from '@shared/services/partyService';
-import { useProjectStore, usePlayerAudioStore, usePartyStore, useUIStore } from '@shared/stores';
+import {
+  useAuthStore,
+  useProjectStore,
+  usePlayerAudioStore,
+  usePartyStore,
+  useUIStore,
+} from '@shared/stores';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
@@ -70,6 +78,66 @@ export const PartyView: React.FC<PartyViewProps> = ({
     createdParty: state.createdParty,
     setCreatedParty: state.setCreatedParty,
   }));
+
+  const { openModal, addNotification } = useUIStore((state) => ({
+    openModal: state.openModal,
+    addNotification: state.addNotification,
+  }));
+  const authStore = useAuthStore();
+  const isAuthenticated = authStore.isAuthenticated;
+
+  // Обработка OAuth callback для автоматического входа
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.api || isAuthenticated()) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const registerCallback = async () => {
+      try {
+        const result = (await window.api.invoke('auth:registerCallback')) as
+          | { success: true; data: { code: string; provider: string } }
+          | { success: false; error: string };
+
+        if (isMounted && result.success && result.data) {
+          const { code, provider } = result.data;
+          try {
+            const deviceId = `desktop-${Date.now()}`;
+            const token = await authService.exchangeCode(code, provider, deviceId);
+            authStore.setToken(token);
+
+            // Загружаем информацию об организаторе
+            const organizerInfo = await authService.getCurrentOrganizer();
+            authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
+
+            addNotification({
+              type: 'success',
+              message: 'Успешный вход в систему',
+              duration: 3000,
+            });
+          } catch (error) {
+            addNotification({
+              type: 'error',
+              message: error instanceof Error ? error.message : 'Ошибка при входе',
+              duration: 5000,
+            });
+          }
+        }
+      } catch (error) {
+        // Игнорируем ошибки таймаута и другие
+        if (isMounted && error instanceof Error && !error.message.includes('timeout')) {
+          console.error('Error handling OAuth callback:', error);
+        }
+      }
+    };
+
+    registerCallback();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, authStore, addNotification]);
 
   const handleThemeChange = (newThemeId: ThemeId) => {
     setThemeId(newThemeId);
@@ -133,10 +201,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     disabledGroupIds,
   ]);
 
-  const { addNotification } = useUIStore((state) => ({
-    addNotification: state.addNotification,
-  }));
-
   const checkPartyExists = React.useCallback(
     async (partyId: string): Promise<boolean> => {
       try {
@@ -181,6 +245,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }, [createdParty, checkPartyExists]);
 
   const handleCreateParty = async () => {
+    // Проверяем авторизацию перед созданием вечеринки
+    if (!isAuthenticated()) {
+      addNotification({
+        type: 'warning',
+        message: 'Для создания вечеринки необходимо войти в аккаунт',
+        duration: 5000,
+      });
+      openModal('account');
+      return;
+    }
     if (!partyName.trim()) {
       addNotification({
         type: 'warning',
@@ -253,6 +327,23 @@ export const PartyView: React.FC<PartyViewProps> = ({
       }
     }
   };
+
+  // Если пользователь не авторизован, показываем форму входа
+  if (!isAuthenticated()) {
+    return (
+      <div className="party-view">
+        <AuthForm
+          title="Требуется авторизация"
+          description="Для работы с вечеринками необходимо войти в аккаунт"
+          compact={false}
+          authService={authService}
+          onLoginSuccess={() => {
+            // Компонент автоматически обновит состояние через authService
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="party-view">

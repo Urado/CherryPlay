@@ -1,10 +1,13 @@
 /**
  * Страница со списком всех вечеринок
  */
+import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
 import './PartyListPage.css';
@@ -23,6 +26,8 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [organizer, setOrganizer] = useState<OrganizerDto | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [filters, setFilters] = useState<PartyFilters>({
     dateFrom: '',
     dateTo: '',
@@ -46,6 +51,24 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
   useEffect(() => {
     loadParties();
   }, [loadParties]);
+
+  // Проверка статуса аутентификации
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentOrganizer = await authService.checkAuth();
+        setOrganizer(currentOrganizer);
+      } catch (err) {
+        // Ошибка проверки аутентификации не критична - просто считаем пользователя неавторизованным
+        console.log('[PartyListPage] Auth check failed (non-critical):', err);
+        setOrganizer(null);
+      } finally {
+        // Всегда устанавливаем authLoading в false, чтобы страница могла загрузиться
+        setAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -167,9 +190,25 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       <div className="party-list-container">
         <div className="party-list-header">
           <h1 className="party-list-title">Вечеринки</h1>
-          <button className="party-list-refresh-btn" onClick={loadParties} title="Обновить список">
-            ↻
-          </button>
+          <div className="party-list-header-actions">
+            {!authLoading &&
+              (organizer ? (
+                <Link to="/cabinet" className="party-list-login-link">
+                  Кабинет
+                </Link>
+              ) : (
+                <Link to="/login" className="party-list-login-link">
+                  Вход
+                </Link>
+              ))}
+            <button
+              className="party-list-refresh-btn"
+              onClick={loadParties}
+              title="Обновить список"
+            >
+              ↻
+            </button>
+          </div>
         </div>
 
         {/* Блок фильтров */}

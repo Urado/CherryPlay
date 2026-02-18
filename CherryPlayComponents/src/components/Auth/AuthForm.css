@@ -1,0 +1,97 @@
+.auth-form-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: var(--spacing-xl, 24px) var(--spacing-md, 16px);
+}
+
+.auth-form-container--compact {
+  padding: var(--spacing-lg, 16px);
+  min-height: auto;
+}
+
+.auth-form-card {
+  max-width: 500px;
+  width: 100%;
+  background-color: var(--bg-secondary, #fff);
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  padding: var(--spacing-xl, 24px);
+  box-shadow: 0 8px 32px var(--ui-shadow, rgba(0, 0, 0, 0.1));
+}
+
+.auth-form-title {
+  margin-top: 0;
+  margin-bottom: var(--spacing-md, 16px);
+  text-align: center;
+  font-size: var(--font-size-heading, 24px);
+  font-weight: var(--font-weight-heading, 600);
+  color: var(--text-primary, #333);
+}
+
+.auth-form-warning {
+  padding: var(--spacing-md, 16px);
+  margin-bottom: var(--spacing-lg, 16px);
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.auth-form-warning strong {
+  display: block;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.auth-form-warning p {
+  margin: var(--spacing-xs, 4px) 0 0 0;
+  font-size: var(--font-size-body, 14px);
+  color: var(--text-secondary, #666);
+}
+
+.auth-form-error {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  margin-bottom: var(--spacing-md, 16px);
+  background-color: rgba(211, 47, 47, 0.1);
+  color: var(--state-error, #d32f2f);
+  border-radius: 4px;
+  border: 1px solid rgba(211, 47, 47, 0.3);
+  font-size: var(--font-size-body, 14px);
+}
+
+.auth-form-tabs {
+  display: flex;
+  gap: var(--spacing-xs, 8px);
+  margin-bottom: var(--spacing-lg, 16px);
+  border-bottom: 1px solid var(--ui-border, #ddd);
+}
+
+.auth-form-tab {
+  flex: 1;
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary, #666);
+  cursor: pointer;
+  font-size: var(--font-size-body, 14px);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.auth-form-tab:hover {
+  color: var(--text-primary, #333);
+}
+
+.auth-form-tab--active {
+  color: var(--accent-primary, #667eea);
+  border-bottom-color: var(--accent-primary, #667eea);
+}
+
+.auth-form-footer {
+  margin-top: var(--spacing-lg, 16px);
+  text-align: center;
+  font-size: var(--font-size-small, 12px);
+  color: var(--text-secondary, #666);
+}

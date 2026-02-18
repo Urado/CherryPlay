@@ -1,6 +1,8 @@
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Models;
+using PlayerItemEntity = CherryPlayServer.Core.Entities.PlayerItem;
+using PlayerItemDto = CherryPlayServer.Models.PlayerItem;
 
 namespace CherryPlayServer.Core.Mappings;
 
@@ -39,14 +41,14 @@ public static class PlaylistMapper
         };
     }
 
-    public static Models.PlayerItem ToDto(this Core.Entities.PlayerItem entity)
+    public static PlayerItemDto ToDto(this PlayerItemEntity entity)
     {
         if (entity == null)
         {
             throw new ArgumentNullException(nameof(entity));
         }
 
-        return new Models.PlayerItem(
+        return new PlayerItemDto(
             Id: entity.Id,
             Type: entity.Type.ToStringValue(),
             Name: entity.Name,
@@ -57,7 +59,7 @@ public static class PlaylistMapper
         );
     }
 
-    public static Core.Entities.PlayerItem ToEntity(this Models.PlayerItem? dto)
+    public static PlayerItemEntity ToEntity(this PlayerItemDto? dto)
     {
         if (dto == null)
         {

@@ -1,0 +1,205 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-page-form {
+  max-width: 500px;
+  width: 100%;
+}
+
+.login-container h1 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.login-subtitle {
+  margin: 0 0 30px 0;
+  color: #666;
+  text-align: center;
+  font-size: 14px;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.login-button:active {
+  transform: translateY(0);
+}
+
+.login-button-telegram {
+  background: #0088cc;
+}
+
+.login-button-telegram:hover {
+  background: #0077b5;
+}
+
+.login-button-vk {
+  background: #4c75a3;
+}
+
+.login-button-vk:hover {
+  background: #3d5f8a;
+}
+
+.login-button-mailru {
+  background: #005ff9;
+}
+
+.login-button-mailru:hover {
+  background: #004fc7;
+}
+
+.login-button-icon {
+  font-size: 20px;
+}
+
+.vkid-widget-container {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.vkid-widget-container:empty {
+  display: none;
+}
+
+.auth-mode-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.auth-mode-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.auth-mode-button:hover {
+  color: #333;
+}
+
+.auth-mode-button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.email-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.login-button-email {
+  background: #667eea;
+  margin-top: 8px;
+}
+
+.login-button-email:hover {
+  background: #5568d3;
+}
+
+.login-button-email:disabled {
+  background: #999;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  padding: 12px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  font-size: 14px;
+}
+
+.register-link {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.register-link a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { app, BrowserWindow, Menu, session } from 'electron';
 
 import { registerAudioHandlers } from './ipc/audio.js';
+import { registerAuthHandlers, handleOAuthCallback } from './ipc/auth.js';
 import { registerConfigHandlers } from './ipc/config.js';
 import { registerDialogHandlers } from './ipc/dialogs.js';
 import { registerExportHandlers } from './ipc/export.js';
@@ -47,6 +48,14 @@ function createWindow(): void {
   });
 }
 
+// Регистрация custom URL scheme для OAuth callback
+const PROTOCOL = 'cherryplaylist';
+
+// Регистрируем protocol только если приложение не упаковано или в dev режиме
+if (!app.isDefaultProtocolClient(PROTOCOL)) {
+  app.setAsDefaultProtocolClient(PROTOCOL);
+}
+
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -72,6 +81,7 @@ app.whenReady().then(() => {
   registerExportHandlers();
   registerProjectHandlers();
   registerPlaylistHandlers();
+  registerAuthHandlers(mainWindow);
 
   createWindow();
 
@@ -81,6 +91,41 @@ app.whenReady().then(() => {
     }
   });
 });
+
+// Обработка OAuth callback через custom URL scheme
+// macOS
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  handleOAuthCallback(url, mainWindow);
+});
+
+// Windows/Linux - обрабатываем аргументы командной строки
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    // Обрабатываем URL из второго экземпляра
+    const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+    if (url) {
+      handleOAuthCallback(url, mainWindow);
+    }
+    // Фокусируемся на главном окне
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+// Обрабатываем URL при запуске приложения (Windows/Linux)
+if (process.platform !== 'darwin') {
+  const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+  if (url) {
+    handleOAuthCallback(url, mainWindow);
+  }
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

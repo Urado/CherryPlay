@@ -1,5 +1,7 @@
 import type { ThemeId, CustomizationSettings } from '../themes';
 
+export * from './auth';
+
 export interface PlayerItem {
   id: string;
   type: 'track' | 'group';

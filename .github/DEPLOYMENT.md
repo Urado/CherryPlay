@@ -17,17 +17,25 @@ GitHub Container Registry уже настроен и доступен автом
 
 ### 2. Настройка GitHub Secrets
 
-Перейдите в Settings → Secrets and variables → Actions и добавьте следующие секреты:
+Перейдите в **Settings → Secrets and variables → Actions** и добавьте секреты.
 
-#### Для деплоя (SSH):
-- `SSH_PRIVATE_KEY` - приватный SSH ключ для доступа к серверу
-- `DEPLOY_HOST` - IP адрес или доменное имя сервера (например: `192.168.1.100` или `deploy.example.com`)
-- `DEPLOY_USER` - имя пользователя для SSH подключения (например: `deploy` или `ubuntu`)
+#### Обязательные для деплоя (Release and Deploy)
 
-#### Опционально:
-- `GHCR_TOKEN` - персональный токен доступа GitHub (PAT) с правами `write:packages`. 
-  - Если репозиторий публичный, можно использовать `GITHUB_TOKEN` (уже доступен автоматически)
-  - Если репозиторий приватный, нужен PAT с правами `read:packages` и `write:packages`
+| Секрет | Описание |
+|--------|----------|
+| `SSH_PRIVATE_KEY` | Приватный SSH-ключ для доступа к серверу (содержимое `id_ed25519` или `id_rsa`) |
+| `DEPLOY_HOST` | IP или домен сервера (например `deploy.example.com`) |
+| `DEPLOY_USER` | Пользователь для SSH (например `deploy`, `ubuntu`) |
+| `JWT_SECRET_KEY` | Секрет для подписи JWT (не менее 32 символов). Используется сервером в production |
+| `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL (должен совпадать с тем, что на сервере при первом запуске) |
+
+#### Опциональные (подставляются в docker-compose при деплое)
+
+| Секрет | Описание |
+|--------|----------|
+| `CORS_ORIGIN_0` | Первый разрешённый origin (например `https://yourdomain.com`) |
+| `CORS_ORIGIN_1` | Второй origin (например `https://www.yourdomain.com`) |
+| `GHCR_TOKEN` | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
 
 ### 3. Настройка SSH ключа
 
@@ -77,25 +85,24 @@ newgrp docker
 mkdir -p ~/cherryplay-deploy
 ```
 
-#### Создание файла `.env.production` (опционально)
+#### Создание файла `.env.production` (для ручного деплоя или запас)
 
-Создайте файл `~/cherryplay-deploy/.env.production` с настройками для продакшена:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `CORS_ORIGIN_*`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
 
 ```env
-# PostgreSQL
+# Обязательно для работы сервера
+JWT_SECRET_KEY=ваш_секрет_не_короче_32_символов
+
+# PostgreSQL (должен совпадать с паролем при первом запуске контейнера postgres)
 POSTGRES_PASSWORD=your_secure_password_here
 
 # pgAdmin
 PGADMIN_EMAIL=admin@yourdomain.com
 PGADMIN_PASSWORD=your_admin_password
 
-# CORS
+# CORS (разрешённые origins для фронта)
 CORS_ORIGIN_0=https://yourdomain.com
 CORS_ORIGIN_1=https://www.yourdomain.com
-
-# API URLs (если нужны)
-VITE_API_URL=https://api.yourdomain.com/api
-VITE_SIGNALR_URL=https://api.yourdomain.com/partyHub
 ```
 
 #### Настройка доступа к GHCR (для приватных репозиториев)
