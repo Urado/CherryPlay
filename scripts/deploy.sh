@@ -219,6 +219,24 @@ done
 echo -e "${YELLOW}🧹 Cleaning up old images...${NC}"
 docker image prune -f
 
+# Обновить конфиг nginx и перезагрузить (если есть nginx и конфиг CherryPlay)
+if [ -f nginx-cherryplay-https.conf ]; then
+    echo -e "${YELLOW}🌐 Updating Nginx config...${NC}"
+    if command -v nginx > /dev/null 2>&1; then
+        if sudo cp nginx-cherryplay-https.conf /etc/nginx/sites-available/cherryplay 2>/dev/null; then
+            if sudo nginx -t 2>/dev/null; then
+                sudo systemctl reload nginx 2>/dev/null && echo -e "${GREEN}✅ Nginx config updated and reloaded${NC}" || echo -e "${YELLOW}⚠️  Nginx reload skipped (e.g. not enabled)${NC}"
+            else
+                echo -e "${YELLOW}⚠️  Nginx config test failed, reload skipped${NC}"
+            fi
+        else
+            echo -e "${YELLOW}⚠️  Could not copy nginx config (need sudo?). Update manually: sudo cp nginx-cherryplay-https.conf /etc/nginx/sites-available/cherryplay && sudo nginx -t && sudo systemctl reload nginx${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Nginx not found, config not updated${NC}"
+    fi
+fi
+
 echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
 echo -e "${GREEN}   Version $VERSION is now live${NC}"
 echo ""

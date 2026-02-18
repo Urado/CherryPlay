@@ -131,10 +131,46 @@ sudo journalctl -xeu nginx.service
 
 Откройте `https://<ваш-домен>`. Убедитесь, что сайт открывается, нет ошибок CORS и авторизация работает.
 
+### 4.5. После передеплоя — снова подставить конфиг Nginx
+
+Передеплой обновляет файл только в `~/cherryplay-deploy/`. Чтобы nginx использовал актуальный конфиг (в т.ч. проксирование на порт 8080), скопируйте его в nginx и перезапустите:
+
+```bash
+cd ~/cherryplay-deploy
+sudo cp nginx-cherryplay-https.conf /etc/nginx/sites-available/cherryplay
+# если в файле остался YOUR_DOMAIN:
+sudo sed -i 's/YOUR_DOMAIN/cherrypashkaparty.ru/g' /etc/nginx/sites-available/cherryplay
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**Если по адресу ничего нет (ни HTTP, ни HTTPS):**
+
+1. **Проверить контейнеры и порт 8080:**
+   ```bash
+   cd ~/cherryplay-deploy
+   docker compose -f docker-compose.prod.yml ps
+   curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/
+   ```
+   Должны быть в Up: `cherryplay-web`, `cherryplay-server`; curl должен вернуть 200.
+
+2. **Проверить, что nginx проксирует на 8080:**
+   ```bash
+   grep proxy_pass /etc/nginx/sites-available/cherryplay
+   ```
+   Должно быть `proxy_pass http://127.0.0.1:8080;`. Если там `:80` — скопируйте конфиг заново из п. 4.5 выше.
+
+3. **Убрать дефолтный сайт nginx** (если запросы забирает он):
+   ```bash
+   sudo rm -f /etc/nginx/sites-enabled/default
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+4. **Открывать по домену:** в браузере именно `https://cherrypashkaparty.ru`, а не по IP — в конфиге стоит `server_name cherrypashkaparty.ru`.
+
 ---
 
 ## 5. Дальше
 
 - Следующие релизы: новый тег → новый Release → деплой выполнится автоматически.
-- После повторных деплоев конфиг в `~/cherryplay-deploy/nginx-cherryplay-https.conf` обновляется; при необходимости скопируйте его в `/etc/nginx/sites-available/cherryplay` и выполните `sudo nginx -t && sudo systemctl reload nginx`.
+- После повторных деплоев конфиг nginx обновляется **скриптом деплоя** автоматически. Если что-то пошло не так — скопируйте вручную по п. 4.5.
 - Откат: [DEPLOYMENT.md — Откат на предыдущую версию](DEPLOYMENT.md#откат-на-предыдущую-версию).
