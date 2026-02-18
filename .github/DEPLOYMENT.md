@@ -33,7 +33,7 @@ GitHub Container Registry уже настроен и доступен автом
 
 | Секрет | Описание |
 |--------|----------|
-| `CORS_ORIGIN_0` | Первый разрешённый origin (например `https://yourdomain.com`) |
+| `CORS_ORIGIN_0` | Первый разрешённый origin (для HTTPS укажите `https://yourdomain.com`). По нему же при деплое подставляется домен в конфиг Nginx. |
 | `CORS_ORIGIN_1` | Второй origin (например `https://www.yourdomain.com`) |
 | `GHCR_TOKEN` | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
 
@@ -119,6 +119,8 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 ## Как использовать
 
+**Первый деплой:** пошаговая инструкция — [FIRST_DEPLOY.md](FIRST_DEPLOY.md).
+
 ### Автоматическая сборка при изменениях
 
 При каждом push в ветки `main` или `develop` автоматически:
@@ -169,11 +171,13 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ```
 .github/
   workflows/
-    build-images.yml          # Автоматическая сборка при изменениях
-    release-and-deploy.yml     # Сборка и деплой при релизе
+    build-images.yml              # Автоматическая сборка при изменениях
+    release-and-deploy.yml        # Сборка и деплой при релизе
+  FIRST_DEPLOY.md                 # Инструкция для первого деплоя
+  nginx-cherryplay-https.conf    # Конфиг Nginx для HTTPS (копируется на сервер при деплое)
 scripts/
-  deploy.sh                    # Скрипт деплоя на сервере
-docker-compose.prod.yml        # Docker Compose для продакшена
+  deploy.sh                       # Скрипт деплоя на сервере
+docker-compose.prod.yml           # Docker Compose для продакшена
 ```
 
 ## Переменные окружения
@@ -250,7 +254,91 @@ docker ps | grep cherryplay
 2. **Используйте сильные пароли для PostgreSQL и pgAdmin**
 3. **Ограничьте доступ к серверу по SSH (используйте firewall)**
 4. **Регулярно обновляйте Docker и систему на сервере**
-5. **Используйте HTTPS для продакшена (настройте reverse proxy)**
+5. **Используйте HTTPS для продакшена** — см. раздел [HTTPS (Nginx + Let's Encrypt)](#https-nginx--lets-encrypt) ниже.
+
+## HTTPS (Nginx + Let's Encrypt)
+
+HTTPS включается на **хосте** перед Docker: внешний Nginx принимает 443, термирует TLS и проксирует на контейнер `web` (порт 80). Конфиг лежит в репозитории (`.github/nginx-cherryplay-https.conf`). При деплое в него подставляется домен из секрета **`CORS_ORIGIN_0`** (из URL берётся только хост, без `https://` и пути), и готовый файл копируется в `~/cherryplay-deploy/nginx-cherryplay-https.conf` на сервере. Если `CORS_ORIGIN_0` не задан, на сервер попадает шаблон с плейсхолдером `YOUR_DOMAIN`.
+
+### Однократная настройка на сервере
+
+#### 1. Установка Nginx и Certbot (Ubuntu/Debian)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y nginx certbot python3-certbot-nginx
+```
+
+#### 2. Освобождение порта 80 для первичного получения сертификата
+
+Контейнер `web` в prod слушает порт 80. Чтобы Certbot смог получить сертификат, временно освободите 80:
+
+```bash
+cd ~/cherryplay-deploy
+docker compose -f docker-compose.prod.yml stop web
+```
+
+#### 3. Получение сертификата Let's Encrypt
+
+Подставьте свой домен и email:
+
+```bash
+sudo certbot certonly --standalone -d YOUR_DOMAIN -d www.YOUR_DOMAIN --non-interactive --agree-tos -m admin@YOUR_DOMAIN
+```
+
+Сертификаты появятся в `/etc/letsencrypt/live/YOUR_DOMAIN/` (fullchain.pem, privkey.pem).
+
+Запустите контейнер обратно:
+
+```bash
+docker compose -f docker-compose.prod.yml start web
+```
+
+#### 4. Установка конфига Nginx
+
+После деплоя в `~/cherryplay-deploy/` лежит файл `nginx-cherryplay-https.conf`. Если в GitHub Secrets задан **`CORS_ORIGIN_0`** (например `https://yourdomain.com`), домен в конфиге уже подставлен; иначе замените в файле `YOUR_DOMAIN` на свой домен. Затем установите конфиг:
+
+```bash
+cd ~/cherryplay-deploy
+sudo cp nginx-cherryplay-https.conf /etc/nginx/sites-available/cherryplay
+# Если домен не был подставлен при деплое:
+# sed 's/YOUR_DOMAIN/yourdomain.com/g' nginx-cherryplay-https.conf | sudo tee /etc/nginx/sites-available/cherryplay > /dev/null
+sudo ln -sf /etc/nginx/sites-available/cherryplay /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl enable nginx
+sudo systemctl reload nginx
+```
+
+#### 5. CORS для HTTPS
+
+В GitHub Secrets задайте origins с протоколом **https**:
+
+| Секрет          | Значение (пример)               |
+|-----------------|---------------------------------|
+| `CORS_ORIGIN_0` | `https://yourdomain.com`        |
+| `CORS_ORIGIN_1` | `https://www.yourdomain.com`    |
+
+При следующем деплое бэкенд будет отдавать эти origins в заголовках CORS. Если деплоите вручную, добавьте те же значения в `~/cherryplay-deploy/.env` или `.env.production` и перезапустите контейнеры.
+
+#### 6. Автообновление сертификатов
+
+```bash
+sudo certbot renew --dry-run
+```
+
+Таймер `certbot.timer` обычно уже настроен (`sudo systemctl status certbot.timer`).
+
+### Если Nginx и Docker оба претендуют на порт 80
+
+По умолчанию контейнер `web` публикует порт `80:80`. Внешний Nginx на хосте должен проксировать на тот же порт. Если вы хотите, чтобы Nginx слушал 80 на хосте, измените в `docker-compose.prod.yml` маппинг для сервиса `web` на другой порт, например:
+
+```yaml
+web:
+  ports:
+    - "8080:80"
+```
+
+Тогда в конфиге Nginx замените `proxy_pass http://127.0.0.1:80` на `proxy_pass http://127.0.0.1:8080`. Конфиг-пример в репозитории рассчитан на вариант `80:80`.
 
 ## Дополнительные настройки
 
@@ -261,26 +349,6 @@ docker ps | grep cherryplay
 1. Обновите `REGISTRY` в workflows
 2. Добавьте секрет `REGISTRY_USERNAME` и `REGISTRY_PASSWORD`
 3. Обновите логин в workflows
-
-### Настройка reverse proxy (Nginx/Traefik)
-
-Для продакшена рекомендуется использовать reverse proxy:
-
-```nginx
-# Пример конфигурации Nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-    }
-
-    location /api {
-        proxy_pass http://localhost:5000;
-    }
-}
-```
 
 ## Поддержка
 

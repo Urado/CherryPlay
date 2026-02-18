@@ -110,6 +110,24 @@ jobs:
           scp scripts/deploy.sh \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
 
+      - name: Prepare Nginx HTTPS config with domain from CORS_ORIGIN_0
+        env:
+          CORS_ORIGIN_0: ${{ secrets.CORS_ORIGIN_0 }}
+        run: |
+          if [ -n "$CORS_ORIGIN_0" ]; then
+            DOMAIN="${CORS_ORIGIN_0#*://}"
+            DOMAIN="${DOMAIN%%/*}"
+            DOMAIN="${DOMAIN%%:*}"
+            sed "s/YOUR_DOMAIN/${DOMAIN}/g" .github/nginx-cherryplay-https.conf > nginx-cherryplay-https.conf
+          else
+            cp .github/nginx-cherryplay-https.conf nginx-cherryplay-https.conf
+          fi
+
+      - name: Copy Nginx HTTPS config to server
+        run: |
+          scp nginx-cherryplay-https.conf \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
+
       - name: Deploy application
         env:
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
