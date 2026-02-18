@@ -63,7 +63,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=sha-,enable={{is_not_pr}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push server image
@@ -113,7 +113,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=sha-,enable={{is_not_pr}}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push web image
