@@ -1,6 +1,7 @@
 @import './playlist.css';
 @import './playlist-item.css';
 @import './player.css';
+@import './party-info.css';
 
 [data-theme="art-deco"] {
   --bg-primary: #1a1a1a;

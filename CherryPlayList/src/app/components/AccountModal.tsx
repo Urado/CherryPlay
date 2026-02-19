@@ -67,46 +67,32 @@ export const AccountModal: React.FC = () => {
         }}
       />
       <div
-        className="modal-content"
+        className="modal-content account-modal-content"
         role="dialog"
         aria-modal="true"
         style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          padding: '20px',
+          position: 'relative',
+          zIndex: 1001,
+          padding: 0,
           maxWidth: '90%',
           maxHeight: '90%',
           overflow: 'auto',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-          zIndex: 1001,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <h2 style={{ margin: 0 }}>Account</h2>
+        <div className="account-modal-header">
+          <h2 className="account-modal-title">Аккаунт</h2>
           <button
+            type="button"
             onClick={closeModal}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              padding: '0',
-              width: '30px',
-              height: '30px',
-            }}
+            className="account-modal-close"
+            aria-label="Закрыть"
           >
             ×
           </button>
         </div>
-        <AccountView />
+        <div className="account-modal-body">
+          <AccountView />
+        </div>
       </div>
     </div>
   );

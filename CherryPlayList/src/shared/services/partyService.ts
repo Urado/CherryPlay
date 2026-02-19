@@ -1,6 +1,6 @@
 import { getApiConfig } from '../config/apiConfig';
 import { useAuthStore } from '../stores/authStore';
-import { handleAuthError } from '../utils/authErrorHandler';
+import { handleApiResponse } from '../utils/apiErrorHandler';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
@@ -13,6 +13,11 @@ export interface CreatePartyDto {
     totalTracks: number;
   };
   eventDateTime?: string;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
 }
 
 export interface PartyDto {
@@ -23,6 +28,11 @@ export interface PartyDto {
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
 }
 
 class PartyService {
@@ -42,17 +52,11 @@ class PartyService {
     return headers;
   }
 
-  private async handleResponseError(response: Response, defaultMessage: string): Promise<never> {
-    if (response.status === 401) {
-      // Токен истек или невалиден
-      handleAuthError('Authentication token expired or invalid. Please login again.');
-      throw new Error('Authentication token expired or invalid. Please login again.');
-    }
-    const errorText = await response.text();
-    throw new Error(`${defaultMessage}: ${errorText}`);
-  }
-
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      throw new Error('Для создания вечеринки необходимо войти в аккаунт');
+    }
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties`, {
       method: 'POST',
@@ -61,15 +65,21 @@ class PartyService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      await this.handleResponseError(response, 'Failed to create party');
-    }
-
-    return response.json();
+    return handleApiResponse<PartyDto>(response, 'Failed to create party');
   }
 
   async getParties(): Promise<PartyDto[]> {
-    return Promise.resolve([]);
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      throw new Error('Для просмотра списка вечеринок необходимо войти в аккаунт');
+    }
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      cache: 'no-cache',
+    });
+    return handleApiResponse<PartyDto[]>(response, 'Failed to load parties');
   }
 
   async getParty(partyId: string): Promise<PartyDto> {
@@ -80,18 +90,7 @@ class PartyService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        await this.handleResponseError(response, 'Failed to get party');
-      }
-      if (response.status === 404) {
-        throw new Error('Party not found');
-      }
-      const errorText = await response.text();
-      throw new Error(`Failed to get party: ${errorText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PartyDto>(response, 'Failed to get party');
   }
 
   async checkPartyExists(partyId: string): Promise<boolean> {
@@ -103,8 +102,16 @@ class PartyService {
     }
   }
 
-  async updateParty(_partyId: string, _data: Partial<CreatePartyDto>): Promise<PartyDto> {
-    throw new Error('Not implemented');
+  async updateParty(partyId: string, data: Partial<CreatePartyDto>): Promise<void> {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data),
+      cache: 'no-cache',
+    });
+
+    await handleApiResponse<void>(response, 'Failed to update party');
   }
 
   async updatePartyPlaylist(
@@ -120,11 +127,7 @@ class PartyService {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        await this.handleResponseError(response, 'Failed to update party playlist');
-      }
-      const errorText = await response.text();
-      throw new Error(`Failed to update party playlist: ${errorText}`);
+      await handleApiResponse<never>(response, 'Failed to update party playlist');
     }
   }
 
@@ -141,16 +144,40 @@ class PartyService {
       const protocol = url.protocol;
       const hostname = url.hostname;
 
-      if (url.port && url.port !== '80' && url.port !== '443') {
-        const webPort = url.protocol === 'https:' ? '443' : '80';
-        return `${protocol}//${hostname}${webPort === '80' ? '' : `:${webPort}`}/?party=${shortCode}`;
+      // Определяем порт веб-приложения
+      // По умолчанию веб-приложение работает на порту 3000 (dev) или 80 (prod через nginx)
+      // Если API сервер на порту 5000, веб обычно на 3000
+      const apiPort = url.port;
+
+      // В dev режиме: если API на 5000, веб на 3000
+      // В prod через nginx: оба на одном домене без порта или на стандартных портах
+      let webPort: string | null = null;
+      if (apiPort && apiPort !== '80' && apiPort !== '443') {
+        if (apiPort === '5000') {
+          // Dev режим: веб на 3000
+          webPort = '3000';
+        } else {
+          // Для других портов используем стандартные
+          webPort = url.protocol === 'https:' ? '443' : '80';
+        }
+      }
+      // Если порт стандартный или отсутствует (nginx), используем тот же домен без порта
+
+      // Используем формат /party/:shortCode
+      if (webPort) {
+        return `${protocol}//${hostname}:${webPort}/party/${shortCode}`;
       }
 
-      return `${protocol}//${hostname}/?party=${shortCode}`;
+      return `${protocol}//${hostname}/party/${shortCode}`;
     } catch {
       const cleanUrl = serverUrl.replace(/^https?:\/\//, '').split('/')[0];
       const protocol = serverUrl.startsWith('https') ? 'https' : 'http';
-      return `${protocol}://${cleanUrl}/?party=${shortCode}`;
+      // По умолчанию используем порт 3000 для веб-приложения в dev режиме
+      const defaultWebPort = serverUrl.includes(':5000') ? '3000' : null;
+      if (defaultWebPort) {
+        return `${protocol}://${cleanUrl}:${defaultWebPort}/party/${shortCode}`;
+      }
+      return `${protocol}://${cleanUrl}/party/${shortCode}`;
     }
   }
 }

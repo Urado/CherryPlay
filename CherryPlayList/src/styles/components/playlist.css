@@ -166,8 +166,11 @@
 
 .playlist-tracks {
   flex: 1;
-  overflow: hidden auto;
+  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   padding: var(--spacing-sm);
+  min-width: 0;
 }
 
 /* Playlist Item */
@@ -184,6 +187,14 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
+  min-height: 44px;
+}
+
+/* Чекбокс и первые колонки не сжимаются — всегда видны в party и узких лейаутах */
+.playlist-item-play,
+.playlist-item-drag-handle,
+.playlist-item-checkbox {
+  flex-shrink: 0;
 }
 
 .playlist-item-play {
@@ -262,6 +273,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  min-width: 28px;
+  min-height: 28px;
   transition: color 0.2s;
 }
 
@@ -274,7 +287,9 @@
 }
 
 .playlist-item-checkbox .checkbox-icon {
-  font-size: 20px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
 }
 
 .playlist-item-index {

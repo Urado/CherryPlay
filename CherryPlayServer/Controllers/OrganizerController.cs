@@ -24,6 +24,22 @@ public class OrganizerController : ControllerBase
     }
 
     /// <summary>
+    /// Проверить валидность сессии организатора (легковесный эндпоинт без полной информации)
+    /// </summary>
+    [HttpGet("session/check")]
+    [AuthorizeOrganizer]
+    public ActionResult<object> CheckSession()
+    {
+        var organizerId = HttpContext.GetOrganizerId();
+        if (!organizerId.HasValue)
+        {
+            return Unauthorized(new { valid = false, message = "Authentication required" });
+        }
+
+        return Ok(new { valid = true, organizerId = organizerId.Value });
+    }
+
+    /// <summary>
     /// Получить профиль текущего организатора
     /// </summary>
     [HttpGet("me")]
@@ -94,6 +110,11 @@ public class OrganizerController : ControllerBase
             if (dto.Links != null)
             {
                 organizer.Links = dto.Links;
+            }
+
+            if (dto.TimeZone != null)
+            {
+                organizer.TimeZone = dto.TimeZone;
             }
 
             organizer.UpdatedAt = DateTime.UtcNow;

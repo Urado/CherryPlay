@@ -14,14 +14,34 @@ public class JwtAuthenticationMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context, IJwtService jwtService)
+    public async Task InvokeAsync(HttpContext context, IJwtService jwtService, IOrganizerRepository organizerRepository)
     {
         var token = context.ExtractTokenFromRequest();
         if (!string.IsNullOrEmpty(token))
         {
             try
             {
-                await jwtService.ValidateAndSetOrganizerContextAsync(context, token);
+                var validationResult = await jwtService.ValidateTokenAsync(token);
+                if (validationResult.IsValid && validationResult.OrganizerId.HasValue)
+                {
+                    // Проверяем, существует ли организатор в базе данных
+                    var organizer = await organizerRepository.GetByIdAsync(validationResult.OrganizerId.Value);
+                    if (organizer == null)
+                    {
+                        _logger.LogWarning(
+                            "Token validation succeeded but organizer {OrganizerId} not found in database",
+                            validationResult.OrganizerId.Value);
+                        // Не устанавливаем OrganizerId в контексте, чтобы авторизация не прошла
+                    }
+                    else
+                    {
+                        // Организатор существует — устанавливаем контекст (SessionId проверяется в OrganizerAuthorizationHandler)
+                        context.Items["OrganizerId"] = validationResult.OrganizerId.Value;
+                        context.Items["OrganizerName"] = validationResult.Name;
+                        if (validationResult.SessionId.HasValue)
+                            context.Items["SessionId"] = validationResult.SessionId.Value;
+                    }
+                }
             }
             catch (Exception ex)
             {

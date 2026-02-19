@@ -1,0 +1,44 @@
+@import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
+
+[data-theme="sakura"] .party-info-display {
+  background: linear-gradient(135deg, #ffeef7 0%, #fff5f9 100%);
+  color: var(--text-primary);
+}
+
+[data-theme="sakura"] .party-info-display-container {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 179, 217, 0.3);
+  box-shadow: 0 4px 24px rgba(255, 179, 217, 0.2);
+}
+
+[data-theme="sakura"] .party-info-display-title {
+  color: var(--accent-primary);
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(255, 179, 217, 0.2);
+}
+
+[data-theme="sakura"] .party-info-display-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="sakura"] .party-info-display-meta {
+  border-top-color: rgba(255, 179, 217, 0.2);
+}
+
+[data-theme="sakura"] .party-info-display-meta strong {
+  color: var(--accent-primary);
+}
+
+[data-theme="sakura"] .party-info-display-link-btn {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 2px 8px rgba(255, 179, 217, 0.3);
+}
+
+[data-theme="sakura"] .party-info-display-link-btn:hover {
+  box-shadow: 0 4px 12px rgba(255, 179, 217, 0.4);
+}
+
+[data-theme="sakura"] .party-info-display-link-back:hover {
+  color: var(--accent-primary);
+}

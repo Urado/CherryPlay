@@ -13,4 +13,10 @@ public class Party
     public PartyPlaylist Playlist { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? EventDateTime { get; set; }
+    public bool IsListedInCatalog { get; set; }
+    public string? Description { get; set; }
+    public string? Place { get; set; }
+    public string? City { get; set; }
+    public string? Schedule { get; set; }
+    public string? TimeZone { get; set; }
 }

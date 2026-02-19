@@ -83,8 +83,10 @@ interface ProjectState {
     groupSettings: Map<string, ProjectGroupSettings>;
     sessionState?: ProjectSessionState;
     filePath?: string;
+    linkedParty?: import('@core/types/project').LinkedParty | null;
   }) => void;
   setFilePath: (path: string | null) => void;
+  setLinkedParty: (linkedParty: import('@core/types/project').LinkedParty | null) => void;
   markAsDirty: () => void;
   resetDirty: () => void;
 
@@ -234,14 +236,22 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           groupSettings: data.groupSettings,
           sessionState: data.sessionState || { ...DEFAULT_SESSION_STATE },
           meta: {
+            ...DEFAULT_PROJECT_META,
             filePath: data.filePath || null,
             isDirty: false,
             lastSavedAt: Date.now(),
+            linkedParty: data.linkedParty ?? null,
           },
           selectedItemIds: new Set(),
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+      },
+
+      setLinkedParty: (linkedParty) => {
+        set((state) => ({
+          meta: { ...state.meta, linkedParty },
+        }));
       },
 
       setFilePath: (path) => {

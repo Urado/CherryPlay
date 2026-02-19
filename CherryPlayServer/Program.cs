@@ -10,6 +10,7 @@ using CherryPlayServer.Infrastructure.Data;
 using CherryPlayServer.Infrastructure.OAuth;
 using CherryPlayServer.Core.Middleware;
 using CherryPlayServer.Core.Authorization;
+using CherryPlayServer.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -44,6 +45,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
 builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
 builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
+builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
 builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
 builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
 
@@ -83,16 +85,34 @@ builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("auth", opt =>
     {
-        opt.PermitLimit = 10;
-        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = AuthConstants.AuthRateLimitPermits;
+        opt.Window = AuthConstants.RateLimitWindow;
         opt.QueueLimit = 0;
     });
+
+    options.AddFixedWindowLimiter("public", opt =>
+    {
+        opt.PermitLimit = AuthConstants.PublicApiRateLimitPermits;
+        opt.Window = AuthConstants.RateLimitWindow;
+        opt.QueueLimit = 0;
+    });
+
+    options.AddFixedWindowLimiter("signalr", opt =>
+    {
+        opt.PermitLimit = AuthConstants.SignalRRateLimitPermits;
+        opt.Window = AuthConstants.RateLimitWindow;
+        opt.QueueLimit = 0;
+    });
+
     options.OnRejected = async (context, cancellationToken) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         await context.HttpContext.Response.WriteAsync("Too many requests. Try again later.", cancellationToken);
     };
 });
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddSingleton<IDataSeeder, DataSeeder>();
 builder.Services.AddHostedService<DataSeederHostedService>();
@@ -165,6 +185,7 @@ app.Use(async (context, next) =>
 app.UseRouting();
 app.UseCors("ConfiguredOrigins");
 app.UseRateLimiter();
+app.UseExceptionHandler();
 
 app.Use(async (context, next) =>
 {

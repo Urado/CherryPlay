@@ -5,9 +5,24 @@ import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 class AuthService implements IAuthService {
   async checkAuth(): Promise<OrganizerDto | null> {
     try {
-      const url = getApiUrl(API_ENDPOINTS.ORGANIZER.ME);
-      console.log('[AuthService] Checking auth at:', url);
+      // Сначала проверяем валидность сессии легковесным эндпоинтом
+      const sessionCheckUrl = getApiUrl(API_ENDPOINTS.ORGANIZER.SESSION_CHECK);
+      const sessionResponse = await fetch(sessionCheckUrl, {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-cache',
+      });
 
+      if (!sessionResponse.ok) {
+        if (sessionResponse.status === 401) {
+          return null;
+        }
+        // Если сервер недоступен (404, 500 и т.д.), не логируем ошибку
+        return null;
+      }
+
+      // Если сессия валидна, получаем полную информацию об организаторе
+      const url = getApiUrl(API_ENDPOINTS.ORGANIZER.ME);
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include',
@@ -16,21 +31,15 @@ class AuthService implements IAuthService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('[AuthService] Not authenticated (401)');
           return null;
         }
-        console.warn('[AuthService] Auth check failed:', response.status, response.statusText);
         return null;
       }
 
       const organizer = (await response.json()) as OrganizerDto;
-      console.log('[AuthService] Authenticated as:', organizer.id);
       return organizer;
-    } catch (error) {
-      console.log(
-        '[AuthService] Auth check failed (network error):',
-        error instanceof Error ? error.message : error,
-      );
+    } catch {
+      // Не логируем сетевые ошибки при проверке сессии
       return null;
     }
   }
@@ -91,6 +100,30 @@ class AuthService implements IAuthService {
   async startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
     const authUrl = getApiUrl(API_ENDPOINTS.AUTH.OAUTH_START(provider).replace('/start', '/web'));
     window.location.href = authUrl;
+  }
+
+  async updateProfile(data: {
+    name?: string;
+    logoUrl?: string;
+    links?: Record<string, string>;
+    timeZone?: string;
+  }): Promise<OrganizerDto> {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.ORGANIZER.PROFILE), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update profile: ${errorText}`);
+    }
+
+    return response.json() as Promise<OrganizerDto>;
   }
 }
 

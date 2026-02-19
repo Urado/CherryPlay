@@ -70,6 +70,7 @@ public class StreamingService : IStreamingService
             Duration = 0,
             Volume = 0.8,
             Mode = PlaybackMode.Session,
+            SessionStartedAt = DateTime.UtcNow,
             LastUpdatedAt = DateTime.UtcNow
         };
 
@@ -158,6 +159,12 @@ public class StreamingService : IStreamingService
         }
 
         var state = stateDto.ToEntity();
+
+        // Если SessionStartedAt не установлен и сессия только начинается, устанавливаем его
+        if (!state.SessionStartedAt.HasValue && state.Mode == PlaybackMode.Session)
+        {
+            state.SessionStartedAt = DateTime.UtcNow;
+        }
 
         double duration = state.Duration;
         if (party.Playlist != null &&

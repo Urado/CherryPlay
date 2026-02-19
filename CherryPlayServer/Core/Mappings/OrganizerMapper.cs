@@ -14,6 +14,7 @@ public static class OrganizerMapper
             Links: organizer.Links,
             DefaultThemeId: organizer.DefaultThemeId,
             DefaultCustomizationSettings: organizer.DefaultCustomizationSettings,
+            TimeZone: organizer.TimeZone,
             CreatedAt: organizer.CreatedAt.ToString("O"),
             UpdatedAt: organizer.UpdatedAt?.ToString("O")
         );

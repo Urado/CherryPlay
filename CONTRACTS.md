@@ -314,6 +314,11 @@
 | `customizationSettings` | `Record<string, string \| number>` | нет | Настройки темы. |
 | `playlistData` | `PartyPlaylistDto` | нет | Начальный плейлист. |
 | `eventDateTime` | `string` (ISO 8601) | нет | Дата/время мероприятия. |
+| `isListedInCatalog` | `boolean` | нет | По умолчанию `false` (unlisted). |
+| `description` | `string` | нет | Описание вечеринки (для страницы `/info`). |
+| `place` | `string` | нет | Место проведения. |
+| `city` | `string` | нет | Город. |
+| `schedule` | `string` | нет | Расписание (текст или структурированный JSON). |
 
 ### 6.5 Профиль организатора
 

@@ -4,6 +4,7 @@ using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Extensions;
+using CherryPlayServer.Core.Entities;
 
 namespace CherryPlayServer.Hubs;
 
@@ -12,17 +13,20 @@ public class PartyHub : Hub
     private readonly IStreamingService _streamingService;
     private readonly IPartyIdValidator _partyIdValidator;
     private readonly IJwtService _jwtService;
+    private readonly IPartyRepository _partyRepository;
     private readonly ILogger<PartyHub> _logger;
 
     public PartyHub(
         IStreamingService streamingService,
         IPartyIdValidator partyIdValidator,
         IJwtService jwtService,
+        IPartyRepository partyRepository,
         ILogger<PartyHub> logger)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
         _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
+        _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -33,13 +37,16 @@ public class PartyHub : Hub
         await Clients.Caller.SendAsync("Error", message);
     }
 
-    private async Task<bool> RequireOrganizerAuthAsync()
+    /// <summary>
+    /// Унифицированный метод для проверки авторизации организатора.
+    /// Извлекает токен из различных источников и валидирует его.
+    /// </summary>
+    private async Task<Guid?> GetOrganizerIdFromContextAsync()
     {
         var httpContext = Context.GetHttpContext();
         if (httpContext == null)
         {
-            await SendErrorAsync("Authentication required");
-            return false;
+            return null;
         }
 
         // Получаем токен из заголовка Authorization, query string (для WebSocket) или cookie
@@ -49,32 +56,58 @@ public class PartyHub : Hub
         var token = httpContext.Request.Query["access_token"].FirstOrDefault() ??
                    httpContext.ExtractTokenFromRequest();
 
-        if (!await _jwtService.ValidateAndSetOrganizerContextAsync(httpContext, token))
-        {
-            await SendErrorAsync("Authentication required");
-            return false;
-        }
-
-        // Sync context items to SignalR context
-        if (httpContext.Items.TryGetValue("OrganizerId", out var organizerId))
-        {
-            Context.Items["OrganizerId"] = organizerId;
-        }
-
-        return true;
-    }
-
-    private async Task<bool> ValidateOrganizerTokenAsync(string? token)
-    {
         if (string.IsNullOrWhiteSpace(token))
-            return false;
+        {
+            return null;
+        }
 
         var result = await _jwtService.ValidateTokenAsync(token);
         if (!result.IsValid || !result.OrganizerId.HasValue)
-            return false;
+        {
+            return null;
+        }
 
+        // Sync context items to SignalR context
         Context.Items["OrganizerId"] = result.OrganizerId.Value;
         Context.Items["OrganizerName"] = result.Name;
+
+        return result.OrganizerId.Value;
+    }
+
+    /// <summary>
+    /// Проверяет авторизацию организатора и возвращает его ID или null.
+    /// </summary>
+    private async Task<Guid?> RequireOrganizerAuthAsync()
+    {
+        var organizerId = await GetOrganizerIdFromContextAsync();
+        if (!organizerId.HasValue)
+        {
+            await SendErrorAsync("Authentication required");
+        }
+        return organizerId;
+    }
+
+    /// <summary>
+    /// Проверяет, что вечеринка принадлежит указанному организатору.
+    /// </summary>
+    private async Task<bool> EnsurePartyOwnershipAsync(Guid partyId, Guid organizerId)
+    {
+        var party = await _partyRepository.GetByIdAsync(partyId);
+        if (party == null)
+        {
+            await SendErrorAsync("Party not found");
+            return false;
+        }
+
+        if (party.OrganizerId != organizerId)
+        {
+            _logger.LogWarning(
+                "[SignalR Server] Access denied: party {PartyId} does not belong to organizer {OrganizerId}",
+                partyId, organizerId);
+            await SendErrorAsync("You do not have permission to access this party");
+            return false;
+        }
+
         return true;
     }
 
@@ -193,7 +226,8 @@ public class PartyHub : Hub
 
     public async Task UpdatePlaybackPosition(string partyId, string trackId, double position)
     {
-        if (!await RequireOrganizerAuthAsync())
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
         {
             return;
         }
@@ -216,6 +250,12 @@ public class PartyHub : Hub
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 
@@ -252,7 +292,8 @@ public class PartyHub : Hub
 
     public async Task UpdateFullState(string partyId, PlaybackStateDto? state)
     {
-        if (!await RequireOrganizerAuthAsync())
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
         {
             return;
         }
@@ -270,6 +311,12 @@ public class PartyHub : Hub
         {
             _logger.LogWarning("[SignalR Server] State is null for partyId={PartyId}", partyId);
             await SendErrorAsync("State cannot be null");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 
@@ -296,7 +343,8 @@ public class PartyHub : Hub
 
     public async Task NotifyStateChanged(string partyId)
     {
-        if (!await RequireOrganizerAuthAsync())
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
         {
             return;
         }
@@ -307,6 +355,12 @@ public class PartyHub : Hub
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 
@@ -354,19 +408,24 @@ public class PartyHub : Hub
 
     public async Task JoinPartyAsOrganizer(string partyId, string token)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        var organizerId = await GetOrganizerIdFromContextAsync();
+        if (!organizerId.HasValue && !string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without token: partyId={PartyId}, connectionId={ConnectionId}",
-                partyId, Context.ConnectionId);
-            await SendErrorAsync("Authentication token is required");
-            return;
+            // Попытка валидации через переданный токен
+            var result = await _jwtService.ValidateTokenAsync(token);
+            if (result.IsValid && result.OrganizerId.HasValue)
+            {
+                organizerId = result.OrganizerId.Value;
+                Context.Items["OrganizerId"] = organizerId.Value;
+                Context.Items["OrganizerName"] = result.Name;
+            }
         }
 
-        if (!await ValidateOrganizerTokenAsync(token))
+        if (!organizerId.HasValue)
         {
-            _logger.LogWarning("[SignalR Server] Invalid token in JoinPartyAsOrganizer: partyId={PartyId}, connectionId={ConnectionId}",
+            _logger.LogWarning("[SignalR Server] JoinPartyAsOrganizer called without valid token: partyId={PartyId}, connectionId={ConnectionId}",
                 partyId, Context.ConnectionId);
-            await SendErrorAsync("Invalid authentication token");
+            await SendErrorAsync("Authentication token is required");
             return;
         }
 
@@ -376,6 +435,12 @@ public class PartyHub : Hub
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 
@@ -395,7 +460,8 @@ public class PartyHub : Hub
 
     public async Task StartSession(string partyId)
     {
-        if (!await RequireOrganizerAuthAsync())
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
         {
             return;
         }
@@ -406,6 +472,12 @@ public class PartyHub : Hub
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 
@@ -432,7 +504,8 @@ public class PartyHub : Hub
 
     public async Task EndSession(string partyId)
     {
-        if (!await RequireOrganizerAuthAsync())
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
         {
             return;
         }
@@ -443,6 +516,12 @@ public class PartyHub : Hub
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
             await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        // Проверяем владение вечеринкой
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
             return;
         }
 

@@ -132,39 +132,16 @@ export const AccountView: React.FC = () => {
   };
 
   return (
-    <div className="account-view" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '20px' }}>Account</h1>
+    <div className="account-view">
+      <h1>Аккаунт</h1>
 
-      {error && (
-        <div
-          style={{
-            padding: '10px',
-            marginBottom: '20px',
-            backgroundColor: '#fee',
-            color: '#c00',
-            borderRadius: '4px',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="account-view-error">{error}</div>}
 
-      {loading && <div style={{ marginBottom: '20px', color: '#666' }}>Loading...</div>}
+      {loading && <div className="account-view-loading">Загрузка…</div>}
 
       {isAuthenticated() && organizerInfo ? (
         <div className="account-info">
-          <div
-            style={{
-              padding: '12px',
-              marginBottom: '20px',
-              backgroundColor: '#e8f5e9',
-              color: '#2e7d32',
-              borderRadius: '4px',
-              border: '1px solid #4caf50',
-            }}
-          >
-            ✓ Вы авторизованы как организатор
-          </div>
+          <div className="account-view-success">✓ Вы авторизованы как организатор</div>
           <h2>Информация об организаторе</h2>
           <div style={{ marginBottom: '20px' }}>
             <p>
@@ -202,24 +179,17 @@ export const AccountView: React.FC = () => {
             </p>
           </div>
           <button
+            type="button"
             onClick={handleLogout}
             disabled={loading}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
+            className="account-view-logout-btn"
           >
-            Logout
+            Выйти
           </button>
         </div>
       ) : (
         <AuthForm
           title="Вход в систему"
-          description="Для создания вечеринок и управления эфиром необходимо войти в систему"
           compact={false}
           authService={authService}
           onLoginSuccess={async () => {

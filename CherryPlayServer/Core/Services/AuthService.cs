@@ -9,6 +9,7 @@ namespace CherryPlayServer.Core.Services;
 public class AuthService : IAuthService
 {
     private readonly IOrganizerRepository _organizerRepository;
+    private readonly IOrganizerSessionRepository _sessionRepository;
     private readonly IOAuthAccountRepository _oauthAccountRepository;
     private readonly IEmailAccountRepository _emailAccountRepository;
     private readonly IPasswordHasher _passwordHasher;
@@ -18,6 +19,7 @@ public class AuthService : IAuthService
 
     public AuthService(
         IOrganizerRepository organizerRepository,
+        IOrganizerSessionRepository sessionRepository,
         IOAuthAccountRepository oauthAccountRepository,
         IEmailAccountRepository emailAccountRepository,
         IPasswordHasher passwordHasher,
@@ -26,6 +28,7 @@ public class AuthService : IAuthService
         ILogger<AuthService> logger)
     {
         _organizerRepository = organizerRepository ?? throw new ArgumentNullException(nameof(organizerRepository));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
         _oauthAccountRepository = oauthAccountRepository ?? throw new ArgumentNullException(nameof(oauthAccountRepository));
         _emailAccountRepository = emailAccountRepository ?? throw new ArgumentNullException(nameof(emailAccountRepository));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
@@ -229,9 +232,16 @@ public class AuthService : IAuthService
         return await GetOrCreateOrganizerFromOAuthUserInfoAsync(provider, userInfo);
     }
 
-    public Task<string> GenerateTokenAsync(Organizer organizer)
+    public async Task<string> GenerateTokenAsync(Organizer organizer)
     {
-        return _jwtService.GenerateTokenAsync(organizer.Id, organizer.Name);
+        var session = new OrganizerSession
+        {
+            Id = Guid.NewGuid(),
+            OrganizerId = organizer.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _sessionRepository.AddAsync(session);
+        return await _jwtService.GenerateTokenAsync(organizer.Id, organizer.Name, session.Id);
     }
 
     private async Task<Organizer> GetOrCreateOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)

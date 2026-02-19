@@ -14,19 +14,32 @@ public static class PartyMapper
             ThemeId: party.ThemeId,
             CreatedAt: party.CreatedAt.ToString("O"),
             HasActiveSession: hasActiveSession,
-            EventDateTime: party.EventDateTime?.ToString("O")
+            EventDateTime: party.EventDateTime?.ToString("O"),
+            IsListedInCatalog: party.IsListedInCatalog,
+            Description: party.Description,
+            Place: party.Place,
+            City: party.City,
+            Schedule: party.Schedule,
+            TimeZone: party.TimeZone
         );
     }
 
-    public static PublicPartyDto ToPublicDto(this Party party, bool hasActiveSession)
+    public static PublicPartyDto ToPublicDto(this Party party, bool hasActiveSession, DateTime? sessionStartedAt = null)
     {
         return new PublicPartyDto(
             Id: party.Id.ToString(),
             Name: party.Name,
             ThemeId: party.ThemeId,
             HasActiveSession: hasActiveSession,
+            IsListedInCatalog: party.IsListedInCatalog,
             CustomizationSettings: party.CustomizationSettings,
-            SessionStartedAt: null
+            SessionStartedAt: sessionStartedAt?.ToString("O"),
+            Description: party.Description,
+            Place: party.Place,
+            City: party.City,
+            EventDateTime: party.EventDateTime?.ToString("O"),
+            Schedule: party.Schedule,
+            TimeZone: party.TimeZone
         );
     }
 }

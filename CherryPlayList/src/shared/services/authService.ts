@@ -1,8 +1,14 @@
+import type {
+  AuthService as IAuthService,
+  OrganizerDto,
+  AuthExchangeRequest,
+  AuthExchangeResponse,
+} from '@cherryplay/components';
+
 import { getServerUrl } from '../config/serverConfig';
 import { useAuthStore } from '../stores/authStore';
-import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
-import { isTokenExpired, isTokenExpiringSoon } from '../utils/tokenUtils';
-import type { AuthService as IAuthService, OrganizerDto, AuthExchangeRequest, AuthExchangeResponse } from '@cherryplay/components';
+import { handleAuthError } from '../utils/authErrorHandler';
+import { isTokenExpired } from '../utils/tokenUtils';
 
 // Re-export types for backward compatibility
 export type { OrganizerDto, AuthExchangeRequest, AuthExchangeResponse };
@@ -88,6 +94,38 @@ class AuthService implements IAuthService {
       throw new Error('Authentication token has expired');
     }
 
+    // Сначала проверяем валидность сессии легковесным эндпоинтом
+    try {
+      const sessionCheckResponse = await fetch(`${baseUrl}/api/organizer/session/check`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache',
+      });
+
+      if (!sessionCheckResponse.ok) {
+        if (sessionCheckResponse.status === 401) {
+          handleAuthError('Authentication token expired or invalid');
+          throw new Error('Authentication token expired or invalid');
+        }
+        // Если сервер недоступен (404, 500 и т.д.), не логируем ошибку, просто выбрасываем
+        throw new Error('Session check failed');
+      }
+    } catch (error) {
+      // Если это ошибка аутентификации, обрабатываем её
+      if (
+        (error instanceof Error && error.message.includes('expired')) ||
+        error.message.includes('invalid')
+      ) {
+        throw error;
+      }
+      // Для других ошибок (сеть, сервер недоступен) не логируем, просто выбрасываем
+      throw new Error('Session check failed');
+    }
+
+    // Если сессия валидна, получаем полную информацию об организаторе
     const response = await fetch(`${baseUrl}/api/organizer/me`, {
       method: 'GET',
       headers: {
@@ -130,10 +168,10 @@ class AuthService implements IAuthService {
 
     const data = (await response.json()) as AuthExchangeResponse;
     const token = data.accessToken;
-    
+
     // Сохраняем токен в store
     useAuthStore.getState().setToken(token);
-    
+
     // Загружаем информацию об организаторе
     try {
       const organizer = await this.getCurrentOrganizer();
@@ -141,7 +179,7 @@ class AuthService implements IAuthService {
     } catch (err) {
       console.warn('Failed to load organizer info after login:', err);
     }
-    
+
     return token;
   }
 
@@ -167,10 +205,10 @@ class AuthService implements IAuthService {
 
     const data = (await response.json()) as AuthExchangeResponse;
     const token = data.accessToken;
-    
+
     // Сохраняем токен в store
     useAuthStore.getState().setToken(token);
-    
+
     // Загружаем информацию об организаторе
     try {
       const organizer = await this.getCurrentOrganizer();
@@ -178,7 +216,7 @@ class AuthService implements IAuthService {
     } catch (err) {
       console.warn('Failed to load organizer info after register:', err);
     }
-    
+
     return token;
   }
 

@@ -9,6 +9,7 @@ public record OrganizerDto(
     Dictionary<string, string>? Links,
     ThemeId? DefaultThemeId,
     Dictionary<string, object>? DefaultCustomizationSettings,
+    string? TimeZone,
     string CreatedAt,
     string? UpdatedAt
 );

@@ -2,9 +2,9 @@ import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
 import { usePlayerAudioStore, useProjectStore, useAuthStore } from '@shared/stores';
+import { logger } from '@shared/utils';
 import { handleAuthError } from '@shared/utils/authErrorHandler';
 import { isTokenExpired } from '@shared/utils/tokenUtils';
-import { logger } from '@shared/utils';
 
 interface UsePlayerSessionOptions {
   allTracks: Track[];

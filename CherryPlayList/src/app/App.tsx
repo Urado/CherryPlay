@@ -3,8 +3,8 @@ import React, { useEffect } from 'react';
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
-import { initializeShortcuts } from '@shared/shortcuts';
 import { authService } from '@shared/services/authService';
+import { initializeShortcuts } from '@shared/shortcuts';
 import {
   useLayoutStore,
   useUIStore,
@@ -14,13 +14,18 @@ import {
   initializeGlobalHistory,
   initializeProjectStoreHistory,
 } from '@shared/stores';
-import { isTokenExpired, isTokenExpiringSoon, getDaysUntilExpiration } from '@shared/utils/tokenUtils';
+import {
+  isTokenExpired,
+  isTokenExpiringSoon,
+  getDaysUntilExpiration,
+} from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
 
 import { AccountModal } from './components/AccountModal';
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
 import { ExportModal } from './components/ExportModal';
+import { LinkPartyModal } from './components/LinkPartyModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SplitContainer } from './components/SplitContainer';
 
@@ -96,6 +101,7 @@ const App: React.FC = () => {
         </div>
         <SettingsModal />
         <ExportModal />
+        <LinkPartyModal />
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />
@@ -112,6 +118,7 @@ const App: React.FC = () => {
       </div>
       <SettingsModal />
       <ExportModal />
+      <LinkPartyModal />
       <TrackSettingsModal />
       <AccountModal />
       <NotificationContainer />

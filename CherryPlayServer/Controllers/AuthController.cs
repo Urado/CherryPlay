@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
 using CherryPlayServer.Models;
@@ -20,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IOAuthService _oauthService;
     private readonly IOAuthStateService _oauthStateService;
+    private readonly IOrganizerSessionRepository _sessionRepository;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
 
@@ -27,12 +29,14 @@ public class AuthController : ControllerBase
         IAuthService authService,
         IOAuthService oauthService,
         IOAuthStateService oauthStateService,
+        IOrganizerSessionRepository sessionRepository,
         IConfiguration configuration,
         ILogger<AuthController> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _oauthService = oauthService ?? throw new ArgumentNullException(nameof(oauthService));
         _oauthStateService = oauthStateService ?? throw new ArgumentNullException(nameof(oauthStateService));
+        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -233,8 +237,14 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [AuthorizeOrganizer]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        var sessionId = HttpContext.GetSessionId();
+        if (sessionId.HasValue)
+        {
+            await _sessionRepository.RemoveAsync(sessionId.Value);
+        }
+
         Response.Cookies.Delete(AuthConstants.AuthCookieName);
         return NoContent();
     }

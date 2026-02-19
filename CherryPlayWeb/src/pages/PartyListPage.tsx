@@ -338,6 +338,13 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   </div>
                   <div className="party-list-card-footer">
                     <span className="party-list-card-code">Код: {party.shortCode}</span>
+                    <Link
+                      to={`/party/${party.shortCode}/info`}
+                      className="party-list-card-info-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Подробнее
+                    </Link>
                     <span className="party-list-card-arrow">→</span>
                   </div>
                 </div>

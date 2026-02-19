@@ -13,5 +13,6 @@ public record PlaybackStateDto
     public List<string> PlayedTrackIds { get; init; } = [];
     public List<string> DisabledTrackIds { get; init; } = [];
     public List<string> DisabledGroupIds { get; init; } = [];
+    public DateTime? SessionStartedAt { get; init; }
     public DateTime LastUpdatedAt { get; init; } = DateTime.UtcNow;
 }

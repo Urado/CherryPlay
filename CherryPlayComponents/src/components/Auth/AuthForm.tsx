@@ -21,7 +21,6 @@ export interface AuthFormProps {
 
 export const AuthForm: React.FC<AuthFormProps> = ({
   title = 'Требуется авторизация',
-  description,
   compact = false,
   authService,
   initialMode = 'email',
@@ -48,13 +47,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     >
       <div className="auth-form-card">
         {title && <h2 className="auth-form-title">{title}</h2>}
-
-        {description && (
-          <div className="auth-form-warning">
-            <strong>⚠ {description}</strong>
-            {!compact && <p>Войдите в систему, чтобы создавать вечеринки и управлять эфиром.</p>}
-          </div>
-        )}
 
         {error && <div className="auth-form-error">{error}</div>}
 
@@ -93,12 +85,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         )}
 
         {mode === 'oauth' && <OAuthButtons authService={authService} onError={handleError} />}
-
-        {!compact && (
-          <p className="auth-form-footer">
-            После входа вы сможете создавать вечеринки и управлять трансляцией
-          </p>
-        )}
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ export type {
   ProjectSettings,
   ProjectSessionState,
   ProjectMeta,
+  LinkedParty,
   SavedProjectTrack,
   SavedProjectGroup,
   SavedProjectItem,

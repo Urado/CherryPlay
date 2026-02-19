@@ -21,4 +21,14 @@ public static class HttpContextExtensions
 
         return null;
     }
+
+    public static Guid? GetSessionId(this HttpContext context)
+    {
+        if (context.Items.TryGetValue("SessionId", out var sessionId) && sessionId is Guid id)
+        {
+            return id;
+        }
+
+        return null;
+    }
 }

@@ -9,5 +9,11 @@ public record PartyDto(
     ThemeId ThemeId,
     string CreatedAt,
     bool HasActiveSession,
-    string? EventDateTime = null
+    string? EventDateTime = null,
+    bool IsListedInCatalog = false,
+    string? Description = null,
+    string? Place = null,
+    string? City = null,
+    string? Schedule = null,
+    string? TimeZone = null
 );

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CherryPlayServer.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class HealthController : ControllerBase
 {
     [HttpGet]

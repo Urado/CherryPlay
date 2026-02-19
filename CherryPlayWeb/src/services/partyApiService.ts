@@ -7,9 +7,72 @@ import type {
   PublicPartyDto,
   PartyStateDto,
   PublicPartyListItemDto,
+  PartyDto,
+  CreatePartyDto,
+  UpdatePartyDto,
 } from '../types/api';
+import { handleApiResponse, createApiError } from '../utils/apiErrorHandler';
 
 class PartyApiService {
+  /**
+   * Список вечеринок текущего организатора (требует авторизации)
+   */
+  async getMyParties(): Promise<PartyDto[]> {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-cache',
+    });
+
+    return handleApiResponse<PartyDto[]>(response, 'Ошибка загрузки списка вечеринок');
+  }
+
+  /**
+   * Создать вечеринку (требует авторизации)
+   */
+  async createParty(dto: CreatePartyDto): Promise<PartyDto> {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(dto),
+    });
+
+    return handleApiResponse<PartyDto>(response, 'Ошибка создания вечеринки');
+  }
+
+  /**
+   * Обновить метаданные вечеринки (требует авторизации)
+   */
+  async updatePartyMetadata(partyId: string, dto: UpdatePartyDto): Promise<void> {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(dto),
+    });
+
+    if (!response.ok) {
+      const error = await createApiError(response, 'Ошибка обновления вечеринки');
+      throw new Error(error.message);
+    }
+  }
+
+  /**
+   * Удалить вечеринку (требует авторизации)
+   */
+  async deleteParty(partyId: string): Promise<void> {
+    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await createApiError(response, 'Ошибка удаления вечеринки');
+      throw new Error(error.message);
+    }
+  }
+
   /**
    * Получает плейлист первого доступного вечеринки (для демо)
    */
@@ -18,14 +81,7 @@ class PartyApiService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Плейлист не найден');
-      }
-      throw new Error(`Ошибка загрузки плейлиста: ${response.statusText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PartyPlaylistDto>(response, 'Ошибка загрузки плейлиста');
   }
 
   /**
@@ -36,14 +92,7 @@ class PartyApiService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Вечеринка не найдена');
-      }
-      throw new Error(`Ошибка загрузки вечеринки: ${response.statusText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PublicPartyDto>(response, 'Ошибка загрузки вечеринки');
   }
 
   /**
@@ -54,14 +103,7 @@ class PartyApiService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Плейлист не найден');
-      }
-      throw new Error(`Ошибка загрузки плейлиста: ${response.statusText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PartyPlaylistDto>(response, 'Ошибка загрузки плейлиста');
   }
 
   /**
@@ -72,14 +114,7 @@ class PartyApiService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Вечеринка не найдена');
-      }
-      throw new Error(`Ошибка загрузки состояния: ${response.statusText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PartyStateDto>(response, 'Ошибка загрузки состояния');
   }
 
   /**
@@ -90,11 +125,10 @@ class PartyApiService {
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      throw new Error(`Ошибка загрузки списка вечеринок: ${response.statusText}`);
-    }
-
-    return response.json();
+    return handleApiResponse<PublicPartyListItemDto[]>(
+      response,
+      'Ошибка загрузки списка вечеринок',
+    );
   }
 }
 

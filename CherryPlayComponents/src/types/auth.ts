@@ -10,6 +10,7 @@ export interface OrganizerDto {
   links?: Record<string, string> | null;
   defaultThemeId?: string | null;
   defaultCustomizationSettings?: Record<string, string | number> | null;
+  timeZone?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }

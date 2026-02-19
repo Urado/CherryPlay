@@ -47,10 +47,13 @@ export const API_ENDPOINTS = {
   ORGANIZER: {
     ME: '/api/organizer/me',
     PROFILE: '/api/organizer/profile',
+    SESSION_CHECK: '/api/organizer/session/check',
   },
 
-  // Вечеринки (публичные)
+  // Вечеринки (публичные и организатор)
   PARTIES: {
+    MY: '/api/parties',
+    BY_ID: (partyId: string) => `/api/parties/${partyId}`,
     PUBLIC: {
       FIRST: '/api/parties/public/first',
       LIST: '/api/parties/public/list',

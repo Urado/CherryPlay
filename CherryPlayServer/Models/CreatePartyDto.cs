@@ -16,4 +16,21 @@ public record CreatePartyDto
     public PartyPlaylistDto? PlaylistData { get; init; }
 
     public DateTime? EventDateTime { get; init; }
+
+    public bool IsListedInCatalog { get; init; }
+
+    [StringLength(2000)]
+    public string? Description { get; init; }
+
+    [StringLength(200)]
+    public string? Place { get; init; }
+
+    [StringLength(100)]
+    public string? City { get; init; }
+
+    [StringLength(5000)]
+    public string? Schedule { get; init; }
+
+    [StringLength(100)]
+    public string? TimeZone { get; init; }
 }

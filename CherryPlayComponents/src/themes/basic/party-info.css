@@ -1,0 +1,40 @@
+@import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
+
+[data-theme="basic"] .party-info-display {
+  background: #1a1a1a;
+  color: var(--text-primary);
+}
+
+[data-theme="basic"] .party-info-display-container {
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="basic"] .party-info-display-title {
+  color: var(--text-primary);
+}
+
+[data-theme="basic"] .party-info-display-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="basic"] .party-info-display-meta {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="basic"] .party-info-display-meta strong {
+  color: var(--text-primary);
+}
+
+[data-theme="basic"] .party-info-display-link-btn {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+[data-theme="basic"] .party-info-display-link-btn:hover {
+  background: var(--accent-primary-light);
+}
+
+[data-theme="basic"] .party-info-display-link-back:hover {
+  color: var(--accent-primary);
+}

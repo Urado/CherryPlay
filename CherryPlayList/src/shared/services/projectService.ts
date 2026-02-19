@@ -1,6 +1,7 @@
 import {
   isProjectGroup,
   isProjectTrack,
+  LinkedParty,
   ProjectFile,
   ProjectGroup,
   ProjectGroupSettings,
@@ -27,6 +28,7 @@ export interface ProjectStateData {
   trackSettings: Map<string, ProjectTrackSettings>;
   groupSettings: Map<string, ProjectGroupSettings>;
   sessionState?: ProjectSessionState;
+  linkedParty?: LinkedParty | null;
 }
 
 class ProjectService {
@@ -128,6 +130,7 @@ class ProjectService {
       trackSettings: trackSettingsRecord,
       groupSettings: groupSettingsRecord,
       sessionState: state.sessionState,
+      ...(state.linkedParty && { linkedParty: state.linkedParty }),
     };
   }
 
@@ -214,6 +217,7 @@ class ProjectService {
       trackSettings,
       groupSettings,
       sessionState: file.sessionState,
+      linkedParty: file.linkedParty ?? null,
     };
   }
 }

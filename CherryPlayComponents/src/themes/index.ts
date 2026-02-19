@@ -6,6 +6,7 @@ import {
   PartyDisplay as BasePartyDisplay,
   PlaylistView as BasePlaylistView,
   CurrentTrackDisplay as BaseCurrentTrackDisplay,
+  PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
 
 export type ThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
@@ -31,6 +32,12 @@ export interface ThemeComponents {
     className?: string;
     themeId?: string;
   }>;
+  PartyInfoDisplay: React.ComponentType<{
+    data: import('./base').PartyInfoDisplayData;
+    className?: string;
+    onGoToPlaylist?: () => void;
+    onGoToCatalog?: () => void;
+  }>;
 }
 
 export interface Theme {
@@ -50,6 +57,7 @@ export const BASE_COMPONENTS: ThemeComponents = {
   PartyDisplay: BasePartyDisplay,
   PlaylistView: BasePlaylistView,
   CurrentTrackDisplay: BaseCurrentTrackDisplay,
+  PartyInfoDisplay: BasePartyInfoDisplay,
 };
 
 export interface CreateThemeConfig {

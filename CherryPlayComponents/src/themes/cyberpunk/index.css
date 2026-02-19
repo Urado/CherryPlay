@@ -1,6 +1,7 @@
 @import './playlist.css';
 @import './playlist-item.css';
 @import './player.css';
+@import './party-info.css';
 
 [data-theme="cyberpunk"] {
   --bg-primary: #0a0a0a;

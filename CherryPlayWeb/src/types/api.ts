@@ -24,7 +24,14 @@ export interface PublicPartyDto {
   themeId: string;
   customizationSettings?: Record<string, string | number>;
   hasActiveSession: boolean;
+  isListedInCatalog: boolean;
   sessionStartedAt?: string;
+  description?: string;
+  place?: string;
+  city?: string;
+  eventDateTime?: string;
+  schedule?: string;
+  timeZone?: string;
 }
 
 export interface PartyStateDto {
@@ -45,6 +52,7 @@ export interface PlaybackStateDto {
   playedTrackIds: string[];
   disabledTrackIds: string[];
   disabledGroupIds: string[];
+  sessionStartedAt?: string;
   lastUpdatedAt: string;
 }
 
@@ -58,6 +66,49 @@ export interface PublicPartyListItemDto {
   totalTracks: number;
   totalDuration: number;
   eventDateTime?: string;
+}
+
+/** Вечеринка организатора (ответ GET /api/parties, GET /api/parties/:id) */
+export interface PartyDto {
+  id: string;
+  name: string;
+  shortCode: string;
+  themeId: string;
+  createdAt: string;
+  hasActiveSession: boolean;
+  eventDateTime?: string;
+  isListedInCatalog: boolean;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
+}
+
+/** Создание вечеринки (POST /api/parties) */
+export interface CreatePartyDto {
+  name: string;
+  themeId: string;
+  eventDateTime?: string;
+  isListedInCatalog?: boolean;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
+}
+
+/** Обновление метаданных (PUT /api/parties/:id) */
+export interface UpdatePartyDto {
+  name?: string;
+  themeId?: string;
+  eventDateTime?: string;
+  isListedInCatalog?: boolean;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
 }
 
 // OrganizerDto теперь экспортируется из @cherryplay/components

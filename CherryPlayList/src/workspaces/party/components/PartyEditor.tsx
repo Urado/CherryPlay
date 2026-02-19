@@ -1,6 +1,7 @@
 import { themes, type ThemeId, getThemeMetadata, getTheme } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
+import { getPopularTimeZones, getDefaultTimeZone } from '@shared/utils/timezoneUtils';
 import './PartyEditor.css';
 
 interface PartyEditorProps {
@@ -8,17 +9,34 @@ interface PartyEditorProps {
   themeId: ThemeId;
   customizationSettings: Record<string, string | number>;
   eventDateTime: string;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
   onPartyNameChange: (name: string) => void;
   onThemeIdChange: (themeId: ThemeId) => void;
   onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
+  onDescriptionChange?: (description: string) => void;
+  onPlaceChange?: (place: string) => void;
+  onCityChange?: (city: string) => void;
+  onScheduleChange?: (schedule: string) => void;
+  onTimeZoneChange?: (timeZone: string) => void;
   onCreateParty: () => void;
+  onPublish?: () => void;
   isCreating: boolean;
+  isPublishing?: boolean;
+  /** Если false, кнопка «Создать вечеринку» отключена (требуется авторизация). */
+  isAuthenticated?: boolean;
+  linkedParty?: { id: string; shortCode: string; url: string } | null;
   createdParty: { id: string; shortCode: string; url: string } | null;
   serverError: string | null;
   isCheckingParty: boolean;
   onCopyUrl: () => void;
   onRetry?: () => void;
+  /** Открыть диалог привязки к существующей вечеринке на сервере */
+  onOpenLinkParty?: () => void;
 }
 
 // Маппинг превью для тем (опциональные описания для UI)
@@ -42,17 +60,32 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   themeId,
   customizationSettings,
   eventDateTime,
+  description = '',
+  place = '',
+  city = '',
+  schedule = '',
+  timeZone = '',
   onPartyNameChange,
   onThemeIdChange,
   onCustomizationSettingsChange,
   onEventDateTimeChange,
+  onDescriptionChange,
+  onPlaceChange,
+  onCityChange,
+  onScheduleChange,
+  onTimeZoneChange,
   onCreateParty,
+  onPublish,
   isCreating,
+  isPublishing = false,
+  isAuthenticated = true,
+  linkedParty,
   createdParty,
   serverError,
   isCheckingParty,
   onCopyUrl,
   onRetry,
+  onOpenLinkParty,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -114,10 +147,15 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                       max={option.max ?? 100}
                       step={option.step ?? 1}
                       value={Number(currentValue)}
-                      onChange={(e) =>
-                        handleCustomizationChange(option.key, parseInt(e.target.value, 10))
-                      }
-                      style={{ flex: 1 }}
+                      onInput={(e) => {
+                        const value = parseInt((e.target as HTMLInputElement).value, 10);
+                        handleCustomizationChange(option.key, value);
+                      }}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value, 10);
+                        handleCustomizationChange(option.key, value);
+                      }}
+                      style={{ flex: 1, cursor: 'pointer' }}
                     />
                     <span
                       style={{
@@ -125,6 +163,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                         textAlign: 'right',
                         fontSize: '14px',
                         color: 'var(--text-secondary, #666666)',
+                        fontWeight: '500',
                       }}
                     >
                       {currentValue}
@@ -163,6 +202,10 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     setIsDropdownOpen(false);
   };
 
+  const displayParty =
+    createdParty && !serverError && !isCheckingParty ? createdParty : (linkedParty ?? null);
+  const isJustCreated = !!(createdParty && !serverError && !isCheckingParty);
+
   return (
     <div className="party-editor">
       <div className="party-editor-section">
@@ -189,6 +232,85 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           />
         </label>
       </div>
+
+      {onTimeZoneChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Таймзона
+            <select
+              className="party-editor-input"
+              value={timeZone || getDefaultTimeZone()}
+              onChange={(e) => onTimeZoneChange(e.target.value)}
+            >
+              {getPopularTimeZones().map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {onDescriptionChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Описание
+            <textarea
+              className="party-editor-input"
+              value={description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              placeholder="Описание вечеринки"
+              rows={3}
+            />
+          </label>
+        </div>
+      )}
+
+      {onPlaceChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Место
+            <input
+              type="text"
+              className="party-editor-input"
+              value={place}
+              onChange={(e) => onPlaceChange(e.target.value)}
+              placeholder="Место проведения"
+            />
+          </label>
+        </div>
+      )}
+
+      {onCityChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Город
+            <input
+              type="text"
+              className="party-editor-input"
+              value={city}
+              onChange={(e) => onCityChange(e.target.value)}
+              placeholder="Город"
+            />
+          </label>
+        </div>
+      )}
+
+      {onScheduleChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Расписание
+            <textarea
+              className="party-editor-input"
+              value={schedule}
+              onChange={(e) => onScheduleChange(e.target.value)}
+              placeholder="Расписание мероприятия"
+              rows={3}
+            />
+          </label>
+        </div>
+      )}
 
       <div className="party-editor-section">
         <label htmlFor="theme-selector" className="party-editor-label">
@@ -239,13 +361,39 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
       {renderCustomizationOptions()}
 
       <div className="party-editor-actions">
+        {onPublish && (
+          <button
+            className="party-editor-button party-editor-button-primary"
+            onClick={onPublish}
+            disabled={isCreating || isPublishing}
+            type="button"
+          >
+            {isPublishing || isCreating
+              ? 'Публикация...'
+              : linkedParty
+                ? 'Опубликовать изменения'
+                : 'Опубликовать'}
+          </button>
+        )}
         <button
-          className="party-editor-button party-editor-button-primary"
+          className="party-editor-button party-editor-button-secondary"
           onClick={onCreateParty}
-          disabled={isCreating || !partyName.trim()}
+          disabled={!isAuthenticated || isCreating || !partyName.trim()}
+          type="button"
+          title={!isAuthenticated ? 'Требуется авторизация' : undefined}
         >
           {isCreating ? 'Создание...' : 'Создать вечеринку'}
         </button>
+        {onOpenLinkParty && isAuthenticated && (
+          <button
+            className="party-editor-button party-editor-button-secondary"
+            onClick={onOpenLinkParty}
+            type="button"
+            title="Привязать текущий плейлист к вечеринке, созданной на сервере"
+          >
+            Привязать к вечеринке
+          </button>
+        )}
       </div>
 
       {isCheckingParty && (
@@ -278,14 +426,24 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {createdParty && !serverError && !isCheckingParty && (
-        <div className="party-editor-success">
-          <div className="party-editor-success-header">
-            <strong className="party-editor-success-title">Вечеринка создана!</strong>
-            <div className="party-editor-success-code">
-              <span className="party-editor-success-code-label">Код:</span>
-              <span className="party-editor-success-code-value">{createdParty.shortCode}</span>
+      {displayParty && (
+        <div className="party-editor-party-block">
+          <div className="party-editor-party-block-header">
+            <span className="party-editor-party-block-icon">🔗</span>
+            <span className="party-editor-party-block-title">Связано с вечеринкой</span>
+          </div>
+          <div className="party-editor-party-block-info">
+            <div className="party-editor-party-block-code">
+              <strong>Код:</strong> {displayParty.shortCode}
             </div>
+            <a
+              href={displayParty.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="party-editor-linked-party-link"
+            >
+              Открыть в браузере →
+            </a>
           </div>
           <div className="party-editor-url-section">
             <label className="party-editor-label">
@@ -294,7 +452,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                 <input
                   type="text"
                   readOnly
-                  value={createdParty.url}
+                  value={displayParty.url}
                   className="input-base party-editor-url-input"
                 />
                 <button
@@ -307,12 +465,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               </div>
             </label>
           </div>
-          <div className="party-editor-info">
-            <p className="party-editor-info-text">
-              Плеер автоматически подключится к серверу при создании вечеринки.
-            </p>
-            <p className="party-editor-info-text">Статус соединения отображается в плеере.</p>
-          </div>
+          {isJustCreated && (
+            <div className="party-editor-info">
+              <p className="party-editor-info-text">
+                Плеер автоматически подключится к серверу при создании вечеринки.
+              </p>
+              <p className="party-editor-info-text">Статус соединения отображается в плеере.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ public static class PlaybackStateMapper
             PlayedTrackIds = entity.PlayedTrackIds.ToList(),
             DisabledTrackIds = entity.DisabledTrackIds.ToList(),
             DisabledGroupIds = entity.DisabledGroupIds.ToList(),
+            SessionStartedAt = entity.SessionStartedAt,
             LastUpdatedAt = entity.LastUpdatedAt
         };
     }
@@ -45,6 +46,7 @@ public static class PlaybackStateMapper
             PlayedTrackIds = dto.PlayedTrackIds.ToList(),
             DisabledTrackIds = dto.DisabledTrackIds.ToList(),
             DisabledGroupIds = dto.DisabledGroupIds.ToList(),
+            SessionStartedAt = dto.SessionStartedAt,
             LastUpdatedAt = dto.LastUpdatedAt
         };
     }

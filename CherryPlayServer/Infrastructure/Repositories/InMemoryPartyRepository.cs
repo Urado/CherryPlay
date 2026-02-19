@@ -33,6 +33,12 @@ public class InMemoryPartyRepository : IPartyRepository
         return Task.FromResult(_parties.Values.ToList());
     }
 
+    public Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId)
+    {
+        var list = _parties.Values.Where(p => p.OrganizerId == organizerId).ToList();
+        return Task.FromResult(list);
+    }
+
     public Task<Party> AddAsync(Party party)
     {
         _parties.TryAdd(party.Id, party);

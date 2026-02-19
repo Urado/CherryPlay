@@ -14,8 +14,8 @@ import * as signalR from '@microsoft/signalr';
 import { getApiConfig } from '../config/apiConfig';
 import { useAuthStore, usePlayerAudioStore, useProjectStore } from '../stores';
 import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
-import { isTokenExpired } from '../utils/tokenUtils';
 import { convertPlaylistForApi } from '../utils/partyUtils';
+import { isTokenExpired } from '../utils/tokenUtils';
 
 import { partyService } from './partyService';
 
@@ -154,7 +154,7 @@ class SignalRService {
    */
   async connect(token?: string): Promise<void> {
     // Получаем токен из authStore, если не передан явно
-    let authToken = token || useAuthStore.getState().accessToken;
+    const authToken = token || useAuthStore.getState().accessToken;
 
     // Проверяем, не истек ли токен
     if (authToken && isTokenExpired(authToken)) {

@@ -14,6 +14,7 @@ import {
   LayoutPreset,
   useAuthStore,
   useLayoutStore,
+  usePartyStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
@@ -76,6 +77,7 @@ export const AppHeader: React.FC = () => {
           trackSettings,
           groupSettings,
           sessionState,
+          linkedParty: meta.linkedParty ?? undefined,
         });
         await projectService.saveProject(path, projectFile);
         setFilePath(path);
@@ -93,6 +95,7 @@ export const AppHeader: React.FC = () => {
     trackSettings,
     groupSettings,
     sessionState,
+    meta.linkedParty,
     setFilePath,
     resetDirty,
     setLastOpenedPlaylist,
@@ -110,6 +113,7 @@ export const AppHeader: React.FC = () => {
           trackSettings,
           groupSettings,
           sessionState,
+          linkedParty: meta.linkedParty ?? undefined,
         });
         await projectService.saveProject(meta.filePath, projectFile);
         resetDirty();
@@ -123,6 +127,7 @@ export const AppHeader: React.FC = () => {
     }
   }, [
     meta.filePath,
+    meta.linkedParty,
     name,
     items,
     settings,
@@ -147,7 +152,17 @@ export const AppHeader: React.FC = () => {
         loadProject({
           ...projectData,
           filePath: path,
+          linkedParty: projectFile.linkedParty ?? null,
         });
+        if (projectFile.linkedParty) {
+          usePartyStore.getState().setCreatedParty({
+            id: projectFile.linkedParty.id,
+            shortCode: projectFile.linkedParty.shortCode,
+            url: projectFile.linkedParty.url,
+          });
+        } else {
+          usePartyStore.getState().setCreatedParty(null);
+        }
         setLastOpenedPlaylist(path);
         addNotification({ type: 'success', message: 'Проект загружен' });
       }
@@ -265,7 +280,7 @@ export const AppHeader: React.FC = () => {
                 }
                 style={{
                   position: 'relative',
-                  color: isAuthenticated ? '#4caf50' : undefined,
+                  color: isAuthenticated ? '#9e9e9e' : undefined,
                 }}
               >
                 <AccountCircleIcon style={{ fontSize: '32px' }} />

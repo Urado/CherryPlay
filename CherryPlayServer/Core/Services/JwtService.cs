@@ -31,7 +31,7 @@ public class JwtService : IJwtService
         _audience = configuration["JWT_AUDIENCE"] ?? "CherryPlayClient";
     }
 
-    public Task<string> GenerateTokenAsync(Guid organizerId, string name)
+    public Task<string> GenerateTokenAsync(Guid organizerId, string name, Guid sessionId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -40,7 +40,8 @@ public class JwtService : IJwtService
         {
             new Claim("organizerId", organizerId.ToString()),
             new Claim("name", name),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("sessionId", sessionId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Jti, sessionId.ToString()),
             new Claim(JwtRegisteredClaimNames.Iat,
                 DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64)
@@ -80,12 +81,14 @@ public class JwtService : IJwtService
             var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
             var organizerIdClaim = principal.FindFirst("organizerId")?.Value;
             var nameClaim = principal.FindFirst("name")?.Value;
+            var sessionIdClaim = principal.FindFirst("sessionId")?.Value ?? principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
-            if (Guid.TryParse(organizerIdClaim, out var organizerId))
+            if (Guid.TryParse(organizerIdClaim, out var organizerId) && Guid.TryParse(sessionIdClaim, out var sessionId))
             {
                 return Task.FromResult(new JwtTokenValidationResult(
                     IsValid: true,
                     OrganizerId: organizerId,
+                    SessionId: sessionId,
                     Name: nameClaim,
                     ErrorMessage: null
                 ));
@@ -94,8 +97,9 @@ public class JwtService : IJwtService
             return Task.FromResult(new JwtTokenValidationResult(
                 IsValid: false,
                 OrganizerId: null,
+                SessionId: null,
                 Name: null,
-                ErrorMessage: "Invalid organizer ID in token"
+                ErrorMessage: "Invalid organizer ID or session ID in token"
             ));
         }
         catch (SecurityTokenExpiredException)
@@ -103,6 +107,7 @@ public class JwtService : IJwtService
             return Task.FromResult(new JwtTokenValidationResult(
                 IsValid: false,
                 OrganizerId: null,
+                SessionId: null,
                 Name: null,
                 ErrorMessage: "Token has expired"
             ));
@@ -112,6 +117,7 @@ public class JwtService : IJwtService
             return Task.FromResult(new JwtTokenValidationResult(
                 IsValid: false,
                 OrganizerId: null,
+                SessionId: null,
                 Name: null,
                 ErrorMessage: ex.Message
             ));
@@ -121,6 +127,7 @@ public class JwtService : IJwtService
             return Task.FromResult(new JwtTokenValidationResult(
                 IsValid: false,
                 OrganizerId: null,
+                SessionId: null,
                 Name: null,
                 ErrorMessage: $"Token validation failed: {ex.Message}"
             ));

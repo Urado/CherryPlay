@@ -38,7 +38,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
-        return party.ToPublicDto(state != null);
+        return party.ToPublicDto(state != null, state?.SessionStartedAt);
     }
 
     public async Task<PartyPlaylistDto?> GetPartyPlaylistByShortCodeAsync(string shortCode)
@@ -62,9 +62,10 @@ public class PublicPartyQueryService : IPublicPartyQueryService
 
     public async Task<List<PublicPartyListItemDto>> GetAllPublicPartiesAsync()
     {
-        _logger.LogDebug("Getting all public parties");
+        _logger.LogDebug("Getting all public parties (catalog only)");
 
-        var parties = await _partyRepository.GetAllAsync();
+        var allParties = await _partyRepository.GetAllAsync();
+        var parties = allParties.Where(p => p.IsListedInCatalog).ToList();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 

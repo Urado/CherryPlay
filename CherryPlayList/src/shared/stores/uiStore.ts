@@ -12,7 +12,7 @@ import {
 // Это позволяет очищать таймеры при ручном удалении уведомлений
 const notificationTimers = new Map<string, NodeJS.Timeout>();
 
-export type ModalType = 'settings' | 'export' | 'trackSettings' | 'account' | null;
+export type ModalType = 'settings' | 'export' | 'trackSettings' | 'account' | 'linkParty' | null;
 
 // Контекст для модального окна настроек трека
 export interface TrackSettingsModalContext {

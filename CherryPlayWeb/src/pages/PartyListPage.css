@@ -197,6 +197,16 @@
   letter-spacing: 1px;
 }
 
+.party-list-card-info-link {
+  color: #0088cc;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.party-list-card-info-link:hover {
+  text-decoration: underline;
+}
+
 .party-list-card-arrow {
   font-size: 20px;
   color: rgba(0, 255, 0, 0.8);

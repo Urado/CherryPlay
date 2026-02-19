@@ -76,13 +76,22 @@ export interface ProjectSessionState {
   sessionStartTime: number | null;
 }
 
+/** Привязка проекта к вечеринке на сервере */
+export interface LinkedParty {
+  id: string;
+  shortCode: string;
+  url: string;
+}
+
 /**
- * Метаданные проекта (не сохраняются в файл)
+ * Метаданные проекта (filePath/isDirty/lastSavedAt не в файле; linkedParty сохраняется в файл)
  */
 export interface ProjectMeta {
   filePath: string | null;
   isDirty: boolean;
   lastSavedAt: number | null;
+  /** Привязка к вечеринке на сервере (сохраняется в .cherry) */
+  linkedParty: LinkedParty | null;
 }
 
 // ============================================
@@ -128,6 +137,8 @@ export interface ProjectFile {
   trackSettings: Record<string, ProjectTrackSettings>;
   groupSettings: Record<string, ProjectGroupSettings>;
   sessionState?: ProjectSessionState;
+  /** Привязка к вечеринке на сервере */
+  linkedParty?: LinkedParty;
 }
 
 // ============================================
@@ -153,4 +164,5 @@ export const DEFAULT_PROJECT_META: ProjectMeta = {
   filePath: null,
   isDirty: false,
   lastSavedAt: null,
+  linkedParty: null,
 };

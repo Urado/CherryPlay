@@ -7,15 +7,50 @@ namespace CherryPlayServer.Infrastructure.Data;
 public class DataSeeder : IDataSeeder
 {
     private readonly IPartyRepository _partyRepository;
+    private readonly IOrganizerRepository _organizerRepository;
+    private readonly IEmailAccountRepository _emailAccountRepository;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public DataSeeder(IPartyRepository partyRepository)
+    public DataSeeder(
+        IPartyRepository partyRepository,
+        IOrganizerRepository organizerRepository,
+        IEmailAccountRepository emailAccountRepository,
+        IPasswordHasher passwordHasher)
     {
         _partyRepository = partyRepository;
+        _organizerRepository = organizerRepository;
+        _emailAccountRepository = emailAccountRepository;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        // Создание тестового пользователя (временное решение для тестов)
+        var testEmail = "t@t.ru";
+        var existingTestAccount = await _emailAccountRepository.GetByEmailAsync(testEmail);
+        if (existingTestAccount == null)
+        {
+            var testOrganizer = new Organizer
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test User",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _organizerRepository.AddAsync(testOrganizer);
+
+            var testEmailAccount = new EmailAccount
+            {
+                Id = Guid.NewGuid(),
+                OrganizerId = testOrganizer.Id,
+                Email = testEmail.ToLowerInvariant().Trim(),
+                PasswordHash = _passwordHasher.HashPassword("123456"),
+                CreatedAt = DateTime.UtcNow,
+                LastUsedAt = DateTime.UtcNow
+            };
+            await _emailAccountRepository.AddAsync(testEmailAccount);
+        }
 
         var existingParties = await _partyRepository.GetAllAsync();
         if (existingParties.Any()) return;
@@ -88,7 +123,9 @@ public class DataSeeder : IDataSeeder
                 TotalTracks = 4
             },
             CreatedAt = DateTime.UtcNow,
-            EventDateTime = DateTime.UtcNow.AddDays(7)
+            EventDateTime = DateTime.UtcNow.AddDays(7),
+            IsListedInCatalog = true,
+            Description = "Ночная вечеринка в стиле киберпанк."
         };
 
         // Sakura вечеринка
@@ -150,7 +187,9 @@ public class DataSeeder : IDataSeeder
                 TotalTracks = 3
             },
             CreatedAt = DateTime.UtcNow,
-            EventDateTime = DateTime.UtcNow.AddDays(14)
+            EventDateTime = DateTime.UtcNow.AddDays(14),
+            IsListedInCatalog = true,
+            Description = "Фестиваль цветения сакуры."
         };
 
         // Art Deco вечеринка
@@ -230,7 +269,8 @@ public class DataSeeder : IDataSeeder
                 TotalTracks = 5
             },
             CreatedAt = DateTime.UtcNow,
-            EventDateTime = DateTime.UtcNow.AddDays(21)
+            EventDateTime = DateTime.UtcNow.AddDays(21),
+            IsListedInCatalog = false
         };
 
         // Базовый вечеринка
@@ -306,7 +346,8 @@ public class DataSeeder : IDataSeeder
                 TotalTracks = 5
             },
             CreatedAt = DateTime.UtcNow,
-            EventDateTime = DateTime.UtcNow.AddDays(3)
+            EventDateTime = DateTime.UtcNow.AddDays(3),
+            IsListedInCatalog = true
         };
 
         await _partyRepository.AddAsync(cyberpunkParty);

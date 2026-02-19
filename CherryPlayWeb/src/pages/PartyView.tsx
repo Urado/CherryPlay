@@ -7,7 +7,6 @@ import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 import type { PlaybackState, ThemeId } from '@cherryplay/components';
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 
-import { ConnectionStatus } from '../components/ConnectionStatus';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { usePartyState } from '../hooks/usePartyState';
@@ -334,6 +333,17 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const connectingRef = useRef(false);
   const hasConnectedRef = useRef(false);
   const hasAttemptedConnectionRef = useRef(false);
+  const prevConnectionStatusRef = useRef(signalR.connectionStatus);
+
+  // После реконнекта запрашиваем полное состояние
+  useEffect(() => {
+    if (isDemo || !shortCode) return;
+    const prev = prevConnectionStatusRef.current;
+    prevConnectionStatusRef.current = signalR.connectionStatus;
+    if (prev === 'connecting' && signalR.connectionStatus === 'connected') {
+      requestFullState();
+    }
+  }, [signalR.connectionStatus, shortCode, isDemo, requestFullState]);
 
   useEffect(() => {
     if (isDemo || !shortCode || loading) {
@@ -471,17 +481,24 @@ export const PartyView: React.FC<PartyViewProps> = ({
               </button>
             )}
             {!isDemo && shortCode && (
-              <ConnectionStatus
-                status={signalR.connectionStatus}
-                isSessionActive={isSessionActive}
-                showSessionIndicator={true}
-              />
+              <a
+                href={`/party/${shortCode}/info`}
+                className="party-view-info-btn"
+                title="Информация о вечеринке"
+              >
+                Информация
+              </a>
             )}
           </div>
           {isDemo && <div className="party-view-demo-badge">Демо режим</div>}
         </div>
         <div className="party-view-content">
-          <PartyDisplay data={displayData} showPlayer={!isDemo && shortCode !== undefined} />
+          <PartyDisplay
+            data={displayData}
+            showPlayer={
+              !isDemo && !!shortCode && signalR.connectionStatus === 'connected' && isSessionActive
+            }
+          />
         </div>
       </div>
     </div>

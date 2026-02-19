@@ -47,6 +47,7 @@ export interface ProjectFile {
     currentTrackId: string | null;
     sessionStartTime: number | null;
   };
+  linkedParty?: { id: string; shortCode: string; url: string };
 }
 
 /**
