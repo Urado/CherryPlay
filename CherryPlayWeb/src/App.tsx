@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { ROUTES } from './constants/routes';
 import { CabinetPage } from './pages/CabinetPage';
 import { LoginPage } from './pages/LoginPage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
@@ -22,22 +23,22 @@ function CatalogOrRedirect() {
   const navigate = useNavigate();
   const partyFromQuery = searchParams.get('party');
   if (partyFromQuery) {
-    return <Navigate to={`/party/${partyFromQuery}`} replace />;
+    return <Navigate to={ROUTES.PARTY_VIEW(partyFromQuery)} replace />;
   }
-  return <PartyListPage onPartySelect={(shortCode) => navigate(`/party/${shortCode}`)} />;
+  return <PartyListPage onPartySelect={(shortCode) => navigate(ROUTES.PARTY_VIEW(shortCode))} />;
 }
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<CatalogOrRedirect />} />
+        <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/cabinet" element={<CabinetPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+        <Route path={ROUTES.CABINET} element={<CabinetPage />} />
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </BrowserRouter>
   );
@@ -45,11 +46,9 @@ function App() {
 
 function PartyViewByRoute() {
   const shortCode = useParams<{ shortCode: string }>().shortCode;
-  const handleBackToList = () => {
-    window.location.href = '/';
-  };
+  const navigate = useNavigate();
   if (!shortCode) return <Navigate to="/" replace />;
-  return <PartyView shortCode={shortCode} onBackToList={handleBackToList} />;
+  return <PartyView shortCode={shortCode} onBackToList={() => navigate(ROUTES.HOME)} />;
 }
 
 export default App;

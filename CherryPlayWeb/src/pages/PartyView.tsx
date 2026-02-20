@@ -9,10 +9,13 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ROUTES } from '../constants/routes';
 import { usePartyState } from '../hooks/usePartyState';
 import { useSignalR } from '../hooks/useSignalR';
 import { signalRService } from '../services/signalRService';
 import type { PlaybackStateDto, PlayerItemDto } from '../types/api';
+import { devLog, devWarn } from '../utils/logger';
+import { playbackStateFromDto } from '../utils/playbackState';
 import './PartyView.css';
 
 function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
@@ -72,73 +75,31 @@ export const PartyView: React.FC<PartyViewProps> = ({
   // Запрашивает полное состояние вечеринки через SignalR
   const requestFullState = useCallback(async () => {
     if (!shortCode) {
-      console.log('[PartyView] requestFullState skipped - no shortCode');
+      devLog('[PartyView] requestFullState skipped - no shortCode');
       return;
     }
 
     if (!signalRService.isServiceConnected()) {
-      console.warn('[PartyView] requestFullState skipped - SignalR not connected');
+      devWarn('[PartyView] requestFullState skipped - SignalR not connected');
       return;
     }
 
     try {
-      console.log('[PartyView] Requesting full state for shortCode:', shortCode);
+      devLog('[PartyView] Requesting full state for shortCode:', shortCode);
       const state = await signalRService.requestFullState(shortCode);
 
       if (state) {
-        console.log('[PartyView] Received full state:', {
-          hasPlaylist: !!state.playlist,
-          playlistItemsCount: state.playlist?.items?.length || 0,
-          hasPlaybackState: !!state.playbackState,
-          playbackState: state.playbackState
-            ? {
-                currentTrackId: state.playbackState.currentTrackId,
-                status: state.playbackState.status,
-                position: state.playbackState.position,
-                duration: state.playbackState.duration,
-                lastUpdatedAt: state.playbackState.lastUpdatedAt,
-              }
-            : null,
-          isSessionActive: state.isSessionActive,
-        });
-
-        // Плейлист уже загружен при инициализации компонента
-        // Обновление плейлиста происходит через событие OnPlaylistChanged
-        // Здесь мы только обновляем состояние воспроизведения
-
-        // Обновляем состояние воспроизведения
         if (state.playbackState) {
-          // Сохраняем текущую позицию, если она более свежая
-          const currentPosition =
-            playbackStateRef.current?.position ?? state.playbackState.position;
-          const currentLastUpdated = playbackStateRef.current?.lastUpdatedAt
-            ? new Date(playbackStateRef.current.lastUpdatedAt).getTime()
-            : 0;
-          const newLastUpdated = new Date(state.playbackState.lastUpdatedAt).getTime();
-
-          // Используем более свежую позицию
-          const finalPosition =
-            currentLastUpdated > newLastUpdated ? currentPosition : state.playbackState.position;
-
-          const playbackState: PlaybackState = {
-            currentTrackId: state.playbackState.currentTrackId,
-            status: state.playbackState.status,
-            position: finalPosition,
-            duration: state.playbackState.duration,
-            volume: state.playbackState.volume,
-            mode: state.playbackState.mode,
-            playedTrackIds: state.playbackState.playedTrackIds || [],
-            disabledTrackIds: state.playbackState.disabledTrackIds || [],
-            disabledGroupIds: state.playbackState.disabledGroupIds || [],
-            lastUpdatedAt: state.playbackState.lastUpdatedAt,
-          };
-          console.log('[PartyView] Setting playback state from requestFullState:', playbackState);
-          setPlaybackState(playbackState);
+          const merged = playbackStateFromDto(state.playbackState, playbackStateRef.current);
+          setPlaybackState(merged);
         }
         setIsSessionActive(state.isSessionActive);
       }
     } catch (err) {
-      console.error('[PartyView] Failed to request full state:', err);
+      console.error(
+        '[PartyView] Failed to request full state:',
+        err instanceof Error ? err.message : err,
+      );
     }
   }, [shortCode, setPlaybackState, setIsSessionActive]);
 
@@ -162,38 +123,20 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onPlaybackPositionUpdated: useCallback(
       (_partyId: string, trackId: string, position: number) => {
-        console.log('[PartyView] Processing OnPlaybackPositionUpdated:', {
-          partyId: _partyId,
-          trackId,
-          position,
-          currentPlaybackState: playbackStateRef.current
-            ? {
-                currentTrackId: playbackStateRef.current.currentTrackId,
-                position: playbackStateRef.current.position,
-                status: playbackStateRef.current.status,
-              }
-            : null,
-          timestamp: new Date().toISOString(),
-        });
-
         const trackDuration = playlistRef.current
           ? findTrackDuration(playlistRef.current.items, trackId)
           : null;
 
-        // Обновляем позицию
         if (playbackStateRef.current) {
-          const updatedState: PlaybackState = {
+          setPlaybackState({
             ...playbackStateRef.current,
             currentTrackId: trackId,
             position,
             duration: trackDuration !== null ? trackDuration : playbackStateRef.current.duration,
             lastUpdatedAt: new Date().toISOString(),
-          };
-          console.log('[PartyView] Updating playback state (existing):', updatedState);
-          setPlaybackState(updatedState);
+          });
         } else {
-          // Если состояния еще нет, создаем минимальное состояние
-          const newState: PlaybackState = {
+          setPlaybackState({
             currentTrackId: trackId,
             status: 'playing',
             position,
@@ -204,78 +147,29 @@ export const PartyView: React.FC<PartyViewProps> = ({
             disabledTrackIds: [],
             disabledGroupIds: [],
             lastUpdatedAt: new Date().toISOString(),
-          };
-          console.log('[PartyView] Creating new playback state:', newState);
-          setPlaybackState(newState);
+          });
         }
       },
       [setPlaybackState],
     ),
     onFullStateUpdated: useCallback(
       (_partyId: string, state: PlaybackStateDto) => {
-        console.log('[PartyView] Processing OnFullStateUpdated:', {
-          partyId: _partyId,
-          receivedState: {
-            currentTrackId: state.currentTrackId,
-            status: state.status,
-            position: state.position,
-            duration: state.duration,
-            lastUpdatedAt: state.lastUpdatedAt,
-          },
-          currentPlaybackState: playbackStateRef.current
-            ? {
-                currentTrackId: playbackStateRef.current.currentTrackId,
-                position: playbackStateRef.current.position,
-                lastUpdatedAt: playbackStateRef.current.lastUpdatedAt,
-              }
-            : null,
-          timestamp: new Date().toISOString(),
-        });
-
-        // Сохраняем текущую позицию, если она более свежая
-        const currentPosition = playbackStateRef.current?.position ?? state.position;
-        const currentLastUpdated = playbackStateRef.current?.lastUpdatedAt
-          ? new Date(playbackStateRef.current.lastUpdatedAt).getTime()
-          : 0;
-        const newLastUpdated = new Date(state.lastUpdatedAt).getTime();
-
-        // Используем более свежую позицию
-        const finalPosition =
-          currentLastUpdated > newLastUpdated ? currentPosition : state.position;
-
-        const playbackState: PlaybackState = {
-          currentTrackId: state.currentTrackId,
-          status: state.status,
-          position: finalPosition,
-          duration: state.duration,
-          volume: state.volume,
-          mode: state.mode,
-          playedTrackIds: state.playedTrackIds || [],
-          disabledTrackIds: state.disabledTrackIds || [],
-          disabledGroupIds: state.disabledGroupIds || [],
-          lastUpdatedAt: state.lastUpdatedAt,
-        };
-        console.log('[PartyView] Setting playback state from OnFullStateUpdated:', playbackState);
-        setPlaybackState(playbackState);
+        const merged = playbackStateFromDto(state, playbackStateRef.current);
         setIsSessionActive(true);
 
-        // Если duration равен 0 или не установлен, пытаемся получить из плейлиста
         if (
-          (!playbackState.duration || playbackState.duration === 0) &&
-          playbackState.currentTrackId &&
+          (!merged.duration || merged.duration === 0) &&
+          merged.currentTrackId &&
           playlistRef.current
         ) {
-          const trackDuration = findTrackDuration(
-            playlistRef.current.items,
-            playbackState.currentTrackId,
-          );
+          const trackDuration = findTrackDuration(playlistRef.current.items, merged.currentTrackId);
           if (trackDuration !== null && trackDuration > 0) {
-            const updatedState = {
-              ...playbackState,
-              duration: trackDuration,
-            };
-            setPlaybackState(updatedState);
+            setPlaybackState({ ...merged, duration: trackDuration });
+          } else {
+            setPlaybackState(merged);
           }
+        } else {
+          setPlaybackState(merged);
         }
       },
       [setPlaybackState, setIsSessionActive],
@@ -288,41 +182,20 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onPlaylistChanged: useCallback(
       (_partyId: string) => {
-        console.log('[PartyView] Playlist changed, reloading...', {
-          partyId: _partyId,
-          timestamp: new Date().toISOString(),
-        });
         loadPlaylist().catch((err) => {
-          console.error('[PartyView] Failed to reload playlist:', err);
+          console.error(
+            '[PartyView] Failed to reload playlist:',
+            err instanceof Error ? err.message : err,
+          );
         });
       },
       [loadPlaylist],
     ),
     onConnectionStatusChanged: useCallback((_partyId: string, isOnline: boolean) => {
-      console.log('[PartyView] Connection status changed:', {
-        partyId: _partyId,
-        isOnline,
-        timestamp: new Date().toISOString(),
-      });
-      // Можно добавить дополнительную логику обработки офлайн-режима
-      if (!isOnline) {
-        // Организатор отключился - показываем последнее известное состояние
-        console.log('[PartyView] Organizer disconnected, showing last known state');
-      }
+      devLog('[PartyView] Connection status changed:', _partyId, isOnline);
     }, []),
     onError: useCallback(
       (error: string) => {
-        console.error('[SignalR] Error event received:', {
-          error: error,
-          timestamp: new Date().toISOString(),
-          currentState: playbackStateRef.current
-            ? {
-                currentTrackId: playbackStateRef.current.currentTrackId,
-                position: playbackStateRef.current.position,
-                status: playbackStateRef.current.status,
-              }
-            : null,
-        });
         setError(`Ошибка подключения: ${error}`);
       },
       [setError],
@@ -383,10 +256,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
         connectingRef.current = false;
       })
       .catch((err) => {
-        console.error('[PartyView] Failed to connect to SignalR:', err);
+        console.error(
+          '[PartyView] Failed to connect to SignalR:',
+          err instanceof Error ? err.message : err,
+        );
         setError('Ошибка подключения к трансляции');
         connectingRef.current = false;
-        // НЕ перезагружаем страницу и НЕ пытаемся подключиться снова автоматически
       });
 
     return () => {
@@ -398,9 +273,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortCode, isDemo, loading]); // Убрали функции из зависимостей намеренно
 
-  // Формируем единый объект данных для PartyDisplay
-  const displayData: PartyDisplayData<ThemeId> = useMemo(() => {
-    const data = {
+  const displayData: PartyDisplayData<ThemeId> = useMemo(
+    () => ({
       partyId: partyId || (isDemo ? 'demo' : 'unknown'),
       partyName: partyName || (isDemo ? 'Демо плейлист' : 'Плейлист вечеринки'),
       themeId,
@@ -408,35 +282,18 @@ export const PartyView: React.FC<PartyViewProps> = ({
       playlist: playlist || { items: [], totalDuration: 0, totalTracks: 0 },
       playbackState: playbackState || null,
       isSessionActive,
-    };
-    console.log('[PartyView] displayData updated:', {
-      partyId: data.partyId,
-      partyName: data.partyName,
-      themeId: data.themeId,
-      playlistItemsCount: data.playlist.items.length,
-      hasPlaybackState: !!data.playbackState,
-      playbackState: data.playbackState
-        ? {
-            currentTrackId: data.playbackState.currentTrackId,
-            status: data.playbackState.status,
-            position: data.playbackState.position,
-            duration: data.playbackState.duration,
-          }
-        : null,
-      isSessionActive: data.isSessionActive,
-      timestamp: new Date().toISOString(),
-    });
-    return data;
-  }, [
-    partyId,
-    partyName,
-    themeId,
-    customizationSettings,
-    playlist,
-    playbackState,
-    isSessionActive,
-    isDemo,
-  ]);
+    }),
+    [
+      partyId,
+      partyName,
+      themeId,
+      customizationSettings,
+      playlist,
+      playbackState,
+      isSessionActive,
+      isDemo,
+    ],
+  );
 
   const handleRetry = () => {
     loadPlaylist();
@@ -482,7 +339,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             )}
             {!isDemo && shortCode && (
               <a
-                href={`/party/${shortCode}/info`}
+                href={ROUTES.PARTY_INFO(shortCode)}
                 className="party-view-info-btn"
                 title="Информация о вечеринке"
               >

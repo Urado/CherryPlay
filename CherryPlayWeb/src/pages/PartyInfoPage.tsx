@@ -6,6 +6,7 @@ import { PartyInfoDisplay, isValidTheme } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { ROUTES } from '../constants/routes';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyDto } from '../types/api';
 
@@ -45,7 +46,7 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
     return (
       <div className="party-info-page">
         <p className="party-info-error">{error ?? 'Вечеринка не найдена'}</p>
-        <button type="button" onClick={() => navigate('/')}>
+        <button type="button" onClick={() => navigate(ROUTES.HOME)}>
           На главную
         </button>
       </div>
@@ -67,8 +68,8 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
         themeId,
         customizationSettings: party.customizationSettings,
       }}
-      onGoToPlaylist={() => navigate(`/party/${shortCode}`)}
-      onGoToCatalog={() => navigate('/')}
+      onGoToPlaylist={() => navigate(ROUTES.PARTY_VIEW(shortCode))}
+      onGoToCatalog={() => navigate(ROUTES.HOME)}
     />
   );
 }

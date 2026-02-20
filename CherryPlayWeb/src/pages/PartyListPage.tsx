@@ -7,9 +7,12 @@ import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ROUTES } from '../constants/routes';
+import { getThemeName } from '../constants/themes';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
+import { devLog } from '../utils/logger';
 import './PartyListPage.css';
 
 interface PartyListPageProps {
@@ -59,8 +62,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         const currentOrganizer = await authService.checkAuth();
         setOrganizer(currentOrganizer);
       } catch (err) {
-        // Ошибка проверки аутентификации не критична - просто считаем пользователя неавторизованным
-        console.log('[PartyListPage] Auth check failed (non-critical):', err);
+        devLog('[PartyListPage] Auth check failed (non-critical):', err);
         setOrganizer(null);
       } finally {
         // Всегда устанавливаем authLoading в false, чтобы страница могла загрузиться
@@ -94,15 +96,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     } catch {
       return dateString;
     }
-  };
-
-  const getThemeName = (themeId: string): string => {
-    const themes: Record<string, string> = {
-      cyberpunk: 'Cyberpunk',
-      sakura: 'Sakura',
-      'art-deco': 'Art Deco',
-    };
-    return themes[themeId] || themeId;
   };
 
   const handleRetry = () => {
@@ -193,11 +186,11 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           <div className="party-list-header-actions">
             {!authLoading &&
               (organizer ? (
-                <Link to="/cabinet" className="party-list-login-link">
+                <Link to={ROUTES.CABINET} className="party-list-login-link">
                   Кабинет
                 </Link>
               ) : (
-                <Link to="/login" className="party-list-login-link">
+                <Link to={ROUTES.LOGIN} className="party-list-login-link">
                   Вход
                 </Link>
               ))}
@@ -339,7 +332,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   <div className="party-list-card-footer">
                     <span className="party-list-card-code">Код: {party.shortCode}</span>
                     <Link
-                      to={`/party/${party.shortCode}/info`}
+                      to={ROUTES.PARTY_INFO(party.shortCode)}
                       className="party-list-card-info-link"
                       onClick={(e) => e.stopPropagation()}
                     >

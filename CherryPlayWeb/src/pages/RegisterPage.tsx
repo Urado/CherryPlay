@@ -1,6 +1,7 @@
 import { EmailAuthForm } from '@cherryplay/components';
 import { useNavigate, Link } from 'react-router-dom';
 
+import { ROUTES } from '../constants/routes';
 import { authService } from '../services/authService';
 import './RegisterPage.css';
 
@@ -11,7 +12,7 @@ export function RegisterPage() {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const organizer = await authService.checkAuth?.();
     if (organizer) {
-      navigate('/cabinet');
+      navigate(ROUTES.CABINET);
     }
   };
 
@@ -27,7 +28,7 @@ export function RegisterPage() {
           showModeToggle={false}
         />
         <div className="login-link">
-          Уже есть аккаунт? <Link to="/login">Войти</Link>
+          Уже есть аккаунт? <Link to={ROUTES.LOGIN}>Войти</Link>
         </div>
       </div>
     </div>

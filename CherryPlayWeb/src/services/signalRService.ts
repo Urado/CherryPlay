@@ -5,6 +5,7 @@ import * as signalR from '@microsoft/signalr';
 
 import { API_ENDPOINTS, getSignalRUrl } from '../config/apiConfig';
 import type { PlaybackStateDto, PartyStateDto } from '../types/api';
+import { devLog } from '../utils/logger';
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
@@ -39,21 +40,11 @@ class SignalRService {
       })
       .build();
 
-    // Устанавливаем отложенные подписки
-    console.log('[SignalR Web] Setting up pending callbacks:', {
-      pendingCallbacksCount: this.pendingCallbacks.length,
-      eventHandlersCount: this.eventHandlers.size,
-      timestamp: new Date().toISOString(),
-    });
+    devLog('[SignalR Web] Setting up pending callbacks');
     this.pendingCallbacks.forEach((callback) => callback());
     this.pendingCallbacks = [];
 
-    // Устанавливаем все сохраненные обработчики
-    console.log('[SignalR Web] Restoring event handlers:', {
-      eventHandlersCount: this.eventHandlers.size,
-      eventNames: Array.from(this.eventHandlers.keys()),
-      timestamp: new Date().toISOString(),
-    });
+    devLog('[SignalR Web] Restoring event handlers');
     this.eventHandlers.forEach((handlers, eventName) => {
       handlers.forEach((handler) => {
         if (this.connection) {
@@ -66,26 +57,16 @@ class SignalRService {
     // Обработка событий подключения
     this.connection.onclose((error) => {
       this.isConnected = false;
-      console.log('[SignalR Web] ← Connection closed:', {
-        error: error ? error.message : 'No error',
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] Connection closed:', error?.message);
     });
 
     this.connection.onreconnecting((error) => {
-      console.log('[SignalR Web] ← Reconnecting...', {
-        error: error ? error.message : 'No error',
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] Reconnecting...', error?.message);
     });
 
     this.connection.onreconnected(async (connectionId) => {
       this.isConnected = true;
-      console.log('[SignalR Web] ← Reconnected:', {
-        connectionId,
-        timestamp: new Date().toISOString(),
-      });
-      console.log('[SignalR Web] Restoring event handlers...');
+      devLog('[SignalR Web] Reconnected:', connectionId);
       // Восстанавливаем все обработчики при переподключении
       this.eventHandlers.forEach((handlers, eventName) => {
         if (this.connection) {
@@ -99,10 +80,7 @@ class SignalRService {
       // Повторно подключаемся к группе вечеринки, если был shortCode
       if (this.currentShortCode) {
         try {
-          console.log('[SignalR Web] Re-joining party as viewer after reconnect:', {
-            shortCode: this.currentShortCode,
-            timestamp: new Date().toISOString(),
-          });
+          devLog('[SignalR Web] Re-joining party after reconnect:', this.currentShortCode);
           await this.joinPartyAsViewer(this.currentShortCode);
         } catch (err) {
           console.error('[SignalR Web] Failed to re-join party after reconnect:', err);
@@ -111,23 +89,19 @@ class SignalRService {
     });
 
     try {
-      console.log('[SignalR Web] → Starting connection...');
+      devLog('[SignalR Web] Starting connection...');
       await this.connection.start();
       this.isConnected = true;
-      console.log('[SignalR Web] ← Connection started successfully:', {
-        connectionId: this.connection.connectionId,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] Connection started:', this.connection.connectionId);
     } catch (error) {
-      console.error('[SignalR Web] ✗ Failed to start connection:', {
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString(),
-      });
-      // Проверяем, не установилось ли соединение через автоматическое переподключение
+      console.error(
+        '[SignalR Web] Failed to start connection:',
+        error instanceof Error ? error.message : error,
+      );
       await new Promise((resolve) => setTimeout(resolve, 500));
       if (this.connection?.state === signalR.HubConnectionState.Connected) {
         this.isConnected = true;
-        console.log('[SignalR Web] ← Connection established via auto-reconnect');
+        devLog('[SignalR Web] Connection established via auto-reconnect');
         return;
       }
       throw error;
@@ -139,13 +113,10 @@ class SignalRService {
    */
   async disconnect(): Promise<void> {
     if (this.connection) {
-      console.log('[SignalR Web] → Disconnecting...');
+      devLog('[SignalR Web] Disconnecting...');
       await this.connection.stop();
       this.connection = null;
       this.isConnected = false;
-      console.log('[SignalR Web] ← Disconnected:', {
-        timestamp: new Date().toISOString(),
-      });
     }
   }
 
@@ -184,19 +155,9 @@ class SignalRService {
     }
 
     await this.waitForConnection();
-    this.currentShortCode = shortCode; // Сохраняем для повторного подключения
-    console.log('[SignalR Web] → Sending JoinPartyAsViewer:', {
-      shortCode,
-      connectionId: this.connection.connectionId,
-      connectionState: this.connection.state,
-      timestamp: new Date().toISOString(),
-    });
+    this.currentShortCode = shortCode;
     await this.connection.invoke('JoinPartyAsViewer', shortCode);
-    console.log('[SignalR Web] ← Successfully joined party as viewer:', {
-      shortCode,
-      connectionId: this.connection.connectionId,
-      timestamp: new Date().toISOString(),
-    });
+    devLog('[SignalR Web] Joined party as viewer:', shortCode);
   }
 
   /**
@@ -208,26 +169,8 @@ class SignalRService {
     }
 
     await this.waitForConnection();
-    console.log('[SignalR Web] → Sending RequestFullState:', {
-      shortCode,
-      timestamp: new Date().toISOString(),
-    });
     const result = await this.connection.invoke('RequestFullState', shortCode);
-    console.log('[SignalR Web] ← Received full state:', {
-      shortCode,
-      hasPlaybackState: !!result?.playbackState,
-      playbackState: result?.playbackState
-        ? {
-            currentTrackId: result.playbackState.currentTrackId,
-            status: result.playbackState.status,
-            position: result.playbackState.position,
-            duration: result.playbackState.duration,
-          }
-        : null,
-      hasPlaylist: !!result?.playlist,
-      playlistItemsCount: result?.playlist?.items?.length || 0,
-      timestamp: new Date().toISOString(),
-    });
+    devLog('[SignalR Web] Received full state:', shortCode, !!result?.playbackState);
     return result;
   }
 
@@ -238,10 +181,7 @@ class SignalRService {
   onSessionStarted(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionStarted';
     const wrappedCallback = (partyId: string) => {
-      console.log('[SignalR Web] ← Received OnSessionStarted:', {
-        partyId,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnSessionStarted:', partyId);
       callback(partyId);
     };
 
@@ -274,10 +214,7 @@ class SignalRService {
   onSessionEnded(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionEnded';
     const wrappedCallback = (partyId: string) => {
-      console.log('[SignalR Web] ← Received OnSessionEnded:', {
-        partyId,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnSessionEnded:', partyId);
       callback(partyId);
     };
 
@@ -312,12 +249,7 @@ class SignalRService {
   ): void {
     const eventName = 'OnPlaybackPositionUpdated';
     const wrappedCallback = (partyId: string, trackId: string, position: number) => {
-      console.log('[SignalR Web] ← Received OnPlaybackPositionUpdated:', {
-        partyId,
-        trackId,
-        position,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnPlaybackPositionUpdated:', partyId, trackId, position);
       callback(partyId, trackId, position);
     };
 
@@ -350,22 +282,7 @@ class SignalRService {
   onFullStateUpdated(callback: (partyId: string, state: PlaybackStateDto) => void): void {
     const eventName = 'OnFullStateUpdated';
     const wrappedCallback = (partyId: string, state: PlaybackStateDto) => {
-      console.log('[SignalR Web] ← Received OnFullStateUpdated:', {
-        partyId,
-        playbackState: {
-          currentTrackId: state.currentTrackId,
-          status: state.status,
-          position: state.position,
-          duration: state.duration,
-          volume: state.volume,
-          mode: state.mode,
-          playedTrackIds: state.playedTrackIds?.length || 0,
-          disabledTrackIds: state.disabledTrackIds?.length || 0,
-          disabledGroupIds: state.disabledGroupIds?.length || 0,
-          lastUpdatedAt: state.lastUpdatedAt,
-        },
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnFullStateUpdated:', partyId);
       callback(partyId, state);
     };
 
@@ -398,10 +315,7 @@ class SignalRService {
   onStateChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnStateChanged';
     const wrappedCallback = (partyId: string) => {
-      console.log('[SignalR Web] ← Received OnStateChanged:', {
-        partyId,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnStateChanged:', partyId);
       callback(partyId);
     };
 
@@ -434,10 +348,7 @@ class SignalRService {
   onPlaylistChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnPlaylistChanged';
     const wrappedCallback = (partyId: string) => {
-      console.log('[SignalR Web] ← Received OnPlaylistChanged:', {
-        partyId,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnPlaylistChanged:', partyId);
       callback(partyId);
     };
 
@@ -472,11 +383,7 @@ class SignalRService {
   onConnectionStatusChanged(callback: (partyId: string, isOnline: boolean) => void): void {
     const eventName = 'OnConnectionStatusChanged';
     const wrappedCallback = (partyId: string, isOnline: boolean) => {
-      console.log('[SignalR Web] ← Received OnConnectionStatusChanged:', {
-        partyId,
-        isOnline,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] OnConnectionStatusChanged:', partyId, isOnline);
       callback(partyId, isOnline);
     };
 
@@ -509,10 +416,7 @@ class SignalRService {
   onError(callback: (error: string) => void): void {
     const eventName = 'Error';
     const wrappedCallback = (error: string) => {
-      console.log('[SignalR Web] ← Received Error:', {
-        error,
-        timestamp: new Date().toISOString(),
-      });
+      devLog('[SignalR Web] Error event:', error);
       callback(error);
     };
 
