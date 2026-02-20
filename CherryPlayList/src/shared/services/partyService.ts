@@ -131,8 +131,14 @@ class PartyService {
     }
   }
 
-  async deleteParty(_partyId: string): Promise<void> {
-    throw new Error('Not implemented');
+  async deleteParty(partyId: string): Promise<void> {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+      cache: 'no-cache',
+    });
+    await handleApiResponse<void>(response, 'Failed to delete party');
   }
 
   async getPartyUrl(shortCode: string): Promise<string> {

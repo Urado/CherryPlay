@@ -27,8 +27,13 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         if (exception is UnauthorizedAccessException)
         {
+            statusCode = HttpStatusCode.Unauthorized;
+            title = "Unauthorized";
+        }
+        else if (exception is ForbiddenException || exception is PartyLimitReachedException)
+        {
             statusCode = HttpStatusCode.Forbidden;
-            title = "Access Denied";
+            title = "Forbidden";
         }
         else if (exception is PartyNotFoundException)
         {

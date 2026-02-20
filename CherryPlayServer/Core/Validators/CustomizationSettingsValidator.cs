@@ -4,46 +4,31 @@ namespace CherryPlayServer.Core.Validators;
 
 public static class CustomizationSettingsValidator
 {
-    /// <summary>
-    /// Валидирует, что все значения в customizationSettings имеют тип string или number (int/double).
-    /// </summary>
     public static bool IsValidCustomizationSettings(Dictionary<string, object>? settings)
     {
         if (settings == null)
         {
-            return true; // null допустим
+            return true;
         }
 
         foreach (var kvp in settings)
         {
             var value = kvp.Value;
 
-            // Обработка JsonElement (может появиться при десериализации)
             if (value is JsonElement jsonElement)
             {
-                if (jsonElement.ValueKind == JsonValueKind.String)
+                if (jsonElement.ValueKind == JsonValueKind.String ||
+                    jsonElement.ValueKind == JsonValueKind.Number ||
+                    jsonElement.ValueKind == JsonValueKind.Null)
                 {
-                    continue; // Строка допустима
+                    continue;
                 }
-                else if (jsonElement.ValueKind == JsonValueKind.Number)
-                {
-                    continue; // Число допустимо
-                }
-                else if (jsonElement.ValueKind == JsonValueKind.Null)
-                {
-                    continue; // null допустим (будет пропущен при нормализации)
-                }
-                else
-                {
-                    return false; // Другие типы JsonElement недопустимы
-                }
+                return false;
             }
 
-            // Проверяем, что значение является string или числом
             if (value is not string && value is not int && value is not long &&
                 value is not float && value is not double && value is not decimal)
             {
-                // null допустим (будет пропущен при нормализации)
                 if (value == null)
                 {
                     continue;
@@ -55,9 +40,6 @@ public static class CustomizationSettingsValidator
         return true;
     }
 
-    /// <summary>
-    /// Нормализует значения в customizationSettings, приводя числа к double где необходимо.
-    /// </summary>
     public static Dictionary<string, object>? NormalizeCustomizationSettings(Dictionary<string, object>? settings)
     {
         if (settings == null)
@@ -70,7 +52,6 @@ public static class CustomizationSettingsValidator
         {
             var value = kvp.Value;
 
-            // Обработка JsonElement (может появиться при десериализации)
             if (value is JsonElement jsonElement)
             {
                 if (jsonElement.ValueKind == JsonValueKind.String)
@@ -91,18 +72,25 @@ public static class CustomizationSettingsValidator
                     {
                         normalized[kvp.Key] = doubleValue;
                     }
+                    else
+                    {
+                        try
+                        {
+                            normalized[kvp.Key] = jsonElement.GetDouble();
+                        }
+                        catch
+                        {
+                        }
+                    }
                 }
-                // Пропускаем null и другие типы JsonElement
                 continue;
             }
 
-            // Пропускаем null значения
             if (value == null)
             {
                 continue;
             }
 
-            // Приводим все числовые типы к double для единообразия
             if (value is int intVal)
             {
                 normalized[kvp.Key] = (double)intVal;
@@ -123,7 +111,6 @@ public static class CustomizationSettingsValidator
             {
                 normalized[kvp.Key] = value;
             }
-            // Пропускаем невалидные значения
         }
 
         return normalized;

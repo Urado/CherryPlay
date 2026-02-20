@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CherryPlayServer.Core.Attributes;
-using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Models;
 
 namespace CherryPlayServer.Controllers;
@@ -12,117 +10,56 @@ namespace CherryPlayServer.Controllers;
 [Route("api/organizer")]
 public class OrganizerController : ControllerBase
 {
-    private readonly IOrganizerRepository _organizerRepository;
+    private readonly IOrganizerService _organizerService;
     private readonly ILogger<OrganizerController> _logger;
 
-    public OrganizerController(
-        IOrganizerRepository organizerRepository,
-        ILogger<OrganizerController> logger)
+    public OrganizerController(IOrganizerService organizerService, ILogger<OrganizerController> logger)
     {
-        _organizerRepository = organizerRepository ?? throw new ArgumentNullException(nameof(organizerRepository));
+        _organizerService = organizerService ?? throw new ArgumentNullException(nameof(organizerService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    /// Проверить валидность сессии организатора (легковесный эндпоинт без полной информации)
-    /// </summary>
     [HttpGet("session/check")]
     [AuthorizeOrganizer]
     public ActionResult<object> CheckSession()
     {
-        var organizerId = HttpContext.GetOrganizerId();
-        if (!organizerId.HasValue)
-        {
-            return Unauthorized(new { valid = false, message = "Authentication required" });
-        }
-
-        return Ok(new { valid = true, organizerId = organizerId.Value });
+        var organizerId = HttpContext.RequireOrganizerId();
+        return Ok(new { valid = true, organizerId });
     }
 
-    /// <summary>
-    /// Получить профиль текущего организатора
-    /// </summary>
     [HttpGet("me")]
     [AuthorizeOrganizer]
     public async Task<ActionResult<OrganizerDto>> GetMe()
     {
-        var organizerId = HttpContext.GetOrganizerId();
-        if (!organizerId.HasValue)
+        var organizerId = HttpContext.RequireOrganizerId();
+        var dto = await _organizerService.GetByIdAsync(organizerId);
+        if (dto == null)
         {
-            return Unauthorized("Authentication required");
+            return NotFound("Organizer not found");
         }
 
-        try
-        {
-            var organizer = await _organizerRepository.GetByIdAsync(organizerId.Value);
-            if (organizer == null)
-            {
-                return NotFound("Organizer not found");
-            }
-
-            var dto = OrganizerMapper.ToDto(organizer);
-            return Ok(dto);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting organizer profile: {OrganizerId}", organizerId);
-            return StatusCode(500, "An error occurred while retrieving organizer profile");
-        }
+        return Ok(dto);
     }
 
-    /// <summary>
-    /// Обновить профиль организатора
-    /// </summary>
     [HttpPatch("profile")]
     [AuthorizeOrganizer]
     public async Task<ActionResult<OrganizerDto>> UpdateProfile([FromBody] UpdateOrganizerDto dto)
     {
-        var organizerId = HttpContext.GetOrganizerId();
-        if (!organizerId.HasValue)
-        {
-            return Unauthorized("Authentication required");
-        }
-
         if (dto == null)
         {
             return BadRequest("Request body cannot be null");
         }
 
+        var organizerId = HttpContext.RequireOrganizerId();
         try
         {
-            var organizer = await _organizerRepository.GetByIdAsync(organizerId.Value);
-            if (organizer == null)
+            var updated = await _organizerService.UpdateProfileAsync(organizerId, dto);
+            if (updated == null)
             {
                 return NotFound("Organizer not found");
             }
 
-            // Обновляем поля
-            if (!string.IsNullOrEmpty(dto.Name))
-            {
-                organizer.Name = dto.Name;
-            }
-
-            if (dto.LogoUrl != null)
-            {
-                organizer.LogoUrl = dto.LogoUrl;
-            }
-
-            if (dto.Links != null)
-            {
-                organizer.Links = dto.Links;
-            }
-
-            if (dto.TimeZone != null)
-            {
-                organizer.TimeZone = dto.TimeZone;
-            }
-
-            organizer.UpdatedAt = DateTime.UtcNow;
-
-            await _organizerRepository.UpdateAsync(organizer);
-
-            var updatedDto = OrganizerMapper.ToDto(organizer);
-            return Ok(updatedDto);
+            return Ok(updated);
         }
         catch (Exception ex)
         {

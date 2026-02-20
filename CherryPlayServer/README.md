@@ -16,6 +16,8 @@ dotnet run
 
 Сервер будет доступен по адресу http://localhost:5000
 
+- **Health:** `GET /health` — проверка доступности (см. [OPS.md](OPS.md)).
+
 ## API Endpoints
 
 ### GET /api/parties/public/first

@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Extensions;
-using CherryPlayServer.Hubs;
 
 namespace CherryPlayServer.Controllers;
 
@@ -14,13 +12,11 @@ namespace CherryPlayServer.Controllers;
 public class PartiesController : ControllerBase
 {
     private readonly IPartyService _partyService;
-    private readonly IHubContext<PartyHub> _hubContext;
     private readonly ILogger<PartiesController> _logger;
 
-    public PartiesController(IPartyService partyService, IHubContext<PartyHub> hubContext, ILogger<PartiesController> logger)
+    public PartiesController(IPartyService partyService, ILogger<PartiesController> logger)
     {
         _partyService = partyService ?? throw new ArgumentNullException(nameof(partyService));
-        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -28,26 +24,9 @@ public class PartiesController : ControllerBase
     [AuthorizeOrganizer]
     public async Task<ActionResult<PartyDto>> CreateParty([FromBody] CreatePartyDto dto)
     {
-        if (HttpContext.GetOrganizerId() == null)
-        {
-            return Unauthorized("Требуется авторизация для создания вечеринки.");
-        }
-
         if (dto == null)
         {
             return BadRequest("Request body cannot be null");
-        }
-
-        // Логирование для отладки
-        if (dto.CustomizationSettings != null)
-        {
-            _logger.LogDebug("Received CustomizationSettings: {Settings}",
-                System.Text.Json.JsonSerializer.Serialize(dto.CustomizationSettings));
-            foreach (var kvp in dto.CustomizationSettings)
-            {
-                _logger.LogDebug("Key: {Key}, Value: {Value}, Type: {Type}",
-                    kvp.Key, kvp.Value, kvp.Value?.GetType().Name ?? "null");
-            }
         }
 
         if (!ModelState.IsValid)
@@ -62,17 +41,17 @@ public class PartiesController : ControllerBase
                 partyDto.Id, partyDto.ShortCode);
             return Ok(partyDto);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ForbiddenException ex)
         {
             return Forbid(ex.Message);
+        }
+        catch (PartyLimitReachedException ex)
+        {
+            return StatusCode(403, ex.Message);
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return StatusCode(403, ex.Message);
         }
         catch (Exception ex)
         {
@@ -81,9 +60,6 @@ public class PartiesController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Список вечеринок текущего организатора
-    /// </summary>
     [HttpGet]
     [AuthorizeOrganizer]
     public async Task<ActionResult<List<PartyDto>>> GetMyParties()
@@ -94,10 +70,6 @@ public class PartiesController : ControllerBase
             _logger.LogDebug("Returning {Count} parties for organizer", parties.Count);
             return Ok(parties);
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Forbid(ex.Message);
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting organizer parties");
@@ -105,9 +77,6 @@ public class PartiesController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Проверяет существование вечеринки по ID
-    /// </summary>
     [HttpGet("{partyId}")]
     [AuthorizeOrganizer]
     public async Task<ActionResult<PartyDto>> GetParty(string partyId)
@@ -127,7 +96,7 @@ public class PartiesController : ControllerBase
 
             return Ok(partyDto);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ForbiddenException ex)
         {
             return Forbid(ex.Message);
         }
@@ -138,9 +107,6 @@ public class PartiesController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Обновляет метаданные вечеринки
-    /// </summary>
     [HttpPut("{partyId}")]
     [AuthorizeOrganizer]
     public async Task<ActionResult> UpdatePartyMetadata(string partyId, [FromBody] UpdatePartyDto dto)
@@ -160,7 +126,7 @@ public class PartiesController : ControllerBase
             await _partyService.UpdatePartyMetadataAsync(partyGuid, dto);
             return NoContent();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ForbiddenException ex)
         {
             return Forbid(ex.Message);
         }
@@ -175,9 +141,6 @@ public class PartiesController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Удаляет вечеринку
-    /// </summary>
     [HttpDelete("{partyId}")]
     [AuthorizeOrganizer]
     public async Task<ActionResult> DeleteParty(string partyId)
@@ -192,7 +155,7 @@ public class PartiesController : ControllerBase
             await _partyService.DeletePartyAsync(partyGuid);
             return NoContent();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ForbiddenException ex)
         {
             return Forbid(ex.Message);
         }
@@ -207,9 +170,6 @@ public class PartiesController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Обновляет плейлист вечеринки и уведомляет всех зрителей через SignalR
-    /// </summary>
     [HttpPut("{partyId}/playlist")]
     [AuthorizeOrganizer]
     public async Task<ActionResult> UpdatePartyPlaylist(string partyId, [FromBody] PartyPlaylistDto playlist)
@@ -227,17 +187,9 @@ public class PartiesController : ControllerBase
         try
         {
             await _partyService.UpdatePartyPlaylistAsync(partyGuid, playlist);
-
-            var groupName = partyGuid.ToString();
-            _logger.LogInformation("[PartiesController] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}, itemsCount={ItemsCount}, totalTracks={TotalTracks}",
-                partyId, groupName, playlist.Items?.Count ?? 0, playlist.TotalTracks);
-            await _hubContext.Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
-            _logger.LogInformation("[PartiesController] OnPlaylistChanged sent successfully: partyId={PartyId}, group={Group}",
-                partyId, groupName);
-
             return NoContent();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (ForbiddenException ex)
         {
             return Forbid(ex.Message);
         }

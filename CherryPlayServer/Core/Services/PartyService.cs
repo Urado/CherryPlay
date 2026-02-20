@@ -18,6 +18,8 @@ public class PartyService : IPartyService
     private readonly IStreamingRepository _streamingRepository;
     private readonly IShortCodeGenerator _shortCodeGenerator;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IPartyPlaylistNotifier _playlistNotifier;
+    private readonly IPartyAccessService _partyAccessService;
     private readonly ILogger<PartyService> _logger;
 
     public PartyService(
@@ -25,12 +27,16 @@ public class PartyService : IPartyService
         IStreamingRepository streamingRepository,
         IShortCodeGenerator shortCodeGenerator,
         IHttpContextAccessor httpContextAccessor,
+        IPartyPlaylistNotifier playlistNotifier,
+        IPartyAccessService partyAccessService,
         ILogger<PartyService> logger)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
         _shortCodeGenerator = shortCodeGenerator ?? throw new ArgumentNullException(nameof(shortCodeGenerator));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _playlistNotifier = playlistNotifier ?? throw new ArgumentNullException(nameof(playlistNotifier));
+        _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -46,10 +52,8 @@ public class PartyService : IPartyService
             throw new ArgumentException("Party name cannot be null or empty", nameof(dto));
         }
 
-        // Нормализуем customizationSettings перед валидацией (обрабатываем JsonElement и другие типы)
         var normalizedSettings = CustomizationSettingsValidator.NormalizeCustomizationSettings(dto.CustomizationSettings);
 
-        // Валидация после нормализации
         if (normalizedSettings != null && !CustomizationSettingsValidator.IsValidCustomizationSettings(normalizedSettings))
         {
             throw new ArgumentException("CustomizationSettings must contain only string or number values", nameof(dto));
@@ -72,7 +76,7 @@ public class PartyService : IPartyService
         var futureCount = myParties.Count(p => p.EventDateTime.HasValue && p.EventDateTime.Value > DateTime.UtcNow);
         if (futureCount >= AuthConstants.MaxFuturePartiesPerOrganizer)
         {
-            throw new InvalidOperationException(
+            throw new PartyLimitReachedException(
                 $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
         }
 
@@ -106,7 +110,6 @@ public class PartyService : IPartyService
             party.ShortCode,
             organizerId);
 
-        // Проверяем, что вечеринка действительно сохранена
         var savedParty = await _partyRepository.GetByIdAsync(party.Id);
         if (savedParty == null)
         {
@@ -129,11 +132,10 @@ public class PartyService : IPartyService
             return null;
         }
 
-        // Если запрос от организатора, проверяем владение
         var organizerId = _httpContextAccessor.HttpContext?.GetOrganizerId();
         if (organizerId.HasValue)
         {
-            await EnsurePartyOwnershipAsync(partyId, organizerId.Value);
+            await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId.Value);
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
@@ -218,7 +220,7 @@ public class PartyService : IPartyService
             throw new UnauthorizedAccessException("HTTP context is required");
         }
         var organizerId = httpContext.RequireOrganizerId("update party");
-        await EnsurePartyOwnershipAsync(partyId, organizerId);
+        await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
@@ -265,7 +267,7 @@ public class PartyService : IPartyService
             throw new UnauthorizedAccessException("HTTP context is required");
         }
         var organizerId = httpContext.RequireOrganizerId("delete party");
-        await EnsurePartyOwnershipAsync(partyId, organizerId);
+        await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
 
         await _streamingRepository.DeleteSessionStateAsync(partyId);
         await _partyRepository.DeleteAsync(partyId);
@@ -292,10 +294,8 @@ public class PartyService : IPartyService
             playlist.TotalTracks,
             organizerId);
 
-        // Проверяем владение перед обновлением
-        await EnsurePartyOwnershipAsync(partyId, organizerId);
+        await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
 
-        // Валидация размера плейлиста
         if (playlist.TotalTracks > AuthConstants.MaxPlaylistTracks)
         {
             throw new ArgumentException($"Playlist cannot contain more than {AuthConstants.MaxPlaylistTracks} tracks");
@@ -311,27 +311,8 @@ public class PartyService : IPartyService
         party.Playlist = playlist.ToEntity();
         await _partyRepository.UpdateAsync(party);
 
+        await _playlistNotifier.NotifyPlaylistChangedAsync(partyId);
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
     }
 
-    /// <summary>
-    /// Проверяет, что вечеринка принадлежит указанному организатору
-    /// </summary>
-    private async Task EnsurePartyOwnershipAsync(Guid partyId, Guid organizerId)
-    {
-        var party = await _partyRepository.GetByIdAsync(partyId);
-        if (party == null)
-        {
-            throw new PartyNotFoundException(partyId);
-        }
-
-        if (party.OrganizerId != organizerId)
-        {
-            _logger.LogWarning(
-                "Access denied: party {PartyId} does not belong to organizer {OrganizerId}",
-                partyId,
-                organizerId);
-            throw new UnauthorizedAccessException("You do not have permission to access this party");
-        }
-    }
 }

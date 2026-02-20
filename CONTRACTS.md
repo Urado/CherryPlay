@@ -15,6 +15,15 @@
 
 В v1 авторизация write-операций: **JWT** для REST и SignalR; в Web сессия через **httpOnly cookie**. Зрители — анонимные, без логина.
 
+### 1.1 Коды ответов по авторизации (REST)
+
+| Код | Значение | Когда возвращается |
+|-----|----------|---------------------|
+| **401 Unauthorized** | Не авторизован | Нет или невалидный JWT, истёк токен, сессия не найдена, не передан организатор в контексте. Клиенту нужно войти заново. |
+| **403 Forbidden** | Доступ запрещён | Пользователь авторизован, но не имеет прав на действие (например, попытка изменить чужую вечеринку). Повторный логин не поможет. |
+
+Эндпоинты организатора при отсутствии/невалидности токена возвращают **401** (в т.ч. при срабатывании `[AuthorizeOrganizer]` до входа в действие); при валидном токене, но отсутствии прав на ресурс — **403**.
+
 ---
 
 ## 2. Контракты Public (viewer) — по плану §6.1
@@ -36,10 +45,11 @@
 |-------|------|----------|--------|
 | GET | `/api/parties/public/{shortCode}` | Метаданные вечеринки по shortCode (в т.ч. флаг «в каталоге» по плану) | `PublicPartyDto` или 404 |
 | GET | `/api/parties/public/{shortCode}/playlist` | Плейлист вечеринки | `PartyPlaylistDto` или 404 |
+| GET | `/api/parties/public/{shortCode}/state` | Полное состояние вечеринки (плейлист + сессия + playback state) | `PartyStateDto` или 404 |
 | GET | `/api/parties/public/list` | Список вечеринок **каталога** (только включённые организатором) | `PublicPartyListItemDto[]` |
 | GET | `/api/parties/public/first` | *(опционально)* Плейлист первой доступной вечеринки (демо) | `PartyPlaylistDto` или 404 |
 
-**Использует:** CherryPlayWeb (страница просмотра `party/<shortCode>`, каталог).
+**Использует:** CherryPlayWeb (страница просмотра `party/<shortCode>`, каталог, получение состояния для отображения).
 
 ### 2.3 SignalR (viewer)
 
@@ -151,6 +161,7 @@
 | `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
 | `defaultThemeId` | `string \| null` | Тема по умолчанию. |
 | `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
+| `timeZone` | `string \| null` | Часовой пояс организатора. |
 | `createdAt` | `string` | ISO 8601. |
 | `updatedAt` | `string \| null` | ISO 8601. |
 
@@ -161,6 +172,7 @@
 | `name` | `string` | нет | Название организации. |
 | `logoUrl` | `string` | нет | URL логотипа. |
 | `links` | `Record<string, string>` | нет | Ссылки (соцсети, сайт). |
+| `timeZone` | `string` | нет | Часовой пояс. |
 
 ### 3.4 REST API (вечеринки)
 
@@ -169,12 +181,13 @@
 | Метод | Путь | Описание | Тело | Ответ |
 |-------|------|----------|------|--------|
 | POST | `/api/parties` | Создать вечеринку | `CreatePartyDto` | `PartyDto` |
+| GET | `/api/parties` | Список вечеринок текущего организатора | — | `PartyDto[]` |
 | GET | `/api/parties/{partyId}` | Получить вечеринку (свою) | — | `PartyDto` или 404 |
 | PUT | `/api/parties/{partyId}` | Редактировать метаданные вечеринки (в т.ч. описание, место, город, дата, расписание, флаг «в каталоге») | по модели вечеринки | 204 или 404 |
 | DELETE | `/api/parties/{partyId}` | Удалить вечеринку | — | 204 или 404 |
 | PUT | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию) | `PartyPlaylistDto` | 204 или 404 |
 
-**Использует:** CherryPlayList (создание, Publish, привязка partyId к проекту); кабинет организатора в Web (CRUD, toggle каталога).
+**Использует:** CherryPlayList (создание, список, Publish, привязка partyId к проекту); кабинет организатора в Web (CRUD, toggle каталога).
 
 ### 3.5 SignalR (organizer)
 
@@ -188,6 +201,7 @@
 | `UpdatePlaybackPosition` | `partyId: string`, `trackId: string`, `position: number` | Обновление позиции воспроизведения. |
 | `UpdateFullState` | `partyId: string`, `state: PlaybackStateDto` | Обновление полного состояния воспроизведения. |
 | `NotifyStateChanged` | `partyId: string` | Уведомление об изменении состояния. |
+| `NotifyPlaylistChanged` | `partyId: string` | Уведомление зрителей об изменении плейлиста (опционально; сервер рассылает `OnPlaylistChanged` и после PUT `.../playlist`). Только организатор, владелец вечеринки. |
 
 Обновление плейлиста в session mode может идти через REST PUT `.../playlist` или по контракту «live» (по плану — изменения плейлиста и состояния в session идут live). Сервер при PUT плейлиста рассылает зрителям `OnPlaylistChanged`.
 

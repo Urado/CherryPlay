@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Linq;
 using CherryPlayServer.Hubs;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Infrastructure;
 using CherryPlayServer.Infrastructure.Repositories;
 using CherryPlayServer.Core.Services;
 using CherryPlayServer.Infrastructure.Data;
@@ -28,8 +29,10 @@ builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-if (corsOrigins.Length == 0)
+if (corsOrigins.Length == 0 && builder.Environment.IsDevelopment())
     corsOrigins = new[] { "http://localhost:3000", "http://localhost:5173", "http://localhost:5174" };
+else if (corsOrigins.Length == 0 && !builder.Environment.IsDevelopment())
+    Console.WriteLine("CORS: Cors:AllowedOrigins is empty in non-Development. Configure Cors:AllowedOrigins for production.");
 
 builder.Services.AddCors(options =>
 {
@@ -56,6 +59,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
+builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
+builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IJwtService, JwtService>();
@@ -80,6 +86,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, OrganizerAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, OrganizerAuthorizationResultHandler>();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -201,7 +208,7 @@ app.UseMiddleware<JwtAuthenticationMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<PartyHub>("/partyHub");
+app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
 
 app.Run();
 

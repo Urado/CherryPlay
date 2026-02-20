@@ -4,7 +4,6 @@ using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Extensions;
-using CherryPlayServer.Core.Entities;
 
 namespace CherryPlayServer.Hubs;
 
@@ -13,20 +12,20 @@ public class PartyHub : Hub
     private readonly IStreamingService _streamingService;
     private readonly IPartyIdValidator _partyIdValidator;
     private readonly IJwtService _jwtService;
-    private readonly IPartyRepository _partyRepository;
+    private readonly IPartyAccessService _partyAccessService;
     private readonly ILogger<PartyHub> _logger;
 
     public PartyHub(
         IStreamingService streamingService,
         IPartyIdValidator partyIdValidator,
         IJwtService jwtService,
-        IPartyRepository partyRepository,
+        IPartyAccessService partyAccessService,
         ILogger<PartyHub> logger)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
         _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
-        _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
+        _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -37,10 +36,6 @@ public class PartyHub : Hub
         await Clients.Caller.SendAsync("Error", message);
     }
 
-    /// <summary>
-    /// Унифицированный метод для проверки авторизации организатора.
-    /// Извлекает токен из различных источников и валидирует его.
-    /// </summary>
     private async Task<Guid?> GetOrganizerIdFromContextAsync()
     {
         var httpContext = Context.GetHttpContext();
@@ -49,10 +44,6 @@ public class PartyHub : Hub
             return null;
         }
 
-        // Получаем токен из заголовка Authorization, query string (для WebSocket) или cookie
-        // Приоритет: Authorization header > query string > cookie
-        // WebSocket в браузере не может устанавливать кастомные заголовки,
-        // поэтому SignalR использует query string для передачи токена
         var token = httpContext.Request.Query["access_token"].FirstOrDefault() ??
                    httpContext.ExtractTokenFromRequest();
 
@@ -67,16 +58,12 @@ public class PartyHub : Hub
             return null;
         }
 
-        // Sync context items to SignalR context
         Context.Items["OrganizerId"] = result.OrganizerId.Value;
         Context.Items["OrganizerName"] = result.Name;
 
         return result.OrganizerId.Value;
     }
 
-    /// <summary>
-    /// Проверяет авторизацию организатора и возвращает его ID или null.
-    /// </summary>
     private async Task<Guid?> RequireOrganizerAuthAsync()
     {
         var organizerId = await GetOrganizerIdFromContextAsync();
@@ -87,28 +74,23 @@ public class PartyHub : Hub
         return organizerId;
     }
 
-    /// <summary>
-    /// Проверяет, что вечеринка принадлежит указанному организатору.
-    /// </summary>
     private async Task<bool> EnsurePartyOwnershipAsync(Guid partyId, Guid organizerId)
     {
-        var party = await _partyRepository.GetByIdAsync(partyId);
-        if (party == null)
+        try
+        {
+            await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
+            return true;
+        }
+        catch (PartyNotFoundException)
         {
             await SendErrorAsync("Party not found");
             return false;
         }
-
-        if (party.OrganizerId != organizerId)
+        catch (ForbiddenException)
         {
-            _logger.LogWarning(
-                "[SignalR Server] Access denied: party {PartyId} does not belong to organizer {OrganizerId}",
-                partyId, organizerId);
             await SendErrorAsync("You do not have permission to access this party");
             return false;
         }
-
-        return true;
     }
 
     #endregion
@@ -253,7 +235,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
@@ -314,7 +295,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
@@ -358,7 +338,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
@@ -378,13 +357,13 @@ public class PartyHub : Hub
         }
     }
 
-    /// <summary>
-    /// Уведомляет всех зрителей об изменении плейлиста (вызывается из контроллера через IHubContext)
-    /// </summary>
     public async Task NotifyPlaylistChanged(string partyId)
     {
-        _logger.LogInformation("[SignalR Server] <- Received NotifyPlaylistChanged: partyId={PartyId}, connectionId={ConnectionId}",
-            partyId, Context.ConnectionId);
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
+        {
+            return;
+        }
 
         if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
         {
@@ -392,11 +371,14 @@ public class PartyHub : Hub
             return;
         }
 
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
+            return;
+        }
+
         try
         {
             var groupName = partyGuid.ToString();
-            _logger.LogInformation("[SignalR Server] -> Sending OnPlaylistChanged: partyId={PartyId}, group={Group}",
-                partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnPlaylistChanged", partyId);
         }
         catch (Exception ex)
@@ -411,7 +393,6 @@ public class PartyHub : Hub
         var organizerId = await GetOrganizerIdFromContextAsync();
         if (!organizerId.HasValue && !string.IsNullOrWhiteSpace(token))
         {
-            // Попытка валидации через переданный токен
             var result = await _jwtService.ValidateTokenAsync(token);
             if (result.IsValid && result.OrganizerId.HasValue)
             {
@@ -438,7 +419,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
@@ -475,7 +455,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
@@ -519,7 +498,6 @@ public class PartyHub : Hub
             return;
         }
 
-        // Проверяем владение вечеринкой
         if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
         {
             return;
