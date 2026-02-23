@@ -1,4 +1,4 @@
-import type { ThemeId, CustomizationSettings } from '../themes';
+import type { PartyThemeId, CustomizationSettings } from '../themes';
 
 export * from './auth';
 
@@ -32,7 +32,7 @@ export interface PartyPlaylistData {
   totalTracks: number;
 }
 
-export interface PartyDisplayData<T extends ThemeId = ThemeId> {
+export interface PartyDisplayData<T extends PartyThemeId = PartyThemeId> {
   partyId: string;
   partyName: string;
   themeId: T;

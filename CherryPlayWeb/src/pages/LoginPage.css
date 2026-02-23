@@ -4,26 +4,63 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-primary);
   padding: 20px;
 }
 
 .login-page-form {
   max-width: 500px;
   width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Уменьшаем белые обводки и подложки на странице авторизации */
+.login-page-form .auth-form-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-color);
+}
+
+.login-page-form .form-group input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.login-page-form .auth-form-tabs,
+.login-page-form .email-auth-form-tabs {
+  border-bottom-color: var(--border-color);
+}
+
+.login-page-form .auth-form-tab,
+.login-page-form .email-auth-form-tab {
+  color: var(--text-secondary);
+}
+
+.login-page-form .auth-form-tab:hover,
+.login-page-form .email-auth-form-tab:hover {
+  color: var(--text-primary);
+}
+
+.login-page-form .auth-form-tab--active,
+.login-page-form .email-auth-form-tab--active {
+  color: var(--text-primary);
+  border-bottom-color: rgba(0, 255, 136, 0.6);
 }
 
 .login-container h1 {
   margin: 0 0 10px 0;
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   text-align: center;
 }
 
 .login-subtitle {
   margin: 0 0 30px 0;
-  color: #666;
+  color: var(--text-secondary);
   text-align: center;
   font-size: 14px;
 }
@@ -40,18 +77,20 @@
   justify-content: center;
   gap: 10px;
   padding: 14px 20px;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
 .login-button:hover {
+  background: var(--bg-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .login-button:active {
@@ -59,31 +98,67 @@
 }
 
 .login-button-telegram {
-  background: #0088cc;
+  background: var(--bg-secondary);
 }
 
 .login-button-telegram:hover {
-  background: #0077b5;
+  background: var(--bg-hover);
 }
 
 .login-button-vk {
-  background: #4c75a3;
+  background: var(--bg-secondary);
 }
 
 .login-button-vk:hover {
-  background: #3d5f8a;
+  background: var(--bg-hover);
 }
 
 .login-button-mailru {
-  background: #005ff9;
+  background: var(--bg-secondary);
 }
 
 .login-button-mailru:hover {
-  background: #004fc7;
+  background: var(--bg-hover);
 }
 
 .login-button-icon {
   font-size: 20px;
+}
+
+/* Иконки OAuth в строке ввода — выравнивание и стиль */
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oauth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.oauth-button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--selected-border);
+}
+
+.oauth-button-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
 }
 
 .vkid-widget-container {
@@ -102,7 +177,7 @@
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .auth-mode-button {
@@ -110,7 +185,7 @@
   padding: 10px 16px;
   border: none;
   background: transparent;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -119,12 +194,12 @@
 }
 
 .auth-mode-button:hover {
-  color: #333;
+  color: var(--text-primary);
 }
 
 .auth-mode-button.active {
-  color: #667eea;
-  border-bottom-color: #667eea;
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
 }
 
 .email-login-form {
@@ -142,60 +217,64 @@
 .form-group label {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .form-group input {
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   font-size: 16px;
   transition: border-color 0.2s;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--text-primary);
 }
 
 .form-group input:disabled {
-  background-color: #f5f5f5;
+  background-color: var(--bg-secondary);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .login-button-email {
-  background: #667eea;
+  background: var(--bg-secondary);
   margin-top: 8px;
 }
 
 .login-button-email:hover {
-  background: #5568d3;
+  background: var(--bg-hover);
 }
 
 .login-button-email:disabled {
-  background: #999;
+  background: var(--bg-secondary);
   cursor: not-allowed;
   transform: none;
+  opacity: 0.5;
 }
 
 .error-message {
   padding: 12px;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  color: #c33;
+  background: var(--state-error-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--state-error-text);
   font-size: 14px;
 }
 
 .register-link {
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
   margin-top: 8px;
 }
 
 .register-link a {
-  color: #667eea;
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 500;
 }

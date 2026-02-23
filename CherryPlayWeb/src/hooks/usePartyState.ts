@@ -1,10 +1,10 @@
 import type {
   PartyPlaylistData,
   PlaybackState,
-  ThemeId,
+  PartyThemeId,
   CustomizationSettings,
 } from '@cherryplay/components';
-import { isValidTheme } from '@cherryplay/components';
+import { isValidPartyTheme } from '@cherryplay/components';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { partyApiService } from '../services/partyApiService';
@@ -21,16 +21,16 @@ export interface UsePartyStateReturn {
   error: string | null;
   partyName: string | null;
   partyId: string | null;
-  themeId: ThemeId;
-  customizationSettings: CustomizationSettings<ThemeId>;
+  themeId: PartyThemeId;
+  customizationSettings: CustomizationSettings<PartyThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
   loadPlaylist: () => Promise<void>;
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
   setError: (error: string | null) => void;
-  setThemeId: (themeId: ThemeId) => void;
-  setCustomizationSettings: (settings: CustomizationSettings<ThemeId>) => void;
+  setThemeId: (themeId: PartyThemeId) => void;
+  setCustomizationSettings: (settings: CustomizationSettings<PartyThemeId>) => void;
   setPartyName: (name: string | null) => void;
 }
 
@@ -54,10 +54,10 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const [playlist, setPlaylist] = useState<PartyPlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
+  const [themeId, setThemeId] = useState<PartyThemeId>('cyberpunk');
   const [customizationSettings, setCustomizationSettings] = useState<
-    CustomizationSettings<ThemeId>
-  >({} as CustomizationSettings<ThemeId>);
+    CustomizationSettings<PartyThemeId>
+  >({} as CustomizationSettings<PartyThemeId>);
   const [partyName, setPartyName] = useState<string | null>(null);
   const [partyId, setPartyId] = useState<string | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
@@ -104,11 +104,13 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
           if (party.id) {
             setPartyId(party.id);
           }
-          if (party.themeId && isValidTheme(party.themeId)) {
-            setThemeId(party.themeId);
+          if (party.partyThemeId && isValidPartyTheme(party.partyThemeId)) {
+            setThemeId(party.partyThemeId);
           }
           if (party.customizationSettings) {
-            setCustomizationSettings(party.customizationSettings as CustomizationSettings<ThemeId>);
+            setCustomizationSettings(
+              party.customizationSettings as CustomizationSettings<PartyThemeId>,
+            );
           }
         } catch (err) {
           console.warn('[usePartyState] Failed to load party info:', err);

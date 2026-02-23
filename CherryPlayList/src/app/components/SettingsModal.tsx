@@ -1,6 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef } from 'react';
 
+import { APP_VERSION } from '@shared/config';
 import {
   useSettingsStore,
   useUIStore,
@@ -283,6 +284,8 @@ export const SettingsModal: React.FC = () => {
               </label>
             </div>
           </div>
+
+          <div className="settings-version">Версия {APP_VERSION}</div>
         </div>
 
         <div className="modal-footer">

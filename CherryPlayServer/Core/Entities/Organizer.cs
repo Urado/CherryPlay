@@ -8,7 +8,10 @@ public class Organizer
     public string Name { get; set; } = string.Empty;
     public string? LogoUrl { get; set; }
     public Dictionary<string, string>? Links { get; set; }
-    public ThemeId? DefaultThemeId { get; set; }
+    /// <summary>
+    /// PartyTheme по умолчанию (см. GLOSSARY.md)
+    /// </summary>
+    public PartyThemeId? DefaultPartyThemeId { get; set; }
     public Dictionary<string, object>? DefaultCustomizationSettings { get; set; }
     public string? TimeZone { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

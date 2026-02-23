@@ -9,7 +9,10 @@ public record CreatePartyDto
     [StringLength(200, MinimumLength = 1, ErrorMessage = "Party name must be between 1 and 200 characters")]
     public string Name { get; init; } = string.Empty;
 
-    public ThemeId ThemeId { get; init; } = ThemeId.Cyberpunk;
+    /// <summary>
+    /// PartyTheme идентификатор (см. GLOSSARY.md)
+    /// </summary>
+    public PartyThemeId PartyThemeId { get; init; } = PartyThemeId.Cyberpunk;
 
     public Dictionary<string, object>? CustomizationSettings { get; init; }
 

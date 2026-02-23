@@ -14,7 +14,7 @@ import './CabinetPage.css';
 
 const emptyForm: CreatePartyDto = {
   name: '',
-  themeId: 'cyberpunk',
+  partyThemeId: 'cyberpunk',
   isListedInCatalog: false,
 };
 
@@ -29,6 +29,7 @@ export function CabinetPage() {
   const [createForm, setCreateForm] = useState<CreatePartyDto>(emptyForm);
   const [creating, setCreating] = useState(false);
   const [editingParty, setEditingParty] = useState<PartyDto | null>(null);
+  const [expandedPartyId, setExpandedPartyId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<UpdatePartyDto>({});
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingPartyId, setDeletingPartyId] = useState<string | null>(null);
@@ -97,7 +98,7 @@ export function CabinetPage() {
     setEditingParty(party);
     setEditForm({
       name: party.name,
-      themeId: party.themeId,
+      partyThemeId: party.partyThemeId,
       eventDateTime: party.eventDateTime,
       isListedInCatalog: party.isListedInCatalog,
       description: party.description ?? '',
@@ -105,7 +106,7 @@ export function CabinetPage() {
       city: party.city ?? '',
       timeZone: party.timeZone ?? getDefaultTimeZone(),
     });
-    setShowCreateForm(true);
+    setExpandedPartyId(party.id);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -116,13 +117,18 @@ export function CabinetPage() {
     try {
       await partyApiService.updatePartyMetadata(editingParty.id, editForm);
       setEditingParty(null);
-      setShowCreateForm(false);
+      setExpandedPartyId(null);
       await loadParties();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка сохранения');
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  const handleEditCancel = () => {
+    setEditingParty(null);
+    setExpandedPartyId(null);
   };
 
   const handleToggleCatalog = async (party: PartyDto) => {
@@ -209,7 +215,7 @@ export function CabinetPage() {
                 if (showCreateForm) setCreateForm(emptyForm);
               }}
             >
-              {showCreateForm && !editingParty ? 'Отмена' : 'Создать вечеринку'}
+              {showCreateForm ? 'Отмена' : 'Создать вечеринку'}
             </button>
           </div>
 
@@ -219,19 +225,18 @@ export function CabinetPage() {
             </div>
           )}
 
-          {(showCreateForm || editingParty) && (
+          {showCreateForm && (
             <CabinetPartyForm
-              editingParty={editingParty}
+              editingParty={null}
               editForm={editForm}
               createForm={createForm}
               setEditForm={setEditForm}
               setCreateForm={setCreateForm}
-              savingEdit={savingEdit}
+              savingEdit={false}
               creating={creating}
-              onSubmit={editingParty ? handleEditSubmit : handleCreateSubmit}
+              onSubmit={handleCreateSubmit}
               onCancel={() => {
                 setShowCreateForm(false);
-                setEditingParty(null);
                 setCreateForm(emptyForm);
               }}
             />
@@ -244,12 +249,19 @@ export function CabinetPage() {
               parties={parties}
               togglingPartyId={togglingPartyId}
               deletingPartyId={deletingPartyId}
+              expandedPartyId={expandedPartyId}
+              editingParty={editingParty}
+              editForm={editForm}
+              setEditForm={setEditForm}
+              savingEdit={savingEdit}
               onEdit={handleEditOpen}
+              onEditSubmit={handleEditSubmit}
+              onEditCancel={handleEditCancel}
               onToggleCatalog={handleToggleCatalog}
               onDeleteConfirm={handleDeleteConfirm}
             />
           )}
-          {!loadingParties && parties.length === 0 && !showCreateForm && !editingParty && (
+          {!loadingParties && parties.length === 0 && !showCreateForm && !expandedPartyId && (
             <p className="cabinet-empty">Нет вечеринок. Создайте первую.</p>
           )}
         </div>

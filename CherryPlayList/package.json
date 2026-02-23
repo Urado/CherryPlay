@@ -1,6 +1,6 @@
 {
   "name": "cherryplaylist",
-  "version": "1.0.0",
+  "version": "0.3.2",
   "description": "Desktop application for creating and managing music playlists",
   "main": "dist-electron/electron/main.mjs",
   "scripts": {

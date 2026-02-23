@@ -8,7 +8,7 @@ export interface OrganizerDto {
   name: string;
   logoUrl?: string | null;
   links?: Record<string, string> | null;
-  defaultThemeId?: string | null;
+  defaultPartyThemeId?: string | null;
   defaultCustomizationSettings?: Record<string, string | number> | null;
   timeZone?: string | null;
   createdAt: string;

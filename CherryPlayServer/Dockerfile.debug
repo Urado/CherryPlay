@@ -26,7 +26,8 @@ COPY . .
 # Открываем порты
 EXPOSE 8080
 EXPOSE 8081
-EXPOSE 5678  # Порт для VS Code debugger
+# Порт для VS Code debugger
+EXPOSE 5678
 
 # В docker-compose.debug.yml команда переопределяется
 # По умолчанию запускаем в watch режиме для hot reload

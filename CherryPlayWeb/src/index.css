@@ -1,3 +1,6 @@
+/* Палитра оболочки из CherryPlayComponents */
+@import '@cherryplay/components/styles/shell-palette.css';
+
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +13,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0a0a;
+  background-color: var(--bg-primary);
   min-height: 100vh;
   overflow-x: hidden;
 }

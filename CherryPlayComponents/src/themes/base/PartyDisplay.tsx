@@ -1,11 +1,19 @@
 import React from 'react';
 
-import { useThemeVars } from '../../core/hooks/useThemeVars';
+import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
+import { findTrack } from '../../core/utils/playlist';
 import { PartyDisplayData } from '../../types';
 
 import { CurrentTrackDisplay } from './CurrentTrackDisplay';
 import { PlaylistView } from './PlaylistView';
 import '../../components/PartyDisplay/PartyDisplay.css';
+
+function canShowCurrentTrack(data: PartyDisplayData): boolean {
+  const state = data.playbackState;
+  if (!state?.currentTrackId) return false;
+  const track = findTrack(data.playlist.items, state.currentTrackId);
+  return track != null && track.type === 'track';
+}
 
 export interface BasePartyDisplayProps {
   data: PartyDisplayData;
@@ -18,21 +26,15 @@ export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
   className = '',
   showPlayer = true,
 }) => {
-  const themeVars = useThemeVars(data.themeId, data.customizationSettings);
+  const themeVars = usePartyThemeVars(data.themeId, data.customizationSettings);
 
   return (
     <div className={`party-display ${className}`} data-theme={data.themeId} style={themeVars}>
       <div className="party-display-header">
         <h1 className="party-display-title">{data.partyName}</h1>
-        {data.isSessionActive && (
-          <div className="party-display-session-indicator" title="Сессия активна">
-            <span className="party-display-session-dot"></span>
-            <span className="party-display-session-text">В эфире</span>
-          </div>
-        )}
       </div>
       <div className="party-display-container">
-        {showPlayer && (data.isSessionActive || data.playbackState) && (
+        {showPlayer && canShowCurrentTrack(data) && (
           <div className="party-display-player">
             <CurrentTrackDisplay
               playbackState={data.playbackState || null}

@@ -8,7 +8,10 @@ public class Party
     public Guid OrganizerId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string ShortCode { get; set; } = string.Empty;
-    public ThemeId ThemeId { get; set; } = ThemeId.Cyberpunk;
+    /// <summary>
+    /// PartyTheme идентификатор (см. GLOSSARY.md)
+    /// </summary>
+    public PartyThemeId PartyThemeId { get; set; } = PartyThemeId.Cyberpunk;
     public Dictionary<string, object>? CustomizationSettings { get; set; }
     public PartyPlaylist Playlist { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

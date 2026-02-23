@@ -74,6 +74,14 @@
   margin-bottom: 0;
 }
 
+.settings-version {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--ui-border);
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
 .settings-label {
   display: block;
   font-size: var(--font-size-body);
@@ -393,6 +401,19 @@
   max-width: 600px;
   margin: 0 auto;
   color: var(--text-primary);
+}
+
+/* Форма входа по центру (не слева) */
+.account-view .auth-form-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.account-view .auth-form-container .auth-form-card {
+  width: 100%;
+  max-width: 420px;
 }
 
 .account-view h1,

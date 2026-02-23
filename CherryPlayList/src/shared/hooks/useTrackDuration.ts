@@ -9,7 +9,8 @@ interface TrackDurationOptions {
   tracks: Track[];
   isAudioFile: (path: string) => boolean;
   requestDuration: (path: string) => Promise<number>;
-  resolveTrackByPath: (path: string) => Track | undefined;
+  /** Optional: skip updating if track was removed or already has duration (e.g. resolveTrackById) */
+  resolveTrackById?: (id: string) => Track | undefined;
   onDurationResolved: (trackId: string, duration: number) => void;
   batchSize?: number;
 }
@@ -18,44 +19,29 @@ export function useTrackDuration({
   tracks,
   isAudioFile,
   requestDuration,
-  resolveTrackByPath,
+  resolveTrackById,
   onDurationResolved,
   batchSize = DEFAULT_BATCH_SIZE,
 }: TrackDurationOptions) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadDurationsForTracks = useCallback(
-    async (paths: string[], externalSignal?: AbortSignal) => {
-      for (let i = 0; i < paths.length; i += batchSize) {
-        const batch = paths.slice(i, i + batchSize);
-        const tasks = batch.map(async (path) => {
-          // Check if track exists before requesting duration
-          const track = resolveTrackByPath(path);
-          if (!track || track.duration) {
-            return;
-          }
-
-          // Store track ID to verify it hasn't changed after async operation
-          const trackId = track.id;
-
+    async (targetTracks: Array<{ id: string; path: string }>, externalSignal?: AbortSignal) => {
+      for (let i = 0; i < targetTracks.length; i += batchSize) {
+        const batch = targetTracks.slice(i, i + batchSize);
+        const tasks = batch.map(async (track) => {
           try {
-            const duration = await requestDuration(path);
+            const duration = await requestDuration(track.path);
+            if (externalSignal?.aborted) return;
 
-            // Verify track still exists and hasn't been deleted or modified
-            // This prevents race condition where track is deleted before duration request completes
-            const latestTrack = resolveTrackByPath(path);
-            if (
-              !latestTrack ||
-              latestTrack.id !== trackId ||
-              latestTrack.duration ||
-              externalSignal?.aborted
-            ) {
-              return;
+            if (resolveTrackById) {
+              const current = resolveTrackById(track.id);
+              if (!current || current.duration != null) return;
             }
-            onDurationResolved(latestTrack.id, duration);
+            onDurationResolved(track.id, duration);
           } catch (error) {
             if (!externalSignal?.aborted) {
-              logger.error(`Failed to load duration for ${path}`, error);
+              logger.error(`Failed to load duration for ${track.path}`, error);
             }
           }
         });
@@ -65,7 +51,7 @@ export function useTrackDuration({
         }
       }
     },
-    [batchSize, onDurationResolved, requestDuration, resolveTrackByPath],
+    [batchSize, onDurationResolved, requestDuration, resolveTrackById],
   );
 
   useEffect(() => {
@@ -75,8 +61,8 @@ export function useTrackDuration({
 
     const targets = tracks.filter((track) => !track.duration && isAudioFile(track.path));
     if (targets.length > 0) {
-      const paths = targets.map((track) => track.path);
-      loadDurationsForTracks(paths, controller.signal);
+      const targetList = targets.map((track) => ({ id: track.id, path: track.path }));
+      loadDurationsForTracks(targetList, controller.signal);
     }
 
     return () => {

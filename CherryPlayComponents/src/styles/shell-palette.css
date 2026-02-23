@@ -1,0 +1,40 @@
+/**
+ * Shell Palette (Палитра оболочки)
+ * Единая нейтральная тёмная палитра для оболочки приложения
+ * Используется в CherryPlayWeb и CherryPlayList для всех элементов UI,
+ * кроме контента вечеринки с PartyTheme
+ */
+
+:root {
+  /* Background Colors */
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --bg-tertiary: #2a2a2a;
+  --bg-hover: #323232;
+
+  /* Text Colors */
+  --text-primary: #fff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-disabled: #666;
+
+  /* Border Colors */
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  /* State Colors (нейтральные) */
+  --state-error-bg: rgba(255, 255, 255, 0.08);
+  --state-error-text: rgba(255, 255, 255, 0.9);
+  --state-success: #4caf50;
+  --state-warning: #ff9800;
+  --state-info: #2196f3;
+  --selected-bg: #3a4a5a;
+  --selected-border: rgba(255, 255, 255, 0.2);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Shadow */
+  --shadow: rgba(0, 0, 0, 0.3);
+}

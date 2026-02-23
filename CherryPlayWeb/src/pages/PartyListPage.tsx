@@ -7,13 +7,32 @@ import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { getPartyThemeName } from '../constants/partyThemes';
 import { ROUTES } from '../constants/routes';
-import { getThemeName } from '../constants/themes';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
 import { devLog } from '../utils/logger';
+import { getPopularTimeZones } from '../utils/timezoneUtils';
 import './PartyListPage.css';
+
+const RUSSIAN_CITIES = [
+  'Москва',
+  'Санкт-Петербург',
+  'Новосибирск',
+  'Екатеринбург',
+  'Казань',
+  'Нижний Новгород',
+  'Челябинск',
+  'Самара',
+  'Ростов-на-Дону',
+  'Уфа',
+  'Красноярск',
+  'Воронеж',
+  'Пермь',
+  'Волгоград',
+  'Краснодар',
+];
 
 interface PartyListPageProps {
   onPartySelect: (shortCode: string) => void;
@@ -23,6 +42,8 @@ interface PartyFilters {
   dateFrom: string;
   dateTo: string;
   daysOfWeek: number[];
+  timeZone: string;
+  city: string;
 }
 
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
@@ -35,6 +56,8 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     dateFrom: '',
     dateTo: '',
     daysOfWeek: [],
+    timeZone: '',
+    city: '',
   });
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
 
@@ -104,6 +127,19 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
 
   // Фильтрация вечеринок
   const filteredParties = parties.filter((party) => {
+    // Фильтр по таймзоне
+    if (filters.timeZone && party.timeZone !== filters.timeZone) {
+      return false;
+    }
+
+    // Фильтр по городу
+    if (
+      filters.city &&
+      (party.city ?? '').trim().toLowerCase() !== filters.city.trim().toLowerCase()
+    ) {
+      return false;
+    }
+
     // Фильтр по датам
     if (party.eventDateTime) {
       const eventDate = new Date(party.eventDateTime);
@@ -155,10 +191,17 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       dateFrom: '',
       dateTo: '',
       daysOfWeek: [],
+      timeZone: '',
+      city: '',
     });
   };
 
-  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.daysOfWeek.length > 0;
+  const hasActiveFilters =
+    filters.dateFrom ||
+    filters.dateTo ||
+    filters.daysOfWeek.length > 0 ||
+    !!filters.timeZone ||
+    !!filters.city;
 
   const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
@@ -262,6 +305,38 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   ))}
                 </div>
               </div>
+
+              <div className="party-list-filters-group">
+                <label className="party-list-filters-label">Таймзона</label>
+                <select
+                  className="party-list-filters-input"
+                  value={filters.timeZone}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, timeZone: e.target.value }))}
+                >
+                  <option value="">Любая</option>
+                  {getPopularTimeZones().map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="party-list-filters-group">
+                <label className="party-list-filters-label">Город</label>
+                <select
+                  className="party-list-filters-input"
+                  value={filters.city}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
+                >
+                  <option value="">Любой</option>
+                  {RUSSIAN_CITIES.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -301,7 +376,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                     <div className="party-list-card-info-item">
                       <span className="party-list-card-info-label">Тема:</span>
                       <span className="party-list-card-info-value">
-                        {getThemeName(party.themeId)}
+                        {getPartyThemeName(party.partyThemeId)}
                       </span>
                     </div>
                     <div className="party-list-card-info-item">

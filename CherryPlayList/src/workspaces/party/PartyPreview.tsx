@@ -3,7 +3,7 @@ import {
   PartyDisplayData,
   PartyPlaylistData,
   PlaybackState,
-  type ThemeId,
+  type PartyThemeId,
   type CustomizationSettings,
 } from '@cherryplay/components';
 import React, { useMemo } from 'react';
@@ -12,8 +12,8 @@ import './PartyPreview.css';
 
 interface PartyPreviewProps {
   playlist: PartyPlaylistData;
-  themeId: ThemeId;
-  customizationSettings?: CustomizationSettings<ThemeId>;
+  themeId: PartyThemeId;
+  customizationSettings?: CustomizationSettings<PartyThemeId>;
   playbackState?: PlaybackState | null;
   partyName?: string;
   partyId?: string;
@@ -27,12 +27,14 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   partyName = 'Превью вечеринки',
   partyId = 'preview',
 }) => {
-  const displayData: PartyDisplayData<ThemeId> = useMemo(
+  const displayData: PartyDisplayData<PartyThemeId> = useMemo(
     () => ({
       partyId,
       partyName,
       themeId,
-      customizationSettings: customizationSettings as CustomizationSettings<ThemeId> | undefined,
+      customizationSettings: customizationSettings as
+        | CustomizationSettings<PartyThemeId>
+        | undefined,
       playlist,
       playbackState: playbackState || null,
       isSessionActive: playbackState !== null,

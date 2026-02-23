@@ -7,11 +7,12 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import React, { useState, useMemo, useEffect, KeyboardEvent, useCallback } from 'react';
 
 import { fileService, ipcService } from '@shared/services';
-import { useDemoPlayerStore, useUIStore } from '@shared/stores';
+import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
 import { formatTrackDuration } from '@shared/utils/durationUtils';
 
 export const FileBrowser: React.FC = () => {
+  const setFileBrowserPath = useSettingsStore((state) => state.setFileBrowserPath);
   const [currentPath, setCurrentPath] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
@@ -34,18 +35,22 @@ export const FileBrowser: React.FC = () => {
   } = useDemoPlayerStore();
   const activeTrackPath = activeTrack?.path;
 
-  // Initialize with system music folder
+  // Initialize: use saved path, or default to user Music folder (run once on mount)
   useEffect(() => {
     const initializePath = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Try to get music folder, fallback to home if not available
+        const saved = useSettingsStore.getState().fileBrowserPath;
         let initialPath: string;
-        try {
-          initialPath = await ipcService.getSystemPath('music');
-        } catch {
-          initialPath = await ipcService.getSystemPath('home');
+        if (saved && saved.trim() !== '') {
+          initialPath = saved.trim();
+        } else {
+          try {
+            initialPath = await ipcService.getSystemPath('music');
+          } catch {
+            initialPath = await ipcService.getSystemPath('home');
+          }
         }
         setCurrentPath(initialPath);
         await loadDirectory(initialPath);
@@ -59,6 +64,28 @@ export const FileBrowser: React.FC = () => {
 
     initializePath();
   }, []);
+
+  // Persist current path when it changes (user navigated)
+  useEffect(() => {
+    if (currentPath && currentPath.trim() !== '') {
+      setFileBrowserPath(currentPath);
+    }
+  }, [currentPath, setFileBrowserPath]);
+
+  const handleChooseFolder = useCallback(async () => {
+    try {
+      const path = await ipcService.showFolderDialog({
+        title: 'Выберите папку',
+        defaultPath: currentPath || undefined,
+      });
+      if (path && path.trim() !== '') {
+        setCurrentPath(path.trim());
+        await loadDirectory(path.trim());
+      }
+    } catch (err) {
+      logger.error('Failed to choose folder', err);
+    }
+  }, [currentPath]);
 
   // Load directory contents
   const loadDirectory = async (path: string) => {
@@ -390,6 +417,15 @@ export const FileBrowser: React.FC = () => {
               </React.Fragment>
             ))}
           </div>
+          <button
+            type="button"
+            className="file-browser-choose-folder"
+            onClick={handleChooseFolder}
+            disabled={loading}
+            title="Выбрать папку"
+          >
+            <FolderIcon /> Папка
+          </button>
         </div>
         <input
           type="text"

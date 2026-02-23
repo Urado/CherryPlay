@@ -3,11 +3,13 @@ import { createWithEqualityFn } from 'zustand/traditional';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 
+import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
 import { ipcService } from '../services/ipcService';
 import { setAudioSinkId, getDefaultDeviceId } from '../utils/audioDevices';
 import { logger } from '../utils/logger';
 
 import { usePlayerAudioStore } from './playerAudioStore';
+import { getProjectStore } from './projectStoreFactory';
 import { useSettingsStore } from './settingsStore';
 import { useUIStore } from './uiStore';
 
@@ -220,22 +222,19 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
   const syncWithPlayer = (deviceId: string | null) => {
     const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
     const playerState = usePlayerAudioStore.getState();
+    const playerProjectStore = getProjectStore(DEFAULT_PLAYER_WORKSPACE_ID);
+    const mode = playerProjectStore?.getState().sessionState?.mode ?? 'preparation';
 
-    // Проверяем, совпадают ли устройства
-    const devicesMatch =
-      deviceId !== null && playerDeviceId !== null && deviceId === playerDeviceId;
+    // Совпадение: оба null (устройство по умолчанию) или один и тот же id
+    const devicesMatch = deviceId === playerDeviceId;
+    const shouldBlock = devicesMatch && mode === 'session';
 
-    if (devicesMatch) {
-      // Если устройства совпадают и плеер играет, останавливаем и блокируем демо-плеер
+    if (shouldBlock) {
       if (playerState.status === 'playing') {
         get().pause();
-        set({ isDisabled: true });
-      } else {
-        // Если плеер не играет, просто блокируем
-        set({ isDisabled: true });
       }
+      set({ isDisabled: true });
     } else {
-      // Если устройства не совпадают, снимаем блокировку
       set({ isDisabled: false });
     }
   };

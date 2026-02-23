@@ -1,13 +1,17 @@
 @import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
 
-[data-theme="basic"] .party-info-display {
-  background: #1a1a1a;
+/* Подложка: явно задаём фон корня и контейнера для базовой темы */
+[data-theme="basic"] .party-info-display,
+.party-info-display[data-theme="basic"] {
+  background: var(--bg-primary, #1a1a1a);
   color: var(--text-primary);
 }
 
-[data-theme="basic"] .party-info-display-container {
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+[data-theme="basic"] .party-info-display-container,
+.party-info-display[data-theme="basic"] .party-info-display-container {
+  background: var(--bg-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="basic"] .party-info-display-title {

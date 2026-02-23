@@ -1,6 +1,6 @@
 import {
   PlaybackState,
-  type ThemeId,
+  type PartyThemeId,
   type CustomizationSettings,
   getDefaultCustomizationSettings,
 } from '@cherryplay/components';
@@ -67,7 +67,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }));
 
   const [partyName, setPartyName] = useState('');
-  const [themeId, setThemeId] = useState<ThemeId>('cyberpunk');
+  const [themeId, setThemeId] = useState<PartyThemeId>('cyberpunk');
   const [customizationSettings, setCustomizationSettings] = useState<
     Record<string, string | number>
   >(getDefaultCustomizationSettings('cyberpunk'));
@@ -148,7 +148,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     };
   }, [isAuthenticated, authStore, addNotification]);
 
-  const handleThemeChange = (newThemeId: ThemeId) => {
+  const handleThemeChange = (newThemeId: PartyThemeId) => {
     setThemeId(newThemeId);
     setCustomizationSettings(getDefaultCustomizationSettings(newThemeId));
   };
@@ -260,7 +260,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         try {
           const party = await partyService.getParty(meta.linkedParty!.id);
           if (party.name) setPartyName(party.name);
-          if (party.themeId) setThemeId(party.themeId as ThemeId);
+          if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
           if (party.eventDateTime) {
             try {
               const date = new Date(party.eventDateTime);
@@ -340,7 +340,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       const createData: CreatePartyDto = {
         name: partyName,
-        themeId,
+        partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
         eventDateTime: eventDateTime || undefined,
@@ -349,6 +349,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         city: city.trim() || undefined,
         schedule: schedule.trim() || undefined,
         timeZone: timeZone.trim() || undefined,
+        isListedInCatalog: true,
       };
 
       const party = await partyService.createParty(createData);
@@ -407,7 +408,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         // Обновляем метаданные вечеринки
         await partyService.updateParty(linkedParty.id, {
           name: partyName,
-          themeId,
+          partyThemeId: themeId,
           customizationSettings: normalizeCustomizationSettings(customizationSettings),
           eventDateTime: eventDateTime || undefined,
           description: description.trim() || undefined,
@@ -442,7 +443,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       const playlistForApi = convertPlaylistForApi(items);
       const createData: CreatePartyDto = {
         name: nameToUse,
-        themeId,
+        partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
         eventDateTime: eventDateTime || undefined,
@@ -451,6 +452,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         city: city.trim() || undefined,
         schedule: schedule.trim() || undefined,
         timeZone: timeZone.trim() || undefined,
+        isListedInCatalog: true,
       };
 
       const party = await partyService.createParty(createData);
@@ -513,8 +515,26 @@ export const PartyView: React.FC<PartyViewProps> = ({
     );
   }
 
+  const linkedParty = meta.linkedParty;
+
   return (
     <div className="party-view">
+      {linkedParty && (
+        <div className="party-view-linked-banner">
+          <span className="party-view-linked-banner-icon">🔗</span>
+          <span className="party-view-linked-banner-text">
+            Привязано к вечеринке: <strong>/{linkedParty.shortCode}</strong>
+          </span>
+          <a
+            href={linkedParty.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="party-view-linked-banner-link"
+          >
+            Открыть в браузере
+          </a>
+        </div>
+      )}
       <div className="party-view-header">
         <h2>Создание вечеринки</h2>
       </div>
@@ -560,7 +580,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <PartyPreview
             playlist={playlistData}
             themeId={themeId}
-            customizationSettings={customizationSettings as CustomizationSettings<ThemeId>}
+            customizationSettings={customizationSettings as CustomizationSettings<PartyThemeId>}
             playbackState={playbackState}
           />
         </div>

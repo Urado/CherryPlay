@@ -270,36 +270,38 @@ export const AppHeader: React.FC = () => {
             </div>
 
             <div className="action-group">
-              <button
-                className="header-button"
-                onClick={handleAccount}
-                title={
-                  isAuthenticated
-                    ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                    : 'Войти в аккаунт'
-                }
-                style={{
-                  position: 'relative',
-                  color: isAuthenticated ? '#9e9e9e' : undefined,
-                }}
-              >
-                <AccountCircleIcon style={{ fontSize: '32px' }} />
-                {isAuthenticated && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '2px',
-                      right: '2px',
-                      width: '8px',
-                      height: '8px',
-                      backgroundColor: '#4caf50',
-                      borderRadius: '50%',
-                      border: '1px solid white',
-                    }}
-                    title="Авторизован"
-                  />
-                )}
-              </button>
+              {enableStreaming && (
+                <button
+                  className="header-button"
+                  onClick={handleAccount}
+                  title={
+                    isAuthenticated
+                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
+                      : 'Войти в аккаунт'
+                  }
+                  style={{
+                    position: 'relative',
+                    color: isAuthenticated ? '#9e9e9e' : undefined,
+                  }}
+                >
+                  <AccountCircleIcon style={{ fontSize: '32px' }} />
+                  {isAuthenticated && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        width: '8px',
+                        height: '8px',
+                        backgroundColor: '#4caf50',
+                        borderRadius: '50%',
+                        border: '1px solid white',
+                      }}
+                      title="Авторизован"
+                    />
+                  )}
+                </button>
+              )}
               <button className="header-button" onClick={handleSettings} title="Настройки">
                 <SettingsIcon style={{ fontSize: '32px' }} />
               </button>

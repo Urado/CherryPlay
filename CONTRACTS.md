@@ -148,6 +148,7 @@
 
 | Метод | Путь | Описание | Тело | Ответ |
 |-------|------|----------|------|--------|
+| GET | `/api/organizer/session/check` | Лёгкая проверка валидности сессии (без тела ответа). В CherryPlayList вызывается **до** `/api/organizer/me`, чтобы при недоступности сервера не спамить консоль 404 от тяжёлого эндпоинта. | — | 200 (OK) или 401 |
 | GET | `/api/organizer/me` | Получить профиль текущего организатора. | — | `OrganizerDto` или 401 |
 | PATCH | `/api/organizer/profile` | Обновить профиль организатора (имя, логотип, ссылки). | `UpdateOrganizerDto` | `OrganizerDto` или 401/400 |
 
@@ -159,7 +160,7 @@
 | `name` | `string` | Название организации / отображаемое имя. |
 | `logoUrl` | `string \| null` | URL логотипа (опционально). |
 | `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
-| `defaultThemeId` | `string \| null` | Тема по умолчанию. |
+| `defaultPartyThemeId` | `string \| null` | Тема по умолчанию. |
 | `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
 | `timeZone` | `string \| null` | Часовой пояс организатора. |
 | `createdAt` | `string` | ISO 8601. |
@@ -285,7 +286,7 @@
 |------|-----|----------|
 | `id` | `string` | GUID вечеринки. |
 | `name` | `string` | Название. |
-| `themeId` | `ThemeId` | Тема. |
+| `partyThemeId` | `PartyThemeId` | PartyTheme идентификатор (см. GLOSSARY.md). |
 | `customizationSettings` | `Record<string, string \| number> \| undefined` | Оформление. |
 | `hasActiveSession` | `boolean` | Идёт ли сессия. |
 | `sessionStartedAt` | `string \| undefined` | ISO 8601 начала сессии. |
@@ -299,7 +300,7 @@
 | `id` | `string` | GUID. |
 | `name` | `string` | Название. |
 | `shortCode` | `string` | Короткий код. |
-| `themeId` | `ThemeId` | Тема. |
+| `partyThemeId` | `PartyThemeId` | PartyTheme идентификатор (см. GLOSSARY.md). |
 | `hasActiveSession` | `boolean` | Активна ли сессия. |
 | `createdAt` | `string` | ISO 8601. |
 | `totalTracks` | `number` | Количество треков. |
@@ -313,7 +314,7 @@
 | `id` | `string` | GUID. |
 | `name` | `string` | Название. |
 | `shortCode` | `string` | Неизменяемый короткий код. |
-| `themeId` | `ThemeId` | Тема. |
+| `partyThemeId` | `PartyThemeId` | PartyTheme идентификатор (см. GLOSSARY.md). |
 | `createdAt` | `string` | ISO 8601. |
 | `hasActiveSession` | `boolean` | Активна ли сессия. |
 | `eventDateTime` | `string \| undefined` | ISO 8601 мероприятия. |
@@ -324,7 +325,7 @@
 | Поле | Тип | Обязательное | Описание |
 |------|-----|--------------|----------|
 | `name` | `string` | да | Название (1–200 символов). |
-| `themeId` | `ThemeId` | нет | По умолчанию `cyberpunk`. |
+| `partyThemeId` | `PartyThemeId` | нет | По умолчанию `cyberpunk`. |
 | `customizationSettings` | `Record<string, string \| number>` | нет | Настройки темы. |
 | `playlistData` | `PartyPlaylistDto` | нет | Начальный плейлист. |
 | `eventDateTime` | `string` (ISO 8601) | нет | Дата/время мероприятия. |
@@ -344,7 +345,7 @@
 | `name` | `string` | Название организации / отображаемое имя. |
 | `logoUrl` | `string \| null` | URL логотипа (опционально). |
 | `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
-| `defaultThemeId` | `string \| null` | Тема по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `defaultPartyThemeId` | `string \| null` | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
 | `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
 | `createdAt` | `string` | ISO 8601. |
 | `updatedAt` | `string \| null` | ISO 8601. |
@@ -370,7 +371,7 @@
 
 ### 6.7 Перечисляемые типы
 
-**ThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"`  
+**PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` (PartyTheme идентификатор)  
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
 **PlaybackMode:** `"preparation"` \| `"session"`
 

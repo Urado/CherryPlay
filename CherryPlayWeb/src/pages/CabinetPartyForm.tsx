@@ -1,4 +1,4 @@
-import { THEME_OPTIONS } from '../constants/themes';
+import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
 import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
 import { getDefaultTimeZone, getPopularTimeZones } from '../utils/timezoneUtils';
 
@@ -58,14 +58,14 @@ export function CabinetPartyForm({
       <label>
         Тема
         <select
-          value={isEditing ? (editForm.themeId ?? 'cyberpunk') : createForm.themeId}
+          value={isEditing ? (editForm.partyThemeId ?? 'cyberpunk') : createForm.partyThemeId}
           onChange={(e) =>
             isEditing
-              ? setEditForm((f) => ({ ...f, themeId: e.target.value }))
-              : setCreateForm((f) => ({ ...f, themeId: e.target.value }))
+              ? setEditForm((f) => ({ ...f, partyThemeId: e.target.value }))
+              : setCreateForm((f) => ({ ...f, partyThemeId: e.target.value }))
           }
         >
-          {THEME_OPTIONS.map((opt) => (
+          {PARTY_THEME_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>

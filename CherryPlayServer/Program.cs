@@ -62,6 +62,7 @@ builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
 builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
+builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IJwtService, JwtService>();

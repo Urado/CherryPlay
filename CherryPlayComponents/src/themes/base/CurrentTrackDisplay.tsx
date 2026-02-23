@@ -20,26 +20,14 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
   themeId,
 }) => {
   if (!playbackState || !playbackState.currentTrackId) {
-    return (
-      <div className={`party-current-track-display ${className}`} data-theme={themeId}>
-        <div className="party-current-track-empty">
-          <p>Трек не выбран</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const playlistItems = playlist.items;
   const currentTrack = findTrack(playlistItems, playbackState.currentTrackId);
 
   if (!currentTrack || currentTrack.type !== 'track') {
-    return (
-      <div className={`party-current-track-display ${className}`} data-theme={themeId}>
-        <div className="party-current-track-empty">
-          <p>Трек не найден</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const progress =

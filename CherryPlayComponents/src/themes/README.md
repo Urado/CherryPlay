@@ -1,8 +1,8 @@
-# Themes
+# PartyTheme (темы вечеринок)
 
-Система тем для CherryPlay Components.
+Система **PartyTheme** для CherryPlay Components: визуальный стиль контента вечеринки (плейлист, текущий трек, страница info). Не путать с темой оболочки приложения (тёмная/светлая). См. [GLOSSARY.md](../../GLOSSARY.md).
 
-## Доступные темы
+## Доступные PartyTheme
 
 ### Cyberpunk
 Неоновая тема в стиле киберпанк с зелеными акцентами и эффектами свечения.
@@ -28,34 +28,34 @@
 ## Использование
 
 ```typescript
-import { PlaylistView, applyTheme, ThemeId } from '@cherryplay/components';
+import { PlaylistView, applyPartyTheme, PartyThemeId } from '@cherryplay/components';
 
-// Применить тему к компоненту
+// Применить PartyTheme к компоненту (в API поле partyThemeId)
 <PlaylistView
   playlist={playlistData}
   themeId="cyberpunk"
 />
 
-// Или применить тему программно
-applyTheme('sakura', element);
+// Или применить PartyTheme программно
+applyPartyTheme('sakura', element);
 ```
 
 ## Структура
 
-Каждая тема находится в отдельной папке:
-- `cyberpunk/` - файлы стилей для темы Cyberpunk
-- `sakura/` - файлы стилей для темы Sakura
-- `art-deco/` - файлы стилей для темы Art Deco
+Каждая PartyTheme находится в отдельной папке:
+- `cyberpunk/` — стили для PartyTheme Cyberpunk
+- `sakura/` — стили для PartyTheme Sakura
+- `art-deco/` — стили для PartyTheme Art Deco
 
 Каждая папка содержит:
-- `playlist.css` - стили для PlaylistView
-- `playlist-item.css` - стили для PlaylistItem
-- `player.css` - стили для CurrentTrackDisplay
-- `index.css` - главный файл, импортирующий все стили и определяющий CSS переменные
+- `playlist.css` — стили для PlaylistView
+- `playlist-item.css` — стили для PlaylistItem
+- `player.css` — стили для CurrentTrackDisplay
+- `index.css` — главный файл, импортирующий все стили и определяющий CSS переменные
 
 ## CSS переменные
 
-Каждая тема определяет свои CSS переменные через атрибут `data-theme`:
+Каждая PartyTheme определяет свои CSS переменные через атрибут `data-theme`:
 - `--bg-primary`, `--bg-secondary`, `--bg-tertiary` - цвета фона
 - `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
 - `--accent-primary` - цвет акцента

@@ -2,8 +2,11 @@ using System.Text.Json.Serialization;
 
 namespace CherryPlayServer.Core.Enums;
 
+/// <summary>
+/// PartyTheme идентификатор (см. GLOSSARY.md)
+/// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum ThemeId
+public enum PartyThemeId
 {
     [JsonStringEnumMemberName("cyberpunk")]
     Cyberpunk,

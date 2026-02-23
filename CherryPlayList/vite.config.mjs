@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -6,6 +7,7 @@ import { defineConfig } from 'vite';
 import eslint from 'vite-plugin-eslint';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
 
 // https://vitejs.dev/config/
 const isDev = process.env.NODE_ENV === 'development';
@@ -23,6 +25,9 @@ const eslintPlugin = eslint({
 export default defineConfig({
   plugins: [react(), ...(shouldLint ? [eslintPlugin] : [])],
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

@@ -6,7 +6,10 @@ public record PartyDto(
     string Id,
     string Name,
     string ShortCode,
-    ThemeId ThemeId,
+    /// <summary>
+    /// PartyTheme идентификатор (см. GLOSSARY.md)
+    /// </summary>
+    PartyThemeId PartyThemeId,
     string CreatedAt,
     bool HasActiveSession,
     string? EventDateTime = null,

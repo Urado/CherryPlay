@@ -91,15 +91,15 @@ themes/
 
 ### TypeScript/JavaScript
 
-Тип `ThemeId` определен в `CherryPlayComponents/src/themes/index.ts`:
+Тип `PartyThemeId` определен в `CherryPlayComponents/src/themes/index.ts`:
 
 ```typescript
-type ThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
+type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
 ```
 
 ### C# (CherryPlayServer)
 
-Enum `ThemeId` определен в `CherryPlayServer.Core.Enums.ThemeId`:
+Enum `PartyThemeId` определен в `CherryPlayServer.Core.Enums.PartyThemeId`:
 
 - `Cyberpunk`, `Sakura`, `ArtDeco`, `Basic`
 - Автоматическая JSON сериализация в строки
@@ -140,6 +140,7 @@ Enum `ThemeId` определен в `CherryPlayServer.Core.Enums.ThemeId`:
 ```typescript
 import { PartyDisplay } from '@cherryplay/components';
 import '@cherryplay/components/themes/index.css';
+import '@cherryplay/components/styles/shell-palette.css'; // Палитра оболочки
 
 <PartyDisplay data={partyDisplayData} />
 ```
@@ -157,25 +158,25 @@ import '@cherryplay/components/themes/index.css';
 ### ThemeComponents
 
 ```typescript
-interface ThemeComponents {
+interface PartyThemeComponents {
   PartyDisplay: React.ComponentType<{ data: PartyDisplayData; ... }>;
   PlaylistView: React.ComponentType<{ playlist: PartyPlaylistData; ... }>;
   CurrentTrackDisplay: React.ComponentType<{ playbackState: PlaybackState; ... }>;
 }
 ```
 
-### createTheme
+### createPartyTheme
 
 ```typescript
-function createTheme(config: CreateThemeConfig): Theme;
+function createPartyTheme(config: CreatePartyThemeConfig): PartyTheme;
 
-interface CreateThemeConfig {
-  id: ThemeId;
+interface CreatePartyThemeConfig {
+  id: PartyThemeId;
   name: string;
   description: string;
   cssPath: string;
   customizationOptions?: string[];
-  overrides?: Partial<ThemeComponents>;
+  overrides?: Partial<PartyThemeComponents>;
 }
 ```
 
@@ -183,10 +184,10 @@ interface CreateThemeConfig {
 
 ### Краткая сводка
 
-Для добавления новой темы нужно:
+Для добавления новой PartyTheme нужно:
 1. Создать CSS файлы в `CherryPlayComponents/src/themes/<theme-id>/`
-2. Зарегистрировать тему в `CherryPlayComponents/src/themes/index.ts`
-3. Добавить значение в C# enum `CherryPlayServer/Core/Enums/ThemeId.cs`
+2. Зарегистрировать PartyTheme в `CherryPlayComponents/src/themes/index.ts`
+3. Добавить значение в C# enum `CherryPlayServer/Core/Enums/PartyThemeId.cs`
 4. Обновить документацию
 
 **Важно**: После добавления темы в библиотеку компонентов, она автоматически становится доступной во всех приложениях благодаря централизованной системе. Дополнительные изменения в CherryPlayWeb и CherryPlayList не требуются (кроме опциональных превью).

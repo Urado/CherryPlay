@@ -21,7 +21,7 @@ export interface PlayerItemDto {
 export interface PublicPartyDto {
   id: string;
   name: string;
-  themeId: string;
+  partyThemeId: string;
   customizationSettings?: Record<string, string | number>;
   hasActiveSession: boolean;
   isListedInCatalog: boolean;
@@ -60,12 +60,14 @@ export interface PublicPartyListItemDto {
   id: string;
   name: string;
   shortCode: string;
-  themeId: string;
+  partyThemeId: string;
   hasActiveSession: boolean;
   createdAt: string;
   totalTracks: number;
   totalDuration: number;
   eventDateTime?: string;
+  timeZone?: string;
+  city?: string;
 }
 
 /** Вечеринка организатора (ответ GET /api/parties, GET /api/parties/:id) */
@@ -73,7 +75,7 @@ export interface PartyDto {
   id: string;
   name: string;
   shortCode: string;
-  themeId: string;
+  partyThemeId: string;
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;
@@ -88,7 +90,7 @@ export interface PartyDto {
 /** Создание вечеринки (POST /api/parties) */
 export interface CreatePartyDto {
   name: string;
-  themeId: string;
+  partyThemeId: string;
   eventDateTime?: string;
   isListedInCatalog?: boolean;
   description?: string;
@@ -101,7 +103,7 @@ export interface CreatePartyDto {
 /** Обновление метаданных (PUT /api/parties/:id) */
 export interface UpdatePartyDto {
   name?: string;
-  themeId?: string;
+  partyThemeId?: string;
   eventDateTime?: string;
   isListedInCatalog?: boolean;
   description?: string;

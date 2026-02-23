@@ -6,10 +6,12 @@ public record PublicPartyListItemDto(
     string Id,
     string Name,
     string ShortCode,
-    ThemeId ThemeId,
+    PartyThemeId PartyThemeId,
     bool HasActiveSession,
     string CreatedAt,
     int TotalTracks,
     int TotalDuration,
-    string? EventDateTime = null
+    string? EventDateTime = null,
+    string? TimeZone = null,
+    string? City = null
 );

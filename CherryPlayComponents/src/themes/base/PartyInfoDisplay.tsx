@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { useThemeVars } from '../../core/hooks/useThemeVars';
-import type { ThemeId } from '../index';
+import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
+import type { PartyThemeId } from '../index';
 
 export interface PartyInfoDisplayData {
   partyName: string;
@@ -11,24 +11,17 @@ export interface PartyInfoDisplayData {
   city?: string | null;
   schedule?: string | null;
   timeZone?: string | null;
-  themeId: ThemeId;
+  themeId: PartyThemeId;
   customizationSettings?: Record<string, string | number>;
 }
 
 export interface BasePartyInfoDisplayProps {
   data: PartyInfoDisplayData;
   className?: string;
-  onGoToPlaylist?: () => void;
-  onGoToCatalog?: () => void;
 }
 
-export const PartyInfoDisplay: React.FC<BasePartyInfoDisplayProps> = ({
-  data,
-  className = '',
-  onGoToPlaylist,
-  onGoToCatalog,
-}) => {
-  const themeVars = useThemeVars(data.themeId, data.customizationSettings);
+export const PartyInfoDisplay: React.FC<BasePartyInfoDisplayProps> = ({ data, className = '' }) => {
+  const themeVars = usePartyThemeVars(data.themeId, data.customizationSettings);
 
   const eventDate = data.eventDateTime
     ? new Intl.DateTimeFormat('ru-RU', {
@@ -71,19 +64,6 @@ export const PartyInfoDisplay: React.FC<BasePartyInfoDisplayProps> = ({
             </p>
           )}
         </section>
-
-        <div className="party-info-display-actions">
-          {onGoToPlaylist && (
-            <button type="button" className="party-info-display-link-btn" onClick={onGoToPlaylist}>
-              Перейти к плейлисту
-            </button>
-          )}
-          {onGoToCatalog && (
-            <button type="button" className="party-info-display-link-back" onClick={onGoToCatalog}>
-              Назад к каталогу
-            </button>
-          )}
-        </div>
       </div>
     </div>
   );

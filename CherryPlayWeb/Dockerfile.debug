@@ -1,0 +1,28 @@
+# Фронт в dev-режиме: Vite dev server, hot reload, логи только в dev (import.meta.env.DEV)
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Компоненты: зависимости и сборка (нужны для зависимости CherryPlayWeb)
+COPY CherryPlayComponents/package.json CherryPlayComponents/package-lock.json ./CherryPlayComponents/
+COPY CherryPlayComponents ./CherryPlayComponents
+RUN cd CherryPlayComponents && npm ci && npm run build
+
+# CherryPlayWeb: зависимости
+COPY CherryPlayWeb/package.json CherryPlayWeb/package-lock.json ./CherryPlayWeb/
+RUN cd CherryPlayWeb && npm ci --ignore-scripts
+
+# Исходники веба (для hot reload при монтировании тома в compose)
+COPY CherryPlayWeb ./CherryPlayWeb
+
+WORKDIR /app/CherryPlayWeb
+
+# Переменные для Vite (dev-сервер подхватит при старте)
+ARG VITE_API_URL=http://localhost:5000
+ARG VITE_SIGNALR_URL=http://localhost:5000/partyHub
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SIGNALR_URL=$VITE_SIGNALR_URL
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

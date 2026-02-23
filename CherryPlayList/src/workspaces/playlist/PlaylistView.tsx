@@ -62,8 +62,14 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   // Get flat list of tracks for duration loading and dividers
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
-  const resolveTrackByPath = useCallback(
-    (path: string) => tracks.find((track) => track.path === path),
+  const duplicatePaths = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const t of tracks) count.set(t.path, (count.get(t.path) ?? 0) + 1);
+    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
+  }, [tracks]);
+
+  const resolveTrackById = useCallback(
+    (id: string) => tracks.find((track) => track.id === id),
     [tracks],
   );
 
@@ -71,7 +77,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     tracks,
     isAudioFile: fileService.isValidAudioFile.bind(fileService),
     requestDuration: ipcService.getAudioDuration.bind(ipcService),
-    resolveTrackByPath,
+    resolveTrackById,
     onDurationResolved: updateTrackDuration,
   });
 
@@ -266,6 +272,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
                 }
                 isActive={isActive}
                 isPlaying={isPlaying}
+                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => playlistDrag.handleDragStart(e, item.id)}

@@ -17,7 +17,7 @@ Workspace-agnostic система drag & drop, работающая с любы�
 - **dragDropStore** (`src/shared/stores/dragDropStore.ts`) — глобальное состояние drag-and-drop
 - **useWorkspaceDragAndDrop** (`src/shared/hooks/useWorkspaceDragAndDrop.ts`) — единый хук для всех workspaces
 - **useDragDropExecutor** (`src/shared/hooks/useDragDropExecutor.ts`) — выполнение cross-workspace операций
-- **ItemList** (`src/shared/components/ItemList/ItemList.tsx`) — контейнер списка с поддержкой drop-индикаторов
+- **ItemList** (`src/shared/components/ItemList/ItemList.tsx`) — контейнер списка с поддержкой drop-индикаторов; при drop на пустую область контейнера передаёт в обработчик позицию курсора как `insertIndex`, поэтому вставка идёт не обязательно в конец списка
 
 ## Алгоритм
 
@@ -136,6 +136,7 @@ Drop на Трек 4 (position: 'bottom'):
 - Визуальные индикаторы (линия вставки, полупрозрачность)
 - Групповое перетаскивание выделенных элементов
 - Вставка внутрь групп
+- Drop на пустую область списка или на нижнюю часть отсечки/между треками: позиция вставки определяется по положению курсора (ItemList передаёт `insertIndex` в `onDrop`/`onDragOver`); расчёт `rawInsertIndex` с учётом `bottom` и конвертация flatIndex → (parentId, localIndex) обеспечивают вставку в нужное место, а не всегда в конец списка
 - Полная поддержка undo/redo через CompositeAction
 
 ## Зависимости

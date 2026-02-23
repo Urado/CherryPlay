@@ -6,29 +6,20 @@
 
 ## Текущая реализация
 
-Маршрутизация выполняется без React Router: по **query-параметру** `party` определяется, показывать ли страницу вечеринки или список.
+Маршрутизация выполняется через **React Router** с path-based маршрутами. Константы путей — в `src/constants/routes.ts`.
 
-| Условие | Страница | Компонент |
-|---------|----------|-----------|
-| Нет `?party=...` в URL | Список вечеринок (каталог / демо) | `PartyListPage` |
-| Есть `?party={shortCode}` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
+| Путь | Страница | Компонент |
+|------|---------|-----------|
+| `/` | Каталог вечеринок (или редирект с `?party=...`) | `PartyListPage` / `CatalogOrRedirect` |
+| `/party/:shortCode` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
+| `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
+| `/login` | Вход | `LoginPage` |
+| `/register` | Регистрация | `RegisterPage` |
+| `/cabinet` | Кабинет организатора | `CabinetPage` |
 
-- **PartyListPage** (`src/pages/PartyListPage.tsx`): список вечеринок; при выборе вечеринки в URL подставляется `party=shortCode` через `history.pushState`.
-- **PartyView** (`src/pages/PartyView.tsx`): отображение плейлиста и текущего состояния воспроизведения; кнопка «Назад» сбрасывает `party` и возвращает к списку.
-
----
-
-## Целевые маршруты по плану v1
-
-По [RELEASE_PLAN.md](../../RELEASE_PLAN.md) и [CONTRACTS.md](../../CONTRACTS.md):
-
-| Путь | Описание |
-|------|----------|
-| `/` или аналог | Каталог вечеринок (список из GET `/api/parties/public/list`). |
-| `party/<shortCode>` | Просмотр плейлиста и состояния сессии; данные по shortCode через REST и SignalR. |
-| `party/<shortCode>/info` | Информация о вечеринке: описание, место, город, дата, расписание, ссылки (поля из PublicPartyDto и метаданных). |
-
-Переход на path-based маршруты (`party/<shortCode>`, `party/<shortCode>/info`) планируется в рамках развития приложения; при этом контракты API остаются теми же (идентификатор — shortCode).
+- **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
+- **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
+- **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`.
 
 ---
 
@@ -54,11 +45,17 @@
 
 ## Структура файлов (кратко)
 
+- `src/constants/routes.ts` — константы маршрутов.
+- `src/constants/themes.ts` — список PartyTheme из CherryPlayComponents (для каталога и кабинета). См. [GLOSSARY.md](../../GLOSSARY.md).
 - `src/pages/PartyListPage.tsx` — каталог/список.
 - `src/pages/PartyView.tsx` — просмотр вечеринки по shortCode.
+- `src/pages/PartyInfoPage.tsx` — информация о вечеринке.
+- `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора.
 - `src/services/partyApiService.ts` — вызовы REST API.
 - `src/services/signalRService.ts` — подключение к Hub и обработка событий.
 - `src/hooks/usePartyState.ts`, `useSignalR.ts` — состояние вечеринки и SignalR.
+- `src/utils/playbackState.ts` — мерж позиции воспроизведения (requestFullState / OnFullStateUpdated).
+- `src/utils/logger.ts` — логи только в DEV (`devLog`, `devWarn`).
 - `src/components/` — LoadingSpinner, ErrorMessage, ConnectionStatus и др.
 
 Типы API (DTO) — в `src/types/api.ts`.

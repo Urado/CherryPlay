@@ -108,14 +108,17 @@ export const AccountView: React.FC = () => {
     }
   };
 
+  const closeModal = useUIStore((state) => state.closeModal);
+
   const handleLogout = async () => {
     try {
       setLoading(true);
       await authService.logout();
       setOrganizerInfo(null);
+      closeModal();
       addNotification({
         type: 'success',
-        message: 'Successfully logged out',
+        message: 'Вы вышли из аккаунта',
         duration: 3000,
       });
     } catch (err) {

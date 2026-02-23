@@ -7,7 +7,7 @@ import React from 'react';
 
 import { findTrack } from '../../core/utils/playlist';
 import { formatTime } from '../../core/utils/time';
-import { ThemeId } from '../../themes';
+import { PartyThemeId } from '../../themes';
 import { PlaybackState, PlayerItem } from '../../types';
 
 import './CurrentTrackDisplay.css';
@@ -16,7 +16,7 @@ export interface CurrentTrackDisplayProps {
   playbackState: PlaybackState | null;
   playlist: { items: PlayerItem[] };
   className?: string;
-  themeId?: ThemeId;
+  themeId?: PartyThemeId;
 }
 
 export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
@@ -26,25 +26,13 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
   themeId,
 }) => {
   if (!playbackState || !playbackState.currentTrackId) {
-    return (
-      <div className={`party-current-track-display ${className}`} data-theme={themeId}>
-        <div className="party-current-track-empty">
-          <p>Трек не выбран</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const currentTrack = findTrack(playlist.items, playbackState.currentTrackId);
 
   if (!currentTrack || currentTrack.type !== 'track') {
-    return (
-      <div className={`party-current-track-display ${className}`} data-theme={themeId}>
-        <div className="party-current-track-empty">
-          <p>Трек не найден</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const progress =

@@ -75,13 +75,16 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     return getTracksFromDisplayItems(displayItems);
   }, [displayItems]);
 
-  const resolveTrackByPath = (path: string) => allTracks.find((track) => track.path === path);
+  const resolveTrackById = useCallback(
+    (id: string) => allTracks.find((track) => track.id === id),
+    [allTracks],
+  );
 
   const { loadDurationsForTracks } = useTrackDuration({
     tracks: allTracks,
     isAudioFile: fileService.isValidAudioFile.bind(fileService),
     requestDuration: ipcService.getAudioDuration.bind(ipcService),
-    resolveTrackByPath,
+    resolveTrackById,
     onDurationResolved: updateTrackDuration,
   });
 
@@ -89,8 +92,8 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     (newTracks: Omit<Track, 'id'>[]) => {
       const tracksWithIds = newTracks.map(createTrackWithId);
       tracksWithIds.forEach((track) => addItem(track));
-      const paths = tracksWithIds.map((track) => track.path);
-      loadDurationsForTracks(paths);
+      const targetList = tracksWithIds.map((t) => ({ id: t.id, path: t.path }));
+      loadDurationsForTracks(targetList);
     },
     [addItem, loadDurationsForTracks],
   );
@@ -98,9 +101,9 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   const handleAddTracksAt = useCallback(
     (newTracks: Omit<Track, 'id'>[], index: number) => {
       const tracksWithIds = newTracks.map(createTrackWithId);
-      tracksWithIds.forEach((track) => addItem(track, index));
-      const paths = tracksWithIds.map((track) => track.path);
-      loadDurationsForTracks(paths);
+      tracksWithIds.forEach((track, i) => addItem(track, index + i));
+      const targetList = tracksWithIds.map((t) => ({ id: t.id, path: t.path }));
+      loadDurationsForTracks(targetList);
     },
     [addItem, loadDurationsForTracks],
   );

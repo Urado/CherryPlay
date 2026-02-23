@@ -1,5 +1,5 @@
 import SettingsIcon from '@mui/icons-material/Settings';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -102,6 +102,15 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   pausePlayback,
 }) => {
   const { getGroupSettings, getTrackSettings } = useProjectStore();
+
+  const duplicatePaths = useMemo(() => {
+    const paths = displayItems
+      .filter((di) => isProjectTrack(di.item))
+      .map((di) => (di.item as Track).path);
+    const count = new Map<string, number>();
+    for (const p of paths) count.set(p, (count.get(p) ?? 0) + 1);
+    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
+  }, [displayItems]);
 
   const [trackSettingsDropdown, setTrackSettingsDropdown] = useState<{
     trackId: string;
@@ -263,6 +272,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 isCurrent={isCurrentTrack}
                 isLocked={isLocked}
                 groupDuration={groupDurationWithPauses}
+                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => playerDrag.handleDragStart(e, item.id)}

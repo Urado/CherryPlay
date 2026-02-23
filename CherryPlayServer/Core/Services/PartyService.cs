@@ -67,9 +67,9 @@ public class PartyService : IPartyService
         var organizerId = httpContext.RequireOrganizerId("create a party");
 
         _logger.LogInformation(
-            "Creating party: name={Name}, themeId={ThemeId}, organizerId={OrganizerId}",
+            "Creating party: name={Name}, partyThemeId={PartyThemeId}, organizerId={OrganizerId}",
             dto.Name,
-            dto.ThemeId,
+            dto.PartyThemeId,
             organizerId);
 
         var myParties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
@@ -89,7 +89,7 @@ public class PartyService : IPartyService
             OrganizerId = organizerId,
             Name = dto.Name,
             ShortCode = shortCode,
-            ThemeId = dto.ThemeId,
+            PartyThemeId = dto.PartyThemeId,
             CustomizationSettings = normalizedSettings,
             Playlist = dto.PlaylistData?.ToEntity() ?? new PartyPlaylist(),
             CreatedAt = DateTime.UtcNow,
@@ -230,8 +230,8 @@ public class PartyService : IPartyService
 
         if (dto.Name != null)
             party.Name = dto.Name;
-        if (dto.ThemeId.HasValue)
-            party.ThemeId = dto.ThemeId.Value;
+        if (dto.PartyThemeId.HasValue)
+            party.PartyThemeId = dto.PartyThemeId.Value;
         if (dto.EventDateTime.HasValue)
             party.EventDateTime = dto.EventDateTime;
         if (dto.CustomizationSettings != null)

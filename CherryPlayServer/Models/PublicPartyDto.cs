@@ -5,7 +5,10 @@ namespace CherryPlayServer.Models;
 public record PublicPartyDto(
     string Id,
     string Name,
-    ThemeId ThemeId,
+    /// <summary>
+    /// PartyTheme идентификатор (см. GLOSSARY.md)
+    /// </summary>
+    PartyThemeId PartyThemeId,
     bool HasActiveSession,
     bool IsListedInCatalog,
     Dictionary<string, object>? CustomizationSettings = null,

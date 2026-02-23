@@ -3,9 +3,18 @@
  */
 
 .app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--spacing-md);
   background-color: var(--bg-secondary);
   border-top: 1px solid var(--ui-border);
-  height: 4px;
+  min-height: 20px;
   flex-shrink: 0;
   width: 100%;
+}
+
+.app-footer-version {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
 }

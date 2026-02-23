@@ -1,3 +1,7 @@
+# Запуск: docker-compose -f docker-compose.debug.yml up --build
+# Фронт: http://localhost:3000 (Vite dev), бэкенд: http://localhost:5000, pgAdmin: http://localhost:5050
+# Логи фронта (в т.ч. SignalR): docker-compose -f docker-compose.debug.yml logs -f web
+
 services:
   # PostgreSQL Database (используем тот же что и в production)
   postgres:
@@ -67,17 +71,26 @@ services:
     # Для attach отладчика используйте:
     # command: ["dotnet", "run", "--urls", "http://+:8080", "--no-launch-profile"]
 
-  # Frontend Web Application (опционально, можно запускать локально)
+  # Frontend — Vite dev server (hot reload, логи SignalR в консоли контейнера)
   web:
     build:
       context: .
-      dockerfile: ./CherryPlayWeb/Dockerfile
+      dockerfile: ./CherryPlayWeb/Dockerfile.debug
       args:
         - VITE_API_URL=http://localhost:5000
         - VITE_SIGNALR_URL=http://localhost:5000/partyHub
     container_name: cherryplay-web-debug
     ports:
-      - "3000:80"
+      - "3000:3000"
+    volumes:
+      - ./CherryPlayWeb/src:/app/CherryPlayWeb/src
+      - ./CherryPlayWeb/index.html:/app/CherryPlayWeb/index.html
+      - ./CherryPlayWeb/vite.config.ts:/app/CherryPlayWeb/vite.config.ts
+      - ./CherryPlayWeb/tsconfig.json:/app/CherryPlayWeb/tsconfig.json
+      - ./CherryPlayWeb/tsconfig.node.json:/app/CherryPlayWeb/tsconfig.node.json
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_SIGNALR_URL=http://localhost:5000/partyHub
     depends_on:
       - server
     networks:

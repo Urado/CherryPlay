@@ -14,7 +14,7 @@
 | `Name` | string | NOT NULL | Название организации / отображаемое имя. |
 | `LogoUrl` | string | NULL | URL логотипа (опционально). |
 | `Links` | JSON/string | NULL | Ссылки (соцсети, сайт) — JSON-объект или текст. |
-| `DefaultThemeId` | string | NULL | Тема по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `DefaultPartyThemeId` | string | NULL | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
 | `DefaultCustomizationSettings` | JSON | NULL | Настройки оформления по умолчанию (override на уровне party). |
 | `CreatedAt` | datetime | NOT NULL | Дата создания. |
 | `UpdatedAt` | datetime | NULL | Дата последнего обновления. |
@@ -62,7 +62,7 @@
 | `City` | string | NULL | Город. |
 | `EventDateTime` | datetime | NULL | Дата и время мероприятия. |
 | `Schedule` | text/JSON | NULL | Расписание (текст или структурированный JSON). |
-| `ThemeId` | string | NOT NULL | Тема (cyberpunk, sakura, art-deco, basic). |
+| `PartyThemeId` | string | NOT NULL | PartyTheme идентификатор (cyberpunk, sakura, art-deco, basic). |
 | `CustomizationSettings` | JSON | NULL | Настройки оформления (override поверх organizer). |
 | `IsListedInCatalog` | boolean | NOT NULL, default false | По умолчанию unlisted; true — вечеринка в общем каталоге. |
 | `CreatedAt` | datetime | NOT NULL | Дата создания. |

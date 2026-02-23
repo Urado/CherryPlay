@@ -8,6 +8,7 @@ interface SettingsState {
   exportPath: string;
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
+  fileBrowserPath: string;
   trackItemSizePreset: 'small' | 'medium' | 'large';
   hourDividerInterval: number;
   showHourDividers: boolean;
@@ -18,6 +19,7 @@ interface SettingsState {
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
+  setFileBrowserPath: (path: string) => void;
   setTrackItemSizePreset: (preset: 'small' | 'medium' | 'large') => void;
   setHourDividerInterval: (interval: number) => void;
   setShowHourDividers: (show: boolean) => void;
@@ -34,6 +36,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       exportPath: '',
       exportStrategy: 'copyWithNumberPrefix',
       lastOpenedPlaylist: '',
+      fileBrowserPath: '',
       trackItemSizePreset: 'medium',
       hourDividerInterval: 3600,
       showHourDividers: true,
@@ -45,6 +48,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
       setLastOpenedPlaylist: (path) => set({ lastOpenedPlaylist: path }),
+      setFileBrowserPath: (path) => set({ fileBrowserPath: path }),
       setTrackItemSizePreset: (preset) => set({ trackItemSizePreset: preset }),
       setHourDividerInterval: (interval) => set({ hourDividerInterval: interval }),
       setShowHourDividers: (show) => set({ showHourDividers: show }),
@@ -64,6 +68,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         exportPath: state.exportPath,
         exportStrategy: state.exportStrategy,
         lastOpenedPlaylist: state.lastOpenedPlaylist,
+        fileBrowserPath: state.fileBrowserPath,
         trackItemSizePreset: state.trackItemSizePreset,
         hourDividerInterval: state.hourDividerInterval,
         showHourDividers: state.showHourDividers,

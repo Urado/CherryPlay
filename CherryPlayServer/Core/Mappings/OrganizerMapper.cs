@@ -12,7 +12,7 @@ public static class OrganizerMapper
             Name: organizer.Name,
             LogoUrl: organizer.LogoUrl,
             Links: organizer.Links,
-            DefaultThemeId: organizer.DefaultThemeId,
+            DefaultPartyThemeId: organizer.DefaultPartyThemeId,
             DefaultCustomizationSettings: organizer.DefaultCustomizationSettings,
             TimeZone: organizer.TimeZone,
             CreatedAt: organizer.CreatedAt.ToString("O"),

@@ -45,6 +45,7 @@ import {
   updateTrackInItems,
   removeItemsById,
   collectItemsById,
+  collectAllItemIds,
   insertIntoGroup,
 } from './projectStoreCore';
 
@@ -335,18 +336,24 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
         const foundItem = findItemRecursive(state.items, id);
         if (!foundItem) return;
 
+        const idsToRemove = collectAllItemIds(foundItem);
+        const idsSet = new Set(idsToRemove);
+
         set((s) => ({
           items: removeItemFromItems(s.items, id),
-          selectedItemIds: new Set([...s.selectedItemIds].filter((sid) => sid !== id)),
+          selectedItemIds: new Set([...s.selectedItemIds].filter((sid) => !idsSet.has(sid))),
         }));
 
         get().markAsDirty();
         return;
       }
 
+      const idsToRemove = collectAllItemIds(itemToRemove);
+      const idsSet = new Set(idsToRemove);
+
       set((s) => ({
         items: s.items.filter((item) => item.id !== id),
-        selectedItemIds: new Set([...s.selectedItemIds].filter((sid) => sid !== id)),
+        selectedItemIds: new Set([...s.selectedItemIds].filter((sid) => !idsSet.has(sid))),
       }));
 
       if (!state._skipHistory) {

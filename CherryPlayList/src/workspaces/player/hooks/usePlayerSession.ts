@@ -1,10 +1,13 @@
 import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
-import { usePlayerAudioStore, useProjectStore, useAuthStore } from '@shared/stores';
+import {
+  usePlayerAudioStore,
+  useProjectStore,
+  useDemoPlayerStore,
+  useSettingsStore,
+} from '@shared/stores';
 import { logger } from '@shared/utils';
-import { handleAuthError } from '@shared/utils/authErrorHandler';
-import { isTokenExpired } from '@shared/utils/tokenUtils';
 
 interface UsePlayerSessionOptions {
   allTracks: Track[];
@@ -37,20 +40,15 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
       return;
     }
 
-    // Проверяем токен перед началом сессии
-    const token = useAuthStore.getState().accessToken;
-    if (!token) {
-      handleAuthError('Authentication required to start session');
-      return;
-    }
-
-    if (isTokenExpired(token)) {
-      handleAuthError('Authentication token has expired. Please login again.');
-      return;
-    }
-
-    // Начинаем сессию
+    // Начинаем сессию (локальное воспроизведение; авторизация не требуется)
     startSession();
+
+    // Блокируем демо-плеер, если выбран тот же аудио-выход (включая оба «по умолчанию»)
+    const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
+    const demoDeviceId = useSettingsStore.getState().demoPlayerAudioDeviceId;
+    if (playerDeviceId === demoDeviceId) {
+      useDemoPlayerStore.getState().setDisabled(true);
+    }
 
     // Вызываем колбэк для начала трансляции, если он предоставлен
     if (onSessionStart) {
@@ -90,6 +88,7 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     clearPauseTimer(); // Очищаем таймер паузы при сбросе
     resetSession();
     pausePlayer(); // Останавливаем плеер при сбросе
+    useDemoPlayerStore.getState().setDisabled(false); // Снимаем блокировку демо-плеера
   }, [resetSession, pausePlayer, clearPauseTimer]);
 
   return {

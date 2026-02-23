@@ -60,9 +60,13 @@
 - **Party workspace** — создание вечеринки и Publish требуют авторизованного организатора; вызовы идут через `partyService` с токеном.
 - **Streaming** — подключение к SignalR как организатор и вызов write-методов выполняются с тем же JWT (см. [Streaming](./streaming.md)).
 
+## Проверка сессии (CherryPlayList)
+
+При получении текущего организатора приложение сначала вызывает лёгкий эндпоинт `GET /api/organizer/session/check`; при успехе запрашивает полный профиль через `GET /api/organizer/me`. Так при недоступности сервера в консоль не уходят лишние 404 от тяжёлого эндпоинта.
+
 ## Контракты
 
 Детали эндпоинтов логина, обмена токенов и профиля организатора — в [CONTRACTS.md](../../CONTRACTS.md):
 - **Auth (логин/логаут):** §3.2 — вход по email+пароль (`POST /auth/login`, `POST /auth/register`), OAuth 2.0 провайдеры VK и Mail.ru для Desktop (`/auth/{provider}/start`, `/auth/exchange`) и Web (`/auth/{provider}/web`, `/auth/{provider}/callback`), logout. OAuth2 для Telegram отложен.
-- **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/me`, `PATCH /api/organizer/profile`).
+- **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
 - **Защита write-методов:** CONTRACTS §2–3 (REST и SignalR требуют JWT).

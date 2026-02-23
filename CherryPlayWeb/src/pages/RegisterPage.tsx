@@ -1,36 +1,22 @@
-import { EmailAuthForm } from '@cherryplay/components';
-import { useNavigate, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
-import { authService } from '../services/authService';
-import './RegisterPage.css';
 
+/**
+ * Отдельная страница регистрации перенаправляет на страницу входа
+ * с переключателем «Вход / Регистрация» сверху.
+ */
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const handleRegisterSuccess = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const organizer = await authService.checkAuth?.();
-    if (organizer) {
-      navigate(ROUTES.CABINET);
-    }
-  };
+  useEffect(() => {
+    const next = searchParams.get('next')
+      ? `?next=${encodeURIComponent(searchParams.get('next')!)}`
+      : '';
+    navigate(`${ROUTES.LOGIN}${next}`, { replace: true });
+  }, [navigate, searchParams]);
 
-  return (
-    <div className="register-page">
-      <div className="register-container">
-        <h1>Регистрация</h1>
-        <p className="register-subtitle">Создайте аккаунт организатора</p>
-        <EmailAuthForm
-          mode="register"
-          authService={authService}
-          onSuccess={handleRegisterSuccess}
-          showModeToggle={false}
-        />
-        <div className="login-link">
-          Уже есть аккаунт? <Link to={ROUTES.LOGIN}>Войти</Link>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

@@ -61,7 +61,7 @@ public class DataSeeder : IDataSeeder
             Id = Guid.NewGuid(),
             Name = "Cyberpunk Night",
             ShortCode = "cyber",
-            ThemeId = ThemeId.Cyberpunk,
+            PartyThemeId = PartyThemeId.Cyberpunk,
             CustomizationSettings = new Dictionary<string, object>
             {
                 { "accentColor", "#00ff00" },
@@ -134,7 +134,7 @@ public class DataSeeder : IDataSeeder
             Id = Guid.NewGuid(),
             Name = "Sakura Festival",
             ShortCode = "sakura",
-            ThemeId = ThemeId.Sakura,
+            PartyThemeId = PartyThemeId.Sakura,
             CustomizationSettings = new Dictionary<string, object>
             {
                 { "pinkTint", 0.6 },
@@ -198,7 +198,7 @@ public class DataSeeder : IDataSeeder
             Id = Guid.NewGuid(),
             Name = "Art Deco Gala",
             ShortCode = "artdeco",
-            ThemeId = ThemeId.ArtDeco,
+            PartyThemeId = PartyThemeId.ArtDeco,
             CustomizationSettings = new Dictionary<string, object>
             {
                 { "goldColor", "#d4af37" },
@@ -279,7 +279,7 @@ public class DataSeeder : IDataSeeder
             Id = Guid.NewGuid(),
             Name = "Базовый плейлист",
             ShortCode = "basic",
-            ThemeId = ThemeId.Basic,
+            PartyThemeId = PartyThemeId.Basic,
             CustomizationSettings = null,
             Playlist = new PartyPlaylist
             {

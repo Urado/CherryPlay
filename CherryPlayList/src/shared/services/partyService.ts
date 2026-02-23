@@ -5,7 +5,7 @@ import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
   name: string;
-  themeId: string;
+  partyThemeId: string;
   customizationSettings?: Record<string, string | number>;
   playlistData: {
     items: PlayerItemForApi[];
@@ -18,13 +18,15 @@ export interface CreatePartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  /** По умолчанию true при создании из приложения — вечеринка сразу в каталоге */
+  isListedInCatalog?: boolean;
 }
 
 export interface PartyDto {
   id: string;
   name: string;
   shortCode: string;
-  themeId: string;
+  partyThemeId: string;
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;

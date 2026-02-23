@@ -82,16 +82,22 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   // Get flat list of tracks for duration loading
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
-  const resolveTrackByPath = useCallback((path: string) => {
+  const duplicatePaths = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const t of tracks) count.set(t.path, (count.get(t.path) ?? 0) + 1);
+    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
+  }, [tracks]);
+
+  const resolveTrackById = useCallback((id: string) => {
     const storeItems = collectionStoreRef.current.getState().items;
-    return storeItems.filter(isProjectTrack).find((track: Track) => track.path === path);
+    return storeItems.filter(isProjectTrack).find((track: Track) => track.id === id);
   }, []);
 
   const { loadDurationsForTracks } = useTrackDuration({
     tracks,
     isAudioFile: fileService.isValidAudioFile.bind(fileService),
     requestDuration: ipcService.getAudioDuration.bind(ipcService),
-    resolveTrackByPath,
+    resolveTrackById,
     onDurationResolved: updateTrackDuration,
   });
 
@@ -357,6 +363,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
                 }
                 isActive={isActive}
                 isPlaying={isPlaying}
+                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => collectionDrag.handleDragStart(e, item.id)}

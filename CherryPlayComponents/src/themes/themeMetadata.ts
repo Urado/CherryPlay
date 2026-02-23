@@ -1,4 +1,4 @@
-import type { ThemeId } from './index';
+import type { PartyThemeId } from './index';
 
 export type CustomizationOptionType = 'color' | 'number' | 'text' | 'select';
 
@@ -21,7 +21,7 @@ export interface ThemeCustomizationOption {
 }
 
 export interface ThemeMetadata {
-  id: ThemeId;
+  id: PartyThemeId;
   defaultCustomizationSettings: Record<string, string | number>;
   customizationOptions: ThemeCustomizationOption[];
 }
@@ -50,9 +50,10 @@ export type ThemeCustomizationSettingsMap = {
   basic: BasicCustomizationSettings;
 };
 
-export type CustomizationSettings<T extends ThemeId = ThemeId> = ThemeCustomizationSettingsMap[T];
+export type CustomizationSettings<T extends PartyThemeId = PartyThemeId> =
+  ThemeCustomizationSettingsMap[T];
 
-export const THEME_METADATA: Record<ThemeId, ThemeMetadata> = {
+export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   cyberpunk: {
     id: 'cyberpunk',
     defaultCustomizationSettings: {
@@ -138,21 +139,21 @@ export const THEME_METADATA: Record<ThemeId, ThemeMetadata> = {
   },
 };
 
-export function getThemeMetadata(themeId: ThemeId): ThemeMetadata {
-  return THEME_METADATA[themeId];
+export function getThemeMetadata(partyThemeId: PartyThemeId): ThemeMetadata {
+  return THEME_METADATA[partyThemeId];
 }
 
-export function getDefaultCustomizationSettings<T extends ThemeId>(
-  themeId: T,
+export function getDefaultCustomizationSettings<T extends PartyThemeId>(
+  partyThemeId: T,
 ): ThemeCustomizationSettingsMap[T] {
-  const metadata = THEME_METADATA[themeId];
+  const metadata = THEME_METADATA[partyThemeId];
   return metadata.defaultCustomizationSettings as ThemeCustomizationSettingsMap[T];
 }
 
 export function getCustomizationOption(
-  themeId: ThemeId,
+  partyThemeId: PartyThemeId,
   optionKey: string,
 ): ThemeCustomizationOption | undefined {
-  const metadata = THEME_METADATA[themeId];
+  const metadata = THEME_METADATA[partyThemeId];
   return metadata.customizationOptions.find((opt) => opt.key === optionKey);
 }

@@ -9,11 +9,11 @@ import {
   PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
 
-export type ThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
+export type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
 
-export interface ThemeComponents {
+export interface PartyThemeComponents {
   PartyDisplay: React.ComponentType<{
-    data: PartyDisplayData<ThemeId>;
+    data: PartyDisplayData<PartyThemeId>;
     className?: string;
     showPlayer?: boolean;
   }>;
@@ -35,41 +35,39 @@ export interface ThemeComponents {
   PartyInfoDisplay: React.ComponentType<{
     data: import('./base').PartyInfoDisplayData;
     className?: string;
-    onGoToPlaylist?: () => void;
-    onGoToCatalog?: () => void;
   }>;
 }
 
-export interface Theme {
-  id: ThemeId;
+export interface PartyTheme {
+  id: PartyThemeId;
   name: string;
   description: string;
   cssPath: string;
   customizationOptions?: string[];
-  components: ThemeComponents;
+  components: PartyThemeComponents;
 }
 
-export interface ThemeRegistry {
-  [key: string]: Theme;
+export interface PartyThemeRegistry {
+  [key: string]: PartyTheme;
 }
 
-export const BASE_COMPONENTS: ThemeComponents = {
+export const BASE_COMPONENTS: PartyThemeComponents = {
   PartyDisplay: BasePartyDisplay,
   PlaylistView: BasePlaylistView,
   CurrentTrackDisplay: BaseCurrentTrackDisplay,
   PartyInfoDisplay: BasePartyInfoDisplay,
 };
 
-export interface CreateThemeConfig {
-  id: ThemeId;
+export interface CreatePartyThemeConfig {
+  id: PartyThemeId;
   name: string;
   description: string;
   cssPath: string;
   customizationOptions?: string[];
-  overrides?: Partial<ThemeComponents>;
+  overrides?: Partial<PartyThemeComponents>;
 }
 
-export function createTheme(config: CreateThemeConfig): Theme {
+export function createPartyTheme(config: CreatePartyThemeConfig): PartyTheme {
   return {
     id: config.id,
     name: config.name,
@@ -83,29 +81,29 @@ export function createTheme(config: CreateThemeConfig): Theme {
   };
 }
 
-export const THEME_REGISTRY: ThemeRegistry = {
-  cyberpunk: createTheme({
+export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
+  cyberpunk: createPartyTheme({
     id: 'cyberpunk',
     name: 'Cyberpunk',
     description: 'Неоновая тема в стиле киберпанк',
     cssPath: './cyberpunk/index.css',
     customizationOptions: ['accentColor', 'glowIntensity'],
   }),
-  sakura: createTheme({
+  sakura: createPartyTheme({
     id: 'sakura',
     name: 'Sakura',
     description: 'Нежная пастельная тема',
     cssPath: './sakura/index.css',
     customizationOptions: ['pinkTint', 'backgroundOpacity'],
   }),
-  'art-deco': createTheme({
+  'art-deco': createPartyTheme({
     id: 'art-deco',
     name: 'Art Deco',
     description: 'Элегантная тема в стиле ар-деко',
     cssPath: './art-deco/index.css',
     customizationOptions: ['goldColor', 'patternStyle'],
   }),
-  basic: createTheme({
+  basic: createPartyTheme({
     id: 'basic',
     name: 'Базовый',
     description: 'Простой и чистый стиль в духе приложения',
@@ -113,26 +111,26 @@ export const THEME_REGISTRY: ThemeRegistry = {
   }),
 };
 
-export const themes: Theme[] = Object.values(THEME_REGISTRY);
+export const partyThemes: PartyTheme[] = Object.values(PARTY_THEME_REGISTRY);
 
-export function getTheme(themeId: ThemeId): Theme | undefined {
-  return THEME_REGISTRY[themeId];
+export function getPartyTheme(partyThemeId: PartyThemeId): PartyTheme | undefined {
+  return PARTY_THEME_REGISTRY[partyThemeId];
 }
 
-export function applyTheme(themeId: ThemeId, element?: HTMLElement): void {
+export function applyPartyTheme(partyThemeId: PartyThemeId, element?: HTMLElement): void {
   const target = element || document.documentElement;
-  target.setAttribute('data-theme', themeId);
+  target.setAttribute('data-theme', partyThemeId);
 }
 
-export function isValidTheme(themeId: string): themeId is ThemeId {
-  return themeId in THEME_REGISTRY;
+export function isValidPartyTheme(partyThemeId: string): partyThemeId is PartyThemeId {
+  return partyThemeId in PARTY_THEME_REGISTRY;
 }
 
-export function getThemeOrDefault(themeId: string | undefined | null): Theme {
-  if (themeId && isValidTheme(themeId)) {
-    return THEME_REGISTRY[themeId];
+export function getPartyThemeOrDefault(partyThemeId: string | undefined | null): PartyTheme {
+  if (partyThemeId && isValidPartyTheme(partyThemeId)) {
+    return PARTY_THEME_REGISTRY[partyThemeId];
   }
-  return THEME_REGISTRY['cyberpunk'];
+  return PARTY_THEME_REGISTRY['cyberpunk'];
 }
 
 export {

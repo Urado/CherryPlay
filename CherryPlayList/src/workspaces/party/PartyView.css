@@ -5,6 +5,36 @@
   background: var(--bg-primary, #ffffff);
 }
 
+.party-view-linked-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(0, 204, 136, 0.12);
+  border-bottom: 1px solid rgba(0, 204, 136, 0.35);
+  flex-shrink: 0;
+}
+
+.party-view-linked-banner-icon {
+  font-size: 1.1rem;
+}
+
+.party-view-linked-banner-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.party-view-linked-banner-link {
+  font-size: 13px;
+  color: var(--accent-primary, #00cc88);
+  text-decoration: none;
+}
+
+.party-view-linked-banner-link:hover {
+  text-decoration: underline;
+}
+
 .party-view-header {
   padding: 16px;
   border-bottom: 1px solid var(--border-color, #e0e0e0);

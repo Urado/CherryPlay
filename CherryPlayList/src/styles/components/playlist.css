@@ -315,6 +315,18 @@
   min-width: 60px;
   text-align: right;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.playlist-item-duplicate-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--state-error);
+  flex-shrink: 0;
 }
 
 .playlist-item-delete {

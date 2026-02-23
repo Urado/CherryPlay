@@ -4,7 +4,7 @@
  */
 
 import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
-import type { PlaybackState, ThemeId } from '@cherryplay/components';
+import type { PlaybackState, PartyThemeId } from '@cherryplay/components';
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -92,6 +92,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
         if (state.playbackState) {
           const merged = playbackStateFromDto(state.playbackState, playbackStateRef.current);
           setPlaybackState(merged);
+          if (import.meta.env.DEV) {
+            console.log('[PartyView] Applied full state playback:', {
+              currentTrackId: merged.currentTrackId,
+              status: merged.status,
+              position: merged.position,
+              duration: merged.duration,
+            });
+          }
         }
         setIsSessionActive(state.isSessionActive);
       }
@@ -149,6 +157,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
             lastUpdatedAt: new Date().toISOString(),
           });
         }
+        if (import.meta.env.DEV) {
+          console.log('[PartyView] Applied OnPlaybackPositionUpdated:', {
+            trackId,
+            position,
+          });
+        }
       },
       [setPlaybackState],
     ),
@@ -171,6 +185,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
         } else {
           setPlaybackState(merged);
         }
+        if (import.meta.env.DEV) {
+          console.log('[PartyView] Applied OnFullStateUpdated:', {
+            currentTrackId: merged.currentTrackId,
+            status: merged.status,
+          });
+        }
       },
       [setPlaybackState, setIsSessionActive],
     ),
@@ -191,9 +211,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
       },
       [loadPlaylist],
     ),
-    onConnectionStatusChanged: useCallback((_partyId: string, isOnline: boolean) => {
-      devLog('[PartyView] Connection status changed:', _partyId, isOnline);
-    }, []),
+    onConnectionStatusChanged: useCallback(
+      (_partyId: string, isOnline: boolean) => {
+        devLog('[PartyView] Connection status changed:', _partyId, isOnline);
+        if (!isOnline) {
+          setIsSessionActive(false);
+          setPlaybackState(null);
+        }
+      },
+      [setIsSessionActive, setPlaybackState],
+    ),
     onError: useCallback(
       (error: string) => {
         setError(`Ошибка подключения: ${error}`);
@@ -273,7 +300,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortCode, isDemo, loading]); // Убрали функции из зависимостей намеренно
 
-  const displayData: PartyDisplayData<ThemeId> = useMemo(
+  const displayData: PartyDisplayData<PartyThemeId> = useMemo(
     () => ({
       partyId: partyId || (isDemo ? 'demo' : 'unknown'),
       partyName: partyName || (isDemo ? 'Демо плейлист' : 'Плейлист вечеринки'),
@@ -330,11 +357,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <div className="party-view-header-controls">
             {onBackToList && (
               <button
+                type="button"
                 className="party-view-back-btn"
                 onClick={onBackToList}
-                title="Вернуться к списку вечеринок"
+                title="Список вечеринок"
               >
-                ← Назад к списку
+                ← Список вечеринок
               </button>
             )}
             {!isDemo && shortCode && (

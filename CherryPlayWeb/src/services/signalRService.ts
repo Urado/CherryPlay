@@ -7,15 +7,29 @@ import { API_ENDPOINTS, getSignalRUrl } from '../config/apiConfig';
 import type { PlaybackStateDto, PartyStateDto } from '../types/api';
 import { devLog } from '../utils/logger';
 
+/** Логировать в консоль полученные сообщения SignalR (только в dev) */
+function logReceived(eventName: string, ...args: unknown[]): void {
+  if (import.meta.env.DEV) {
+    console.log(`[SignalR] Received ${eventName}`, ...args);
+  }
+}
+
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private isConnected = false;
   private pendingCallbacks: Array<() => void> = [];
-  // Храним обработчики для восстановления при переподключении
-  // SignalR требует тип (...args: any[]) => any для обработчиков событий
-  private eventHandlers: Map<string, Array<(...args: unknown[]) => unknown>> = new Map();
+  // Один обработчик на событие (подписка только из useSignalR)
+  private eventHandlers: Map<string, (...args: unknown[]) => void> = new Map();
   // Храним shortCode для повторного подключения к группе при переподключении
   private currentShortCode: string | null = null;
+
+  private registerHandlers(): void {
+    if (!this.connection) return;
+    this.eventHandlers.forEach((handler, eventName) => {
+      this.connection!.off(eventName);
+      this.connection!.on(eventName, handler as (...args: unknown[]) => void);
+    });
+  }
 
   /**
    * Подключается к SignalR Hub
@@ -45,14 +59,7 @@ class SignalRService {
     this.pendingCallbacks = [];
 
     devLog('[SignalR Web] Restoring event handlers');
-    this.eventHandlers.forEach((handlers, eventName) => {
-      handlers.forEach((handler) => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.connection.on(eventName, handler as (...args: unknown[]) => void);
-        }
-      });
-    });
+    this.registerHandlers();
 
     // Обработка событий подключения
     this.connection.onclose((error) => {
@@ -67,15 +74,7 @@ class SignalRService {
     this.connection.onreconnected(async (connectionId) => {
       this.isConnected = true;
       devLog('[SignalR Web] Reconnected:', connectionId);
-      // Восстанавливаем все обработчики при переподключении
-      this.eventHandlers.forEach((handlers, eventName) => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          handlers.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.registerHandlers();
 
       // Повторно подключаемся к группе вечеринки, если был shortCode
       if (this.currentShortCode) {
@@ -171,6 +170,15 @@ class SignalRService {
     await this.waitForConnection();
     const result = await this.connection.invoke('RequestFullState', shortCode);
     devLog('[SignalR Web] Received full state:', shortCode, !!result?.playbackState);
+    if (import.meta.env.DEV && result != null) {
+      console.log('[SignalR] RequestFullState result:', {
+        shortCode,
+        hasPlaybackState: !!result.playbackState,
+        playbackState: result.playbackState ?? null,
+        hasPlaylist: !!result.playlist,
+        playlistItemsCount: result.playlist?.items?.length ?? 0,
+      });
+    }
     return result;
   }
 
@@ -181,30 +189,15 @@ class SignalRService {
   onSessionStarted(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionStarted';
     const wrappedCallback = (partyId: string) => {
-      devLog('[SignalR Web] OnSessionStarted:', partyId);
+      logReceived(eventName, { partyId });
       callback(partyId);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -214,30 +207,15 @@ class SignalRService {
   onSessionEnded(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionEnded';
     const wrappedCallback = (partyId: string) => {
-      devLog('[SignalR Web] OnSessionEnded:', partyId);
+      logReceived(eventName, { partyId });
       callback(partyId);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -249,30 +227,15 @@ class SignalRService {
   ): void {
     const eventName = 'OnPlaybackPositionUpdated';
     const wrappedCallback = (partyId: string, trackId: string, position: number) => {
-      devLog('[SignalR Web] OnPlaybackPositionUpdated:', partyId, trackId, position);
+      logReceived(eventName, { partyId, trackId, position });
       callback(partyId, trackId, position);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -282,30 +245,22 @@ class SignalRService {
   onFullStateUpdated(callback: (partyId: string, state: PlaybackStateDto) => void): void {
     const eventName = 'OnFullStateUpdated';
     const wrappedCallback = (partyId: string, state: PlaybackStateDto) => {
-      devLog('[SignalR Web] OnFullStateUpdated:', partyId);
+      logReceived(eventName, {
+        partyId,
+        state: state ?? null,
+        currentTrackId: state?.currentTrackId ?? null,
+        status: state?.status ?? null,
+        position: state?.position ?? null,
+        duration: state?.duration ?? null,
+      });
       callback(partyId, state);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -315,30 +270,15 @@ class SignalRService {
   onStateChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnStateChanged';
     const wrappedCallback = (partyId: string) => {
-      devLog('[SignalR Web] OnStateChanged:', partyId);
+      logReceived(eventName, { partyId });
       callback(partyId);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -348,32 +288,15 @@ class SignalRService {
   onPlaylistChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnPlaylistChanged';
     const wrappedCallback = (partyId: string) => {
-      devLog('[SignalR Web] OnPlaylistChanged:', partyId);
+      logReceived(eventName, { partyId });
       callback(partyId);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
-      // Удаляем старые обработчики перед добавлением нового (избегаем дублирования)
       this.connection.off(eventName);
-      // Добавляем все сохраненные обработчики
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -383,30 +306,15 @@ class SignalRService {
   onConnectionStatusChanged(callback: (partyId: string, isOnline: boolean) => void): void {
     const eventName = 'OnConnectionStatusChanged';
     const wrappedCallback = (partyId: string, isOnline: boolean) => {
-      devLog('[SignalR Web] OnConnectionStatusChanged:', partyId, isOnline);
+      logReceived(eventName, { partyId, isOnline });
       callback(partyId, isOnline);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 
@@ -416,30 +324,15 @@ class SignalRService {
   onError(callback: (error: string) => void): void {
     const eventName = 'Error';
     const wrappedCallback = (error: string) => {
-      devLog('[SignalR Web] Error event:', error);
+      logReceived(eventName, { error });
       callback(error);
     };
-
-    // Сохраняем обработчик для восстановления при переподключении
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)!.push(wrappedCallback as (...args: unknown[]) => unknown);
-
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {
       this.connection.off(eventName);
-      this.eventHandlers.get(eventName)!.forEach((handler) => {
-        this.connection!.on(eventName, handler as (...args: unknown[]) => void);
-      });
-    } else {
-      this.pendingCallbacks.push(() => {
-        if (this.connection) {
-          this.connection.off(eventName);
-          this.eventHandlers.get(eventName)!.forEach((handler) => {
-            this.connection!.on(eventName, handler);
-          });
-        }
-      });
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
     }
   }
 

@@ -7,7 +7,7 @@ import React from 'react';
 
 import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import { formatDuration } from '../../core/utils/time';
-import { ThemeId } from '../../themes';
+import { PartyThemeId } from '../../themes';
 import { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';
@@ -20,7 +20,7 @@ export interface PlaylistViewProps {
   disabledTrackIds?: string[];
   disabledGroupIds?: string[];
   className?: string;
-  themeId?: ThemeId;
+  themeId?: PartyThemeId;
 }
 
 export const PlaylistView: React.FC<PlaylistViewProps> = ({

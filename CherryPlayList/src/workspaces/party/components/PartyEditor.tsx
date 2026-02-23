@@ -1,4 +1,9 @@
-import { themes, type ThemeId, getThemeMetadata, getTheme } from '@cherryplay/components';
+import {
+  partyThemes,
+  type PartyThemeId,
+  getThemeMetadata,
+  getPartyTheme,
+} from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
 import { getPopularTimeZones, getDefaultTimeZone } from '@shared/utils/timezoneUtils';
@@ -6,7 +11,7 @@ import './PartyEditor.css';
 
 interface PartyEditorProps {
   partyName: string;
-  themeId: ThemeId;
+  themeId: PartyThemeId;
   customizationSettings: Record<string, string | number>;
   eventDateTime: string;
   description?: string;
@@ -15,7 +20,7 @@ interface PartyEditorProps {
   schedule?: string;
   timeZone?: string;
   onPartyNameChange: (name: string) => void;
-  onThemeIdChange: (themeId: ThemeId) => void;
+  onThemeIdChange: (themeId: PartyThemeId) => void;
   onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
   onDescriptionChange?: (description: string) => void;
@@ -39,20 +44,20 @@ interface PartyEditorProps {
   onOpenLinkParty?: () => void;
 }
 
-// Маппинг превью для тем (опциональные описания для UI)
-const THEME_PREVIEWS: Record<ThemeId, string> = {
+// Маппинг превью для PartyTheme (опциональные описания для UI)
+const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
   cyberpunk: '💚 Неоновое свечение, темный фон, футуристический стиль',
   sakura: '🌸 Розовые оттенки, мягкие переходы, элегантный дизайн',
   'art-deco': '✨ Золотые акценты, геометрические паттерны, роскошный вид',
   basic: '📋 Простой дизайн, темный фон, синий акцент',
 };
 
-// Используем темы из библиотеки компонентов
-const AVAILABLE_STYLES = themes.map((theme) => ({
+// Используем PartyTheme из библиотеки компонентов
+const AVAILABLE_STYLES = partyThemes.map((theme) => ({
   id: theme.id,
   name: theme.name,
   description: theme.description,
-  preview: THEME_PREVIEWS[theme.id] || theme.description,
+  preview: PARTY_THEME_PREVIEWS[theme.id] || theme.description,
 }));
 
 export const PartyEditor: React.FC<PartyEditorProps> = ({
@@ -117,7 +122,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const renderCustomizationOptions = () => {
     const metadata = getThemeMetadata(themeId);
-    const theme = getTheme(themeId);
+    const theme = getPartyTheme(themeId);
     if (!metadata || metadata.customizationOptions.length === 0) {
       return null;
     }
@@ -197,7 +202,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     );
   };
 
-  const handleStyleSelect = (themeId: ThemeId) => {
+  const handleStyleSelect = (themeId: PartyThemeId) => {
     onThemeIdChange(themeId);
     setIsDropdownOpen(false);
   };

@@ -11,7 +11,7 @@ public static class PartyMapper
             Id: party.Id.ToString(),
             Name: party.Name,
             ShortCode: party.ShortCode,
-            ThemeId: party.ThemeId,
+            PartyThemeId: party.PartyThemeId,
             CreatedAt: party.CreatedAt.ToString("O"),
             HasActiveSession: hasActiveSession,
             EventDateTime: party.EventDateTime?.ToString("O"),
@@ -29,7 +29,7 @@ public static class PartyMapper
         return new PublicPartyDto(
             Id: party.Id.ToString(),
             Name: party.Name,
-            ThemeId: party.ThemeId,
+            PartyThemeId: party.PartyThemeId,
             HasActiveSession: hasActiveSession,
             IsListedInCatalog: party.IsListedInCatalog,
             CustomizationSettings: party.CustomizationSettings,

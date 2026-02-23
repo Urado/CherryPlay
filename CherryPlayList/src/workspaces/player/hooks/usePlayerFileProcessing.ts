@@ -34,7 +34,7 @@ export function usePlayerFileProcessing() {
     async (
       sources: FileSource[],
       target: ProcessingTarget,
-      loadDurationsForTracks: (paths: string[]) => void,
+      loadDurationsForTracks: (targets: Array<{ id: string; path: string }>) => void,
     ) => {
       if (sources.length === 0) return;
 
@@ -99,13 +99,13 @@ async function processFiles(
       addItem(trackWithId);
       // Затем перемещаем в группу
       addItemToGroup(target.id!, trackWithId.id, insertIndex + idx);
-      loadDurationsForTracks([trackWithId.path]);
+      loadDurationsForTracks([{ id: trackWithId.id, path: trackWithId.path }]);
     });
   } else if (target.type === 'position' && target.index !== undefined) {
     // Добавляем в позицию
     const tracksWithIds = tracks.map(createTrackWithId);
     tracksWithIds.forEach((track) => addItem(track, target.index));
-    const paths = tracksWithIds.map((track) => track.path);
-    loadDurationsForTracks(paths);
+    const targetList = tracksWithIds.map((t) => ({ id: t.id, path: t.path }));
+    loadDurationsForTracks(targetList);
   }
 }

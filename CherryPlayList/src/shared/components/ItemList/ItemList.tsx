@@ -12,10 +12,10 @@ export interface ItemListProps {
   className?: string;
   style?: React.CSSProperties;
   workspaceId?: WorkspaceId;
-  /** Container drag over handler - receives event only (new API) */
-  onDragOver?: (e: React.DragEvent) => void;
-  /** Container drop handler - receives event only (new API) */
-  onDrop?: (e: React.DragEvent) => void;
+  /** Container drag over handler - receives event and insert index (where item would be inserted) */
+  onDragOver?: (e: React.DragEvent, insertIndex: number) => void;
+  /** Container drop handler - receives event and insert index */
+  onDrop?: (e: React.DragEvent, insertIndex: number) => void;
   onDragLeave?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   showEmptyState?: boolean;
@@ -58,6 +58,7 @@ export const ItemList: React.FC<ItemListProps> = ({
   emptyState,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastInsertIndexRef = useRef<number>(0);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -115,10 +116,10 @@ export const ItemList: React.FC<ItemListProps> = ({
 
       setIsDragging(true);
       const insertIndex = calculateInsertIndex(e);
+      lastInsertIndexRef.current = insertIndex;
       setDropIndex(insertIndex);
 
-      // Call callback with just the event (new API)
-      onDragOver?.(e);
+      onDragOver?.(e, insertIndex);
     },
     [calculateInsertIndex, onDragOver],
   );
@@ -128,8 +129,8 @@ export const ItemList: React.FC<ItemListProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
-      // Call callback with just the event (new API)
-      onDrop?.(e);
+      const insertIndex = lastInsertIndexRef.current;
+      onDrop?.(e, insertIndex);
 
       setDropIndex(null);
       setIsDragging(false);

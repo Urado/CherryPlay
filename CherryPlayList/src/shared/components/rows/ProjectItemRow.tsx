@@ -84,6 +84,8 @@ export interface ProjectItemRowProps {
   // Group-specific
   /** Duration of the group including pauses (for groups only) */
   groupDuration?: number;
+  /** Whether this track's path appears more than once in the list (show duplicate warning) */
+  isDuplicatePath?: boolean;
 
   // Callbacks
   /** Called when selection is toggled */
@@ -141,6 +143,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   isCurrent = false,
   isLocked = false,
   groupDuration,
+  isDuplicatePath = false,
   onToggleSelect,
   onRemove,
   onDragStart,
@@ -368,8 +371,19 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         {isGroup ? renderGroupNameContent() : trackDisplayName}
       </ListRowCompound.Content>
 
-      {/* Duration */}
-      {displayDuration && <ListRowCompound.Secondary>{displayDuration}</ListRowCompound.Secondary>}
+      {/* Duration (with duplicate warning when same path appears elsewhere) */}
+      {displayDuration && (
+        <ListRowCompound.Secondary>
+          {isDuplicatePath && (
+            <span
+              className="playlist-item-duplicate-dot"
+              title="Дубликат: тот же файл уже есть в плейлисте"
+              aria-label="Дубликат"
+            />
+          )}
+          {displayDuration}
+        </ListRowCompound.Secondary>
+      )}
 
       {/* Actions */}
       <ListRowCompound.Actions>

@@ -28,7 +28,7 @@ export interface WorkspaceDragDropOptions {
   isValidAudioFile: (path: string) => boolean;
   onAddTracks: (tracks: Omit<Track, 'id'>[]) => void;
   onAddTracksAt: (tracks: Omit<Track, 'id'>[], index: number) => void;
-  onTracksAdded?: (paths: string[]) => void;
+  onTracksAdded?: (targets: Array<{ id: string; path: string }>) => void;
   loadFolderTracks?: (folderPath: string) => Promise<string[]>;
   /** Unified move executor - handles both same-workspace and cross-workspace moves */
   onMove?: (command: DragDropCommand) => boolean;
@@ -186,7 +186,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
   );
 
   const handleDragOverContainer = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent, insertIndex?: number) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -211,7 +211,9 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         e.dataTransfer.dropEffect = isCopyMode ? 'copy' : 'move';
       }
 
-      setDragOverIndex(displayItems.length);
+      const index =
+        typeof insertIndex === 'number' && insertIndex >= 0 ? insertIndex : displayItems.length;
+      setDragOverIndex(index);
       setInsertPosition('top');
     },
     [
@@ -262,9 +264,9 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       } else {
         onAddTracks(drafts);
       }
-      onTracksAdded?.(filteredPaths);
+      // Duration loading is done in the parent's onAddTracks/onAddTracksAt (with track ids)
     },
-    [isValidAudioFile, onAddTracks, onAddTracksAt, onTracksAdded],
+    [isValidAudioFile, onAddTracks, onAddTracksAt],
   );
 
   const addFolders = useCallback(
@@ -416,7 +418,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
   );
 
   const handleDropOnContainer = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent, insertIndex?: number) => {
       e.preventDefault();
       e.stopPropagation();
 
@@ -424,6 +426,9 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         handleClearDragState();
         return;
       }
+
+      const index =
+        typeof insertIndex === 'number' && insertIndex >= 0 ? insertIndex : displayItems.length;
 
       const types = Array.from(e.dataTransfer.types);
       const isFileDrag = types.includes('application/json');
@@ -433,17 +438,19 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
           e.dataTransfer.getData('application/json'),
         );
 
-        const rootCount = displayItems.filter((di) => di.parentGroupId === null).length;
+        const rootInsertIndex = displayItems.filter(
+          (di, i) => i < index && di.parentGroupId === null,
+        ).length;
 
         if (files.length) {
-          addTracksFromPaths(files, null, rootCount);
+          addTracksFromPaths(files, null, rootInsertIndex);
         }
         if (directories.length) {
-          addFolders(directories, null, rootCount);
+          addFolders(directories, null, rootInsertIndex);
         }
       } else if (isItemDragState(draggedItems)) {
         const position: InsertPosition = 'top';
-        executeDrop(displayItems.length, position);
+        executeDrop(index, position);
       }
 
       handleClearDragState();

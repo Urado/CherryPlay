@@ -10,7 +10,8 @@
 
 Библиотека построена на основе системы изолированных тем:
 - **Core-слой** (`src/core/`) - общие типы, утилиты и хуки
-- **Темы** (`src/themes/<themeId>/`) - изолированные наборы компонентов для каждой темы
+- **PartyTheme** (`src/themes/<themeId>/`) - изолированные наборы компонентов для каждой PartyTheme
+- **Палитра оболочки** (`src/styles/shell-palette.css`) - единая нейтральная тёмная палитра для оболочки приложения
 - **Фасадный компонент** (`PartyDisplay`) - единая точка входа для фронта, автоматически выбирает нужную тему
 
 ## Основной компонент
@@ -113,7 +114,9 @@ CherryPlayComponents/
 ├── src/
 │   ├── core/                    # Общий слой
 │   │   ├── utils/               # Утилиты (форматирование времени, работа с плейлистом)
-│   │   └── hooks/               # React хуки (useThemeVars)
+│   │   └── hooks/               # React хуки (usePartyThemeVars)
+│   ├── styles/                  # Палитра оболочки
+│   │   └── shell-palette.css    # Единая палитра для оболочки приложения
 │   ├── types/                   # TypeScript типы
 │   ├── components/              # Универсальные компоненты (для обратной совместимости)
 │   │   ├── PartyDisplay/        # Фасадный компонент
@@ -145,17 +148,34 @@ CherryPlayComponents/
 1. Создайте директорию `src/themes/<theme-id>/`
 2. Реализуйте компоненты темы (PartyDisplay, PlaylistView, PlaylistItem, CurrentTrackDisplay)
 3. Добавьте CSS стили в `styles/`
-4. Зарегистрируйте тему в `src/themes/index.ts` в `THEME_REGISTRY`
+4. Зарегистрируйте PartyTheme в `src/themes/index.ts` в `PARTY_THEME_REGISTRY` используя `createPartyTheme()`
 
 ## Стилизация
 
-Каждая тема определяет свои CSS переменные через атрибут `data-theme`:
+### Палитра оболочки
+
+Единая нейтральная тёмная палитра для оболочки приложения (кабинет, список, логин, редактор вечеринки и т.д.) находится в `src/styles/shell-palette.css`. Импортируйте её в вашем приложении:
+
+```typescript
+import '@cherryplay/components/styles/shell-palette.css';
+```
+
+Палитра оболочки определяет CSS переменные на `:root`:
+- `--bg-primary`, `--bg-secondary`, `--bg-tertiary`, `--bg-hover` - цвета фона
+- `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
+- `--border-color` - цвет границ
+- `--radius-sm`, `--radius-md`, `--radius-lg` - радиусы скругления
+- `--state-error-bg`, `--state-error-text` - состояния ошибок
+
+### PartyTheme
+
+Каждая PartyTheme определяет свои CSS переменные через атрибут `data-theme`:
 - `--bg-primary`, `--bg-secondary`, `--bg-tertiary` - цвета фона
 - `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
 - `--accent-primary` - цвет акцента
 - `--border-color` - цвет границ
 
-Настройки кастомизации передаются через `customizationSettings` в `PartyDisplayData` и автоматически преобразуются в CSS переменные.
+Настройки кастомизации передаются через `customizationSettings` в `PartyDisplayData` и автоматически преобразуются в CSS переменные через хук `usePartyThemeVars`.
 
 ## Сборка
 

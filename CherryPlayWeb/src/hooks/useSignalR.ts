@@ -84,7 +84,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onError,
   ]);
 
-  // Устанавливаем подписки на события
+  // Единственное место подписки на события SignalR (один обработчик на событие в сервисе)
   useEffect(() => {
     if (onSessionStarted) {
       signalRService.onSessionStarted((partyId) => {

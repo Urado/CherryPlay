@@ -1,7 +1,7 @@
 .party-list-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  color: var(--text-primary);
   padding: 20px;
 }
 
@@ -37,10 +37,10 @@
 
 .party-list-login-link {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -49,19 +49,19 @@
 }
 
 .party-list-login-link:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--bg-hover);
+  border-color: var(--selected-border);
   transform: translateY(-1px);
 }
 
 .party-list-refresh-btn {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-size: 24px;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -70,14 +70,14 @@
 }
 
 .party-list-refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover);
   transform: rotate(180deg);
 }
 
 .party-list-empty {
   text-align: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-tertiary);
 }
 
 .party-list-empty p {
@@ -87,7 +87,7 @@
 
 .party-list-empty-hint {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-disabled);
 }
 
 .party-list-grid {
@@ -98,8 +98,8 @@
 
 .party-list-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -124,14 +124,14 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   flex: 1;
 }
 
 .party-list-card-badge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -174,11 +174,11 @@
 }
 
 .party-list-card-info-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .party-list-card-info-value {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -187,12 +187,12 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 .party-list-card-code {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
   font-family: 'Courier New', monospace;
   letter-spacing: 1px;
 }
@@ -220,8 +220,8 @@
 /* Фильтры */
 .party-list-filters {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 24px;
   backdrop-filter: blur(10px);
@@ -237,7 +237,7 @@
 .party-list-filters-toggle {
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -259,17 +259,17 @@
 
 .party-list-filters-clear {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-size: 14px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .party-list-filters-clear:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover);
   border-color: rgba(255, 0, 0, 0.5);
 }
 
@@ -278,7 +278,7 @@
   flex-direction: column;
   gap: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 .party-list-filters-group {
@@ -288,16 +288,16 @@
 }
 
 .party-list-filters-label {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
 }
 
 .party-list-filters-input {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font-size: 14px;
   padding: 8px 12px;
   transition: all 0.3s ease;
@@ -306,7 +306,7 @@
 .party-list-filters-input:focus {
   outline: none;
   border-color: rgba(0, 255, 0, 0.5);
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-hover);
 }
 
 .party-list-filters-days {
@@ -317,9 +317,9 @@
 
 .party-list-filters-day {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   padding: 8px 12px;
@@ -330,7 +330,7 @@
 }
 
 .party-list-filters-day:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-hover);
   border-color: rgba(0, 255, 0, 0.3);
 }
 
@@ -342,18 +342,18 @@
 
 .party-list-empty-clear {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-size: 14px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   margin-top: 16px;
   transition: all 0.3s ease;
 }
 
 .party-list-empty-clear:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover);
 }
 
 /* Адаптивность */

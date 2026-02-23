@@ -76,12 +76,14 @@ public class PublicPartyQueryService : IPublicPartyQueryService
                 Id: party.Id.ToString(),
                 Name: party.Name,
                 ShortCode: party.ShortCode,
-                ThemeId: party.ThemeId,
+                PartyThemeId: party.PartyThemeId,
                 HasActiveSession: hasActiveSession,
                 CreatedAt: party.CreatedAt.ToString("O"),
                 TotalTracks: party.Playlist.TotalTracks,
                 TotalDuration: party.Playlist.TotalDuration,
-                EventDateTime: party.EventDateTime?.ToString("O")
+                EventDateTime: party.EventDateTime?.ToString("O"),
+                TimeZone: party.TimeZone,
+                City: party.City
             );
         }).ToList();
 

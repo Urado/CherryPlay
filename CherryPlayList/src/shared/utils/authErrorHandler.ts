@@ -6,7 +6,7 @@ import { useUIStore } from '../stores/uiStore';
 
 /**
  * Обрабатывает ошибку аутентификации (401)
- * Очищает токен и показывает уведомление пользователю
+ * Очищает токен, закрывает модалку аккаунта и показывает уведомление пользователю
  */
 export function handleAuthError(error?: Error | string): void {
   const errorMessage =
@@ -19,8 +19,14 @@ export function handleAuthError(error?: Error | string): void {
   // Очищаем токен
   useAuthStore.getState().clearAuth();
 
+  // Закрываем модалку аккаунта, чтобы UI визуально обновился
+  const uiStore = useUIStore.getState();
+  if (uiStore.modal === 'account') {
+    uiStore.closeModal();
+  }
+
   // Показываем уведомление пользователю
-  useUIStore.getState().addNotification({
+  uiStore.addNotification({
     type: 'error',
     message: errorMessage,
     duration: 8000,
