@@ -132,10 +132,25 @@ jobs:
           scp nginx-cherryplay-https.conf \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
 
+      - name: Run EF Core migrations
+        env:
+          DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+        run: |
+          if [ -z "$DATABASE_CONNECTION_STRING" ]; then
+            echo "::warning:: DATABASE_CONNECTION_STRING secret is not set. Skipping migrations. Configure it for production PostgreSQL to run migrations in CI/CD."
+            exit 0
+          fi
+          dotnet tool install --global dotnet-ef || true
+          dotnet restore CherryPlayServer/CherryPlayServer.csproj
+          dotnet build CherryPlayServer/CherryPlayServer.csproj --no-restore
+          dotnet ef database update --project CherryPlayServer/CherryPlayServer.csproj --no-build --connection "$DATABASE_CONNECTION_STRING"
+
       - name: Deploy application
         env:
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          PGADMIN_EMAIL: ${{ secrets.PGADMIN_EMAIL }}
+          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
           CORS_ORIGIN_0: ${{ secrets.CORS_ORIGIN_0 }}
           CORS_ORIGIN_1: ${{ secrets.CORS_ORIGIN_1 }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
@@ -154,6 +169,8 @@ jobs:
             export GHCR_TOKEN='$GHCR_TOKEN'
             export JWT_SECRET_KEY='$JWT_SECRET_KEY'
             export POSTGRES_PASSWORD='$POSTGRES_PASSWORD'
+            export PGADMIN_EMAIL='$PGADMIN_EMAIL'
+            export PGADMIN_PASSWORD='$PGADMIN_PASSWORD'
             export CORS_ORIGIN_0='$CORS_ORIGIN_0'
             export CORS_ORIGIN_1='$CORS_ORIGIN_1'
             export OAUTH_VK_CLIENT_ID='$OAUTH_VK_CLIENT_ID'

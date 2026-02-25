@@ -11,6 +11,7 @@ export const LinkPartyModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
   const items = useProjectStore((state) => state.items);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
+  const markAsDirty = useProjectStore((state) => state.markAsDirty);
 
   const [parties, setParties] = useState<PartyDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,7 @@ export const LinkPartyModal: React.FC = () => {
       const url = await partyService.getPartyUrl(party.shortCode);
       const partyData = { id: party.id, shortCode: party.shortCode, url };
       setLinkedParty(partyData);
+      markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
         const playlistForApi = convertPlaylistForApi(items);

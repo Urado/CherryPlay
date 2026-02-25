@@ -2,6 +2,13 @@
 
 Модель данных приведена в соответствие с планом релиза v1: [RELEASE_PLAN.md](../RELEASE_PLAN.md) (§3.2, §4.1, §4.2, §4.4): мульти-тенантность (один аккаунт = одна организация), персистентное хранение метаданных вечеринки и плейлиста без путей к файлам, состояние сессии для отображения зрителю.
 
+## Реализация (EF Core Code First)
+
+- **Схема ведётся через EF Core миграции** (проект CherryPlayServer, папка `Migrations/`). Команды: `dotnet ef migrations add <Name>`, `dotnet ef database update`.
+- **PostgreSQL (Npgsql)**. Имена таблиц и колонок в БД — **snake_case** (например `organizers`, `party_playlists`, `created_at`), задаётся конвенцией EFCore.NamingConventions.
+- **Отдельный слой персистентности:** доменные сущности в `Core/Entities`, EF-сущности в `Infrastructure/Persistence/Entities`; маппинг Domain ↔ EF в `Infrastructure/Persistence/Mappings`. Репозитории возвращают только доменные типы.
+- **Soft delete:** у таблиц `organizers` и `parties` есть колонка `is_deleted`; в выборках применяется Global Query Filter. Удаление организатора/вечеринки — установка флага, без физического удаления строки.
+
 ---
 
 ## Organizer (организатор)
@@ -18,6 +25,7 @@
 | `DefaultCustomizationSettings` | JSON | NULL | Настройки оформления по умолчанию (override на уровне party). |
 | `CreatedAt` | datetime | NOT NULL | Дата создания. |
 | `UpdatedAt` | datetime | NULL | Дата последнего обновления. |
+| `IsDeleted` | boolean | NOT NULL, default false | Soft delete (скрытие из выборок). |
 
 *Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам.*
 
@@ -67,6 +75,7 @@
 | `IsListedInCatalog` | boolean | NOT NULL, default false | По умолчанию unlisted; true — вечеринка в общем каталоге. |
 | `CreatedAt` | datetime | NOT NULL | Дата создания. |
 | `UpdatedAt` | datetime | NULL | Дата последнего обновления. |
+| `IsDeleted` | boolean | NOT NULL, default false | Soft delete (скрытие из выборок). |
 
 Индексы: `ShortCode` (уникальный), `OrganizerId`, `IsListedInCatalog` (для выборки каталога).
 

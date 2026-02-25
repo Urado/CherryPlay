@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using CherryPlayServer.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CherryPlayServer.Core.Authorization;
 
 public class OrganizerAuthorizationHandler : AuthorizationHandler<OrganizerRequirement>
 {
-    private readonly IOrganizerSessionRepository _sessionRepository;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public OrganizerAuthorizationHandler(IOrganizerSessionRepository sessionRepository)
+    public OrganizerAuthorizationHandler(IServiceScopeFactory scopeFactory)
     {
-        _sessionRepository = sessionRepository ?? throw new ArgumentNullException(nameof(sessionRepository));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
     }
 
     protected override async Task HandleRequirementAsync(
@@ -29,7 +30,9 @@ public class OrganizerAuthorizationHandler : AuthorizationHandler<OrganizerRequi
                 return;
             }
 
-            var session = await _sessionRepository.GetByIdAsync(sessionId);
+            using var scope = _scopeFactory.CreateScope();
+            var sessionRepository = scope.ServiceProvider.GetRequiredService<IOrganizerSessionRepository>();
+            var session = await sessionRepository.GetByIdAsync(sessionId);
             if (session == null)
             {
                 context.Fail(new AuthorizationFailureReason(this, "Session not found or expired"));

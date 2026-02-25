@@ -71,6 +71,15 @@ npm run build
 - .NET 9.0 SDK установлен
 - PostgreSQL установлен и запущен (или используйте Docker только для БД)
 
+**Локально с PostgreSQL в Docker:** чтобы бэкенд (запущенный с хоста через `dotnet run`) работал с БД в контейнере:
+1. Поднимите только Postgres: `docker compose up postgres -d`
+2. В `CherryPlayServer/appsettings.Development.json` уже указана строка подключения к `localhost:5433`, пользователь `cherryplay`, пароль `cherryplay_password` (совпадает с `docker-compose.yml`)
+3. Запустите сервер: `cd CherryPlayServer && dotnet run` — миграции применятся при старте.
+
+Либо запустите всё в Docker: `docker compose up` — логин/пароль БД заданы в compose (см. раздел [Docker](#docker)).
+
+**Если фронт даёт ERR_EMPTY_RESPONSE на localhost:5000:** бэкенд, скорее всего, падает при старте (БД или миграции). Проверьте логи: `docker compose -f docker-compose.debug.yml logs server --tail 150`. При необходимости один раз примените миграции с хоста: `cd CherryPlayServer && dotnet ef database update --connection "Host=localhost;Port=5433;Database=cherryplay;Username=cherryplay;Password=cherryplay_password"`, затем перезапустите контейнеры.
+
 Подробнее см. `QUICK_START.md`
 
 ## Документация
@@ -156,17 +165,23 @@ docker-compose down -v
   - Password: `admin`
 - **PostgreSQL**: localhost:5433 (внешний порт, внутри контейнера 5432)
 
+**На продакшен-сервере** pgAdmin не открыт в интернет (порт 5050 привязан к 127.0.0.1). Доступ только через SSH-туннель — см. [SSH_TUNNEL_PGADMIN.md](SSH_TUNNEL_PGADMIN.md) и раздел «Доступ к pgAdmin на сервере» в [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md).
+
 ### Подключение к PostgreSQL через pgAdmin
 
 1. Откройте http://localhost:5050
-2. Войдите с учетными данными выше
+2. Войдите с учетными данными выше (email: `admin@cherryplay.com`, пароль: `admin`)
 3. Добавьте новый сервер:
    - **Name**: CherryPlay DB
-   - **Host**: `postgres`
-   - **Port**: `5432`
+   - **Host**: `postgres` (при запуске из Docker; с хоста — `localhost`, порт `5433`)
+   - **Port**: `5432` (из контейнера) или `5433` (с хоста)
    - **Database**: `cherryplay`
    - **Username**: `cherryplay`
    - **Password**: `cherryplay_password`
+
+Если при раскрытии сервера появляется **«Crypt key is missing»** — в docker-compose для pgAdmin включён `PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'`. Перезапустите контейнеры (`docker compose down`, затем `docker compose -f docker-compose.debug.yml up -d`), чтобы применить настройку.
+
+**Таблицы (схема public):** после подключения откройте *Servers → CherryPlay DB → Databases → cherryplay → Schemas → public → Tables*. Таблицы EF Core: `organizers`, `parties`, `party_playlists`, `session_states`, `email_accounts`, `oauth_accounts`, `organizer_sessions`.
 
 ### Переменные окружения
 

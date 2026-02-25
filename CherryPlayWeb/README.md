@@ -38,6 +38,24 @@ npm run dev
 
 По умолчанию приложение подключается к серверу на `http://localhost:5000`. Можно изменить через переменную окружения **`VITE_API_URL`** (например, в файле `.env` в корне проекта: `VITE_API_URL=http://localhost:5000`). Полный список переменных окружения см. в [ENV.md](ENV.md).
 
+## Продакшен через Docker и Nginx
+
+В продакшене веб-приложение собирается и упаковывается в Docker-образ `CherryPlayWeb`, который использует Nginx для раздачи статики и проксирования запросов:
+
+- Конфиг Nginx внутри контейнера: `CherryPlayWeb/nginx.conf`.
+- Этот Nginx:
+  - отдаёт SPA по `location /` (`index.html` и статику);
+  - проксирует `location /api` и `location /auth` на backend-сервис `server:8080`;
+  - проксирует `location /partyHub` (SignalR Hub) на `server:8080`.
+
+На боевом сервере перед контейнером `web` стоит ещё один Nginx на хосте (см. `.github/nginx-cherryplay-https.conf` и `.github/DEPLOYMENT.md`), который:
+
+- принимает HTTP/HTTPS на 80/443;
+- делает редирект HTTP → HTTPS;
+- терминирует TLS и проксирует весь трафик на контейнер `web` (порт 8080).
+
+Итого: браузер всегда ходит только на домен (например, `https://cherrypashkaparty.ru`), а маршрутизация к backend (`/api`, `/auth`, `/partyHub`) настроена в Nginx внутри `CherryPlayWeb` и в хостовом Nginx.
+
 ## Демо-режим
 
 По умолчанию приложение работает в демо-режиме и показывает первый доступный плейлист с сервера.

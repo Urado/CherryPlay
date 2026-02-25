@@ -7,6 +7,27 @@
 1. **Build Workflow** (`build-images.yml`) - автоматически собирает образы при изменениях в коде
 2. **Release Workflow** (`release-and-deploy.yml`) - собирает образы с тегами версий и деплоит на сервер при создании релиза
 
+### Сетевое устройство и Nginx
+
+В продакшене используется **два уровня Nginx**:
+
+- **Внешний Nginx на хосте** (конфиг: `.github/nginx-cherryplay-https.conf`):
+  - слушает порты **80/443**;
+  - делает редирект HTTP → HTTPS;
+  - терминирует TLS (Let's Encrypt сертификаты);
+  - проксирует все запросы на контейнер `web` (по умолчанию `127.0.0.1:8080`).
+
+- **Внутренний Nginx в контейнере `web`** (конфиг: `CherryPlayWeb/nginx.conf`):
+  - раздаёт статику SPA (`/` → `index.html`);
+  - проксирует:
+    - ` /api` → сервис `server:8080` (Backend API),
+    - ` /auth` → `server:8080` (OAuth и auth-эндпоинты),
+    - ` /partyHub` → `server:8080` (SignalR Hub).
+
+Поток запроса в продакшене:
+
+`Клиент → Nginx на хосте (443) → контейнер web (8080) → Nginx внутри web → backend-сервис server:8080`.
+
 ## Предварительные требования
 
 ### 1. GitHub Container Registry (GHCR)
@@ -28,8 +49,10 @@ GitHub Container Registry уже настроен и доступен автом
 | `DEPLOY_USER` | Пользователь для SSH (например `deploy`, `ubuntu`) |
 | `JWT_SECRET_KEY` | Секрет для подписи JWT (не менее 32 символов). Используется сервером в production |
 | `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL (должен совпадать с тем, что на сервере при первом запуске) |
+| `PGADMIN_EMAIL` | Email для входа в pgAdmin (например `admin@yourdomain.com`) |
+| `PGADMIN_PASSWORD` | Пароль для входа в pgAdmin (задайте сильный пароль) |
 
-#### Опциональные (подставляются в docker-compose при деплое)
+#### Опциональные (подставляются в docker-compose и CI/CD при деплое)
 
 | Секрет | Описание |
 |--------|----------|
@@ -38,6 +61,7 @@ GitHub Container Registry уже настроен и доступен автом
 | `OAUTH_VK_CLIENT_ID` | ID приложения VK (для входа через VK) |
 | `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK |
 | `GHCR_TOKEN` | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
+| `DATABASE_CONNECTION_STRING` | (Рекомендуется) Полная строка подключения к **production PostgreSQL**. Используется шагом CI/CD для запуска `dotnet ef database update` перед деплоем. Например: `Host=prod-db;Port=5432;Database=cherryplay;Username=cherryplay;Password=...;Ssl Mode=Require;Trust Server Certificate=true`. |
 
 ### 3. Настройка SSH ключа
 
@@ -89,7 +113,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера
@@ -126,6 +150,17 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ## Как использовать
 
 **Первый деплой:** пошаговая инструкция — [FIRST_DEPLOY.md](FIRST_DEPLOY.md).
+
+### Доступ к pgAdmin на сервере
+
+На проде pgAdmin слушает только **127.0.0.1:5050** — в интернет он не вынесен. Чтобы открыть админку БД:
+
+1. Поднимите **SSH-туннель** с вашего ПК на сервер (см. [SSH_TUNNEL_PGADMIN.md](../SSH_TUNNEL_PGADMIN.md)):
+   ```bash
+   ssh -L 5050:127.0.0.1:5050 ЛОГИН@АДРЕС_СЕРВЕРА
+   ```
+2. В браузере откройте **http://localhost:5050** — отобразится pgAdmin с сервера.
+3. Войдите по логину/паролю из `PGADMIN_EMAIL` и `PGADMIN_PASSWORD`. При первом заходе (или при раскрытии серверов) pgAdmin попросит задать/ввести **мастер-пароль** для шифрования сохранённых паролей — задайте и запоминайте его, он сохраняется в томе и не сбрасывается при перезапуске. В pgAdmin добавьте сервер БД: Host `postgres`, Port `5432`, база `cherryplay`, пользователь/пароль из `POSTGRES_PASSWORD`.
 
 ### Автоматическая сборка при изменениях
 

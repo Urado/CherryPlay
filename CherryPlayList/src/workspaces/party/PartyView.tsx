@@ -14,7 +14,6 @@ import {
   useAuthStore,
   useProjectStore,
   usePlayerAudioStore,
-  usePartyStore,
   useUIStore,
 } from '@shared/stores';
 import {
@@ -41,6 +40,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const meta = useProjectStore((state) => state.meta);
   const projectName = useProjectStore((state) => state.name);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
+  const markAsDirty = useProjectStore((state) => state.markAsDirty);
 
   const sessionState = useProjectStore((state) => state.sessionState);
   const { mode, currentTrackId, playedTrackIds, disabledTrackIds, disabledGroupIds } = useMemo(
@@ -82,11 +82,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [isCheckingParty, setIsCheckingParty] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [partyVerified, setPartyVerified] = useState(false);
-
-  const { createdParty, setCreatedParty } = usePartyStore((state) => ({
-    createdParty: state.createdParty,
-    setCreatedParty: state.setCreatedParty,
-  }));
 
   const { openModal, addNotification } = useUIStore((state) => ({
     openModal: state.openModal,
@@ -219,25 +214,23 @@ export const PartyView: React.FC<PartyViewProps> = ({
         setPartyVerified(exists);
         if (!exists) {
           setServerError('Сервер не найден');
-          setCreatedParty(null);
         }
         return exists;
       } catch (error) {
         console.error('Failed to check party existence:', error);
         setServerError('Сервер не найден');
         setPartyVerified(false);
-        setCreatedParty(null);
         return false;
       } finally {
         setIsCheckingParty(false);
       }
     },
-    [setCreatedParty],
+    [],
   );
 
   const handleRetry = async () => {
-    if (createdParty) {
-      await checkPartyExists(createdParty.id);
+    if (meta.linkedParty) {
+      await checkPartyExists(meta.linkedParty.id);
     } else {
       setServerError(null);
       setPartyVerified(false);
@@ -245,13 +238,13 @@ export const PartyView: React.FC<PartyViewProps> = ({
   };
 
   useEffect(() => {
-    if (createdParty) {
-      checkPartyExists(createdParty.id);
+    if (meta.linkedParty) {
+      checkPartyExists(meta.linkedParty.id);
     } else {
       setPartyVerified(false);
       setServerError(null);
     }
-  }, [createdParty, checkPartyExists]);
+  }, [meta.linkedParty, checkPartyExists]);
 
   // Загружаем метаданные вечеринки при наличии linkedParty
   useEffect(() => {
@@ -366,8 +359,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       const url = await partyService.getPartyUrl(party.shortCode);
       const partyData = { id: party.id, shortCode: party.shortCode, url };
-      setCreatedParty(partyData);
       setLinkedParty(partyData);
+      setPartyVerified(true);
+      markAsDirty();
 
       addNotification({
         type: 'success',
@@ -464,9 +458,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       const url = await partyService.getPartyUrl(party.shortCode);
       const partyData = { id: party.id, shortCode: party.shortCode, url };
-      setCreatedParty(partyData);
       setLinkedParty(partyData);
       setPartyVerified(true);
+      markAsDirty();
       addNotification({ type: 'success', message: 'Вечеринка создана и опубликована' });
     } catch (error) {
       console.error('Failed to publish:', error);
@@ -481,9 +475,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
   };
 
   const handleCopyUrl = async () => {
-    if (createdParty) {
+    if (meta.linkedParty) {
       try {
-        await navigator.clipboard.writeText(createdParty.url);
+        await navigator.clipboard.writeText(meta.linkedParty.url);
         addNotification({
           type: 'success',
           message: 'URL скопирован в буфер обмена',
@@ -566,7 +560,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
             isPublishing={isPublishing}
             isAuthenticated={isAuthenticated()}
             linkedParty={meta.linkedParty}
-            createdParty={partyVerified && createdParty ? createdParty : null}
             serverError={serverError}
             isCheckingParty={isCheckingParty}
             onCopyUrl={handleCopyUrl}

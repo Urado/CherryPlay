@@ -14,7 +14,6 @@ import {
   LayoutPreset,
   useAuthStore,
   useLayoutStore,
-  usePartyStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
@@ -154,15 +153,6 @@ export const AppHeader: React.FC = () => {
           filePath: path,
           linkedParty: projectFile.linkedParty ?? null,
         });
-        if (projectFile.linkedParty) {
-          usePartyStore.getState().setCreatedParty({
-            id: projectFile.linkedParty.id,
-            shortCode: projectFile.linkedParty.shortCode,
-            url: projectFile.linkedParty.url,
-          });
-        } else {
-          usePartyStore.getState().setCreatedParty(null);
-        }
         setLastOpenedPlaylist(path);
         addNotification({ type: 'success', message: 'Проект загружен' });
       }

@@ -6,6 +6,8 @@ using CherryPlayServer.Hubs;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Infrastructure;
 using CherryPlayServer.Infrastructure.Repositories;
+using CherryPlayServer.Infrastructure.Persistence;
+using CherryPlayServer.Infrastructure.Persistence.Repositories;
 using CherryPlayServer.Core.Services;
 using CherryPlayServer.Infrastructure.Data;
 using CherryPlayServer.Infrastructure.OAuth;
@@ -14,6 +16,7 @@ using CherryPlayServer.Core.Authorization;
 using CherryPlayServer.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,12 +48,32 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
-builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
-builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
-builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
-builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
-builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
+var useInMemoryStorage = builder.Configuration.GetValue<bool>("UseInMemoryStorage");
+if (useInMemoryStorage)
+{
+    builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
+    builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
+    builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
+    builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
+    builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
+    builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
+}
+else
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not set.");
+    builder.Services.AddDbContext<AppDbContext>(options =>
+    {
+        options.UseNpgsql(connectionString);
+        options.UseSnakeCaseNamingConvention();
+    });
+    builder.Services.AddScoped<IPartyRepository, EfPartyRepository>();
+    builder.Services.AddScoped<IStreamingRepository, EfStreamingRepository>();
+    builder.Services.AddScoped<IOrganizerRepository, EfOrganizerRepository>();
+    builder.Services.AddScoped<IOrganizerSessionRepository, EfOrganizerSessionRepository>();
+    builder.Services.AddScoped<IOAuthAccountRepository, EfOAuthAccountRepository>();
+    builder.Services.AddScoped<IEmailAccountRepository, EfEmailAccountRepository>();
+}
 
 builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
 builder.Services.AddSingleton<IPartyIdValidator, PartyIdValidator>();
@@ -122,10 +145,23 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.Services.AddSingleton<IDataSeeder, DataSeeder>();
-builder.Services.AddHostedService<DataSeederHostedService>();
+if (useInMemoryStorage)
+{
+    builder.Services.AddScoped<IDataSeeder, DataSeeder>();
+    builder.Services.AddHostedService<DataSeederHostedService>();
+}
 
 var app = builder.Build();
+
+// Apply EF migrations at startup when using PostgreSQL (optional; can instead run in CI/CD)
+if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
+    }
+}
 
 // Validate OAuth credentials in production
 if (!app.Environment.IsDevelopment())

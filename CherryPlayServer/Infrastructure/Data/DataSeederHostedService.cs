@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -5,19 +6,23 @@ namespace CherryPlayServer.Infrastructure.Data;
 
 public class DataSeederHostedService : IHostedService
 {
-    private readonly IDataSeeder _dataSeeder;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<DataSeederHostedService> _logger;
 
-    public DataSeederHostedService(IDataSeeder dataSeeder, ILogger<DataSeederHostedService> logger)
+    public DataSeederHostedService(IServiceScopeFactory scopeFactory, ILogger<DataSeederHostedService> logger)
     {
-        _dataSeeder = dataSeeder;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Running data seeder");
-        await _dataSeeder.SeedAsync(cancellationToken);
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var dataSeeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+            await dataSeeder.SeedAsync(cancellationToken);
+        }
         _logger.LogInformation("Data seeder completed");
     }
 

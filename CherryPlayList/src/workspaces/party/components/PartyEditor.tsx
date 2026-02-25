@@ -34,8 +34,8 @@ interface PartyEditorProps {
   isPublishing?: boolean;
   /** Если false, кнопка «Создать вечеринку» отключена (требуется авторизация). */
   isAuthenticated?: boolean;
+  /** Привязанная вечеринка (сохраняется в проекте .cherry) */
   linkedParty?: { id: string; shortCode: string; url: string } | null;
-  createdParty: { id: string; shortCode: string; url: string } | null;
   serverError: string | null;
   isCheckingParty: boolean;
   onCopyUrl: () => void;
@@ -85,7 +85,6 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   isPublishing = false,
   isAuthenticated = true,
   linkedParty,
-  createdParty,
   serverError,
   isCheckingParty,
   onCopyUrl,
@@ -207,9 +206,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     setIsDropdownOpen(false);
   };
 
-  const displayParty =
-    createdParty && !serverError && !isCheckingParty ? createdParty : (linkedParty ?? null);
-  const isJustCreated = !!(createdParty && !serverError && !isCheckingParty);
+  const displayParty = !serverError && !isCheckingParty ? (linkedParty ?? null) : null;
 
   return (
     <div className="party-editor">
@@ -407,7 +404,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {serverError && !createdParty && !isCheckingParty && (
+      {serverError && !linkedParty && !isCheckingParty && (
         <div className="party-editor-error">
           <div className="party-editor-error-header">
             <strong className="party-editor-error-title">Ошибка подключения</strong>
@@ -470,14 +467,11 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               </div>
             </label>
           </div>
-          {isJustCreated && (
-            <div className="party-editor-info">
-              <p className="party-editor-info-text">
-                Плеер автоматически подключится к серверу при создании вечеринки.
-              </p>
-              <p className="party-editor-info-text">Статус соединения отображается в плеере.</p>
-            </div>
-          )}
+          <div className="party-editor-info">
+            <p className="party-editor-info-text">
+              Плеер подключается к серверу по привязанной вечеринке. Статус соединения отображается в плеере.
+            </p>
+          </div>
         </div>
       )}
     </div>

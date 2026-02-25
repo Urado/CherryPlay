@@ -8,7 +8,7 @@ import { WorkspaceId } from '@core/types/workspace';
 import { useWorkspaceDragAndDrop, useTrackDuration, useDragDropExecutor } from '@shared/hooks';
 import { fileService, ipcService, signalRService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
-import { useUIStore, useSettingsStore, usePartyStore, useProjectStore } from '@shared/stores';
+import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
@@ -134,7 +134,8 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     onError: handleError,
   });
 
-  const { createdParty } = usePartyStore((state) => ({ createdParty: state.createdParty }));
+  /** Привязанная вечеринка (из проекта, сохраняется в .cherry) — единственный источник для SignalR */
+  const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
   const [connectionState, setConnectionState] = useState<signalR.HubConnectionState | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -411,7 +412,14 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
   useEffect(() => {
+    console.log('[PlayerViewContainer] Streaming effect:', {
+      enableStreaming,
+      hasLinkedParty: !!linkedParty,
+      partyId: linkedParty?.id,
+    });
+
     if (!enableStreaming) {
+      console.log('[PlayerViewContainer] SignalR skipped: streaming disabled');
       if (signalRService.isServiceConnected()) {
         signalRService.disconnect().catch(console.error);
       }
@@ -419,7 +427,10 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       return;
     }
 
-    if (!createdParty) {
+    if (!linkedParty) {
+      console.log(
+        '[PlayerViewContainer] SignalR skipped: no party linked (create/link a party first)',
+      );
       if (signalRService.isServiceConnected()) {
         signalRService.disconnect().catch(console.error);
       }
@@ -428,12 +439,12 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     }
 
     const connectToSignalR = async () => {
-      if (!createdParty || !enableStreaming) {
+      if (!linkedParty || !enableStreaming) {
         return;
       }
 
       try {
-        const exists = await partyService.checkPartyExists(createdParty.id);
+        const exists = await partyService.checkPartyExists(linkedParty.id);
         if (!exists) {
           console.warn(
             '[PlayerViewContainer] Party does not exist on server, skipping SignalR connection',
@@ -449,34 +460,35 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
 
       if (signalRService.isServiceConnected()) {
         setConnectionState(signalR.HubConnectionState.Connected);
-        signalRService.startStoreSubscriptions(createdParty.id);
+        signalRService.startStoreSubscriptions(linkedParty.id);
         if (mode === 'session') {
-          signalRService.startPositionUpdates(createdParty.id);
+          signalRService.startPositionUpdates(linkedParty.id);
         }
         return;
       }
 
       try {
+        console.log('[PlayerViewContainer] Connecting to SignalR for party', linkedParty.id);
         setConnectionState(signalR.HubConnectionState.Connecting);
         await signalRService.connect();
-        await signalRService.joinPartyAsOrganizer(createdParty.id);
-        signalRService.startStoreSubscriptions(createdParty.id);
+        await signalRService.joinPartyAsOrganizer(linkedParty.id);
+        signalRService.startStoreSubscriptions(linkedParty.id);
 
         if (mode === 'session') {
-          signalRService.startPositionUpdates(createdParty.id);
-          await signalRService.startSession(createdParty.id);
+          signalRService.startPositionUpdates(linkedParty.id);
+          await signalRService.startSession(linkedParty.id);
         }
 
-        signalRService.sendFullStateUpdate(createdParty.id);
+        signalRService.sendFullStateUpdate(linkedParty.id);
         setConnectionState(signalR.HubConnectionState.Connected);
       } catch (error) {
         console.error('[PlayerViewContainer] Failed to connect to SignalR:', error);
         setConnectionState(signalR.HubConnectionState.Disconnected);
 
-        if (createdParty && reconnectTimeoutRef.current) {
+        if (linkedParty && reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        if (createdParty && enableStreaming) {
+        if (linkedParty && enableStreaming) {
           reconnectTimeoutRef.current = setTimeout(() => {
             connectToSignalR();
           }, 10000);
@@ -491,20 +503,20 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [createdParty, mode, enableStreaming]);
+  }, [linkedParty, mode, enableStreaming]);
 
   useEffect(() => {
-    if (!enableStreaming || !createdParty || !signalRService.isServiceConnected()) {
+    if (!enableStreaming || !linkedParty || !signalRService.isServiceConnected()) {
       return;
     }
 
     if (mode === 'session') {
-      signalRService.startPositionUpdates(createdParty.id);
-      signalRService.startSession(createdParty.id).catch(console.error);
+      signalRService.startPositionUpdates(linkedParty.id);
+      signalRService.startSession(linkedParty.id).catch(console.error);
     } else {
       signalRService.stopPositionUpdates();
     }
-  }, [mode, createdParty, enableStreaming]);
+  }, [mode, linkedParty, enableStreaming]);
 
   useEffect(() => {
     if (!enableStreaming) {

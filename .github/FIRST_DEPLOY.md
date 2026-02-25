@@ -17,6 +17,8 @@
 | `DEPLOY_USER` | Пользователь SSH (например `deploy`, `ubuntu`) |
 | `JWT_SECRET_KEY` | Не менее 32 символов |
 | `POSTGRES_PASSWORD` | Пароль PostgreSQL |
+| `PGADMIN_EMAIL` | Email для входа в pgAdmin (например `admin@yourdomain.com`) |
+| `PGADMIN_PASSWORD` | Пароль для входа в pgAdmin |
 | `GHCR_TOKEN` | PAT с правом `read:packages` (для публичного репо можно не задавать) |
 
 Для HTTPS с первого дня добавьте:
@@ -73,6 +75,8 @@ docker compose -f docker-compose.prod.yml ps
 
 - Сайт: `http://<DEPLOY_HOST>` (или по домену, если DNS уже указывает на сервер)
 - API: `http://<DEPLOY_HOST>:5000/api/health`
+
+Примечание по безопасности: в `docker-compose.prod.yml` pgAdmin по умолчанию публикуется только на `127.0.0.1:5050` (наружу не открыт). Для доступа используйте SSH-туннель с вашего компьютера на сервер.
 
 При ошибках: `docker compose -f docker-compose.prod.yml logs -f server`
 
