@@ -345,7 +345,7 @@
 | `name` | `string` | Название организации / отображаемое имя. |
 | `logoUrl` | `string \| null` | URL логотипа (опционально). |
 | `links` | `Record<string, string> \| null` | Ссылки (соцсети, сайт) — JSON-объект. |
-| `defaultPartyThemeId` | `string \| null` | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `defaultPartyThemeId` | `string \| null` | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic, spring-cross-step). |
 | `defaultCustomizationSettings` | `Record<string, string \| number> \| null` | Настройки оформления по умолчанию. |
 | `createdAt` | `string` | ISO 8601. |
 | `updatedAt` | `string \| null` | ISO 8601. |
@@ -371,7 +371,7 @@
 
 ### 6.7 Перечисляемые типы
 
-**PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` (PartyTheme идентификатор)  
+**PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` \| `"spring-cross-step"` (PartyTheme идентификатор)  
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
 **PlaybackMode:** `"preparation"` \| `"session"`
 

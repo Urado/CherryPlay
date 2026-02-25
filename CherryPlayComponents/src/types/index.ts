@@ -35,6 +35,7 @@ export interface PartyPlaylistData {
 export interface PartyDisplayData<T extends PartyThemeId = PartyThemeId> {
   partyId: string;
   partyName: string;
+  subtitle?: string | null;
   themeId: T;
   customizationSettings?: CustomizationSettings<T>;
   playlist: PartyPlaylistData;

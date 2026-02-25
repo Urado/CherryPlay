@@ -87,6 +87,14 @@ themes/
 - Шрифты: системные, стандартные
 - Эффекты: минимальные, простые переходы
 
+### 5. Весенний кросс-степ (`spring-cross-step`)
+
+Светлая весенняя тема с зелёными акцентами и мягкими тонами.
+
+- Цветовая схема: светлый зелёный фон (#f0f7e8), тёмно-зелёный текст и акценты (#1a5c2e, #7cb342)
+- Шрифты: системные
+- Эффекты: пульсирующий индикатор сессии, градиент прогресса с «капелькой», опциональные анимации лепестков/листьев
+
 ## Идентификаторы тем
 
 ### TypeScript/JavaScript
@@ -94,14 +102,14 @@ themes/
 Тип `PartyThemeId` определен в `CherryPlayComponents/src/themes/index.ts`:
 
 ```typescript
-type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
+type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic' | 'spring-cross-step';
 ```
 
 ### C# (CherryPlayServer)
 
 Enum `PartyThemeId` определен в `CherryPlayServer.Core.Enums.PartyThemeId`:
 
-- `Cyberpunk`, `Sakura`, `ArtDeco`, `Basic`
+- `Cyberpunk`, `Sakura`, `ArtDeco`, `Basic`, `SpringCrossStep`
 - Автоматическая JSON сериализация в строки
 
 ## Настройки кастомизации
@@ -130,6 +138,10 @@ Enum `PartyThemeId` определен в `CherryPlayServer.Core.Enums.PartyThem
 | `patternStyle` | string | `'geometric'` | Стиль паттерна |
 
 ### Базовый
+
+Тема не поддерживает настройки кастомизации.
+
+### Весенний кросс-степ
 
 Тема не поддерживает настройки кастомизации.
 

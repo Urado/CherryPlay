@@ -22,6 +22,7 @@ public static class PartyThemeIdExtensions
             "sakura" => PartyThemeId.Sakura,
             "art-deco" => PartyThemeId.ArtDeco,
             "basic" => PartyThemeId.Basic,
+            "spring-cross-step" => PartyThemeId.SpringCrossStep,
             _ => null
         };
     }
@@ -37,6 +38,7 @@ public static class PartyThemeIdExtensions
             PartyThemeId.Sakura => "sakura",
             PartyThemeId.ArtDeco => "art-deco",
             PartyThemeId.Basic => "basic",
+            PartyThemeId.SpringCrossStep => "spring-cross-step",
             _ => "cyberpunk" // default
         };
     }

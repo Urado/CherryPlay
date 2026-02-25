@@ -25,7 +25,7 @@ export interface UsePartyStateReturn {
   customizationSettings: CustomizationSettings<PartyThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
-  loadPlaylist: () => Promise<void>;
+  loadPlaylist: (options?: { silent?: boolean }) => Promise<void>;
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
   setError: (error: string | null) => void;
@@ -74,10 +74,13 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     playlistRef.current = playlist;
   }, [playlist]);
 
-  const loadPlaylist = useCallback(async () => {
+  const loadPlaylist = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
 
       let playlistData: PartyPlaylistData;
 
@@ -124,7 +127,9 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
       setError(errorMessage);
       console.error('[usePartyState] Failed to load playlist:', err);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [shortCode, isDemo]);
 

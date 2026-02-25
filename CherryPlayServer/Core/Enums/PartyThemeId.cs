@@ -18,5 +18,8 @@ public enum PartyThemeId
     ArtDeco,
 
     [JsonStringEnumMemberName("basic")]
-    Basic
+    Basic,
+
+    [JsonStringEnumMemberName("spring-cross-step")]
+    SpringCrossStep
 }

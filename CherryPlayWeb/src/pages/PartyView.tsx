@@ -202,7 +202,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onPlaylistChanged: useCallback(
       (_partyId: string) => {
-        loadPlaylist().catch((err) => {
+        loadPlaylist({ silent: true }).catch((err) => {
           console.error(
             '[PartyView] Failed to reload playlist:',
             err instanceof Error ? err.message : err,

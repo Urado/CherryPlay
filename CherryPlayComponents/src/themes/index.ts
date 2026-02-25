@@ -8,8 +8,14 @@ import {
   CurrentTrackDisplay as BaseCurrentTrackDisplay,
   PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
+import {
+  PartyDisplay as SpringCrossStepPartyDisplay,
+  PlaylistView as SpringCrossStepPlaylistView,
+  CurrentTrackDisplay as SpringCrossStepCurrentTrackDisplay,
+  PartyInfoDisplay as SpringCrossStepPartyInfoDisplay,
+} from './spring-cross-step';
 
-export type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic';
+export type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic' | 'spring-cross-step';
 
 export interface PartyThemeComponents {
   PartyDisplay: React.ComponentType<{
@@ -109,6 +115,18 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     description: 'Простой и чистый стиль в духе приложения',
     cssPath: './basic/index.css',
   }),
+  'spring-cross-step': createPartyTheme({
+    id: 'spring-cross-step',
+    name: 'Весенний кросс-степ',
+    description: 'Светлая весенняя тема с зелёными акцентами и мягкими тонами',
+    cssPath: './spring-cross-step/index.css',
+    overrides: {
+      PartyDisplay: SpringCrossStepPartyDisplay,
+      PlaylistView: SpringCrossStepPlaylistView,
+      CurrentTrackDisplay: SpringCrossStepCurrentTrackDisplay,
+      PartyInfoDisplay: SpringCrossStepPartyInfoDisplay,
+    },
+  }),
 };
 
 export const partyThemes: PartyTheme[] = Object.values(PARTY_THEME_REGISTRY);
@@ -147,4 +165,5 @@ export {
   type SakuraCustomizationSettings,
   type ArtDecoCustomizationSettings,
   type BasicCustomizationSettings,
+  type SpringCrossStepCustomizationSettings,
 } from './themeMetadata';

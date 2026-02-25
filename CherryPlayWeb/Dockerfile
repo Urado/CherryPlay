@@ -22,7 +22,8 @@ COPY CherryPlayWeb/package.json CherryPlayWeb/package-lock.json ./
 # npm ci использует package-lock.json для установки точных версий зависимостей
 RUN npm ci --ignore-scripts
 
-# Копируем остальные файлы (node_modules уже установлены и не будут перезаписаны благодаря .dockerignore)
+# Копируем остальные файлы (в т.ч. public/ — статика и ресурсы тем, например images/spring-cross-step-poster.svg)
+# Vite при сборке копирует public/ в корень dist/, откуда nginx раздаёт их в контейнере
 COPY CherryPlayWeb/ .
 
 # Передаем переменные окружения для Vite (build-time переменные)

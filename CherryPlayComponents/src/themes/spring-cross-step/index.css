@@ -1,0 +1,91 @@
+@import './layout.css';
+@import './playlist.css';
+@import './playlist-item.css';
+@import './player.css';
+@import './party-info.css';
+
+/* PartyTheme: spring-cross-step — весенний кросс-степ */
+
+[data-theme="spring-cross-step"] {
+  --bg-primary: #f0f7e8;
+  --bg-secondary: #e4f2d8;
+  --bg-tertiary: #d4edc9;
+  --bg-hover: rgba(45, 122, 63, 0.08);
+  --text-primary: #1a3c1a;
+  --text-secondary: #3d7a4a;
+  --text-tertiary: #6b9b6b;
+  --accent-primary: #1a5c2e;
+  --accent-primary-light: #2d7a3f;
+  --border-color: rgba(26, 92, 46, 0.15);
+  --selected-bg: rgba(45, 122, 63, 0.12);
+  --selected-border: #2d7a3f;
+  --flower-white: #fdf5f0;
+  --leaf-green: #7cb342;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="spring-cross-step"] .party-display {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="spring-cross-step"] .party-display-title {
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: -0.02em;
+}
+
+[data-theme="spring-cross-step"] .party-display-session-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-theme="spring-cross-step"] .party-display-session-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary-light);
+  animation: spring-pulse 2s ease-in-out infinite;
+}
+
+@keyframes spring-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes leaf-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(5deg); }
+  75% { transform: translateY(4px) rotate(-3deg); }
+}
+
+@keyframes petal-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.7; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Floating petals/leaves background */
+[data-theme="spring-cross-step"] .party-display-floating-petals {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="spring-cross-step"] .spring-petal {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  animation: petal-fall linear infinite;
+}
+
+[data-theme="spring-cross-step"] .spring-leaf-decoration {
+  animation: leaf-float 4s ease-in-out infinite;
+}

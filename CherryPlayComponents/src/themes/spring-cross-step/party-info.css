@@ -1,0 +1,89 @@
+@import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
+
+/* Общие стили для темы (базовый PartyInfoDisplay) */
+[data-theme="spring-cross-step"] .party-info-display,
+.party-info-display[data-theme="spring-cross-step"] {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-container,
+.party-info-display[data-theme="spring-cross-step"] .party-info-display-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 24px rgba(26, 92, 46, 0.06);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-title {
+  color: var(--accent-primary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-description {
+  color: var(--text-secondary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-meta {
+  border-top-color: var(--border-color);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-meta strong {
+  color: var(--text-primary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-link-btn {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-link-btn:hover {
+  background: var(--accent-primary-light);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-link-back:hover {
+  color: var(--accent-primary);
+}
+
+/* Страница информации в стиле плейлиста: карточка с контентом */
+[data-theme="spring-cross-step"] .party-info-display-container--spring-cross-step {
+  padding: 0;
+  overflow: hidden;
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner {
+  padding: 24px 24px 32px;
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-section {
+  margin-bottom: 20px;
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-description {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-meta {
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-meta--top {
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-meta p {
+  margin: 8px 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+[data-theme="spring-cross-step"] .party-info-display-inner .party-info-display-meta strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

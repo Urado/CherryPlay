@@ -43,11 +43,14 @@ export type ArtDecoCustomizationSettings = {
 
 export type BasicCustomizationSettings = Record<string, never>;
 
+export type SpringCrossStepCustomizationSettings = Record<string, never>;
+
 export type ThemeCustomizationSettingsMap = {
   cyberpunk: CyberpunkCustomizationSettings;
   sakura: SakuraCustomizationSettings;
   'art-deco': ArtDecoCustomizationSettings;
   basic: BasicCustomizationSettings;
+  'spring-cross-step': SpringCrossStepCustomizationSettings;
 };
 
 export type CustomizationSettings<T extends PartyThemeId = PartyThemeId> =
@@ -134,6 +137,11 @@ export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   },
   basic: {
     id: 'basic',
+    defaultCustomizationSettings: {},
+    customizationOptions: [],
+  },
+  'spring-cross-step': {
+    id: 'spring-cross-step',
     defaultCustomizationSettings: {},
     customizationOptions: [],
   },

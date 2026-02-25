@@ -15,6 +15,11 @@
   box-sizing: border-box;
 }
 
+/* Тема spring-cross-step: свой layout (как страница плейлиста), без лишних отступов */
+.party-info-page[data-theme="spring-cross-step"] {
+  padding: 0;
+}
+
 .party-info-page-header {
   position: absolute;
   top: 0;
@@ -24,6 +29,10 @@
   align-items: center;
   justify-content: flex-end;
   padding: 1rem 2rem;
+}
+
+.party-info-page[data-theme="spring-cross-step"] .party-info-page-header {
+  padding: 1rem 1.5rem;
 }
 
 .party-info-page-header-controls {
