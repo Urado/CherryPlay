@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+
+import { SakuraPetalIcon } from './SakuraPetalIcon';
+import { SpringLeafIcon } from './SpringLeafIcon';
 
 interface Petal {
   id: number;
@@ -7,6 +10,9 @@ interface Petal {
   duration: number;
   size: number;
   type: 'petal' | 'leaf';
+  swayAmplitude: number;
+  swayDirection: 1 | -1;
+  rotationTurns: number;
 }
 
 /**
@@ -14,69 +20,57 @@ interface Petal {
  * Renders animated SVG elements that fall from top to bottom.
  */
 export const FloatingPetals: React.FC = () => {
-  const [petals, setPetals] = useState<Petal[]>([]);
+  const [petals] = useState<Petal[]>(() =>
+    Array.from({ length: 48 }, (_, i) => {
+      const baseDuration = 8;
+      const duration = baseDuration + Math.random() * 6;
+      const size = 24 + Math.random() * 40;
 
-  useEffect(() => {
-    const items: Petal[] = Array.from({ length: 48 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 8,
-      duration: 8 + Math.random() * 6,
-      size: 8 + Math.random() * 14,
-      type: Math.random() > 0.5 ? 'petal' : 'leaf',
-    }));
-    setPetals(items);
-  }, []);
+      // Slower-falling elements (longer duration) rotate faster:
+      // rotationTurns grows roughly with the square of the duration
+      // so angular speed is inversely proportional to fall speed.
+      const normalizedDuration = duration / baseDuration;
+      const rotationTurns = 2 * normalizedDuration * normalizedDuration;
+
+      return {
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 8,
+        duration,
+        size,
+        type: Math.random() > 0.5 ? 'petal' : 'leaf',
+        // Horizontal sway amplitude is roughly 4× petal length, with some variation per petal.
+        swayAmplitude: size * (3.5 + Math.random() * 1.5),
+        swayDirection: Math.random() > 0.5 ? 1 : -1,
+        rotationTurns,
+      };
+    }),
+  );
 
   return (
-    <div className="party-display-floating-petals" aria-hidden>
+    <div className="party-display-floating-petals" aria-hidden="true">
       {petals.map((petal) => (
         <div
           key={petal.id}
           className="spring-petal"
-          style={{
-            left: `${petal.left}%`,
-            top: '-20px',
-            animationDelay: `${petal.delay}s`,
-            animationDuration: `${petal.duration}s`,
-            width: petal.size,
-            height: petal.size,
-          }}
+          style={
+            {
+              left: `${petal.left}%`,
+              top: '-20px',
+              animationDelay: `${petal.delay}s`,
+              animationDuration: `${petal.duration}s`,
+              width: petal.size,
+              height: petal.size,
+              '--petal-sway-amplitude': `${petal.swayAmplitude}px`,
+              '--petal-sway-direction': petal.swayDirection,
+              '--petal-rotation-turns': petal.rotationTurns,
+            } as React.CSSProperties
+          }
         >
           {petal.type === 'petal' ? (
-            <svg viewBox="0 0 20 20" fill="none" width={petal.size} height={petal.size}>
-              <ellipse
-                cx="10"
-                cy="10"
-                rx="6"
-                ry="9"
-                fill="#fce4ec"
-                opacity="0.7"
-                transform="rotate(15 10 10)"
-              />
-              <ellipse
-                cx="10"
-                cy="10"
-                rx="4"
-                ry="7"
-                fill="#f8bbd0"
-                opacity="0.4"
-                transform="rotate(15 10 10)"
-              />
-            </svg>
+            <SakuraPetalIcon size={petal.size} />
           ) : (
-            <svg viewBox="0 0 20 20" fill="none" width={petal.size} height={petal.size}>
-              <path d="M10 2 C4 8 4 14 10 18 C16 14 16 8 10 2Z" fill="#a5d67a" opacity="0.5" />
-              <line
-                x1="10"
-                y1="4"
-                x2="10"
-                y2="16"
-                stroke="#7cb342"
-                strokeWidth="0.5"
-                opacity="0.4"
-              />
-            </svg>
+            <SpringLeafIcon size={petal.size} />
           )}
         </div>
       ))}

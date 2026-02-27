@@ -2,16 +2,27 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+const cherryPlayComponentsSrc = path.resolve(__dirname, '../CherryPlayComponents/src');
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Следим за исходниками библиотеки, чтобы изменения подхватывались без перезапуска
+    {
+      name: 'watch-cherryplay-components',
+      configureServer(server) {
+        server.watcher.add(cherryPlayComponentsSrc);
+      },
+    },
+  ],
   resolve: {
     alias: {
-      '@cherryplay/components': path.resolve(__dirname, '../CherryPlayComponents/src'),
+      '@cherryplay/components': cherryPlayComponentsSrc,
       '@cherryplay/themes': path.resolve(__dirname, '../CherryPlayComponents/src/themes'),
     },
   },
   optimizeDeps: {
-    include: ['@cherryplay/components'],
+    exclude: ['@cherryplay/components'],
   },
   server: {
     port: 3000,
