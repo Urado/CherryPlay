@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type RefObject, useEffect, useState } from 'react';
 
 /**
  * Returns true when the element's content overflows (scrollWidth > clientWidth).
@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
  * @param contentKey When this changes (e.g. display name or stable id), the effect re-runs and re-measures so truncation is updated when the visible text changes.
  */
 export function useIsTruncated(
-  ref: React.RefObject<HTMLElement | null>,
+  ref: RefObject<HTMLElement | null>,
   enabled: boolean,
   contentKey?: string,
 ): boolean {

@@ -68,7 +68,6 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
   const [nameExpanded, setNameExpanded] = useState(false);
   const idPrefix = useId();
   const nameRef = useRef<HTMLDivElement>(null);
-  const isGroup = item.type === 'group';
   const displayName =
     item.type === 'track'
       ? stripLastExtension(item.name) || item.name || 'Трек'
