@@ -6,7 +6,7 @@
 
 /* PartyTheme: spring-cross-step — весенний кросс-степ */
 
-[data-theme="spring-cross-step"] {
+[data-theme='spring-cross-step'] {
   --bg-primary: #f9fcf7;
   --bg-secondary: #f2f9ec;
   --bg-tertiary: #e7f4df;
@@ -25,7 +25,7 @@
   color: var(--text-primary);
 }
 
-[data-theme="spring-cross-step"] .party-display {
+[data-theme='spring-cross-step'] .party-display {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
@@ -33,19 +33,19 @@
   overflow: hidden;
 }
 
-[data-theme="spring-cross-step"] .party-display-title {
+[data-theme='spring-cross-step'] .party-display-title {
   font-weight: 700;
   color: var(--accent-primary);
   letter-spacing: -0.02em;
 }
 
-[data-theme="spring-cross-step"] .party-display-session-indicator {
+[data-theme='spring-cross-step'] .party-display-session-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-[data-theme="spring-cross-step"] .party-display-session-dot {
+[data-theme='spring-cross-step'] .party-display-session-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -54,8 +54,15 @@
 }
 
 @keyframes spring-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
 
 @keyframes leaf-float {
@@ -83,127 +90,121 @@
   }
   12.5% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.6),
-      12.5vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.125turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.6),
+        12.5vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.125turn));
   }
   18% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.8),
-      18vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.18turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.8),
+        18vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.18turn));
   }
   21% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.9),
-      21vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.21turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.9),
+        21vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.21turn));
   }
   25% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px)),
-      25vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.25turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px)),
+        25vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.25turn));
     opacity: 0.7;
   }
   29% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.96),
-      29vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.29turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.96),
+        29vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.29turn));
   }
   32% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.85),
-      32vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.32turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.85),
+        32vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.32turn));
   }
   37.5% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.65),
-      37.5vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.375turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.65),
+        37.5vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.375turn));
   }
   50% {
-    transform: translate3d(
-      0,
-      50vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.5turn));
-    /* Mid-fall (around playlist area): keep petals semi-transparent */
+    transform: translate3d(0, 50vh, 0) rotate(calc(var(--petal-rotation-turns, 2) * 0.5turn));
     opacity: 0.5;
   }
   62.5% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
-      62.5vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.625turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
+        62.5vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.625turn));
   }
   68% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
-      68vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.68turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
+        68vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.68turn));
   }
   72% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
-      72vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.72turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
+        72vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.72turn));
   }
   75% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -1),
-      75vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.75turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -1),
+        75vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.75turn));
     opacity: 0.6;
   }
   78% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
-      78vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.78turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
+        78vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.78turn));
   }
   82% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
-      82vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.82turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
+        82vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.82turn));
   }
   87.5% {
     transform: translate3d(
-      calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
-      92vh,
-      0
-    )
-    rotate(calc(var(--petal-rotation-turns, 2) * 0.875turn));
+        calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
+        92vh,
+        0
+      )
+      rotate(calc(var(--petal-rotation-turns, 2) * 0.875turn));
   }
   100% {
     transform: translate3d(0, 110vh, 0) rotate(calc(var(--petal-rotation-turns, 2) * 1turn));
@@ -211,9 +212,9 @@
   }
 }
 
-/* Floating petals/leaves background */
-[data-theme="spring-cross-step"] .party-display-floating-petals {
-  position: fixed;
+/* Floating petals/leaves background — absolute so they're contained by .party-display (e.g. preview area in List, full page in Web) */
+[data-theme='spring-cross-step'] .party-display-floating-petals {
+  position: absolute;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -238,7 +239,7 @@
   mask-size: 100% 100%;
 }
 
-[data-theme="spring-cross-step"] .spring-petal {
+[data-theme='spring-cross-step'] .spring-petal {
   position: absolute;
   pointer-events: none;
   opacity: 0;
@@ -247,6 +248,6 @@
   will-change: transform, opacity;
 }
 
-[data-theme="spring-cross-step"] .spring-leaf-decoration {
+[data-theme='spring-cross-step'] .spring-leaf-decoration {
   animation: leaf-float 4s linear infinite;
 }

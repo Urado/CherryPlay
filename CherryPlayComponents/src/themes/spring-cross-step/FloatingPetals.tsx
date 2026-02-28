@@ -22,8 +22,8 @@ interface Petal {
 export const FloatingPetals: React.FC = () => {
   const [petals] = useState<Petal[]>(() =>
     Array.from({ length: 48 }, (_, i) => {
-      const baseDuration = 8;
-      const duration = baseDuration + Math.random() * 6;
+      const baseDuration = 18;
+      const duration = baseDuration + Math.random() * 10;
       const size = 24 + Math.random() * 40;
 
       // Slower-falling elements (longer duration) rotate faster:
@@ -35,7 +35,7 @@ export const FloatingPetals: React.FC = () => {
       return {
         id: i,
         left: Math.random() * 100,
-        delay: Math.random() * 8,
+        delay: Math.random() * 12,
         duration,
         size,
         type: Math.random() > 0.5 ? 'petal' : 'leaf',
