@@ -78,6 +78,7 @@ interface PlayerViewProps {
   pausePlayback: () => void;
   onNext?: () => void;
   connectionState: signalR.HubConnectionState | null;
+  serverTrackIds?: Set<string> | null;
 }
 
 /**
@@ -134,6 +135,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   pausePlayback,
   onNext,
   connectionState,
+  serverTrackIds = null,
 }) => {
   return (
     <div className="playlist-view player-view">
@@ -190,9 +192,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         handleOpenTrackSettings={handleOpenTrackSettings}
         startTrackPlayback={startTrackPlayback}
         pausePlayback={pausePlayback}
+        serverTrackIds={serverTrackIds}
       />
 
-      {/* Панель управления плеером */}
       <PlayerControls onNext={onNext} />
     </div>
   );

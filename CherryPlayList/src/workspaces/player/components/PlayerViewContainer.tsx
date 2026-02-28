@@ -134,10 +134,10 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     onError: handleError,
   });
 
-  /** Привязанная вечеринка (из проекта, сохраняется в .cherry) — единственный источник для SignalR */
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
   const [connectionState, setConnectionState] = useState<signalR.HubConnectionState | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
 
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
@@ -540,6 +540,30 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!linkedParty?.shortCode) {
+      setServerTrackIds(null);
+      return;
+    }
+    let cancelled = false;
+    partyService
+      .getPartyState(linkedParty.shortCode)
+      .then((state) => {
+        if (cancelled) return;
+        if (state?.serverTrackIds?.length) {
+          setServerTrackIds(new Set(state.serverTrackIds));
+        } else {
+          setServerTrackIds(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setServerTrackIds(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [linkedParty?.shortCode]);
+
   return (
     <PlayerView
       name={name}
@@ -591,6 +615,7 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       pausePlayback={pausePlayback}
       onNext={handleNext}
       connectionState={connectionState}
+      serverTrackIds={serverTrackIds}
     />
   );
 };

@@ -86,6 +86,7 @@ export interface ProjectItemRowProps {
   groupDuration?: number;
   /** Whether this track's path appears more than once in the list (show duplicate warning) */
   isDuplicatePath?: boolean;
+  isNotOnServer?: boolean;
 
   // Callbacks
   /** Called when selection is toggled */
@@ -144,6 +145,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   isLocked = false,
   groupDuration,
   isDuplicatePath = false,
+  isNotOnServer = false,
   onToggleSelect,
   onRemove,
   onDragStart,
@@ -371,9 +373,15 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         {isGroup ? renderGroupNameContent() : trackDisplayName}
       </ListRowCompound.Content>
 
-      {/* Duration (with duplicate warning when same path appears elsewhere) */}
       {displayDuration && (
         <ListRowCompound.Secondary>
+          {isNotOnServer && (
+            <span
+              className="playlist-item-not-on-server-dot"
+              title="Трека нет в плейлисте на сервере"
+              aria-label="Трека нет на сервере"
+            />
+          )}
           {isDuplicatePath && (
             <span
               className="playlist-item-duplicate-dot"

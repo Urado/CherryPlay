@@ -7,6 +7,10 @@ public class Party
     public Guid Id { get; set; }
     public Guid OrganizerId { get; set; }
     public string Name { get; set; } = string.Empty;
+    /// <summary>Optional display title; frontend uses Title ?? Name.</summary>
+    public string? Title { get; set; }
+    /// <summary>Optional subtitle shown below the display title.</summary>
+    public string? Subtitle { get; set; }
     public string ShortCode { get; set; } = string.Empty;
     /// <summary>
     /// PartyTheme идентификатор (см. GLOSSARY.md)

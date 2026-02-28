@@ -5,6 +5,8 @@ import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export interface CreatePartyDto {
   name: string;
+  title?: string;
+  subtitle?: string;
   partyThemeId: string;
   customizationSettings?: Record<string, string | number>;
   playlistData: {
@@ -18,13 +20,14 @@ export interface CreatePartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
-  /** По умолчанию true при создании из приложения — вечеринка сразу в каталоге */
   isListedInCatalog?: boolean;
 }
 
 export interface PartyDto {
   id: string;
   name: string;
+  title?: string;
+  subtitle?: string;
   shortCode: string;
   partyThemeId: string;
   createdAt: string;
@@ -35,6 +38,14 @@ export interface PartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+}
+
+/** Public party state (playlist, session, server track IDs). Used e.g. for "track not on server" indicator. */
+export interface PartyStateDto {
+  partyId: string;
+  isSessionActive: boolean;
+  playlist: { items: unknown[]; totalDuration: number; totalTracks: number };
+  serverTrackIds?: string[];
 }
 
 class PartyService {
@@ -141,6 +152,20 @@ class PartyService {
       cache: 'no-cache',
     });
     await handleApiResponse<void>(response, 'Failed to delete party');
+  }
+
+  async getPartyState(shortCode: string): Promise<PartyStateDto | null> {
+    const baseUrl = await this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/parties/public/${shortCode}/state`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-cache',
+    });
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      await handleApiResponse<never>(response, 'Failed to get party state');
+    }
+    return response.json() as Promise<PartyStateDto>;
   }
 
   async getPartyUrl(shortCode: string): Promise<string> {

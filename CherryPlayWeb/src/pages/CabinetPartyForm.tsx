@@ -56,6 +56,34 @@ export function CabinetPartyForm({
         />
       </label>
       <label>
+        Заголовок (на экране)
+        <input
+          type="text"
+          value={isEditing ? (editForm.title ?? '') : (createForm.title ?? '')}
+          onChange={(e) =>
+            isEditing
+              ? setEditForm((f) => ({ ...f, title: e.target.value }))
+              : setCreateForm((f) => ({ ...f, title: e.target.value }))
+          }
+          placeholder="Если пусто — показывается название"
+          maxLength={500}
+        />
+      </label>
+      <label>
+        Подзаголовок
+        <input
+          type="text"
+          value={isEditing ? (editForm.subtitle ?? '') : (createForm.subtitle ?? '')}
+          onChange={(e) =>
+            isEditing
+              ? setEditForm((f) => ({ ...f, subtitle: e.target.value }))
+              : setCreateForm((f) => ({ ...f, subtitle: e.target.value }))
+          }
+          placeholder="Строка под заголовком"
+          maxLength={500}
+        />
+      </label>
+      <label>
         Тема
         <select
           value={isEditing ? (editForm.partyThemeId ?? 'cyberpunk') : createForm.partyThemeId}

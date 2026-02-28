@@ -5,6 +5,8 @@ namespace CherryPlayServer.Models;
 public record PublicPartyListItemDto(
     string Id,
     string Name,
+    string? Title,
+    string? Subtitle,
     string ShortCode,
     PartyThemeId PartyThemeId,
     bool HasActiveSession,

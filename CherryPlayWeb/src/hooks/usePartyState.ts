@@ -20,6 +20,8 @@ export interface UsePartyStateReturn {
   loading: boolean;
   error: string | null;
   partyName: string | null;
+  partyTitle: string | null;
+  partySubtitle: string | null;
   partyId: string | null;
   themeId: PartyThemeId;
   customizationSettings: CustomizationSettings<PartyThemeId>;
@@ -59,6 +61,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     CustomizationSettings<PartyThemeId>
   >({} as CustomizationSettings<PartyThemeId>);
   const [partyName, setPartyName] = useState<string | null>(null);
+  const [partyTitle, setPartyTitle] = useState<string | null>(null);
+  const [partySubtitle, setPartySubtitle] = useState<string | null>(null);
   const [partyId, setPartyId] = useState<string | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -105,6 +109,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
             if (party.name) {
               setPartyName(party.name);
             }
+            setPartyTitle(party.title ?? null);
+            setPartySubtitle(party.subtitle ?? null);
             if (party.id) {
               setPartyId(party.id);
             }
@@ -145,6 +151,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     loading,
     error,
     partyName,
+    partyTitle,
+    partySubtitle,
     partyId,
     themeId,
     customizationSettings,

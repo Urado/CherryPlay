@@ -5,6 +5,8 @@ namespace CherryPlayServer.Models;
 public record PublicPartyDto(
     string Id,
     string Name,
+    string? Title,
+    string? Subtitle,
     /// <summary>
     /// PartyTheme идентификатор (см. GLOSSARY.md)
     /// </summary>

@@ -21,6 +21,7 @@
 1. **Организатор**: подключение к Hub как organizer (JWT), StartSession/EndSession, UpdatePlaybackPosition, UpdateFullState, NotifyStateChanged; при изменении плейлиста — REST PUT playlist и/или события OnPlaylistChanged.
 2. **Зритель**: JoinPartyAsViewer(shortCode) или JoinPartyAsViewerWithState(shortCode); подписка на OnSessionStarted, OnSessionEnded, OnFullStateUpdated, OnPlaybackPositionUpdated, OnStateChanged, OnPlaylistChanged; при реконнекте — запрос полного состояния (RequestFullState / JoinPartyAsViewerWithState).
 3. **Freeze**: при потере связи UI скрывает блок текущего трека, плейлист и пометки проигранных остаются. При завершении сессии организатором (EndSession) состояние на сервере сохраняется (IsActive=false); зрители получают OnSessionEnded и видят тот же эффект (см. [CONTRACTS.md](../../CONTRACTS.md) §4, [OPS.md](../../CherryPlayServer/OPS.md)).
+4. **Сохранение и восстановление состояния сессии**: при отключении организатора (EndSession или разрыв связи) состояние сессии сохраняется в БД. При следующем StartSession сервер восстанавливает сохранённое состояние (текущий трек, позиция, проигранные/отключённые), при необходимости санитизируя его по текущему плейлисту.
 
 ## Связь с другими подсистемами
 

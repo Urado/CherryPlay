@@ -35,6 +35,8 @@ public static class EfToDomainMappers
             Id = ef.Id,
             OrganizerId = ef.OrganizerId,
             Name = ef.Name,
+            Title = ef.Title,
+            Subtitle = ef.Subtitle,
             ShortCode = ef.ShortCode,
             Description = ef.Description,
             Place = ef.Place,

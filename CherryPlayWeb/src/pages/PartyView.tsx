@@ -49,6 +49,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     loading,
     error,
     partyName,
+    partyTitle,
+    partySubtitle,
     partyId,
     themeId,
     customizationSettings,
@@ -303,7 +305,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(
     () => ({
       partyId: partyId || (isDemo ? 'demo' : 'unknown'),
-      partyName: partyName || (isDemo ? 'Демо плейлист' : 'Плейлист вечеринки'),
+      partyName: partyTitle || partyName || (isDemo ? 'Демо плейлист' : 'Плейлист вечеринки'),
+      subtitle: partySubtitle ?? undefined,
       themeId,
       customizationSettings,
       playlist: playlist || { items: [], totalDuration: 0, totalTracks: 0 },
@@ -312,7 +315,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }),
     [
       partyId,
+      partyTitle,
       partyName,
+      partySubtitle,
       themeId,
       customizationSettings,
       playlist,

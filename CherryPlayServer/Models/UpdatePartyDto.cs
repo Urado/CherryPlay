@@ -8,6 +8,12 @@ public record UpdatePartyDto
     [StringLength(200, MinimumLength = 1, ErrorMessage = "Party name must be between 1 and 200 characters")]
     public string? Name { get; init; }
 
+    [StringLength(500)]
+    public string? Title { get; init; }
+
+    [StringLength(500)]
+    public string? Subtitle { get; init; }
+
     /// <summary>
     /// PartyTheme идентификатор (см. GLOSSARY.md)
     /// </summary>

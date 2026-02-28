@@ -21,6 +21,8 @@ export interface PlayerItemDto {
 export interface PublicPartyDto {
   id: string;
   name: string;
+  title?: string;
+  subtitle?: string;
   partyThemeId: string;
   customizationSettings?: Record<string, string | number>;
   hasActiveSession: boolean;
@@ -40,6 +42,7 @@ export interface PartyStateDto {
   sessionStartedAt?: string;
   playbackState?: PlaybackStateDto;
   playlist: PartyPlaylistDto;
+  serverTrackIds?: string[];
 }
 
 export interface PlaybackStateDto {
@@ -74,6 +77,8 @@ export interface PublicPartyListItemDto {
 export interface PartyDto {
   id: string;
   name: string;
+  title?: string;
+  subtitle?: string;
   shortCode: string;
   partyThemeId: string;
   createdAt: string;
@@ -90,6 +95,8 @@ export interface PartyDto {
 /** Создание вечеринки (POST /api/parties) */
 export interface CreatePartyDto {
   name: string;
+  title?: string;
+  subtitle?: string;
   partyThemeId: string;
   eventDateTime?: string;
   isListedInCatalog?: boolean;
@@ -103,6 +110,8 @@ export interface CreatePartyDto {
 /** Обновление метаданных (PUT /api/parties/:id) */
 export interface UpdatePartyDto {
   name?: string;
+  title?: string;
+  subtitle?: string;
   partyThemeId?: string;
   eventDateTime?: string;
   isListedInCatalog?: boolean;

@@ -329,6 +329,14 @@
   flex-shrink: 0;
 }
 
+.playlist-item-not-on-server-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--state-warning, #f0ad4e);
+  flex-shrink: 0;
+}
+
 .playlist-item-delete {
   background: transparent;
   border: none;

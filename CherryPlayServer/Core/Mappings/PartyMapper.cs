@@ -10,6 +10,8 @@ public static class PartyMapper
         return new PartyDto(
             Id: party.Id.ToString(),
             Name: party.Name,
+            Title: party.Title,
+            Subtitle: party.Subtitle,
             ShortCode: party.ShortCode,
             PartyThemeId: party.PartyThemeId,
             CreatedAt: party.CreatedAt.ToString("O"),
@@ -29,6 +31,8 @@ public static class PartyMapper
         return new PublicPartyDto(
             Id: party.Id.ToString(),
             Name: party.Name,
+            Title: party.Title,
+            Subtitle: party.Subtitle,
             PartyThemeId: party.PartyThemeId,
             HasActiveSession: hasActiveSession,
             IsListedInCatalog: party.IsListedInCatalog,

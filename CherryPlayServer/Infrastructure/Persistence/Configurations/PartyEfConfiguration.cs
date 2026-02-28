@@ -11,6 +11,8 @@ public class PartyEfConfiguration : IEntityTypeConfiguration<PartyEf>
         builder.ToTable("parties");
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Name).IsRequired().HasMaxLength(200);
+        builder.Property(e => e.Title).HasMaxLength(500);
+        builder.Property(e => e.Subtitle).HasMaxLength(500);
         builder.Property(e => e.ShortCode).IsRequired().HasMaxLength(32);
         builder.Property(e => e.PartyThemeId).IsRequired().HasMaxLength(50);
         builder.Property(e => e.IsDeleted).HasDefaultValue(false);

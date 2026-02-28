@@ -98,6 +98,8 @@ export function CabinetPage() {
     setEditingParty(party);
     setEditForm({
       name: party.name,
+      title: party.title,
+      subtitle: party.subtitle,
       partyThemeId: party.partyThemeId,
       eventDateTime: party.eventDateTime,
       isListedInCatalog: party.isListedInCatalog,

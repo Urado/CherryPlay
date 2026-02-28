@@ -67,6 +67,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }));
 
   const [partyName, setPartyName] = useState('');
+  const [partyTitle, setPartyTitle] = useState('');
+  const [partySubtitle, setPartySubtitle] = useState('');
   const [themeId, setThemeId] = useState<PartyThemeId>('cyberpunk');
   const [customizationSettings, setCustomizationSettings] = useState<
     Record<string, string | number>
@@ -253,6 +255,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
         try {
           const party = await partyService.getParty(meta.linkedParty!.id);
           if (party.name) setPartyName(party.name);
+          setPartyTitle(party.title ?? '');
+          setPartySubtitle(party.subtitle ?? '');
           if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
           if (party.eventDateTime) {
             try {
@@ -333,6 +337,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       const createData: CreatePartyDto = {
         name: partyName,
+        title: partyTitle.trim() || undefined,
+        subtitle: partySubtitle.trim() || undefined,
         partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
@@ -402,6 +408,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
         // Обновляем метаданные вечеринки
         await partyService.updateParty(linkedParty.id, {
           name: partyName,
+          title: partyTitle.trim() || undefined,
+          subtitle: partySubtitle.trim() || undefined,
           partyThemeId: themeId,
           customizationSettings: normalizeCustomizationSettings(customizationSettings),
           eventDateTime: eventDateTime || undefined,
@@ -437,6 +445,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
       const playlistForApi = convertPlaylistForApi(items);
       const createData: CreatePartyDto = {
         name: nameToUse,
+        title: partyTitle.trim() || undefined,
+        subtitle: partySubtitle.trim() || undefined,
         partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
@@ -537,6 +547,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
         <div className="party-view-editor">
           <PartyEditor
             partyName={partyName}
+            partyTitle={partyTitle}
+            partySubtitle={partySubtitle}
             themeId={themeId}
             customizationSettings={customizationSettings}
             eventDateTime={eventDateTime}
@@ -546,6 +558,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
             schedule={schedule}
             timeZone={timeZone}
             onPartyNameChange={setPartyName}
+            onPartyTitleChange={setPartyTitle}
+            onPartySubtitleChange={setPartySubtitle}
             onThemeIdChange={handleThemeChange}
             onCustomizationSettingsChange={setCustomizationSettings}
             onEventDateTimeChange={setEventDateTime}
@@ -575,6 +589,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
             themeId={themeId}
             customizationSettings={customizationSettings as CustomizationSettings<PartyThemeId>}
             playbackState={playbackState}
+            partyName={partyTitle.trim() || partyName || 'Превью вечеринки'}
+            subtitle={partySubtitle.trim() || undefined}
           />
         </div>
       </div>

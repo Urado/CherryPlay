@@ -67,6 +67,7 @@ interface PlayerTracksListProps {
   handleOpenTrackSettings: (itemId: string) => void;
   startTrackPlayback: (track: Track) => Promise<void> | void;
   pausePlayback: () => void;
+  serverTrackIds?: Set<string> | null;
 }
 
 export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
@@ -100,6 +101,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   handleOpenTrackSettings,
   startTrackPlayback,
   pausePlayback,
+  serverTrackIds = null,
 }) => {
   const { getGroupSettings, getTrackSettings } = useProjectStore();
 
@@ -273,6 +275,9 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 isLocked={isLocked}
                 groupDuration={groupDurationWithPauses}
                 isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
+                isNotOnServer={
+                  track && serverTrackIds != null ? !serverTrackIds.has(track.id) : false
+                }
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => playerDrag.handleDragStart(e, item.id)}

@@ -5,6 +5,8 @@ import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/sho
 import { electronStorage } from '../storage/electronStorage';
 
 interface SettingsState {
+  _hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   exportPath: string;
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
@@ -33,6 +35,9 @@ interface SettingsState {
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
   persist(
     (set) => ({
+      _hasHydrated: false,
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
+
       exportPath: '',
       exportStrategy: 'copyWithNumberPrefix',
       lastOpenedPlaylist: '',
@@ -77,6 +82,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
       }),
+      onRehydrateStorage: () => (_state, _err) => {
+        useSettingsStore.getState().setHasHydrated(true);
+      },
     },
   ),
 );

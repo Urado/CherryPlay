@@ -16,6 +16,7 @@ interface PartyPreviewProps {
   customizationSettings?: CustomizationSettings<PartyThemeId>;
   playbackState?: PlaybackState | null;
   partyName?: string;
+  subtitle?: string;
   partyId?: string;
 }
 
@@ -25,12 +26,14 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   customizationSettings = {},
   playbackState = null,
   partyName = 'Превью вечеринки',
+  subtitle,
   partyId = 'preview',
 }) => {
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(
     () => ({
       partyId,
       partyName,
+      subtitle: subtitle ?? undefined,
       themeId,
       customizationSettings: customizationSettings as
         | CustomizationSettings<PartyThemeId>
@@ -39,7 +42,7 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
       playbackState: playbackState || null,
       isSessionActive: playbackState !== null,
     }),
-    [partyId, partyName, themeId, customizationSettings, playlist, playbackState],
+    [partyId, partyName, subtitle, themeId, customizationSettings, playlist, playbackState],
   );
 
   return (

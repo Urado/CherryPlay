@@ -11,6 +11,8 @@ import './PartyEditor.css';
 
 interface PartyEditorProps {
   partyName: string;
+  partyTitle?: string;
+  partySubtitle?: string;
   themeId: PartyThemeId;
   customizationSettings: Record<string, string | number>;
   eventDateTime: string;
@@ -20,6 +22,8 @@ interface PartyEditorProps {
   schedule?: string;
   timeZone?: string;
   onPartyNameChange: (name: string) => void;
+  onPartyTitleChange?: (title: string) => void;
+  onPartySubtitleChange?: (subtitle: string) => void;
   onThemeIdChange: (themeId: PartyThemeId) => void;
   onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
@@ -62,6 +66,8 @@ const AVAILABLE_STYLES = partyThemes.map((theme) => ({
 
 export const PartyEditor: React.FC<PartyEditorProps> = ({
   partyName,
+  partyTitle = '',
+  partySubtitle = '',
   themeId,
   customizationSettings,
   eventDateTime,
@@ -71,6 +77,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   schedule = '',
   timeZone = '',
   onPartyNameChange,
+  onPartyTitleChange,
+  onPartySubtitleChange,
   onThemeIdChange,
   onCustomizationSettingsChange,
   onEventDateTimeChange,
@@ -219,6 +227,32 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             value={partyName}
             onChange={(e) => onPartyNameChange(e.target.value)}
             placeholder="Введите название вечеринки"
+          />
+        </label>
+      </div>
+
+      <div className="party-editor-section">
+        <label className="party-editor-label">
+          Заголовок (на экране)
+          <input
+            type="text"
+            className="party-editor-input"
+            value={partyTitle}
+            onChange={(e) => onPartyTitleChange?.(e.target.value)}
+            placeholder="Если пусто — показывается название"
+          />
+        </label>
+      </div>
+
+      <div className="party-editor-section">
+        <label className="party-editor-label">
+          Подзаголовок
+          <input
+            type="text"
+            className="party-editor-input"
+            value={partySubtitle}
+            onChange={(e) => onPartySubtitleChange?.(e.target.value)}
+            placeholder="Строка под заголовком"
           />
         </label>
       </div>

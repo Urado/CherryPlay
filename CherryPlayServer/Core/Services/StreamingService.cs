@@ -44,12 +44,77 @@ public class StreamingService : IStreamingService
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
+        var serverTrackIds = GetFlattenedTrackIds(party.Playlist?.Items);
+        var serverTrackIdsSnapshot = serverTrackIds.ToArray();
         return new PartyStateDto(
             partyId: party.Id.ToString(),
             isSessionActive: state?.IsActive ?? false,
             playbackState: state != null ? state.ToDto() : null,
-            playlist: party.Playlist.ToDto()
+            playlist: party.Playlist.ToDto(),
+            serverTrackIds: serverTrackIdsSnapshot
         );
+    }
+
+    private static IReadOnlyList<string> GetFlattenedTrackIds(List<Core.Entities.PlayerItem>? items)
+    {
+        if (items == null || items.Count == 0)
+            return Array.Empty<string>();
+        var list = new List<string>();
+        foreach (var item in items)
+        {
+            if (item.Type == PlayerItemType.Track && !string.IsNullOrEmpty(item.Id))
+                list.Add(item.Id);
+            else if (item.Type == PlayerItemType.Group && item.Items != null)
+                list.AddRange(GetFlattenedTrackIds(item.Items));
+        }
+        return list;
+    }
+
+    private static (HashSet<string> trackIds, HashSet<string> groupIds) GetValidTrackAndGroupIds(List<Core.Entities.PlayerItem>? items)
+    {
+        var trackIds = new HashSet<string>(StringComparer.Ordinal);
+        var groupIds = new HashSet<string>(StringComparer.Ordinal);
+        if (items == null || items.Count == 0)
+            return (trackIds, groupIds);
+        CollectTrackAndGroupIds(items, trackIds, groupIds);
+        return (trackIds, groupIds);
+    }
+
+    private static void CollectTrackAndGroupIds(List<Core.Entities.PlayerItem> items, HashSet<string> trackIds, HashSet<string> groupIds)
+    {
+        foreach (var item in items)
+        {
+            if (string.IsNullOrEmpty(item.Id))
+                continue;
+            if (item.Type == PlayerItemType.Track)
+                trackIds.Add(item.Id);
+            else if (item.Type == PlayerItemType.Group)
+            {
+                groupIds.Add(item.Id);
+                if (item.Items != null)
+                    CollectTrackAndGroupIds(item.Items, trackIds, groupIds);
+            }
+        }
+    }
+
+    private static void SanitizeRestoredState(PlaybackState state, List<Core.Entities.PlayerItem>? playlistItems)
+    {
+        var (trackIds, groupIds) = GetValidTrackAndGroupIds(playlistItems);
+        if (trackIds.Count == 0 && groupIds.Count == 0)
+            return;
+
+        if (!string.IsNullOrEmpty(state.CurrentTrackId) && !trackIds.Contains(state.CurrentTrackId))
+        {
+            state.CurrentTrackId = null;
+            state.Position = 0;
+            state.Duration = 0;
+        }
+        if (state.PlayedTrackIds.Count > 0)
+            state.PlayedTrackIds = state.PlayedTrackIds.Where(id => trackIds.Contains(id)).ToList();
+        if (state.DisabledTrackIds.Count > 0)
+            state.DisabledTrackIds = state.DisabledTrackIds.Where(id => trackIds.Contains(id)).ToList();
+        if (state.DisabledGroupIds.Count > 0)
+            state.DisabledGroupIds = state.DisabledGroupIds.Where(id => groupIds.Contains(id)).ToList();
     }
 
     public async Task StartSessionAsync(Guid partyId)
@@ -61,6 +126,19 @@ public class StreamingService : IStreamingService
         {
             _logger.LogWarning("Cannot start session - party not found: {PartyId}", partyId);
             throw new PartyNotFoundException(partyId);
+        }
+
+        var existingState = await _streamingRepository.GetSessionStateAsync(party.Id);
+        if (existingState != null)
+        {
+            existingState.IsActive = true;
+            existingState.Mode = PlaybackMode.Session;
+            existingState.SessionStartedAt = DateTime.UtcNow;
+            existingState.LastUpdatedAt = DateTime.UtcNow;
+            SanitizeRestoredState(existingState, party.Playlist?.Items);
+            await _streamingRepository.SetSessionStateAsync(party.Id, existingState);
+            _logger.LogInformation("Session restored for party: {PartyId}", partyId);
+            return;
         }
 
         var initialState = new PlaybackState

@@ -20,6 +20,7 @@ const DIVIDER_INTERVALS = [
 
 export const SettingsModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
+  const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
     setTrackItemSizePreset,
@@ -44,7 +45,7 @@ export const SettingsModal: React.FC = () => {
   const [localDemoPlayerDeviceId, setLocalDemoPlayerDeviceId] = useState<string | null>(
     demoPlayerAudioDeviceId,
   );
-  const [localEnableStreaming, setLocalEnableStreaming] = useState(enableStreaming);
+  const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -70,20 +71,30 @@ export const SettingsModal: React.FC = () => {
   }, [modal]);
 
   useEffect(() => {
+    if (hasHydrated) {
+      setLocalEnableStreaming(enableStreaming);
+    }
+  }, [hasHydrated, enableStreaming]);
+
+  useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
+      prevModalRef.current = 'settings';
       const timeoutId = setTimeout(() => {
         setLocalTrackItemSizePreset(trackItemSizePreset);
         setLocalHourDividerInterval(hourDividerInterval);
         setLocalShowHourDividers(showHourDividers);
         setLocalPlayerDeviceId(playerAudioDeviceId);
         setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
-        setLocalEnableStreaming(enableStreaming);
+        if (hasHydrated) {
+          setLocalEnableStreaming(enableStreaming);
+        }
       }, 0);
       return () => clearTimeout(timeoutId);
     }
     prevModalRef.current = modal;
   }, [
     modal,
+    hasHydrated,
     trackItemSizePreset,
     hourDividerInterval,
     showHourDividers,

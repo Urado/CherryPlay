@@ -88,6 +88,8 @@ public class PartyService : IPartyService
             Id = Guid.NewGuid(),
             OrganizerId = organizerId,
             Name = dto.Name,
+            Title = dto.Title,
+            Subtitle = dto.Subtitle,
             ShortCode = shortCode,
             PartyThemeId = dto.PartyThemeId,
             CustomizationSettings = normalizedSettings,
@@ -230,6 +232,10 @@ public class PartyService : IPartyService
 
         if (dto.Name != null)
             party.Name = dto.Name;
+        if (dto.Title != null)
+            party.Title = dto.Title;
+        if (dto.Subtitle != null)
+            party.Subtitle = dto.Subtitle;
         if (dto.PartyThemeId.HasValue)
             party.PartyThemeId = dto.PartyThemeId.Value;
         if (dto.EventDateTime.HasValue)

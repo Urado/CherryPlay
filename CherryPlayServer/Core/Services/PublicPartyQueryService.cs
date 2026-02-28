@@ -75,6 +75,8 @@ public class PublicPartyQueryService : IPublicPartyQueryService
             return new PublicPartyListItemDto(
                 Id: party.Id.ToString(),
                 Name: party.Name,
+                Title: party.Title,
+                Subtitle: party.Subtitle,
                 ShortCode: party.ShortCode,
                 PartyThemeId: party.PartyThemeId,
                 HasActiveSession: hasActiveSession,

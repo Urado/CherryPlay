@@ -5,6 +5,8 @@ public class PartyEf
     public Guid Id { get; set; }
     public Guid OrganizerId { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public string? Subtitle { get; set; }
     public string ShortCode { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Place { get; set; }

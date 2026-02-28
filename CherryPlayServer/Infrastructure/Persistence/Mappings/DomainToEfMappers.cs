@@ -63,6 +63,8 @@ public static class DomainToEfMappers
     public static void ApplyTo(this Party domain, PartyEf ef)
     {
         ef.Name = domain.Name;
+        ef.Title = domain.Title;
+        ef.Subtitle = domain.Subtitle;
         ef.Description = domain.Description;
         ef.Place = domain.Place;
         ef.City = domain.City;
@@ -82,6 +84,8 @@ public static class DomainToEfMappers
             Id = domain.Id,
             OrganizerId = domain.OrganizerId,
             Name = domain.Name,
+            Title = domain.Title,
+            Subtitle = domain.Subtitle,
             ShortCode = domain.ShortCode,
             Description = domain.Description,
             Place = domain.Place,
