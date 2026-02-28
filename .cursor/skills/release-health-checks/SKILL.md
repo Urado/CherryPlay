@@ -1,0 +1,149 @@
+---
+name: release-health-checks
+description: Runs build verification, lint, format checks, and optional Docker builds for CherryPlay release pipeline. Use when the user asks to verify the build, run health checks, validate release readiness, or check that all projects build and pass checks before release or CI.
+---
+
+# Release & Build Health Checks
+
+## Script (recommended)
+
+From repo root, run all checks (Server + Components + Web):
+
+```bash
+node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
+```
+
+Options:
+
+- `--docker` — also build Docker images (server and web), same as `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
+- `--skip-ci` — skip `npm ci` in CherryPlayComponents (use when `node_modules` is already installed and `npm ci` fails e.g. with EPERM).
+
+Example with Docker (full CI parity):
+
+```bash
+node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs --docker
+```
+
+**CI alignment:** The script runs the same steps and order as in CI. Native steps mirror `CherryPlayServer/Dockerfile` and `CherryPlayWeb/Dockerfile`; with `--docker` it runs the same `docker build` commands as in `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
+
+The script resolves the repo root from its own path, so it can be run from any working directory. It prints a summary table at the end and exits with code 1 if any check fails.
+
+---
+
+## When to Apply
+
+Use this skill when the user asks to:
+
+- Verify the build (all projects or release configuration)
+- Run health checks
+- Validate release readiness
+- Check that code passes lint/format and builds before release or push
+
+## Scope
+
+CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). CI builds only Docker images (`.github/workflows/build-images.yml` on push/PR; `release-and-deploy.yml` on release). The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
+
+**Shell note:** On Windows PowerShell use `;` to chain commands. Use `&&` in Bash (e.g. GitHub Actions, Linux Docker).
+
+---
+
+## Health Check Workflow
+
+Either run the script above or run the following steps manually in this order (matches Dockerfiles and CI).
+
+### 1. CherryPlayServer (.NET)
+
+Order as in `CherryPlayServer/Dockerfile`: restore → format → build.
+
+From repo root:
+
+```bash
+dotnet restore CherryPlayServer/CherryPlayServer.csproj
+dotnet format CherryPlayServer/CherryPlayServer.csproj --verify-no-changes --verbosity minimal
+dotnet build CherryPlayServer/CherryPlayServer.csproj -c Release --no-restore
+```
+
+To fix format issues run `dotnet format` (no `--verify-no-changes`) in `CherryPlayServer/`.
+
+### 2. CherryPlayComponents (Node)
+
+Order as in `CherryPlayWeb/Dockerfile` first stage: npm ci → lint → build.
+
+From repo root:
+
+```bash
+cd CherryPlayComponents; npm ci; npm run lint; npm run build
+```
+
+- **Lint:** ESLint with `--max-warnings=0`.
+- **Build:** `tsc`.
+
+### 3. CherryPlayWeb (Node + Vite)
+
+Order as in `CherryPlayWeb/Dockerfile`: lint:fix → lint → build.
+
+From repo root:
+
+```bash
+cd CherryPlayWeb; npm run lint:fix; npm run lint; npm run build
+```
+
+- **Lint:** ESLint via wrapper, `--max-warnings=10`.
+
+### 4. Optional — Docker builds (release images)
+
+Only run if the user asks for full release/Docker verification. These require Docker and network (NuGet/npm).
+
+- **Server image** (same as in `build-images.yml` and `release-and-deploy.yml`): context `./CherryPlayServer`, file `./CherryPlayServer/Dockerfile`.
+  ```bash
+  docker build -f CherryPlayServer/Dockerfile -t cherryplay-server:test ./CherryPlayServer
+  ```
+- **Web image** (same as CI): context `.`, file `./CherryPlayWeb/Dockerfile`.
+  ```bash
+  docker build -f CherryPlayWeb/Dockerfile -t cherryplay-web:test .
+  ```
+
+Local Docker builds may fail with network errors (e.g. NuGet in server image on Windows); CI usually succeeds.
+
+---
+
+## Summary Format
+
+After running the requested checks, report:
+
+```text
+## Health check results
+
+| Check                    | Status |
+|--------------------------|--------|
+| Server: restore           | ✅ / ❌ |
+| Server: format            | ✅ / ❌ |
+| Server: build (Release)   | ✅ / ❌ |
+| Components: npm ci       | ✅ / ❌ / skipped |
+| Components: lint         | ✅ / ❌ |
+| Components: build        | ✅ / ❌ |
+| Web: lint:fix            | ✅ / ❌ |
+| Web: lint                | ✅ / ❌ |
+| Web: build               | ✅ / ❌ |
+| (Optional) Docker server | ✅ / ❌ / skipped |
+| (Optional) Docker web    | ✅ / ❌ / skipped |
+
+[If any ❌: list failed step and first relevant error or fix hint.]
+```
+
+Keep the table to the checks you actually ran (e.g. omit Docker if not requested).
+
+---
+
+## Quick Reference
+
+| Project    | Lint/format                         | Build                        |
+| ---------- | ----------------------------------- | ---------------------------- |
+| Server     | `dotnet format --verify-no-changes` | `dotnet build -c Release`    |
+| Components | `npm run lint` (max-warnings=0)     | `npm run build` (tsc)        |
+| Web        | `npm run lint` (max-warnings=10)    | `npm run build` (tsc + vite) |
+
+Fix hints:
+
+- **Server format:** Run `dotnet format` in `CherryPlayServer/` and commit the changes (e.g. line endings CRLF→LF).
+- **Components/Web lint:** Fix reported files; use `npm run lint:fix` where available; for unused vars use `_` prefix or remove.

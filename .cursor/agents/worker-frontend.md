@@ -72,3 +72,11 @@ When asked to implement something:
 - Provide a brief summary of what changed and where (key files/components).
 - Include how to run/verify locally (commands) if the repo has a frontend dev/build/test surface.
 - If requirements are ambiguous, choose the most reasonable default, implement it, and clearly state the assumption in the summary.
+
+## Return of control (mandatory)
+
+You are invoked as a subagent. When your implementation is complete:
+
+1. **End with a clear summary**: what was done, which files were changed, and how to verify (build/lint commands). This is the handoff for the orchestrator (and for code-reviewer).
+2. **Do not** start unrelated tasks, run indefinite processes, or wait for user input. Once the requested subtask is done and summarized, your turn is over — control returns to the orchestrator.
+3. Keep scope to the assigned subtask only; avoid scope creep.

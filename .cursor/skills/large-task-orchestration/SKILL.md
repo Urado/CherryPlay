@@ -9,15 +9,15 @@ Use this skill when the user gives a **large or multi-step task** that should be
 
 ## Subagents and roles
 
-| Subagent | Role |
-|----------|------|
-| **business-analyst** | Task analysis, requirements clarification, plan review, final outcome verification |
-| **scheduler** | Breaks the task into subtasks and writes plan files in `.cursor/schedulerPlans/` |
-| **code-reviewer** | Reviews worker output for correctness, safety, and requirements; classifies issues as Critical / Warnings / Suggestions |
-| **worker-dotnet** | Backend subtasks (.NET/C#, APIs, services, EF Core, server-side) |
-| **worker-frontend** | Frontend subtasks (React, TypeScript, UI, components, hooks, styling) |
-| **worker-documentation** | Documentation subtasks (Markdown docs, README, CONTRACTS, setup/ops/theme docs) |
-| **worker-ci-cd** | CI/CD subtasks (Dockerfiles, docker-compose, GitHub Actions, deployment, infra) |
+| Subagent                 | Role                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| **business-analyst**     | Task analysis, requirements clarification, plan review, final outcome verification                                      |
+| **scheduler**            | Breaks the task into subtasks and writes plan files in `.cursor/schedulerPlans/`                                        |
+| **code-reviewer**        | Reviews worker output for correctness, safety, and requirements; classifies issues as Critical / Warnings / Suggestions |
+| **worker-dotnet**        | Backend subtasks (.NET/C#, APIs, services, EF Core, server-side)                                                        |
+| **worker-frontend**      | Frontend subtasks (React, TypeScript, UI, components, hooks, styling)                                                   |
+| **worker-documentation** | Documentation subtasks (Markdown docs, README, CONTRACTS, setup/ops/theme docs)                                         |
+| **worker-ci-cd**         | CI/CD subtasks (Dockerfiles, docker-compose, GitHub Actions, deployment, infra)                                         |
 
 Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. `business-analyst`, `scheduler`, `code-reviewer`, `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`). Pass the user request and context in `prompt`.
 
@@ -27,6 +27,8 @@ Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. 
 - **Wait for the result**: After every subagent invocation, **wait for the call to complete**, read the returned result (e.g. analysis, plan, review, or changed files), then decide the next step. Do not start the next stage or call another subagent until you have processed the current subagent’s result.
 - **Do not use `run_in_background`** for orchestration steps where you need the subagent’s output (Stage 1–5: analyst, scheduler, workers, code-reviewer). Use `run_in_background: true` only for tasks that explicitly run in parallel and do not need to block the next step. For this skill, **do not set** `run_in_background` so that control and results return to you in order.
 - **Explicit handoff**: After each subagent returns, summarize or use its output in your next action (e.g. pass analyst restatement to scheduler, pass worker changes to code-reviewer). This keeps the workflow correct and makes it clear that control has returned.
+- **Prompt each subagent to return control**: In every `mcp_task` prompt, add a short instruction so the subagent knows when to stop and what to return, e.g. "When done, end with a clear **Summary** (what you did and key outputs) so control returns to the orchestrator. Do not start unrelated tasks or wait for user input."
+- **Business-analyst must not edit code**: The business-analyst subagent is analysis-only. In your prompt to the analyst, state: "Do not edit source code, config, or plan files; only produce analysis and recommendations in text. The orchestrator will assign implementation to workers."
 
 ## When to apply
 
@@ -38,12 +40,12 @@ Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. 
 
 Use the scheduler’s task types to choose the worker:
 
-| Scheduler task type | Worker subagent |
-|---------------------|-----------------|
-| Backend | worker-dotnet |
-| Frontend | worker-frontend |
-| Documentation | worker-documentation |
-| CI/CD | worker-ci-cd |
+| Scheduler task type | Worker subagent      |
+| ------------------- | -------------------- |
+| Backend             | worker-dotnet        |
+| Frontend            | worker-frontend      |
+| Documentation       | worker-documentation |
+| CI/CD               | worker-ci-cd         |
 
 ## Five-stage workflow
 
@@ -115,3 +117,4 @@ Use the scheduler’s task types to choose the worker:
 - **Plan location**: Plans live in `.cursor/schedulerPlans/`. Do not delete plan files as part of this skill; the scheduler does not delete them either.
 - **Review severity**: **Critical** and **Warnings** trigger a worker re-invoke; **Suggestions** alone do not. When re-invoking the worker, pass **Critical**, **Warnings**, and **Suggestions** so the worker fixes all of them in one pass.
 - **One worker per subtask**: Each subtask is assigned exactly one worker based on its type; if a subtask spans two areas (e.g. backend + frontend), the scheduler should split it into two subtasks.
+- **If a subagent does not return**: If you do not receive a result from a subagent (e.g. no tool result or timeout), do not assume the task is done. Summarize what was requested and what is missing for the user; they may need to re-run the step or retry the orchestration.

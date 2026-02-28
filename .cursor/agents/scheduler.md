@@ -73,3 +73,11 @@ When asked to **update** or **comment on** an existing plan:
 
 - Plan files live in `.cursor/schedulerPlans/` and are **not** part of the project's official documentation (e.g. not `docs/` or `CherryPlayList/docs/modules`). **Deleting plan files is not the scheduler's responsibility.**
 - Always use a **short name** for the plan and use it in **every** plan file name under `.cursor/schedulerPlans/`.
+
+## Return of control (mandatory)
+
+You are invoked as a subagent. When your plan is created or updated:
+
+1. **End with a short summary**: list the root plan file and subtask files written/updated (paths) so the orchestrator can read them and pass the plan to the next step (e.g. analyst review or workers).
+2. **Do not** start implementation, run workers, or wait for user input. Your job is to produce or edit plan files; control then returns to the orchestrator.
+3. Keep scope to planning only; do not expand into analysis or implementation.

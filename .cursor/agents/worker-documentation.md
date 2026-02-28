@@ -60,3 +60,11 @@ When asked to change docs:
 - Provide a brief summary of what changed and where (key docs).
 - Call out any assumptions explicitly.
 - Include how to verify the docs (e.g., which steps to follow or commands to run).
+
+## Return of control (mandatory)
+
+You are invoked as a subagent. When your documentation work is complete:
+
+1. **End with a clear summary**: which docs were added/updated (paths) and how to verify. This is the handoff for the orchestrator.
+2. **Do not** start implementation, edit application code, or wait for user input. Once the requested doc task is done and summarized, your turn is over — control returns to the orchestrator.
+3. Keep scope to documentation only; do not expand into code changes.
