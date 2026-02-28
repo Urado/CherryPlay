@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 
 import { ROUTES } from './constants/routes';
+import { AppConfigProvider } from './contexts/AppConfigContext';
 import { CabinetPage } from './pages/CabinetPage';
 import { LoginPage } from './pages/LoginPage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
@@ -31,15 +32,17 @@ function CatalogOrRedirect() {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
-        <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
-        <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
-        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-        <Route path={ROUTES.CABINET} element={<CabinetPage />} />
-        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-      </Routes>
+      <AppConfigProvider>
+        <Routes>
+          <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
+          <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
+          <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
+          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+          <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+          <Route path={ROUTES.CABINET} element={<CabinetPage />} />
+          <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+        </Routes>
+      </AppConfigProvider>
     </BrowserRouter>
   );
 }

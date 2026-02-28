@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ROUTES } from '../constants/routes';
+import { useAppConfig } from '../contexts/AppConfigContext';
 import { usePartyState } from '../hooks/usePartyState';
 import { useSignalR } from '../hooks/useSignalR';
 import { signalRService } from '../services/signalRService';
@@ -42,7 +43,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   isDemo = false,
   onBackToList,
 }) => {
-  // Используем хук для управления состоянием вечеринки
+  const { partyInfoPageEnabled } = useAppConfig();
   const partyState = usePartyState({ shortCode, isDemo });
   const {
     playlist,
@@ -370,7 +371,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
                 ← Список вечеринок
               </button>
             )}
-            {!isDemo && shortCode && (
+            {!isDemo && shortCode && partyInfoPageEnabled && (
               <a
                 href={ROUTES.PARTY_INFO(shortCode)}
                 className="party-view-info-btn"

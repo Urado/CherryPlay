@@ -14,6 +14,7 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { getPartyThemeName } from '../constants/partyThemes';
 import { ROUTES } from '../constants/routes';
+import { useAppConfig } from '../contexts/AppConfigContext';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
@@ -51,6 +52,7 @@ interface PartyFilters {
 }
 
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
+  const { partyInfoPageEnabled } = useAppConfig();
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,21 +110,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateString;
-    }
   };
 
   const handleRetry = () => {
@@ -393,12 +380,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                         {formatDuration(party.totalDuration)}
                       </span>
                     </div>
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-label">Создана:</span>
-                      <span className="party-list-card-info-value">
-                        {formatDate(party.createdAt)}
-                      </span>
-                    </div>
                     {party.eventDateTime && (
                       <div className="party-list-card-info-item">
                         <span className="party-list-card-info-label">Мероприятие:</span>
@@ -413,14 +394,18 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   </div>
                   <div className="party-list-card-footer">
                     <span className="party-list-card-code">Код: {party.shortCode}</span>
-                    <Link
-                      to={ROUTES.PARTY_INFO(party.shortCode)}
-                      className="party-list-card-info-link"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Подробнее
-                    </Link>
-                    <span className="party-list-card-arrow">→</span>
+                    {partyInfoPageEnabled && (
+                      <>
+                        <Link
+                          to={ROUTES.PARTY_INFO(party.shortCode)}
+                          className="party-list-card-info-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Подробнее
+                        </Link>
+                        <span className="party-list-card-arrow">→</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

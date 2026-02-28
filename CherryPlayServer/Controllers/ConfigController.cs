@@ -22,11 +22,14 @@ public class ConfigController : ControllerBase
     public IActionResult Get()
     {
         var oauthEnabled = _configuration.GetValue("Auth:OAuthEnabled", false);
-        return Ok(new AppConfigResponse(oauthEnabled));
+        var partyInfoPageEnabled = _configuration.GetValue("Features:PartyInfoPageEnabled", false);
+        return Ok(new AppConfigResponse(oauthEnabled, partyInfoPageEnabled));
     }
 }
 
 /// <summary>
 /// Response for GET /api/config. Property name is explicitly camelCase for client contract (see CONTRACTS.md §2.2).
 /// </summary>
-public record AppConfigResponse([property: JsonPropertyName("oauthEnabled")] bool OAuthEnabled);
+public record AppConfigResponse(
+    [property: JsonPropertyName("oauthEnabled")] bool OAuthEnabled,
+    [property: JsonPropertyName("partyInfoPageEnabled")] bool PartyInfoPageEnabled);

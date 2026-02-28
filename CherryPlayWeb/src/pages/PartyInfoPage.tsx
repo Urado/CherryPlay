@@ -4,9 +4,10 @@
  */
 import { getDefaultTimeZone, PartyInfoDisplay, isValidPartyTheme } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
+import { useAppConfig } from '../contexts/AppConfigContext';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyDto } from '../types/api';
 import './PartyInfoPage.css';
@@ -120,6 +121,7 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
 
 export function PartyInfoPage() {
   const { shortCode } = useParams<{ shortCode: string }>();
+  const { partyInfoPageEnabled } = useAppConfig();
 
   if (!shortCode) {
     return (
@@ -127,6 +129,10 @@ export function PartyInfoPage() {
         <p>Не указан код вечеринки.</p>
       </div>
     );
+  }
+
+  if (!partyInfoPageEnabled) {
+    return <Navigate to={ROUTES.PARTY_VIEW(shortCode)} replace />;
   }
 
   return <PartyInfoContent key={shortCode} shortCode={shortCode} />;

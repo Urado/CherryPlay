@@ -19,7 +19,7 @@
 
 - **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
 - **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
-- **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`.
+- **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
 
 ---
 

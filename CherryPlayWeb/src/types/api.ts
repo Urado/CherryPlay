@@ -2,6 +2,12 @@
  * Типы для API запросов и ответов
  */
 
+/** Ответ GET /api/config (публичная конфигурация приложения) */
+export interface AppConfigResponse {
+  oauthEnabled: boolean;
+  partyInfoPageEnabled: boolean;
+}
+
 export interface PartyPlaylistDto {
   items: PlayerItemDto[];
   totalDuration: number;
