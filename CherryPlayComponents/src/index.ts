@@ -8,3 +8,4 @@ export * from './components/UI';
 export * from './types';
 export * from './themes';
 export * from './core/utils/authValidation';
+export * from './utils/timezoneUtils';

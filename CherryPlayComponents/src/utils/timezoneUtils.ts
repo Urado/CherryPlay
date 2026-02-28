@@ -1,6 +1,9 @@
 /**
- * Утилиты для работы с таймзонами
+ * Утилиты для работы с таймзонами (общий модуль для List и Web).
+ * convertLocalDateTimeToUtc интерпретирует ввод как местное время в заданной IANA таймзоне.
  */
+
+import { DateTime } from 'luxon';
 
 /**
  * Получить список популярных таймзон (Россия и СНГ)
@@ -33,7 +36,7 @@ export function getDefaultTimeZone(): string {
 }
 
 /**
- * Форматировать дату в указанной таймзоне
+ * Форматировать дату в указанной таймзоне (локаль ru-RU)
  */
 export function formatDateInTimeZone(
   date: Date | string,
@@ -50,49 +53,31 @@ export function formatDateInTimeZone(
 }
 
 /**
- * Конвертировать UTC дату в дату указанной таймзоны для datetime-local input
+ * Конвертировать UTC дату (ISO) в строку YYYY-MM-DDTHH:mm для datetime-local в заданной таймзоне
  */
 export function convertUtcToLocalDateTime(utcDate: string, timeZone: string): string {
+  if (!utcDate?.trim()) return '';
   try {
-    const date = new Date(utcDate);
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone,
-    });
-    return formatter.format(date).replace(', ', 'T');
+    const dt = DateTime.fromISO(utcDate, { zone: 'utc' }).setZone(timeZone);
+    if (!dt.isValid) return '';
+    return dt.toFormat("yyyy-MM-dd'T'HH:mm");
   } catch {
     return '';
   }
 }
 
 /**
- * Конвертировать локальную дату из datetime-local input в UTC с учетом таймзоны
+ * Интерпретирует localDateTime как местное время в заданной IANA таймзоне и возвращает ISO UTC.
+ * Например: "2025-03-01T21:00" + "Europe/Moscow" → "2025-03-01T18:00:00.000Z"
  */
 export function convertLocalDateTimeToUtc(localDateTime: string, timeZone: string): string {
+  if (!localDateTime?.trim()) return '';
   try {
-    // Создаем дату в указанной таймзоне
-    const [datePart, timePart] = localDateTime.split('T');
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = timePart.split(':').map(Number);
-
-    // Используем Intl API для конвертации
-    const dateInTimezone = new Date(
-      new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone,
-      }).formatToParts(new Date(year, month - 1, day, hours, minutes)),
-    );
-
-    return dateInTimezone.toISOString();
+    const dt = DateTime.fromISO(localDateTime, { zone: timeZone });
+    if (!dt.isValid) return '';
+    const iso = dt.toUTC().toISO();
+    return iso ?? '';
   } catch {
-    return new Date(localDateTime).toISOString();
+    return '';
   }
 }

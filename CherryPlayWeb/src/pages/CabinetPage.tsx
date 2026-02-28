@@ -6,7 +6,7 @@ import { ROUTES } from '../constants/routes';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
-import { getDefaultTimeZone } from '../utils/timezoneUtils';
+import { getDefaultTimeZone } from '@cherryplay/components';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
 import { CabinetPartyList } from './CabinetPartyList';
@@ -16,6 +16,7 @@ const emptyForm: CreatePartyDto = {
   name: '',
   partyThemeId: 'cyberpunk',
   isListedInCatalog: false,
+  timeZone: getDefaultTimeZone(),
 };
 
 export function CabinetPage() {

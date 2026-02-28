@@ -2,6 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { formatDateInTimeZone, getDefaultTimeZone } from '@cherryplay/components';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
 import { useProjectStore, useUIStore } from '@shared/stores';
@@ -138,6 +139,14 @@ export const LinkPartyModal: React.FC = () => {
                     <div className="link-party-modal-item-info">
                       <span className="link-party-modal-item-name">{party.name}</span>
                       <span className="link-party-modal-item-code">Код: {party.shortCode}</span>
+                      {party.eventDateTime ? (
+                        <span className="link-party-modal-item-date">
+                          {formatDateInTimeZone(
+                            party.eventDateTime,
+                            party.timeZone ?? getDefaultTimeZone(),
+                          )}
+                        </span>
+                      ) : null}
                     </div>
                     <button
                       type="button"

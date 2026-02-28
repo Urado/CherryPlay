@@ -2,7 +2,7 @@
  * Страница информации о вечеринке (описание, место, дата).
  * Использует тематический компонент PartyInfoDisplay из библиотеки компонентов.
  */
-import { PartyInfoDisplay, isValidPartyTheme } from '@cherryplay/components';
+import { getDefaultTimeZone, PartyInfoDisplay, isValidPartyTheme } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -109,7 +109,7 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
           place: party.place,
           city: party.city,
           schedule: party.schedule,
-          timeZone: party.timeZone,
+          timeZone: party.timeZone ?? getDefaultTimeZone(),
           themeId,
           customizationSettings: party.customizationSettings,
         }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import type { AuthService } from '../../types/auth';
 
@@ -10,10 +10,13 @@ export type AuthMode = 'email' | 'oauth';
 
 export interface AuthFormProps {
   title?: string;
+  /** Optional short text under the title (e.g. "Войдите, чтобы управлять вечеринками"). */
   description?: string;
   compact?: boolean;
   authService: AuthService;
   initialMode?: AuthMode;
+  /** When false, OAuth tab and buttons are hidden. Sessions are not affected. Default true. */
+  oauthEnabled?: boolean;
   onLoginSuccess?: () => void;
   onError?: (error: string) => void;
   className?: string;
@@ -21,15 +24,22 @@ export interface AuthFormProps {
 
 export const AuthForm: React.FC<AuthFormProps> = ({
   title = 'Требуется авторизация',
+  description,
   compact = false,
   authService,
   initialMode = 'email',
+  oauthEnabled = true,
   onLoginSuccess,
   onError,
   className = '',
 }) => {
-  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const effectiveInitialMode = oauthEnabled ? initialMode : 'email';
+  const [mode, setMode] = useState<AuthMode>(effectiveInitialMode);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!oauthEnabled && mode === 'oauth') setMode('email');
+  }, [oauthEnabled, mode]);
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
@@ -47,6 +57,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     >
       <div className="auth-form-card">
         {title && <h2 className="auth-form-title">{title}</h2>}
+        {description && <p className="auth-form-description">{description}</p>}
 
         {error && <div className="auth-form-error">{error}</div>}
 
@@ -61,16 +72,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           >
             Email / Пароль
           </button>
-          <button
-            type="button"
-            className={`auth-form-tab ${mode === 'oauth' ? 'auth-form-tab--active' : ''}`}
-            onClick={() => {
-              setMode('oauth');
-              setError(null);
-            }}
-          >
-            OAuth
-          </button>
+          {oauthEnabled && (
+            <button
+              type="button"
+              className={`auth-form-tab ${mode === 'oauth' ? 'auth-form-tab--active' : ''}`}
+              onClick={() => {
+                setMode('oauth');
+                setError(null);
+              }}
+            >
+              OAuth
+            </button>
+          )}
         </div>
 
         {mode === 'email' && (
@@ -84,7 +97,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           />
         )}
 
-        {mode === 'oauth' && <OAuthButtons authService={authService} onError={handleError} />}
+        {oauthEnabled && mode === 'oauth' && (
+          <OAuthButtons authService={authService} onError={handleError} />
+        )}
       </div>
     </div>
   );

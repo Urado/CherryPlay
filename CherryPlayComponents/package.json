@@ -17,11 +17,15 @@
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "luxon": "^3.4.4"
+  },
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/luxon": "^3.4.2",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.1",
     "@types/react": "^18.2.43",

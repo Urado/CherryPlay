@@ -3,6 +3,9 @@ import {
   type PartyThemeId,
   type CustomizationSettings,
   getDefaultCustomizationSettings,
+  convertUtcToLocalDateTime,
+  convertLocalDateTimeToUtc,
+  getDefaultTimeZone,
 } from '@cherryplay/components';
 import { AuthForm } from '@cherryplay/components';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -10,12 +13,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { WorkspaceId } from '@core/types/workspace';
 import { authService } from '@shared/services/authService';
 import { partyService, CreatePartyDto } from '@shared/services/partyService';
-import {
-  useAuthStore,
-  useProjectStore,
-  usePlayerAudioStore,
-  useUIStore,
-} from '@shared/stores';
+import { useAuthStore, useProjectStore, usePlayerAudioStore, useUIStore } from '@shared/stores';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
@@ -207,28 +205,25 @@ export const PartyView: React.FC<PartyViewProps> = ({
     disabledGroupIds,
   ]);
 
-  const checkPartyExists = React.useCallback(
-    async (partyId: string): Promise<boolean> => {
-      try {
-        setIsCheckingParty(true);
-        setServerError(null);
-        const exists = await partyService.checkPartyExists(partyId);
-        setPartyVerified(exists);
-        if (!exists) {
-          setServerError('Сервер не найден');
-        }
-        return exists;
-      } catch (error) {
-        console.error('Failed to check party existence:', error);
+  const checkPartyExists = React.useCallback(async (partyId: string): Promise<boolean> => {
+    try {
+      setIsCheckingParty(true);
+      setServerError(null);
+      const exists = await partyService.checkPartyExists(partyId);
+      setPartyVerified(exists);
+      if (!exists) {
         setServerError('Сервер не найден');
-        setPartyVerified(false);
-        return false;
-      } finally {
-        setIsCheckingParty(false);
       }
-    },
-    [],
-  );
+      return exists;
+    } catch (error) {
+      console.error('Failed to check party existence:', error);
+      setServerError('Сервер не найден');
+      setPartyVerified(false);
+      return false;
+    } finally {
+      setIsCheckingParty(false);
+    }
+  }, []);
 
   const handleRetry = async () => {
     if (meta.linkedParty) {
@@ -258,19 +253,18 @@ export const PartyView: React.FC<PartyViewProps> = ({
           setPartyTitle(party.title ?? '');
           setPartySubtitle(party.subtitle ?? '');
           if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
+          const tz = party.timeZone || getDefaultTimeZone();
+          setTimeZone(tz);
           if (party.eventDateTime) {
-            try {
-              const date = new Date(party.eventDateTime);
-              setEventDateTime(date.toISOString().slice(0, 16));
-            } catch {
-              // Игнорируем ошибки парсинга даты
-            }
+            const local = convertUtcToLocalDateTime(party.eventDateTime, tz);
+            if (local) setEventDateTime(local);
+          } else {
+            setEventDateTime('');
           }
           if (party.description) setDescription(party.description);
           if (party.place) setPlace(party.place);
           if (party.city) setCity(party.city);
           if (party.schedule) setSchedule(party.schedule);
-          if (party.timeZone) setTimeZone(party.timeZone);
         } catch (error) {
           console.error('Failed to load party metadata:', error);
           // Не показываем ошибку пользователю, просто не загружаем метаданные
@@ -335,6 +329,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     try {
       const playlistForApi = convertPlaylistForApi(items);
 
+      const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
         name: partyName,
         title: partyTitle.trim() || undefined,
@@ -342,7 +337,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
-        eventDateTime: eventDateTime || undefined,
+        eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
         description: description.trim() || undefined,
         place: place.trim() || undefined,
         city: city.trim() || undefined,
@@ -406,13 +401,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
 
         // Обновляем метаданные вечеринки
+        const tz = timeZone.trim() || getDefaultTimeZone();
         await partyService.updateParty(linkedParty.id, {
           name: partyName,
           title: partyTitle.trim() || undefined,
           subtitle: partySubtitle.trim() || undefined,
           partyThemeId: themeId,
           customizationSettings: normalizeCustomizationSettings(customizationSettings),
-          eventDateTime: eventDateTime || undefined,
+          eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
           description: description.trim() || undefined,
           place: place.trim() || undefined,
           city: city.trim() || undefined,
@@ -443,6 +439,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setPartyVerified(false);
     try {
       const playlistForApi = convertPlaylistForApi(items);
+      const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
         name: nameToUse,
         title: partyTitle.trim() || undefined,
@@ -450,7 +447,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         partyThemeId: themeId,
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
-        eventDateTime: eventDateTime || undefined,
+        eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
         description: description.trim() || undefined,
         place: place.trim() || undefined,
         city: city.trim() || undefined,
@@ -567,7 +564,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onPlaceChange={setPlace}
             onCityChange={setCity}
             onScheduleChange={setSchedule}
-            onTimeZoneChange={setTimeZone}
+            onTimeZoneChange={(newTz) => {
+              const oldTz = timeZone.trim() || getDefaultTimeZone();
+              setTimeZone(newTz);
+              setEventDateTime(
+                convertUtcToLocalDateTime(
+                  convertLocalDateTimeToUtc(eventDateTime, oldTz),
+                  newTz,
+                ),
+              );
+            }}
             onCreateParty={handleCreateParty}
             onPublish={handlePublish}
             isCreating={isCreating}

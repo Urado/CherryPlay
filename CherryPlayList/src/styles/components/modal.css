@@ -335,6 +335,11 @@
   color: var(--text-secondary);
 }
 
+.link-party-modal-item-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .link-party-modal-link-btn {
   display: inline-flex;
   align-items: center;

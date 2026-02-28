@@ -33,6 +33,17 @@
   border-color: var(--accent-primary, #2196f3);
 }
 
+/* datetime-local: согласованность с формой и тёмной темой */
+.party-editor input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+.party-editor input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+  cursor: pointer;
+}
+
 /* Dropdown Styles */
 .party-editor-dropdown {
   position: relative;

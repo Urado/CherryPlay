@@ -1,7 +1,12 @@
 /**
  * Страница со списком всех вечеринок
  */
-import type { OrganizerDto } from '@cherryplay/components';
+import {
+  formatDateInTimeZone,
+  getDefaultTimeZone,
+  getPopularTimeZones,
+  type OrganizerDto,
+} from '@cherryplay/components';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -13,7 +18,6 @@ import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
 import { devLog } from '../utils/logger';
-import { getPopularTimeZones } from '../utils/timezoneUtils';
 import './PartyListPage.css';
 
 const RUSSIAN_CITIES = [
@@ -399,7 +403,10 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                       <div className="party-list-card-info-item">
                         <span className="party-list-card-info-label">Мероприятие:</span>
                         <span className="party-list-card-info-value">
-                          {formatDate(party.eventDateTime)}
+                          {formatDateInTimeZone(
+                            party.eventDateTime,
+                            party.timeZone ?? getDefaultTimeZone(),
+                          )}
                         </span>
                       </div>
                     )}

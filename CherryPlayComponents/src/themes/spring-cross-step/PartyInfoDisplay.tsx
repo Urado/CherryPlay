@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
+import { getDefaultTimeZone } from '../../utils/timezoneUtils';
 import type { PartyThemeId } from '../index';
 
 import { FloatingPetals } from './FloatingPetals';
@@ -41,7 +42,7 @@ export const PartyInfoDisplay: React.FC<SpringCrossStepPartyInfoDisplayProps> = 
     ? new Intl.DateTimeFormat('ru-RU', {
         dateStyle: 'long',
         timeStyle: 'short',
-        timeZone: data.timeZone || undefined,
+        timeZone: data.timeZone || getDefaultTimeZone(),
       }).format(new Date(data.eventDateTime))
     : null;
 

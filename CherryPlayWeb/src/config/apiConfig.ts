@@ -34,6 +34,9 @@ export const SIGNALR_BASE_URL =
  * Эндпоинты API
  */
 export const API_ENDPOINTS = {
+  // Публичная конфигурация приложения (флаги для UI)
+  CONFIG: '/api/config',
+
   // Аутентификация
   AUTH: {
     LOGIN: '/auth/login',

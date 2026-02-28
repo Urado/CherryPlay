@@ -1,6 +1,11 @@
 import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
 import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
-import { getDefaultTimeZone, getPopularTimeZones } from '../utils/timezoneUtils';
+import {
+  convertUtcToLocalDateTime,
+  convertLocalDateTimeToUtc,
+  getDefaultTimeZone,
+  getPopularTimeZones,
+} from '@cherryplay/components';
 
 export interface CabinetPartyFormProps {
   editingParty: PartyDto | null;
@@ -27,16 +32,23 @@ export function CabinetPartyForm({
 }: CabinetPartyFormProps) {
   const isEditing = !!editingParty;
 
-  const datetimeValue = (dt: string | undefined) => {
-    if (!dt) return '';
-    try {
-      return new Date(dt).toISOString().slice(0, 16);
-    } catch {
-      return '';
+  const timeZone = isEditing
+    ? (editForm.timeZone ?? getDefaultTimeZone())
+    : (createForm.timeZone ?? getDefaultTimeZone());
+
+  const displayedDateTime = isEditing
+    ? convertUtcToLocalDateTime(editForm.eventDateTime ?? '', timeZone)
+    : convertUtcToLocalDateTime(createForm.eventDateTime ?? '', timeZone);
+
+  const handleDateTimeChange = (value: string) => {
+    const raw = value ? convertLocalDateTimeToUtc(value, timeZone) : undefined;
+    const utc = raw === '' ? undefined : raw;
+    if (isEditing) {
+      setEditForm((f) => ({ ...f, eventDateTime: utc }));
+    } else {
+      setCreateForm((f) => ({ ...f, eventDateTime: utc }));
     }
   };
-
-  const setDatetime = (value: string) => (value ? new Date(value).toISOString() : undefined);
 
   return (
     <form className="cabinet-form" onSubmit={onSubmit}>
@@ -101,18 +113,6 @@ export function CabinetPartyForm({
         </select>
       </label>
       <label>
-        Дата мероприятия
-        <input
-          type="datetime-local"
-          value={datetimeValue(isEditing ? editForm.eventDateTime : createForm.eventDateTime)}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, eventDateTime: setDatetime(e.target.value) }))
-              : setCreateForm((f) => ({ ...f, eventDateTime: setDatetime(e.target.value) }))
-          }
-        />
-      </label>
-      <label>
         Таймзона
         <select
           value={
@@ -120,11 +120,32 @@ export function CabinetPartyForm({
               ? (editForm.timeZone ?? getDefaultTimeZone())
               : (createForm.timeZone ?? getDefaultTimeZone())
           }
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, timeZone: e.target.value }))
-              : setCreateForm((f) => ({ ...f, timeZone: e.target.value }))
-          }
+          onChange={(e) => {
+            const newTz = e.target.value;
+            if (isEditing) {
+              setEditForm((f) => {
+                const currentDisplay = convertUtcToLocalDateTime(
+                  f.eventDateTime ?? '',
+                  f.timeZone ?? getDefaultTimeZone(),
+                );
+                const newUtc = currentDisplay
+                  ? convertLocalDateTimeToUtc(currentDisplay, newTz)
+                  : undefined;
+                return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
+              });
+            } else {
+              setCreateForm((f) => {
+                const currentDisplay = convertUtcToLocalDateTime(
+                  f.eventDateTime ?? '',
+                  f.timeZone ?? getDefaultTimeZone(),
+                );
+                const newUtc = currentDisplay
+                  ? convertLocalDateTimeToUtc(currentDisplay, newTz)
+                  : undefined;
+                return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
+              });
+            }
+          }}
         >
           {getPopularTimeZones().map((tz) => (
             <option key={tz.value} value={tz.value}>
@@ -132,6 +153,14 @@ export function CabinetPartyForm({
             </option>
           ))}
         </select>
+      </label>
+      <label>
+        Дата мероприятия (по местному времени выбранной таймзоны)
+        <input
+          type="datetime-local"
+          value={displayedDateTime}
+          onChange={(e) => handleDateTimeChange(e.target.value)}
+        />
       </label>
       <label>
         Описание

@@ -6,7 +6,7 @@ import {
 } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
-import { getPopularTimeZones, getDefaultTimeZone } from '@shared/utils/timezoneUtils';
+import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
 import './PartyEditor.css';
 
 interface PartyEditorProps {
@@ -257,18 +257,6 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </label>
       </div>
 
-      <div className="party-editor-section">
-        <label className="party-editor-label">
-          Дата и время мероприятия
-          <input
-            type="datetime-local"
-            className="party-editor-input"
-            value={eventDateTime}
-            onChange={(e) => onEventDateTimeChange(e.target.value)}
-          />
-        </label>
-      </div>
-
       {onTimeZoneChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
@@ -287,6 +275,18 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           </label>
         </div>
       )}
+
+      <div className="party-editor-section">
+        <label className="party-editor-label">
+          Дата и время мероприятия (по местному времени выбранной таймзоны)
+          <input
+            type="datetime-local"
+            className="party-editor-input"
+            value={eventDateTime}
+            onChange={(e) => onEventDateTimeChange(e.target.value)}
+          />
+        </label>
+      </div>
 
       {onDescriptionChange && (
         <div className="party-editor-section">
