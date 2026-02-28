@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
-import { formatDuration } from '../../core/utils/time';
 import { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';

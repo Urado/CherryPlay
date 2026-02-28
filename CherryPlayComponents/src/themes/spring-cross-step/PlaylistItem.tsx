@@ -58,7 +58,7 @@ function CheckIcon(): React.ReactElement {
 export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
   item,
   index,
-  level,
+  level: _level,
   isCurrent = false,
   isPlayed = false,
   isDisabled = false,
