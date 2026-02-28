@@ -16,7 +16,7 @@ export function useIsTruncated(
 
   useEffect(() => {
     if (!enabled || !ref.current) {
-      setIsTruncated(false);
+      queueMicrotask(() => setIsTruncated(false));
       return;
     }
 

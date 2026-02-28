@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import type { AuthService } from '../../types/auth';
 
@@ -37,9 +37,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({
   const [mode, setMode] = useState<AuthMode>(effectiveInitialMode);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!oauthEnabled && mode === 'oauth') setMode('email');
-  }, [oauthEnabled, mode]);
+  // Derive display mode so we don't need setState in effect when oauth is disabled
+  const displayMode: AuthMode = !oauthEnabled && mode === 'oauth' ? 'email' : mode;
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
@@ -64,7 +63,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         <div className="auth-form-tabs">
           <button
             type="button"
-            className={`auth-form-tab ${mode === 'email' ? 'auth-form-tab--active' : ''}`}
+            className={`auth-form-tab ${displayMode === 'email' ? 'auth-form-tab--active' : ''}`}
             onClick={() => {
               setMode('email');
               setError(null);
@@ -75,7 +74,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           {oauthEnabled && (
             <button
               type="button"
-              className={`auth-form-tab ${mode === 'oauth' ? 'auth-form-tab--active' : ''}`}
+              className={`auth-form-tab ${displayMode === 'oauth' ? 'auth-form-tab--active' : ''}`}
               onClick={() => {
                 setMode('oauth');
                 setError(null);
@@ -86,7 +85,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           )}
         </div>
 
-        {mode === 'email' && (
+        {displayMode === 'email' && (
           <EmailAuthForm
             mode="login"
             authService={authService}
@@ -97,7 +96,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
           />
         )}
 
-        {oauthEnabled && mode === 'oauth' && (
+        {oauthEnabled && displayMode === 'oauth' && (
           <OAuthButtons authService={authService} onError={handleError} />
         )}
       </div>
