@@ -108,8 +108,10 @@ fi
 # Override with secrets from GitHub Actions when set (so Actions secrets take precedence)
 [ -n "$JWT_SECRET_KEY" ] && echo "JWT_SECRET_KEY=$JWT_SECRET_KEY" >> .env
 [ -n "$POSTGRES_PASSWORD" ] && echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> .env
-[ -n "$PGADMIN_EMAIL" ] && echo "PGADMIN_EMAIL=$PGADMIN_EMAIL" >> .env
-[ -n "$PGADMIN_PASSWORD" ] && echo "PGADMIN_PASSWORD=$PGADMIN_PASSWORD" >> .env
+# pgAdmin: берём из секретов PGADMIN_EMAIL и PGADMIN_PASSWORD, иначе подставляем значения по умолчанию
+echo "PGADMIN_EMAIL=${PGADMIN_EMAIL:-admin@localhost}" >> .env
+echo "PGADMIN_PASSWORD=${PGADMIN_PASSWORD:-changeme}" >> .env
+[ -z "$PGADMIN_EMAIL" ] || [ -z "$PGADMIN_PASSWORD" ] && echo -e "${YELLOW}⚠️  PGADMIN_EMAIL или PGADMIN_PASSWORD не заданы — используются значения по умолчанию. Задайте их в GitHub Secrets или .env.production и передеплойте.${NC}"
 [ -n "$CORS_ORIGIN_0" ] && echo "CORS_ORIGIN_0=$CORS_ORIGIN_0" >> .env
 [ -n "$CORS_ORIGIN_1" ] && echo "CORS_ORIGIN_1=$CORS_ORIGIN_1" >> .env
 [ -n "$CORS_ORIGIN_2" ] && echo "CORS_ORIGIN_2=$CORS_ORIGIN_2" >> .env
