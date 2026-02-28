@@ -38,7 +38,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
-        return party.ToPublicDto(state != null, state?.SessionStartedAt);
+        return party.ToPublicDto(state?.IsActive ?? false, state?.SessionStartedAt);
     }
 
     public async Task<PartyPlaylistDto?> GetPartyPlaylistByShortCodeAsync(string shortCode)
@@ -71,7 +71,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
 
         var dtos = parties.Select(party =>
         {
-            var hasActiveSession = stateLookup.ContainsKey(party.Id);
+            var hasActiveSession = stateLookup.TryGetValue(party.Id, out var s) && s.IsActive;
             return new PublicPartyListItemDto(
                 Id: party.Id.ToString(),
                 Name: party.Name,

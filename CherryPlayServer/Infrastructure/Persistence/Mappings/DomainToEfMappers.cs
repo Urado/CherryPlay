@@ -112,7 +112,7 @@ public static class DomainToEfMappers
 
     public static void ApplyTo(this PlaybackState domain, SessionStateEf ef)
     {
-        ef.IsActive = domain.SessionStartedAt.HasValue;
+        ef.IsActive = domain.IsActive;
         ef.SessionStartedAt = EnsureUtc(domain.SessionStartedAt);
         ef.CurrentTrackId = domain.CurrentTrackId;
         ef.Status = domain.Status.ToString().ToLowerInvariant();
@@ -131,7 +131,7 @@ public static class DomainToEfMappers
         var ef = new SessionStateEf
         {
             PartyId = partyId,
-            IsActive = domain.SessionStartedAt.HasValue,
+            IsActive = domain.IsActive,
             SessionStartedAt = EnsureUtc(domain.SessionStartedAt),
             CurrentTrackId = domain.CurrentTrackId,
             Status = domain.Status.ToString().ToLowerInvariant(),

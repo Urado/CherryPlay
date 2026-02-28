@@ -1,6 +1,6 @@
 # Первый деплой
 
-Пошаговая инструкция для первого выката CherryPlay на сервер. Подробности — в [DEPLOYMENT.md](DEPLOYMENT.md).
+Пошаговая инструкция для первого выката CherryPlay на сервер. Подробности — в [DEPLOYMENT.md](DEPLOYMENT.md). Полный справочник переменных окружения (назначение, dev/prod, безопасность) — в [ENV.md](../ENV.md) в корне репозитория.
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 1.1. GitHub Secrets
 
-В репозитории: **Settings → Secrets and variables → Actions**. Добавьте:
+В репозитории: **Settings → Secrets and variables → Actions**. Добавьте (полный список и описание — см. [ENV.md](../ENV.md)):
 
 | Секрет | Значение |
 |--------|----------|
@@ -74,7 +74,7 @@ docker compose -f docker-compose.prod.yml ps
 Проверьте доступность:
 
 - Сайт: `http://<DEPLOY_HOST>` (или по домену, если DNS уже указывает на сервер)
-- API: `http://<DEPLOY_HOST>:5000/api/health`
+- API: `http://<DEPLOY_HOST>:5000/health`
 
 Примечание по безопасности: в `docker-compose.prod.yml` pgAdmin по умолчанию публикуется только на `127.0.0.1:5050` (наружу не открыт). Для доступа используйте SSH-туннель с вашего компьютера на сервер.
 

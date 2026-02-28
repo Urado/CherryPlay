@@ -3,8 +3,10 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 const cherryPlayComponentsSrc = path.resolve(__dirname, '../CherryPlayComponents/src');
+const repoRoot = path.resolve(__dirname, '..');
 
 export default defineConfig({
+  envDir: repoRoot,
   plugins: [
     react(),
     // Следим за исходниками библиотеки, чтобы изменения подхватывались без перезапуска

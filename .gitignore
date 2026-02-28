@@ -29,9 +29,11 @@ lerna-debug.log*
 coverage/
 .nyc_output/
 
-# Environment
+# Environment (only .env.example and .env.*.example are committed)
 .env
 .env.local
+.env.development
+.env.production
 .env.*.local
 
 # OS

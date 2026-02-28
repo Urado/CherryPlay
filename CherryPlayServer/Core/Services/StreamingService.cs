@@ -46,7 +46,7 @@ public class StreamingService : IStreamingService
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
         return new PartyStateDto(
             partyId: party.Id.ToString(),
-            isSessionActive: state != null,
+            isSessionActive: state?.IsActive ?? false,
             playbackState: state != null ? state.ToDto() : null,
             playlist: party.Playlist.ToDto()
         );
@@ -71,7 +71,8 @@ public class StreamingService : IStreamingService
             Volume = 0.8,
             Mode = PlaybackMode.Session,
             SessionStartedAt = DateTime.UtcNow,
-            LastUpdatedAt = DateTime.UtcNow
+            LastUpdatedAt = DateTime.UtcNow,
+            IsActive = true,
         };
 
         await _streamingRepository.SetSessionStateAsync(party.Id, initialState);
@@ -89,7 +90,15 @@ public class StreamingService : IStreamingService
             throw new PartyNotFoundException(partyId);
         }
 
-        await _streamingRepository.DeleteSessionStateAsync(partyId);
+        var state = await _streamingRepository.GetSessionStateAsync(partyId);
+        if (state != null)
+        {
+            state.IsActive = false;
+            state.Status = PlaybackStatus.Ended;
+            state.LastUpdatedAt = DateTime.UtcNow;
+            await _streamingRepository.SetSessionStateAsync(partyId, state);
+        }
+
         _logger.LogInformation("Session ended for party: {PartyId}", partyId);
     }
 

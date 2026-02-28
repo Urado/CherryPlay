@@ -75,6 +75,7 @@ public static class EfToDomainMappers
             DisabledGroupIds = ef.DisabledGroupIds.ToList(),
             SessionStartedAt = ef.SessionStartedAt,
             LastUpdatedAt = ef.LastUpdatedAt,
+            IsActive = ef.IsActive,
         };
     }
 

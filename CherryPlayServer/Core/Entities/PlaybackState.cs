@@ -15,6 +15,7 @@ public class PlaybackState
     public List<string> DisabledGroupIds { get; set; } = [];
     public DateTime? SessionStartedAt { get; set; }
     public DateTime LastUpdatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsActive { get; set; } = true;
 
     public PlaybackState Clone()
     {
@@ -30,7 +31,8 @@ public class PlaybackState
             DisabledTrackIds = DisabledTrackIds.ToList(),
             DisabledGroupIds = DisabledGroupIds.ToList(),
             SessionStartedAt = SessionStartedAt,
-            LastUpdatedAt = LastUpdatedAt
+            LastUpdatedAt = LastUpdatedAt,
+            IsActive = IsActive
         };
     }
 }

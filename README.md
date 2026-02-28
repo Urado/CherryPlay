@@ -85,6 +85,7 @@ npm run build
 ## Документация
 
 - [DEV_SETUP.md](DEV_SETUP.md) — настройка окружения для разработки (порядок запуска, переменные)
+- [ENV.md](ENV.md) — справочник переменных окружения (бэкенд, фронт, БД, деплой; dev/prod)
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы MVP, архитектура
 - [CONTRACTS.md](CONTRACTS.md) — REST API, SignalR Hub, DTO (Public и Organizer)
 - [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.)
@@ -97,7 +98,7 @@ npm run build
   - [QUICK_START_BUILD.md](CherryPlayList/QUICK_START_BUILD.md) — быстрый старт сборки релиза
 - **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, Data and Contracts)
 - **CherryPlayServer:** [API.md](CherryPlayServer/API.md) (указатель на CONTRACTS), [OPS.md](CherryPlayServer/OPS.md), [DATABASE.md](CherryPlayServer/DATABASE.md)
-- **CherryPlayWeb:** [README.md](CherryPlayWeb/README.md), [ENV.md](CherryPlayWeb/ENV.md), [docs/pages.md](CherryPlayWeb/docs/pages.md)
+- **CherryPlayWeb:** [README.md](CherryPlayWeb/README.md), [docs/pages.md](CherryPlayWeb/docs/pages.md); переменные окружения — в корневом [ENV.md](ENV.md)
 - **CherryPlayComponents:** [README.md](CherryPlayComponents/README.md)
 
 ## Структура
@@ -185,21 +186,7 @@ docker-compose down -v
 
 ### Переменные окружения
 
-Для изменения настроек создайте файл `.env` в корне проекта:
-
-```env
-# PostgreSQL
-POSTGRES_DB=cherryplay
-POSTGRES_USER=cherryplay
-POSTGRES_PASSWORD=your_secure_password
-
-# pgAdmin
-PGADMIN_EMAIL=admin@cherryplay.com
-PGADMIN_PASSWORD=your_admin_password
-
-# Backend
-ASPNETCORE_ENVIRONMENT=Production
-```
+Для изменения настроек скопируйте [.env.example](.env.example) в `.env` или `.env.development` / `.env.production` и заполните значения. Полный список переменных и описание — в [ENV.md](ENV.md).
 
 ### Сборка образов
 

@@ -113,7 +113,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Полный справочник переменных — в корневом [ENV.md](../ENV.md). Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера

@@ -198,7 +198,7 @@
 |-------|-----------|----------|
 | `JoinPartyAsOrganizer` | `partyId: string`, `token: string` | Подключение к группе вечеринки (token — JWT). |
 | `StartSession` | `partyId: string` | Начало сессии; сервер рассылает `OnSessionStarted`. |
-| `EndSession` | `partyId: string` | Окончание сессии; сервер рассылает `OnSessionEnded`. |
+| `EndSession` | `partyId: string` | Окончание сессии; состояние сохраняется с IsActive=false, Status=Ended (freeze); сервер рассылает `OnSessionEnded`. |
 | `UpdatePlaybackPosition` | `partyId: string`, `trackId: string`, `position: number` | Обновление позиции воспроизведения. |
 | `UpdateFullState` | `partyId: string`, `state: PlaybackStateDto` | Обновление полного состояния воспроизведения. |
 | `NotifyStateChanged` | `partyId: string` | Уведомление об изменении состояния. |
@@ -214,6 +214,7 @@
 - **Viewer** подключается по `shortCode`, получает плейлист (REST) и/или последнее сохранённое состояние, живые обновления по SignalR при активной сессии.
 - Точность позиции: «в целом совпадает», без жёстких требований к секундам.
 - **Offline/freeze (по плану §2.1, §4.3):** при потере связи у зрителя — блок «сейчас играет» скрывается; плейлист и пометки проигранных остаются видимыми.
+- **Завершение сессии (freeze):** при EndSession организатором состояние на сервере сохраняется (IsActive=false, Status=Ended); зрители видят плейлист и пометки, блок «сейчас играет» скрыт (см. [RELEASE_PLAN.md](RELEASE_PLAN.md) §2.1).
 
 Связь локального проекта и серверной вечеринки (§3.3 плана): создать на сервере → сохранить `partyId` в локальном проекте; при Publish в edit режиме локальный проект перетирает серверную версию плейлиста.
 
@@ -385,7 +386,7 @@
 
 ## 8. Ops — по плану §4.5, §2.1
 
-- **Health endpoint:** доступность сервиса (например GET `/health` или `/api/health`).
+- **Health endpoint:** GET `/health` — проверка доступности сервиса.
 - **Логи:** auth, create/update party, start/end session, подключение к Hub.
 - **Rate limiting:** на публичные ручки и Hub; лимиты по вечеринкам (антиспам каталога).
 - **Бэкап БД:** минимум еженедельный + инструкция восстановления.

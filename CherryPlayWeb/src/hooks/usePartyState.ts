@@ -74,64 +74,67 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     playlistRef.current = playlist;
   }, [playlist]);
 
-  const loadPlaylist = useCallback(async (options?: { silent?: boolean }) => {
-    const silent = options?.silent === true;
-    try {
-      if (!silent) {
-        setLoading(true);
-        setError(null);
-      }
+  const loadPlaylist = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent === true;
+      try {
+        if (!silent) {
+          setLoading(true);
+          setError(null);
+        }
 
-      let playlistData: PartyPlaylistData;
+        let playlistData: PartyPlaylistData;
 
-      if (isDemo || !shortCode) {
-        const dto = await partyApiService.getFirstPartyPlaylist();
-        playlistData = {
-          items: normalizePlaylistItems(dto.items),
-          totalDuration: dto.totalDuration,
-          totalTracks: dto.totalTracks,
-        };
-      } else {
-        const dto = await partyApiService.getPartyPlaylist(shortCode);
-        playlistData = {
-          items: normalizePlaylistItems(dto.items),
-          totalDuration: dto.totalDuration,
-          totalTracks: dto.totalTracks,
-        };
+        if (isDemo || !shortCode) {
+          const dto = await partyApiService.getFirstPartyPlaylist();
+          playlistData = {
+            items: normalizePlaylistItems(dto.items),
+            totalDuration: dto.totalDuration,
+            totalTracks: dto.totalTracks,
+          };
+        } else {
+          const dto = await partyApiService.getPartyPlaylist(shortCode);
+          playlistData = {
+            items: normalizePlaylistItems(dto.items),
+            totalDuration: dto.totalDuration,
+            totalTracks: dto.totalTracks,
+          };
 
-        try {
-          const party = await partyApiService.getPublicParty(shortCode);
-          if (party.name) {
-            setPartyName(party.name);
+          try {
+            const party = await partyApiService.getPublicParty(shortCode);
+            if (party.name) {
+              setPartyName(party.name);
+            }
+            if (party.id) {
+              setPartyId(party.id);
+            }
+            if (party.partyThemeId && isValidPartyTheme(party.partyThemeId)) {
+              setThemeId(party.partyThemeId);
+            }
+            if (party.customizationSettings) {
+              setCustomizationSettings(
+                party.customizationSettings as CustomizationSettings<PartyThemeId>,
+              );
+            }
+          } catch (err) {
+            console.warn('[usePartyState] Failed to load party info:', err);
           }
-          if (party.id) {
-            setPartyId(party.id);
-          }
-          if (party.partyThemeId && isValidPartyTheme(party.partyThemeId)) {
-            setThemeId(party.partyThemeId);
-          }
-          if (party.customizationSettings) {
-            setCustomizationSettings(
-              party.customizationSettings as CustomizationSettings<PartyThemeId>,
-            );
-          }
-        } catch (err) {
-          console.warn('[usePartyState] Failed to load party info:', err);
+        }
+
+        setPlaylist(playlistData);
+        playlistRef.current = playlistData;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке';
+        setError(errorMessage);
+        console.error('[usePartyState] Failed to load playlist:', err);
+      } finally {
+        if (!silent) {
+          setLoading(false);
         }
       }
-
-      setPlaylist(playlistData);
-      playlistRef.current = playlistData;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке';
-      setError(errorMessage);
-      console.error('[usePartyState] Failed to load playlist:', err);
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }, [shortCode, isDemo]);
+    },
+    [shortCode, isDemo],
+  );
 
   useEffect(() => {
     loadPlaylist();

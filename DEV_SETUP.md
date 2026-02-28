@@ -22,6 +22,14 @@ dotnet run
 ```
 
 - Сервер будет доступен по адресу **http://localhost:5000**
+
+### Переменные окружения для локальной разработки
+
+- Скопируйте корневой **.env.example** (или **.env.development.example**) в **.env.development** и заполните значения.
+- Чтобы запустить сервер с этими переменными:
+  - **Вариант 1:** подгрузите их перед запуском, например: `source .env.development` (Bash), затем `cd CherryPlayServer && dotnet run`.
+  - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
+- Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings__DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
 - В режиме по умолчанию используется InMemory хранилище и тестовые данные (см. [CherryPlayServer/README.md](CherryPlayServer/README.md))
   > **Примечание:** Это временное состояние для разработки. По плану релиза v1 (Epic A) будет реализована персистентная БД PostgreSQL.
@@ -36,6 +44,7 @@ npm run dev
 
 - Приложение будет доступно по адресу **http://localhost:3000**
 - По умолчанию подключается к серверу на `http://localhost:5000` (см. раздел «Переменные окружения» ниже)
+- Переменные окружения (VITE_*) читаются из **корня репозитория** (файлы `.env`, `.env.development`, `.env.production`). Создайте в корне `.env.development` из `.env.example` при необходимости (см. [ENV.md](ENV.md)).
 
 ## 3. CherryPlayList (Electron)
 
@@ -69,6 +78,7 @@ npm run dev
 
 ## Документация
 
+- [ENV.md](ENV.md) — справочник переменных окружения (корневой .env.example, dev/prod, маппинг бэкенда)
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы и архитектура
 - [CONTRACTS.md](CONTRACTS.md) — REST API и SignalR контракты
 - [docs/integration/README.md](docs/integration/README.md) — подсистемы интеграции приложение–сервер–веб
