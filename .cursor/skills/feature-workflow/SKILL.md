@@ -1,17 +1,17 @@
 ---
 name: feature-workflow
-description: Coordinates feature work by selecting the appropriate worker-dotnet or worker-frontend subagent for implementation, then invoking the code-reviewer subagent to review the changes and looping back to the worker to address any critical review feedback. Use when implementing or updating a feature end-to-end.
+description: Coordinates feature work by selecting the appropriate worker (worker-dotnet, worker-frontend, worker-documentation, or worker-ci-cd) for implementation, then invoking the code-reviewer subagent to review the changes and looping back to the worker to address any critical review feedback. Use when implementing or updating a feature end-to-end, including required documentation or CI/CD updates.
 ---
 
 # Feature Workflow
 
 ## Purpose
 
-Use this skill to coordinate **end-to-end feature work** across the `worker-dotnet`, `worker-frontend`, and `code-reviewer` subagents.
+Use this skill to coordinate **end-to-end feature work** across the `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, and `code-reviewer` subagents.
 
 The workflow:
 - **Analyzes the requested task**
-- **Selects the appropriate worker** (`worker-dotnet` or `worker-frontend`)
+- **Selects the appropriate worker** (`worker-dotnet`, `worker-frontend`, `worker-documentation`, or `worker-ci-cd`)
 - **Runs a code review** via `code-reviewer`
 - **Loops back to the worker** to fix any **critical** review comments
 
@@ -19,7 +19,7 @@ The workflow:
 
 Apply this skill whenever:
 - The user requests a **new feature**, **enhancement**, or **non-trivial bug fix**
-- The work involves **.NET / C# backend**, **TypeScript/React frontend**, or both
+- The work involves **.NET / C# backend**, **TypeScript/React frontend**, **documentation**, or **CI/CD / infrastructure** (Docker, docker-compose, GitHub Actions, deployment automation)
 - You need a **structured flow**: implement → review → fix critical issues
 
 Avoid this workflow for:
@@ -52,11 +52,29 @@ Select the worker subagent based on task characteristics:
   - Implementing or changing **React/TypeScript components, hooks, styling, state management, or client-side logic**
   - Working primarily in frontend UI/UX code
 
+- Use **`worker-documentation`** when:
+  - Creating or updating **Markdown documentation** (setup guides, contracts, architecture docs, integration docs, ops/db docs, theme docs, glossary/terms)
+  - The task is primarily about **clarifying behavior**, **documenting a workflow**, or **keeping docs in sync** with existing code
+  - Code changes are *not* required, but documentation accuracy and cross-linking are
+
+- Use **`worker-ci-cd`** when:
+  - Implementing or changing **CI/CD pipelines**, **GitHub Actions workflows**, or **deployment automation** under `.github/`
+  - Adjusting or adding **Dockerfiles** and **docker-compose** configurations (including `docker-compose.debug.yml`, `docker-compose.yml`, `docker-compose.prod.yml`) as part of build/deploy flows
+  - Evolving **infrastructure-related configuration** such as container image tags, environment variables for services, and health checks used by deployments
+
 - If the task spans **both backend and frontend**:
   - Break the work into **clear sub-tasks** (e.g. "backend API support" then "frontend UI integration").
   - Run the workflow **separately for each sub-task**:
     1. Backend sub-task with `worker-dotnet` → `code-reviewer`
     2. Frontend sub-task with `worker-frontend` → `code-reviewer`
+
+- If the task spans **code + documentation**:
+  - Prefer implementing the code first (with `worker-dotnet`/`worker-frontend`) and reviewing it.
+  - Then run a documentation sub-task with `worker-documentation` → `code-reviewer` to ensure docs are accurate and complete.
+
+- If the task spans **application code + CI/CD or infrastructure**:
+  - Break the work into **application** and **CI/CD** sub-tasks.
+  - Use `worker-dotnet`/`worker-frontend` for application changes, then `worker-ci-cd` to update workflows/compose/Dockerfiles so they build, test, and deploy the new behavior.
 
 ### 3. Implement the feature with the worker
 

@@ -1,0 +1,25 @@
+---
+description: Use user-context7 MCP when the agent needs to see any documentation
+alwaysApply: true
+---
+
+# Use Documentation MCP for Library Docs
+
+When you need to see **any documentation** (libraries, APIs, frameworks, packages), use the **user-context7** MCP server to retrieve up-to-date docs and code examples instead of relying only on built-in knowledge or web search.
+
+## When to use
+
+- Looking up library/framework API (React, Vue, TypeScript, etc.)
+- Checking package usage, options, or examples
+- Verifying current docs for a dependency
+- Need official or up-to-date code samples
+
+## How to use
+
+1. Use MCP tools from the **user-context7** server (e.g. list/read tool descriptors in `mcps/user-context7/` if needed).
+2. Call the appropriate tool to fetch documentation for the library or topic in question.
+3. Prefer this over guessing from memory when accuracy or recency matters.
+
+## Note
+
+"contact7" in project discussions refers to this documentation MCP (user-context7). Always prefer it when the task involves reading or following documentation.

@@ -1,0 +1,26 @@
+---
+description: Lint, format and completion checks for CherryPlay (CherryPlayWeb, CherryPlayList)
+alwaysApply: true
+---
+
+# CherryPlay Lint, Format and Completion
+
+После любых изменений в файлах TypeScript/JavaScript/React (.ts, .tsx, .js, .jsx) в проектах CherryPlayWeb или CherryPlayList соблюдай следующие правила.
+
+## Автоматический запуск линтера
+
+1. Если изменены файлы в `CherryPlayWeb/src/` — запусти `cd CherryPlayWeb && npm run lint:fix`
+2. Если изменены файлы в `CherryPlayList/src/` — запусти `cd CherryPlayList && npm run lint:fix`
+3. Если изменены файлы в обоих проектах — запусти линтер для обоих
+
+## Форматирование кода
+
+Все изменения должны соответствовать правилам ESLint и Prettier проекта. При необходимости автоматически исправляй форматирование через `lint:fix`.
+
+## Проверка перед завершением задачи
+
+Перед завершением задачи убедись, что:
+
+- Линтер пройден без ошибок
+- Код соответствует стандартам проекта
+- Все изменения протестированы

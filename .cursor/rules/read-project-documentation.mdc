@@ -1,0 +1,30 @@
+---
+description: Read project MD documentation and follow cross-references to linked docs
+alwaysApply: true
+---
+
+# Read Project Documentation
+
+When working on CherryPlay, use the project's **Markdown documentation** as the source of truth for architecture, contracts, setup, and features. Documentation is **cross-linked**: many files reference others; follow those links to get full context.
+
+## When to Read Docs
+
+- **Architecture, API, or contracts** — start from [CONTRACTS.md](CONTRACTS.md), [CherryPlayServer/README.md](CherryPlayServer/README.md), [docs/integration/README.md](docs/integration/README.md).
+- **Database and persistence** — [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
+- **Operations and deployment** — [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md).
+- **Dev setup and quick start** — [DEV_SETUP.md](DEV_SETUP.md), [QUICK_START.md](QUICK_START.md), [README.md](README.md).
+- **Terms and identifiers** — [GLOSSARY.md](GLOSSARY.md).
+- **Adding a PartyTheme** — [ADDING_THEME.md](ADDING_THEME.md).
+- **CherryPlayList (desktop app)** — [CherryPlayList/FULL_DOCUMENTATION.md](CherryPlayList/FULL_DOCUMENTATION.md), [CherryPlayList/TECHNICAL.md](CherryPlayList/TECHNICAL.md), [CherryPlayList/BUILD.md](CherryPlayList/BUILD.md), [CherryPlayList/docs/README.md](CherryPlayList/docs/README.md) and linked modules under `CherryPlayList/docs/modules/`.
+
+## Following Links
+
+- If a doc you read links to another (e.g. `[CONTRACTS.md](../CONTRACTS.md)`, `[DATABASE.md](DATABASE.md)`), **open and read** the linked file when it is relevant to the task.
+- Resolve paths relative to the current doc: `../` = parent directory, `./` = same directory.
+- Hub docs (README.md, `docs/integration/README.md`, `CherryPlayList/docs/modules/README.md`) list key documents; use them to discover and follow the chain of references.
+
+## Summary
+
+1. Prefer project `.md` docs over guessing when answering questions about setup, API, or behavior.
+2. Treat linked docs as part of the same documentation graph; follow links to get complete information.
+3. Use the paths above as entry points; from there, follow in-doc links as needed.
