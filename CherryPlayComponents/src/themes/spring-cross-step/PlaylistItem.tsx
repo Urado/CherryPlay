@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useId, useRef, useState } from 'react';
 
+import { useIsTruncated } from '../../core/hooks/useIsTruncated';
+import { stripLastExtension } from '../../core/utils/string';
 import { formatDuration } from '../../core/utils/time';
 import { PlayerItem } from '../../types';
 
@@ -63,10 +65,18 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
   isPlayed = false,
   isDisabled = false,
 }) => {
+  const [nameExpanded, setNameExpanded] = useState(false);
+  const idPrefix = useId();
+  const nameRef = useRef<HTMLDivElement>(null);
   const isGroup = item.type === 'group';
-  const displayName = item.name || (isGroup ? 'Группа' : 'Трек');
+  const displayName =
+    item.type === 'track'
+      ? stripLastExtension(item.name) || item.name || 'Трек'
+      : item.name || 'Группа';
   const displayDuration =
     item.type === 'track' && item.duration != null ? formatDuration(item.duration) : null;
+
+  const nameTruncated = useIsTruncated(nameRef, !nameExpanded, displayName);
 
   const circleContent = isCurrent ? <MusicIcon /> : isPlayed ? <CheckIcon /> : index + 1;
 
@@ -92,7 +102,31 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
           {circleContent}
         </div>
         <div className="party-playlist-item-info">
-          <div className="party-playlist-item-name">{displayName}</div>
+          <div className="party-playlist-item-name-wrapper">
+            <div
+              ref={nameRef}
+              className={`party-playlist-item-name${nameExpanded ? ' party-playlist-item-name--expanded' : ''}${!nameExpanded && nameTruncated ? ' party-playlist-item-name--inline-ellipsis' : ''}`}
+              id={`${idPrefix}-name`}
+            >
+              {displayName}
+            </div>
+            {(nameExpanded || nameTruncated) && (
+              <button
+                type="button"
+                className="party-playlist-item-expand-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNameExpanded((v) => !v);
+                }}
+                aria-expanded={nameExpanded}
+                aria-controls={`${idPrefix}-name`}
+                aria-label={nameExpanded ? 'Свернуть название' : 'Показать полное название'}
+                title={nameExpanded ? 'Свернуть название' : 'Показать полное название'}
+              >
+                {nameExpanded ? '×' : '…'}
+              </button>
+            )}
+          </div>
           {item.type === 'track' && item.path && (
             <div className="party-playlist-item-artist">{item.path}</div>
           )}

@@ -1,7 +1,7 @@
 /* Элемент плейлиста — по образцу из примера (playlist-item.tsx) */
 
-[data-theme="spring-cross-step"] .party-playlist-item,
-[data-theme="spring-cross-step"] .party-playlist-item--track {
+[data-theme='spring-cross-step'] .party-playlist-item,
+[data-theme='spring-cross-step'] .party-playlist-item--track {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -16,43 +16,43 @@
   text-align: left;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item:hover,
-[data-theme="spring-cross-step"] .party-playlist-item--track:hover {
+[data-theme='spring-cross-step'] .party-playlist-item:hover,
+[data-theme='spring-cross-step'] .party-playlist-item--track:hover {
   background: var(--bg-hover);
   border-left-color: var(--leaf-green);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item--current,
-[data-theme="spring-cross-step"] .party-playlist-item.current {
+[data-theme='spring-cross-step'] .party-playlist-item--current,
+[data-theme='spring-cross-step'] .party-playlist-item.current {
   background: var(--selected-bg);
   border-left-color: var(--accent-primary);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item--current .party-playlist-item-name,
-[data-theme="spring-cross-step"] .party-playlist-item.current .party-playlist-item-name {
+[data-theme='spring-cross-step'] .party-playlist-item--current .party-playlist-item-name,
+[data-theme='spring-cross-step'] .party-playlist-item.current .party-playlist-item-name {
   color: var(--accent-primary);
   font-weight: 600;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item--played,
-[data-theme="spring-cross-step"] .party-playlist-item.played {
+[data-theme='spring-cross-step'] .party-playlist-item--played,
+[data-theme='spring-cross-step'] .party-playlist-item.played {
   opacity: 0.5;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item--played .party-playlist-item-name,
-[data-theme="spring-cross-step"] .party-playlist-item.played .party-playlist-item-name {
+[data-theme='spring-cross-step'] .party-playlist-item--played .party-playlist-item-name,
+[data-theme='spring-cross-step'] .party-playlist-item.played .party-playlist-item-name {
   text-decoration: line-through;
   text-decoration-color: var(--text-tertiary);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item--disabled,
-[data-theme="spring-cross-step"] .party-playlist-item.disabled {
+[data-theme='spring-cross-step'] .party-playlist-item--disabled,
+[data-theme='spring-cross-step'] .party-playlist-item.disabled {
   opacity: 0.35;
   pointer-events: none;
 }
 
 /* Левый блок: круг + название/артист (flex items-center gap-3 как в примере) */
-[data-theme="spring-cross-step"] .party-playlist-item-left {
+[data-theme='spring-cross-step'] .party-playlist-item-left {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -62,7 +62,7 @@
 }
 
 /* Круг: 28×28, как в примере */
-[data-theme="spring-cross-step"] .party-playlist-item-circle {
+[data-theme='spring-cross-step'] .party-playlist-item-circle {
   width: 28px;
   height: 28px;
   min-width: 28px;
@@ -76,43 +76,95 @@
   justify-content: center;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item-circle[data-state="current"] {
+[data-theme='spring-cross-step'] .party-playlist-item-circle[data-state='current'] {
   background: var(--accent-primary);
   color: var(--flower-white);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item-circle[data-state="played"] {
+[data-theme='spring-cross-step'] .party-playlist-item-circle[data-state='played'] {
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item-circle[data-state="upcoming"] {
+[data-theme='spring-cross-step'] .party-playlist-item-circle[data-state='upcoming'] {
   background: var(--bg-secondary);
   color: var(--text-tertiary);
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item-info {
+[data-theme='spring-cross-step'] .party-playlist-item-info {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-/* Название трека — как в примере */
-[data-theme="spring-cross-step"] .party-playlist-item-name {
+[data-theme='spring-cross-step'] .party-playlist-item-name-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+/* Название трека — одна строка по умолчанию; при обрезке в конце строки кликабельное … */
+[data-theme='spring-cross-step'] .party-playlist-item-name {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   transition: color 0.2s ease;
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item-name--inline-ellipsis {
+  text-overflow: clip;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item-name--expanded {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+/* Expand/collapse toggle: ellipsis (…) when collapsed, × when expanded — minimal, clickable */
+[data-theme='spring-cross-step'] .party-playlist-item-expand-btn {
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--accent-primary-light);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  min-width: 20px;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item-expand-btn:hover {
+  background: rgba(26, 92, 46, 0.1);
+  color: var(--accent-primary);
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item-expand-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
 }
 
 /* Подзаголовок (артист / path) — fontSize 12, color text-tertiary, marginTop 1 как в примере */
-[data-theme="spring-cross-step"] .party-playlist-item-artist {
+[data-theme='spring-cross-step'] .party-playlist-item-artist {
   font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 1px;
   line-height: 1.3;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-item-duration {
+[data-theme='spring-cross-step'] .party-playlist-item-duration {
   font-size: 13px;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
@@ -120,12 +172,12 @@
   margin-left: 12px;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-items {
+[data-theme='spring-cross-step'] .party-playlist-items {
   display: flex;
   flex-direction: column;
 }
 
-[data-theme="spring-cross-step"] .party-playlist-group-items {
+[data-theme='spring-cross-step'] .party-playlist-group-items {
   display: flex;
   flex-direction: column;
 }
