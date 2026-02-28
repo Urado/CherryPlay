@@ -135,10 +135,17 @@ jobs:
       - name: Run EF Core migrations
         env:
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           if [ -z "$DATABASE_CONNECTION_STRING" ]; then
-            echo "::warning:: DATABASE_CONNECTION_STRING secret is not set. Skipping migrations. Configure it for production PostgreSQL to run migrations in CI/CD."
-            exit 0
+            if [ -n "$DEPLOY_HOST" ] && [ -n "$POSTGRES_PASSWORD" ]; then
+              DATABASE_CONNECTION_STRING="Host=${DEPLOY_HOST};Port=5433;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD}"
+              echo "Using connection string built from DEPLOY_HOST and POSTGRES_PASSWORD (port 5433)."
+            else
+              echo "::warning:: DATABASE_CONNECTION_STRING secret is not set and DEPLOY_HOST/POSTGRES_PASSWORD are insufficient. Skipping migrations. Set DATABASE_CONNECTION_STRING or run migrations manually on the server."
+              exit 0
+            fi
           fi
           dotnet tool install --global dotnet-ef || true
           dotnet restore CherryPlayServer/CherryPlayServer.csproj

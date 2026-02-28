@@ -10,30 +10,32 @@
 
 В репозитории: **Settings → Secrets and variables → Actions**. Добавьте (полный список и описание — см. [ENV.md](../ENV.md)):
 
-| Секрет | Значение |
-|--------|----------|
-| `SSH_PRIVATE_KEY` | Приватный SSH-ключ для доступа к серверу |
-| `DEPLOY_HOST` | IP или домен сервера |
-| `DEPLOY_USER` | Пользователь SSH (например `deploy`, `ubuntu`) |
-| `JWT_SECRET_KEY` | Не менее 32 символов |
-| `POSTGRES_PASSWORD` | Пароль PostgreSQL |
-| `PGADMIN_EMAIL` | Email для входа в pgAdmin (например `admin@yourdomain.com`) |
-| `PGADMIN_PASSWORD` | Пароль для входа в pgAdmin |
-| `GHCR_TOKEN` | PAT с правом `read:packages` (для публичного репо можно не задавать) |
+| Секрет              | Значение                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `SSH_PRIVATE_KEY`   | Приватный SSH-ключ для доступа к серверу                                                                          |
+| `DEPLOY_HOST`       | IP или домен сервера                                                                                              |
+| `DEPLOY_USER`       | Пользователь SSH (например `deploy`, `ubuntu`)                                                                    |
+| `JWT_SECRET_KEY`    | Не менее 32 символов                                                                                              |
+| `POSTGRES_PASSWORD` | Пароль PostgreSQL                                                                                                 |
+| `PGADMIN_EMAIL`     | Email для входа в pgAdmin (например `admin@yourdomain.com`). В контейнере передаётся как `PGADMIN_DEFAULT_EMAIL`. |
+| `PGADMIN_PASSWORD`  | Пароль для входа в pgAdmin. В контейнере передаётся как `PGADMIN_DEFAULT_PASSWORD`.                               |
+| `GHCR_TOKEN`        | PAT с правом `read:packages` (для публичного репо можно не задавать)                                              |
+
+Строка подключения для миграций БД в CI собирается автоматически из `DEPLOY_HOST` и `POSTGRES_PASSWORD` (порт 5433). Отдельный секрет `DATABASE_CONNECTION_STRING` задавайте только если БД не на сервере деплоя или порт/хост другие. Важно: в `docker-compose.prod.yml` PostgreSQL по умолчанию слушает только `127.0.0.1:5433`, поэтому с GitHub Actions к нему не подключиться — миграции в CI выполнятся только при доступном с интернета порте 5433 или при заданной вручную строке подключения (например, к облачной БД); иначе выполняйте миграции вручную на сервере.
 
 Для HTTPS с первого дня добавьте:
 
-| Секрет | Значение (пример) |
-|--------|--------------------|
-| `CORS_ORIGIN_0` | `https://yourdomain.com` |
+| Секрет          | Значение (пример)            |
+| --------------- | ---------------------------- |
+| `CORS_ORIGIN_0` | `https://yourdomain.com`     |
 | `CORS_ORIGIN_1` | `https://www.yourdomain.com` |
 
 Для входа через VK добавьте:
 
-| Секрет | Значение |
-|--------|----------|
-| `OAUTH_VK_CLIENT_ID` | ID приложения VK (из настройки приложения VK) |
-| `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK |
+| Секрет                   | Значение                                      |
+| ------------------------ | --------------------------------------------- |
+| `OAUTH_VK_CLIENT_ID`     | ID приложения VK (из настройки приложения VK) |
+| `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK                 |
 
 Публичный ключ от `SSH_PRIVATE_KEY` должен быть добавлен на сервер (`~/.ssh/authorized_keys` пользователя `DEPLOY_USER`).
 
@@ -48,6 +50,7 @@
 ## 2. Запуск первого деплоя
 
 1. Создайте тег и запушьте:
+
    ```bash
    git tag -a v1.0.0 -m "Release 1.0.0"
    git push origin v1.0.0
@@ -128,6 +131,7 @@ sudo journalctl -xeu nginx.service
 ```
 
 Чаще всего:
+
 - **Сертификаты не найдены** — пути в конфиге вида `/etc/letsencrypt/live/<домен>/...` должны существовать. Сначала выполните п. 4.2 (certbot), затем снова копируйте конфиг и перезапускайте nginx.
 - **В конфиге остался YOUR_DOMAIN** — замените на свой домен:  
   `sudo sed -i 's/YOUR_DOMAIN/cherrypashkaparty.ru/g' /etc/nginx/sites-available/cherryplay`
@@ -157,20 +161,25 @@ sudo nginx -t && sudo systemctl reload nginx
 **Если по адресу ничего нет (ни HTTP, ни HTTPS):**
 
 1. **Проверить контейнеры и порт 8080:**
+
    ```bash
    cd ~/cherryplay-deploy
    docker compose -f docker-compose.prod.yml ps
    curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/
    ```
+
    Должны быть в Up: `cherryplay-web`, `cherryplay-server`; curl должен вернуть 200.
 
 2. **Проверить, что nginx проксирует на 8080:**
+
    ```bash
    grep proxy_pass /etc/nginx/sites-available/cherryplay
    ```
+
    Должно быть `proxy_pass http://127.0.0.1:8080;`. Если там `:80` — скопируйте конфиг заново из п. 4.5 выше.
 
 3. **Убрать дефолтный сайт nginx** (если запросы забирает он):
+
    ```bash
    sudo rm -f /etc/nginx/sites-enabled/default
    sudo nginx -t && sudo systemctl reload nginx

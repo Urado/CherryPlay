@@ -33,6 +33,7 @@
 ### 1. GitHub Container Registry (GHCR)
 
 GitHub Container Registry уже настроен и доступен автоматически. Образы будут публиковаться в:
+
 - `ghcr.io/<owner>/<repo>/server`
 - `ghcr.io/<owner>/<repo>/web`
 
@@ -42,26 +43,26 @@ GitHub Container Registry уже настроен и доступен автом
 
 #### Обязательные для деплоя (Release and Deploy)
 
-| Секрет | Описание |
-|--------|----------|
-| `SSH_PRIVATE_KEY` | Приватный SSH-ключ для доступа к серверу (содержимое `id_ed25519` или `id_rsa`) |
-| `DEPLOY_HOST` | IP или домен сервера (например `deploy.example.com`) |
-| `DEPLOY_USER` | Пользователь для SSH (например `deploy`, `ubuntu`) |
-| `JWT_SECRET_KEY` | Секрет для подписи JWT (не менее 32 символов). Используется сервером в production |
+| Секрет              | Описание                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| `SSH_PRIVATE_KEY`   | Приватный SSH-ключ для доступа к серверу (содержимое `id_ed25519` или `id_rsa`)            |
+| `DEPLOY_HOST`       | IP или домен сервера (например `deploy.example.com`)                                       |
+| `DEPLOY_USER`       | Пользователь для SSH (например `deploy`, `ubuntu`)                                         |
+| `JWT_SECRET_KEY`    | Секрет для подписи JWT (не менее 32 символов). Используется сервером в production          |
 | `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL (должен совпадать с тем, что на сервере при первом запуске) |
-| `PGADMIN_EMAIL` | Email для входа в pgAdmin (например `admin@yourdomain.com`) |
-| `PGADMIN_PASSWORD` | Пароль для входа в pgAdmin (задайте сильный пароль) |
+| `PGADMIN_EMAIL`     | Email для входа в pgAdmin (например `admin@yourdomain.com`)                                |
+| `PGADMIN_PASSWORD`  | Пароль для входа в pgAdmin (задайте сильный пароль)                                        |
 
 #### Опциональные (подставляются в docker-compose и CI/CD при деплое)
 
-| Секрет | Описание |
-|--------|----------|
-| `CORS_ORIGIN_0` | Первый разрешённый origin (для HTTPS укажите `https://yourdomain.com`). По нему же при деплое подставляется домен в конфиг Nginx. |
-| `CORS_ORIGIN_1` | Второй origin (например `https://www.yourdomain.com`) |
-| `OAUTH_VK_CLIENT_ID` | ID приложения VK (для входа через VK) |
-| `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK |
-| `GHCR_TOKEN` | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
-| `DATABASE_CONNECTION_STRING` | (Рекомендуется) Полная строка подключения к **production PostgreSQL**. Используется шагом CI/CD для запуска `dotnet ef database update` перед деплоем. Например: `Host=prod-db;Port=5432;Database=cherryplay;Username=cherryplay;Password=...;Ssl Mode=Require;Trust Server Certificate=true`. |
+| Секрет                       | Описание                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CORS_ORIGIN_0`              | Первый разрешённый origin (для HTTPS укажите `https://yourdomain.com`). По нему же при деплое подставляется домен в конфиг Nginx.                                                                                                                                                                                                                                                                                                    |
+| `CORS_ORIGIN_1`              | Второй origin (например `https://www.yourdomain.com`)                                                                                                                                                                                                                                                                                                                                                                                |
+| `OAUTH_VK_CLIENT_ID`         | ID приложения VK (для входа через VK)                                                                                                                                                                                                                                                                                                                                                                                                |
+| `OAUTH_VK_CLIENT_SECRET`     | Защищённый ключ приложения VK                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `GHCR_TOKEN`                 | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN`                                                                                                                                                                                                                                                                                                   |
+| `DATABASE_CONNECTION_STRING` | (Опционально.) Если не задан, строка собирается из `DEPLOY_HOST` и `POSTGRES_PASSWORD` (порт 5433). Задайте вручную, если БД не на сервере деплоя, другой порт/хост или нужны параметры вроде `Ssl Mode=Require`. По умолчанию PostgreSQL в compose слушает только `127.0.0.1:5433`, поэтому миграции из CI до него не доходят — либо откройте порт, либо задайте строку к облачной БД, либо выполняйте миграции вручную на сервере. |
 
 ### 3. Настройка SSH ключа
 
@@ -76,6 +77,7 @@ ssh-copy-id -i ~/.ssh/github_actions_deploy.pub <DEPLOY_USER>@<DEPLOY_HOST>
 ```
 
 Добавьте приватный ключ в GitHub Secrets:
+
 ```bash
 # Windows (PowerShell)
 cat ~/.ssh/github_actions_deploy | Set-Clipboard
@@ -165,6 +167,7 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ### Автоматическая сборка при изменениях
 
 При каждом push в ветки `main` или `develop` автоматически:
+
 - Собираются образы `server` и `web`
 - Образы публикуются в GHCR с тегами:
   - `latest` (только для main)
@@ -174,6 +177,7 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ### Создание релиза и деплой
 
 1. **Создайте тег в Git:**
+
    ```bash
    git tag -a v1.0.0 -m "Release version 1.0.0"
    git push origin v1.0.0
@@ -232,6 +236,7 @@ docker-compose.prod.yml           # Docker Compose для продакшена
 ### На сервере
 
 Скрипт `deploy.sh` использует следующие переменные:
+
 - `VERSION` - версия для деплоя (например, `v1.0.0`)
 - `REGISTRY` - реестр Docker
 - `IMAGE_NAME_SERVER` - имя образа сервера
@@ -354,10 +359,10 @@ sudo systemctl reload nginx
 
 В GitHub Secrets задайте origins с протоколом **https**:
 
-| Секрет          | Значение (пример)               |
-|-----------------|---------------------------------|
-| `CORS_ORIGIN_0` | `https://yourdomain.com`        |
-| `CORS_ORIGIN_1` | `https://www.yourdomain.com`    |
+| Секрет          | Значение (пример)            |
+| --------------- | ---------------------------- |
+| `CORS_ORIGIN_0` | `https://yourdomain.com`     |
+| `CORS_ORIGIN_1` | `https://www.yourdomain.com` |
 
 При следующем деплое бэкенд будет отдавать эти origins в заголовках CORS. Если деплоите вручную, добавьте те же значения в `~/cherryplay-deploy/.env` или `.env.production` и перезапустите контейнеры.
 
@@ -394,6 +399,7 @@ web:
 ## Поддержка
 
 При возникновении проблем:
+
 1. Проверьте логи GitHub Actions
 2. Проверьте логи на сервере
 3. Убедитесь, что все секреты настроены правильно
