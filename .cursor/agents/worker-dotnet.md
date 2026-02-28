@@ -65,6 +65,7 @@ When asked to implement something:
 - **Data access**:
   - EF Core: avoid N+1 queries; use `AsNoTracking()` for read-only; use transactions only when needed.
   - SQL: parameterize always; prefer set-based operations; add indexes only with justification.
+  - **When adding migrations or new columns**: update [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md) with the new or changed table/column descriptions so the schema doc stays in sync.
 - **Security**: least privilege, validate/normalize inputs, avoid leaking internals in error payloads.
 - **Observability**: structured logs around boundaries (HTTP, background jobs, external calls), include correlation IDs if the codebase supports them.
 
