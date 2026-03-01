@@ -94,6 +94,7 @@ export const PartyDisplay: React.FC<SpringCrossStepPartyDisplayProps> = ({
             playedTrackIds={data.playbackState?.playedTrackIds ?? []}
             disabledTrackIds={data.playbackState?.disabledTrackIds ?? []}
             disabledGroupIds={data.playbackState?.disabledGroupIds ?? []}
+            isSessionActive={data.isSessionActive}
             themeId={data.themeId}
           />
         </div>

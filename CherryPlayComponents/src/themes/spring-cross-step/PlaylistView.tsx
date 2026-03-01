@@ -11,6 +11,7 @@ export interface SpringCrossStepPlaylistViewProps {
   playedTrackIds?: string[];
   disabledTrackIds?: string[];
   disabledGroupIds?: string[];
+  isSessionActive?: boolean;
   className?: string;
   themeId?: string;
 }
@@ -46,6 +47,7 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
   playedTrackIds = [],
   disabledTrackIds = [],
   disabledGroupIds = [],
+  isSessionActive = true,
   className = '',
   themeId,
 }) => {
@@ -142,10 +144,12 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
           <span className="party-playlist-header-label">Плейлист</span>
         </div>
         <div className="party-playlist-stats">
-          {notYetPlayedCount === 0 ? (
+          {!isSessionActive && notYetPlayedCount === 0 ? (
             <span className="party-playlist-stats-not-yet-played">Вечеринка окончена</span>
+          ) : notYetPlayedCount === 0 ? (
+            <span className="party-playlist-stats-not-yet-played">Сейчас последний трек</span>
           ) : notYetPlayedCount === 1 ? (
-            <span className="party-playlist-stats-not-yet-played">Последний трек</span>
+            <span className="party-playlist-stats-not-yet-played">Остался последний трек</span>
           ) : (
             <>
               <span className="party-playlist-stats-remaining-label">Осталось треков:</span>
