@@ -128,36 +128,51 @@
   flex: 1;
 }
 
-.party-list-card-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--radius-lg);
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.party-list-card-badge--active {
-  background: rgba(255, 0, 0, 0.2);
-  border: 1px solid rgba(255, 0, 0, 0.5);
-  color: #ff4444;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
 .party-list-card-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+}
+
+.party-list-card-description {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.party-list-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.party-list-card-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.party-list-card-external-link {
+  color: #0088cc;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.party-list-card-external-link:hover {
+  text-decoration: underline;
+}
+
+.party-list-card-external-link--text {
+  cursor: default;
+}
+
+.party-list-card-external-link--text:hover {
+  text-decoration: none;
 }
 
 .party-list-card-info {
@@ -180,41 +195,6 @@
 .party-list-card-info-value {
   color: var(--text-primary);
   font-weight: 500;
-}
-
-.party-list-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
-}
-
-.party-list-card-code {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  font-family: 'Courier New', monospace;
-  letter-spacing: 1px;
-}
-
-.party-list-card-info-link {
-  color: #0088cc;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.party-list-card-info-link:hover {
-  text-decoration: underline;
-}
-
-.party-list-card-arrow {
-  font-size: 20px;
-  color: rgba(0, 255, 0, 0.8);
-  transition: transform 0.3s ease;
-}
-
-.party-list-card:hover .party-list-card-arrow {
-  transform: translateX(4px);
 }
 
 /* Фильтры */

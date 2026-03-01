@@ -6,6 +6,8 @@ using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Core.Validators;
 using CherryPlayServer.Core;
 using CherryPlayServer.Models;
+
+using static CherryPlayServer.Core.PartyConstants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -83,6 +85,8 @@ public class PartyService : IPartyService
         var shortCode = await _shortCodeGenerator.GenerateUniqueShortCodeAsync(
             async code => await _partyRepository.GetByShortCodeAsync(code) == null);
 
+        ValidatePartyCardFields(dto.ShortDescription, dto.DanceTags, nameof(dto));
+
         var party = new Party
         {
             Id = Guid.NewGuid(),
@@ -101,7 +105,11 @@ public class PartyService : IPartyService
             Place = dto.Place,
             City = dto.City,
             Schedule = dto.Schedule,
-            TimeZone = dto.TimeZone
+            TimeZone = dto.TimeZone,
+            ShortDescription = TrimToNull(dto.ShortDescription),
+            ExternalLinkUrl = TrimToNull(dto.ExternalLinkUrl),
+            ExternalLinkText = string.IsNullOrWhiteSpace(TrimToNull(dto.ExternalLinkUrl)) ? null : TrimToNull(dto.ExternalLinkText),
+            DanceTags = NormalizeDanceTags(dto.DanceTags),
         };
 
         await _partyRepository.AddAsync(party);
@@ -120,7 +128,7 @@ public class PartyService : IPartyService
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
-        return party.ToDto(state != null);
+        return savedParty.ToDto(state != null);
     }
 
     public async Task<PartyDto?> GetPartyAsync(Guid partyId)
@@ -230,6 +238,8 @@ public class PartyService : IPartyService
             throw new PartyNotFoundException(partyId);
         }
 
+        ValidatePartyCardFields(dto.ShortDescription, dto.DanceTags, nameof(dto));
+
         if (dto.Name != null)
             party.Name = dto.Name;
         if (dto.Title != null)
@@ -260,6 +270,16 @@ public class PartyService : IPartyService
             party.Schedule = dto.Schedule;
         if (dto.TimeZone != null)
             party.TimeZone = dto.TimeZone;
+        if (dto.ShortDescription != null)
+            party.ShortDescription = TrimToNull(dto.ShortDescription);
+        if (dto.ExternalLinkUrl != null)
+            party.ExternalLinkUrl = TrimToNull(dto.ExternalLinkUrl);
+        if (dto.ExternalLinkText != null)
+            party.ExternalLinkText = TrimToNull(dto.ExternalLinkText);
+        if (string.IsNullOrWhiteSpace(party.ExternalLinkUrl))
+            party.ExternalLinkText = null;
+        if (dto.DanceTags != null)
+            party.DanceTags = NormalizeDanceTags(dto.DanceTags);
 
         await _partyRepository.UpdateAsync(party);
         _logger.LogInformation("Party metadata updated: {PartyId}", partyId);
@@ -321,4 +341,36 @@ public class PartyService : IPartyService
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
     }
 
+    private static void ValidatePartyCardFields(string? shortDescription, List<string>? danceTags, string paramName)
+    {
+        if (shortDescription != null && shortDescription.Length > MaxShortDescriptionLength)
+            throw new ArgumentException($"Short description must not exceed {MaxShortDescriptionLength} characters", paramName);
+        if (danceTags != null && danceTags.Count > MaxDanceTagsCount)
+            throw new ArgumentException($"Dance tags must not exceed {MaxDanceTagsCount} items", paramName);
+        if (danceTags != null && danceTags.Any(t => t != null && t.Length > MaxDanceTagLength))
+            throw new ArgumentException($"Each dance tag must not exceed {MaxDanceTagLength} characters", paramName);
+    }
+
+    private static List<string> NormalizeDanceTags(List<string>? tags)
+    {
+        if (tags == null || tags.Count == 0) return [];
+        var normalized = tags
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t =>
+            {
+                var s = t!.Trim();
+                return s.Length > MaxDanceTagLength ? s[..MaxDanceTagLength] : s;
+            })
+            .Distinct(StringComparer.Ordinal)
+            .Take(MaxDanceTagsCount)
+            .ToList();
+        return normalized;
+    }
+
+    private static string? TrimToNull(string? value)
+    {
+        if (value == null) return null;
+        var t = value.Trim();
+        return t.Length == 0 ? null : t;
+    }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
@@ -13,10 +14,12 @@ namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 public class EfPartyRepository : IPartyRepository
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<EfPartyRepository> _logger;
 
-    public EfPartyRepository(AppDbContext context)
+    public EfPartyRepository(AppDbContext context, ILogger<EfPartyRepository> logger)
     {
         _context = context;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<Party?> GetByIdAsync(Guid id)
@@ -25,7 +28,7 @@ public class EfPartyRepository : IPartyRepository
             .AsNoTracking()
             .Include(e => e.Playlist)
             .FirstOrDefaultAsync(e => e.Id == id);
-        return ef?.ToDomain();
+        return ef?.ToDomain(_logger);
     }
 
     public async Task<Party?> GetByShortCodeAsync(string shortCode)
@@ -34,7 +37,7 @@ public class EfPartyRepository : IPartyRepository
             .AsNoTracking()
             .Include(e => e.Playlist)
             .FirstOrDefaultAsync(e => e.ShortCode == shortCode);
-        return ef?.ToDomain();
+        return ef?.ToDomain(_logger);
     }
 
     public async Task<List<Party>> GetAllAsync()
@@ -44,7 +47,7 @@ public class EfPartyRepository : IPartyRepository
             .Include(e => e.Playlist)
             .OrderBy(e => e.CreatedAt)
             .ToListAsync();
-        return list.Select(e => e.ToDomain()).ToList();
+        return list.Select(e => e.ToDomain(_logger)).ToList();
     }
 
     public async Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId)
@@ -55,7 +58,7 @@ public class EfPartyRepository : IPartyRepository
             .Where(e => e.OrganizerId == organizerId)
             .OrderBy(e => e.CreatedAt)
             .ToListAsync();
-        return list.Select(e => e.ToDomain()).ToList();
+        return list.Select(e => e.ToDomain(_logger)).ToList();
     }
 
     public async Task<Party> AddAsync(Party party)
@@ -122,6 +125,6 @@ public class EfPartyRepository : IPartyRepository
             .AsNoTracking()
             .Include(e => e.Playlist)
             .FirstOrDefaultAsync();
-        return ef?.ToDomain();
+        return ef?.ToDomain(_logger);
     }
 }

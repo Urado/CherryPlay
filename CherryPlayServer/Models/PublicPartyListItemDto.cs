@@ -15,5 +15,9 @@ public record PublicPartyListItemDto(
     int TotalDuration,
     string? EventDateTime = null,
     string? TimeZone = null,
-    string? City = null
+    string? City = null,
+    string? ShortDescription = null,
+    string? ExternalLinkUrl = null,
+    string? ExternalLinkText = null,
+    IReadOnlyList<string>? DanceTags = null
 );

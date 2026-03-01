@@ -9,7 +9,7 @@ Workspace для создания и управления вечеринками
 ## Основные компоненты
 
 - **PartyView** (`src/workspaces/party/PartyView.tsx`) - Основной компонент workspace
-- **PartyEditor** (`src/workspaces/party/components/PartyEditor.tsx`) - Форма создания вечеринки
+- **PartyEditor** (`src/workspaces/party/components/PartyEditor.tsx`) — Форма создания и редактирования вечеринки (название, тема, кастомизация; поля карточки каталога: краткое описание, город, дата/время, внешняя ссылка, теги танцев). Данные сохраняются через API (CreatePartyDto/UpdatePartyDto) в сущность Party на сервере.
 - **PartyPreview** (`src/workspaces/party/PartyPreview.tsx`) - Превью плейлиста
 - **partyStore** (`src/shared/stores/partyStore.ts`) - Store состояния вечеринки
 - **partyService** (`src/shared/services/partyService.ts`) - Сервис для работы с API

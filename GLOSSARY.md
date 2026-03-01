@@ -52,7 +52,12 @@
 | **PartyPlaylistDto** | DTO плейлиста вечеринки: items (треки и группы), totalDuration, totalTracks. Без абсолютных путей к файлам. |
 | **PartyStateDto** | Полное состояние вечеринки для зрителя: partyId, isSessionActive, playbackState?, playlist. |
 | **PublicPartyDto** | Публичные метаданные вечеринки по shortCode (название, PartyTheme — поле partyThemeId, флаг «в каталоге», описание/место/дата для страницы info и т.д.). |
-| **CreatePartyDto** | Тело запроса создания вечеринки (name, partyThemeId — идентификатор PartyTheme, customizationSettings, playlistData?, eventDateTime? и т.д.). |
+| **PublicPartyListItemDto** | Элемент списка каталога (GET `/api/parties/public/list`): id, name, shortDescription, city, eventDateTime, timeZone, danceTags, externalLinkUrl, externalLinkText и др. В карточке каталога отображаются только: название, краткое описание, город, дата/время, теги танцев, внешняя ссылка. |
+| **CreatePartyDto** | Тело запроса создания вечеринки (name, partyThemeId, customizationSettings, playlistData?, eventDateTime?, shortDescription?, externalLinkUrl?, externalLinkText?, danceTags? и т.д.). |
+| **UpdatePartyDto** | Тело запроса обновления метаданных вечеринки (PUT `/api/parties/{partyId}`); все поля опциональны, в т.ч. shortDescription, externalLinkUrl, externalLinkText, danceTags. |
+| **short description** (карточка) | Краткое описание вечеринки для карточки в каталоге; макс. 200 символов. Редактируется в PartyEditor (CherryPlayList), хранится в Party.ShortDescription. |
+| **external link** (вечеринка) | Внешняя ссылка вечеринки: URL (externalLinkUrl) и опциональный текст (externalLinkText). Отображается на карточке в каталоге. |
+| **dance tags** | Теги танцев вечеринки (до 20: предопределённый набор + свои). Отображаются на карточке в каталоге. Редактируются в PartyEditor, хранятся в Party (DanceTagsJson). |
 
 ---
 

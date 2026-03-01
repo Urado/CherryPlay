@@ -75,6 +75,10 @@ public static class DomainToEfMappers
         ef.CustomizationSettingsJson = SerializeDictObject(domain.CustomizationSettings);
         ef.IsListedInCatalog = domain.IsListedInCatalog;
         ef.UpdatedAt = EnsureUtc(DateTime.UtcNow);
+        ef.ShortDescription = domain.ShortDescription;
+        ef.ExternalLinkUrl = domain.ExternalLinkUrl;
+        ef.ExternalLinkText = domain.ExternalLinkText;
+        ef.DanceTagsJson = SerializeStringList(domain.DanceTags);
     }
 
     public static PartyEf ToEf(this Party domain)
@@ -99,6 +103,10 @@ public static class DomainToEfMappers
             CreatedAt = EnsureUtc(domain.CreatedAt),
             UpdatedAt = null,
             IsDeleted = false,
+            ShortDescription = domain.ShortDescription,
+            ExternalLinkUrl = domain.ExternalLinkUrl,
+            ExternalLinkText = domain.ExternalLinkText,
+            DanceTagsJson = SerializeStringList(domain.DanceTags),
         };
     }
 
@@ -201,6 +209,12 @@ public static class DomainToEfMappers
             OrganizerId = domain.OrganizerId,
             CreatedAt = domain.CreatedAt,
         };
+    }
+
+    private static string? SerializeStringList(List<string>? list)
+    {
+        if (list == null || list.Count == 0) return null;
+        return JsonSerializer.Serialize(list, JsonOptions);
     }
 
     private static string? SerializeDictString(Dictionary<string, string>? dict)

@@ -2,6 +2,7 @@ using System.Text.Json;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Mappings;
 
@@ -28,7 +29,7 @@ public static class EfToDomainMappers
         };
     }
 
-    public static Party ToDomain(this PartyEf ef)
+    public static Party ToDomain(this PartyEf ef, ILogger? logger = null)
     {
         var party = new Party
         {
@@ -49,6 +50,10 @@ public static class EfToDomainMappers
             IsListedInCatalog = ef.IsListedInCatalog,
             CreatedAt = ef.CreatedAt,
             Playlist = new PartyPlaylist(),
+            ShortDescription = ef.ShortDescription,
+            ExternalLinkUrl = ef.ExternalLinkUrl,
+            ExternalLinkText = ef.ExternalLinkText,
+            DanceTags = DeserializeStringList(ef.DanceTagsJson, logger) ?? [],
         };
         if (ef.Playlist != null)
         {
@@ -117,6 +122,20 @@ public static class EfToDomainMappers
             OrganizerId = ef.OrganizerId,
             CreatedAt = ef.CreatedAt,
         };
+    }
+
+    private static List<string>? DeserializeStringList(string? json, ILogger? logger = null)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(json, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "Failed to deserialize string list from JSON");
+            return null;
+        }
     }
 
     private static Dictionary<string, string>? DeserializeDictString(string? json)

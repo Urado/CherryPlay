@@ -4,10 +4,167 @@ import {
   getThemeMetadata,
   getPartyTheme,
 } from '@cherryplay/components';
+import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
-import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
+import {
+  MAX_SHORT_DESCRIPTION_LENGTH,
+  MAX_DANCE_TAGS,
+  MAX_DANCE_TAG_LENGTH,
+  MAX_EXTERNAL_LINK_URL_LENGTH,
+  MAX_EXTERNAL_LINK_TEXT_LENGTH,
+  PREDEFINED_DANCE_TAGS,
+} from '@shared/services/partyService';
 import './PartyEditor.css';
+
+interface DanceTagsFieldProps {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  predefinedOptions: string[];
+  maxTags: number;
+  maxTagLength: number;
+}
+
+const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
+  tags,
+  onChange,
+  predefinedOptions,
+  maxTags,
+  maxTagLength,
+}) => {
+  const [customInput, setCustomInput] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const customBlockRef = useRef<HTMLDivElement>(null);
+  const collapseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+    },
+    [],
+  );
+
+  const addTag = (tag: string) => {
+    const trimmed = tag.trim().slice(0, maxTagLength);
+    if (!trimmed || tags.includes(trimmed) || tags.length >= maxTags) return;
+    onChange([...tags, trimmed]);
+  };
+
+  const removeTag = (index: number) => {
+    onChange(tags.filter((_, i) => i !== index));
+  };
+
+  const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(customInput);
+      setCustomInput('');
+      if (collapseTimeoutRef.current) {
+        clearTimeout(collapseTimeoutRef.current);
+        collapseTimeoutRef.current = null;
+      }
+      setShowCustomInput(false);
+    }
+  };
+
+  return (
+    <div className="party-editor-section">
+      <label className="party-editor-label">Танцевальные теги (макс. {maxTags})</label>
+      <div className="party-editor-tags-predefined">
+        {predefinedOptions.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`party-editor-tag-button ${tags.includes(option) ? 'party-editor-tag-button--selected' : ''}`}
+            onClick={() => {
+              if (tags.includes(option)) {
+                removeTag(tags.indexOf(option));
+              } else if (tags.length < maxTags) {
+                addTag(option);
+              }
+            }}
+            disabled={!tags.includes(option) && tags.length >= maxTags}
+          >
+            {option}
+          </button>
+        ))}
+        {!showCustomInput ? (
+          <button
+            type="button"
+            className="party-editor-tag-button"
+            onClick={() => {
+              if (collapseTimeoutRef.current) {
+                clearTimeout(collapseTimeoutRef.current);
+                collapseTimeoutRef.current = null;
+              }
+              setShowCustomInput(true);
+            }}
+            disabled={tags.length >= maxTags}
+            aria-label="Ввести другой танец"
+          >
+            Другой танец
+          </button>
+        ) : (
+          <div
+            ref={customBlockRef}
+            className="party-editor-tags-custom party-editor-tags-custom--inline"
+          >
+            <input
+              type="text"
+              className="party-editor-input party-editor-tag-input"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value.slice(0, maxTagLength))}
+              onKeyDown={handleCustomKeyDown}
+              onBlur={(e) => {
+                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget as Node))
+                  return;
+                collapseTimeoutRef.current = setTimeout(() => setShowCustomInput(false), 150);
+              }}
+              placeholder="Другой танец (Enter или запятая)"
+              maxLength={maxTagLength}
+              disabled={tags.length >= maxTags}
+              aria-label="Поле для ввода другого танца"
+              autoFocus
+            />
+            <button
+              type="button"
+              className="party-editor-button party-editor-button-secondary party-editor-tag-add"
+              onClick={() => {
+                addTag(customInput);
+                setCustomInput('');
+                if (collapseTimeoutRef.current) {
+                  clearTimeout(collapseTimeoutRef.current);
+                  collapseTimeoutRef.current = null;
+                }
+                setShowCustomInput(false);
+              }}
+              disabled={tags.length >= maxTags || !customInput.trim()}
+            >
+              Добавить
+            </button>
+          </div>
+        )}
+      </div>
+      {tags.length > 0 && (
+        <div className="party-editor-tags-list">
+          {tags.map((tag, index) => (
+            <span key={`${tag}-${index}`} className="party-editor-tag-chip">
+              {tag}
+              <button
+                type="button"
+                className="party-editor-tag-remove"
+                onClick={() => removeTag(index)}
+                aria-label={`Удалить тег ${tag}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface PartyEditorProps {
   partyName: string;
@@ -21,6 +178,10 @@ interface PartyEditorProps {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
   onPartyNameChange: (name: string) => void;
   onPartyTitleChange?: (title: string) => void;
   onPartySubtitleChange?: (subtitle: string) => void;
@@ -31,24 +192,24 @@ interface PartyEditorProps {
   onPlaceChange?: (place: string) => void;
   onCityChange?: (city: string) => void;
   onScheduleChange?: (schedule: string) => void;
+  onShortDescriptionChange?: (value: string) => void;
+  onExternalLinkUrlChange?: (value: string) => void;
+  onExternalLinkTextChange?: (value: string) => void;
+  onDanceTagsChange?: (tags: string[]) => void;
   onTimeZoneChange?: (timeZone: string) => void;
   onCreateParty: () => void;
   onPublish?: () => void;
   isCreating: boolean;
   isPublishing?: boolean;
-  /** Если false, кнопка «Создать вечеринку» отключена (требуется авторизация). */
   isAuthenticated?: boolean;
-  /** Привязанная вечеринка (сохраняется в проекте .cherry) */
   linkedParty?: { id: string; shortCode: string; url: string } | null;
   serverError: string | null;
   isCheckingParty: boolean;
   onCopyUrl: () => void;
   onRetry?: () => void;
-  /** Открыть диалог привязки к существующей вечеринке на сервере */
   onOpenLinkParty?: () => void;
 }
 
-// Маппинг превью для PartyTheme (опциональные описания для UI)
 const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
   cyberpunk: '💚 Неоновое свечение, темный фон, футуристический стиль',
   sakura: '🌸 Розовые оттенки, мягкие переходы, элегантный дизайн',
@@ -56,7 +217,6 @@ const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
   basic: '📋 Простой дизайн, темный фон, синий акцент',
 };
 
-// Используем PartyTheme из библиотеки компонентов
 const AVAILABLE_STYLES = partyThemes.map((theme) => ({
   id: theme.id,
   name: theme.name,
@@ -76,6 +236,10 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   city = '',
   schedule = '',
   timeZone = '',
+  shortDescription = '',
+  externalLinkUrl = '',
+  externalLinkText = '',
+  danceTags: danceTagsProp = [],
   onPartyNameChange,
   onPartyTitleChange,
   onPartySubtitleChange,
@@ -86,6 +250,10 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   onPlaceChange,
   onCityChange,
   onScheduleChange,
+  onShortDescriptionChange,
+  onExternalLinkUrlChange,
+  onExternalLinkTextChange,
+  onDanceTagsChange,
   onTimeZoneChange,
   onCreateParty,
   onPublish,
@@ -348,6 +516,68 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
+      {onShortDescriptionChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Краткое описание (для карточки)
+            <textarea
+              className="party-editor-input"
+              value={shortDescription}
+              onChange={(e) =>
+                onShortDescriptionChange(e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH))
+              }
+              placeholder="Краткое описание до 200 символов"
+              rows={2}
+              maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
+            />
+            <span className="party-editor-char-count">
+              {shortDescription.length}/{MAX_SHORT_DESCRIPTION_LENGTH}
+            </span>
+          </label>
+        </div>
+      )}
+
+      {onExternalLinkUrlChange && onExternalLinkTextChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Внешняя ссылка (URL)
+            <input
+              type="url"
+              className="party-editor-input"
+              value={externalLinkUrl}
+              onChange={(e) =>
+                onExternalLinkUrlChange(e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH))
+              }
+              placeholder="https://..."
+              maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
+            />
+          </label>
+          <label className="party-editor-label">
+            Текст ссылки (подпись)
+            <input
+              type="text"
+              className="party-editor-input"
+              value={externalLinkText}
+              onChange={(e) =>
+                onExternalLinkTextChange(e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH))
+              }
+              placeholder="Например: Сайт мероприятия"
+              maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
+            />
+          </label>
+        </div>
+      )}
+
+      {onDanceTagsChange && (
+        <DanceTagsField
+          tags={danceTagsProp}
+          onChange={onDanceTagsChange}
+          predefinedOptions={[...PREDEFINED_DANCE_TAGS]}
+          maxTags={MAX_DANCE_TAGS}
+          maxTagLength={MAX_DANCE_TAG_LENGTH}
+        />
+      )}
+
       <div className="party-editor-section">
         <label htmlFor="theme-selector" className="party-editor-label">
           Стиль оформления
@@ -503,7 +733,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           </div>
           <div className="party-editor-info">
             <p className="party-editor-info-text">
-              Плеер подключается к серверу по привязанной вечеринке. Статус соединения отображается в плеере.
+              Плеер подключается к серверу по привязанной вечеринке. Статус соединения отображается
+              в плеере.
             </p>
           </div>
         </div>

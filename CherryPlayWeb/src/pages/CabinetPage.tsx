@@ -17,6 +17,10 @@ const emptyForm: CreatePartyDto = {
   partyThemeId: 'cyberpunk',
   isListedInCatalog: false,
   timeZone: getDefaultTimeZone(),
+  shortDescription: '',
+  externalLinkUrl: '',
+  externalLinkText: '',
+  danceTags: [],
 };
 
 export function CabinetPage() {
@@ -108,6 +112,10 @@ export function CabinetPage() {
       place: party.place ?? '',
       city: party.city ?? '',
       timeZone: party.timeZone ?? getDefaultTimeZone(),
+      shortDescription: party.shortDescription ?? '',
+      externalLinkUrl: party.externalLinkUrl ?? '',
+      externalLinkText: party.externalLinkText ?? '',
+      danceTags: party.danceTags ? [...party.danceTags] : [],
     });
     setExpandedPartyId(party.id);
   };

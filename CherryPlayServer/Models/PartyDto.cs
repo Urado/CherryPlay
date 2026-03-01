@@ -8,9 +8,6 @@ public record PartyDto(
     string? Title,
     string? Subtitle,
     string ShortCode,
-    /// <summary>
-    /// PartyTheme идентификатор (см. GLOSSARY.md)
-    /// </summary>
     PartyThemeId PartyThemeId,
     string CreatedAt,
     bool HasActiveSession,
@@ -20,5 +17,9 @@ public record PartyDto(
     string? Place = null,
     string? City = null,
     string? Schedule = null,
-    string? TimeZone = null
+    string? TimeZone = null,
+    string? ShortDescription = null,
+    string? ExternalLinkUrl = null,
+    string? ExternalLinkText = null,
+    IReadOnlyList<string>? DanceTags = null
 );

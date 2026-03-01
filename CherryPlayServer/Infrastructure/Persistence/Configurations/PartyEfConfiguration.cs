@@ -16,6 +16,10 @@ public class PartyEfConfiguration : IEntityTypeConfiguration<PartyEf>
         builder.Property(e => e.ShortCode).IsRequired().HasMaxLength(32);
         builder.Property(e => e.PartyThemeId).IsRequired().HasMaxLength(50);
         builder.Property(e => e.IsDeleted).HasDefaultValue(false);
+        builder.Property(e => e.ShortDescription).HasMaxLength(200);
+        builder.Property(e => e.ExternalLinkUrl).HasMaxLength(2048);
+        builder.Property(e => e.ExternalLinkText).HasMaxLength(200);
+        builder.Property(e => e.DanceTagsJson);
         builder.HasIndex(e => e.ShortCode).IsUnique();
         builder.HasIndex(e => e.OrganizerId);
         builder.HasIndex(e => e.IsListedInCatalog);

@@ -1,6 +1,3 @@
-/**
- * Страница со списком всех вечеринок
- */
 import {
   formatDateInTimeZone,
   getDefaultTimeZone,
@@ -12,7 +9,6 @@ import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { getPartyThemeName } from '../constants/partyThemes';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { authService } from '../services/authService';
@@ -53,6 +49,7 @@ interface PartyFilters {
 
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
   const { partyInfoPageEnabled } = useAppConfig();
+  void partyInfoPageEnabled;
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +81,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     loadParties();
   }, [loadParties]);
 
-  // Проверка статуса аутентификации
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -94,36 +90,21 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         devLog('[PartyListPage] Auth check failed (non-critical):', err);
         setOrganizer(null);
       } finally {
-        // Всегда устанавливаем authLoading в false, чтобы страница могла загрузиться
         setAuthLoading(false);
       }
     };
     checkAuth();
   }, []);
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handleRetry = () => {
     loadParties();
   };
 
-  // Фильтрация вечеринок
   const filteredParties = parties.filter((party) => {
-    // Фильтр по таймзоне
     if (filters.timeZone && party.timeZone !== filters.timeZone) {
       return false;
     }
 
-    // Фильтр по городу
     if (
       filters.city &&
       (party.city ?? '').trim().toLowerCase() !== filters.city.trim().toLowerCase()
@@ -131,7 +112,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       return false;
     }
 
-    // Фильтр по датам
     if (party.eventDateTime) {
       const eventDate = new Date(party.eventDateTime);
 
@@ -151,15 +131,13 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         }
       }
 
-      // Фильтр по дням недели
       if (filters.daysOfWeek.length > 0) {
-        const dayOfWeek = eventDate.getDay(); // 0 = воскресенье, 1 = понедельник, ...
+        const dayOfWeek = eventDate.getDay();
         if (!filters.daysOfWeek.includes(dayOfWeek)) {
           return false;
         }
       }
     } else {
-      // Если у вечеринки нет даты мероприятия, пропускаем её при фильтрации по датам
       if (filters.dateFrom || filters.dateTo || filters.daysOfWeek.length > 0) {
         return false;
       }
@@ -351,62 +329,70 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
             {filteredParties.map((party) => (
               <div
                 key={party.id}
+                role="button"
+                tabIndex={0}
                 className="party-list-card"
                 onClick={() => onPartySelect(party.shortCode)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onPartySelect(party.shortCode);
+                  }
+                }}
               >
                 <div className="party-list-card-header">
                   <h2 className="party-list-card-title">{party.name}</h2>
-                  {party.hasActiveSession && (
-                    <span className="party-list-card-badge party-list-card-badge--active">
-                      В эфире
-                    </span>
-                  )}
                 </div>
                 <div className="party-list-card-body">
-                  <div className="party-list-card-info">
+                  {party.shortDescription && (
+                    <p className="party-list-card-description">{party.shortDescription}</p>
+                  )}
+                  {party.city && (
                     <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-label">Тема:</span>
+                      <span className="party-list-card-info-value">{party.city}</span>
+                    </div>
+                  )}
+                  {party.eventDateTime && (
+                    <div className="party-list-card-info-item">
                       <span className="party-list-card-info-value">
-                        {getPartyThemeName(party.partyThemeId)}
+                        {formatDateInTimeZone(
+                          party.eventDateTime,
+                          party.timeZone ?? getDefaultTimeZone(),
+                        )}
                       </span>
                     </div>
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-label">Треков:</span>
-                      <span className="party-list-card-info-value">{party.totalTracks}</span>
-                    </div>
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-label">Длительность:</span>
-                      <span className="party-list-card-info-value">
-                        {formatDuration(party.totalDuration)}
-                      </span>
-                    </div>
-                    {party.eventDateTime && (
-                      <div className="party-list-card-info-item">
-                        <span className="party-list-card-info-label">Мероприятие:</span>
-                        <span className="party-list-card-info-value">
-                          {formatDateInTimeZone(
-                            party.eventDateTime,
-                            party.timeZone ?? getDefaultTimeZone(),
-                          )}
+                  )}
+                  {party.danceTags && party.danceTags.length > 0 && (
+                    <div className="party-list-card-tags">
+                      {party.danceTags.map((tag, index) => (
+                        <span key={`${tag}-${index}`} className="party-list-card-tag">
+                          {tag}
                         </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="party-list-card-footer">
-                    <span className="party-list-card-code">Код: {party.shortCode}</span>
-                    {partyInfoPageEnabled && (
-                      <>
-                        <Link
-                          to={ROUTES.PARTY_INFO(party.shortCode)}
-                          className="party-list-card-info-link"
+                      ))}
+                    </div>
+                  )}
+                  {party.externalLinkUrl &&
+                    (() => {
+                      const isSafeUrl =
+                        party.externalLinkUrl.startsWith('http://') ||
+                        party.externalLinkUrl.startsWith('https://');
+                      const label = party.externalLinkText ?? 'Ссылка';
+                      return isSafeUrl ? (
+                        <a
+                          href={party.externalLinkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="party-list-card-external-link"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          Подробнее
-                        </Link>
-                        <span className="party-list-card-arrow">→</span>
-                      </>
-                    )}
-                  </div>
+                          {label}
+                        </a>
+                      ) : (
+                        <span className="party-list-card-external-link party-list-card-external-link--text">
+                          {label}
+                        </span>
+                      );
+                    })()}
                 </div>
               </div>
             ))}

@@ -3,6 +3,25 @@ import { useAuthStore } from '../stores/authStore';
 import { handleApiResponse } from '../utils/apiErrorHandler';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
+export const MAX_SHORT_DESCRIPTION_LENGTH = 200;
+
+export const MAX_DANCE_TAGS = 20;
+
+export const MAX_DANCE_TAG_LENGTH = 50;
+
+export const MAX_EXTERNAL_LINK_URL_LENGTH = 2048;
+
+export const MAX_EXTERNAL_LINK_TEXT_LENGTH = 200;
+
+export const PREDEFINED_DANCE_TAGS = [
+  'Кросс-степ вальс',
+  'Свободные Вальсы',
+  'КД',
+  'ШКД',
+  'Кадрили',
+  'Фигурные вальсы',
+] as const;
+
 export interface CreatePartyDto {
   name: string;
   title?: string;
@@ -21,6 +40,10 @@ export interface CreatePartyDto {
   schedule?: string;
   timeZone?: string;
   isListedInCatalog?: boolean;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
 export interface PartyDto {
@@ -38,9 +61,12 @@ export interface PartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
-/** Public party state (playlist, session, server track IDs). Used e.g. for "track not on server" indicator. */
 export interface PartyStateDto {
   partyId: string;
   isSessionActive: boolean;

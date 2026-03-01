@@ -1,8 +1,3 @@
-/**
- * Типы для API запросов и ответов
- */
-
-/** Ответ GET /api/config (публичная конфигурация приложения) */
 export interface AppConfigResponse {
   oauthEnabled: boolean;
   partyInfoPageEnabled: boolean;
@@ -77,9 +72,12 @@ export interface PublicPartyListItemDto {
   eventDateTime?: string;
   timeZone?: string;
   city?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
-/** Вечеринка организатора (ответ GET /api/parties, GET /api/parties/:id) */
 export interface PartyDto {
   id: string;
   name: string;
@@ -96,9 +94,12 @@ export interface PartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
-/** Создание вечеринки (POST /api/parties) */
 export interface CreatePartyDto {
   name: string;
   title?: string;
@@ -111,9 +112,12 @@ export interface CreatePartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
-/** Обновление метаданных (PUT /api/parties/:id) */
 export interface UpdatePartyDto {
   name?: string;
   title?: string;
@@ -126,7 +130,10 @@ export interface UpdatePartyDto {
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
 }
 
-// OrganizerDto теперь экспортируется из @cherryplay/components
 export type { OrganizerDto } from '@cherryplay/components';

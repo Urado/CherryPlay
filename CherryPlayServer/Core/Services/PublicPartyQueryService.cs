@@ -85,7 +85,11 @@ public class PublicPartyQueryService : IPublicPartyQueryService
                 TotalDuration: party.Playlist.TotalDuration,
                 EventDateTime: party.EventDateTime?.ToString("O"),
                 TimeZone: party.TimeZone,
-                City: party.City
+                City: party.City,
+                ShortDescription: party.ShortDescription,
+                ExternalLinkUrl: party.ExternalLinkUrl,
+                ExternalLinkText: party.ExternalLinkText,
+                DanceTags: party.DanceTags.Count > 0 ? party.DanceTags : null
             );
         }).ToList();
 

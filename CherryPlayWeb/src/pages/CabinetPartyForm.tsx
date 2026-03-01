@@ -4,7 +4,16 @@ import {
   getDefaultTimeZone,
   getPopularTimeZones,
 } from '@cherryplay/components';
+import { useState, useRef, useEffect } from 'react';
 
+import {
+  MAX_SHORT_DESCRIPTION_LENGTH,
+  MAX_DANCE_TAGS,
+  MAX_DANCE_TAG_LENGTH,
+  MAX_EXTERNAL_LINK_URL_LENGTH,
+  MAX_EXTERNAL_LINK_TEXT_LENGTH,
+  PREDEFINED_DANCE_TAGS,
+} from '../constants/partyCard';
 import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
 import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
 
@@ -32,6 +41,38 @@ export function CabinetPartyForm({
   onCancel,
 }: CabinetPartyFormProps) {
   const isEditing = !!editingParty;
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [showCustomTagInput, setShowCustomTagInput] = useState(false);
+  const customBlockRef = useRef<HTMLDivElement>(null);
+  const collapseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+    },
+    [],
+  );
+
+  const danceTags = isEditing ? (editForm.danceTags ?? []) : (createForm.danceTags ?? []);
+
+  const setDanceTags = (tags: string[]) => {
+    const next = tags.length > 0 ? tags : [];
+    if (isEditing) {
+      setEditForm((f) => ({ ...f, danceTags: next }));
+    } else {
+      setCreateForm((f) => ({ ...f, danceTags: next }));
+    }
+  };
+
+  const addDanceTag = (tag: string) => {
+    const trimmed = tag.trim().slice(0, MAX_DANCE_TAG_LENGTH);
+    if (!trimmed || danceTags.includes(trimmed) || danceTags.length >= MAX_DANCE_TAGS) return;
+    setDanceTags([...danceTags, trimmed]);
+  };
+
+  const removeDanceTag = (index: number) => {
+    setDanceTags(danceTags.filter((_, i) => i !== index));
+  };
 
   const timeZone = isEditing
     ? (editForm.timeZone ?? getDefaultTimeZone())
@@ -199,6 +240,183 @@ export function CabinetPartyForm({
           }
         />
       </label>
+      <label>
+        Краткое описание (для карточки)
+        <textarea
+          value={
+            isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? '')
+          }
+          onChange={(e) =>
+            isEditing
+              ? setEditForm((f) => ({
+                  ...f,
+                  shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
+                }))
+              : setCreateForm((f) => ({
+                  ...f,
+                  shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
+                }))
+          }
+          rows={2}
+          maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
+          placeholder="Краткое описание для карточки в каталоге"
+        />
+        <span className="cabinet-char-count">
+          {
+            (isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? ''))
+              .length
+          }
+          /{MAX_SHORT_DESCRIPTION_LENGTH}
+        </span>
+      </label>
+      <label>
+        Ссылка (URL)
+        <input
+          type="url"
+          value={isEditing ? (editForm.externalLinkUrl ?? '') : (createForm.externalLinkUrl ?? '')}
+          onChange={(e) =>
+            isEditing
+              ? setEditForm((f) => ({
+                  ...f,
+                  externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
+                }))
+              : setCreateForm((f) => ({
+                  ...f,
+                  externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
+                }))
+          }
+          placeholder="https://..."
+          maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
+        />
+      </label>
+      <label>
+        Текст ссылки
+        <input
+          type="text"
+          value={
+            isEditing ? (editForm.externalLinkText ?? '') : (createForm.externalLinkText ?? '')
+          }
+          onChange={(e) =>
+            isEditing
+              ? setEditForm((f) => ({
+                  ...f,
+                  externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
+                }))
+              : setCreateForm((f) => ({
+                  ...f,
+                  externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
+                }))
+          }
+          placeholder="Текст ссылки (если пусто — «Ссылка»)"
+          maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
+        />
+      </label>
+      <div className="cabinet-form-field">
+        <span className="cabinet-form-field-label">Танцевальные теги (макс. {MAX_DANCE_TAGS})</span>
+        <div className="cabinet-dance-tags-predefined">
+          {PREDEFINED_DANCE_TAGS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`cabinet-tag-btn ${danceTags.includes(option) ? 'cabinet-tag-btn--selected' : ''}`}
+              onClick={() => {
+                if (danceTags.includes(option)) {
+                  removeDanceTag(danceTags.indexOf(option));
+                } else if (danceTags.length < MAX_DANCE_TAGS) {
+                  addDanceTag(option);
+                }
+              }}
+              disabled={!danceTags.includes(option) && danceTags.length >= MAX_DANCE_TAGS}
+            >
+              {option}
+            </button>
+          ))}
+          {!showCustomTagInput ? (
+            <button
+              type="button"
+              className="cabinet-tag-btn"
+              onClick={() => {
+                if (collapseTimeoutRef.current) {
+                  clearTimeout(collapseTimeoutRef.current);
+                  collapseTimeoutRef.current = null;
+                }
+                setShowCustomTagInput(true);
+              }}
+              disabled={danceTags.length >= MAX_DANCE_TAGS}
+              aria-label="Ввести другой танец"
+            >
+              Другой танец
+            </button>
+          ) : (
+            <div
+              ref={customBlockRef}
+              className="cabinet-dance-tags-custom cabinet-dance-tags-custom--inline"
+            >
+              <input
+                type="text"
+                className="cabinet-tag-input"
+                value={customTagInput}
+                onChange={(e) => setCustomTagInput(e.target.value.slice(0, MAX_DANCE_TAG_LENGTH))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    addDanceTag(customTagInput);
+                    setCustomTagInput('');
+                    if (collapseTimeoutRef.current) {
+                      clearTimeout(collapseTimeoutRef.current);
+                      collapseTimeoutRef.current = null;
+                    }
+                    setShowCustomTagInput(false);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget as Node))
+                    return;
+                  collapseTimeoutRef.current = setTimeout(() => setShowCustomTagInput(false), 150);
+                }}
+                placeholder="Другой танец (Enter или запятая)"
+                maxLength={MAX_DANCE_TAG_LENGTH}
+                disabled={danceTags.length >= MAX_DANCE_TAGS}
+                aria-label="Поле для ввода другого танца"
+                autoFocus
+              />
+              <button
+                type="button"
+                className="cabinet-btn cabinet-btn-sm"
+                onClick={() => {
+                  addDanceTag(customTagInput);
+                  setCustomTagInput('');
+                  if (collapseTimeoutRef.current) {
+                    clearTimeout(collapseTimeoutRef.current);
+                    collapseTimeoutRef.current = null;
+                  }
+                  setShowCustomTagInput(false);
+                }}
+                disabled={danceTags.length >= MAX_DANCE_TAGS || !customTagInput.trim()}
+              >
+                Добавить
+              </button>
+            </div>
+          )}
+        </div>
+        {danceTags.length > 0 && (
+          <div className="cabinet-dance-tags-list">
+            {danceTags.map((tag, index) => (
+              <span key={`${tag}-${index}`} className="cabinet-tag-chip">
+                {tag}
+                <button
+                  type="button"
+                  className="cabinet-tag-remove"
+                  onClick={() => removeDanceTag(index)}
+                  aria-label={`Удалить тег ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
       <label className="cabinet-checkbox">
         <input
           type="checkbox"

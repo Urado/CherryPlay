@@ -79,6 +79,10 @@ _Связь с учётной записью: email+пароль (таблица
 | `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                 |
 | `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                    |
 | `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                              |
+| `ShortDescription`      | string    | NULL, длина до 200             | Краткое описание для карточки вечеринки.                        |
+| `ExternalLinkUrl`       | string    | NULL, длина до 2048            | URL внешней ссылки.                                            |
+| `ExternalLinkText`      | string    | NULL, длина до 200             | Текст ссылки (подпись).                                        |
+| `DanceTagsJson`         | text/JSON | NULL                           | Массив тегов танцев (JSON), макс. 20 элементов.                |
 
 Индексы: `ShortCode` (уникальный), `OrganizerId`, `IsListedInCatalog` (для выборки каталога).
 

@@ -22,7 +22,11 @@ public static class PartyMapper
             Place: party.Place,
             City: party.City,
             Schedule: party.Schedule,
-            TimeZone: party.TimeZone
+            TimeZone: party.TimeZone,
+            ShortDescription: party.ShortDescription,
+            ExternalLinkUrl: party.ExternalLinkUrl,
+            ExternalLinkText: party.ExternalLinkText,
+            DanceTags: party.DanceTags.Count > 0 ? party.DanceTags : null
         );
     }
 
@@ -43,7 +47,11 @@ public static class PartyMapper
             City: party.City,
             EventDateTime: party.EventDateTime?.ToString("O"),
             Schedule: party.Schedule,
-            TimeZone: party.TimeZone
+            TimeZone: party.TimeZone,
+            ShortDescription: party.ShortDescription,
+            ExternalLinkUrl: party.ExternalLinkUrl,
+            ExternalLinkText: party.ExternalLinkText,
+            DanceTags: party.DanceTags.Count > 0 ? party.DanceTags : null
         );
     }
 }

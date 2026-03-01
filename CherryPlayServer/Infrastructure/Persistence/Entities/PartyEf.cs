@@ -20,6 +20,10 @@ public class PartyEf
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+    public string? ShortDescription { get; set; }
+    public string? ExternalLinkUrl { get; set; }
+    public string? ExternalLinkText { get; set; }
+    public string? DanceTagsJson { get; set; }
 
     public OrganizerEf Organizer { get; set; } = null!;
     public PartyPlaylistEf? Playlist { get; set; }

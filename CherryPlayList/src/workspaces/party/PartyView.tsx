@@ -77,6 +77,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [city, setCity] = useState<string>('');
   const [schedule, setSchedule] = useState<string>('');
   const [timeZone, setTimeZone] = useState<string>('');
+  const [shortDescription, setShortDescription] = useState<string>('');
+  const [externalLinkUrl, setExternalLinkUrl] = useState<string>('');
+  const [externalLinkText, setExternalLinkText] = useState<string>('');
+  const [danceTags, setDanceTags] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isCheckingParty, setIsCheckingParty] = useState(false);
@@ -265,6 +269,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
           if (party.place) setPlace(party.place);
           if (party.city) setCity(party.city);
           if (party.schedule) setSchedule(party.schedule);
+          setShortDescription(party.shortDescription ?? '');
+          setExternalLinkUrl(party.externalLinkUrl ?? '');
+          setExternalLinkText(party.externalLinkText ?? '');
+          setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
         } catch (error) {
           console.error('Failed to load party metadata:', error);
           // Не показываем ошибку пользователю, просто не загружаем метаданные
@@ -344,6 +352,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
         schedule: schedule.trim() || undefined,
         timeZone: timeZone.trim() || undefined,
         isListedInCatalog: true,
+        shortDescription: shortDescription.trim() || undefined,
+        externalLinkUrl: externalLinkUrl.trim() || undefined,
+        externalLinkText: externalLinkText.trim() || undefined,
+        danceTags: danceTags.length > 0 ? danceTags : undefined,
       };
 
       const party = await partyService.createParty(createData);
@@ -414,6 +426,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
           city: city.trim() || undefined,
           schedule: schedule.trim() || undefined,
           timeZone: timeZone.trim() || undefined,
+          shortDescription: shortDescription.trim(),
+          externalLinkUrl: externalLinkUrl.trim(),
+          externalLinkText: externalLinkText.trim(),
+          danceTags,
         });
 
         addNotification({ type: 'success', message: 'Плейлист и метаданные опубликованы' });
@@ -454,6 +470,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
         schedule: schedule.trim() || undefined,
         timeZone: timeZone.trim() || undefined,
         isListedInCatalog: true,
+        shortDescription: shortDescription.trim() || undefined,
+        externalLinkUrl: externalLinkUrl.trim() || undefined,
+        externalLinkText: externalLinkText.trim() || undefined,
+        danceTags: danceTags.length > 0 ? danceTags : undefined,
       };
 
       const party = await partyService.createParty(createData);
@@ -554,6 +574,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
             city={city}
             schedule={schedule}
             timeZone={timeZone}
+            shortDescription={shortDescription}
+            externalLinkUrl={externalLinkUrl}
+            externalLinkText={externalLinkText}
+            danceTags={danceTags}
             onPartyNameChange={setPartyName}
             onPartyTitleChange={setPartyTitle}
             onPartySubtitleChange={setPartySubtitle}
@@ -564,14 +588,15 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onPlaceChange={setPlace}
             onCityChange={setCity}
             onScheduleChange={setSchedule}
+            onShortDescriptionChange={setShortDescription}
+            onExternalLinkUrlChange={setExternalLinkUrl}
+            onExternalLinkTextChange={setExternalLinkText}
+            onDanceTagsChange={setDanceTags}
             onTimeZoneChange={(newTz) => {
               const oldTz = timeZone.trim() || getDefaultTimeZone();
               setTimeZone(newTz);
               setEventDateTime(
-                convertUtcToLocalDateTime(
-                  convertLocalDateTimeToUtc(eventDateTime, oldTz),
-                  newTz,
-                ),
+                convertUtcToLocalDateTime(convertLocalDateTimeToUtc(eventDateTime, oldTz), newTz),
               );
             }}
             onCreateParty={handleCreateParty}

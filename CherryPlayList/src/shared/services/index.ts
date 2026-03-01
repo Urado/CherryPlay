@@ -3,7 +3,15 @@ export type { ExportResult } from './exportService';
 export { fileService } from './fileService';
 export { ipcService } from './ipcService';
 export type { IPCResponse, DirectoryItem, Track as IPCTrack } from './ipcService';
-export { partyService } from './partyService';
+export {
+  partyService,
+  MAX_SHORT_DESCRIPTION_LENGTH,
+  MAX_DANCE_TAGS,
+  MAX_DANCE_TAG_LENGTH,
+  MAX_EXTERNAL_LINK_URL_LENGTH,
+  MAX_EXTERNAL_LINK_TEXT_LENGTH,
+  PREDEFINED_DANCE_TAGS,
+} from './partyService';
 export type { CreatePartyDto, PartyDto } from './partyService';
 export { signalRService } from './signalRService';
 export type {

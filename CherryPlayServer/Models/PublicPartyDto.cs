@@ -20,5 +20,9 @@ public record PublicPartyDto(
     string? City = null,
     string? EventDateTime = null,
     string? Schedule = null,
-    string? TimeZone = null
+    string? TimeZone = null,
+    string? ShortDescription = null,
+    string? ExternalLinkUrl = null,
+    string? ExternalLinkText = null,
+    IReadOnlyList<string>? DanceTags = null
 );
