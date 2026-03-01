@@ -21,6 +21,9 @@
   --selected-border: #2d7a3f;
   --flower-white: #fdf5f0;
   --leaf-green: #7cb342;
+  /* Cancelled/disabled track: icon and strikethrough color */
+  --canceled-track: #c97a82;
+  --canceled-track-text: rgba(26, 60, 26, 0.4);
   background: var(--bg-primary);
   color: var(--text-primary);
 }

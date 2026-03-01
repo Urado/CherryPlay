@@ -3,7 +3,7 @@ import React, { useId, useRef, useState } from 'react';
 import { useIsTruncated } from '../../core/hooks/useIsTruncated';
 import { findTrack, getFlatTracksInDisplayOrder } from '../../core/utils/playlist';
 import { stripLastExtension } from '../../core/utils/string';
-import { formatTime } from '../../core/utils/time';
+import { formatDuration, formatTime } from '../../core/utils/time';
 import { PlaybackState, PlayerItem, PartyPlaylistData } from '../../types';
 
 import '../../components/Player/CurrentTrackDisplay.css';
@@ -118,6 +118,14 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
                 {prevNameExpanded ? '×' : '…'}
               </button>
             )}
+            {prevTrack.duration != null && (
+              <span
+                className="party-current-track-adjacent-time"
+                aria-label={`Длительность: ${formatDuration(prevTrack.duration)}`}
+              >
+                {formatDuration(prevTrack.duration)}
+              </span>
+            )}
           </div>
           {prevTrack.path && (
             <div className="party-current-track-adjacent-meta">{prevTrack.path}</div>
@@ -197,6 +205,14 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
               >
                 {nextNameExpanded ? '×' : '…'}
               </button>
+            )}
+            {nextTrack.duration != null && (
+              <span
+                className="party-current-track-adjacent-time"
+                aria-label={`Длительность: ${formatDuration(nextTrack.duration)}`}
+              >
+                {formatDuration(nextTrack.duration)}
+              </span>
             )}
           </div>
           {nextTrack.path && (

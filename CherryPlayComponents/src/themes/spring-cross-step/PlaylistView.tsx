@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
+import { getFlatTracksInDisplayOrder, sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';
@@ -13,13 +13,6 @@ export interface SpringCrossStepPlaylistViewProps {
   disabledGroupIds?: string[];
   className?: string;
   themeId?: string;
-}
-
-function formatTotalDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h} ч ${m} мин`;
-  return `${m} мин`;
 }
 
 function PlaylistIcon(): React.ReactElement {
@@ -56,9 +49,49 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
   className = '',
   themeId,
 }) => {
-  const playedCount = playedTrackIds.length;
-  const totalFormatted =
-    playlist.totalDuration > 0 ? formatTotalDuration(playlist.totalDuration) : '0 мин';
+  const [activeCancelPopupTrackId, setActiveCancelPopupTrackId] = useState<string | null>(null);
+  const cancelPopupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const onCancelIconClick = useCallback((trackId: string) => {
+    if (cancelPopupTimeoutRef.current) {
+      clearTimeout(cancelPopupTimeoutRef.current);
+      cancelPopupTimeoutRef.current = null;
+    }
+    setActiveCancelPopupTrackId(trackId);
+    cancelPopupTimeoutRef.current = setTimeout(() => {
+      setActiveCancelPopupTrackId(null);
+      cancelPopupTimeoutRef.current = null;
+    }, 10000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cancelPopupTimeoutRef.current) clearTimeout(cancelPopupTimeoutRef.current);
+    };
+  }, []);
+
+  const flatTracks = useMemo(() => getFlatTracksInDisplayOrder(playlist.items), [playlist.items]);
+
+  const trackNumberByItemId = useMemo(() => {
+    const map: Record<string, number> = {};
+    let n = 0;
+    for (const t of flatTracks) {
+      if (!disabledTrackIds.includes(t.id)) {
+        n += 1;
+        map[t.id] = n;
+      }
+    }
+    return map;
+  }, [flatTracks, disabledTrackIds]);
+
+  const notYetPlayedCount = useMemo(() => {
+    return flatTracks.filter(
+      (t) =>
+        !disabledTrackIds.includes(t.id) &&
+        t.id !== currentTrackId &&
+        !playedTrackIds.includes(t.id),
+    ).length;
+  }, [flatTracks, disabledTrackIds, currentTrackId, playedTrackIds]);
 
   const renderItem = (item: PlayerItem, index: number, level: number = 0): React.ReactNode => {
     const isCurrent = item.id === currentTrackId;
@@ -71,15 +104,20 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
     const sortedItems =
       item.type === 'group' && item.items ? sortItemsByDisplayOrder(item.items) : null;
 
+    const trackNumber = item.type === 'track' ? trackNumberByItemId[item.id] : undefined;
+
     return (
       <React.Fragment key={item.id}>
         <PlaylistItem
           item={item}
           index={index}
           level={level}
+          trackNumber={trackNumber}
           isCurrent={isCurrent}
           isPlayed={isPlayed}
           isDisabled={isDisabled}
+          onCancelIconClick={onCancelIconClick}
+          showCancelPopupFromParent={activeCancelPopupTrackId === item.id}
         />
         {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
           <div className="party-playlist-group-items">
@@ -104,14 +142,19 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
           <span className="party-playlist-header-label">Плейлист</span>
         </div>
         <div className="party-playlist-stats">
-          <span>{playlist.totalTracks} треков</span>
-          <span className="party-playlist-stats-separator" />
-          <span>{totalFormatted}</span>
-          <span className="party-playlist-stats-separator" />
-          <span>{playedCount} сыграно</span>
+          {notYetPlayedCount === 0 ? (
+            <span className="party-playlist-stats-not-yet-played">Вечеринка окончена</span>
+          ) : notYetPlayedCount === 1 ? (
+            <span className="party-playlist-stats-not-yet-played">Последний трек</span>
+          ) : (
+            <>
+              <span className="party-playlist-stats-remaining-label">Осталось треков:</span>
+              <span className="party-playlist-stats-not-yet-played">{notYetPlayedCount}</span>
+            </>
+          )}
         </div>
       </div>
-      <div className="party-playlist-items">
+      <div className="party-playlist-items" role="list">
         {sortedItems.length === 0 ? (
           <div className="party-playlist-empty">Плейлист пуст. Добавьте треки для вечеринки!</div>
         ) : (
