@@ -10,19 +10,23 @@ description: Coordinates feature work by selecting the appropriate worker (worke
 Use this skill to coordinate **end-to-end feature work** across the `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, and `code-reviewer` subagents.
 
 The workflow:
+
 - **Analyzes the requested task**
 - **Selects the appropriate worker** (`worker-dotnet`, `worker-frontend`, `worker-documentation`, or `worker-ci-cd`)
+- **Delegates implementation to that worker** (invoke the worker subagent; do not implement the feature yourself)
 - **Runs a code review** via `code-reviewer`
 - **Loops back to the worker** to fix any **critical** review comments
 
 ## When to Apply This Skill
 
 Apply this skill whenever:
+
 - The user requests a **new feature**, **enhancement**, or **non-trivial bug fix**
 - The work involves **.NET / C# backend**, **TypeScript/React frontend**, **documentation**, or **CI/CD / infrastructure** (Docker, docker-compose, GitHub Actions, deployment automation)
 - You need a **structured flow**: implement → review → fix critical issues
 
 Avoid this workflow for:
+
 - Tiny, isolated text changes or config toggles that do not need review
 - Purely exploratory questions (use ask/debug modes instead)
 
@@ -55,7 +59,7 @@ Select the worker subagent based on task characteristics:
 - Use **`worker-documentation`** when:
   - Creating or updating **Markdown documentation** (setup guides, contracts, architecture docs, integration docs, ops/db docs, theme docs, glossary/terms)
   - The task is primarily about **clarifying behavior**, **documenting a workflow**, or **keeping docs in sync** with existing code
-  - Code changes are *not* required, but documentation accuracy and cross-linking are
+  - Code changes are _not_ required, but documentation accuracy and cross-linking are
 
 - Use **`worker-ci-cd`** when:
   - Implementing or changing **CI/CD pipelines**, **GitHub Actions workflows**, or **deployment automation** under `.github/`
@@ -78,17 +82,21 @@ Select the worker subagent based on task characteristics:
 
 ### 3. Implement the feature with the worker
 
+**You MUST delegate implementation to the worker subagent.** Do not implement the feature yourself (do not use search_replace, write, or similar edit tools for the feature code). Invoke the chosen worker via the subagent/task tool (e.g. `mcp_task` with the appropriate `subagent_type`: `worker-dotnet`, `worker-frontend`, `worker-documentation`, or `worker-ci-cd`).
+
 For the chosen worker:
 
-1. Provide a **clear, task-focused prompt** that includes:
+1. **Invoke the worker subagent** with a **clear, task-focused prompt** that includes:
    - The user’s original request
    - Any **assumptions or constraints**
    - Relevant **files, technologies, and patterns** used in the repo
-2. Let the worker:
+2. Let the worker (the subagent) do the work:
    - Locate the relevant code paths
    - Implement the change following **existing conventions**
    - Add or adjust tests where meaningful
    - Keep changes tightly scoped to the task
+
+Only after the worker returns and you have the implementation should you proceed to step 4 (code review). Optional, low-risk fixes (e.g. applying a non-critical suggestion from review) may be done by the orchestrator if they are trivial; the initial implementation and any critical fix loops must be done by the worker.
 
 ### 4. Run code review with `code-reviewer`
 
@@ -105,6 +113,7 @@ After the worker finishes:
 ### 5. Handle critical feedback and iterate
 
 If `code-reviewer` reports **critical issues** (for example):
+
 - Logic bugs, broken flows, or regressions
 - Failing or missing essential tests
 - Security problems or unsafe patterns
@@ -124,6 +133,7 @@ Then:
 5. Repeat this loop **until there are no remaining critical issues**. Do not finalize the feature or report it as \"done\" while any critical item remains.
 
 For **non-critical suggestions**:
+
 - Apply straightforward, low-risk improvements directly when they are easy and clearly beneficial.
 - Otherwise, mention them as **optional follow-ups** in your summary to the user.
 
@@ -169,4 +179,3 @@ When there are **no remaining critical review comments**:
   - Then, run the workflow for the **frontend sub-task**:
     - Use `worker-frontend` → `code-reviewer` → fix loop until clean.
   - Summarize the final result across both layers for the user.
-

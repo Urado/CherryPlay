@@ -16,7 +16,9 @@ node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
 Options:
 
 - `--docker` — also build Docker images (server and web), same as `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
-- `--skip-ci` — skip `npm ci` in CherryPlayComponents (use when `node_modules` is already installed and `npm ci` fails e.g. with EPERM).
+- `--skip-ci` — skip the Components install step (use when you want to rely on existing `node_modules` and not run `npm ci` / `npm install`).
+
+**Note:** The script tries `npm ci` in CherryPlayComponents first; if it fails (e.g. EPERM on Windows when files are locked), it automatically falls back to `npm install` so the full check can complete.
 
 Example with Docker (full CI parity):
 

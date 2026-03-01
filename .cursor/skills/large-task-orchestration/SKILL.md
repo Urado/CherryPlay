@@ -74,10 +74,12 @@ Use the scheduler’s task types to choose the worker:
 
 ### Stage 3 — Execute the plan
 
+**You MUST delegate each subtask to the appropriate worker subagent.** Do not implement subtasks yourself (do not use search_replace, write, or similar edit tools for the subtask implementation). Invoke the worker via **mcp_task** with the correct `subagent_type`; the worker performs the implementation and returns control to you.
+
 1. Read the plan in `.cursor/schedulerPlans/`: root file and subtask files. Determine the **ordered list of subtasks**.
 2. For each **unfinished subtask**, in order:
    - **Select worker** by the subtask’s type (see table above): Backend → worker-dotnet, Frontend → worker-frontend, Documentation → worker-documentation, CI/CD → worker-ci-cd.
-   - Invoke the chosen **worker** with a prompt that includes: the subtask title and description, the overall task goal, and relevant file/area hints.
+   - **Invoke the chosen worker subagent** (e.g. `mcp_task` with that `subagent_type`) with a prompt that includes: the subtask title and description, the overall task goal, and relevant file/area hints.
    - After the worker completes, invoke **code-reviewer** with: the user’s task/subtask requirements and the changes (or files) produced by the worker. Ask for a structured review with **Critical**, **Warnings**, and **Suggestions**.
    - **If there are no Critical and no Warnings (or only Suggestions):**
      - Mark the subtask as done and continue to the **next subtask**.
@@ -114,6 +116,7 @@ Use the scheduler’s task types to choose the worker:
 
 ## Important notes
 
+- **Orchestrator does not implement**: Implementation of subtasks (Stage 3) is done **only by worker subagents**. The orchestrator must invoke the worker via `mcp_task` and must not perform implementation edits (search_replace, write, etc.) for plan execution. Critical-fix loops are also done by re-invoking the same worker, not by the orchestrator editing the code.
 - **Plan location**: Plans live in `.cursor/schedulerPlans/`. Do not delete plan files as part of this skill; the scheduler does not delete them either.
 - **Review severity**: **Critical** and **Warnings** trigger a worker re-invoke; **Suggestions** alone do not. When re-invoking the worker, pass **Critical**, **Warnings**, and **Suggestions** so the worker fixes all of them in one pass.
 - **One worker per subtask**: Each subtask is assigned exactly one worker based on its type; if a subtask spans two areas (e.g. backend + frontend), the scheduler should split it into two subtasks.

@@ -67,17 +67,23 @@ run("Server: build (Release)", () =>
 );
 
 // --- Components (order matches CherryPlayWeb/Dockerfile first stage: npm ci → lint → build)
+const componentsDir = resolve(repoRoot, "CherryPlayComponents");
 if (!skipCi) {
-  run("Components: npm ci", () =>
-    exec("npm ci", resolve(repoRoot, "CherryPlayComponents")),
-  );
+  run("Components: npm ci", () => {
+    try {
+      exec("npm ci", componentsDir);
+    } catch (e) {
+      process.stdout.write(
+        "npm ci failed (e.g. EPERM on Windows), falling back to npm install...\n",
+      );
+      exec("npm install", componentsDir);
+    }
+  });
 }
 run("Components: lint", () =>
-  exec("npm run lint", resolve(repoRoot, "CherryPlayComponents")),
+  exec("npx eslint . --max-warnings=0", componentsDir),
 );
-run("Components: build", () =>
-  exec("npm run build", resolve(repoRoot, "CherryPlayComponents")),
-);
+run("Components: build", () => exec("npx tsc", componentsDir));
 
 // --- Web (order matches CherryPlayWeb/Dockerfile: lint:fix → lint → build)
 run("Web: lint:fix", () =>

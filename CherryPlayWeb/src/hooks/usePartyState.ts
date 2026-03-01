@@ -88,7 +88,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const loadPlaylist = useCallback(
     async (options?: { silent?: boolean }) => {
       const silent = options?.silent === true;
-      const partyKey = isDemo ? 'demo' : shortCode ?? '';
+      const partyKey = isDemo ? 'demo' : (shortCode ?? '');
 
       const now = Date.now();
       const lastPlaylistAt = lastPlaylistFetchAtRef.current[partyKey] ?? 0;
