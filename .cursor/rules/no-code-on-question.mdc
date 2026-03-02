@@ -1,0 +1,29 @@
+---
+description: When the user asks a question (how, why, can I, what is), answer without writing or changing code. Use when the message is a question or request for explanation, not a request to implement or change something.
+alwaysApply: true
+---
+
+# No Code When User Asks a Question
+
+## Core rule
+
+If the user's message is a **question**, **clarification**, or **request for explanation/analysis** — **you must not run any edit tools** (search_replace, write, and the like). Answer only in text: explain, suggest, point to docs or code, list options.
+
+## When this rule applies
+
+- Message contains question words or intent: «как?», «почему?», «можно ли?», «что значит?», «зачем?», «не лучше ли?», уточнение, просьба объяснить или проанализировать.
+- **Mixed messages**: If the message contains both questions and a phrase that could be read as a request to change something (e.g. «Почему X? И добавь Y») — **treat the whole message as question**. Do not edit. Answer the questions in text; for the “add/change” part, describe _what_ you would do and _where_, and say that you can do it in a follow-up if the user asks (e.g. «сделай», «добавь», «реализуй»).
+- **Unclear intent**: If it is unclear whether the user wants an answer or implementation — answer first, offer to implement in a follow-up, and do **not** run edit tools until the user explicitly asks to implement.
+
+## When you may edit
+
+Only when the user **clearly and primarily** asks to implement, fix, or change something, in a message that is **not** a question or clarification. Examples of explicit implementation requests: «сделай», «добавь», «исправь», «реализуй», «запусти воркфлоу», «обнови правило», «добавь в файл X».  
+If the same message also contains questions, apply the “mixed messages” rule above: answer only, no edit.
+
+## Scope of “no code”
+
+Do not change or create: application code, config files, documentation, rules (`.mdc`), agent/skill files (`.md` in `.cursor/`), or any other repository files. Any use of edit/write tools counts as “code” for this rule.
+
+## Before every edit
+
+Before running any edit tool, check: _Is this message mainly a question or request for explanation?_ If yes → do not edit. Answer in text only.

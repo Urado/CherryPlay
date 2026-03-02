@@ -1,25 +1,25 @@
 ---
-description: Use user-context7 MCP when the agent needs to see any documentation
+description: Use Context7 MCP when the agent needs to see any documentation
 alwaysApply: true
 ---
 
-# Use Documentation MCP for Library Docs
+# Use Context7 MCP for Library Docs
 
-When you need to see **any documentation** (libraries, APIs, frameworks, packages), use the **user-context7** MCP server to retrieve up-to-date docs and code examples instead of relying only on built-in knowledge or web search.
+When you need to see **any documentation** (libraries, APIs, frameworks, packages), use the **Context7** MCP server to retrieve up-to-date docs and code examples instead of relying only on built-in knowledge or web search.
 
 ## When to use
 
-- Looking up library/framework API (React, Vue, TypeScript, etc.)
+- Looking up library/framework API (React, Vue, TypeScript, Vite, etc.)
 - Checking package usage, options, or examples
 - Verifying current docs for a dependency
 - Need official or up-to-date code samples
 
 ## How to use
 
-1. Use MCP tools from the **user-context7** server (e.g. list/read tool descriptors in `mcps/user-context7/` if needed).
-2. Call the appropriate tool to fetch documentation for the library or topic in question.
-3. Prefer this over guessing from memory when accuracy or recency matters.
+1. **Resolve library ID:** Call `resolve-library-id` (or equivalent) with the library/package name and a short query describing what you need. This returns one or more Context7-compatible library IDs (e.g. `/websites/cursor`, `/vercel/next.js`).
+2. **Query documentation:** Call `query-docs` with the chosen `libraryId` and a specific question or topic. Use the ID from step 1; do not call `query-docs` without a valid library ID unless the user explicitly provided one in the format `/org/project` or `/org/project/version`.
+3. Prefer Context7 over guessing from memory when accuracy or recency matters.
 
 ## Note
 
-"contact7" in project discussions refers to this documentation MCP (user-context7). Always prefer it when the task involves reading or following documentation.
+"Context7" in project discussions refers to this documentation MCP. Always prefer it when the task involves reading or following official documentation.

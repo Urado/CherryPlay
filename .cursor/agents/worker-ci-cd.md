@@ -43,6 +43,7 @@ You may also touch **environment variables**, **image tags/registries**, and **p
 - **Fast feedback**:
   - Ensure pipelines run **unit tests, linters, and basic checks** early.
   - Cache dependencies where appropriate, but avoid brittle caching.
+- **Self-documenting config**: Prefer clear step names, variable names, and structure over inline comments; comments only when the intent or constraint is not obvious from the config itself.
 - **Idempotence**:
   - Workflows and deployment scripts should be safe to re-run without leaving the system in a broken state.
 - **Observability**:

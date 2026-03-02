@@ -149,3 +149,4 @@ Fix hints:
 
 - **Server format:** Run `dotnet format` in `CherryPlayServer/` and commit the changes (e.g. line endings CRLF→LF).
 - **Components/Web lint:** Fix reported files; use `npm run lint:fix` where available; for unused vars use `_` prefix or remove.
+- **EPERM on Windows (npm ci):** If `npm ci` fails with EPERM when unlocking files in `node_modules` (e.g. `.resolver-binding-win32-x64-msvc` or `.rollup-win32-x64-msvc`), the script falls back to `npm install`. To make `npm ci` work: close IDE/terminals using the project, then remove `node_modules` and run `npm ci` again; or add the project folder to antivirus exclusions. Alternatively run health checks with `--skip-ci` to skip the install step and use existing `node_modules`.
