@@ -27,7 +27,7 @@ import {
   ProjectStoreState,
 } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
-import { logger } from '@shared/utils';
+import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
 import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
 
 interface CollectionViewProps {
@@ -82,11 +82,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   // Get flat list of tracks for duration loading
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
-  const duplicatePaths = useMemo(() => {
-    const count = new Map<string, number>();
-    for (const t of tracks) count.set(t.path, (count.get(t.path) ?? 0) + 1);
-    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
-  }, [tracks]);
+  const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
 
   const resolveTrackById = useCallback((id: string) => {
     const storeItems = collectionStoreRef.current.getState().items;
@@ -363,7 +359,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
                 }
                 isActive={isActive}
                 isPlaying={isPlaying}
-                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
+                isDuplicatePath={track ? duplicateTrackIds.has(track.id) : false}
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => collectionDrag.handleDragStart(e, item.id)}

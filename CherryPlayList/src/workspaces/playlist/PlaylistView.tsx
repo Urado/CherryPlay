@@ -22,7 +22,12 @@ import { fileService, ipcService } from '@shared/services';
 import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
-import { logger, calculateSimpleDividerMarkers, formatSimpleDividerLabel } from '@shared/utils';
+import {
+  logger,
+  calculateSimpleDividerMarkers,
+  formatSimpleDividerLabel,
+  getDuplicateTrackIdsByPathAndFilename,
+} from '@shared/utils';
 import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
 
 interface PlaylistViewProps {
@@ -62,11 +67,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   // Get flat list of tracks for duration loading and dividers
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
-  const duplicatePaths = useMemo(() => {
-    const count = new Map<string, number>();
-    for (const t of tracks) count.set(t.path, (count.get(t.path) ?? 0) + 1);
-    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
-  }, [tracks]);
+  const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
 
   const resolveTrackById = useCallback(
     (id: string) => tracks.find((track) => track.id === id),
@@ -272,7 +273,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
                 }
                 isActive={isActive}
                 isPlaying={isPlaying}
-                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
+                isDuplicatePath={track ? duplicateTrackIds.has(track.id) : false}
                 onToggleSelect={handleToggleSelect}
                 onRemove={removeItem}
                 onDragStart={(e) => playlistDrag.handleDragStart(e, item.id)}

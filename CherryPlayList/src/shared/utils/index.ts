@@ -55,3 +55,7 @@ export {
   expandSelectionWithGroupContents,
   type DisplayItem,
 } from './playerItemsUtils';
+export {
+  getDuplicateTrackIdsByPathAndFilename,
+  getDuplicateTrackIdsFromDisplayItems,
+} from './duplicateUtils';

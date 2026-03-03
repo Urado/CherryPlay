@@ -8,6 +8,7 @@ import { ItemList, DropIndicator, ProjectItemRow, EmptyState } from '@shared/com
 import { useSelectionWithModifiers } from '@shared/hooks';
 import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
+import { getDuplicateTrackIdsFromDisplayItems } from '@shared/utils';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
@@ -108,14 +109,10 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 }) => {
   const { getGroupSettings, getTrackSettings } = useProjectStore();
 
-  const duplicatePaths = useMemo(() => {
-    const paths = displayItems
-      .filter((di) => isProjectTrack(di.item))
-      .map((di) => (di.item as Track).path);
-    const count = new Map<string, number>();
-    for (const p of paths) count.set(p, (count.get(p) ?? 0) + 1);
-    return new Set([...count.entries()].filter(([, c]) => c > 1).map(([p]) => p));
-  }, [displayItems]);
+  const duplicateTrackIds = useMemo(
+    () => getDuplicateTrackIdsFromDisplayItems(displayItems),
+    [displayItems],
+  );
 
   const [trackSettingsDropdown, setTrackSettingsDropdown] = useState<{
     trackId: string;
@@ -293,7 +290,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 isCurrent={isCurrentTrack}
                 isLocked={isLocked}
                 groupDuration={groupDurationWithPauses}
-                isDuplicatePath={track ? duplicatePaths.has(track.path) : false}
+                isDuplicatePath={track ? duplicateTrackIds.has(track.id) : false}
                 isNotOnServer={
                   track && serverTrackIds != null ? !serverTrackIds.has(track.id) : false
                 }

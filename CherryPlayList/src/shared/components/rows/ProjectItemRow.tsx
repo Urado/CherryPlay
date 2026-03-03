@@ -85,7 +85,7 @@ export interface ProjectItemRowProps {
   // Group-specific
   /** Duration of the group including pauses (for groups only) */
   groupDuration?: number;
-  /** Whether this track's path appears more than once in the list (show duplicate warning) */
+  /** Whether this track is considered a duplicate in the current list (path or filename) */
   isDuplicatePath?: boolean;
   isNotOnServer?: boolean;
 
@@ -412,7 +412,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
           {isDuplicatePath && (
             <span
               className="playlist-item-duplicate-dot"
-              title="Дубликат: тот же файл уже есть в плейлисте"
+              title="Дубликат: такой трек уже есть в списке (по пути или имени файла)"
               aria-label="Дубликат"
             />
           )}
