@@ -79,15 +79,14 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
     return null;
   }
 
-  const timeZone = party.timeZone ?? getDefaultTimeZone();
-  const date = formatDateInTimeZone(party.eventDateTime, timeZone);
+  const date = formatDateInTimeZone(party.eventDateTime);
   const timeRange = getPartyTimeRange(party);
 
   if (!timeRange) {
     return date;
   }
 
-  return `${date}, ${timeRange}`;
+  return `${date} ${timeRange}`;
 };
 
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {

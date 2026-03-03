@@ -40,14 +40,11 @@ export function getDefaultTimeZone(): string {
  */
 export function formatDateInTimeZone(
   date: Date | string,
-  timeZone: string,
   options?: Intl.DateTimeFormatOptions,
 ): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const defaultOptions: Intl.DateTimeFormatOptions = {
     dateStyle: 'long',
-    timeStyle: 'short',
-    timeZone,
   };
   return new Intl.DateTimeFormat('ru-RU', { ...defaultOptions, ...options }).format(dateObj);
 }
