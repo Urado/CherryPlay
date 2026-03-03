@@ -128,6 +128,7 @@ interface ProjectState {
   setDefaultPauseBetweenTracks: (value: number) => void;
   setDefaultActionAfterTrack: (value: ActionAfterTrack) => void;
   setPlannedEndTime: (time: number | null) => void;
+  setPortableMode: (value: boolean) => void;
   setTrackSettings: (trackId: string, settings: ProjectTrackSettings) => void;
   getTrackSettings: (trackId: string) => ProjectTrackSettings;
   clearTrackSettings: (trackId: string) => void;
@@ -877,6 +878,13 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           );
         }
 
+        get().markAsDirty();
+      },
+
+      setPortableMode: (value) => {
+        set((state) => ({
+          settings: { ...state.settings, portableMode: value },
+        }));
         get().markAsDirty();
       },
 

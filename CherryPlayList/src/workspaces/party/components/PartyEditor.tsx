@@ -173,6 +173,7 @@ interface PartyEditorProps {
   themeId: PartyThemeId;
   customizationSettings: Record<string, string | number>;
   eventDateTime: string;
+  eventEndDateTime?: string;
   description?: string;
   place?: string;
   city?: string;
@@ -188,6 +189,7 @@ interface PartyEditorProps {
   onThemeIdChange: (themeId: PartyThemeId) => void;
   onCustomizationSettingsChange: (settings: Record<string, string | number>) => void;
   onEventDateTimeChange: (dateTime: string) => void;
+  onEventEndDateTimeChange?: (dateTime: string) => void;
   onDescriptionChange?: (description: string) => void;
   onPlaceChange?: (place: string) => void;
   onCityChange?: (city: string) => void;
@@ -231,6 +233,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   themeId,
   customizationSettings,
   eventDateTime,
+  eventEndDateTime = '',
   description = '',
   place = '',
   city = '',
@@ -246,6 +249,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   onThemeIdChange,
   onCustomizationSettingsChange,
   onEventDateTimeChange,
+  onEventEndDateTimeChange,
   onDescriptionChange,
   onPlaceChange,
   onCityChange,
@@ -455,6 +459,20 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           />
         </label>
       </div>
+
+      {onEventEndDateTimeChange && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Время окончания мероприятия (по местному времени выбранной таймзоны)
+            <input
+              type="datetime-local"
+              className="party-editor-input"
+              value={eventEndDateTime}
+              onChange={(e) => onEventEndDateTimeChange(e.target.value)}
+            />
+          </label>
+        </div>
+      )}
 
       {onDescriptionChange && (
         <div className="party-editor-section">

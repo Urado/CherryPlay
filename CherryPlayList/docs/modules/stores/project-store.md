@@ -28,3 +28,8 @@
 - Выделение элементов (single, multiple, range)
 - Undo/Redo через globalHistoryStore
 - Сохранение/загрузка проектов (.cherry формат)
+- `setPortableMode(value: boolean)` — включает/выключает портативный режим; обновляет `settings.portableMode` и помечает проект как изменённый
+
+## Настройки проекта
+
+`settings.portableMode: boolean` (default `false`) — флаг портативного режима. Хранится в `.cherry` файле как часть `ProjectSettings`. Управляется через `setPortableMode`. Не путать с настройками приложения (`settingsStore`) — это настройка конкретного проекта.

@@ -389,6 +389,17 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         {isGroup ? renderGroupNameContent() : trackDisplayName}
       </ListRowCompound.Content>
 
+      {!isGroup && track && track.isMissing && (
+        <span
+          className="playlist-item-missing-dot"
+          title={`Файл не найден: ${track.path}`}
+          aria-label="Файл не найден"
+          style={{ color: 'var(--warning, #ff9800)', fontSize: '14px', marginRight: '4px' }}
+        >
+          ⚠
+        </span>
+      )}
+
       {displayDuration && (
         <ListRowCompound.Secondary>
           {isNotOnServer && (

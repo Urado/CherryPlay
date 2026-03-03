@@ -62,6 +62,7 @@ export interface ProjectSettings {
   defaultPauseBetweenTracks: number;
   defaultActionAfterTrack: ActionAfterTrack;
   plannedEndTime: number | null;
+  portableMode: boolean;
 }
 
 /**
@@ -149,6 +150,7 @@ export const DEFAULT_PROJECT_SETTINGS: ProjectSettings = {
   defaultPauseBetweenTracks: 0,
   defaultActionAfterTrack: 'next',
   plannedEndTime: null,
+  portableMode: false,
 };
 
 export const DEFAULT_SESSION_STATE: ProjectSessionState = {

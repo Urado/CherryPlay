@@ -35,6 +35,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [Demo Player](./systems/demo-player.md) - Глобальная система предпрослушивания треков без очереди
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
 - [Streaming](./systems/streaming.md) - Система трансляции состояния плейлиста для вечеринок
+- [Save / Load](./systems/save-load.md) - Система сохранения и загрузки проектов (.cherry формат, портативный режим)
 
 ## Supporting infrastructure (не модули в строгом смысле)
 

@@ -77,6 +77,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
     Record<string, string | number>
   >(getDefaultCustomizationSettings('cyberpunk'));
   const [eventDateTime, setEventDateTime] = useState<string>('');
+  const [eventEndDateTime, setEventEndDateTime] = useState<string>('');
+  const [hasInitialEventEndDateTime, setHasInitialEventEndDateTime] = useState<boolean>(false);
+  const [eventEndDateTimeTouched, setEventEndDateTimeTouched] = useState<boolean>(false);
   const [description, setDescription] = useState<string>('');
   const [place, setPlace] = useState<string>('');
   const [city, setCity] = useState<string>('');
@@ -242,6 +245,19 @@ export const PartyView: React.FC<PartyViewProps> = ({
       } else {
         setEventDateTime('');
       }
+      if (party.eventEndDateTime) {
+        const localEnd = convertUtcToLocalDateTime(party.eventEndDateTime, tz);
+        if (localEnd) {
+          setEventEndDateTime(localEnd);
+          setHasInitialEventEndDateTime(true);
+        } else {
+          setEventEndDateTime('');
+          setHasInitialEventEndDateTime(false);
+        }
+      } else {
+        setEventEndDateTime('');
+        setHasInitialEventEndDateTime(false);
+      }
       if (party.description) setDescription(party.description);
       if (party.place) setPlace(party.place);
       if (party.city) setCity(party.city);
@@ -250,9 +266,15 @@ export const PartyView: React.FC<PartyViewProps> = ({
       setExternalLinkUrl(party.externalLinkUrl ?? '');
       setExternalLinkText(party.externalLinkText ?? '');
       setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
+      setEventEndDateTimeTouched(false);
     } catch (error) {
       console.error('Failed to load party metadata:', error);
     }
+  }, []);
+
+  const handleEventEndDateTimeChange = useCallback((value: string) => {
+    setEventEndDateTime(value);
+    setEventEndDateTimeTouched(true);
   }, []);
 
   const restoreAfterReconnect = useCallback(
@@ -488,6 +510,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
         eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
+        eventEndDateTime: eventEndDateTime
+          ? convertLocalDateTimeToUtc(eventEndDateTime, tz)
+          : undefined,
         description: description.trim() || undefined,
         place: place.trim() || undefined,
         city: city.trim() || undefined,
@@ -562,6 +587,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
         // Обновляем метаданные вечеринки
         const tz = timeZone.trim() || getDefaultTimeZone();
+        let eventEndDateTimeForUpdate: string | null | undefined = undefined;
+
+        if (eventEndDateTimeTouched) {
+          if (!eventEndDateTime.trim()) {
+            eventEndDateTimeForUpdate = hasInitialEventEndDateTime ? null : undefined;
+          } else {
+            eventEndDateTimeForUpdate = convertLocalDateTimeToUtc(eventEndDateTime, tz);
+          }
+        }
+
         await partyService.updateParty(linkedParty.id, {
           name: partyName,
           title: partyTitle.trim() || undefined,
@@ -569,6 +604,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           partyThemeId: themeId,
           customizationSettings: normalizeCustomizationSettings(customizationSettings),
           eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
+          eventEndDateTime: eventEndDateTimeForUpdate,
           description: description.trim() || undefined,
           place: place.trim() || undefined,
           city: city.trim() || undefined,
@@ -612,6 +648,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
         customizationSettings: normalizeCustomizationSettings(customizationSettings),
         playlistData: playlistForApi,
         eventDateTime: eventDateTime ? convertLocalDateTimeToUtc(eventDateTime, tz) : undefined,
+        eventEndDateTime: eventEndDateTime
+          ? convertLocalDateTimeToUtc(eventEndDateTime, tz)
+          : undefined,
         description: description.trim() || undefined,
         place: place.trim() || undefined,
         city: city.trim() || undefined,
@@ -766,6 +805,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             themeId={themeId}
             customizationSettings={customizationSettings}
             eventDateTime={eventDateTime}
+            eventEndDateTime={eventEndDateTime}
             description={description}
             place={place}
             city={city}
@@ -781,6 +821,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onThemeIdChange={handleThemeChange}
             onCustomizationSettingsChange={setCustomizationSettings}
             onEventDateTimeChange={setEventDateTime}
+            onEventEndDateTimeChange={handleEventEndDateTimeChange}
             onDescriptionChange={setDescription}
             onPlaceChange={setPlace}
             onCityChange={setCity}
@@ -795,6 +836,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
               setEventDateTime(
                 convertUtcToLocalDateTime(convertLocalDateTimeToUtc(eventDateTime, oldTz), newTz),
               );
+              if (eventEndDateTime) {
+                const updatedEnd = convertUtcToLocalDateTime(
+                  convertLocalDateTimeToUtc(eventEndDateTime, oldTz),
+                  newTz,
+                );
+                setEventEndDateTime(updatedEnd);
+                setEventEndDateTimeTouched(true);
+              }
             }}
             onCreateParty={handleCreateParty}
             onPublish={handlePublish}

@@ -3,4 +3,5 @@ export interface Track {
   path: string;
   name: string;
   duration?: number; // Duration in seconds
+  isMissing?: boolean;
 }

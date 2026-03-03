@@ -84,6 +84,7 @@ public class PublicPartyQueryService : IPublicPartyQueryService
                 TotalTracks: party.Playlist.TotalTracks,
                 TotalDuration: party.Playlist.TotalDuration,
                 EventDateTime: party.EventDateTime?.ToString("O"),
+                EventEndDateTime: party.EventEndDateTime?.ToString("O"),
                 TimeZone: party.TimeZone,
                 City: party.City,
                 ShortDescription: party.ShortDescription,

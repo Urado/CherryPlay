@@ -21,6 +21,8 @@ import {
 } from '@shared/stores';
 
 export const AppHeader: React.FC = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
   const {
     name,
     items,
@@ -63,6 +65,7 @@ export const AppHeader: React.FC = () => {
 
   const handleSaveAs = useCallback(async () => {
     try {
+      setIsSaving(true);
       const path = await ipcService.showSaveDialog({
         title: 'Сохранить проект',
         defaultPath: name || 'project',
@@ -82,7 +85,9 @@ export const AppHeader: React.FC = () => {
           sessionState,
           linkedParty: linkedPartyForFile,
         });
-        await projectService.saveProject(path, projectFile);
+        await projectService.saveProject(path, projectFile, {
+          portableMode: settings.portableMode,
+        });
         setFilePath(path);
         resetDirty();
         setLastOpenedPlaylist(path);
@@ -90,6 +95,8 @@ export const AppHeader: React.FC = () => {
       }
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
+    } finally {
+      setIsSaving(false);
     }
   }, [
     name,
@@ -107,6 +114,7 @@ export const AppHeader: React.FC = () => {
 
   const handleSave = useCallback(async () => {
     try {
+      setIsSaving(true);
       // Если есть сохранённый путь - быстрое сохранение
       if (meta.filePath) {
         const linkedPartyForFile = meta.linkedParty
@@ -121,7 +129,9 @@ export const AppHeader: React.FC = () => {
           sessionState,
           linkedParty: linkedPartyForFile,
         });
-        await projectService.saveProject(meta.filePath, projectFile);
+        await projectService.saveProject(meta.filePath, projectFile, {
+          portableMode: settings.portableMode,
+        });
         resetDirty();
         addNotification({ type: 'success', message: 'Проект сохранён' });
       } else {
@@ -130,6 +140,8 @@ export const AppHeader: React.FC = () => {
       }
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
+    } finally {
+      setIsSaving(false);
     }
   }, [
     meta.filePath,
@@ -153,10 +165,9 @@ export const AppHeader: React.FC = () => {
       });
 
       if (path) {
-        const projectFile = await projectService.loadProject(path);
-        const projectData = projectService.deserializeProject(projectFile);
-        const linkedPartyFromFile = projectFile.linkedParty
-          ? { id: projectFile.linkedParty.id, shortCode: projectFile.linkedParty.shortCode }
+        const projectData = await projectService.loadProject(path);
+        const linkedPartyFromFile = projectData.linkedParty
+          ? { id: projectData.linkedParty.id, shortCode: projectData.linkedParty.shortCode }
           : null;
         loadProject({
           ...projectData,
@@ -259,8 +270,25 @@ export const AppHeader: React.FC = () => {
                 className="header-button"
                 onClick={handleSave}
                 title={meta.filePath ? 'Сохранить (Ctrl+S)' : 'Сохранить как... (Ctrl+S)'}
+                disabled={isSaving}
               >
-                <SaveIcon style={{ fontSize: '32px' }} />
+                {isSaving ? (
+                  <span
+                    className="header-button-loader"
+                    aria-label="Сохранение..."
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      border: '3px solid rgba(255,255,255,0.2)',
+                      borderTopColor: '#fff',
+                      boxSizing: 'border-box',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                ) : (
+                  <SaveIcon style={{ fontSize: '32px' }} />
+                )}
               </button>
               <button
                 className="header-button"

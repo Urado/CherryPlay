@@ -181,6 +181,12 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
     warnings.push('Invalid plannedEndTime, using default');
   }
 
+  if (typeof settings.portableMode === 'boolean') {
+    result.portableMode = settings.portableMode;
+  } else if (settings.portableMode !== undefined) {
+    warnings.push('Invalid portableMode value, using default');
+  }
+
   return result;
 }
 

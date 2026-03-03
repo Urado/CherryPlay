@@ -100,6 +100,7 @@ public class PartyService : IPartyService
             Playlist = dto.PlaylistData?.ToEntity() ?? new PartyPlaylist(),
             CreatedAt = DateTime.UtcNow,
             EventDateTime = dto.EventDateTime,
+            EventEndDateTime = dto.EventEndDateTime,
             IsListedInCatalog = dto.IsListedInCatalog,
             Description = dto.Description,
             Place = dto.Place,
@@ -250,6 +251,8 @@ public class PartyService : IPartyService
             party.PartyThemeId = dto.PartyThemeId.Value;
         if (dto.EventDateTime.HasValue)
             party.EventDateTime = dto.EventDateTime;
+        if (dto.EventEndDateTime.HasValue)
+            party.EventEndDateTime = dto.EventEndDateTime;
         if (dto.CustomizationSettings != null)
         {
             if (!CustomizationSettingsValidator.IsValidCustomizationSettings(dto.CustomizationSettings))
