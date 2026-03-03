@@ -202,7 +202,7 @@ interface PartyEditorProps {
   isCreating: boolean;
   isPublishing?: boolean;
   isAuthenticated?: boolean;
-  linkedParty?: { id: string; shortCode: string; url: string } | null;
+  linkedParty?: { id: string; shortCode: string; url?: string } | null;
   serverError: string | null;
   isCheckingParty: boolean;
   onCopyUrl: () => void;
@@ -702,14 +702,16 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             <div className="party-editor-party-block-code">
               <strong>Код:</strong> {displayParty.shortCode}
             </div>
-            <a
-              href={displayParty.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="party-editor-linked-party-link"
-            >
-              Открыть в браузере →
-            </a>
+            {displayParty.url && (
+              <a
+                href={displayParty.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="party-editor-linked-party-link"
+              >
+                Открыть в браузере →
+              </a>
+            )}
           </div>
           <div className="party-editor-url-section">
             <label className="party-editor-label">
@@ -718,7 +720,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
                 <input
                   type="text"
                   readOnly
-                  value={displayParty.url}
+                  value={displayParty.url ?? ''}
                   className="input-base party-editor-url-input"
                 />
                 <button

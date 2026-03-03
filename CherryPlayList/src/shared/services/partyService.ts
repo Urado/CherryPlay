@@ -141,6 +141,26 @@ class PartyService {
     }
   }
 
+  async checkServerReachable(): Promise<boolean> {
+    try {
+      const config = await getApiConfig();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch(`${config.serverUrl}/api/health`, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-cache',
+        });
+        return response.ok;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch {
+      return false;
+    }
+  }
+
   async updateParty(partyId: string, data: Partial<CreatePartyDto>): Promise<void> {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/${partyId}`, {

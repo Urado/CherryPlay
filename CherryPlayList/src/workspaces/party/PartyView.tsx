@@ -8,9 +8,10 @@ import {
   getDefaultTimeZone,
 } from '@cherryplay/components';
 import { AuthForm } from '@cherryplay/components';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { Spinner } from '@shared/components';
 import { authService } from '@shared/services/authService';
 import { partyService, CreatePartyDto } from '@shared/services/partyService';
 import { useAuthStore, useProjectStore, usePlayerAudioStore, useUIStore } from '@shared/stores';
@@ -24,6 +25,10 @@ import {
 import { PartyEditor } from './components/PartyEditor';
 import { PartyPreview } from './PartyPreview';
 import './PartyView.css';
+
+const RECONNECT_INTERVAL_MS = 60_000;
+const ERROR_PARTY_NOT_FOUND = 'Вечеринка не найдена на сервере';
+const ERROR_CONNECTION = 'Ошибка соединения с сервером';
 
 interface PartyViewProps {
   workspaceId: WorkspaceId;
@@ -45,9 +50,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
     () => ({
       mode: sessionState.mode,
       currentTrackId: sessionState.currentTrackId,
-      playedTrackIds: Array.from(sessionState.playedTrackIds),
-      disabledTrackIds: Array.from(sessionState.disabledTrackIds),
-      disabledGroupIds: Array.from(sessionState.disabledGroupIds),
+      playedTrackIds: sessionState.playedTrackIds,
+      disabledTrackIds: sessionState.disabledTrackIds,
+      disabledGroupIds: sessionState.disabledGroupIds,
     }),
     [sessionState],
   );
@@ -86,6 +91,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [isCheckingParty, setIsCheckingParty] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [partyVerified, setPartyVerified] = useState(false);
+  const [serverUnreachable, setServerUnreachable] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [lastManualCheckFailed, setLastManualCheckFailed] = useState(false);
+  const reconnectIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectCancelledRef = useRef(false);
 
   const { openModal, addNotification } = useUIStore((state) => ({
     openModal: state.openModal,
@@ -93,10 +103,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }));
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
+  const isAuth = isAuthenticated();
 
   // Обработка OAuth callback для автоматического входа
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.api || isAuthenticated()) {
+    if (typeof window === 'undefined' || !window.api || isAuth) {
       return;
     }
 
@@ -145,7 +156,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, authStore, addNotification]);
+  }, [isAuth, authStore, addNotification]);
 
   const handleThemeChange = (newThemeId: PartyThemeId) => {
     setThemeId(newThemeId);
@@ -209,19 +220,113 @@ export const PartyView: React.FC<PartyViewProps> = ({
     disabledGroupIds,
   ]);
 
-  const checkPartyExists = React.useCallback(async (partyId: string): Promise<boolean> => {
+  const stopReconnectTimer = useCallback(() => {
+    if (reconnectIntervalRef.current !== null) {
+      clearInterval(reconnectIntervalRef.current);
+      reconnectIntervalRef.current = null;
+    }
+  }, []);
+
+  const loadPartyMetadata = useCallback(async (partyId: string) => {
+    try {
+      const party = await partyService.getParty(partyId);
+      if (party.name) setPartyName(party.name);
+      setPartyTitle(party.title ?? '');
+      setPartySubtitle(party.subtitle ?? '');
+      if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
+      const tz = party.timeZone || getDefaultTimeZone();
+      setTimeZone(tz);
+      if (party.eventDateTime) {
+        const local = convertUtcToLocalDateTime(party.eventDateTime, tz);
+        if (local) setEventDateTime(local);
+      } else {
+        setEventDateTime('');
+      }
+      if (party.description) setDescription(party.description);
+      if (party.place) setPlace(party.place);
+      if (party.city) setCity(party.city);
+      if (party.schedule) setSchedule(party.schedule);
+      setShortDescription(party.shortDescription ?? '');
+      setExternalLinkUrl(party.externalLinkUrl ?? '');
+      setExternalLinkText(party.externalLinkText ?? '');
+      setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
+    } catch (error) {
+      console.error('Failed to load party metadata:', error);
+    }
+  }, []);
+
+  const restoreAfterReconnect = useCallback(
+    async (linkedParty: { id: string; shortCode: string }) => {
+      try {
+        const exists = await partyService.checkPartyExists(linkedParty.id);
+        setPartyVerified(exists);
+        if (!exists) {
+          setServerError(ERROR_PARTY_NOT_FOUND);
+          return;
+        }
+        setServerError(null);
+
+        const url = await partyService.getPartyUrl(linkedParty.shortCode);
+        setLinkedParty({ ...linkedParty, url });
+
+        if (isAuth) {
+          await loadPartyMetadata(linkedParty.id);
+        }
+      } catch (error) {
+        console.error('Failed to restore after reconnect:', error);
+        setServerError(ERROR_CONNECTION);
+        setPartyVerified(false);
+      }
+    },
+    [isAuth, loadPartyMetadata, setLinkedParty],
+  );
+
+  const startReconnectTimer = useCallback(
+    (linkedParty: { id: string; shortCode: string } | null) => {
+      stopReconnectTimer();
+      reconnectCancelledRef.current = false;
+      reconnectIntervalRef.current = setInterval(() => {
+        void (async () => {
+          if (reconnectCancelledRef.current) return;
+          setIsReconnecting(true);
+          try {
+            const reachable = await partyService.checkServerReachable();
+            if (reconnectCancelledRef.current) return;
+            if (reachable) {
+              stopReconnectTimer();
+              if (!reconnectCancelledRef.current) setServerUnreachable(false);
+              if (!reconnectCancelledRef.current) setLastManualCheckFailed(false);
+              if (linkedParty) {
+                await restoreAfterReconnect(linkedParty);
+              } else {
+                if (!reconnectCancelledRef.current) setServerError(null);
+                if (!reconnectCancelledRef.current) setPartyVerified(false);
+              }
+            }
+          } catch {
+            // сервер всё ещё недоступен, ждём следующей попытки
+          } finally {
+            if (!reconnectCancelledRef.current) setIsReconnecting(false);
+          }
+        })();
+      }, RECONNECT_INTERVAL_MS);
+    },
+    [stopReconnectTimer, restoreAfterReconnect],
+  );
+
+  const checkPartyExists = useCallback(async (partyId: string): Promise<boolean> => {
     try {
       setIsCheckingParty(true);
       setServerError(null);
       const exists = await partyService.checkPartyExists(partyId);
       setPartyVerified(exists);
       if (!exists) {
-        setServerError('Сервер не найден');
+        setServerError(ERROR_PARTY_NOT_FOUND);
       }
       return exists;
     } catch (error) {
       console.error('Failed to check party existence:', error);
-      setServerError('Сервер не найден');
+      setServerError(ERROR_CONNECTION);
       setPartyVerified(false);
       return false;
     } finally {
@@ -229,58 +334,95 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, []);
 
-  const handleRetry = async () => {
+  const handleManualReconnect = useCallback(async () => {
+    const linkedParty = meta.linkedParty;
+    setIsReconnecting(true);
+    try {
+      const reachable = await partyService.checkServerReachable();
+      if (reachable) {
+        stopReconnectTimer();
+        setServerUnreachable(false);
+        setLastManualCheckFailed(false);
+        if (linkedParty) {
+          await restoreAfterReconnect(linkedParty);
+        } else {
+          setServerError(null);
+          setPartyVerified(false);
+        }
+      } else {
+        setLastManualCheckFailed(true);
+      }
+    } catch {
+      setLastManualCheckFailed(true);
+    } finally {
+      setIsReconnecting(false);
+    }
+  }, [meta.linkedParty, stopReconnectTimer, restoreAfterReconnect]);
+
+  const handleRetry = useCallback(async () => {
     if (meta.linkedParty) {
       await checkPartyExists(meta.linkedParty.id);
     } else {
       setServerError(null);
       setPartyVerified(false);
     }
-  };
+  }, [meta.linkedParty, checkPartyExists]);
 
   useEffect(() => {
     if (meta.linkedParty) {
-      checkPartyExists(meta.linkedParty.id);
+      let cancelled = false;
+      const linkedParty = meta.linkedParty;
+
+      void (async () => {
+        setIsCheckingParty(true);
+        setServerError(null);
+        try {
+          const reachable = await partyService.checkServerReachable();
+          if (cancelled) return;
+          if (!reachable) {
+            setServerUnreachable(true);
+            setPartyVerified(false);
+            startReconnectTimer(linkedParty);
+            return;
+          }
+          setServerUnreachable(false);
+          stopReconnectTimer();
+          const exists = await partyService.checkPartyExists(linkedParty.id);
+          if (cancelled) return;
+          setPartyVerified(exists);
+          if (!exists) {
+            setServerError(ERROR_PARTY_NOT_FOUND);
+          }
+        } catch {
+          if (!cancelled) {
+            setServerUnreachable(true);
+            setPartyVerified(false);
+            startReconnectTimer(linkedParty);
+          }
+        } finally {
+          if (!cancelled) setIsCheckingParty(false);
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+        stopReconnectTimer();
+        reconnectCancelledRef.current = true;
+      };
     } else {
       setPartyVerified(false);
       setServerError(null);
+      setServerUnreachable(false);
+      stopReconnectTimer();
     }
-  }, [meta.linkedParty, checkPartyExists]);
+  }, [meta.linkedParty, startReconnectTimer, stopReconnectTimer]);
 
   // Загружаем метаданные вечеринки при наличии linkedParty
   useEffect(() => {
-    if (meta.linkedParty && isAuthenticated()) {
-      const loadPartyMetadata = async () => {
-        try {
-          const party = await partyService.getParty(meta.linkedParty!.id);
-          if (party.name) setPartyName(party.name);
-          setPartyTitle(party.title ?? '');
-          setPartySubtitle(party.subtitle ?? '');
-          if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
-          const tz = party.timeZone || getDefaultTimeZone();
-          setTimeZone(tz);
-          if (party.eventDateTime) {
-            const local = convertUtcToLocalDateTime(party.eventDateTime, tz);
-            if (local) setEventDateTime(local);
-          } else {
-            setEventDateTime('');
-          }
-          if (party.description) setDescription(party.description);
-          if (party.place) setPlace(party.place);
-          if (party.city) setCity(party.city);
-          if (party.schedule) setSchedule(party.schedule);
-          setShortDescription(party.shortDescription ?? '');
-          setExternalLinkUrl(party.externalLinkUrl ?? '');
-          setExternalLinkText(party.externalLinkText ?? '');
-          setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
-        } catch (error) {
-          console.error('Failed to load party metadata:', error);
-          // Не показываем ошибку пользователю, просто не загружаем метаданные
-        }
-      };
-      loadPartyMetadata();
+    if (meta.linkedParty && isAuth) {
+      void loadPartyMetadata(meta.linkedParty.id);
     }
-  }, [meta.linkedParty, isAuthenticated]);
+  }, [meta.linkedParty, isAuth, loadPartyMetadata]);
 
   // Нормализует customizationSettings, оставляя только значения типа string или number
   const normalizeCustomizationSettings = (
@@ -314,7 +456,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   const handleCreateParty = async () => {
     // Проверяем авторизацию перед созданием вечеринки
-    if (!isAuthenticated()) {
+    if (!isAuth) {
       addNotification({
         type: 'warning',
         message: 'Для создания вечеринки необходимо войти в аккаунт',
@@ -382,7 +524,13 @@ export const PartyView: React.FC<PartyViewProps> = ({
       });
     } catch (error) {
       console.error('Failed to create party:', error);
-      setServerError('Сервер не найден');
+      const reachable = await partyService.checkServerReachable();
+      if (!reachable) {
+        setServerUnreachable(true);
+        startReconnectTimer(null);
+      } else {
+        setServerError(ERROR_CONNECTION);
+      }
       setPartyVerified(false);
       addNotification({
         type: 'error',
@@ -394,7 +542,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   };
 
   const handlePublish = async () => {
-    if (!isAuthenticated()) {
+    if (!isAuth) {
       addNotification({
         type: 'warning',
         message: 'Для публикации необходимо войти в аккаунт',
@@ -491,7 +639,13 @@ export const PartyView: React.FC<PartyViewProps> = ({
       addNotification({ type: 'success', message: 'Вечеринка создана и опубликована' });
     } catch (error) {
       console.error('Failed to publish:', error);
-      setServerError('Сервер не найден');
+      const reachable = await partyService.checkServerReachable();
+      if (!reachable) {
+        setServerUnreachable(true);
+        startReconnectTimer(null);
+      } else {
+        setServerError(ERROR_CONNECTION);
+      }
       addNotification({
         type: 'error',
         message: error instanceof Error ? error.message : 'Ошибка публикации',
@@ -502,25 +656,31 @@ export const PartyView: React.FC<PartyViewProps> = ({
   };
 
   const handleCopyUrl = async () => {
-    if (meta.linkedParty) {
-      try {
-        await navigator.clipboard.writeText(meta.linkedParty.url);
-        addNotification({
-          type: 'success',
-          message: 'URL скопирован в буфер обмена',
-        });
-      } catch (error) {
-        console.error('Failed to copy URL:', error);
-        addNotification({
-          type: 'error',
-          message: 'Не удалось скопировать URL',
-        });
-      }
+    const url = meta.linkedParty?.url;
+    if (!url) {
+      addNotification({
+        type: 'error',
+        message: 'URL вечеринки ещё не загружен',
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      addNotification({
+        type: 'success',
+        message: 'URL скопирован в буфер обмена',
+      });
+    } catch (error) {
+      console.error('Failed to copy URL:', error);
+      addNotification({
+        type: 'error',
+        message: 'Не удалось скопировать URL',
+      });
     }
   };
 
   // Если пользователь не авторизован, показываем форму входа
-  if (!isAuthenticated()) {
+  if (!isAuth) {
     return (
       <div className="party-view">
         <AuthForm
@@ -536,6 +696,41 @@ export const PartyView: React.FC<PartyViewProps> = ({
     );
   }
 
+  if (isCheckingParty) {
+    return (
+      <div className="party-view">
+        <div className="party-view-loading" role="status" aria-label="Загрузка...">
+          <Spinner size="large" />
+        </div>
+      </div>
+    );
+  }
+
+  if (serverUnreachable) {
+    return (
+      <div className="party-view">
+        <div className="party-view-no-connection">
+          <div className="party-view-no-connection-icon">🔌</div>
+          <p className="party-view-no-connection-title">Не удалось подключиться к серверу</p>
+          {isReconnecting && (
+            <p className="party-view-no-connection-hint">Проверка соединения...</p>
+          )}
+          <button
+            className="action-button party-view-no-connection-retry"
+            onClick={() => void handleManualReconnect()}
+            disabled={isReconnecting}
+            type="button"
+          >
+            {isReconnecting ? 'Проверка...' : 'Проверить сейчас'}
+          </button>
+          {lastManualCheckFailed && !isReconnecting && (
+            <p className="party-view-no-connection-hint">Сервер недоступен</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const linkedParty = meta.linkedParty;
 
   return (
@@ -546,14 +741,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <span className="party-view-linked-banner-text">
             Привязано к вечеринке: <strong>/{linkedParty.shortCode}</strong>
           </span>
-          <a
-            href={linkedParty.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="party-view-linked-banner-link"
-          >
-            Открыть в браузере
-          </a>
+          {linkedParty.url && (
+            <a
+              href={linkedParty.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="party-view-linked-banner-link"
+            >
+              Открыть в браузере
+            </a>
+          )}
         </div>
       )}
       <div className="party-view-header">
@@ -603,7 +800,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onPublish={handlePublish}
             isCreating={isCreating}
             isPublishing={isPublishing}
-            isAuthenticated={isAuthenticated()}
+            isAuthenticated={isAuth}
             linkedParty={meta.linkedParty}
             serverError={serverError}
             isCheckingParty={isCheckingParty}

@@ -9,6 +9,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { DemoPlayer } from '@shared/components';
 import { ipcService, projectService } from '@shared/services';
+import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
   LayoutPreset,
@@ -69,6 +70,9 @@ export const AppHeader: React.FC = () => {
       });
 
       if (path) {
+        const linkedPartyForFile = meta.linkedParty
+          ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
+          : undefined;
         const projectFile = projectService.serializeProject({
           name,
           items,
@@ -76,7 +80,7 @@ export const AppHeader: React.FC = () => {
           trackSettings,
           groupSettings,
           sessionState,
-          linkedParty: meta.linkedParty ?? undefined,
+          linkedParty: linkedPartyForFile,
         });
         await projectService.saveProject(path, projectFile);
         setFilePath(path);
@@ -105,6 +109,9 @@ export const AppHeader: React.FC = () => {
     try {
       // Если есть сохранённый путь - быстрое сохранение
       if (meta.filePath) {
+        const linkedPartyForFile = meta.linkedParty
+          ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
+          : undefined;
         const projectFile = projectService.serializeProject({
           name,
           items,
@@ -112,7 +119,7 @@ export const AppHeader: React.FC = () => {
           trackSettings,
           groupSettings,
           sessionState,
-          linkedParty: meta.linkedParty ?? undefined,
+          linkedParty: linkedPartyForFile,
         });
         await projectService.saveProject(meta.filePath, projectFile);
         resetDirty();
@@ -148,13 +155,31 @@ export const AppHeader: React.FC = () => {
       if (path) {
         const projectFile = await projectService.loadProject(path);
         const projectData = projectService.deserializeProject(projectFile);
+        const linkedPartyFromFile = projectFile.linkedParty
+          ? { id: projectFile.linkedParty.id, shortCode: projectFile.linkedParty.shortCode }
+          : null;
         loadProject({
           ...projectData,
           filePath: path,
-          linkedParty: projectFile.linkedParty ?? null,
+          linkedParty: linkedPartyFromFile,
         });
         setLastOpenedPlaylist(path);
         addNotification({ type: 'success', message: 'Проект загружен' });
+
+        if (linkedPartyFromFile?.shortCode) {
+          partyService
+            .getPartyUrl(linkedPartyFromFile.shortCode)
+            .then((url) => {
+              useProjectStore.getState().setLinkedParty({
+                id: linkedPartyFromFile.id,
+                shortCode: linkedPartyFromFile.shortCode,
+                url,
+              });
+            })
+            .catch(() => {
+              // Server unreachable — keep linkedParty without url
+            });
+        }
       }
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка загрузки: ${(error as Error).message}` });

@@ -8,7 +8,6 @@ export { useUIStore } from './uiStore';
 export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext } from './uiStore';
 export { usePlayerAudioStore } from './playerAudioStore';
 export type { PlayerAudioStatus } from './playerAudioStore';
-export { usePartyStore } from './partyStore';
 export { useAuthStore } from './authStore';
 export {
   useProjectStore,

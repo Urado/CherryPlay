@@ -9,6 +9,7 @@ import {
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
   isProjectGroup,
+  LinkedParty,
   ProjectGroup,
   ProjectGroupSettings,
   ProjectItem,
@@ -53,6 +54,8 @@ import {
 } from './projectStoreCore';
 import { registerExternalApplyHandler, registerProjectStore } from './projectStoreFactory';
 
+type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
+
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
 
 interface ProjectState {
@@ -83,10 +86,10 @@ interface ProjectState {
     groupSettings: Map<string, ProjectGroupSettings>;
     sessionState?: ProjectSessionState;
     filePath?: string;
-    linkedParty?: import('@core/types/project').LinkedParty | null;
+    linkedParty?: LinkedParty | null;
   }) => void;
   setFilePath: (path: string | null) => void;
-  setLinkedParty: (linkedParty: import('@core/types/project').LinkedParty | null) => void;
+  setLinkedParty: (linkedParty: LinkedParty | null) => void;
   markAsDirty: () => void;
   resetDirty: () => void;
 
@@ -135,6 +138,7 @@ interface ProjectState {
   startSession: () => void;
   resetSession: () => void;
   markTrackAsPlayed: (trackId: string) => void;
+  markTracksAsPlayed: (trackIds: string[]) => void;
   setCurrentTrack: (trackId: string | null) => void;
   isTrackPlayed: (trackId: string) => boolean;
   toggleTrackDisabled: (trackId: string) => void;
@@ -972,6 +976,22 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         get().markAsDirty();
       },
 
+      markTracksAsPlayed: (trackIds) => {
+        if (trackIds.length === 0) return;
+        set((state) => {
+          const existing = new Set(state.sessionState.playedTrackIds);
+          const toAdd = trackIds.filter((id) => !existing.has(id));
+          if (toAdd.length === 0) return state;
+          return {
+            sessionState: {
+              ...state.sessionState,
+              playedTrackIds: [...state.sessionState.playedTrackIds, ...toAdd],
+            },
+          };
+        });
+        get().markAsDirty();
+      },
+
       setCurrentTrack: (trackId) => {
         set((state) => ({
           sessionState: {
@@ -1065,6 +1085,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           filePath: state.meta.filePath,
           isDirty: state.meta.isDirty,
           lastSavedAt: state.meta.lastSavedAt,
+          linkedParty: state.meta.linkedParty
+            ? { id: state.meta.linkedParty.id, shortCode: state.meta.linkedParty.shortCode }
+            : null,
         },
       }),
       merge: (persistedState: unknown, currentState: ProjectState) => {
@@ -1076,10 +1099,27 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
               trackSettings: Array<[string, ProjectTrackSettings]>;
               groupSettings: Array<[string, ProjectGroupSettings]>;
               sessionState: ProjectSessionState;
-              meta: ProjectMeta;
+              meta: Omit<ProjectMeta, 'linkedParty'> & {
+                linkedParty: PersistedLinkedParty | null;
+              };
             }>
           | null
           | undefined;
+
+        const persistedMeta = state?.meta;
+        const restoredMeta: ProjectMeta = persistedMeta
+          ? {
+              filePath: persistedMeta.filePath ?? null,
+              isDirty: false,
+              lastSavedAt: persistedMeta.lastSavedAt ?? null,
+              linkedParty: persistedMeta.linkedParty
+                ? {
+                    id: persistedMeta.linkedParty.id,
+                    shortCode: persistedMeta.linkedParty.shortCode,
+                  }
+                : null,
+            }
+          : currentState.meta;
 
         return {
           ...currentState,
@@ -1089,7 +1129,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           trackSettings: new Map(state?.trackSettings ?? []),
           groupSettings: new Map(state?.groupSettings ?? []),
           sessionState: state?.sessionState ?? currentState.sessionState,
-          meta: state?.meta ?? currentState.meta,
+          meta: restoredMeta,
           selectedItemIds: new Set<string>(),
         };
       },

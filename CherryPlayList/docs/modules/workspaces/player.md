@@ -76,12 +76,68 @@ Workspace для автоматического последовательног
 
 Подробнее о системе предпрослушивания см. модуль [Demo Player](../systems/demo-player.md).
 
+### Восстановление сессии после перезапуска
+
+При перезапуске приложения Player автоматически восстанавливает состояние последней сессии:
+
+- Если `sessionState.mode === 'session'` и `currentTrackId` установлен, хук `useSessionRecovery` (`src/workspaces/player/hooks/useSessionRecovery.ts`) при монтировании `PlayerViewContainer` загружает текущий трек в `playerAudioStore` в состоянии **paused** (позиция 0).
+- Восстановление происходит однократно: `useRef`-флаг предотвращает повторную загрузку при перемонтировании компонента (например, при смене layout) или двойном срабатывании эффекта в React Strict Mode.
+- Диалог не отображается; автовоспроизведение не запускается — пользователь нажимает Play вручную.
+- Если аудиофайл недоступен, `playerAudioStore.error` устанавливается автоматически, кнопка Play отображает красную иконку ошибки (`ErrorOutlineIcon`); кнопка Next остаётся функциональной.
+- Если вечеринка привязана и SignalR подключается, `sendFullStateUpdate` вызывается в штатном порядке (существующее поведение `PlayerViewContainer`).
+
+### Переход к треку (Jump to Track)
+
+В режиме активной сессии каждая строка трека (кроме текущего активного) содержит кнопку-меню (⋮) с действиями над треком. Сейчас доступно одно действие: «Перейти к этому треку».
+
+Хук `useJumpToTrack` (`src/workspaces/player/hooks/useJumpToTrack.ts`) реализует следующую логику при вызове `jumpToTrack(targetTrackId)`:
+
+1. Все треки, стоящие перед целевым (по порядку `getAllTracksInOrder()`), помечаются как проигранные.
+2. Если целевой трек или его родительская группа отключены — они включаются.
+3. `currentTrackId` в `sessionState` обновляется на целевой трек.
+4. Трек загружается в `playerAudioStore` в состоянии paused (позиция 0).
+
+Кнопка не отображается в режиме подготовки (`preparation`), для групп и для текущего активного трека.
+
+### Меню действий трека (`TrackActionsDropdown`)
+
+Компонент `TrackActionsDropdown` (`src/workspaces/player/TrackActionsDropdown.tsx`) — портальный выпадающий список действий над конкретным треком. Открывается по нажатию кнопки ⋮ (`MoreVertIcon`) в строке трека.
+
+**Props:**
+
+| Prop | Тип | Описание |
+|---|---|---|
+| `trackId` | `string` | ID трека, над которым выполняется действие |
+| `anchorRect` | `DOMRect` | Позиция кнопки-якоря для позиционирования |
+| `onClose` | `() => void` | Закрыть дропдаун |
+| `onJumpToTrack` | `(trackId: string) => Promise<void>` (optional) | Колбэк перехода к треку |
+
+Дропдаун закрывается по клику вне него или по нажатию `Escape`. Позиционируется слева от кнопки (или справа, если не хватает места).
+
+**Как добавить новое действие:**
+
+1. Добавить новый опциональный prop в `TrackActionsDropdownProps` (например, `onMarkAsPlayed?: (trackId: string) => void`).
+2. Добавить новый `<li>` в список внутри компонента, условно рендеря его только при наличии prop.
+3. Передать новый prop из `PlayerTracksList` в `<TrackActionsDropdown>`.
+
+### Prop `onTrackActions` в `ProjectItemRow`
+
+`ProjectItemRow` принимает опциональный prop:
+
+```ts
+onTrackActions?: (itemId: string, anchorRect: DOMRect) => void;
+```
+
+Когда prop передан, в строке трека (не группы) появляется кнопка ⋮. При клике вызывается `onTrackActions(itemId, buttonRect)`, где `buttonRect` — координаты кнопки для позиционирования дропдауна.
+
+Это **точка расширения** для будущих действий над треком: чтобы добавить новое действие, достаточно расширить `TrackActionsDropdown` новым prop и передать его через `PlayerTracksList`, не меняя `ProjectItemRow`.
+
 ### Интеграция со Streaming System
 
 Player может опционально транслировать состояние сессии зрителям вечеринки через  
 [Streaming System](../systems/streaming.md):
 
-- при наличии созданной вечеринки в `partyStore` и активного подключения к SignalR:
+- при наличии привязанной вечеринки в `projectStore.meta.linkedParty` и активного подключения к SignalR:
   - `PlayerViewContainer` подключается к серверу через `signalRService`;
   - при старте сессии вызываются методы `startSession`, `startPositionUpdates` и `sendFullStateUpdate`;
   - `signalRService` подписывается на изменения `projectStore` и `playerAudioStore` и отправляет дельта‑обновления на сервер.

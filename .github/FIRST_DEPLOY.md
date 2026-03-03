@@ -77,7 +77,7 @@ docker compose -f docker-compose.prod.yml ps
 Проверьте доступность:
 
 - Сайт: `http://<DEPLOY_HOST>` (или по домену, если DNS уже указывает на сервер)
-- API: `http://<DEPLOY_HOST>:5000/health`
+- API: `http://<DEPLOY_HOST>:5000/api/health`
 
 Примечание по безопасности: в `docker-compose.prod.yml` pgAdmin по умолчанию публикуется только на `127.0.0.1:5050` (наружу не открыт). Для доступа используйте SSH-туннель с вашего компьютера на сервер.
 

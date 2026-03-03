@@ -12,6 +12,7 @@ import { DisplayItem } from '@shared/utils/playerItemsUtils';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import { formatTimeFromTimestamp } from '../dividerUtils';
+import { TrackActionsDropdown } from '../TrackActionsDropdown';
 import { TrackSettingsDropdown } from '../TrackSettingsDropdown';
 import {
   getItemState,
@@ -68,6 +69,7 @@ interface PlayerTracksListProps {
   startTrackPlayback: (track: Track) => Promise<void> | void;
   pausePlayback: () => void;
   serverTrackIds?: Set<string> | null;
+  jumpToTrack?: (trackId: string) => Promise<void>;
 }
 
 export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
@@ -102,6 +104,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   startTrackPlayback,
   pausePlayback,
   serverTrackIds = null,
+  jumpToTrack,
 }) => {
   const { getGroupSettings, getTrackSettings } = useProjectStore();
 
@@ -120,6 +123,13 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   } | null>(null);
 
   const closeTrackSettingsDropdown = useCallback(() => setTrackSettingsDropdown(null), []);
+
+  const [trackActionsDropdown, setTrackActionsDropdown] = useState<{
+    trackId: string;
+    anchorRect: DOMRect;
+  } | null>(null);
+
+  const closeTrackActionsDropdown = useCallback(() => setTrackActionsDropdown(null), []);
 
   const { handleToggleSelect } = useSelectionWithModifiers({
     toggleSelection: toggleItemSelection,
@@ -178,6 +188,15 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
           trackId={trackSettingsDropdown.trackId}
           anchorRect={trackSettingsDropdown.anchorRect}
           onClose={closeTrackSettingsDropdown}
+        />
+      )}
+      {trackActionsDropdown && (
+        <TrackActionsDropdown
+          key={trackActionsDropdown.trackId}
+          trackId={trackActionsDropdown.trackId}
+          anchorRect={trackActionsDropdown.anchorRect}
+          onClose={closeTrackActionsDropdown}
+          onJumpToTrack={!isPreparationMode && jumpToTrack ? jumpToTrack : undefined}
         />
       )}
       <ItemList
@@ -303,6 +322,13 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 onRenameGroup={setGroupName}
                 onUngroupGroup={handleUngroupGroup}
                 settingsButton={renderSettingsButton(item, isGroup)}
+                onTrackActions={
+                  !isGroup
+                    ? (itemId, rect) =>
+                        setTrackActionsDropdown({ trackId: itemId, anchorRect: rect })
+                    : undefined
+                }
+                trackActionsDisabled={!jumpToTrack || item.id === activePlayerTrackId}
               />
               {showDivider && track && (
                 <div className="playlist-hour-divider">

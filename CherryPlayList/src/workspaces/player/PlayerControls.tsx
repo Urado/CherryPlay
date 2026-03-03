@@ -1,3 +1,4 @@
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -16,6 +17,7 @@ interface PlayerControlsProps {
 export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   const mode = useProjectStore((state) => state.sessionState.mode);
   const isSessionMode = mode === 'session';
+  const sessionCurrentTrackId = useProjectStore((state) => state.sessionState.currentTrackId);
 
   const {
     currentTrack,
@@ -33,8 +35,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
 
   const isPlaying = status === 'playing';
   const isDisabled = !isSessionMode || !currentTrack;
+  const isNextDisabled = !isSessionMode || !onNext;
   const safePosition = isDisabled ? 0 : position;
   const resolvedDuration = duration || currentTrack?.duration || 0;
+  // Show error if there's a loaded track OR if we're in session mode with an expected track
+  // (handles the case where loadTrack fails before currentTrack is set in the audio store)
+  const hasError =
+    error !== null && (currentTrack !== null || (isSessionMode && sessionCurrentTrackId !== null));
 
   const handleToggle = useCallback(async () => {
     if (isDisabled) {
@@ -60,11 +67,11 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   }, [isDisabled, stop]);
 
   const handleNext = useCallback(() => {
-    if (isDisabled || !onNext) {
+    if (isNextDisabled || !onNext) {
       return;
     }
     onNext();
-  }, [isDisabled, onNext]);
+  }, [isNextDisabled, onNext]);
 
   const handleSeek = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,12 +97,21 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
       <div className="player-controls__buttons">
         <button
           type="button"
-          className="player-controls__button player-controls__button--play"
+          className={`player-controls__button player-controls__button--play${hasError ? ' player-controls__button--error' : ''}`}
           onClick={handleToggle}
           disabled={isDisabled}
-          title={isPlaying ? 'Пауза' : 'Воспроизвести'}
+          title={
+            hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
+          }
+          style={hasError ? { color: 'var(--color-error, #f44336)' } : undefined}
         >
-          {isPlaying ? <PauseIcon fontSize="medium" /> : <PlayArrowIcon fontSize="medium" />}
+          {hasError ? (
+            <ErrorOutlineIcon fontSize="medium" />
+          ) : isPlaying ? (
+            <PauseIcon fontSize="medium" />
+          ) : (
+            <PlayArrowIcon fontSize="medium" />
+          )}
         </button>
         <button
           type="button"
@@ -110,7 +126,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           type="button"
           className="player-controls__button player-controls__button--next"
           onClick={handleNext}
-          disabled={isDisabled}
+          disabled={isNextDisabled}
           title="Следующий"
         >
           <SkipNextIcon fontSize="medium" />

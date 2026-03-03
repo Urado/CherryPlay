@@ -1,4 +1,5 @@
 import FolderIcon from '@mui/icons-material/Folder';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 import { ProjectItem, isProjectGroup } from '@core/types/project';
@@ -113,6 +114,19 @@ export interface ProjectItemRowProps {
   onUngroupGroup?: (groupId: string) => void;
   /** Called when settings button is clicked */
   onOpenSettings?: (itemId: string) => void;
+  /**
+   * Called when the track actions menu button (⋮) is clicked.
+   * Provides the anchor DOMRect for dropdown positioning.
+   * The button is always visible for tracks in player modes, but disabled when this is not provided.
+   * This is the extension point for future per-track actions.
+   */
+  onTrackActions?: (itemId: string, anchorRect: DOMRect) => void;
+  /**
+   * When true, the track actions button (⋮) is rendered but disabled.
+   * Use this when the button should always occupy space but no actions are available
+   * (e.g. preparation mode, or the track is currently active).
+   */
+  trackActionsDisabled?: boolean;
 
   // Custom content
   /** Custom settings button (for player modes) */
@@ -158,6 +172,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   onRenameGroup,
   onUngroupGroup,
   onOpenSettings,
+  onTrackActions,
+  trackActionsDisabled = false,
   settingsButton,
 }) => {
   const isGroup = isProjectGroup(item);
@@ -405,6 +421,27 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         {/* Disable button (for session mode) */}
         {showDisableButton && onToggleDisabled && (
           <ListRowCompound.DisableButton onToggle={handleToggleDisabled} />
+        )}
+
+        {/* Track actions menu button (⋮) — always visible for tracks in player modes.
+            Disabled when no actions are available (trackActionsDisabled=true or onTrackActions not provided).
+            Always occupies the same space so the layout stays stable. */}
+        {!isGroup && mode !== 'playlist' && (
+          <button
+            type="button"
+            className="playlist-item-settings playlist-item-actions"
+            aria-label="Действия с треком"
+            title={trackActionsDisabled || !onTrackActions ? undefined : 'Действия с треком'}
+            disabled={trackActionsDisabled || !onTrackActions}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!trackActionsDisabled && onTrackActions) {
+                onTrackActions(item.id, (e.currentTarget as HTMLElement).getBoundingClientRect());
+              }
+            }}
+          >
+            <MoreVertIcon style={{ fontSize: '18px' }} />
+          </button>
         )}
 
         {/* Delete button */}

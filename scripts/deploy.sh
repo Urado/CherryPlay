@@ -162,12 +162,12 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     
     # Method 1: Check from host if curl/wget is available
     if command -v curl > /dev/null 2>&1; then
-        if curl -f -s http://localhost:5000/health > /dev/null 2>&1; then
+        if curl -f -s http://localhost:5000/api/health > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Server is healthy (checked via curl)${NC}"
             break
         fi
     elif command -v wget > /dev/null 2>&1; then
-        if wget -q --spider http://localhost:5000/health 2>/dev/null; then
+        if wget -q --spider http://localhost:5000/api/health 2>/dev/null; then
             echo -e "${GREEN}✅ Server is healthy (checked via wget)${NC}"
             break
         fi

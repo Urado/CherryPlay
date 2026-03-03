@@ -80,7 +80,7 @@ export interface ProjectSessionState {
 export interface LinkedParty {
   id: string;
   shortCode: string;
-  url: string;
+  url?: string;
 }
 
 /**
@@ -137,8 +137,8 @@ export interface ProjectFile {
   trackSettings: Record<string, ProjectTrackSettings>;
   groupSettings: Record<string, ProjectGroupSettings>;
   sessionState?: ProjectSessionState;
-  /** Привязка к вечеринке на сервере */
-  linkedParty?: LinkedParty;
+  /** Привязка к вечеринке на сервере (url не сохраняется, регенерируется при запуске) */
+  linkedParty?: Pick<LinkedParty, 'id' | 'shortCode'>;
 }
 
 // ============================================

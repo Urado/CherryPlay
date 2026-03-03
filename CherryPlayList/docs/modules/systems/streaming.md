@@ -36,12 +36,6 @@ Streaming System связывает:
     - обновления плейлиста вечеринки;
     - получения текущего состояния с сервера (при необходимости).
 
-- **`partyStore`** (`src/shared/stores/partyStore.ts`)
-  - Локальное состояние активной вечеринки:
-    - `createdParty` (id, shortCode, url),
-    - `isStreaming` (флаг трансляции).
-  - Persist между сессиями.
-
 - **`PlayerViewContainer`** (`src/workspaces/player/components/PlayerViewContainer.tsx`)
   - Интеграция Player workspace со Streaming:
     - подключение к SignalR при наличии созданной вечеринки;
@@ -62,7 +56,7 @@ Streaming System связывает:
    - `partyId` — идентификатор вечеринки на сервере;
    - `shortCode` — короткий код для публичного URL;
    - `url` — полный URL страницы для зрителей.
-4. Эти данные записываются в `partyStore.createdParty`.
+4. `{ id, shortCode }` сохраняются в `projectStore.meta.linkedParty`; `url` не персистируется и регенерируется асинхронно через `partyService.getPartyUrl` при каждом запуске приложения или загрузке файла.
 
 Подробнее см. модуль [Party](../workspaces/party.md).
 
@@ -70,7 +64,7 @@ Streaming System связывает:
 
 Когда есть созданная вечеринка:
 
-1. `PlayerViewContainer` отслеживает `partyStore.createdParty` и режим плеера.
+1. `PlayerViewContainer` отслеживает `projectStore.meta.linkedParty` и режим плеера.
 2. При наличии вечеринки вызывается:
    - `signalRService.connect(token?)` — создание подключения;
    - `signalRService.joinPartyAsOrganizer(partyId)` — присоединение организатора к группе вечеринки;
@@ -110,7 +104,7 @@ Streaming System связывает:
 
 - **Party workspace**:
   - Отвечает за создание и конфигурацию вечеринки.
-  - Сохраняет `partyId`/`shortCode`/`url` в `partyStore`.
+  - Сохраняет `{ id, shortCode }` в `projectStore.meta.linkedParty`; `url` регенерируется при загрузке.
   - Предоставляет организатору URL для зрителей.
   - Подробнее: [Party](../workspaces/party.md).
 

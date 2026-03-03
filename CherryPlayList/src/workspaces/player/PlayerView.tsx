@@ -79,6 +79,7 @@ interface PlayerViewProps {
   onNext?: () => void;
   connectionState: signalR.HubConnectionState | null;
   serverTrackIds?: Set<string> | null;
+  jumpToTrack?: (trackId: string) => Promise<void>;
 }
 
 /**
@@ -136,6 +137,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   onNext,
   connectionState,
   serverTrackIds = null,
+  jumpToTrack,
 }) => {
   return (
     <div className="playlist-view player-view">
@@ -193,6 +195,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         startTrackPlayback={startTrackPlayback}
         pausePlayback={pausePlayback}
         serverTrackIds={serverTrackIds}
+        jumpToTrack={jumpToTrack}
       />
 
       <PlayerControls onNext={onNext} />
