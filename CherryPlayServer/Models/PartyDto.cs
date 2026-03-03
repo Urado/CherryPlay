@@ -12,6 +12,7 @@ public record PartyDto(
     string CreatedAt,
     bool HasActiveSession,
     string? EventDateTime = null,
+    string? EventEndDateTime = null,
     bool IsListedInCatalog = false,
     string? Description = null,
     string? Place = null,

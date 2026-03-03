@@ -12,6 +12,7 @@ public class PartyEf
     public string? Place { get; set; }
     public string? City { get; set; }
     public DateTime? EventDateTime { get; set; }
+    public DateTime? EventEndDateTime { get; set; }
     public string? Schedule { get; set; }
     public string? TimeZone { get; set; }
     public string PartyThemeId { get; set; } = string.Empty;

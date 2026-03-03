@@ -19,6 +19,7 @@ public record PublicPartyDto(
     string? Place = null,
     string? City = null,
     string? EventDateTime = null,
+    string? EventEndDateTime = null,
     string? Schedule = null,
     string? TimeZone = null,
     string? ShortDescription = null,

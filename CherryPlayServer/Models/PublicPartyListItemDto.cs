@@ -14,6 +14,7 @@ public record PublicPartyListItemDto(
     int TotalTracks,
     int TotalDuration,
     string? EventDateTime = null,
+    string? EventEndDateTime = null,
     string? TimeZone = null,
     string? City = null,
     string? ShortDescription = null,

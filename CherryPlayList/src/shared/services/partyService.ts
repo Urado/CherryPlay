@@ -34,6 +34,7 @@ export interface CreatePartyDto {
     totalTracks: number;
   };
   eventDateTime?: string;
+  eventEndDateTime?: string;
   description?: string;
   place?: string;
   city?: string;
@@ -56,11 +57,32 @@ export interface PartyDto {
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   description?: string;
   place?: string;
   city?: string;
   schedule?: string;
   timeZone?: string;
+  shortDescription?: string;
+  externalLinkUrl?: string;
+  externalLinkText?: string;
+  danceTags?: string[];
+}
+
+export interface UpdatePartyDto {
+  name?: string;
+  title?: string;
+  subtitle?: string;
+  partyThemeId?: string;
+  customizationSettings?: Record<string, string | number>;
+  eventDateTime?: string | null;
+  eventEndDateTime?: string | null;
+  description?: string;
+  place?: string;
+  city?: string;
+  schedule?: string;
+  timeZone?: string;
+  isListedInCatalog?: boolean;
   shortDescription?: string;
   externalLinkUrl?: string;
   externalLinkText?: string;
@@ -161,7 +183,7 @@ class PartyService {
     }
   }
 
-  async updateParty(partyId: string, data: Partial<CreatePartyDto>): Promise<void> {
+  async updateParty(partyId: string, data: UpdatePartyDto): Promise<void> {
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/${partyId}`, {
       method: 'PUT',

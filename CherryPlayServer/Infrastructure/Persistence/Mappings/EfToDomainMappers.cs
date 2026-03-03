@@ -43,6 +43,7 @@ public static class EfToDomainMappers
             Place = ef.Place,
             City = ef.City,
             EventDateTime = ef.EventDateTime,
+            EventEndDateTime = ef.EventEndDateTime,
             Schedule = ef.Schedule,
             TimeZone = ef.TimeZone,
             PartyThemeId = PartyThemeIdExtensions.ParsePartyThemeIdOrDefault(ef.PartyThemeId),

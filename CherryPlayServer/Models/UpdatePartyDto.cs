@@ -22,6 +22,8 @@ public record UpdatePartyDto
 
     public DateTime? EventDateTime { get; init; }
 
+    public DateTime? EventEndDateTime { get; init; }
+
     public Dictionary<string, object>? CustomizationSettings { get; init; }
 
     public bool? IsListedInCatalog { get; init; }

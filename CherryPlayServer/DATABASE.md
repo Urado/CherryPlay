@@ -71,7 +71,8 @@ _Связь с учётной записью: email+пароль (таблица
 | `Description`           | text      | NULL                           | Описание вечеринки (для страницы `/info`).                     |
 | `Place`                 | string    | NULL                           | Место проведения.                                              |
 | `City`                  | string    | NULL                           | Город.                                                         |
-| `EventDateTime`         | datetime  | NULL                           | Дата и время мероприятия.                                      |
+| `EventDateTime`         | datetime  | NULL                           | Дата и время начала мероприятия.                               |
+| `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                            |
 | `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                 |
 | `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор (cyberpunk, sakura, art-deco, basic). |
 | `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).              |
@@ -85,6 +86,8 @@ _Связь с учётной записью: email+пароль (таблица
 | `DanceTagsJson`         | text/JSON | NULL                           | Массив тегов танцев (JSON), макс. 20 элементов.                |
 
 Индексы: `ShortCode` (уникальный), `OrganizerId`, `IsListedInCatalog` (для выборки каталога).
+
+Колонки `EventDateTime` и `EventEndDateTime` обе допускают `NULL` и используются для отображения времени мероприятия в публичном каталоге и карточках CherryPlayWeb: начало и (опционально) конец попадают в публичные DTO (`PublicPartyDto`, `PublicPartyListItemDto`) как `eventDateTime`/`eventEndDateTime` (см. [CONTRACTS.md](../CONTRACTS.md)). Отсутствующее значение конца трактуется как «конец не задан» и не ломает существующие данные.
 
 ---
 

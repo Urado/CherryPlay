@@ -27,6 +27,8 @@ public record CreatePartyDto
 
     public DateTime? EventDateTime { get; init; }
 
+    public DateTime? EventEndDateTime { get; init; }
+
     public bool IsListedInCatalog { get; init; }
 
     [StringLength(2000)]

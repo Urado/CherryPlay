@@ -47,6 +47,49 @@ interface PartyFilters {
   city: string;
 }
 
+const formatTimeInTimeZone = (dateTime: string, timeZone: string): string => {
+  const date = new Date(dateTime);
+
+  return date.toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone,
+  });
+};
+
+const getPartyTimeRange = (party: PublicPartyListItemDto): string | null => {
+  if (!party.eventDateTime) {
+    return null;
+  }
+
+  const timeZone = party.timeZone ?? getDefaultTimeZone();
+  const startTime = formatTimeInTimeZone(party.eventDateTime, timeZone);
+
+  if (party.eventEndDateTime) {
+    const endTime = formatTimeInTimeZone(party.eventEndDateTime, timeZone);
+    return `с ${startTime} до ${endTime}`;
+  }
+
+  return `с ${startTime}`;
+};
+
+const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => {
+  if (!party.eventDateTime) {
+    return null;
+  }
+
+  const timeZone = party.timeZone ?? getDefaultTimeZone();
+  const date = formatDateInTimeZone(party.eventDateTime, timeZone);
+  const timeRange = getPartyTimeRange(party);
+
+  if (!timeRange) {
+    return date;
+  }
+
+  return `${date}, ${timeRange}`;
+};
+
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   void partyInfoPageEnabled;
@@ -352,16 +395,16 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                       <span className="party-list-card-info-value">{party.city}</span>
                     </div>
                   )}
-                  {party.eventDateTime && (
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-value">
-                        {formatDateInTimeZone(
-                          party.eventDateTime,
-                          party.timeZone ?? getDefaultTimeZone(),
-                        )}
-                      </span>
-                    </div>
-                  )}
+                  {(() => {
+                    const dateTimeRange = getPartyDateTimeRange(party);
+                    if (!dateTimeRange) return null;
+
+                    return (
+                      <div className="party-list-card-info-item">
+                        <span className="party-list-card-info-value">{dateTimeRange}</span>
+                      </div>
+                    );
+                  })()}
                   {party.danceTags && party.danceTags.length > 0 && (
                     <div className="party-list-card-tags">
                       {party.danceTags.map((tag, index) => (

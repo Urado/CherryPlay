@@ -23,10 +23,7 @@
   font-size: 32px;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #00ff00 0%, #00ccff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .party-list-header-actions {

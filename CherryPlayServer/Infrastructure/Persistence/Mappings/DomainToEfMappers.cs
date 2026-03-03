@@ -69,6 +69,7 @@ public static class DomainToEfMappers
         ef.Place = domain.Place;
         ef.City = domain.City;
         ef.EventDateTime = EnsureUtc(domain.EventDateTime);
+        ef.EventEndDateTime = EnsureUtc(domain.EventEndDateTime);
         ef.Schedule = domain.Schedule;
         ef.TimeZone = domain.TimeZone;
         ef.PartyThemeId = domain.PartyThemeId.ToStringValue();
@@ -95,6 +96,7 @@ public static class DomainToEfMappers
             Place = domain.Place,
             City = domain.City,
             EventDateTime = EnsureUtc(domain.EventDateTime),
+            EventEndDateTime = EnsureUtc(domain.EventEndDateTime),
             Schedule = domain.Schedule,
             TimeZone = domain.TimeZone,
             PartyThemeId = domain.PartyThemeId.ToStringValue(),

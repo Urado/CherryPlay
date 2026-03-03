@@ -289,9 +289,10 @@ _Примечание:_ в текущей реализации веб может
 
 #### Дата/время и таймзона
 
-- **eventDateTime**: в API и БД всегда строка в формате **ISO 8601 в UTC**. Клиент при отображении переводит в местное время выбранной таймзоны; при сохранении передаёт в API уже сконвертированное в UTC значение.
+- **eventDateTime**: в API и БД строка в формате **ISO 8601 в UTC**. Клиент при отображении переводит в местное время выбранной таймзоны; при сохранении передаёт в API уже сконвертированное в UTC значение. Может отсутствовать (`null`/`undefined`), если время начала ещё не задано.
+- **eventEndDateTime**: опциональное время окончания мероприятия в формате **ISO 8601 в UTC**. При отсутствии (`null`/`undefined`) считается, что у вечеринки нет явного конца; клиенты (CherryPlayWeb, CherryPlayList) в этом случае показывают только начало или полностью скрывают строку интервала.
 - **timeZone**: строка — идентификатор **IANA** (например `Europe/Moscow`). Используется для интерпретации пользовательского ввода и отображения (местное время этой таймзоны).
-- Схема БД не меняется; миграции не требуются.
+- Схема БД расширена nullable‑колонкой `EventEndDateTime` в таблице `Party` (см. [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md)). Добавление поля выполнено как обратно совместимое: старые записи без конца продолжают корректно сериализоваться с `eventEndDateTime = null`/отсутствующим полем.
 
 **PublicPartyDto** (ответ публичного API; по плану — метаданные + флаг «в каталоге»)
 
@@ -301,6 +302,8 @@ _Примечание:_ в текущей реализации веб может
 | `name`                  | `string`                                        | Название.                                                  |
 | `title`                 | `string \| undefined`                           | Заголовок на экране; если пусто — отображается `name`.     |
 | `subtitle`              | `string \| undefined`                           | Подзаголовок под заголовком.                               |
+| `eventDateTime`         | `string \| undefined`                           | Время начала мероприятия в UTC, ISO 8601.                  |
+| `eventEndDateTime`      | `string \| undefined`                           | Опциональное время окончания мероприятия в UTC, ISO 8601.  |
 | `partyThemeId`          | `PartyThemeId`                                  | PartyTheme идентификатор (см. GLOSSARY.md).                |
 | `customizationSettings` | `Record<string, string \| number> \| undefined` | Оформление.                                                |
 | `hasActiveSession`      | `boolean`                                       | Идёт ли сессия.                                            |
@@ -325,7 +328,8 @@ _Примечание:_ в текущей реализации веб может
 | `createdAt`          | `string`                   | ISO 8601.                                                           |
 | `totalTracks`        | `number`                   | Количество треков.                                                  |
 | `totalDuration`      | `number`                   | Длительность, сек.                                                  |
-| `eventDateTime`      | `string \| undefined`      | UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventDateTime`      | `string \| undefined`      | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventEndDateTime`   | `string \| undefined`      | Опциональное время окончания мероприятия в UTC, ISO 8601.          |
 | `timeZone`           | `string \| undefined`      | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).          |
 | `city`               | `string \| undefined`      | Город.                                                              |
 | `shortDescription`   | `string \| undefined`      | Краткое описание для карточки (макс. 200 символов).                 |
@@ -345,7 +349,8 @@ _Примечание:_ в текущей реализации веб может
 | `partyThemeId`       | `PartyThemeId`             | PartyTheme идентификатор (см. GLOSSARY.md).                         |
 | `createdAt`          | `string`                   | ISO 8601.                                                           |
 | `hasActiveSession`   | `boolean`                  | Активна ли сессия.                                                  |
-| `eventDateTime`      | `string \| undefined`      | UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventDateTime`      | `string \| undefined`      | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventEndDateTime`   | `string \| undefined`      | Опциональное время окончания мероприятия в UTC, ISO 8601.          |
 | `timeZone`           | `string \| undefined`      | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).          |
 | `isListedInCatalog`  | `boolean`                  | Включена ли в каталог.                                              |
 | `description`       | `string \| undefined`      | Описание для страницы `/info`.                                      |
@@ -367,7 +372,8 @@ _Примечание:_ в текущей реализации веб может
 | `partyThemeId`          | `PartyThemeId`                     | нет          | По умолчанию `cyberpunk`.                                                          |
 | `customizationSettings` | `Record<string, string \| number>` | нет          | Настройки темы.                                                                    |
 | `playlistData`          | `PartyPlaylistDto`                 | нет          | Начальный плейлист.                                                                |
-| `eventDateTime`         | `string` (ISO 8601, UTC)           | нет          | Дата/время мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventDateTime`         | `string` (ISO 8601, UTC)           | нет          | Дата/время начала мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventEndDateTime`      | `string` (ISO 8601, UTC)           | нет          | Опциональное время окончания мероприятия в UTC. Может быть опущено; при отсутствии считается, что конец явно не задан. |
 | `timeZone`              | `string` (IANA)                    | нет          | Часовой пояс (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                 |
 | `isListedInCatalog`     | `boolean`                          | нет          | По умолчанию `false` (unlisted).                                                   |
 | `description`           | `string`                           | нет          | Описание вечеринки (для страницы `/info`).                                         |
@@ -389,13 +395,14 @@ _Примечание:_ в текущей реализации веб может
 | `title`              | `string`        | Заголовок на экране.                                |
 | `subtitle`           | `string`        | Подзаголовок.                                       |
 | `partyThemeId`       | `PartyThemeId`  | PartyTheme идентификатор.                           |
-| `eventDateTime`      | `string`        | UTC, ISO 8601.                                      |
-| `timeZone`           | `string`        | IANA.                                                |
+| `eventDateTime`      | `string`        | Время начала мероприятия в UTC, ISO 8601.           |
+| `eventEndDateTime`   | `string`        | Опциональное время окончания мероприятия в UTC.     |
+| `timeZone`           | `string`        | IANA.                                               |
 | `customizationSettings` | `object`     | Настройки темы.                                     |
 | `isListedInCatalog`  | `boolean`       | Включена ли в каталог.                              |
 | `description`        | `string`        | Описание для страницы `/info`.                      |
 | `place`              | `string`        | Место проведения.                                   |
-| `city`               | `string`        | Город.                                               |
+| `city`               | `string`        | Город.                                              |
 | `schedule`           | `string`        | Расписание.                                         |
 | `shortDescription`   | `string`        | Краткое описание для карточки (макс. 200 символов). |
 | `externalLinkUrl`    | `string`        | URL внешней ссылки.                                 |

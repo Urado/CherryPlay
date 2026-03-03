@@ -33,6 +33,7 @@ export interface PublicPartyDto {
   place?: string;
   city?: string;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   schedule?: string;
   timeZone?: string;
 }
@@ -70,6 +71,7 @@ export interface PublicPartyListItemDto {
   totalTracks: number;
   totalDuration: number;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   timeZone?: string;
   city?: string;
   shortDescription?: string;
@@ -88,6 +90,7 @@ export interface PartyDto {
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   isListedInCatalog: boolean;
   description?: string;
   place?: string;
@@ -106,6 +109,7 @@ export interface CreatePartyDto {
   subtitle?: string;
   partyThemeId: string;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   isListedInCatalog?: boolean;
   description?: string;
   place?: string;
@@ -124,6 +128,7 @@ export interface UpdatePartyDto {
   subtitle?: string;
   partyThemeId?: string;
   eventDateTime?: string;
+  eventEndDateTime?: string;
   isListedInCatalog?: boolean;
   description?: string;
   place?: string;
