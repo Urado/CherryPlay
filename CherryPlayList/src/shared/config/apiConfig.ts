@@ -6,16 +6,30 @@ let cachedApiConfig: {
   apiUrl: string;
 } | null = null;
 
+/** Убирает завершающий слэш у base URL, чтобы не получать двойной слэш в путях */
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
+function buildSignalRUrl(serverUrl: string): string {
+  return `${normalizeBaseUrl(serverUrl)}/partyHub`;
+}
+
+function buildApiUrl(serverUrl: string): string {
+  return `${normalizeBaseUrl(serverUrl)}/api`;
+}
+
 async function getApiConfigAsync(): Promise<{
   serverUrl: string;
   signalRUrl: string;
   apiUrl: string;
 }> {
-  const serverUrl = await getServerUrl();
+  const raw = await getServerUrl();
+  const serverUrl = normalizeBaseUrl(raw);
   return {
     serverUrl,
-    signalRUrl: `${serverUrl}/partyHub`,
-    apiUrl: `${serverUrl}/api`,
+    signalRUrl: buildSignalRUrl(raw),
+    apiUrl: buildApiUrl(raw),
   };
 }
 
@@ -28,11 +42,12 @@ function getApiConfigSync(): {
     return cachedApiConfig;
   }
 
-  const serverUrl = getServerUrlSync();
+  const raw = getServerUrlSync();
+  const serverUrl = normalizeBaseUrl(raw);
   cachedApiConfig = {
     serverUrl,
-    signalRUrl: `${serverUrl}/partyHub`,
-    apiUrl: `${serverUrl}/api`,
+    signalRUrl: buildSignalRUrl(raw),
+    apiUrl: buildApiUrl(raw),
   };
 
   return cachedApiConfig;

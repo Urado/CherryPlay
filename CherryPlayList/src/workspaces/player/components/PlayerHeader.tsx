@@ -33,6 +33,7 @@ interface PlayerHeaderProps {
   onOpenGlobalSettings: () => void;
   onExportTracksToText: () => void;
   connectionState: signalR.HubConnectionState | null;
+  onReconnectClick?: () => void;
 }
 
 export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
@@ -55,6 +56,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   onOpenGlobalSettings,
   onExportTracksToText,
   connectionState,
+  onReconnectClick,
 }) => {
   const { enableStreaming } = useSettingsStore();
 
@@ -64,6 +66,9 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
     connectionState === signalR.HubConnectionState.Connecting ||
     connectionState === signalR.HubConnectionState.Reconnecting;
 
+  const isDisconnected = !isConnected && !isConnecting;
+  const canReconnect = isDisconnected && onReconnectClick;
+
   const getConnectionTooltip = () => {
     if (isConnected) {
       return 'Подключено к серверу';
@@ -71,11 +76,52 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
     if (isConnecting) {
       return 'Подключение...';
     }
+    if (canReconnect) {
+      return connectionErrorReason
+        ? `${connectionErrorReason} Нажмите для переподключения.`
+        : 'Нет соединения с сервером. Нажмите для переподключения.';
+    }
     if (connectionErrorReason) {
       return connectionErrorReason;
     }
     return 'Неизвестная ошибка';
   };
+
+  const connectionIndicator = (
+    <div
+      className={`player-connection-indicator ${
+        isConnected
+          ? 'player-connection-indicator--connected'
+          : isConnecting
+            ? 'player-connection-indicator--connecting'
+            : 'player-connection-indicator--disconnected'
+      } ${canReconnect ? 'player-connection-indicator--clickable' : ''}`}
+      title={getConnectionTooltip()}
+      role={canReconnect ? 'button' : undefined}
+      tabIndex={canReconnect ? 0 : undefined}
+      onClick={canReconnect ? onReconnectClick : undefined}
+      onKeyDown={
+        canReconnect
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onReconnectClick?.();
+              }
+            }
+          : undefined
+      }
+    >
+      <span
+        className={`player-connection-dot ${
+          isConnected
+            ? 'player-connection-dot--connected'
+            : isConnecting
+              ? 'player-connection-dot--connecting'
+              : 'player-connection-dot--disconnected'
+        }`}
+      />
+    </div>
+  );
 
   return (
     <div className="playlist-header-section">
@@ -87,28 +133,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           onChange={(e) => onNameChange(e.target.value)}
           placeholder="Player"
         />
-        {enableStreaming && (
-          <div
-            className={`player-connection-indicator ${
-              isConnected
-                ? 'player-connection-indicator--connected'
-                : isConnecting
-                  ? 'player-connection-indicator--connecting'
-                  : 'player-connection-indicator--disconnected'
-            }`}
-            title={getConnectionTooltip()}
-          >
-            <span
-              className={`player-connection-dot ${
-                isConnected
-                  ? 'player-connection-dot--connected'
-                  : isConnecting
-                    ? 'player-connection-dot--connecting'
-                    : 'player-connection-dot--disconnected'
-              }`}
-            />
-          </div>
-        )}
+        {enableStreaming && connectionIndicator}
         {hasSelectedItems && (
           <>
             <button

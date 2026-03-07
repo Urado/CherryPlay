@@ -78,6 +78,7 @@ interface PlayerViewProps {
   pausePlayback: () => void;
   onNext?: () => void;
   connectionState: signalR.HubConnectionState | null;
+  onReconnectClick?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
 }
@@ -136,6 +137,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   pausePlayback,
   onNext,
   connectionState,
+  onReconnectClick,
   serverTrackIds = null,
   jumpToTrack,
 }) => {
@@ -161,6 +163,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onOpenGlobalSettings={onOpenGlobalSettings}
         onExportTracksToText={onExportTracksToText}
         connectionState={connectionState}
+        onReconnectClick={onReconnectClick}
       />
 
       <PlayerTracksList

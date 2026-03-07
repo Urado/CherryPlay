@@ -301,6 +301,24 @@ class SignalRService {
   }
 
   /**
+   * Подписывается на событие сброса состояния воспроизведения (организатор нажал «Сбросить»)
+   */
+  onPlaybackStateReset(callback: (partyId: string) => void): void {
+    const eventName = 'PlaybackStateReset';
+    const wrappedCallback = (partyId: string) => {
+      logReceived(eventName, { partyId });
+      callback(partyId);
+    };
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
+    if (this.connection) {
+      this.connection.off(eventName);
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
+    }
+  }
+
+  /**
    * Подписывается на изменение статуса подключения организатора
    */
   onConnectionStatusChanged(callback: (partyId: string, isOnline: boolean) => void): void {

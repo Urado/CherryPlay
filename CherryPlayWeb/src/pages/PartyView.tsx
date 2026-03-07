@@ -5,7 +5,7 @@
 
 import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 import type { PlaybackState, PartyThemeId } from '@cherryplay/components';
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -18,6 +18,9 @@ import type { PlaybackStateDto, PlayerItemDto } from '../types/api';
 import { devLog, devWarn } from '../utils/logger';
 import { playbackStateFromDto } from '../utils/playbackState';
 import './PartyView.css';
+
+const DISCONNECT_FREEZE_MS = 60_000;
+const SESSION_END_GRACE_MS = 1500;
 
 function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
   for (const item of items) {
@@ -65,6 +68,29 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef(playlist);
+  const disconnectFreezeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionEndGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDisconnectFreezeActive, setIsDisconnectFreezeActive] = useState(false);
+
+  // Clear both timers (on unmount or when live stream returns); also exits freeze display
+  const clearSessionTimers = useCallback(() => {
+    if (disconnectFreezeTimerRef.current !== null) {
+      clearTimeout(disconnectFreezeTimerRef.current);
+      disconnectFreezeTimerRef.current = null;
+    }
+    if (sessionEndGraceTimerRef.current !== null) {
+      clearTimeout(sessionEndGraceTimerRef.current);
+      sessionEndGraceTimerRef.current = null;
+    }
+    setIsDisconnectFreezeActive(false);
+  }, []);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      clearSessionTimers();
+    };
+  }, [clearSessionTimers]);
 
   // Синхронизируем ref с state
   useEffect(() => {
@@ -86,6 +112,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
       devWarn('[PartyView] requestFullState skipped - SignalR not connected');
       return;
     }
+
+    clearSessionTimers();
 
     try {
       devLog('[PartyView] Requesting full state for shortCode:', shortCode);
@@ -112,7 +140,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         err instanceof Error ? err.message : err,
       );
     }
-  }, [shortCode, setPlaybackState, setIsSessionActive]);
+  }, [shortCode, clearSessionTimers, setPlaybackState, setIsSessionActive]);
 
   // Используем хук для управления SignalR подключением
   const signalR = useSignalR({
@@ -120,17 +148,22 @@ export const PartyView: React.FC<PartyViewProps> = ({
     autoConnect: false, // Подключаемся вручную в useEffect
     onSessionStarted: useCallback(
       (_partyId: string) => {
+        clearSessionTimers();
         setIsSessionActive(true);
         requestFullState();
       },
-      [setIsSessionActive, requestFullState],
+      [clearSessionTimers, setIsSessionActive, requestFullState],
     ),
     onSessionEnded: useCallback(
       (_partyId: string) => {
-        setIsSessionActive(false);
-        setPlaybackState(null);
+        clearSessionTimers();
+        sessionEndGraceTimerRef.current = setTimeout(() => {
+          sessionEndGraceTimerRef.current = null;
+          setPlaybackState(null);
+          setIsSessionActive(false);
+        }, SESSION_END_GRACE_MS);
       },
-      [setIsSessionActive, setPlaybackState],
+      [clearSessionTimers, setIsSessionActive, setPlaybackState],
     ),
     onPlaybackPositionUpdated: useCallback(
       (_partyId: string, trackId: string, position: number) => {
@@ -171,6 +204,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onFullStateUpdated: useCallback(
       (_partyId: string, state: PlaybackStateDto) => {
+        clearSessionTimers();
         const merged = playbackStateFromDto(state, playbackStateRef.current);
         setIsSessionActive(true);
 
@@ -195,7 +229,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           });
         }
       },
-      [setPlaybackState, setIsSessionActive],
+      [clearSessionTimers, setPlaybackState, setIsSessionActive],
     ),
     onStateChanged: useCallback(
       (_partyId: string) => {
@@ -218,8 +252,21 @@ export const PartyView: React.FC<PartyViewProps> = ({
       (_partyId: string, isOnline: boolean) => {
         devLog('[PartyView] Connection status changed:', _partyId, isOnline);
         if (!isOnline) {
+          if (sessionEndGraceTimerRef.current !== null) {
+            clearTimeout(sessionEndGraceTimerRef.current);
+            sessionEndGraceTimerRef.current = null;
+          }
           setIsSessionActive(false);
-          setPlaybackState(null);
+          setIsDisconnectFreezeActive(true);
+          if (disconnectFreezeTimerRef.current !== null) {
+            clearTimeout(disconnectFreezeTimerRef.current);
+            disconnectFreezeTimerRef.current = null;
+          }
+          disconnectFreezeTimerRef.current = setTimeout(() => {
+            disconnectFreezeTimerRef.current = null;
+            setPlaybackState(null);
+            setIsDisconnectFreezeActive(false);
+          }, DISCONNECT_FREEZE_MS);
         }
       },
       [setIsSessionActive, setPlaybackState],
@@ -238,15 +285,37 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const hasAttemptedConnectionRef = useRef(false);
   const prevConnectionStatusRef = useRef(signalR.connectionStatus);
 
-  // После реконнекта запрашиваем полное состояние
+  // После (первого) подключения или восстановления соединения запрашиваем полное состояние
   useEffect(() => {
     if (isDemo || !shortCode) return;
     const prev = prevConnectionStatusRef.current;
     prevConnectionStatusRef.current = signalR.connectionStatus;
-    if (prev === 'connecting' && signalR.connectionStatus === 'connected') {
+    const becameConnected =
+      signalR.connectionStatus === 'connected' &&
+      (prev === 'connecting' || prev === 'disconnected');
+    if (becameConnected) {
       requestFullState();
     }
   }, [signalR.connectionStatus, shortCode, isDemo, requestFullState]);
+
+  // Периодическая попытка переподключения раз в 30 с при отвале соединения
+  const RECONNECT_INTERVAL_MS = 30_000;
+  useEffect(() => {
+    if (isDemo || !shortCode || signalR.connectionStatus !== 'disconnected') {
+      return;
+    }
+    const id = setInterval(() => {
+      if (signalR.connectionStatus !== 'disconnected') return;
+      signalR.connect().catch((err) => {
+        console.warn(
+          '[PartyView] Periodic reconnect attempt failed:',
+          err instanceof Error ? err.message : err,
+        );
+      });
+    }, RECONNECT_INTERVAL_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- зависим только от status и connect, не от всего signalR
+  }, [isDemo, shortCode, signalR.connectionStatus, signalR.connect]);
 
   useEffect(() => {
     if (isDemo || !shortCode || loading) {
@@ -387,7 +456,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
           <PartyDisplay
             data={displayData}
             showPlayer={
-              !isDemo && !!shortCode && signalR.connectionStatus === 'connected' && isSessionActive
+              !isDemo &&
+              !!shortCode &&
+              ((signalR.connectionStatus === 'connected' && isSessionActive) ||
+                (isDisconnectFreezeActive && playbackState != null))
             }
           />
         </div>

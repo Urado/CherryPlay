@@ -139,7 +139,12 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
   const [connectionState, setConnectionState] = useState<signalR.HubConnectionState | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectToSignalRRef = useRef<(() => Promise<void>) | null>(null);
   const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
+
+  const handleReconnectClick = useCallback(() => {
+    connectToSignalRRef.current?.();
+  }, []);
 
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
@@ -240,10 +245,26 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       setCurrentTrack,
     });
 
-  const { handleStartSession, handleResetSession } = usePlayerSession({
+  const { handleStartSession, handleResetSession: handleResetSessionFromHook } = usePlayerSession({
     allTracks,
     isTrackActive,
   });
+
+  const handleResetSession = useCallback(async () => {
+    if (enableStreaming && linkedParty) {
+      try {
+        await signalRService.resetPlaybackState(linkedParty.id);
+      } catch (error) {
+        logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
+        addNotification({
+          type: 'error',
+          message: 'Не удалось сбросить состояние на сервере',
+          duration: 5000,
+        });
+      }
+    }
+    handleResetSessionFromHook();
+  }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
   useSessionRecovery();
 
@@ -448,6 +469,8 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       if (!linkedParty || !enableStreaming) {
         return;
       }
+
+      connectToSignalRRef.current = connectToSignalR;
 
       try {
         const exists = await partyService.checkPartyExists(linkedParty.id);
@@ -654,6 +677,7 @@ export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
       pausePlayback={pausePlayback}
       onNext={handleNext}
       connectionState={connectionState}
+      onReconnectClick={handleReconnectClick}
       serverTrackIds={serverTrackIds}
       jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
     />

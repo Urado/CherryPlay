@@ -11,7 +11,7 @@
 
 import * as signalR from '@microsoft/signalr';
 
-import { getApiConfig } from '../config/apiConfig';
+import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
 import { useAuthStore, usePlayerAudioStore, useProjectStore } from '../stores';
 import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
 import { convertPlaylistForApi } from '../utils/partyUtils';
@@ -190,6 +190,8 @@ class SignalRService {
         await this.cleanupConnection();
       }
 
+      // При каждом connect запрашиваем актуальный URL (важно для ручного реконнекта)
+      clearApiConfigCache();
       const config = await getApiConfig();
 
       console.log('[SignalR] Starting connection to:', config.signalRUrl);
@@ -583,6 +585,19 @@ class SignalRService {
     } catch (error) {
       console.error('[SignalR] Failed to end session:', error);
     }
+  }
+
+  /**
+   * Сбрасывает состояние воспроизведения на сервере (организатор).
+   * Сервер очищает состояние и рассылает PlaybackStateReset зрителям.
+   */
+  async resetPlaybackState(partyId: string): Promise<void> {
+    if (!this.isServiceConnected() || !this.connection) {
+      throw new Error('Нет подключения к серверу');
+    }
+
+    await this.invokeWithLogging('ResetPlaybackState', partyId);
+    console.log('[SignalR] Playback state reset');
   }
 
   /**

@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { ipcMain } from 'electron';
 
-import { copyFileWithRetry, ensureFolder, validatePath } from '../utils/fsHelpers.js';
+import { copyFileWithRetry, ensureFolder, safeFileName, validatePath } from '../utils/fsHelpers.js';
 
 /**
  * Формат файла .cherry (версия 2.0)
@@ -52,14 +52,73 @@ export interface ProjectFile {
 }
 
 /**
+ * Build a mapping from track ID to the path of groups (collections) it belongs to.
+ * The path contains group names from root to the deepest group that contains the track.
+ */
+function buildTrackCollectionFolderMap(projectFile: ProjectFile): Map<string, string | null> {
+  const itemsById = new Map<string, (ProjectFile['items'][number])>();
+
+  for (const item of projectFile.items) {
+    itemsById.set(item.id, item);
+  }
+
+  const trackToGroupPath = new Map<string, string[]>();
+
+  const visit = (itemId: string, groupPath: string[]): void => {
+    const item = itemsById.get(itemId);
+    if (!item) {
+      return;
+    }
+
+    if (item.type === 'track') {
+      // Only set the group path if we haven't seen this track yet.
+      if (!trackToGroupPath.has(item.id)) {
+        trackToGroupPath.set(item.id, groupPath);
+      }
+      return;
+    }
+
+    if (item.type === 'group' && Array.isArray(item.items)) {
+      const nextPath = [...groupPath, item.name];
+      for (const childId of item.items) {
+        visit(childId, nextPath);
+      }
+    }
+  };
+
+  for (const rootId of projectFile.rootItems) {
+    visit(rootId, []);
+  }
+
+  const result = new Map<string, string | null>();
+
+  for (const [trackId, groupPath] of trackToGroupPath.entries()) {
+    if (groupPath.length === 0) {
+      result.set(trackId, null);
+      continue;
+    }
+
+    const sanitizedSegments = groupPath.map((name, index) => {
+      const base = name && name.trim().length > 0 ? name.trim() : `Group${index + 1}`;
+      const sanitized = safeFileName(base);
+      return sanitized.length === 0 ? `Group${index + 1}` : sanitized;
+    });
+
+    result.set(trackId, sanitizedSegments.join(path.sep));
+  }
+
+  return result;
+}
+
+/**
  * Resolve a unique destination filename in the tracks folder.
  * If `tracks/filename.ext` already exists and is a different source file,
  * appends `_2`, `_3`, etc. until a free slot is found.
  */
-async function resolveUniqueDestPath(tracksDir: string, srcPath: string): Promise<string> {
+async function resolveUniqueDestPath(destDir: string, srcPath: string): Promise<string> {
   const ext = path.extname(srcPath);
   const baseName = path.basename(srcPath, ext);
-  let candidate = path.join(tracksDir, `${baseName}${ext}`);
+  let candidate = path.join(destDir, `${baseName}${ext}`);
 
   // If the candidate is the same file as the source, no conflict
   if (path.resolve(candidate) === path.resolve(srcPath)) {
@@ -71,7 +130,7 @@ async function resolveUniqueDestPath(tracksDir: string, srcPath: string): Promis
     try {
       await fs.access(candidate);
       // Different file occupies this name — try next suffix
-      candidate = path.join(tracksDir, `${baseName}_${suffix}${ext}`);
+      candidate = path.join(destDir, `${baseName}_${suffix}${ext}`);
       suffix++;
     } catch {
       // fs.access threw → file does not exist → slot is free
@@ -97,45 +156,104 @@ async function copyTracksForPortableMode(
 
   const trackItems = projectFile.items.filter((item) => item.type === 'track' && item.path);
   const total = trackItems.length;
+  const normalizedTracksDir = path.resolve(tracksDir);
+  const isWindows = process.platform === 'win32';
+  const trackCollectionFolders = buildTrackCollectionFolderMap(projectFile);
 
   if (total === 0) {
     sendProgress(0, 0, '');
-    return;
+  } else {
+    for (let i = 0; i < trackItems.length; i++) {
+      const item = trackItems[i];
+      const srcPath = item.path!;
+      const fileName = path.basename(srcPath);
+
+      const srcAbsolute = path.resolve(srcPath);
+      const normalizedSrcAbsolute = isWindows ? srcAbsolute.toLowerCase() : srcAbsolute;
+      const normalizedTracksRoot = isWindows
+        ? normalizedTracksDir.toLowerCase()
+        : normalizedTracksDir;
+      const inTracksDir =
+        normalizedSrcAbsolute === normalizedTracksRoot ||
+        normalizedSrcAbsolute.startsWith(normalizedTracksRoot + path.sep);
+
+      if (inTracksDir) {
+        // Already inside tracks/ (including subfolders) — rewrite path to relative form
+        const relativeFromTracks = path.relative(tracksDir, srcAbsolute);
+        const normalizedRelative = relativeFromTracks.split(path.sep).join('/');
+        item.path = `./tracks/${normalizedRelative}`;
+        sendProgress(i + 1, total, fileName);
+        continue;
+      }
+
+      // Check source accessibility; skip (don't fail) if missing
+      try {
+        await fs.access(srcPath);
+      } catch {
+        sendProgress(i + 1, total, fileName);
+        continue;
+      }
+
+      const collectionFolder = trackCollectionFolders.get(item.id) ?? null;
+      const destBaseDir = collectionFolder ? path.join(tracksDir, collectionFolder) : tracksDir;
+      const destPath = await resolveUniqueDestPath(destBaseDir, srcPath);
+      const destFileName = path.basename(destPath);
+
+      await copyFileWithRetry(srcPath, destPath);
+
+      // Use forward slashes for the relative path stored on disk
+      const relativeFromTracks = path.relative(tracksDir, destPath);
+      const normalizedRelative = relativeFromTracks.split(path.sep).join('/');
+      item.path = `./tracks/${normalizedRelative}`;
+
+      sendProgress(i + 1, total, fileName);
+    }
   }
 
-  for (let i = 0; i < trackItems.length; i++) {
-    const item = trackItems[i];
-    const srcPath = item.path!;
-    const fileName = path.basename(srcPath);
+  const normalizePath = (p: string) => {
+    const resolved = path.resolve(p);
+    return isWindows ? resolved.toLowerCase() : resolved;
+  };
 
-    // Use path.resolve for reliable cross-platform comparison (handles relative paths and case)
-    const srcDir = path.resolve(path.dirname(srcPath));
-    const normalizedTracksDir = path.resolve(tracksDir);
+  const usedTrackPaths = new Set<string>();
 
-    if (srcDir === normalizedTracksDir) {
-      // Already in tracks/ — just rewrite path to relative form
-      item.path = `./tracks/${fileName}`;
-      sendProgress(i + 1, total, fileName);
+  for (const item of projectFile.items) {
+    if (item.type !== 'track' || !item.path) {
       continue;
     }
 
-    // Check source accessibility; skip (don't fail) if missing
-    try {
-      await fs.access(srcPath);
-    } catch {
-      sendProgress(i + 1, total, fileName);
+    if (!item.path.startsWith('./tracks/')) {
       continue;
     }
 
-    const destPath = await resolveUniqueDestPath(tracksDir, srcPath);
-    const destFileName = path.basename(destPath);
+    const absolutePath = path.resolve(projectDir, item.path);
+    usedTrackPaths.add(normalizePath(absolutePath));
+  }
 
-    await copyFileWithRetry(srcPath, destPath);
+  const stack: string[] = [tracksDir];
 
-    // Use forward slashes for the relative path stored on disk
-    item.path = `./tracks/${destFileName}`;
+  while (stack.length > 0) {
+    const currentDir = stack.pop()!;
+    const entries = await fs.readdir(currentDir, { withFileTypes: true });
 
-    sendProgress(i + 1, total, fileName);
+    for (const entry of entries) {
+      const entryPath = path.join(currentDir, entry.name);
+
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+        continue;
+      }
+
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      const normalizedEntryPath = normalizePath(entryPath);
+
+      if (!usedTrackPaths.has(normalizedEntryPath)) {
+        await fs.unlink(entryPath);
+      }
+    }
   }
 }
 

@@ -185,14 +185,14 @@
 
 Все запросы с авторизацией (JWT в заголовке или cookie по плану).
 
-| Метод  | Путь                              | Описание                                                                                                | Тело                | Ответ              |
-| ------ | --------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------- | ------------------ |
-| POST   | `/api/parties`                    | Создать вечеринку                                                                                       | `CreatePartyDto`    | `PartyDto`         |
-| GET    | `/api/parties`                    | Список вечеринок текущего организатора                                                                  | —                   | `PartyDto[]`       |
-| GET    | `/api/parties/{partyId}`          | Получить вечеринку (свою)                                                                               | —                   | `PartyDto` или 404 |
-| PUT    | `/api/parties/{partyId}`          | Редактировать метаданные вечеринки (описание, место, город, дата, расписание, краткое описание для карточки, внешняя ссылка, теги танцев, флаг «в каталоге» и др.; тело — UpdatePartyDto) | `UpdatePartyDto`    | 204 или 404        |
-| DELETE | `/api/parties/{partyId}`          | Удалить вечеринку                                                                                       | —                   | 204 или 404        |
-| PUT    | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию)                                | `PartyPlaylistDto`  | 204 или 404        |
+| Метод  | Путь                              | Описание                                                                                                                                                                                  | Тело               | Ответ              |
+| ------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ |
+| POST   | `/api/parties`                    | Создать вечеринку                                                                                                                                                                         | `CreatePartyDto`   | `PartyDto`         |
+| GET    | `/api/parties`                    | Список вечеринок текущего организатора                                                                                                                                                    | —                  | `PartyDto[]`       |
+| GET    | `/api/parties/{partyId}`          | Получить вечеринку (свою)                                                                                                                                                                 | —                  | `PartyDto` или 404 |
+| PUT    | `/api/parties/{partyId}`          | Редактировать метаданные вечеринки (описание, место, город, дата, расписание, краткое описание для карточки, внешняя ссылка, теги танцев, флаг «в каталоге» и др.; тело — UpdatePartyDto) | `UpdatePartyDto`   | 204 или 404        |
+| DELETE | `/api/parties/{partyId}`          | Удалить вечеринку                                                                                                                                                                         | —                  | 204 или 404        |
+| PUT    | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию)                                                                                                                  | `PartyPlaylistDto` | 204 или 404        |
 
 **Использует:** CherryPlayList (создание, список, Publish, привязка partyId к проекту); кабинет организатора в Web (CRUD, toggle каталога).
 
@@ -316,98 +316,98 @@ _Примечание:_ в текущей реализации веб может
 
 Ответ GET `/api/parties/public/list`. В карточке каталога (PartyListPage) отображаются **только** 6 полей в порядке: название, краткое описание, город, дата/время, теги танцев, внешняя ссылка. Остальные поля (theme, track count, duration, shortCode, кнопка «Подробнее», бейдж «В эфире») на карточке не показываются.
 
-| Поле                 | Тип                        | Описание                                                            |
-| -------------------- | -------------------------- | ------------------------------------------------------------------- |
-| `id`                 | `string`                   | GUID.                                                               |
-| `name`               | `string`                   | Название.                                                           |
-| `title`              | `string \| undefined`      | Заголовок на экране.                                                |
-| `subtitle`           | `string \| undefined`      | Подзаголовок.                                                       |
-| `shortCode`          | `string`                   | Короткий код.                                                       |
-| `partyThemeId`       | `PartyThemeId`             | PartyTheme идентификатор (см. GLOSSARY.md).                         |
-| `hasActiveSession`   | `boolean`                  | Активна ли сессия.                                                  |
-| `createdAt`          | `string`                   | ISO 8601.                                                           |
-| `totalTracks`        | `number`                   | Количество треков.                                                  |
-| `totalDuration`      | `number`                   | Длительность, сек.                                                  |
-| `eventDateTime`      | `string \| undefined`      | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
-| `eventEndDateTime`   | `string \| undefined`      | Опциональное время окончания мероприятия в UTC, ISO 8601.          |
-| `timeZone`           | `string \| undefined`      | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).          |
-| `city`               | `string \| undefined`      | Город.                                                              |
-| `shortDescription`   | `string \| undefined`      | Краткое описание для карточки (макс. 200 символов).                 |
-| `externalLinkUrl`    | `string \| undefined`      | URL внешней ссылки.                                                 |
-| `externalLinkText`   | `string \| undefined`      | Текст ссылки (подпись).                                             |
-| `danceTags`          | `string[] \| undefined`    | Теги танцев (до 20: предопределённые + свои).                       |
+| Поле               | Тип                     | Описание                                                                                       |
+| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`               | `string`                | GUID.                                                                                          |
+| `name`             | `string`                | Название.                                                                                      |
+| `title`            | `string \| undefined`   | Заголовок на экране.                                                                           |
+| `subtitle`         | `string \| undefined`   | Подзаголовок.                                                                                  |
+| `shortCode`        | `string`                | Короткий код.                                                                                  |
+| `partyThemeId`     | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                    |
+| `hasActiveSession` | `boolean`               | Активна ли сессия.                                                                             |
+| `createdAt`        | `string`                | ISO 8601.                                                                                      |
+| `totalTracks`      | `number`                | Количество треков.                                                                             |
+| `totalDuration`    | `number`                | Длительность, сек.                                                                             |
+| `eventDateTime`    | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventEndDateTime` | `string \| undefined`   | Опциональное время окончания мероприятия в UTC, ISO 8601.                                      |
+| `timeZone`         | `string \| undefined`   | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                     |
+| `city`             | `string \| undefined`   | Город.                                                                                         |
+| `shortDescription` | `string \| undefined`   | Краткое описание для карточки (макс. 200 символов).                                            |
+| `externalLinkUrl`  | `string \| undefined`   | URL внешней ссылки.                                                                            |
+| `externalLinkText` | `string \| undefined`   | Текст ссылки (подпись).                                                                        |
+| `danceTags`        | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                  |
 
 **PartyDto** (API организатора)
 
-| Поле                 | Тип                        | Описание                                                            |
-| -------------------- | -------------------------- | ------------------------------------------------------------------- |
-| `id`                 | `string`                   | GUID.                                                               |
-| `name`               | `string`                   | Название.                                                           |
-| `title`              | `string \| undefined`      | Заголовок на экране; если пусто — отображается `name`.              |
-| `subtitle`           | `string \| undefined`      | Подзаголовок.                                                       |
-| `shortCode`          | `string`                   | Неизменяемый короткий код.                                          |
-| `partyThemeId`       | `PartyThemeId`             | PartyTheme идентификатор (см. GLOSSARY.md).                         |
-| `createdAt`          | `string`                   | ISO 8601.                                                           |
-| `hasActiveSession`   | `boolean`                  | Активна ли сессия.                                                  |
-| `eventDateTime`      | `string \| undefined`      | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
-| `eventEndDateTime`   | `string \| undefined`      | Опциональное время окончания мероприятия в UTC, ISO 8601.          |
-| `timeZone`           | `string \| undefined`      | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).          |
-| `isListedInCatalog`  | `boolean`                  | Включена ли в каталог.                                              |
-| `description`       | `string \| undefined`      | Описание для страницы `/info`.                                      |
-| `place`              | `string \| undefined`      | Место проведения.                                                   |
-| `city`               | `string \| undefined`      | Город.                                                              |
-| `schedule`           | `string \| undefined`      | Расписание.                                                         |
-| `shortDescription`   | `string \| undefined`      | Краткое описание для карточки каталога (макс. 200 символов).        |
-| `externalLinkUrl`    | `string \| undefined`      | URL внешней ссылки.                                                 |
-| `externalLinkText`   | `string \| undefined`      | Текст ссылки (подпись).                                             |
-| `danceTags`          | `string[] \| undefined`    | Теги танцев (до 20: предопределённые + свои).                       |
+| Поле                | Тип                     | Описание                                                                                       |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `id`                | `string`                | GUID.                                                                                          |
+| `name`              | `string`                | Название.                                                                                      |
+| `title`             | `string \| undefined`   | Заголовок на экране; если пусто — отображается `name`.                                         |
+| `subtitle`          | `string \| undefined`   | Подзаголовок.                                                                                  |
+| `shortCode`         | `string`                | Неизменяемый короткий код.                                                                     |
+| `partyThemeId`      | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                    |
+| `createdAt`         | `string`                | ISO 8601.                                                                                      |
+| `hasActiveSession`  | `boolean`               | Активна ли сессия.                                                                             |
+| `eventDateTime`     | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| `eventEndDateTime`  | `string \| undefined`   | Опциональное время окончания мероприятия в UTC, ISO 8601.                                      |
+| `timeZone`          | `string \| undefined`   | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                     |
+| `isListedInCatalog` | `boolean`               | Включена ли в каталог.                                                                         |
+| `description`       | `string \| undefined`   | Описание для страницы `/info`.                                                                 |
+| `place`             | `string \| undefined`   | Место проведения.                                                                              |
+| `city`              | `string \| undefined`   | Город.                                                                                         |
+| `schedule`          | `string \| undefined`   | Расписание.                                                                                    |
+| `shortDescription`  | `string \| undefined`   | Краткое описание для карточки каталога (макс. 200 символов).                                   |
+| `externalLinkUrl`   | `string \| undefined`   | URL внешней ссылки.                                                                            |
+| `externalLinkText`  | `string \| undefined`   | Текст ссылки (подпись).                                                                        |
+| `danceTags`         | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                  |
 
 **CreatePartyDto** (тело POST `/api/parties`)
 
-| Поле                    | Тип                                | Обязательное | Описание                                                                           |
-| ----------------------- | ---------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
-| `name`                  | `string`                           | да           | Название (1–200 символов).                                                         |
-| `title`                 | `string`                           | нет          | Заголовок на экране; если пусто — отображается название.                           |
-| `subtitle`              | `string`                           | нет          | Подзаголовок.                                                                      |
-| `partyThemeId`          | `PartyThemeId`                     | нет          | По умолчанию `cyberpunk`.                                                          |
-| `customizationSettings` | `Record<string, string \| number>` | нет          | Настройки темы.                                                                    |
-| `playlistData`          | `PartyPlaylistDto`                 | нет          | Начальный плейлист.                                                                |
-| `eventDateTime`         | `string` (ISO 8601, UTC)           | нет          | Дата/время начала мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
+| Поле                    | Тип                                | Обязательное | Описание                                                                                                               |
+| ----------------------- | ---------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `name`                  | `string`                           | да           | Название (1–200 символов).                                                                                             |
+| `title`                 | `string`                           | нет          | Заголовок на экране; если пусто — отображается название.                                                               |
+| `subtitle`              | `string`                           | нет          | Подзаголовок.                                                                                                          |
+| `partyThemeId`          | `PartyThemeId`                     | нет          | По умолчанию `cyberpunk`.                                                                                              |
+| `customizationSettings` | `Record<string, string \| number>` | нет          | Настройки темы.                                                                                                        |
+| `playlistData`          | `PartyPlaylistDto`                 | нет          | Начальный плейлист.                                                                                                    |
+| `eventDateTime`         | `string` (ISO 8601, UTC)           | нет          | Дата/время начала мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                              |
 | `eventEndDateTime`      | `string` (ISO 8601, UTC)           | нет          | Опциональное время окончания мероприятия в UTC. Может быть опущено; при отсутствии считается, что конец явно не задан. |
-| `timeZone`              | `string` (IANA)                    | нет          | Часовой пояс (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                 |
-| `isListedInCatalog`     | `boolean`                          | нет          | По умолчанию `false` (unlisted).                                                   |
-| `description`           | `string`                           | нет          | Описание вечеринки (для страницы `/info`).                                         |
-| `place`                 | `string`                           | нет          | Место проведения.                                                                  |
-| `city`                  | `string`                           | нет          | Город.                                                                             |
-| `schedule`              | `string`                           | нет          | Расписание (текст или структурированный JSON).                                     |
-| `shortDescription`      | `string`                           | нет          | Краткое описание для карточки каталога (макс. 200 символов).                        |
-| `externalLinkUrl`       | `string`                           | нет          | URL внешней ссылки.                                                                |
-| `externalLinkText`      | `string`                           | нет          | Текст ссылки (подпись).                                                            |
-| `danceTags`             | `string[]`                         | нет          | Теги танцев (до 20: предопределённые + свои).                                      |
+| `timeZone`              | `string` (IANA)                    | нет          | Часовой пояс (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                     |
+| `isListedInCatalog`     | `boolean`                          | нет          | По умолчанию `false` (unlisted).                                                                                       |
+| `description`           | `string`                           | нет          | Описание вечеринки (для страницы `/info`).                                                                             |
+| `place`                 | `string`                           | нет          | Место проведения.                                                                                                      |
+| `city`                  | `string`                           | нет          | Город.                                                                                                                 |
+| `schedule`              | `string`                           | нет          | Расписание (текст или структурированный JSON).                                                                         |
+| `shortDescription`      | `string`                           | нет          | Краткое описание для карточки каталога (макс. 200 символов).                                                           |
+| `externalLinkUrl`       | `string`                           | нет          | URL внешней ссылки.                                                                                                    |
+| `externalLinkText`      | `string`                           | нет          | Текст ссылки (подпись).                                                                                                |
+| `danceTags`             | `string[]`                         | нет          | Теги танцев (до 20: предопределённые + свои).                                                                          |
 
 **UpdatePartyDto** (тело PUT `/api/parties/{partyId}`)
 
 Все поля опциональны (частичное обновление). Формат и лимиты — как в CreatePartyDto для соответствующих полей.
 
-| Поле                 | Тип             | Описание                                            |
-| -------------------- | --------------- | --------------------------------------------------- |
-| `name`               | `string`        | Название (1–200 символов).                          |
-| `title`              | `string`        | Заголовок на экране.                                |
-| `subtitle`           | `string`        | Подзаголовок.                                       |
-| `partyThemeId`       | `PartyThemeId`  | PartyTheme идентификатор.                           |
-| `eventDateTime`      | `string`        | Время начала мероприятия в UTC, ISO 8601.           |
-| `eventEndDateTime`   | `string`        | Опциональное время окончания мероприятия в UTC.     |
-| `timeZone`           | `string`        | IANA.                                               |
-| `customizationSettings` | `object`     | Настройки темы.                                     |
-| `isListedInCatalog`  | `boolean`       | Включена ли в каталог.                              |
-| `description`        | `string`        | Описание для страницы `/info`.                      |
-| `place`              | `string`        | Место проведения.                                   |
-| `city`               | `string`        | Город.                                              |
-| `schedule`           | `string`        | Расписание.                                         |
-| `shortDescription`   | `string`        | Краткое описание для карточки (макс. 200 символов). |
-| `externalLinkUrl`    | `string`        | URL внешней ссылки.                                 |
-| `externalLinkText`   | `string`        | Текст ссылки (подпись).                             |
-| `danceTags`          | `string[]`      | Теги танцев (до 20).                                |
+| Поле                    | Тип            | Описание                                            |
+| ----------------------- | -------------- | --------------------------------------------------- |
+| `name`                  | `string`       | Название (1–200 символов).                          |
+| `title`                 | `string`       | Заголовок на экране.                                |
+| `subtitle`              | `string`       | Подзаголовок.                                       |
+| `partyThemeId`          | `PartyThemeId` | PartyTheme идентификатор.                           |
+| `eventDateTime`         | `string`       | Время начала мероприятия в UTC, ISO 8601.           |
+| `eventEndDateTime`      | `string`       | Опциональное время окончания мероприятия в UTC.     |
+| `timeZone`              | `string`       | IANA.                                               |
+| `customizationSettings` | `object`       | Настройки темы.                                     |
+| `isListedInCatalog`     | `boolean`      | Включена ли в каталог.                              |
+| `description`           | `string`       | Описание для страницы `/info`.                      |
+| `place`                 | `string`       | Место проведения.                                   |
+| `city`                  | `string`       | Город.                                              |
+| `schedule`              | `string`       | Расписание.                                         |
+| `shortDescription`      | `string`       | Краткое описание для карточки (макс. 200 символов). |
+| `externalLinkUrl`       | `string`       | URL внешней ссылки.                                 |
+| `externalLinkText`      | `string`       | Текст ссылки (подпись).                             |
+| `danceTags`             | `string[]`     | Теги танцев (до 20).                                |
 
 ### 6.5 Профиль организатора
 
