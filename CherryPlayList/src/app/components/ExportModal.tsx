@@ -56,7 +56,10 @@ export const ExportModal: React.FC = () => {
   };
 
   const handleExport = async () => {
-    if (tracks.length === 0) {
+    // Получаем актуальный список треков в порядке плейлиста на момент экспорта
+    // (важно для нумерации 01, 02, ... и согласованности с отображением)
+    const tracksToExport = getAllTracksInOrder();
+    if (tracksToExport.length === 0) {
       addNotification({ type: 'warning', message: 'Плейлист пуст' });
       return;
     }
@@ -73,9 +76,9 @@ export const ExportModal: React.FC = () => {
 
       // Выполняем экспорт
       if (localExportStrategy === 'aimpPlaylist') {
-        await exportService.exportAIMPPlaylist(tracks, localExportPath, name);
+        await exportService.exportAIMPPlaylist(tracksToExport, localExportPath, name);
       } else {
-        await exportService.exportWithNumberPrefix(tracks, localExportPath);
+        await exportService.exportWithNumberPrefix(tracksToExport, localExportPath);
       }
 
       addNotification({ type: 'success', message: 'Экспорт завершён' });

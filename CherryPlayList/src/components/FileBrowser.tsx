@@ -1,15 +1,23 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import FolderIcon from '@mui/icons-material/Folder';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import React, { useState, useMemo, useEffect, KeyboardEvent, useCallback } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+  Fragment,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 import { fileService, ipcService } from '@shared/services';
 import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
 import { formatTrackDuration } from '@shared/utils/durationUtils';
+
+import { FileBrowserItemRow } from './FileBrowserItemRow';
 
 export const FileBrowser: React.FC = () => {
   const setFileBrowserPath = useSettingsStore((state) => state.setFileBrowserPath);
@@ -35,7 +43,6 @@ export const FileBrowser: React.FC = () => {
   } = useDemoPlayerStore();
   const activeTrackPath = activeTrack?.path;
 
-  // Initialize: use saved path, or default to user Music folder (run once on mount)
   useEffect(() => {
     const initializePath = async () => {
       try {
@@ -65,7 +72,6 @@ export const FileBrowser: React.FC = () => {
     initializePath();
   }, []);
 
-  // Persist current path when it changes (user navigated)
   useEffect(() => {
     if (currentPath && currentPath.trim() !== '') {
       setFileBrowserPath(currentPath);
@@ -87,7 +93,6 @@ export const FileBrowser: React.FC = () => {
     }
   }, [currentPath]);
 
-  // Load directory contents
   const loadDirectory = async (path: string) => {
     try {
       setLoading(true);
@@ -190,11 +195,8 @@ export const FileBrowser: React.FC = () => {
     setPendingRevealPath(null);
   }, [items, pendingRevealPath]);
 
-  // Debounce search query to avoid excessive filtering on rapid typing
-  // For future recursive search, this will prevent excessive IPC calls
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Filter items by search query
   const filteredItems = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
       return items;
@@ -208,6 +210,69 @@ export const FileBrowser: React.FC = () => {
     if (!currentPath) return [];
     return fileService.getPathSegments(currentPath);
   }, [currentPath]);
+
+  const [overflowIndex, setOverflowIndex] = useState(0);
+  const [breadcrumbDropdownOpen, setBreadcrumbDropdownOpen] = useState(false);
+  const [breadcrumbDropdownAnchor, setBreadcrumbDropdownAnchor] = useState<DOMRect | null>(null);
+  const breadcrumbsContainerRef = useRef<HTMLDivElement>(null);
+  const breadcrumbsContentRef = useRef<HTMLDivElement>(null);
+  const breadcrumbEllipsisRef = useRef<HTMLButtonElement>(null);
+  const breadcrumbDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setOverflowIndex(0);
+  }, [currentPath]);
+
+  useEffect(() => {
+    const el = breadcrumbsContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setOverflowIndex(0));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const container = breadcrumbsContainerRef.current;
+    const content = breadcrumbsContentRef.current;
+    if (!container || !content || breadcrumbs.length === 0) return;
+    if (content.scrollWidth > container.clientWidth && overflowIndex < breadcrumbs.length - 1) {
+      setOverflowIndex((prev) => prev + 1);
+    }
+  }, [breadcrumbs, overflowIndex]);
+
+  const openBreadcrumbDropdown = useCallback(() => {
+    const rect = breadcrumbEllipsisRef.current?.getBoundingClientRect();
+    if (rect) {
+      setBreadcrumbDropdownAnchor(rect);
+      setBreadcrumbDropdownOpen(true);
+    }
+  }, []);
+
+  const closeBreadcrumbDropdown = useCallback(() => {
+    setBreadcrumbDropdownOpen(false);
+    setBreadcrumbDropdownAnchor(null);
+  }, []);
+
+  useEffect(() => {
+    if (!breadcrumbDropdownOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeBreadcrumbDropdown();
+    };
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const container = breadcrumbsContainerRef.current;
+      const dropdown = breadcrumbDropdownRef.current;
+      if (container && !container.contains(target) && !dropdown?.contains(target)) {
+        closeBreadcrumbDropdown();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [breadcrumbDropdownOpen, closeBreadcrumbDropdown]);
 
   const handleNavigate = async (path: string) => {
     try {
@@ -240,7 +305,7 @@ export const FileBrowser: React.FC = () => {
   };
 
   const handleItemKeyDown = (
-    event: KeyboardEvent<HTMLDivElement>,
+    event: React.KeyboardEvent<HTMLElement>,
     item: { path: string; isDirectory: boolean },
   ) => {
     if (event.key === 'Enter') {
@@ -268,7 +333,6 @@ export const FileBrowser: React.FC = () => {
 
   const handleItemClick = (e: React.MouseEvent, path: string) => {
     if (e.ctrlKey || e.metaKey) {
-      // Ctrl+Click: toggle selection
       setSelectedPaths((prev) => {
         const newSet = new Set(prev);
         if (newSet.has(path)) {
@@ -279,7 +343,6 @@ export const FileBrowser: React.FC = () => {
         return newSet;
       });
     } else if (e.shiftKey && selectedPaths.size > 0) {
-      // Shift+Click: select range
       const itemsArray = items.map((item) => item.path);
       const lastSelected = Array.from(selectedPaths).pop();
       if (lastSelected) {
@@ -295,13 +358,11 @@ export const FileBrowser: React.FC = () => {
         }
       }
     } else {
-      // Regular click: single selection
       setSelectedPaths(new Set([path]));
     }
   };
 
   const handleDragStart = (e: React.DragEvent, path: string) => {
-    // If item is selected, drag all selected items
     const pathsToDrag =
       selectedPaths.has(path) && selectedPaths.size > 1 ? Array.from(selectedPaths) : [path];
 
@@ -403,19 +464,70 @@ export const FileBrowser: React.FC = () => {
           >
             <ArrowUpwardIcon />
           </button>
-          <div className="breadcrumbs">
-            {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.path}>
-                {index > 0 && <span className="breadcrumb-separator"> &gt; </span>}
-                <button
-                  className="breadcrumb-item"
-                  onClick={() => handleBreadcrumbClick(crumb.path)}
-                  disabled={loading}
+          <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
+            <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
+              {overflowIndex > 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="breadcrumb-ellipsis"
+                    ref={breadcrumbEllipsisRef}
+                    onClick={openBreadcrumbDropdown}
+                    disabled={loading}
+                    title="Скрытые элементы пути"
+                    aria-expanded={breadcrumbDropdownOpen}
+                    aria-haspopup="menu"
+                  >
+                    …
+                  </button>
+                  <span className="breadcrumb-separator"> &gt; </span>
+                </>
+              )}
+              {breadcrumbs.slice(overflowIndex).map((crumb, i) => (
+                <Fragment key={crumb.path}>
+                  {i > 0 && <span className="breadcrumb-separator"> &gt; </span>}
+                  <button
+                    type="button"
+                    className="breadcrumb-item"
+                    onClick={() => handleBreadcrumbClick(crumb.path)}
+                    disabled={loading}
+                  >
+                    {crumb.name}
+                  </button>
+                </Fragment>
+              ))}
+            </div>
+            {breadcrumbDropdownOpen &&
+              breadcrumbDropdownAnchor &&
+              createPortal(
+                <div
+                  ref={breadcrumbDropdownRef}
+                  className="breadcrumb-dropdown"
+                  role="menu"
+                  style={{
+                    position: 'fixed',
+                    top: breadcrumbDropdownAnchor.bottom + 4,
+                    left: breadcrumbDropdownAnchor.left,
+                    minWidth: Math.max(breadcrumbDropdownAnchor.width, 160),
+                  }}
                 >
-                  {crumb.name}
-                </button>
-              </React.Fragment>
-            ))}
+                  {[...breadcrumbs.slice(0, overflowIndex)].reverse().map((crumb) => (
+                    <button
+                      key={crumb.path}
+                      type="button"
+                      className="breadcrumb-dropdown-item"
+                      role="menuitem"
+                      onClick={() => {
+                        handleBreadcrumbClick(crumb.path);
+                        closeBreadcrumbDropdown();
+                      }}
+                    >
+                      {crumb.name}
+                    </button>
+                  ))}
+                </div>,
+                document.body,
+              )}
           </div>
           <button
             type="button"
@@ -457,61 +569,30 @@ export const FileBrowser: React.FC = () => {
             const isAudioFile = !item.isDirectory && fileService.isValidAudioFile(item.path);
             const isActiveAudio = isAudioFile && activeTrackPath === item.path;
             const isPlayingAudio = isActiveAudio && playerStatus === 'playing';
+            const secondaryMeta =
+              !item.isDirectory && formatFileMeta(item, isAudioFile)
+                ? formatFileMeta(item, isAudioFile)
+                : '';
 
             return (
-              <div
+              <FileBrowserItemRow
                 key={item.path}
-                className={`file-browser-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''}`}
-                data-file-path={item.path}
+                item={item}
+                isSelected={isSelected}
+                isDragging={isDragging}
+                isAudioFile={isAudioFile}
+                isActiveAudio={isActiveAudio}
+                isPlayingAudio={isPlayingAudio}
+                primaryContent={item.name}
+                secondaryContent={secondaryMeta}
+                onPlay={() => void handlePlayFile(item)}
+                onPause={pause}
                 onClick={(e) => handleItemClick(e, item.path)}
                 onDoubleClick={() => handleDoubleClick(item)}
-                draggable
                 onDragStart={(e) => handleDragStart(e, item.path)}
                 onDragEnd={handleDragEnd}
-                role="button"
-                tabIndex={0}
                 onKeyDown={(event) => handleItemKeyDown(event, item)}
-                aria-pressed={isSelected}
-              >
-                <div className="file-browser-item-icon">
-                  {item.isDirectory ? (
-                    <FolderIcon className="folder-icon" />
-                  ) : (
-                    <InsertDriveFileIcon className="file-icon" />
-                  )}
-                </div>
-                <div className="file-browser-item-info">
-                  <div className="file-browser-item-name">{item.name}</div>
-                  {!item.isDirectory && formatFileMeta(item, isAudioFile) && (
-                    <div className="file-browser-item-size">
-                      {formatFileMeta(item, isAudioFile)}
-                    </div>
-                  )}
-                </div>
-                {isAudioFile && (
-                  <div className="file-browser-item-actions">
-                    <button
-                      type="button"
-                      className={`file-browser-play-button ${isActiveAudio ? 'active' : ''}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (isPlayingAudio) {
-                          pause();
-                        } else {
-                          void handlePlayFile(item);
-                        }
-                      }}
-                      title={isPlayingAudio ? 'Пауза' : 'Воспроизвести'}
-                    >
-                      {isPlayingAudio ? (
-                        <PauseIcon fontSize="small" />
-                      ) : (
-                        <PlayArrowIcon fontSize="small" />
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
+              />
             );
           })
         )}

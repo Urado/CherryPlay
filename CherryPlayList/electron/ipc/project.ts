@@ -56,7 +56,7 @@ export interface ProjectFile {
  * The path contains group names from root to the deepest group that contains the track.
  */
 function buildTrackCollectionFolderMap(projectFile: ProjectFile): Map<string, string | null> {
-  const itemsById = new Map<string, (ProjectFile['items'][number])>();
+  const itemsById = new Map<string, ProjectFile['items'][number]>();
 
   for (const item of projectFile.items) {
     itemsById.set(item.id, item);

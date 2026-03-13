@@ -4,6 +4,10 @@ import { persist } from 'zustand/middleware';
 import { createWithEqualityFn, useStoreWithEqualityFn } from 'zustand/traditional';
 
 import {
+  DEFAULT_PLAYLIST_WORKSPACE_ID,
+  DEFAULT_PLAYER_WORKSPACE_ID,
+} from '@core/constants/workspace';
+import {
   DEFAULT_PROJECT_META,
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
@@ -940,8 +944,21 @@ export function ensureProjectStore(options: ProjectStoreOptions): ProjectStore {
   return store;
 }
 
+/**
+ * Resolves workspace ID to project store. Player workspace uses the playlist store
+ * (same data, different UI zone), so drag-drop and history resolve to the same store.
+ */
+function getStoreForWorkspace(workspaceId: WorkspaceId): ProjectStore | undefined {
+  const store = projectStores.get(workspaceId);
+  if (store) return store;
+  if (workspaceId === DEFAULT_PLAYER_WORKSPACE_ID) {
+    return projectStores.get(DEFAULT_PLAYLIST_WORKSPACE_ID);
+  }
+  return undefined;
+}
+
 export function getProjectStore(workspaceId: WorkspaceId): ProjectStore | undefined {
-  return projectStores.get(workspaceId);
+  return getStoreForWorkspace(workspaceId);
 }
 
 export function removeProjectStore(workspaceId: WorkspaceId): void {
@@ -984,7 +1001,7 @@ export function registerExternalApplyHandler(
 
 export function initializeGlobalHistory(): void {
   useGlobalHistoryStore.getState().registerApplyCommand((workspaceId, command, mode) => {
-    const store = projectStores.get(workspaceId);
+    const store = getStoreForWorkspace(workspaceId);
     if (store) {
       return store.getState()._applyCommand(command, mode);
     }
