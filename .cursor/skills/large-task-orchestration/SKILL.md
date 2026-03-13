@@ -19,8 +19,9 @@ Use this skill when the user gives a **large or multi-step task** that should be
 | **worker-documentation** | Documentation subtasks (Markdown docs, README, CONTRACTS, setup/ops/theme docs)                                         |
 | **worker-ci-cd**         | CI/CD subtasks (Dockerfiles, docker-compose, GitHub Actions, deployment, infra)                                         |
 | **worker-electron**      | Desktop/Electron subtasks (CherryPlayList shell, windows, menus, tray, IPC, preload, packaging, auto-update)            |
+| **worker-cpp**           | Native/C++ subtasks (AIMP plugins, COM/DLL interfaces, Win32 integrations, C++17/20 native modules)                     |
 
-Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. `business-analyst`, `scheduler`, `code-reviewer`, `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`). Pass the user request and context in `prompt`.
+Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. `business-analyst`, `scheduler`, `code-reviewer`, `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, `worker-cpp`). Pass the user request and context in `prompt`.
 
 ### Subagent control and return of control
 
@@ -48,6 +49,7 @@ Use the scheduler's task types to choose the worker:
 | Documentation       | worker-documentation |
 | CI/CD               | worker-ci-cd         |
 | Desktop/Electron    | worker-electron      |
+| C++/Native          | worker-cpp           |
 
 ## Artifacts and file locations
 
@@ -99,7 +101,7 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 
 1. Read the plan in `.cursor/schedulerPlans/`: root file and subtask files. Determine the **ordered list of subtasks**.
 2. For each **unfinished subtask**, in order:
-   - **Select the worker** by the subtask's type (see table above): Backend → worker-dotnet, Frontend → worker-frontend, Documentation → worker-documentation, CI/CD → worker-ci-cd.
+   - **Select the worker** by the subtask's type (see table above): Backend → worker-dotnet, Frontend → worker-frontend, Documentation → worker-documentation, CI/CD → worker-ci-cd, Desktop/Electron → worker-electron, C++/Native → worker-cpp.
    - **Always provide and require reading the planning files**. In the worker prompt, pass explicit paths and instructions to:
      1. **Technical specification file**: `.cursor/schedulerPlans/{prefix}-01-technical-spec.md` — instruct the worker to read it first as the authoritative problem statement and acceptance criteria.
      2. **Root plan file**: the main plan in `.cursor/schedulerPlans/` for this task (for example `plan-{prefix}.md`) — instruct the worker to read it to understand overall structure and ordering of subtasks.
@@ -138,7 +140,7 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 - [ ] Task prefix chosen; Stage 0: chat/session summarized into `.cursor/schedulerPlans/{prefix}-00-chat-summary.md` (temporary; will be deleted).
 - [ ] Stage 1: business-analyst read the summary, wrote technical spec to `.cursor/schedulerPlans/{prefix}-01-technical-spec.md` (temporary; will be deleted).
 - [ ] Stage 2: scheduler read `{prefix}-01-technical-spec.md`, created/updated plan in `.cursor/schedulerPlans/`; business-analyst reviewed the plan; loop repeated until no blocking comments.
-- [ ] Stage 3: each subtask executed in order; workers read their subtask file and root docs first; correct worker per type; code-reviewer loop until no Critical/Warnings; all subtasks marked done.
+- [ ] Stage 3: each subtask executed in order; workers read their subtask file and root docs first; correct worker per type (Backend→worker-dotnet, Frontend→worker-frontend, Documentation→worker-documentation, CI/CD→worker-ci-cd, Desktop/Electron→worker-electron, C++/Native→worker-cpp); code-reviewer loop until no Critical/Warnings; all subtasks marked done.
 - [ ] Stage 4: business-analyst verified outcome; if comments, re-plan (Stage 2 → Stage 3) used at most 3 times.
 - [ ] Stage 5: worker-documentation updated docs; orchestration complete.
 

@@ -89,11 +89,11 @@ When the user has answered the questions and/or said they are ready (e.g. "let's
    - **Stage 0** — Already done: `{prefix}-00-chat-summary.md` was written in step 1 above (temporary; will be deleted). (If orchestration is started without discovery, the orchestrator chooses the prefix and performs Stage 0 inside large-task-orchestration.)
    - **Stage 1** — **Business-analyst** reads `{prefix}-00-chat-summary.md` and writes the technical spec to `{prefix}-01-technical-spec.md` (temporary; will be deleted).
    - **Stage 2** — **Scheduler** reads `{prefix}-01-technical-spec.md` and creates/updates the plan in `.cursor/schedulerPlans/`; then **business-analyst** reviews the plan; loop until no blocking comments.
-   - **Stage 3** — Execute each subtask with the correct **worker**; pass each worker the path to **their subtask plan file** and instruct them to **read that file and the project root documentation first**; after each worker run **code-reviewer**; loop worker ↔ code-reviewer until no Critical/Warnings.
+   - **Stage 3** — Execute each subtask with the correct **worker** (Backend→worker-dotnet, Frontend→worker-frontend, Documentation→worker-documentation, CI/CD→worker-ci-cd, Desktop/Electron→worker-electron, C++/Native→worker-cpp); pass each worker the path to **their subtask plan file** and instruct them to **read that file and the project root documentation first**; after each worker run **code-reviewer**; loop worker ↔ code-reviewer until no Critical/Warnings.
    - **Stage 4** — **Business-analyst** verifies outcome; if needed, re-plan (max 3 returns to Stage 2) then re-execute.
    - **Stage 5** — **worker-documentation** to update docs; optionally run code-reviewer on doc changes.
 
-3. Use **mcp_task** with the appropriate `subagent_type` for each step. Do not skip stages. Follow the detailed instructions in the **large-task-orchestration** skill (artifacts, subagent control, task type → worker mapping, review severity, return of control).
+3. Use **mcp_task** with the appropriate `subagent_type` for each step. Do not skip stages. Follow the detailed instructions in the **large-task-orchestration** skill (artifacts, subagent control, task type → worker mapping, review severity, return of control). Available workers: `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, `worker-cpp`.
 
 4. After orchestration completes, summarize for the user: what was done, which workers ran, any open points or follow-ups.
 
@@ -101,10 +101,10 @@ When the user has answered the questions and/or said they are ready (e.g. "let's
 
 ## Summary
 
-| Phase | What happens                                                                                                                                                                                                                                                                                                                               |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **1** | Discovery: analyst lens → restatement, assumptions, risks. Questions to the user — **single continuous numbering (1, 2, 3, …)**. After each answer: analyze whether there are enough details; if not — more questions **(continue numbering: 5, 6, 7…)**. Loop until full clarity. Then: "Write 'let's go' / 'run the workflow' to start." |
-| **2** | Choose task prefix; write `{prefix}-00-chat-summary.md` (temporary) with Discovery + user answers → run full large-task-orchestration (Stages 0–5): analyst writes `{prefix}-01-technical-spec.md` (temporary), scheduler reads spec and plans, workers read their subtask file and root docs first; temporary files are **kept by default** and may be deleted manually later.       |
+| Phase | What happens                                                                                                                                                                                                                                                                                                                                                                    |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | Discovery: analyst lens → restatement, assumptions, risks. Questions to the user — **single continuous numbering (1, 2, 3, …)**. After each answer: analyze whether there are enough details; if not — more questions **(continue numbering: 5, 6, 7…)**. Loop until full clarity. Then: "Write 'let's go' / 'run the workflow' to start."                                      |
+| **2** | Choose task prefix; write `{prefix}-00-chat-summary.md` (temporary) with Discovery + user answers → run full large-task-orchestration (Stages 0–5): analyst writes `{prefix}-01-technical-spec.md` (temporary), scheduler reads spec and plans, workers read their subtask file and root docs first; temporary files are **kept by default** and may be deleted manually later. |
 
 **Question numbering:** Throughout Phase 1 there is one shared numbered list (1, 2, 3, 4, …) so the user can answer by item ("1. … 2. … 3. …") without confusion between rounds.
 

@@ -1,18 +1,18 @@
 ---
 name: feature-workflow
-description: Coordinates feature work by selecting the appropriate worker (worker-dotnet, worker-frontend, worker-documentation, or worker-ci-cd) for implementation, then invoking the code-reviewer subagent to review the changes and looping back to the worker to address any critical review feedback. Use when implementing or updating a feature end-to-end, including required documentation or CI/CD updates.
+description: Coordinates feature work by selecting the appropriate worker (worker-dotnet, worker-frontend, worker-documentation, worker-ci-cd, worker-electron, or worker-cpp) for implementation, then invoking the code-reviewer subagent to review the changes and looping back to the worker to address any critical review feedback. Use when implementing or updating a feature end-to-end, including required documentation or CI/CD updates.
 ---
 
 # Feature Workflow
 
 ## Purpose
 
-Use this skill to coordinate **end-to-end feature work** across the `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, and `code-reviewer` subagents.
+Use this skill to coordinate **end-to-end feature work** across the `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, `worker-cpp`, and `code-reviewer` subagents.
 
 The workflow:
 
 - **Analyzes the requested task**
-- **Selects the appropriate worker** (`worker-dotnet`, `worker-frontend`, `worker-documentation`, or `worker-ci-cd`)
+- **Selects the appropriate worker** (`worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, or `worker-cpp`)
 - **Delegates implementation to that worker** (invoke the worker subagent; do not implement the feature yourself)
 - **Runs a code review** via `code-reviewer`
 - **Loops back to the worker** to fix any **critical** review comments
@@ -22,7 +22,7 @@ The workflow:
 Apply this skill whenever:
 
 - The user requests a **new feature**, **enhancement**, or **non-trivial bug fix**
-- The work involves **.NET / C# backend**, **TypeScript/React frontend**, **documentation**, or **CI/CD / infrastructure** (Docker, docker-compose, GitHub Actions, deployment automation)
+- The work involves **.NET / C# backend**, **TypeScript/React frontend**, **C++ / native code**, **documentation**, or **CI/CD / infrastructure** (Docker, docker-compose, GitHub Actions, deployment automation)
 - You need a **structured flow**: implement → review → fix critical issues
 
 Avoid this workflow for:
@@ -66,6 +66,10 @@ Select the worker subagent based on task characteristics:
   - Adjusting or adding **Dockerfiles** and **docker-compose** configurations (including `docker-compose.debug.yml`, `docker-compose.yml`, `docker-compose.prod.yml`) as part of build/deploy flows
   - Evolving **infrastructure-related configuration** such as container image tags, environment variables for services, and health checks used by deployments
 
+- Use **`worker-cpp`** when:
+  - Implementing or changing **C++ / native code**, AIMP plugins, COM/DLL interfaces, Win32 integrations, or performance-critical native modules
+  - Working primarily in C++17/20 projects, plugin SDKs, or native Windows libraries
+
 - If the task spans **both backend and frontend**:
   - Break the work into **clear sub-tasks** (e.g. "backend API support" then "frontend UI integration").
   - Run the workflow **separately for each sub-task**:
@@ -82,7 +86,7 @@ Select the worker subagent based on task characteristics:
 
 ### 3. Implement the feature with the worker
 
-**You MUST delegate implementation to the worker subagent.** Do not implement the feature yourself (do not use search_replace, write, or similar edit tools for the feature code). Invoke the chosen worker via the subagent/task tool (e.g. `mcp_task` with the appropriate `subagent_type`: `worker-dotnet`, `worker-frontend`, `worker-documentation`, or `worker-ci-cd`).
+**You MUST delegate implementation to the worker subagent.** Do not implement the feature yourself (do not use search_replace, write, or similar edit tools for the feature code). Invoke the chosen worker via the subagent/task tool (e.g. `mcp_task` with the appropriate `subagent_type`: `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, or `worker-cpp`).
 
 For the chosen worker:
 
@@ -122,7 +126,7 @@ If `code-reviewer` reports **critical issues** (for example):
 Then:
 
 1. Summarize the critical comments.
-2. Re-invoke the **same worker** that did the implementation (`worker-dotnet` or `worker-frontend`) with:
+2. Re-invoke the **same worker** that did the implementation (`worker-dotnet`, `worker-frontend`, `worker-cpp`, etc.) with:
    - The **original task description**
    - The **review summary**, highlighting **critical issues** to fix
    - **This step is NOT optional**: if there is at least one critical issue, you MUST re-run the worker without asking the user for confirmation, even if the issue seems \"tiny\" (e.g. a single prop fix).
