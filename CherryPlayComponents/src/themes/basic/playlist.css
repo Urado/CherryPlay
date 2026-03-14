@@ -1,42 +1,44 @@
-[data-theme="basic"] .party-playlist-view {
+[data-theme='basic'] .party-playlist-view {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-[data-theme="basic"] .party-playlist-header {
+[data-theme='basic'] .party-playlist-header {
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
-  padding: 20px 24px;
+  padding: 20px 24px 16px;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="basic"] .party-playlist-stats {
+[data-theme='basic'] .party-playlist-stats {
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 
-[data-theme="basic"] .party-playlist-stats-separator {
+[data-theme='basic'] .party-playlist-stats-separator {
   color: var(--text-tertiary);
   margin: 0 8px;
   font-weight: 400;
 }
 
-[data-theme="basic"] .party-playlist-items {
+[data-theme='basic'] .party-playlist-items {
   background: var(--bg-secondary);
   padding: 12px 0;
 }
 
-[data-theme="basic"] .party-playlist-empty {
+[data-theme='basic'] .party-playlist-empty {
   color: var(--text-tertiary);
   padding: 48px 24px;
   text-align: center;
   font-size: 15px;
 }
 
-[data-theme="basic"] .party-playlist-group-items {
+[data-theme='basic'] .party-playlist-group-items {
   border-left: 2px solid var(--border-color);
   margin-left: 20px;
   padding-left: 20px;

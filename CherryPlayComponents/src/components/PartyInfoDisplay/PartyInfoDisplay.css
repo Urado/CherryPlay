@@ -17,6 +17,18 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
+.party-info-display-inner {
+  padding: 24px 24px 32px;
+  box-sizing: border-box;
+}
+
+.party-info-display-meta--top {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 20px;
+}
+
 .party-info-display-title {
   margin: 0 0 24px 0;
   font-size: 28px;

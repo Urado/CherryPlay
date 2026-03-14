@@ -32,39 +32,45 @@ export const PartyInfoDisplay: React.FC<BasePartyInfoDisplayProps> = ({ data, cl
       }).format(new Date(data.eventDateTime))
     : null;
 
+  const hasContentAboveMeta = Boolean(data.description);
+
   return (
     <div className={`party-info-display ${className}`} data-theme={data.themeId} style={themeVars}>
       <div className="party-info-display-container">
-        <h1 className="party-info-display-title">{data.partyName}</h1>
+        <div className="party-info-display-inner">
+          <h1 className="party-info-display-title">{data.partyName}</h1>
 
-        {data.description && (
-          <section className="party-info-display-section">
-            <p className="party-info-display-description">{data.description}</p>
+          {data.description && (
+            <section className="party-info-display-section">
+              <p className="party-info-display-description">{data.description}</p>
+            </section>
+          )}
+
+          <section
+            className={`party-info-display-meta${!hasContentAboveMeta ? ' party-info-display-meta--top' : ''}`}
+          >
+            {eventDate && (
+              <p className="party-info-display-date">
+                <strong>Дата и время:</strong> {eventDate}
+              </p>
+            )}
+            {data.place && (
+              <p className="party-info-display-place">
+                <strong>Место:</strong> {data.place}
+              </p>
+            )}
+            {data.city && (
+              <p className="party-info-display-city">
+                <strong>Город:</strong> {data.city}
+              </p>
+            )}
+            {data.schedule && (
+              <p className="party-info-display-schedule">
+                <strong>Расписание:</strong> {data.schedule}
+              </p>
+            )}
           </section>
-        )}
-
-        <section className="party-info-display-meta">
-          {eventDate && (
-            <p className="party-info-display-date">
-              <strong>Дата и время:</strong> {eventDate}
-            </p>
-          )}
-          {data.place && (
-            <p className="party-info-display-place">
-              <strong>Место:</strong> {data.place}
-            </p>
-          )}
-          {data.city && (
-            <p className="party-info-display-city">
-              <strong>Город:</strong> {data.city}
-            </p>
-          )}
-          {data.schedule && (
-            <p className="party-info-display-schedule">
-              <strong>Расписание:</strong> {data.schedule}
-            </p>
-          )}
-        </section>
+        </div>
       </div>
     </div>
   );

@@ -7,17 +7,50 @@
 }
 
 .party-playlist-header {
-  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 20px 24px 16px;
   border-bottom: 1px solid var(--border-color, #e0e0e0);
   background: var(--bg-secondary, #f5f5f5);
+}
+
+.party-playlist-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.party-playlist-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #666666);
+}
+
+.party-playlist-header-label {
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .party-playlist-stats {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary, #666666);
+}
+
+.party-playlist-stats-remaining-label {
+  color: var(--text-secondary, #666666);
+}
+
+.party-playlist-stats-not-yet-played {
+  font-weight: 600;
+  color: var(--text-primary, #000000);
 }
 
 .party-playlist-stats-separator {
@@ -34,8 +67,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  min-height: 200px;
+  padding: 24px 16px;
   color: var(--text-secondary, #666666);
+}
+
+.party-playlist-empty p {
+  margin: 0;
 }
 
 .party-playlist-group-items {

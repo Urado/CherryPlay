@@ -1,47 +1,58 @@
-[data-theme="art-deco"] .party-playlist-view {
+[data-theme='art-deco'] .party-playlist-view {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: #d4af37;
   font-family: 'Playfair Display', 'Georgia', serif;
 }
 
-[data-theme="art-deco"] .party-playlist-header {
+[data-theme='art-deco'] .party-playlist-header {
   background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
-  border-bottom: 3px solid var(--gold-color, #d4af37);
+  border-bottom: 1px solid var(--border-color);
   box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
   position: relative;
-  padding: 24px 32px;
+  padding: 20px 24px 16px;
 }
 
-[data-theme="art-deco"] .party-playlist-stats {
+[data-theme='art-deco'] .party-playlist-stats {
   color: #d4af37;
   font-weight: 600;
   letter-spacing: 2px;
   text-transform: uppercase;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-[data-theme="art-deco"] .party-playlist-stats-separator {
+[data-theme='art-deco'] .party-playlist-stats-separator {
   color: #b8941f;
   margin: 0 12px;
   font-weight: 400;
 }
 
-[data-theme="art-deco"] .party-playlist-items {
+[data-theme='art-deco'] .party-playlist-items {
   background: transparent;
-  padding: 16px 0;
+  padding: 8px 0;
 }
 
-[data-theme="art-deco"] .party-playlist-empty {
+[data-theme='art-deco'] .party-playlist-empty {
   color: #8b6914;
   font-style: italic;
-  padding: 56px 32px;
+  padding: 48px 24px;
   text-align: center;
-  font-size: 16px;
+  font-size: 15px;
 }
 
-[data-theme="art-deco"] .party-playlist-group-items {
-  border-left: 3px solid rgba(212, 175, 55, 0.4);
-  margin-left: 28px;
-  padding-left: 28px;
-  margin-top: 12px;
+[data-theme='art-deco'] .party-playlist-group-items {
+  border-left: 2px solid var(--border-color);
+  margin-left: 20px;
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='art-deco'] .party-playlist-stats {
+    justify-content: center;
+  }
+
+  [data-theme='art-deco'] .party-playlist-stats-remaining-label {
+    max-width: 5.5em;
+    word-break: keep-all;
+  }
 }

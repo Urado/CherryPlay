@@ -29,6 +29,7 @@ export interface PartyThemeComponents {
     playedTrackIds?: string[];
     disabledTrackIds?: string[];
     disabledGroupIds?: string[];
+    isSessionActive?: boolean;
     className?: string;
     themeId?: string;
   }>;

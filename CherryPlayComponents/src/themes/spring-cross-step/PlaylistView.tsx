@@ -109,7 +109,7 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
     const trackNumber = item.type === 'track' ? trackNumberByItemId[item.id] : undefined;
 
     return (
-      <React.Fragment key={item.id}>
+      <React.Fragment key={`${item.id}-${level}-${index}`}>
         <PlaylistItem
           item={item}
           index={index}

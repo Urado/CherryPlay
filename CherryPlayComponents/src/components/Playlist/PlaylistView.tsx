@@ -45,26 +45,27 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       item.type === 'group' && item.items ? sortItemsByDisplayOrder(item.items) : null;
 
     return (
-      <PlaylistItem
-        key={item.id}
-        item={item}
-        index={index}
-        level={level}
-        isCurrent={isCurrent}
-        isPlayed={isPlayed}
-        isDisabled={isDisabled}
-      >
-        {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
-          <div
-            className="party-playlist-group-items"
-            style={{ marginLeft: `${(level + 1) * 20}px` }}
-          >
-            {sortedItems.map((childItem, childIndex) =>
-              renderItem(childItem, childIndex, level + 1),
-            )}
-          </div>
-        )}
-      </PlaylistItem>
+      <React.Fragment key={`${item.id}-${level}-${index}`}>
+        <PlaylistItem
+          item={item}
+          index={index}
+          level={level}
+          isCurrent={isCurrent}
+          isPlayed={isPlayed}
+          isDisabled={isDisabled}
+        >
+          {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
+            <div
+              className="party-playlist-group-items"
+              style={{ marginLeft: `${(level + 1) * 20}px` }}
+            >
+              {sortedItems.map((childItem, childIndex) =>
+                renderItem(childItem, childIndex, level + 1),
+              )}
+            </div>
+          )}
+        </PlaylistItem>
+      </React.Fragment>
     );
   };
 

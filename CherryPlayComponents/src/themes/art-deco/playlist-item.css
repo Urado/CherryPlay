@@ -1,80 +1,117 @@
-[data-theme="art-deco"] .party-playlist-item {
+[data-theme='art-deco'] .party-playlist-item {
   background: rgba(26, 26, 26, 0.7);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-  border-left: 2px solid transparent;
+  border-bottom: none;
+  border-left: 3px solid transparent;
   transition: all 0.3s ease;
   position: relative;
-  padding: 16px 24px;
-  margin: 8px 20px;
+  padding: 0;
+  margin: 6px 16px;
   border-radius: 4px;
   cursor: pointer;
 }
 
-[data-theme="art-deco"] .party-playlist-item--group {
+[data-theme='art-deco'] .party-playlist-item-row {
+  padding: 12px 24px;
+  gap: 12px;
+}
+
+[data-theme='art-deco'] .party-playlist-item--group {
   background: rgba(212, 175, 55, 0.12);
-  border-left: 3px solid rgba(212, 175, 55, 0.4);
+  border-left-color: rgba(212, 175, 55, 0.4);
   font-weight: 700;
 }
 
-[data-theme="art-deco"] .party-playlist-item--track {
+[data-theme='art-deco'] .party-playlist-item--track {
   background: rgba(26, 26, 26, 0.7);
 }
 
-[data-theme="art-deco"] .party-playlist-item:hover {
+[data-theme='art-deco'] .party-playlist-item:hover {
   background: rgba(45, 45, 45, 0.9);
   box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
   border-left-color: rgba(212, 175, 55, 0.5);
   transform: translateX(6px);
 }
 
-[data-theme="art-deco"] .party-playlist-item--group:hover {
+[data-theme='art-deco'] .party-playlist-item--group:hover {
   background: rgba(212, 175, 55, 0.18);
   border-left-color: rgba(212, 175, 55, 0.6);
 }
 
-[data-theme="art-deco"] .party-playlist-item--current {
-  background: rgba(212, 175, 55, 0.2);
-  border-left: 5px solid var(--gold-color, #d4af37);
+[data-theme='art-deco'] .party-playlist-item--current {
+  background: var(--selected-bg);
+  border-left-width: 3px;
+  border-left-color: var(--selected-border);
   box-shadow: 0 0 24px rgba(212, 175, 55, 0.5);
   font-weight: 700;
-  padding: 20px 28px;
-  margin: 10px 16px;
-  border-radius: 6px;
 }
 
-[data-theme="art-deco"] .party-playlist-item--played {
+[data-theme='art-deco'] .party-playlist-item--played {
   opacity: 0.55;
-  color: #8b6914;
+  color: var(--text-tertiary);
+  border-left-color: var(--border-color);
 }
 
-[data-theme="art-deco"] .party-playlist-item--disabled {
+[data-theme='art-deco'] .party-playlist-item--disabled {
   opacity: 0.35;
   text-decoration: line-through;
   color: #5a4a1a;
   cursor: not-allowed;
 }
 
-[data-theme="art-deco"] .party-playlist-item-name {
-  color: #d4af37;
+[data-theme='art-deco'] .party-playlist-item-circle {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme='art-deco'] .party-playlist-item-circle[data-state='current'] {
+  background: var(--accent-primary);
+  color: #1a1a1a;
+}
+
+[data-theme='art-deco'] .party-playlist-item-circle[data-state='played'] {
+  background: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme='art-deco'] .party-playlist-item-circle[data-state='disabled'] {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+[data-theme='art-deco'] .party-playlist-item-name {
+  color: var(--text-primary);
   font-weight: 600;
   letter-spacing: 0.8px;
-  font-size: 16px;
-  line-height: 1.5;
-  margin-bottom: 6px;
-  padding-left: 16px;
-}
-
-[data-theme="art-deco"] .party-playlist-item--group .party-playlist-item-name {
-  padding-left: 8px;
-}
-
-[data-theme="art-deco"] .party-playlist-item-group-icon {
-  margin-right: 10px;
-}
-
-[data-theme="art-deco"] .party-playlist-item-duration {
-  color: #b8941f;
   font-size: 14px;
+  line-height: 1.5;
+}
+
+[data-theme='art-deco'] .party-playlist-item--group .party-playlist-item-name {
+  padding-left: 0;
+}
+
+[data-theme='art-deco'] .party-playlist-item-expand {
+  padding: 2px 4px;
+  min-width: 20px;
+  border-radius: 4px;
+}
+
+[data-theme='art-deco'] .party-playlist-item-expand:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+[data-theme='art-deco'] .party-playlist-item-duration {
+  color: var(--text-secondary);
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.5px;
+  margin-left: 12px;
+}
+
+[data-theme='art-deco'] .party-playlist-item-group-icon {
+  margin-right: 10px;
 }

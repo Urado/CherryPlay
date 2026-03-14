@@ -1,18 +1,18 @@
 @import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
 
-[data-theme="art-deco"] .party-info-display {
+[data-theme='art-deco'] .party-info-display {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: var(--text-primary);
 }
 
-[data-theme="art-deco"] .party-info-display-container {
+[data-theme='art-deco'] .party-info-display-container {
   background: rgba(26, 26, 26, 0.95);
   border: 2px solid var(--accent-primary);
   box-shadow: 0 4px 24px rgba(212, 175, 55, 0.2);
   position: relative;
 }
 
-[data-theme="art-deco"] .party-info-display-container::before {
+[data-theme='art-deco'] .party-info-display-container::before {
   content: '';
   position: absolute;
   top: 0;
@@ -22,26 +22,36 @@
   background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
 }
 
-[data-theme="art-deco"] .party-info-display-title {
+[data-theme='art-deco'] .party-info-display-inner {
+  padding: 24px 24px 32px;
+}
+
+[data-theme='art-deco'] .party-info-display-title {
   color: var(--accent-primary);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-[data-theme="art-deco"] .party-info-display-description {
+[data-theme='art-deco'] .party-info-display-description {
   color: var(--text-secondary);
 }
 
-[data-theme="art-deco"] .party-info-display-meta {
+[data-theme='art-deco'] .party-info-display-meta {
+  margin: 8px 0;
+  font-size: 15px;
   border-top-color: rgba(212, 175, 55, 0.3);
 }
 
-[data-theme="art-deco"] .party-info-display-meta strong {
+[data-theme='art-deco'] .party-info-display-meta--top {
+  margin-bottom: 20px;
+}
+
+[data-theme='art-deco'] .party-info-display-meta strong {
   color: var(--accent-primary);
 }
 
-[data-theme="art-deco"] .party-info-display-link-btn {
+[data-theme='art-deco'] .party-info-display-link-btn {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
@@ -49,10 +59,10 @@
   letter-spacing: 0.5px;
 }
 
-[data-theme="art-deco"] .party-info-display-link-btn:hover {
+[data-theme='art-deco'] .party-info-display-link-btn:hover {
   box-shadow: 0 4px 12px rgba(212, 175, 55, 0.5);
 }
 
-[data-theme="art-deco"] .party-info-display-link-back:hover {
+[data-theme='art-deco'] .party-info-display-link-back:hover {
   color: var(--accent-primary);
 }

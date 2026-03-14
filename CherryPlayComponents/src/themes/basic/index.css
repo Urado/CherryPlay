@@ -3,7 +3,7 @@
 @import './player.css';
 @import './party-info.css';
 
-[data-theme="basic"] {
+[data-theme='basic'] {
   --bg-primary: #1a1a1a;
   --bg-secondary: #2a2a2a;
   --bg-tertiary: #333333;
@@ -20,30 +20,29 @@
   color: var(--text-primary);
 }
 
-[data-theme="basic"] .party-display {
+[data-theme='basic'] .party-display {
   background: transparent;
   color: var(--text-primary);
 }
 
-[data-theme="basic"] .party-display-title {
+[data-theme='basic'] .party-display-title {
   color: var(--text-primary);
   font-weight: 700;
-  font-size: 2.75rem;
+  font-size: clamp(22px, 5vw, 32px);
   letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
 }
 
-[data-theme="basic"] .party-playlist-view {
+[data-theme='basic'] .party-playlist-view {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="basic"] .party-current-track-display {
+[data-theme='basic'] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border-radius: 12px 12px 0 0;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
