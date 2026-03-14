@@ -1,0 +1,10 @@
+{
+  "name": "cherryplay-aimp-bridge",
+  "version": "0.1.0",
+  "description": "AIMP named-pipe protocol manifest for CherryPlayList integration",
+  "main": "CherryPlayAimpBridge.dll",
+  "protocolVersion": "1.0.0",
+  "pipeName": "\\\\.\\pipe\\cherryplay-aimp-v1",
+  "supportedPlatforms": ["win32"],
+  "supportedArchitectures": ["x64"]
+}

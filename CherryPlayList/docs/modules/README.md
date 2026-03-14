@@ -24,6 +24,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [File Browser](./workspaces/file-browser.md) - Обозреватель файлов
 - [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
 - [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
+- [AIMP](./workspaces/aimp.md) - Панель AIMP: мониторинг плейлиста/воспроизведения и стриминг на сайт (Windows x64, источник AIMP)
 - [Test Zone](./workspaces/test-zone.md) - Тестовый модуль для проверки layout и реестра workspace
 
 ### Systems (модули)

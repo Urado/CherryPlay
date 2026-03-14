@@ -17,12 +17,16 @@
 
 Подсистемы, связывающие CherryPlayList с CherryPlayServer и CherryPlayWeb (авторизация, вечеринки, стриминг). Общая документация вынесена в корень репозитория.
 
-- **[docs/integration/](../../docs/integration/)** — обзор подсистем (Accounts & Auth, Party Management, Streaming, Data and Contracts), роли, ссылки на CONTRACTS, DATABASE и README сервера/веба.
+- **[docs/integration/](../../docs/integration/)** — обзор подсистем (Accounts & Auth, Party Management, Streaming, Data and Contracts, **AIMP как источник стриминга**), роли, ссылки на CONTRACTS, DATABASE и README сервера/веба.
 
 ### Модули приложения
 
 - **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections, File Browser, Player, Party, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout, Storage, Demo Player, Commands, Streaming).
-- Документация по каждому модулю — по ссылкам из modules/README.md (workspaces/*.md, systems/*.md, stores/*.md, services/*.md).
+- Документация по каждому модулю — по ссылкам из modules/README.md (workspaces/_.md, systems/_.md, stores/_.md, services/_.md).
+
+### Проверка и релиз
+
+- **[AIMP E2E Verification](AIMP_E2E_VERIFICATION.md)** — чеклист сквозной проверки AIMP → приложение → сайт (релизный gate). См. также [AIMP Streaming (интеграция)](../../docs/integration/aimp-streaming.md) и [плагин AIMP](../../CherryPlayAimpPlugin/README.md).
 
 ---
 

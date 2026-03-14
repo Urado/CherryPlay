@@ -14,12 +14,23 @@ import { WorkspaceId } from '@core/types/workspace';
 import { Spinner } from '@shared/components';
 import { authService } from '@shared/services/authService';
 import { partyService, CreatePartyDto } from '@shared/services/partyService';
-import { useAuthStore, useProjectStore, usePlayerAudioStore, useUIStore } from '@shared/stores';
+import {
+  useAuthStore,
+  useAimpStore,
+  useProjectStore,
+  usePlayerAudioStore,
+  useSettingsStore,
+  useUIStore,
+} from '@shared/stores';
+import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
   countTotalTracks,
+  canUseAimpLiveSnapshots,
+  convertAimpPlaylistForApi,
   convertPlaylistForApi,
+  createAimpPlaybackStateDto,
 } from '@shared/utils';
 
 import { PartyEditor } from './components/PartyEditor';
@@ -41,6 +52,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
 }) => {
   const items = useProjectStore((state) => state.items);
   const meta = useProjectStore((state) => state.meta);
+  const streamingSource = useSettingsStore((state) => state.streamingSource);
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const projectName = useProjectStore((state) => state.name);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
@@ -185,16 +198,46 @@ export const PartyView: React.FC<PartyViewProps> = ({
     return removePath(converted);
   }, [items]);
 
-  const playlistData = useMemo(
-    () => ({
+  const playlistData = useMemo(() => {
+    if (
+      streamingSource === 'aimp' &&
+      aimpBridgeState.playlistSnapshot &&
+      aimpBridgeState.playlistSnapshot.tracks.length > 0
+    ) {
+      const aimpPlaylist = convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot);
+      return {
+        items: aimpPlaylist.items,
+        totalDuration: aimpPlaylist.totalDuration,
+        totalTracks: aimpPlaylist.totalTracks,
+      };
+    }
+    return {
       items: componentItems,
       totalDuration: calculatePartyTotalDuration(items),
       totalTracks: countTotalTracks(items),
-    }),
-    [componentItems, items],
-  );
+    };
+  }, [streamingSource, aimpBridgeState.playlistSnapshot, componentItems, items]);
 
   const playbackState: PlaybackState | null = useMemo(() => {
+    if (
+      streamingSource === 'aimp' &&
+      aimpBridgeState.liveStreamStarted &&
+      canUseAimpLiveSnapshots(aimpBridgeState)
+    ) {
+      const dto = createAimpPlaybackStateDto(aimpBridgeState) as PlaybackState;
+      // Resolve currentTrackId to the playlist track key so findTrack() matches (casing/format)
+      const resolvedCurrentTrackId =
+        dto.currentTrackId && aimpBridgeState.playlistSnapshot
+          ? (() => {
+              const normalized = normalizeTrackKeyForComparison(dto.currentTrackId!);
+              const match = aimpBridgeState.playlistSnapshot!.tracks.find(
+                (t) => normalizeTrackKeyForComparison(t.trackKey) === normalized,
+              );
+              return match ? match.trackKey : dto.currentTrackId;
+            })()
+          : dto.currentTrackId;
+      return { ...dto, currentTrackId: resolvedCurrentTrackId };
+    }
     if (mode !== 'session') {
       return null;
     }
@@ -212,6 +255,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
       lastUpdatedAt: new Date().toISOString(),
     };
   }, [
+    streamingSource,
+    aimpBridgeState.liveStreamStarted,
+    aimpBridgeState.playlistSnapshot,
+    aimpBridgeState.playbackSnapshot,
+    aimpBridgeState.connection.phase,
     mode,
     currentTrackId,
     audioStatus,
@@ -499,7 +547,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setServerError(null);
     setPartyVerified(false);
     try {
-      const playlistForApi = convertPlaylistForApi(items);
+      const playlistForApi =
+        streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
+          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
+          : convertPlaylistForApi(items);
 
       const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
@@ -582,7 +633,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
       setIsPublishing(true);
       setServerError(null);
       try {
-        const playlistForApi = convertPlaylistForApi(items);
+        const playlistForApi =
+          streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
+            ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
+            : convertPlaylistForApi(items);
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
 
         // Обновляем метаданные вечеринки
@@ -638,7 +692,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setServerError(null);
     setPartyVerified(false);
     try {
-      const playlistForApi = convertPlaylistForApi(items);
+      const playlistForApi =
+        streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
+          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
+          : convertPlaylistForApi(items);
       const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
         name: nameToUse,

@@ -3,6 +3,7 @@ export type { PlayerStatus } from './demoPlayerStore';
 export { useDragDropStore } from './dragDropStore';
 export { useLayoutStore } from './layoutStore';
 export type { LayoutPreset } from './layoutStore';
+export { useAimpStore } from './aimpStore';
 export { useSettingsStore } from './settingsStore';
 export { useUIStore } from './uiStore';
 export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext } from './uiStore';

@@ -4,7 +4,8 @@
 
 ## Проекты
 
-- **CherryPlayList** - Desktop приложение на Electron для создания и управления плейлистами
+- **CherryPlayList** — Desktop приложение на Electron для создания и управления плейлистами; при выборе источника AIMP принимает состояние от плагина по named pipe и транслирует на сайт
+- **CherryPlayAimpPlugin** — нативный плагин AIMP (Windows x64), read-only мост: стримит плейлист и воспроизведение в CherryPlayList по NDJSON через `\\.\pipe\cherryplay-aimp-v1`
 - **CherryPlayComponents** - React компоненты и темы для отображения плейлистов
 - **CherryPlayServer** - Backend сервер на .NET для синхронизации воспроизведения
 - **CherryPlayWeb** - Web приложение для просмотра плейлистов
@@ -96,7 +97,7 @@ npm run build
 - [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) — документация по деплою (GitHub Secrets, автоматический деплой, ручной деплой, откат)
 - **CherryPlayList:** [docs/README.md](CherryPlayList/docs/README.md) — оглавление документации приложения
   - [QUICK_START_BUILD.md](CherryPlayList/QUICK_START_BUILD.md) — быстрый старт сборки релиза
-- **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, Data and Contracts)
+- **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, **AIMP Streaming**, Data and Contracts). AIMP: плагин [CherryPlayAimpPlugin](CherryPlayAimpPlugin/README.md) → named pipe → CherryPlayList (Electron) → SignalR/сайт; см. [aimp-streaming.md](docs/integration/aimp-streaming.md).
 - **CherryPlayServer:** [API.md](CherryPlayServer/API.md) (указатель на CONTRACTS), [OPS.md](CherryPlayServer/OPS.md), [DATABASE.md](CherryPlayServer/DATABASE.md)
 - **CherryPlayWeb:** [README.md](CherryPlayWeb/README.md), [docs/pages.md](CherryPlayWeb/docs/pages.md); переменные окружения — в корневом [ENV.md](ENV.md)
 - **CherryPlayComponents:** [README.md](CherryPlayComponents/README.md)

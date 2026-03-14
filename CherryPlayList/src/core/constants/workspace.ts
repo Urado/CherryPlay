@@ -17,10 +17,14 @@ export const DEFAULT_PLAYER_WORKSPACE_ID: WorkspaceId = 'default-player-workspac
 // ID для party workspace
 export const PARTY_WORKSPACE_ID: WorkspaceId = 'party-workspace';
 
+// ID для AIMP workspace
+export const AIMP_WORKSPACE_ID: WorkspaceId = 'aimp-workspace';
+
 const workspaceTypeRegistry = new Map<WorkspaceId, WorkspaceType>();
 workspaceTypeRegistry.set(DEFAULT_PLAYLIST_WORKSPACE_ID, 'playlist');
 workspaceTypeRegistry.set(DEFAULT_PLAYER_WORKSPACE_ID, 'player');
 workspaceTypeRegistry.set(PARTY_WORKSPACE_ID, 'party');
+workspaceTypeRegistry.set(AIMP_WORKSPACE_ID, 'aimp');
 
 /**
  * Генерирует новый UUID для workspace

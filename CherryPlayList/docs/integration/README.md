@@ -8,4 +8,5 @@
 - [Accounts and Auth](../../../docs/integration/accounts-and-auth.md)
 - [Party Management](../../../docs/integration/party-management.md)
 - [Streaming](../../../docs/integration/streaming.md)
+- [AIMP Streaming](../../../docs/integration/aimp-streaming.md) — AIMP как источник стриминга (Windows x64, протокол, плагин, приложение)
 - [Data and Contracts](../../../docs/integration/data-and-contracts.md)

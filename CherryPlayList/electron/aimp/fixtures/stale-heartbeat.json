@@ -1,0 +1,80 @@
+{
+  "fixtureId": "stale-heartbeat",
+  "description": "Valid connection that should transition to stale when no heartbeat or snapshot arrives for longer than the configured timeout.",
+  "pipeName": "\\\\.\\pipe\\cherryplay-aimp-v1",
+  "protocolVersion": "1.0.0",
+  "expectedRendererState": {
+    "connectionPhase": "stale",
+    "appListening": true,
+    "pluginConnected": true,
+    "waitMsAfterLastMessage": 20000
+  },
+  "expectedServerMessages": [
+    {
+      "type": "helloAck",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "server-helloAck-1",
+      "sentAt": "2026-03-13T10:00:00.000Z",
+      "payload": {
+        "accepted": true,
+        "serverProtocolVersion": "1.0.0"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "type": "hello",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "fixture-stale-hello",
+      "sentAt": "2026-03-13T10:10:00.000Z",
+      "payload": {
+        "pluginName": "CherryPlay AIMP Bridge",
+        "pluginVersion": "0.1.0",
+        "aimpVersion": "5.40.2683",
+        "architecture": "x64",
+        "platform": "win32",
+        "instanceId": "aimp-instance-002"
+      }
+    },
+    {
+      "type": "playlistSnapshot",
+      "protocolVersion": "1.0.0",
+      "sequence": 2,
+      "messageId": "fixture-stale-playlist",
+      "sentAt": "2026-03-13T10:10:00.500Z",
+      "payload": {
+        "playlistId": "main-playlist",
+        "playlistName": "Main Playlist",
+        "revision": 8,
+        "activeTrack": {
+          "nativeTrackId": "track-010"
+        },
+        "tracks": [
+          {
+            "nativeTrackId": "track-010",
+            "filePath": "C:\\Music\\Artist Two\\Afterglow.flac",
+            "title": "Afterglow",
+            "artist": "Artist Two",
+            "durationMs": 241000,
+            "positionInQueue": 0,
+            "isActive": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "heartbeat",
+      "protocolVersion": "1.0.0",
+      "sequence": 3,
+      "messageId": "fixture-stale-heartbeat",
+      "sentAt": "2026-03-13T10:10:05.000Z",
+      "payload": {
+        "connectionUptimeMs": 5000,
+        "lastPlaylistRevision": 8,
+        "lastPlaybackRevision": 0
+      }
+    }
+  ]
+}

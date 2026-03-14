@@ -1,0 +1,45 @@
+{
+  "fixtureId": "version-mismatch",
+  "description": "Handshake fixture that must be rejected because the plugin advertises an unsupported protocol version.",
+  "pipeName": "\\\\.\\pipe\\cherryplay-aimp-v1",
+  "protocolVersion": "1.0.0",
+  "expectedRendererState": {
+    "connectionPhase": "listening",
+    "appListening": true,
+    "pluginConnected": false,
+    "protocolErrorCode": "unsupportedProtocolVersion",
+    "disconnectReasonCode": "protocolVersionMismatch"
+  },
+  "expectedServerMessages": [
+    {
+      "type": "helloAck",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "server-helloAck-1",
+      "sentAt": "2026-03-13T10:00:00.000Z",
+      "payload": {
+        "accepted": false,
+        "serverProtocolVersion": "1.0.0",
+        "errorCode": "unsupportedProtocolVersion",
+        "detail": "Unsupported AIMP protocol version \"2.0.0\" Supported versions: 1.0.0"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "type": "hello",
+      "protocolVersion": "2.0.0",
+      "sequence": 1,
+      "messageId": "fixture-version-mismatch-hello",
+      "sentAt": "2026-03-13T10:30:00.000Z",
+      "payload": {
+        "pluginName": "CherryPlay AIMP Bridge",
+        "pluginVersion": "0.2.0",
+        "aimpVersion": "5.40.2683",
+        "architecture": "x64",
+        "platform": "win32",
+        "instanceId": "aimp-instance-004"
+      }
+    }
+  ]
+}

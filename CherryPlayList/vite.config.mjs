@@ -25,6 +25,10 @@ const eslintPlugin = eslint({
 export default defineConfig({
   plugins: [react(), ...(shouldLint ? [eslintPlugin] : [])],
   base: './',
+  optimizeDeps: {
+    include: ['@mui/material', '@mui/material/utils', '@mui/icons-material'],
+    force: false,
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

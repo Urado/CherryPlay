@@ -13,12 +13,14 @@ import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
   LayoutPreset,
+  useAimpStore,
   useAuthStore,
   useLayoutStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
+import { getAimpPartyPresetState, getLayoutPresetFromLayout } from '@shared/utils';
 
 export const AppHeader: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -40,11 +42,28 @@ export const AppHeader: React.FC = () => {
   } = useProjectStore();
 
   const { openModal, addNotification, focusFileInBrowser } = useUIStore();
-  const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
-  const { setLayoutPreset } = useLayoutStore();
+  const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
+  const layout = useLayoutStore((state) => state.layout);
+  const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
-  const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>('simple');
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
+  const aimpPartyPresetState = getAimpPartyPresetState({
+    sourceSelection: streamingSource,
+    environment: aimpBridgeState.environment,
+    enableStreaming,
+  });
+  const isAimpPresetVisible = aimpPartyPresetState.visible;
+  const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
+  const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
+    persistedLayoutPreset ?? 'simple',
+  );
+
+  useEffect(() => {
+    if (persistedLayoutPreset && persistedLayoutPreset !== selectedLayout) {
+      setSelectedLayout(persistedLayoutPreset);
+    }
+  }, [persistedLayoutPreset, selectedLayout]);
 
   // В production не позволяем использовать complex layout
   useEffect(() => {
@@ -57,6 +76,21 @@ export const AppHeader: React.FC = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [selectedLayout, setLayoutPreset]);
+
+  useEffect(() => {
+    if (!isAimpPresetVisible && persistedLayoutPreset === 'aimp-party') {
+      const timeoutId = setTimeout(() => {
+        setSelectedLayout(aimpPartyPresetState.fallbackPreset);
+        setLayoutPreset(aimpPartyPresetState.fallbackPreset);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    aimpPartyPresetState.fallbackPreset,
+    isAimpPresetVisible,
+    persistedLayoutPreset,
+    setLayoutPreset,
+  ]);
 
   const handleNew = useCallback(() => {
     newProject();
@@ -238,7 +272,8 @@ export const AppHeader: React.FC = () => {
       preset === 'collections' ||
       preset === 'collections-vertical' ||
       preset === 'player' ||
-      (preset === 'party' && enableStreaming)
+      (preset === 'party' && enableStreaming) ||
+      (preset === 'aimp-party' && isAimpPresetVisible)
     ) {
       setSelectedLayout(preset);
       setLayoutPreset(preset);
@@ -249,6 +284,7 @@ export const AppHeader: React.FC = () => {
         'collections-vertical': 'Коллекции вертикально',
         player: 'Плеер',
         party: 'Вечеринка',
+        'aimp-party': 'AIMP + Party',
       };
       addNotification({
         type: 'info',
@@ -384,6 +420,7 @@ export const AppHeader: React.FC = () => {
               </option>
               <option value="player">Плеер (Player + Browser)</option>
               {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
+              {isAimpPresetVisible && <option value="aimp-party">AIMP + Party</option>}
             </select>
           </div>
         </div>

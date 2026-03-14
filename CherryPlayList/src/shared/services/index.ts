@@ -1,3 +1,4 @@
+export { aimpService } from './aimpService';
 export { exportService } from './exportService';
 export type { ExportResult } from './exportService';
 export { fileService } from './fileService';

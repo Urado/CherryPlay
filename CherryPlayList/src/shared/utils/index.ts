@@ -59,3 +59,32 @@ export {
   getDuplicateTrackIdsByPathAndFilename,
   getDuplicateTrackIdsFromDisplayItems,
 } from './duplicateUtils';
+export {
+  canAdvanceAimpPlayback,
+  canStartAimpLiveStream,
+  canUseAimpLiveSnapshots,
+  convertAimpPlaylistForApi,
+  createAimpPlaybackStateDto,
+  getAimpAvailability,
+  getAimpCurrentTrack,
+  getAimpEffectiveProgressMs,
+  getAimpPlaybackPublishKey,
+  getAimpPlaylistPublishKey,
+  isAimpDegraded,
+} from './aimpStreamingAdapter';
+export type { AimpAvailability } from './aimpStreamingAdapter';
+export {
+  createAimpPublishingPathState,
+  formatAimpPublishingPathError,
+  startAimpPublishingBridge,
+  type AimpPublishingBridgeServices,
+  type AimpPublishingPathState,
+  type AimpPublishingPathStatus,
+} from './aimpPublishingPath';
+export {
+  startAimpOrganizerSession,
+  teardownAimpOrganizerSession,
+  type AimpOrganizerSessionActions,
+} from './aimpOrganizerSession';
+export { getLayoutPresetFromLayout } from './layoutPreset';
+export { getAimpPartyPresetState } from './aimpPresetVisibility';

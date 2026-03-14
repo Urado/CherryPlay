@@ -3,12 +3,14 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { APP_VERSION } from '@shared/config';
 import {
+  useAimpStore,
   useSettingsStore,
   useUIStore,
   useDemoPlayerStore,
   usePlayerAudioStore,
   useProjectStore,
 } from '@shared/stores';
+import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
 const DIVIDER_INTERVALS = [
@@ -38,7 +40,12 @@ export const SettingsModal: React.FC = () => {
     setDemoPlayerAudioDeviceId,
     enableStreaming,
     setEnableStreaming,
+    streamingSource,
+    setStreamingSource,
   } = useSettingsStore();
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
+  const aimpAvailability = getAimpAvailability(aimpBridgeState);
+  const canSelectAimpSource = aimpAvailability.available;
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
   const [localHourDividerInterval, setLocalHourDividerInterval] = useState(hourDividerInterval);
@@ -50,6 +57,7 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
   );
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
+  const [localStreamingSource, setLocalStreamingSource] = useState(streamingSource);
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -75,12 +83,6 @@ export const SettingsModal: React.FC = () => {
   }, [modal]);
 
   useEffect(() => {
-    if (hasHydrated) {
-      setLocalEnableStreaming(enableStreaming);
-    }
-  }, [hasHydrated, enableStreaming]);
-
-  useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
       prevModalRef.current = 'settings';
       const timeoutId = setTimeout(() => {
@@ -91,6 +93,7 @@ export const SettingsModal: React.FC = () => {
         setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
         if (hasHydrated) {
           setLocalEnableStreaming(enableStreaming);
+          setLocalStreamingSource(streamingSource);
         }
       }, 0);
       return () => clearTimeout(timeoutId);
@@ -105,6 +108,7 @@ export const SettingsModal: React.FC = () => {
     playerAudioDeviceId,
     demoPlayerAudioDeviceId,
     enableStreaming,
+    streamingSource,
   ]);
 
   if (modal !== 'settings') {
@@ -119,6 +123,7 @@ export const SettingsModal: React.FC = () => {
     setPlayerAudioDeviceId(localPlayerDeviceId);
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
     setEnableStreaming(localEnableStreaming);
+    setStreamingSource(localStreamingSource);
 
     try {
       const playerStore = usePlayerAudioStore.getState();
@@ -147,6 +152,7 @@ export const SettingsModal: React.FC = () => {
     setLocalPlayerDeviceId(playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
     setLocalEnableStreaming(enableStreaming);
+    setLocalStreamingSource(streamingSource);
     closeModal();
   };
 
@@ -213,6 +219,52 @@ export const SettingsModal: React.FC = () => {
               </label>
             </div>
           </div>
+
+          <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
+
+          <div
+            className="settings-section-title"
+            style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+          >
+            Источник стриминга
+          </div>
+
+          <div className="settings-group">
+            <label className="settings-label" htmlFor="settings-streaming-source">
+              Источник состояния воспроизведения
+            </label>
+            <select
+              className="settings-select"
+              value={localStreamingSource}
+              onChange={(e) =>
+                setLocalStreamingSource(e.target.value as 'cherryPlayPlayer' | 'aimp')
+              }
+              id="settings-streaming-source"
+            >
+              <option value="cherryPlayPlayer">CherryPlay Player</option>
+              <option value="aimp" disabled={!canSelectAimpSource}>
+                AIMP
+              </option>
+            </select>
+          </div>
+
+          {!canSelectAimpSource && (
+            <div
+              className="settings-description"
+              style={{
+                marginTop: 4,
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary, #9e9e9e)',
+                display: 'grid',
+                gap: 4,
+              }}
+            >
+              <div>AIMP режим сейчас недоступен:</div>
+              {aimpAvailability.gatingReasons.map((reason) => (
+                <div key={reason.code}>- {reason.message}</div>
+              ))}
+            </div>
+          )}
 
           <div className="settings-group">
             <label className="settings-label" htmlFor="settings-hour-divider">

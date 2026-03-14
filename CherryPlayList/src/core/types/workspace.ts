@@ -9,6 +9,7 @@ export type WorkspaceType =
   | 'rules'
   | 'autogenerator'
   | 'player'
+  | 'aimp'
   | 'test1'
   | 'test2'
   | 'test3'

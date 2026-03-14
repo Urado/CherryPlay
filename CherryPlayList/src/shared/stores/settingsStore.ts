@@ -1,6 +1,7 @@
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import type { AimpSourceSelection } from '../contracts/aimp';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
 import { electronStorage } from '../storage/electronStorage';
 
@@ -18,6 +19,7 @@ interface SettingsState {
   demoPlayerAudioDeviceId: string | null;
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
+  streamingSource: AimpSourceSelection;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
@@ -30,6 +32,7 @@ interface SettingsState {
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
+  setStreamingSource: (source: AimpSourceSelection) => void;
 }
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
@@ -49,6 +52,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       demoPlayerAudioDeviceId: null,
       keyBindings: {},
       enableStreaming: false,
+      streamingSource: 'cherryPlayPlayer',
 
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
@@ -65,6 +69,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         })),
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
+      setStreamingSource: (source) => set({ streamingSource: source }),
     }),
     {
       name: 'cherryplaylist-settings',
@@ -81,6 +86,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         demoPlayerAudioDeviceId: state.demoPlayerAudioDeviceId,
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
+        streamingSource: state.streamingSource,
       }),
       onRehydrateStorage: () => (_state, _err) => {
         useSettingsStore.getState().setHasHydrated(true);

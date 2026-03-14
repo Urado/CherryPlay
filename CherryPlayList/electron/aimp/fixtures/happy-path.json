@@ -1,0 +1,109 @@
+{
+  "fixtureId": "happy-path",
+  "description": "Valid hello + snapshot + heartbeat sequence that should leave the renderer-facing state connected.",
+  "pipeName": "\\\\.\\pipe\\cherryplay-aimp-v1",
+  "protocolVersion": "1.0.0",
+  "expectedRendererState": {
+    "connectionPhase": "connected",
+    "appListening": true,
+    "pluginConnected": true,
+    "liveStreamStarted": false
+  },
+  "expectedServerMessages": [
+    {
+      "type": "helloAck",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "server-helloAck-1",
+      "sentAt": "2026-03-13T10:00:00.000Z",
+      "payload": {
+        "accepted": true,
+        "serverProtocolVersion": "1.0.0"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "type": "hello",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "fixture-happy-hello",
+      "sentAt": "2026-03-13T10:00:00.000Z",
+      "payload": {
+        "pluginName": "CherryPlay AIMP Bridge",
+        "pluginVersion": "0.1.0",
+        "aimpVersion": "5.40.2683",
+        "architecture": "x64",
+        "platform": "win32",
+        "instanceId": "aimp-instance-001"
+      }
+    },
+    {
+      "type": "playlistSnapshot",
+      "protocolVersion": "1.0.0",
+      "sequence": 2,
+      "messageId": "fixture-happy-playlist",
+      "sentAt": "2026-03-13T10:00:01.000Z",
+      "payload": {
+        "playlistId": "main-playlist",
+        "playlistName": "Main Playlist",
+        "revision": 4,
+        "activeTrack": {
+          "nativeTrackId": "track-002"
+        },
+        "tracks": [
+          {
+            "nativeTrackId": "track-001",
+            "filePath": "C:\\Music\\Artist One\\Intro.mp3",
+            "title": "Intro",
+            "artist": "Artist One",
+            "album": "Club Set",
+            "durationMs": 90000,
+            "positionInQueue": 0,
+            "isActive": false
+          },
+          {
+            "nativeTrackId": "track-002",
+            "filePath": "C:\\Music\\Artist One\\Main Theme.mp3",
+            "title": "Main Theme",
+            "artist": "Artist One",
+            "album": "Club Set",
+            "durationMs": 182000,
+            "positionInQueue": 1,
+            "isActive": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "playbackSnapshot",
+      "protocolVersion": "1.0.0",
+      "sequence": 3,
+      "messageId": "fixture-happy-playback",
+      "sentAt": "2026-03-13T10:00:01.250Z",
+      "payload": {
+        "revision": 7,
+        "status": "playing",
+        "currentTrack": {
+          "nativeTrackId": "track-002"
+        },
+        "positionMs": 42000,
+        "durationMs": 182000,
+        "volumePercent": 78,
+        "isMuted": false
+      }
+    },
+    {
+      "type": "heartbeat",
+      "protocolVersion": "1.0.0",
+      "sequence": 4,
+      "messageId": "fixture-happy-heartbeat",
+      "sentAt": "2026-03-13T10:00:05.000Z",
+      "payload": {
+        "connectionUptimeMs": 5000,
+        "lastPlaylistRevision": 4,
+        "lastPlaybackRevision": 7
+      }
+    }
+  ]
+}

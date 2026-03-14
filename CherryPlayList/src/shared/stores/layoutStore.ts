@@ -5,6 +5,7 @@ import { createWithEqualityFn } from 'zustand/traditional';
 import { WorkspaceId } from '@core/types/workspace';
 
 import {
+  AIMP_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
   PARTY_WORKSPACE_ID,
@@ -457,7 +458,8 @@ export type LayoutPreset =
   | 'collections'
   | 'collections-vertical'
   | 'player'
-  | 'party';
+  | 'party'
+  | 'aimp-party';
 
 /**
  * Создает layout для player workspace
@@ -537,6 +539,38 @@ function createPartyLayout(): Layout {
   };
 }
 
+function createAimpPartyLayout(): Layout {
+  const aimpZoneId = uuidv4();
+  const partyZoneId = uuidv4();
+  const rootContainerId = uuidv4();
+
+  return {
+    rootZone: {
+      id: rootContainerId,
+      type: 'container',
+      direction: 'horizontal',
+      zones: [
+        {
+          id: aimpZoneId,
+          type: 'workspace',
+          workspaceId: AIMP_WORKSPACE_ID,
+          workspaceType: 'aimp',
+          size: 60,
+        },
+        {
+          id: partyZoneId,
+          type: 'workspace',
+          workspaceId: PARTY_WORKSPACE_ID,
+          workspaceType: 'party',
+          size: 40,
+        },
+      ],
+      sizes: [60, 40],
+    },
+    version: 1,
+  };
+}
+
 /**
  * Создает layout по имени предустановки
  */
@@ -554,6 +588,8 @@ function createLayoutByPreset(preset: LayoutPreset): Layout {
       return createPlayerLayout();
     case 'party':
       return createPartyLayout();
+    case 'aimp-party':
+      return createAimpPartyLayout();
     default:
       return createSimpleLayout();
   }

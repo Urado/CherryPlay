@@ -35,6 +35,24 @@ interface PlayerViewContainerProps {
 }
 
 export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
+  workspaceId,
+  zoneId,
+}) => {
+  const streamingSource = useSettingsStore((state) => state.streamingSource);
+
+  if (streamingSource === 'aimp') {
+    return (
+      <div className="empty-state">
+        <p>CherryPlay Player is disabled while AIMP is selected as the streaming source.</p>
+        <p>Switch back to `CherryPlay Player` in Settings to resume the built-in player flow.</p>
+      </div>
+    );
+  }
+
+  return <PlayerViewContainerContent workspaceId={workspaceId} zoneId={zoneId} />;
+};
+
+const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   workspaceId: _workspaceId,
   zoneId,
 }) => {

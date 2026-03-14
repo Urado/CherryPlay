@@ -619,30 +619,38 @@ class SignalRService {
    * Уведомляет об изменении состояния
    */
   async notifyStateChanged(partyId: string): Promise<void> {
-    if (!this.isServiceConnected() || !this.connection) {
-      return;
-    }
-
     try {
-      await this.invokeWithLogging('NotifyStateChanged', partyId);
+      await this.notifyStateChangedOrThrow(partyId);
     } catch (error) {
       console.error('[SignalR] Failed to notify state changed:', error);
     }
+  }
+
+  async notifyStateChangedOrThrow(partyId: string): Promise<void> {
+    if (!this.isServiceConnected() || !this.connection) {
+      throw new Error('SignalR connection not established');
+    }
+
+    await this.invokeWithLogging('NotifyStateChanged', partyId);
   }
 
   /**
    * Обновляет полное состояние воспроизведения
    */
   async updateFullState(partyId: string, state: PlaybackStateDto): Promise<void> {
-    if (!this.isServiceConnected() || !this.connection) {
-      return;
-    }
-
     try {
-      await this.invokeWithLogging('UpdateFullState', partyId, state);
+      await this.updateFullStateOrThrow(partyId, state);
     } catch (error) {
       console.error('[SignalR] Failed to update full state:', error);
     }
+  }
+
+  async updateFullStateOrThrow(partyId: string, state: PlaybackStateDto): Promise<void> {
+    if (!this.isServiceConnected() || !this.connection) {
+      throw new Error('SignalR connection not established');
+    }
+
+    await this.invokeWithLogging('UpdateFullState', partyId, state);
   }
 
   /**

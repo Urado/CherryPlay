@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url';
 
 import { app, BrowserWindow, Menu, session } from 'electron';
 
+import { aimpIntegrationService } from './aimp/service.js';
+import { registerAimpHandlers } from './ipc/aimp.js';
 import { registerAudioHandlers } from './ipc/audio.js';
 import { registerAuthHandlers, handleOAuthCallback } from './ipc/auth.js';
 import { registerConfigHandlers } from './ipc/config.js';
@@ -74,6 +76,7 @@ app.whenReady().then(() => {
   });
 
   registerFileBrowserHandlers();
+  registerAimpHandlers();
   registerAudioHandlers();
   registerDialogHandlers();
   registerSystemHandlers();
@@ -131,4 +134,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  aimpIntegrationService.dispose();
 });

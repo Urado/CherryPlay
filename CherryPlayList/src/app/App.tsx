@@ -22,6 +22,7 @@ import {
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
 
 import { AccountModal } from './components/AccountModal';
+import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
 import { ExportModal } from './components/ExportModal';
@@ -116,6 +117,7 @@ const App: React.FC = () => {
       <div className="app-content">
         <SplitContainer zone={layout.rootZone} />
       </div>
+      <AimpIntegrationController />
       <SettingsModal />
       <ExportModal />
       <LinkPartyModal />

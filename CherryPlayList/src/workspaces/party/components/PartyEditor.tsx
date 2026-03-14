@@ -124,7 +124,6 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               maxLength={maxTagLength}
               disabled={tags.length >= maxTags}
               aria-label="Поле для ввода другого танца"
-              autoFocus
             />
             <button
               type="button"

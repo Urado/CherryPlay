@@ -3,6 +3,7 @@ import '@workspaces/collection';
 import '@workspaces/testZone';
 import '@workspaces/player';
 import '@workspaces/party';
+import '@workspaces/aimp';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 

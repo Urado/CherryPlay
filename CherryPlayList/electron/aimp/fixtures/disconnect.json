@@ -1,0 +1,69 @@
+{
+  "fixtureId": "disconnect",
+  "description": "Valid session that ends with a goodbye payload so the app can surface an explicit disconnect reason while staying in listening mode.",
+  "pipeName": "\\\\.\\pipe\\cherryplay-aimp-v1",
+  "protocolVersion": "1.0.0",
+  "expectedRendererState": {
+    "connectionPhase": "listening",
+    "appListening": true,
+    "pluginConnected": false,
+    "disconnectReasonCode": "clientGoodbye"
+  },
+  "expectedServerMessages": [
+    {
+      "type": "helloAck",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "server-helloAck-1",
+      "sentAt": "2026-03-13T10:00:00.000Z",
+      "payload": {
+        "accepted": true,
+        "serverProtocolVersion": "1.0.0"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "type": "hello",
+      "protocolVersion": "1.0.0",
+      "sequence": 1,
+      "messageId": "fixture-disconnect-hello",
+      "sentAt": "2026-03-13T10:20:00.000Z",
+      "payload": {
+        "pluginName": "CherryPlay AIMP Bridge",
+        "pluginVersion": "0.1.0",
+        "aimpVersion": "5.40.2683",
+        "architecture": "x64",
+        "platform": "win32",
+        "instanceId": "aimp-instance-003"
+      }
+    },
+    {
+      "type": "playbackSnapshot",
+      "protocolVersion": "1.0.0",
+      "sequence": 2,
+      "messageId": "fixture-disconnect-playback",
+      "sentAt": "2026-03-13T10:20:01.000Z",
+      "payload": {
+        "revision": 3,
+        "status": "paused",
+        "currentTrack": null,
+        "positionMs": 0,
+        "durationMs": null,
+        "volumePercent": 65,
+        "isMuted": false
+      }
+    },
+    {
+      "type": "goodbye",
+      "protocolVersion": "1.0.0",
+      "sequence": 3,
+      "messageId": "fixture-disconnect-goodbye",
+      "sentAt": "2026-03-13T10:20:02.000Z",
+      "payload": {
+        "reason": "pluginShutdown",
+        "detail": "AIMP is closing and the plugin is detaching from CherryPlayList."
+      }
+    }
+  ]
+}
