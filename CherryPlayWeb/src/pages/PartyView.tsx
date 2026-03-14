@@ -17,6 +17,7 @@ import { signalRService } from '../services/signalRService';
 import type { PlaybackStateDto, PlayerItemDto } from '../types/api';
 import { devLog, devWarn } from '../utils/logger';
 import { playbackStateFromDto } from '../utils/playbackState';
+import { resolveCurrentTrackIdFromPlaylist } from '../utils/trackKey';
 import './PartyView.css';
 
 const DISCONNECT_FREEZE_MS = 60_000;
@@ -372,30 +373,40 @@ export const PartyView: React.FC<PartyViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortCode, isDemo, loading]); // Убрали функции из зависимостей намеренно
 
-  const displayData: PartyDisplayData<PartyThemeId> = useMemo(
-    () => ({
+  const displayData: PartyDisplayData<PartyThemeId> = useMemo(() => {
+    const pl = playlist || { items: [], totalDuration: 0, totalTracks: 0 };
+    const ps = playbackState || null;
+    const resolvedCurrentTrackId =
+      ps?.currentTrackId && pl.items.length > 0
+        ? resolveCurrentTrackIdFromPlaylist(pl.items, ps.currentTrackId)
+        : (ps?.currentTrackId ?? null);
+    const playbackStateForDisplay =
+      ps && resolvedCurrentTrackId !== null
+        ? { ...ps, currentTrackId: resolvedCurrentTrackId }
+        : ps;
+
+    return {
       partyId: partyId || (isDemo ? 'demo' : 'unknown'),
       partyName: partyTitle || partyName || (isDemo ? 'Демо плейлист' : 'Плейлист вечеринки'),
       subtitle: partySubtitle ?? undefined,
       themeId,
       customizationSettings,
-      playlist: playlist || { items: [], totalDuration: 0, totalTracks: 0 },
-      playbackState: playbackState || null,
+      playlist: pl,
+      playbackState: playbackStateForDisplay,
       isSessionActive,
-    }),
-    [
-      partyId,
-      partyTitle,
-      partyName,
-      partySubtitle,
-      themeId,
-      customizationSettings,
-      playlist,
-      playbackState,
-      isSessionActive,
-      isDemo,
-    ],
-  );
+    };
+  }, [
+    partyId,
+    partyTitle,
+    partyName,
+    partySubtitle,
+    themeId,
+    customizationSettings,
+    playlist,
+    playbackState,
+    isSessionActive,
+    isDemo,
+  ]);
 
   const handleRetry = () => {
     loadPlaylist();
