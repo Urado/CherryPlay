@@ -1,0 +1,72 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vs2026-x64-release",
+      "displayName": "Visual Studio 2026 x64 Release",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2026-x64-release",
+      "cacheVariables": {
+        "AIMP_SDK_ROOT": "D:/AIMP_SDK/Sources/Cpp"
+      }
+    },
+    {
+      "name": "vs2026-x64-debug",
+      "displayName": "Visual Studio 2026 x64 Debug",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2026-x64-debug",
+      "cacheVariables": {
+        "AIMP_SDK_ROOT": "D:/AIMP_SDK/Sources/Cpp"
+      }
+    },
+    {
+      "name": "vs2022-x64-release",
+      "displayName": "Visual Studio 2022 x64 Release",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2022-x64-release",
+      "cacheVariables": {
+        "AIMP_SDK_ROOT": "D:/AIMP_SDK/Sources/Cpp"
+      }
+    },
+    {
+      "name": "vs2022-x64-debug",
+      "displayName": "Visual Studio 2022 x64 Debug",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2022-x64-debug",
+      "cacheVariables": {
+        "AIMP_SDK_ROOT": "D:/AIMP_SDK/Sources/Cpp"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-release",
+      "configurePreset": "vs2026-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "build-debug",
+      "configurePreset": "vs2026-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-release-vs2022",
+      "configurePreset": "vs2022-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "build-debug-vs2022",
+      "configurePreset": "vs2022-x64-debug",
+      "configuration": "Debug"
+    }
+  ]
+}

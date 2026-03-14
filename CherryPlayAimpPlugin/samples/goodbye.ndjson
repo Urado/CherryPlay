@@ -1,0 +1,3 @@
+{"type":"hello","protocolVersion":"1.0.0","sequence":1,"messageId":"aimp-instance-003-1","sentAt":"2026-03-13T12:10:00.000Z","payload":{"pluginName":"CherryPlay AIMP Bridge","pluginVersion":"0.1.0","aimpVersion":"5.40.2683","architecture":"x64","platform":"win32","instanceId":"aimp-instance-003"}}
+{"type":"helloAck","protocolVersion":"1.0.0","sequence":1,"messageId":"server-helloAck-1","sentAt":"2026-03-13T12:10:00.050Z","payload":{"accepted":true,"serverProtocolVersion":"1.0.0"}}
+{"type":"goodbye","protocolVersion":"1.0.0","sequence":2,"messageId":"aimp-instance-003-2","sentAt":"2026-03-13T12:10:02.000Z","payload":{"reason":"appClosing","detail":"AIMP is closing and the plugin is detaching from CherryPlayList."}}
