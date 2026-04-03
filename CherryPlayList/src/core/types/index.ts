@@ -19,6 +19,7 @@ export type {
   ProjectSettings,
   ProjectSessionState,
   ProjectMeta,
+  PartyTrackDisplaySettings,
   LinkedParty,
   SavedProjectTrack,
   SavedProjectGroup,
@@ -31,4 +32,5 @@ export {
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
   DEFAULT_PROJECT_META,
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
 } from './project';

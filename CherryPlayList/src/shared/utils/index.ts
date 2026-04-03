@@ -25,6 +25,8 @@ export {
   convertToApiPlayerItems,
   calculatePlaylistMetadata,
   convertPlaylistForApi,
+  applyPartyTrackDisplayToTrackName,
+  applyPartyTrackDisplayToComponentPlaylist,
   type PlayerItemForApi,
 } from './partyUtils';
 export {

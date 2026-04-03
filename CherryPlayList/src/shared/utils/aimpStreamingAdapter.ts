@@ -1,4 +1,9 @@
 import {
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+  type PartyTrackDisplaySettings,
+} from '@core/types/project';
+
+import {
   hasUsableAimpLiveStreamSnapshots,
   normalizeTrackKeyForComparison,
   type AimpBridgeState,
@@ -10,7 +15,7 @@ import {
 } from '../contracts/aimp';
 import type { PlaybackStateDto } from '../services/signalRService';
 
-import type { PlayerItemForApi } from './partyUtils';
+import { applyPartyTrackDisplayToTrackName, type PlayerItemForApi } from './partyUtils';
 
 export interface AimpAvailability {
   available: boolean;
@@ -146,6 +151,7 @@ function getAimpTrackDisplayName(track: AimpPlaylistTrackDto): string {
 
 export function convertAimpPlaylistForApi(
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
+  trackDisplay: PartyTrackDisplaySettings = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
 ): {
   items: PlayerItemForApi[];
   totalTracks: number;
@@ -154,14 +160,18 @@ export function convertAimpPlaylistForApi(
   const tracks = playlistSnapshot?.tracks ?? [];
 
   return {
-    items: tracks.map((track) => ({
-      id: track.trackKey,
-      type: 'track',
-      name: getAimpTrackDisplayName(track),
-      duration: convertDurationMsToSeconds(track.durationMs),
-      displayOrder: track.order,
-      level: 0,
-    })),
+    items: tracks.map((track) => {
+      const rawName = getAimpTrackDisplayName(track);
+      const name = applyPartyTrackDisplayToTrackName(rawName, trackDisplay);
+      return {
+        id: track.trackKey,
+        type: 'track',
+        name,
+        duration: convertDurationMsToSeconds(track.durationMs),
+        displayOrder: track.order,
+        level: 0,
+      };
+    }),
     totalTracks: tracks.length,
     totalDuration: tracks.reduce(
       (sum, track) => sum + convertDurationMsToSeconds(track.durationMs),

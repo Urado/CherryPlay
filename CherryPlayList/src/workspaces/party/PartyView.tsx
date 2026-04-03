@@ -12,6 +12,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 
 import { WorkspaceId } from '@core/types/workspace';
 import { Spinner } from '@shared/components';
+import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import { authService } from '@shared/services/authService';
 import { partyService, CreatePartyDto } from '@shared/services/partyService';
 import {
@@ -22,7 +23,6 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import {
   convertToComponentPlayerItems,
   calculatePartyTotalDuration,
@@ -31,9 +31,11 @@ import {
   convertAimpPlaylistForApi,
   convertPlaylistForApi,
   createAimpPlaybackStateDto,
+  applyPartyTrackDisplayToComponentPlaylist,
 } from '@shared/utils';
 
 import { PartyEditor } from './components/PartyEditor';
+import { PartyTrackDisplaySection } from './components/PartyTrackDisplaySection';
 import { PartyPreview } from './PartyPreview';
 import './PartyView.css';
 
@@ -57,6 +59,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const projectName = useProjectStore((state) => state.name);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
+  const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
+  const setPartyTrackDisplaySettings = useProjectStore(
+    (state) => state.setPartyTrackDisplaySettings,
+  );
 
   const sessionState = useProjectStore((state) => state.sessionState);
   const { mode, currentTrackId, playedTrackIds, disabledTrackIds, disabledGroupIds } = useMemo(
@@ -217,6 +223,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
       totalTracks: countTotalTracks(items),
     };
   }, [streamingSource, aimpBridgeState.playlistSnapshot, componentItems, items]);
+
+  const previewPlaylistData = useMemo(
+    () => ({
+      ...playlistData,
+      items: applyPartyTrackDisplayToComponentPlaylist(playlistData.items, partyTrackDisplay),
+    }),
+    [playlistData, partyTrackDisplay],
+  );
 
   const playbackState: PlaybackState | null = useMemo(() => {
     if (
@@ -549,8 +563,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     try {
       const playlistForApi =
         streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
-          : convertPlaylistForApi(items);
+          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
+          : convertPlaylistForApi(items, partyTrackDisplay);
 
       const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
@@ -635,8 +649,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
       try {
         const playlistForApi =
           streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-            ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
-            : convertPlaylistForApi(items);
+            ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
+            : convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
 
         // Обновляем метаданные вечеринки
@@ -694,8 +708,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     try {
       const playlistForApi =
         streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot)
-          : convertPlaylistForApi(items);
+          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
+          : convertPlaylistForApi(items, partyTrackDisplay);
       const tz = timeZone.trim() || getDefaultTimeZone();
       const createData: CreatePartyDto = {
         name: nameToUse,
@@ -855,6 +869,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
       <div className="party-view-content">
         <div className="party-view-editor">
+          <PartyTrackDisplaySection
+            value={partyTrackDisplay}
+            onChange={setPartyTrackDisplaySettings}
+          />
           <PartyEditor
             partyName={partyName}
             partyTitle={partyTitle}
@@ -919,7 +937,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
         <div className="party-view-preview">
           <h3>Превью (как будет выглядеть в браузере)</h3>
           <PartyPreview
-            playlist={playlistData}
+            playlist={previewPlaylistData}
             themeId={themeId}
             customizationSettings={customizationSettings as CustomizationSettings<PartyThemeId>}
             playbackState={playbackState}

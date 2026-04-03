@@ -819,7 +819,7 @@ class SignalRService {
       });
 
       // Преобразуем плейлист для API и отправляем на сервер через HTTP PUT
-      const playlistForApi = convertPlaylistForApi(state.items);
+      const playlistForApi = convertPlaylistForApi(state.items, state.meta.partyTrackDisplay);
       console.log('[SignalR] → Sending PUT request to update playlist:', {
         partyId,
         itemsCount: playlistForApi.items.length,

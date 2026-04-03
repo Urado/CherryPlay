@@ -1,7 +1,9 @@
 import {
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
   isProjectGroup,
   isProjectTrack,
   LinkedParty,
+  PartyTrackDisplaySettings,
   ProjectFile,
   ProjectGroup,
   ProjectGroupSettings,
@@ -129,6 +131,7 @@ export interface ProjectStateData {
   groupSettings: Map<string, ProjectGroupSettings>;
   sessionState?: ProjectSessionState;
   linkedParty?: LinkedParty | null;
+  partyTrackDisplay?: PartyTrackDisplaySettings;
 }
 
 class ProjectService {
@@ -246,6 +249,7 @@ class ProjectService {
       groupSettings: groupSettingsRecord,
       sessionState: state.sessionState,
       ...(state.linkedParty && { linkedParty: state.linkedParty }),
+      partyTrackDisplay: state.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
     };
   }
 
@@ -333,6 +337,7 @@ class ProjectService {
       groupSettings,
       sessionState: file.sessionState,
       linkedParty: file.linkedParty ?? null,
+      partyTrackDisplay: file.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
     };
   }
 }

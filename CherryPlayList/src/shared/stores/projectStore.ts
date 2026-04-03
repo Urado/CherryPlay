@@ -5,11 +5,13 @@ import { createWithEqualityFn } from 'zustand/traditional';
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import {
   ActionAfterTrack,
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
   DEFAULT_PROJECT_META,
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
   isProjectGroup,
   LinkedParty,
+  PartyTrackDisplaySettings,
   ProjectGroup,
   ProjectGroupSettings,
   ProjectItem,
@@ -87,9 +89,11 @@ interface ProjectState {
     sessionState?: ProjectSessionState;
     filePath?: string;
     linkedParty?: LinkedParty | null;
+    partyTrackDisplay?: PartyTrackDisplaySettings;
   }) => void;
   setFilePath: (path: string | null) => void;
   setLinkedParty: (linkedParty: LinkedParty | null) => void;
+  setPartyTrackDisplaySettings: (settings: PartyTrackDisplaySettings) => void;
   markAsDirty: () => void;
   resetDirty: () => void;
 
@@ -246,11 +250,21 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
             isDirty: false,
             lastSavedAt: Date.now(),
             linkedParty: data.linkedParty ?? null,
+            partyTrackDisplay: data.partyTrackDisplay ?? {
+              ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+            },
           },
           selectedItemIds: new Set(),
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+      },
+
+      setPartyTrackDisplaySettings: (partyTrackDisplay) => {
+        set((state) => ({
+          meta: { ...state.meta, partyTrackDisplay },
+        }));
+        get().markAsDirty();
       },
 
       setLinkedParty: (linkedParty) => {
@@ -1096,6 +1110,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           linkedParty: state.meta.linkedParty
             ? { id: state.meta.linkedParty.id, shortCode: state.meta.linkedParty.shortCode }
             : null,
+          partyTrackDisplay: state.meta.partyTrackDisplay,
         },
       }),
       merge: (persistedState: unknown, currentState: ProjectState) => {
@@ -1126,6 +1141,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
                     shortCode: persistedMeta.linkedParty.shortCode,
                   }
                 : null,
+              partyTrackDisplay: persistedMeta.partyTrackDisplay ?? {
+                ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+              },
             }
           : currentState.meta;
 

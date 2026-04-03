@@ -19,7 +19,7 @@
 - `trackSettings: Map<string, ProjectTrackSettings>` - Настройки отдельных треков
 - `groupSettings: Map<string, ProjectGroupSettings>` - Настройки групп
 - `sessionState: ProjectSessionState` - Состояние сессии (mode, played tracks)
-- `meta: ProjectMeta` - Метаданные (filePath, isDirty, lastSavedAt)
+- `meta: ProjectMeta` - Метаданные (filePath, isDirty, lastSavedAt, linkedParty, **partyTrackDisplay**)
 
 ## Основные операции
 
@@ -33,3 +33,5 @@
 ## Настройки проекта
 
 `settings.portableMode: boolean` (default `false`) — флаг портативного режима. Хранится в `.cherry` файле как часть `ProjectSettings`. Управляется через `setPortableMode`. Не путать с настройками приложения (`settingsStore`) — это настройка конкретного проекта.
+
+`meta.partyTrackDisplay` (`PartyTrackDisplaySettings`) — отображение имён треков для вечеринки (превью и плейлист для API). Опциональный ключ `partyTrackDisplay` в `.cherry`, персистится вместе с `meta`; обновление через `setPartyTrackDisplaySettings`. Подробнее см. [Party workspace](../workspaces/party.md#отображение-имён-треков-party-track-display) и [`project.ts`](../../../src/core/types/project.ts).

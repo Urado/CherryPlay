@@ -9,11 +9,21 @@ Workspace для создания и управления вечеринками
 ## Основные компоненты
 
 - **PartyView** (`src/workspaces/party/PartyView.tsx`) - Основной компонент workspace
+- **PartyTrackDisplaySection** (`src/workspaces/party/components/PartyTrackDisplaySection.tsx`) — блок **«Отображение треков»** (настройки имён треков для превью и публикации; см. ниже)
 - **PartyEditor** (`src/workspaces/party/components/PartyEditor.tsx`) — Форма создания и редактирования вечеринки (название, тема, кастомизация; поля карточки каталога: краткое описание, город, дата/время **начала** и опционального **конца** мероприятия, внешняя ссылка, теги танцев). Данные сохраняются через API (CreatePartyDto/UpdatePartyDto) в сущность Party на сервере, в том числе поля `eventDateTime` и `eventEndDateTime`.
 - **PartyPreview** (`src/workspaces/party/PartyPreview.tsx`) - Превью плейлиста
 - **PartyView.css** (`src/workspaces/party/PartyView.css`) — стили компонента, включая экран недоступности сервера (`.party-view-no-connection`)
 - **projectStore** (`src/shared/stores/projectStore.ts`) — хранит `meta.linkedParty` (`{ id, shortCode }`); `url` не персистируется и регенерируется при загрузке через `partyService.getPartyUrl`
 - **partyService** (`src/shared/services/partyService.ts`) - Сервис для работы с API
+
+## Отображение имён треков (party track display)
+
+Настройки того, **как показываются имена треков** в веб‑превью плейлиста в Party workspace и в **плейлисте, который уходит на сервер** (публикация, SignalR, модальное окно привязки вечеринки, AIMP‑интеграция). При включении опции с начала имени снимается заданное число **Unicode code points** (см. тип `PartyTrackDisplaySettings` в [`project.ts`](../../../src/core/types/project.ts): `stripLeadingCharsEnabled`, `stripLeadingCharsCount`).
+
+- **Не** относится к JSON кастомизации темы на сервере (`customizationSettings` Party API) — это отдельные **локальные/проектные** поля.
+- **Хранение:** `meta.partyTrackDisplay` в [`projectStore`](../../../src/shared/stores/projectStore.ts): опциональный ключ `partyTrackDisplay` в файле проекта `.cherry` и персист Zustand для метаданных проекта.
+- **UI:** секция рендерится в [`PartyView.tsx`](../../../src/workspaces/party/PartyView.tsx) **над** `PartyEditor`, заголовок блока — «Отображение треков».
+- **Преобразование имён:** логика в [`partyUtils.ts`](../../../src/shared/utils/partyUtils.ts) (`applyPartyTrackDisplayToTrackName`, `applyPartyTrackDisplayToComponentPlaylist`, `convertPlaylistForApi` / `convertAimpPlaylistForApi`). Исходные имена треков в проекте **не меняются** — изменяются только данные для превью и для API‑плейлиста.
 
 ## Функциональность
 

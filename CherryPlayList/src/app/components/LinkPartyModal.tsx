@@ -11,6 +11,7 @@ import { convertPlaylistForApi } from '@shared/utils';
 export const LinkPartyModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
   const items = useProjectStore((state) => state.items);
+  const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
 
@@ -52,7 +53,7 @@ export const LinkPartyModal: React.FC = () => {
       markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
-        const playlistForApi = convertPlaylistForApi(items);
+        const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
         addNotification({
           type: 'success',

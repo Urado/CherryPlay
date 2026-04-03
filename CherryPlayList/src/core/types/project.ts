@@ -85,6 +85,21 @@ export interface LinkedParty {
 }
 
 /**
+ * Настройки отображения имён треков для вечеринки (локально / в проекте, не Party customizationSettings API).
+ */
+export interface PartyTrackDisplaySettings {
+  /** Обрезать заданное число символов с начала имени при превью и при отправке плейлиста на сервер */
+  stripLeadingCharsEnabled: boolean;
+  /** Сколько символов (Unicode code points) убрать с начала (при включённой опции) */
+  stripLeadingCharsCount: number;
+}
+
+export const DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS: PartyTrackDisplaySettings = {
+  stripLeadingCharsEnabled: false,
+  stripLeadingCharsCount: 0,
+};
+
+/**
  * Метаданные проекта (filePath/isDirty/lastSavedAt не в файле; linkedParty сохраняется в файл)
  */
 export interface ProjectMeta {
@@ -93,6 +108,8 @@ export interface ProjectMeta {
   lastSavedAt: number | null;
   /** Привязка к вечеринке на сервере (сохраняется в .cherry) */
   linkedParty: LinkedParty | null;
+  /** Отображение треков на странице вечеринки; сохраняется в .cherry и в persist стора */
+  partyTrackDisplay: PartyTrackDisplaySettings;
 }
 
 // ============================================
@@ -140,6 +157,8 @@ export interface ProjectFile {
   sessionState?: ProjectSessionState;
   /** Привязка к вечеринке на сервере (url не сохраняется, регенерируется при запуске) */
   linkedParty?: Pick<LinkedParty, 'id' | 'shortCode'>;
+  /** Настройки отображения имён треков для вечеринки (не customization вечеринки на API) */
+  partyTrackDisplay?: PartyTrackDisplaySettings;
 }
 
 // ============================================
@@ -167,4 +186,5 @@ export const DEFAULT_PROJECT_META: ProjectMeta = {
   isDirty: false,
   lastSavedAt: null,
   linkedParty: null,
+  partyTrackDisplay: { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS },
 };

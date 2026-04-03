@@ -118,6 +118,7 @@ export const AppHeader: React.FC = () => {
           groupSettings,
           sessionState,
           linkedParty: linkedPartyForFile,
+          partyTrackDisplay: meta.partyTrackDisplay,
         });
         await projectService.saveProject(path, projectFile, {
           portableMode: settings.portableMode,
@@ -140,6 +141,7 @@ export const AppHeader: React.FC = () => {
     groupSettings,
     sessionState,
     meta.linkedParty,
+    meta.partyTrackDisplay,
     setFilePath,
     resetDirty,
     setLastOpenedPlaylist,
@@ -162,6 +164,7 @@ export const AppHeader: React.FC = () => {
           groupSettings,
           sessionState,
           linkedParty: linkedPartyForFile,
+          partyTrackDisplay: meta.partyTrackDisplay,
         });
         await projectService.saveProject(meta.filePath, projectFile, {
           portableMode: settings.portableMode,
@@ -180,6 +183,7 @@ export const AppHeader: React.FC = () => {
   }, [
     meta.filePath,
     meta.linkedParty,
+    meta.partyTrackDisplay,
     name,
     items,
     settings,

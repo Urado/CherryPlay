@@ -1,6 +1,8 @@
 import {
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
+  PartyTrackDisplaySettings,
   ProjectFile,
   ProjectGroupSettings,
   ProjectSessionState,
@@ -47,6 +49,28 @@ function isString(value: unknown): value is string {
  */
 function isNumber(value: unknown): value is number {
   return typeof value === 'number' && !isNaN(value);
+}
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
+
+function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrackDisplaySettings {
+  if (!isObject(raw)) {
+    warnings.push('Invalid partyTrackDisplay, using defaults');
+    return { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS };
+  }
+  const enabled = isBoolean(raw.stripLeadingCharsEnabled) ? raw.stripLeadingCharsEnabled : false;
+  let count = 0;
+  if (isNumber(raw.stripLeadingCharsCount) && isFinite(raw.stripLeadingCharsCount)) {
+    count = Math.max(0, Math.floor(raw.stripLeadingCharsCount));
+  } else if (raw.stripLeadingCharsCount !== undefined) {
+    warnings.push('Invalid stripLeadingCharsCount in partyTrackDisplay, using 0');
+  }
+  return {
+    stripLeadingCharsEnabled: enabled,
+    stripLeadingCharsCount: count,
+  };
 }
 
 /**
@@ -383,6 +407,11 @@ export function validateProjectFile(data: unknown): ValidationResult {
   // Валидируем sessionState
   const sessionState = validateSessionState(data.sessionState, warnings);
 
+  const partyTrackDisplay =
+    data.partyTrackDisplay !== undefined
+      ? validatePartyTrackDisplay(data.partyTrackDisplay, warnings)
+      : { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS };
+
   // Если есть критические ошибки, возвращаем null
   if (errors.length > 0) {
     return {
@@ -403,6 +432,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
     trackSettings,
     groupSettings,
     sessionState,
+    partyTrackDisplay,
   };
 
   return {

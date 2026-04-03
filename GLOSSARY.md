@@ -58,6 +58,7 @@
 | **short description** (карточка) | Краткое описание вечеринки для карточки в каталоге; макс. 200 символов. Редактируется в PartyEditor (CherryPlayList), хранится в Party.ShortDescription. |
 | **external link** (вечеринка) | Внешняя ссылка вечеринки: URL (externalLinkUrl) и опциональный текст (externalLinkText). Отображается на карточке в каталоге. |
 | **dance tags** | Теги танцев вечеринки (до 20: предопределённый набор + свои). Отображаются на карточке в каталоге. Редактируются в PartyEditor, хранятся в Party (DanceTagsJson). |
+| **partyTrackDisplay** (Party track display) | Настройки CherryPlayList для отображения имён треков на веб‑превью вечеринки и в плейлисте, отправляемом на сервер: опционально обрезать N ведущих Unicode code points у имени. Хранятся в метаданных проекта (`ProjectMeta.partyTrackDisplay`), в `.cherry` и персисте store; **не** являются частью `customizationSettings` Party API. Исходные имена треков в проекте не меняются. |
 
 ---
 

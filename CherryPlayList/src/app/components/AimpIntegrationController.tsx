@@ -35,6 +35,7 @@ export const AimpIntegrationController: React.FC = () => {
   const setStreamingSource = useSettingsStore((state) => state.setStreamingSource);
 
   const linkedPartyId = useProjectStore((state) => state.meta.linkedParty?.id ?? null);
+  const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
   const addNotification = useUIStore((state) => state.addNotification);
 
   const [signalRReady, setSignalRReady] = useState(false);
@@ -339,7 +340,7 @@ export const AimpIntegrationController: React.FC = () => {
         try {
           await partyService.updatePartyPlaylist(
             linkedPartyId,
-            convertAimpPlaylistForApi(bridgeState.playlistSnapshot),
+            convertAimpPlaylistForApi(bridgeState.playlistSnapshot, partyTrackDisplay),
           );
           publishedPlaylistKeyRef.current = playlistPublishKey;
         } catch (error) {
@@ -375,7 +376,7 @@ export const AimpIntegrationController: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [bridgeState, canPublishLiveState, linkedPartyId, setPublishingPathState]);
+  }, [bridgeState, canPublishLiveState, linkedPartyId, partyTrackDisplay, setPublishingPathState]);
 
   useEffect(() => {
     stopAimpPositionUpdates();
