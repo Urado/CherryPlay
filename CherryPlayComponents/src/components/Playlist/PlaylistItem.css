@@ -90,9 +90,16 @@
   font-size: 14px;
 }
 
+/* Когда рядом кнопка «…», убираем браузерное троеточие — иначе дублируется */
+.party-playlist-item-name--inline-ellipsis {
+  text-overflow: clip;
+}
+
 .party-playlist-item-name--expanded {
   white-space: normal;
   word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
 }
 
 .party-playlist-item-expand {

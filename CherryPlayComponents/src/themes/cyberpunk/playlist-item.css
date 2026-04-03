@@ -1,93 +1,110 @@
-[data-theme="cyberpunk"] .party-playlist-item {
+[data-theme='cyberpunk'] .party-playlist-item {
   background: #0a0a0a;
   border-bottom: 1px solid rgba(0, 255, 0, 0.1);
   border-left: 2px solid transparent;
-  transition: all 0.2s ease;
-  padding: 14px 24px;
-  margin: 6px 20px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  padding: 0;
+  margin: 4px 14px;
   cursor: pointer;
-  position: relative;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--group {
+[data-theme='cyberpunk'] .party-playlist-item-row {
+  padding: 10px 14px;
+}
+
+[data-theme='cyberpunk'] .party-playlist-item--group {
   background: rgba(0, 255, 0, 0.08);
   border-left: 3px solid rgba(0, 255, 0, 0.3);
   font-weight: 700;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--track {
+[data-theme='cyberpunk'] .party-playlist-item--track {
   background: #0a0a0a;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item::before {
-  content: '>';
-  position: absolute;
-  left: 8px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  color: var(--accent-color, #00ff00);
-  font-weight: 700;
-}
-
-[data-theme="cyberpunk"] .party-playlist-item:hover {
+[data-theme='cyberpunk'] .party-playlist-item:hover {
   background: #1a1a1a;
   box-shadow: 0 0 12px rgba(0, 255, 0, 0.3);
   border-left: 4px solid var(--accent-color, #00ff00);
-  transform: translateX(4px);
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--group:hover {
+[data-theme='cyberpunk'] .party-playlist-item--group:hover {
   background: rgba(0, 255, 0, 0.12);
   border-left-color: rgba(0, 255, 0, 0.5);
 }
 
-[data-theme="cyberpunk"] .party-playlist-item:hover::before {
-  opacity: 1;
-}
-
-[data-theme="cyberpunk"] .party-playlist-item--current {
+[data-theme='cyberpunk'] .party-playlist-item--current {
   background: rgba(0, 255, 0, 0.15);
   border-left: 5px solid var(--accent-color, #00ff00);
   box-shadow: 0 0 20px rgba(0, 255, 0, calc(var(--glow-intensity, 0.5) * 1.2));
   font-weight: 700;
   text-shadow: 0 0 8px var(--accent-color, #00ff00);
-  padding: 18px 28px;
-  margin: 8px 16px;
+  margin: 6px 12px;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--played {
+[data-theme='cyberpunk'] .party-playlist-item--current .party-playlist-item-row {
+  padding: 12px 16px;
+}
+
+[data-theme='cyberpunk'] .party-playlist-item--played {
   opacity: 0.45;
   color: #666666;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--disabled {
+[data-theme='cyberpunk'] .party-playlist-item--disabled {
   opacity: 0.35;
   text-decoration: line-through;
   color: #444444;
   cursor: not-allowed;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item-name {
+[data-theme='cyberpunk'] .party-playlist-item-name {
   color: #00ff00;
   font-weight: 500;
   font-size: 15px;
   line-height: 1.5;
   margin-bottom: 4px;
   letter-spacing: 0.5px;
-  padding-left: 16px;
+  padding-left: 10px;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item--group .party-playlist-item-name {
+[data-theme='cyberpunk'] .party-playlist-item--group .party-playlist-item-name {
   padding-left: 8px;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item-group-icon {
+[data-theme='cyberpunk'] .party-playlist-item-group-icon {
   margin-right: 10px;
 }
 
-[data-theme="cyberpunk"] .party-playlist-item-duration {
+[data-theme='cyberpunk'] .party-playlist-item-duration {
   color: #00ff88;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='cyberpunk'] .party-playlist-item {
+    margin: 4px 8px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-item-row {
+    padding: 8px 10px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-item--current {
+    margin: 6px 8px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-item--current .party-playlist-item-row {
+    padding: 10px 12px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-item-name {
+    font-size: 14px;
+    padding-left: 6px;
+  }
 }

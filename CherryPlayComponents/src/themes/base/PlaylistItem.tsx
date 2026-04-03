@@ -131,7 +131,9 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
           <div className="party-playlist-item-name-wrap">
             <div
               ref={nameRef}
-              className={`party-playlist-item-name${nameExpanded ? ' party-playlist-item-name--expanded' : ''}`}
+              className={`party-playlist-item-name${nameExpanded ? ' party-playlist-item-name--expanded' : ''}${
+                !nameExpanded && nameTruncated ? ' party-playlist-item-name--inline-ellipsis' : ''
+              }`}
               id={`${idPrefix}-name`}
             >
               {displayName}

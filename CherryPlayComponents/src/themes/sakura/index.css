@@ -3,7 +3,7 @@
 @import './player.css';
 @import './party-info.css';
 
-[data-theme="sakura"] {
+[data-theme='sakura'] {
   --bg-primary: #fff5f5;
   --bg-secondary: rgba(255, 255, 255, 0.8);
   --bg-tertiary: rgba(255, 220, 230, 0.6);
@@ -19,24 +19,25 @@
   color: var(--text-primary);
 }
 
-[data-theme="sakura"] .party-display {
+[data-theme='sakura'] .party-display {
   background: transparent;
   color: var(--text-primary);
 }
 
-[data-theme="sakura"] .party-display-title {
+[data-theme='sakura'] .party-display-title {
   color: var(--text-primary);
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 3rem;
+  /* Базовый PartyDisplay использует clamp; фиксированные 3rem на узких экранах съедали место */
+  font-size: clamp(22px, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 0.75rem;
 }
 
-[data-theme="sakura"] .party-playlist-view {
+[data-theme='sakura'] .party-playlist-view {
   background: var(--bg-primary);
   color: var(--text-primary);
   border-radius: 20px;
@@ -45,7 +46,7 @@
   border: 1px solid rgba(255, 182, 193, 0.3);
 }
 
-[data-theme="sakura"] .party-current-track-display {
+[data-theme='sakura'] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border-radius: 20px 20px 0 0;

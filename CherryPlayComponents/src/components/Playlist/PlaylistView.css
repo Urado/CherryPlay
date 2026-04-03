@@ -61,6 +61,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
 }
 
 .party-playlist-empty {

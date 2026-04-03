@@ -9,7 +9,7 @@
 [data-theme='basic'] .party-playlist-header {
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
-  padding: 20px 24px 16px;
+  padding: 16px 18px 14px;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -28,19 +28,43 @@
 
 [data-theme='basic'] .party-playlist-items {
   background: var(--bg-secondary);
-  padding: 12px 0;
+  padding: 8px 0;
 }
 
 [data-theme='basic'] .party-playlist-empty {
   color: var(--text-tertiary);
-  padding: 48px 24px;
+  padding: 40px 18px;
   text-align: center;
   font-size: 15px;
 }
 
 [data-theme='basic'] .party-playlist-group-items {
   border-left: 2px solid var(--border-color);
-  margin-left: 20px;
-  padding-left: 20px;
-  margin-top: 8px;
+  margin-left: 16px;
+  padding-left: 16px;
+  margin-top: 6px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='basic'] .party-playlist-header {
+    padding: 12px 10px 10px;
+  }
+
+  [data-theme='basic'] .party-playlist-stats {
+    font-size: 14px;
+  }
+
+  [data-theme='basic'] .party-playlist-items {
+    padding: 6px 0;
+  }
+
+  [data-theme='basic'] .party-playlist-empty {
+    padding: 32px 12px;
+    font-size: 14px;
+  }
+
+  [data-theme='basic'] .party-playlist-group-items {
+    margin-left: 10px;
+    padding-left: 10px;
+  }
 }

@@ -1,12 +1,12 @@
 [data-theme='basic'] .party-current-track-display {
   background: var(--bg-secondary);
-  padding: 24px;
+  padding: 20px 18px;
   border-radius: 8px;
 }
 
 [data-theme='basic'] .party-current-track-empty {
   color: var(--text-tertiary);
-  padding: 32px 24px;
+  padding: 28px 18px;
   font-size: 15px;
 }
 
@@ -80,4 +80,30 @@
 [data-theme='basic'] .party-current-track-expand-btn:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
+}
+
+@media (max-width: 480px) {
+  [data-theme='basic'] .party-current-track-display {
+    padding: 16px 12px;
+  }
+
+  [data-theme='basic'] .party-current-track-empty {
+    padding: 24px 12px;
+    font-size: 14px;
+  }
+
+  [data-theme='basic'] .party-current-track-name {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  [data-theme='basic'] .party-current-track-meta {
+    font-size: 13px;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+
+  [data-theme='basic'] .party-current-track-time {
+    font-size: 13px;
+  }
 }

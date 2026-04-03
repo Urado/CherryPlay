@@ -102,3 +102,13 @@
   flex-direction: column;
   min-height: 0;
 }
+
+/* CherryPlayWeb: плавающая кнопка «Список вечеринок» — запас сверху, чтобы не наезжала на заголовок */
+@media (max-width: 768px) {
+  [data-theme='basic'] .party-display-main,
+  [data-theme='cyberpunk'] .party-display-main,
+  [data-theme='sakura'] .party-display-main,
+  [data-theme='art-deco'] .party-display-main {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
+  }
+}

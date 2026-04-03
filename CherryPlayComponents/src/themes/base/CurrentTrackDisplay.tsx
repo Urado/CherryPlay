@@ -95,7 +95,11 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
           <div className="party-current-track-adjacent-name-wrapper">
             <div
               ref={prevNameRef}
-              className={`party-current-track-adjacent-name${prevNameExpanded ? ' party-current-track-adjacent-name--expanded' : ''}`}
+              className={`party-current-track-adjacent-name${prevNameExpanded ? ' party-current-track-adjacent-name--expanded' : ''}${
+                !prevNameExpanded && prevTruncated
+                  ? ' party-current-track-adjacent-name--inline-ellipsis'
+                  : ''
+              }`}
               id={`${idPrefix}-prev-name`}
             >
               {prevDisplayName}
@@ -130,7 +134,11 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
           <div className="party-current-track-name-wrapper">
             <div
               ref={currentNameRef}
-              className={`party-current-track-name${currentNameExpanded ? ' party-current-track-name--expanded' : ''}`}
+              className={`party-current-track-name${currentNameExpanded ? ' party-current-track-name--expanded' : ''}${
+                !currentNameExpanded && currentTruncated
+                  ? ' party-current-track-name--inline-ellipsis'
+                  : ''
+              }`}
               id={`${idPrefix}-current-name`}
             >
               {currentDisplayName}
@@ -169,7 +177,11 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
           <div className="party-current-track-adjacent-name-wrapper">
             <div
               ref={nextNameRef}
-              className={`party-current-track-adjacent-name${nextNameExpanded ? ' party-current-track-adjacent-name--expanded' : ''}`}
+              className={`party-current-track-adjacent-name${nextNameExpanded ? ' party-current-track-adjacent-name--expanded' : ''}${
+                !nextNameExpanded && nextTruncated
+                  ? ' party-current-track-adjacent-name--inline-ellipsis'
+                  : ''
+              }`}
               id={`${idPrefix}-next-name`}
             >
               {nextDisplayName}

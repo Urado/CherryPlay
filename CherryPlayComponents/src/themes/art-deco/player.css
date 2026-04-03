@@ -3,14 +3,14 @@
   box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
   position: relative;
   overflow: hidden;
-  padding: 24px;
+  padding: 20px 18px;
   border-radius: 8px;
 }
 
 [data-theme='art-deco'] .party-current-track-empty {
   color: var(--text-tertiary);
   font-style: italic;
-  padding: 32px 16px;
+  padding: 28px 18px;
   font-size: 14px;
   text-align: center;
 }
@@ -120,4 +120,28 @@
 [data-theme='art-deco'] .party-current-track-expand-btn:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
+}
+
+@media (max-width: 480px) {
+  [data-theme='art-deco'] .party-current-track-display {
+    padding: 16px 12px;
+  }
+
+  [data-theme='art-deco'] .party-current-track-empty {
+    padding: 24px 12px;
+    font-size: 13px;
+  }
+
+  [data-theme='art-deco'] .party-current-track-name {
+    font-size: 16px;
+    letter-spacing: 1.5px;
+  }
+
+  [data-theme='art-deco'] .party-current-track-meta {
+    font-size: 11px;
+  }
+
+  [data-theme='art-deco'] .party-current-track-time {
+    font-size: 11px;
+  }
 }

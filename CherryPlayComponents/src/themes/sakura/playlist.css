@@ -1,10 +1,10 @@
-[data-theme="sakura"] .party-playlist-view {
+[data-theme='sakura'] .party-playlist-view {
   background: linear-gradient(135deg, #fff5f5 0%, #ffeef0 100%);
   color: #8b4a6b;
   font-family: 'Georgia', 'Times New Roman', serif;
 }
 
-[data-theme="sakura"] .party-playlist-header {
+[data-theme='sakura'] .party-playlist-header {
   background: rgba(255, 255, 255, 0.85);
   border-bottom: 3px solid rgba(255, 182, 193, 0.5);
   backdrop-filter: blur(12px);
@@ -12,25 +12,25 @@
   padding: 28px 36px;
 }
 
-[data-theme="sakura"] .party-playlist-stats {
+[data-theme='sakura'] .party-playlist-stats {
   color: #d4a5a5;
   font-style: italic;
   font-size: 16px;
   font-weight: 500;
 }
 
-[data-theme="sakura"] .party-playlist-stats-separator {
+[data-theme='sakura'] .party-playlist-stats-separator {
   color: #ffb3d9;
   margin: 0 12px;
   font-weight: 400;
 }
 
-[data-theme="sakura"] .party-playlist-items {
+[data-theme='sakura'] .party-playlist-items {
   background: transparent;
   padding: 20px 0;
 }
 
-[data-theme="sakura"] .party-playlist-empty {
+[data-theme='sakura'] .party-playlist-empty {
   color: #d4a5a5;
   padding: 64px 36px;
   text-align: center;
@@ -38,9 +38,37 @@
   font-style: italic;
 }
 
-[data-theme="sakura"] .party-playlist-group-items {
+[data-theme='sakura'] .party-playlist-group-items {
   border-left: 3px solid rgba(255, 182, 193, 0.4);
   margin-left: 24px;
   padding-left: 24px;
   margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='sakura'] .party-playlist-header {
+    padding: 18px 14px;
+  }
+
+  [data-theme='sakura'] .party-playlist-stats {
+    font-size: 14px;
+  }
+
+  [data-theme='sakura'] .party-playlist-stats-separator {
+    margin: 0 8px;
+  }
+
+  [data-theme='sakura'] .party-playlist-items {
+    padding: 12px 0;
+  }
+
+  [data-theme='sakura'] .party-playlist-empty {
+    padding: 40px 16px;
+    font-size: 14px;
+  }
+
+  [data-theme='sakura'] .party-playlist-group-items {
+    margin-left: 12px;
+    padding-left: 12px;
+  }
 }

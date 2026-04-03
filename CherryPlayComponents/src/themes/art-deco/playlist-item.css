@@ -2,17 +2,20 @@
   background: rgba(26, 26, 26, 0.7);
   border-bottom: none;
   border-left: 3px solid transparent;
-  transition: all 0.3s ease;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
   position: relative;
   padding: 0;
-  margin: 6px 16px;
+  margin: 4px 12px;
   border-radius: 4px;
   cursor: pointer;
 }
 
 [data-theme='art-deco'] .party-playlist-item-row {
-  padding: 12px 24px;
-  gap: 12px;
+  padding: 10px 16px;
+  gap: 10px;
 }
 
 [data-theme='art-deco'] .party-playlist-item--group {
@@ -29,7 +32,6 @@
   background: rgba(45, 45, 45, 0.9);
   box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
   border-left-color: rgba(212, 175, 55, 0.5);
-  transform: translateX(6px);
 }
 
 [data-theme='art-deco'] .party-playlist-item--group:hover {
@@ -109,9 +111,30 @@
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.5px;
-  margin-left: 12px;
+  margin-left: 8px;
 }
 
 [data-theme='art-deco'] .party-playlist-item-group-icon {
   margin-right: 10px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='art-deco'] .party-playlist-item {
+    margin: 4px 8px;
+  }
+
+  [data-theme='art-deco'] .party-playlist-item-row {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  [data-theme='art-deco'] .party-playlist-item-name {
+    font-size: 13px;
+    letter-spacing: 0.4px;
+  }
+
+  [data-theme='art-deco'] .party-playlist-item-duration {
+    font-size: 12px;
+    margin-left: 6px;
+  }
 }

@@ -1,18 +1,20 @@
-[data-theme="cyberpunk"] .party-playlist-view {
+[data-theme='cyberpunk'] .party-playlist-view {
   background: #0a0a0a;
   color: #00ff00;
   font-family: 'Courier New', monospace;
 }
 
-[data-theme="cyberpunk"] .party-playlist-header {
+[data-theme='cyberpunk'] .party-playlist-header {
   background: #1a1a1a;
   border-bottom: 3px solid var(--accent-color, #00ff00);
-  box-shadow: 0 0 16px rgba(0, 255, 0, 0.4), inset 0 0 8px rgba(0, 0, 0, 0.5);
-  padding: 24px 32px;
+  box-shadow:
+    0 0 16px rgba(0, 255, 0, 0.4),
+    inset 0 0 8px rgba(0, 0, 0, 0.5);
+  padding: 18px 20px;
   position: relative;
 }
 
-[data-theme="cyberpunk"] .party-playlist-header::after {
+[data-theme='cyberpunk'] .party-playlist-header::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -23,7 +25,7 @@
   animation: scan 2s linear infinite;
 }
 
-[data-theme="cyberpunk"] .party-playlist-stats {
+[data-theme='cyberpunk'] .party-playlist-stats {
   color: #00ff00;
   text-shadow: 0 0 8px var(--accent-color, #00ff00);
   font-weight: 700;
@@ -32,29 +34,57 @@
   text-transform: uppercase;
 }
 
-[data-theme="cyberpunk"] .party-playlist-stats-separator {
+[data-theme='cyberpunk'] .party-playlist-stats-separator {
   color: #00ff88;
-  margin: 0 12px;
+  margin: 0 8px;
   font-weight: 400;
 }
 
-[data-theme="cyberpunk"] .party-playlist-items {
+[data-theme='cyberpunk'] .party-playlist-items {
   background: #0a0a0a;
-  padding: 16px 0;
+  padding: 10px 0;
 }
 
-[data-theme="cyberpunk"] .party-playlist-empty {
+[data-theme='cyberpunk'] .party-playlist-empty {
   color: #666666;
   text-shadow: none;
-  padding: 56px 32px;
+  padding: 44px 20px;
   text-align: center;
   font-size: 15px;
   font-family: 'Courier New', monospace;
 }
 
-[data-theme="cyberpunk"] .party-playlist-group-items {
+[data-theme='cyberpunk'] .party-playlist-group-items {
   border-left: 2px solid rgba(0, 255, 0, 0.3);
-  margin-left: 24px;
-  padding-left: 24px;
-  margin-top: 12px;
+  margin-left: 16px;
+  padding-left: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  [data-theme='cyberpunk'] .party-playlist-header {
+    padding: 12px 10px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-stats {
+    font-size: 13px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-stats-separator {
+    margin: 0 6px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-items {
+    padding: 8px 0;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-empty {
+    padding: 36px 12px;
+    font-size: 14px;
+  }
+
+  [data-theme='cyberpunk'] .party-playlist-group-items {
+    margin-left: 10px;
+    padding-left: 10px;
+  }
 }

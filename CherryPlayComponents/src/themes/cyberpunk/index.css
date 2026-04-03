@@ -3,7 +3,7 @@
 @import './player.css';
 @import './party-info.css';
 
-[data-theme="cyberpunk"] {
+[data-theme='cyberpunk'] {
   --bg-primary: #0a0a0a;
   --bg-secondary: #1a1a1a;
   --bg-tertiary: rgba(0, 0, 0, 0.6);
@@ -19,34 +19,36 @@
   color: var(--text-primary);
 }
 
-[data-theme="cyberpunk"] .party-display {
+[data-theme='cyberpunk'] .party-display {
   background: transparent;
   color: var(--text-primary);
 }
 
-[data-theme="cyberpunk"] .party-display-title {
+[data-theme='cyberpunk'] .party-display-title {
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--text-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 0 20px rgba(0, 255, 0, calc(var(--glow-intensity) * 0.5));
-  font-size: 3rem;
+  font-size: clamp(22px, 5vw, 3rem);
   font-weight: 900;
   letter-spacing: 0.1em;
   margin-bottom: 0.75rem;
   text-transform: uppercase;
 }
 
-[data-theme="cyberpunk"] .party-playlist-view {
+[data-theme='cyberpunk'] .party-playlist-view {
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 2px solid rgba(0, 255, 0, 0.2);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 0 24px rgba(0, 255, 0, 0.2), inset 0 0 16px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 24px rgba(0, 255, 0, 0.2),
+    inset 0 0 16px rgba(0, 0, 0, 0.5);
 }
 
-[data-theme="cyberpunk"] .party-current-track-display {
+[data-theme='cyberpunk'] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border-radius: 8px 8px 0 0;
