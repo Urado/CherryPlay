@@ -20,6 +20,14 @@
   gap: var(--spacing-sm);
 }
 
+.file-browser-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .file-browser-choose-folder {
   display: flex;
   align-items: center;
@@ -35,7 +43,6 @@
     background-color 0.2s,
     border-color 0.2s;
   flex-shrink: 0;
-  margin-left: auto;
 }
 
 .file-browser-choose-folder:hover:not(:disabled) {

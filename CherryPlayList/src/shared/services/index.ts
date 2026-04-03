@@ -2,7 +2,7 @@ export { aimpService } from './aimpService';
 export { exportService } from './exportService';
 export type { ExportResult } from './exportService';
 export { fileService } from './fileService';
-export { ipcService } from './ipcService';
+export { ipcService, isIpcRendererAvailable } from './ipcService';
 export type { IPCResponse, DirectoryItem, Track as IPCTrack } from './ipcService';
 export {
   partyService,

@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
-import { useTrackDuration } from '../../src/hooks/useTrackDuration';
-import type { Track } from '../../src/types/track';
+import type { Track } from '../../src/core/types/track';
+import { useAudioPathDurations, useTrackDuration } from '../../src/shared/hooks/useTrackDuration';
 import { createTrack, flushPromises } from '../testUtils';
 
 const createTracks = () => [
@@ -9,6 +9,32 @@ const createTracks = () => [
   { ...createTrack('2', '/b.mp3') },
   { ...createTrack('3', '/c.mp3') },
 ];
+
+describe('useAudioPathDurations', () => {
+  it('calls onResolved and onError per path', async () => {
+    const requestDuration = jest
+      .fn()
+      .mockResolvedValueOnce(10)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce(30);
+    const onResolved = jest.fn();
+    const onError = jest.fn();
+
+    renderHook(() =>
+      useAudioPathDurations({
+        paths: ['/a.mp3', '/b.mp3', '/c.mp3'],
+        requestDuration,
+        onResolved,
+        onError,
+        batchSize: 5,
+      }),
+    );
+
+    await waitFor(() => expect(onResolved).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+    expect(onError).toHaveBeenCalledWith('/b.mp3', expect.any(Error));
+  });
+});
 
 describe('useTrackDuration', () => {
   it('loads durations in batches and resolves updates', async () => {
@@ -30,7 +56,7 @@ describe('useTrackDuration', () => {
         tracks,
         isAudioFile: (path) => path.endsWith('.mp3'),
         requestDuration,
-        resolveTrackByPath: (path) => tracks.find((track) => track.path === path),
+        resolveTrackById: (id) => tracks.find((track) => track.id === id),
         onDurationResolved,
         batchSize: 2,
       }),
@@ -38,6 +64,28 @@ describe('useTrackDuration', () => {
 
     await waitFor(() => expect(onDurationResolved).toHaveBeenCalledTimes(3));
     expect(requestDuration).toHaveBeenCalledTimes(3);
+  });
+
+  it('dedupes identical paths into one IPC request', async () => {
+    const tracks: Track[] = [
+      { ...createTrack('1', '/same.mp3') },
+      { ...createTrack('2', '/same.mp3') },
+    ];
+    const requestDuration = jest.fn().mockResolvedValue(42);
+    const onDurationResolved = jest.fn();
+
+    renderHook(() =>
+      useTrackDuration({
+        tracks,
+        isAudioFile: () => true,
+        requestDuration,
+        resolveTrackById: (id) => tracks.find((track) => track.id === id),
+        onDurationResolved,
+      }),
+    );
+
+    await waitFor(() => expect(onDurationResolved).toHaveBeenCalledTimes(2));
+    expect(requestDuration).toHaveBeenCalledTimes(1);
   });
 
   it('cancels pending loads on unmount', async () => {
@@ -56,7 +104,7 @@ describe('useTrackDuration', () => {
         tracks,
         isAudioFile: () => true,
         requestDuration,
-        resolveTrackByPath: (path) => tracks.find((track) => track.path === path),
+        resolveTrackById: (id) => tracks.find((track) => track.id === id),
         onDurationResolved,
       }),
     );
@@ -82,7 +130,7 @@ describe('useTrackDuration', () => {
         tracks,
         isAudioFile: (path) => path.endsWith('.mp3'),
         requestDuration,
-        resolveTrackByPath: (path) => tracks.find((track) => track.path === path),
+        resolveTrackById: (id) => tracks.find((track) => track.id === id),
         onDurationResolved,
       }),
     );
@@ -93,6 +141,7 @@ describe('useTrackDuration', () => {
 
   it('continues after duration request errors', async () => {
     const tracks = createTracks();
+    const onError = jest.fn();
     const requestDuration = jest
       .fn()
       .mockRejectedValueOnce(new Error('fail'))
@@ -105,13 +154,15 @@ describe('useTrackDuration', () => {
         tracks,
         isAudioFile: () => true,
         requestDuration,
-        resolveTrackByPath: (path) => tracks.find((track) => track.path === path),
+        resolveTrackById: (id) => tracks.find((track) => track.id === id),
         onDurationResolved,
+        onError,
       }),
     );
 
     await waitFor(() => expect(onDurationResolved).toHaveBeenCalledTimes(2));
     expect(requestDuration).toHaveBeenCalledTimes(3);
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
 
   it('requests durations for tracks added after initial render', async () => {
@@ -132,7 +183,7 @@ describe('useTrackDuration', () => {
           tracks: tracksParam,
           isAudioFile: () => true,
           requestDuration,
-          resolveTrackByPath: (path) => currentTracks.find((track) => track.path === path),
+          resolveTrackById: (id) => currentTracks.find((track) => track.id === id),
           onDurationResolved,
           batchSize: 1,
         }),
@@ -167,7 +218,7 @@ describe('useTrackDuration', () => {
           tracks: tracksParam,
           isAudioFile: () => true,
           requestDuration,
-          resolveTrackByPath: (path) => currentTracks.find((track) => track.path === path),
+          resolveTrackById: (id) => currentTracks.find((track) => track.id === id),
           onDurationResolved,
         }),
       { initialProps: currentTracks },
@@ -201,7 +252,7 @@ describe('useTrackDuration', () => {
           tracks: tracksParam,
           isAudioFile: () => true,
           requestDuration,
-          resolveTrackByPath: (path) => currentTracks.find((track) => track.path === path),
+          resolveTrackById: (id) => currentTracks.find((track) => track.id === id),
           onDurationResolved,
         }),
       { initialProps: currentTracks },

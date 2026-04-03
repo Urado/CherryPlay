@@ -1,4 +1,5 @@
-export { useTrackDuration } from './useTrackDuration';
+export { useAudioPathDurations, useTrackDuration } from './useTrackDuration';
+export type { UseAudioPathDurationsOptions } from './useTrackDuration';
 export { useTrackItemSize } from './useTrackItemSize';
 export {
   useWorkspaceDragAndDrop,
@@ -12,7 +13,6 @@ export type {
 } from './useWorkspaceDragAndDrop';
 export { useDragDropExecutor } from './useDragDropExecutor';
 
-// Selection hooks
 export { useItemSelection } from './useItemSelection';
 export type { UseItemSelectionOptions, UseItemSelectionReturn } from './useItemSelection';
 export { useSelectionWithModifiers } from './useSelectionWithModifiers';
@@ -21,9 +21,5 @@ export type {
   UseSelectionWithModifiersReturn,
 } from './useSelectionWithModifiers';
 
-// Playback preview
 export { usePlaybackPreview } from './usePlaybackPreview';
 export type { UsePlaybackPreviewOptions, UsePlaybackPreviewReturn } from './usePlaybackPreview';
-
-// Note: Keyboard shortcuts have been moved to @shared/shortcuts module
-// Use: import { useShortcuts, useListShortcuts, useGlobalShortcuts } from '@shared/shortcuts';

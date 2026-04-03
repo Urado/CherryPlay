@@ -1,6 +1,8 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import FolderIcon from '@mui/icons-material/Folder';
+import ClearIcon from '@mui/icons-material/Clear';
+import SelectAllIcon from '@mui/icons-material/SelectAll';
 import React, {
   useState,
   useMemo,
@@ -12,7 +14,8 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { fileService, ipcService } from '@shared/services';
+import { useAudioPathDurations, useItemSelection } from '@shared/hooks';
+import { fileService, ipcService, isIpcRendererAvailable } from '@shared/services';
 import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
 import { formatTrackDuration } from '@shared/utils/durationUtils';
@@ -45,6 +48,14 @@ export const FileBrowser: React.FC = () => {
 
   useEffect(() => {
     const initializePath = async () => {
+      if (!isIpcRendererAvailable()) {
+        setLoading(false);
+        setError(
+          'Файловый браузер доступен только в окне CherryPlay (Electron). Если открыт только адрес в браузере — дождитесь запуска окна приложения.',
+        );
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -60,16 +71,14 @@ export const FileBrowser: React.FC = () => {
           }
         }
         setCurrentPath(initialPath);
-        await loadDirectory(initialPath);
       } catch (err) {
         setError((err as Error).message || 'Failed to initialize file browser');
         logger.error('Failed to initialize file browser', err);
-      } finally {
         setLoading(false);
       }
     };
 
-    initializePath();
+    void initializePath();
   }, []);
 
   useEffect(() => {
@@ -79,6 +88,9 @@ export const FileBrowser: React.FC = () => {
   }, [currentPath, setFileBrowserPath]);
 
   const handleChooseFolder = useCallback(async () => {
+    if (!isIpcRendererAvailable()) {
+      return;
+    }
     try {
       const path = await ipcService.showFolderDialog({
         title: 'Выберите папку',
@@ -86,7 +98,6 @@ export const FileBrowser: React.FC = () => {
       });
       if (path && path.trim() !== '') {
         setCurrentPath(path.trim());
-        await loadDirectory(path.trim());
       }
     } catch (err) {
       logger.error('Failed to choose folder', err);
@@ -94,6 +105,11 @@ export const FileBrowser: React.FC = () => {
   }, [currentPath]);
 
   const loadDirectory = async (path: string) => {
+    if (!isIpcRendererAvailable()) {
+      setLoading(false);
+      setItems([]);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -109,39 +125,36 @@ export const FileBrowser: React.FC = () => {
     }
   };
 
-  const DURATION_CONCURRENCY = 5;
-  useEffect(() => {
-    const audioPaths = items
-      .filter((item) => !item.isDirectory && fileService.isValidAudioFile(item.path))
-      .map((item) => item.path);
-    if (audioPaths.length === 0) return;
+  const audioPaths = useMemo(
+    () =>
+      items
+        .filter((item) => !item.isDirectory && fileService.isValidAudioFile(item.path))
+        .map((item) => item.path),
+    [items],
+  );
 
-    let cancelled = false;
+  const requestAudioDuration = useCallback((path: string) => {
+    if (!isIpcRendererAvailable()) {
+      return Promise.reject(new Error('IPC API not available'));
+    }
+    return ipcService.getAudioDuration(path);
+  }, []);
 
-    const run = async () => {
-      for (let i = 0; i < audioPaths.length; i += DURATION_CONCURRENCY) {
-        if (cancelled) return;
-        const chunk = audioPaths.slice(i, i + DURATION_CONCURRENCY);
-        const results = await Promise.allSettled(chunk.map((p) => ipcService.getAudioDuration(p)));
-        if (cancelled) return;
-        setDurations((prev) => {
-          const next = { ...prev };
-          chunk.forEach((path, idx) => {
-            const result = results[idx];
-            if (result.status === 'fulfilled' && Number.isFinite(result.value)) {
-              next[path] = result.value;
-            }
-          });
-          return next;
-        });
-      }
-    };
+  const onBrowserDurationResolved = useCallback((path: string, duration: number) => {
+    setDurations((prev) => (prev[path] === duration ? prev : { ...prev, [path]: duration }));
+  }, []);
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [items]);
+  const onBrowserDurationError = useCallback((_path: string, error: Error) => {
+    logger.warn(`File browser duration: ${error.message}`);
+  }, []);
+
+  useAudioPathDurations({
+    paths: audioPaths,
+    requestDuration: requestAudioDuration,
+    onResolved: onBrowserDurationResolved,
+    onError: onBrowserDurationError,
+    batchSize: 5,
+  });
 
   useEffect(() => {
     if (currentPath) {
@@ -205,6 +218,19 @@ export const FileBrowser: React.FC = () => {
     const query = debouncedSearchQuery.toLowerCase();
     return items.filter((item) => item.name.toLowerCase().includes(query));
   }, [items, debouncedSearchQuery]);
+
+  const fileBrowserSelectionItems = useMemo(
+    () => filteredItems.map((item) => ({ id: item.path })),
+    [filteredItems],
+  );
+
+  const { selectAll: selectAllVisible, deselectAll: deselectAllVisible } = useItemSelection({
+    items: fileBrowserSelectionItems,
+    selectedIds: selectedPaths,
+    onSelectionChange: setSelectedPaths,
+  });
+
+  const hasSelectedPaths = selectedPaths.size > 0;
 
   const breadcrumbs = useMemo(() => {
     if (!currentPath) return [];
@@ -529,15 +555,42 @@ export const FileBrowser: React.FC = () => {
                 document.body,
               )}
           </div>
-          <button
-            type="button"
-            className="file-browser-choose-folder"
-            onClick={handleChooseFolder}
-            disabled={loading}
-            title="Выбрать папку"
-          >
-            <FolderIcon /> Папка
-          </button>
+          <div className="file-browser-toolbar-actions">
+            {hasSelectedPaths ? (
+              <button
+                type="button"
+                className="nav-button"
+                onClick={deselectAllVisible}
+                disabled={loading}
+                title="Снять выделение"
+                aria-label="Снять выделение"
+              >
+                <ClearIcon />
+              </button>
+            ) : (
+              filteredItems.length > 0 && (
+                <button
+                  type="button"
+                  className="nav-button"
+                  onClick={selectAllVisible}
+                  disabled={loading}
+                  title="Выбрать всё"
+                  aria-label="Выбрать всё"
+                >
+                  <SelectAllIcon />
+                </button>
+              )
+            )}
+            <button
+              type="button"
+              className="file-browser-choose-folder"
+              onClick={handleChooseFolder}
+              disabled={loading}
+              title="Выбрать папку"
+            >
+              <FolderIcon /> Папка
+            </button>
+          </div>
         </div>
         <input
           type="text"

@@ -1,7 +1,3 @@
-/**
- * IPC Service - wrapper for Electron IPC communication
- */
-
 import { useUIStore } from '../stores/uiStore';
 import { logger } from '../utils/logger';
 
@@ -30,20 +26,17 @@ interface AudioFileSource {
   mimeType: string;
 }
 
+export function isIpcRendererAvailable(): boolean {
+  return typeof window !== 'undefined' && typeof window.api !== 'undefined';
+}
+
 class IPCService {
-  /**
-   * Generic IPC invoke method
-   * @param channel - IPC channel name
-   * @param payload - Optional payload to send
-   * @param showNotification - Whether to show error notification (default: true)
-   * @returns Promise with response data
-   */
   async invoke<T>(
     channel: string,
     payload?: unknown,
     showNotification: boolean = true,
   ): Promise<T> {
-    if (!window.api) {
+    if (!isIpcRendererAvailable()) {
       const error = new Error('IPC API not available');
       if (showNotification) {
         useUIStore.getState().addNotification({
@@ -72,9 +65,7 @@ class IPCService {
     } catch (error) {
       logger.error(`IPC call failed: ${channel}`, error);
 
-      // Show notification if not already shown and showNotification is true
       if (showNotification && error instanceof Error) {
-        // Only show if it's not an error we already handled
         if (
           !error.message.includes('IPC API not available') &&
           !error.message.includes('IPC call failed')
@@ -90,16 +81,10 @@ class IPCService {
     }
   }
 
-  /**
-   * List directory contents
-   */
   async listDirectory(path: string): Promise<DirectoryItem[]> {
     return this.invoke<DirectoryItem[]>('fileBrowser:listDirectory', { path });
   }
 
-  /**
-   * Get file/directory stats
-   */
   async statFile(path: string): Promise<{
     size: number;
     modified: number;
@@ -108,23 +93,14 @@ class IPCService {
     return this.invoke('fileBrowser:statFile', { path });
   }
 
-  /**
-   * Find all audio files recursively in a directory
-   */
   async findAudioFilesRecursive(path: string): Promise<string[]> {
     return this.invoke<string[]>('fileBrowser:findAudioFilesRecursive', { path });
   }
 
-  /**
-   * Get audio file duration in seconds
-   */
-  async getAudioDuration(path: string): Promise<number> {
-    return this.invoke<number>('audio:getDuration', { path });
+  async getAudioDuration(path: string, showNotification: boolean = false): Promise<number> {
+    return this.invoke<number>('audio:getDuration', { path }, showNotification);
   }
 
-  /**
-   * Get audio file contents as base64 buffer for secure playback
-   */
   async getAudioFileSource(
     path: string,
     showNotification: boolean = true,
@@ -132,9 +108,6 @@ class IPCService {
     return this.invoke<AudioFileSource>('audio:getFileSource', { path }, showNotification);
   }
 
-  /**
-   * Show folder selection dialog
-   */
   async showFolderDialog(options?: {
     title?: string;
     defaultPath?: string;
@@ -142,9 +115,6 @@ class IPCService {
     return this.invoke<string | null>('dialog:showOpenDialog', options || {});
   }
 
-  /**
-   * Show save file dialog
-   */
   async showSaveDialog(options?: {
     title?: string;
     defaultPath?: string;
@@ -153,9 +123,6 @@ class IPCService {
     return this.invoke<string | null>('dialog:showSaveDialog', options || {});
   }
 
-  /**
-   * Show open file dialog
-   */
   async showOpenFileDialog(options?: {
     title?: string;
     defaultPath?: string;
@@ -164,9 +131,6 @@ class IPCService {
     return this.invoke<string | null>('dialog:showOpenFileDialog', options || {});
   }
 
-  /**
-   * Get system path (documents, music, downloads, etc.)
-   */
   async getSystemPath(name: string): Promise<string> {
     return this.invoke<string>('system:getPath', { name });
   }
