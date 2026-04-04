@@ -37,7 +37,7 @@ interface AimpFixture {
 
 const originalReadFileSync = fs.readFileSync.bind(fs) as OriginalReadFileSync;
 const fixturesDirectory = path.resolve(__dirname, '../../electron/aimp/fixtures');
-const manifestSuffix = path.join('plugins', 'aimp', 'manifest.json');
+const manifestSuffix = path.join('plugins', 'CherryPlayAimpBridge', 'manifest.json');
 const validManifest = {
   name: 'cherryplay-aimp-bridge',
   version: '0.1.0',

@@ -1,6 +1,6 @@
 {
   "name": "cherryplaylist",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Desktop application for creating and managing music playlists",
   "main": "dist-electron/electron/main.mjs",
   "scripts": {
@@ -20,7 +20,8 @@
     "check": "npm run lint && npm run stylelint && npm run format:check",
     "prepare": "node scripts/prepare-husky.mjs",
     "dist": "npm run build:electron && electron-builder",
-    "dist:win": "npm run build:electron && electron-builder --win",
+    "stage:aimp-plugin": "node scripts/stage-aimp-plugin.mjs",
+    "dist:win": "npm run build:electron && npm run stage:aimp-plugin && electron-builder --win --x64",
     "dist:mac": "npm run build:electron && electron-builder --mac",
     "dist:linux": "npm run build:electron && electron-builder --linux",
     "dist:all": "npm run build:electron && electron-builder --win --mac --linux"
@@ -44,6 +45,7 @@
     "music-metadata": "^11.12.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "use-sync-external-store": "^1.4.0",
     "uuid": "^11.0.0",
     "zustand": "^5.0.0"
   },
@@ -94,6 +96,14 @@
     "vite-plugin-eslint": "^1.8.1",
     "wait-on": "^9.0.4"
   },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom",
+    "@cherryplay/components": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --max-warnings=0 --fix",
@@ -134,8 +144,17 @@
     ],
     "extraResources": [
       {
-        "from": "plugins",
-        "to": "plugins",
+        "from": "plugins/example-plugin",
+        "to": "plugins/example-plugin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "plugins/CherryPlayAimpBridge",
+        "to": "CherryPlayAimpBridge",
         "filter": [
           "**/*"
         ]
@@ -144,14 +163,7 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        },
-        {
-          "target": "portable",
+          "target": "zip",
           "arch": [
             "x64"
           ]

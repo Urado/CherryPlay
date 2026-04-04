@@ -49,3 +49,6 @@ Thumbs.db
 out/
 release/
 
+# Staged native AIMP bridge (copied by scripts/stage-aimp-plugin.mjs before dist)
+plugins/CherryPlayAimpBridge/*.dll
+

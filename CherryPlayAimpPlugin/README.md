@@ -66,7 +66,7 @@ The build output DLL is `CherryPlayAimpBridge.dll` (under `build/<preset>/Releas
    - Должна использоваться установка **AIMP x64**, не 32-битная.
 3. **Скопировать** `CherryPlayAimpBridge.dll` в эту папку (при необходимости — с правами администратора).
 4. **Перезапустить AIMP** (полностью закрыть и открыть снова).
-5. В **CherryPlayList**: убедиться, что в настройках выбран источник **AIMP** и присутствует манифест `CherryPlayList/plugins/aimp/manifest.json`, чтобы приложение слушало pipe `\\.\pipe\cherryplay-aimp-v1`. После запуска AIMP в панели AIMP должно отображаться состояние «подключён».
+5. В **CherryPlayList**: убедиться, что в настройках выбран источник **AIMP** и присутствует манифест `CherryPlayList/plugins/CherryPlayAimpBridge/manifest.json`, чтобы приложение слушало pipe `\\.\pipe\cherryplay-aimp-v1`. После запуска AIMP в панели AIMP должно отображаться состояние «подключён».
 
 ## Protocol
 

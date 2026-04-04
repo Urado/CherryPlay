@@ -36,6 +36,9 @@ import {
 } from '../../src/shared/contracts/aimp.js';
 import { logger } from '../utils/logger.js';
 
+/** Same folder name as AIMP uses for the plugin (DLL basename without extension). */
+const AIMP_BRIDGE_PLUGIN_DIR = 'CherryPlayAimpBridge';
+
 export type { AimpLogEntry };
 
 type AimpStateListener = (state: AimpBridgeState) => void;
@@ -63,9 +66,13 @@ function getPluginsBasePaths(): string[] {
 }
 
 function getAimpPluginManifestPaths(): string[] {
-  return getPluginsBasePaths().map((pluginsBasePath) =>
-    path.join(pluginsBasePath, 'aimp', 'manifest.json'),
+  const underPlugins = getPluginsBasePaths().map((pluginsBasePath) =>
+    path.join(pluginsBasePath, AIMP_BRIDGE_PLUGIN_DIR, 'manifest.json'),
   );
+  const besideExe = app.isPackaged
+    ? [path.join(path.dirname(process.execPath), AIMP_BRIDGE_PLUGIN_DIR, 'manifest.json')]
+    : [];
+  return [...new Set([...underPlugins, ...besideExe])];
 }
 
 function resolveAimpPluginManifestPath(): string | null {

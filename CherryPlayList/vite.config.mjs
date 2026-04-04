@@ -26,7 +26,12 @@ export default defineConfig({
   plugins: [react(), ...(shouldLint ? [eslintPlugin] : [])],
   base: './',
   optimizeDeps: {
-    include: ['@mui/material', '@mui/material/utils', '@mui/icons-material'],
+    include: [
+      '@mui/material',
+      '@mui/material/utils',
+      '@mui/icons-material',
+      'use-sync-external-store/shim/with-selector.js',
+    ],
     force: false,
   },
   define: {
@@ -41,6 +46,7 @@ export default defineConfig({
     strictPort: true,
   },
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@core': path.resolve(__dirname, './src/core'),
@@ -48,6 +54,9 @@ export default defineConfig({
       '@workspaces': path.resolve(__dirname, './src/workspaces'),
       '@app': path.resolve(__dirname, './src/app'),
       '@cherryplay/components': path.resolve(__dirname, '../CherryPlayComponents/src'),
+      react: path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+      'react/jsx-runtime': path.resolve(__dirname, './node_modules/react/jsx-runtime'),
     },
   },
 });
