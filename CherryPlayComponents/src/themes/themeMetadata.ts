@@ -34,20 +34,11 @@ export interface ThemeMetadata {
   customizationOptions: ThemeCustomizationOption[];
 }
 
-export type CyberpunkCustomizationSettings = {
-  accentColor: string;
-  glowIntensity: number;
-};
+export type CyberpunkCustomizationSettings = Record<string, never>;
 
-export type SakuraCustomizationSettings = {
-  pinkTint: string;
-  backgroundOpacity: number;
-};
+export type SakuraCustomizationSettings = Record<string, never>;
 
-export type ArtDecoCustomizationSettings = {
-  goldColor: string;
-  patternStyle: 'geometric' | 'floral' | 'linear';
-};
+export type ArtDecoCustomizationSettings = Record<string, never>;
 
 // Canonical storage contract for basic theme settings.
 export type BasicCustomizationSettings = BasicThemeCanonicalCustomizationSettings;
@@ -120,81 +111,18 @@ function createBasicThemeCustomizationOptions(
 export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   cyberpunk: {
     id: 'cyberpunk',
-    defaultCustomizationSettings: {
-      accentColor: '#00ff00',
-      glowIntensity: 50,
-    },
-    customizationOptions: [
-      {
-        key: 'accentColor',
-        type: 'color',
-        defaultValue: '#00ff00',
-        label: 'Цвет акцента',
-      },
-      {
-        key: 'glowIntensity',
-        type: 'number',
-        defaultValue: 50,
-        min: 0,
-        max: 100,
-        step: 1,
-        transform: (value) => String(Math.max(0, Math.min(1, Number(value) / 100))),
-        label: 'Интенсивность свечения',
-        description: 'Интенсивность свечения от 0 до 100',
-      },
-    ],
+    defaultCustomizationSettings: {},
+    customizationOptions: [],
   },
   sakura: {
     id: 'sakura',
-    defaultCustomizationSettings: {
-      pinkTint: '#ffb3d9',
-      backgroundOpacity: 80,
-    },
-    customizationOptions: [
-      {
-        key: 'pinkTint',
-        type: 'color',
-        defaultValue: '#ffb3d9',
-        label: 'Оттенок розового',
-      },
-      {
-        key: 'backgroundOpacity',
-        type: 'number',
-        defaultValue: 80,
-        min: 0,
-        max: 100,
-        step: 1,
-        transform: (value) => String(Math.max(0, Math.min(1, Number(value) / 100))),
-        label: 'Прозрачность фона',
-        description: 'Прозрачность фона от 0 до 100',
-      },
-    ],
+    defaultCustomizationSettings: {},
+    customizationOptions: [],
   },
   'art-deco': {
     id: 'art-deco',
-    defaultCustomizationSettings: {
-      goldColor: '#d4af37',
-      patternStyle: 'geometric',
-    },
-    customizationOptions: [
-      {
-        key: 'goldColor',
-        type: 'color',
-        defaultValue: '#d4af37',
-        label: 'Цвет золота',
-      },
-      {
-        key: 'patternStyle',
-        type: 'select',
-        defaultValue: 'geometric',
-        label: 'Стиль паттерна',
-        options: [
-          { value: 'geometric', label: 'Геометрический' },
-          { value: 'floral', label: 'Цветочный' },
-          { value: 'linear', label: 'Линейный' },
-        ],
-      },
-    ],
+    defaultCustomizationSettings: {},
+    customizationOptions: [],
   },
   basic: {
     id: 'basic',

@@ -36,15 +36,18 @@ themes/
 │   ├── PlaylistItem.tsx
 │   ├── CurrentTrackDisplay.tsx
 │   └── index.ts
-├── cyberpunk/         # CSS-only PartyTheme
+├── cyberpunk/         # CSS + CustomizationEditor (stub)
 │   ├── index.css
 │   ├── playlist.css
 │   ├── playlist-item.css
-│   └── player.css
-├── sakura/            # CSS-only PartyTheme
-│   └── *.css
-└── art-deco/          # CSS-only PartyTheme
-    └── *.css
+│   ├── player.css
+│   └── CustomizationEditor.tsx
+├── sakura/            # CSS + CustomizationEditor (stub)
+│   ├── *.css
+│   └── CustomizationEditor.tsx
+└── art-deco/          # CSS + CustomizationEditor (stub)
+    ├── *.css
+    └── CustomizationEditor.tsx
 ```
 
 ### Как это работает
@@ -133,24 +136,15 @@ Enum `PartyThemeId` определён в `CherryPlayServer/Core/Enums/PartyThem
 
 ### Cyberpunk
 
-| Параметр        | Тип            | По умолчанию | Описание               |
-| --------------- | -------------- | ------------ | ---------------------- |
-| `accentColor`   | string (hex)   | `#00ff00`    | Цвет акцента           |
-| `glowIntensity` | number (0-100) | `50`         | Интенсивность свечения |
+PartyTheme не поддерживает настройки кастомизации (редактор темы возвращает `null`).
 
 ### Sakura
 
-| Параметр            | Тип            | По умолчанию | Описание          |
-| ------------------- | -------------- | ------------ | ----------------- |
-| `pinkTint`          | string (hex)   | `#ffb3d9`    | Оттенок розового  |
-| `backgroundOpacity` | number (0-100) | `80`         | Прозрачность фона |
+PartyTheme не поддерживает настройки кастомизации (редактор темы возвращает `null`).
 
 ### Art Deco
 
-| Параметр       | Тип          | По умолчанию  | Описание       |
-| -------------- | ------------ | ------------- | -------------- |
-| `goldColor`    | string (hex) | `#d4af37`     | Цвет золота    |
-| `patternStyle` | string       | `'geometric'` | Стиль паттерна |
+PartyTheme не поддерживает настройки кастомизации (редактор темы возвращает `null`).
 
 ### Базовый (`basic`)
 
@@ -184,7 +178,7 @@ Enum `PartyThemeId` определён в `CherryPlayServer/Core/Enums/PartyThem
 
 ### Весенний кросс-степ (`spring-cross-step`)
 
-PartyTheme не поддерживает настройки кастомизации.
+PartyTheme не поддерживает настройки кастомизации (редактор темы возвращает `null`).
 
 ## Использование в проектах
 
@@ -215,8 +209,17 @@ interface PartyThemeComponents {
   PartyDisplay: React.ComponentType<{ data: PartyDisplayData; ... }>;
   PlaylistView: React.ComponentType<{ playlist: PartyPlaylistData; ... }>;
   CurrentTrackDisplay: React.ComponentType<{ playbackState: PlaybackState; ... }>;
+  PartyInfoDisplay: React.ComponentType<{ data: PartyInfoDisplayData; ... }>;
+  CustomizationEditor?: React.ComponentType<ThemeCustomizationEditorProps>;
+}
+
+interface ThemeCustomizationEditorProps {
+  customizationSettings: Record<string, unknown>;
+  onCustomizationSettingsChange: (settings: Record<string, unknown>) => void;
 }
 ```
+
+Для текущих встроенных тем `customizationOptions` не пустой только у `basic`; у остальных тем редактор возвращает `null`, а `customizationOptions` остаётся пустым.
 
 ### createPartyTheme
 

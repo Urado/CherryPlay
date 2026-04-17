@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { PartyDisplayData, PartyPlaylistData, PlaybackState, PlayerItem } from '../types';
 
+import { ArtDecoThemeCustomizationEditor } from './art-deco/CustomizationEditor';
 import {
   PartyDisplay as BasePartyDisplay,
   PlaylistView as BasePlaylistView,
@@ -9,12 +10,16 @@ import {
   PartyInfoDisplay as BasePartyInfoDisplay,
   BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
 } from './base';
+import { BasicThemeCustomizationEditor } from './basic';
+import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
+import { SakuraThemeCustomizationEditor } from './sakura/CustomizationEditor';
 import {
   PartyDisplay as SpringCrossStepPartyDisplay,
   PlaylistView as SpringCrossStepPlaylistView,
   CurrentTrackDisplay as SpringCrossStepCurrentTrackDisplay,
   PartyInfoDisplay as SpringCrossStepPartyInfoDisplay,
 } from './spring-cross-step';
+import { SpringCrossStepThemeCustomizationEditor } from './spring-cross-step/CustomizationEditor';
 
 export type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic' | 'spring-cross-step';
 
@@ -44,6 +49,12 @@ export interface PartyThemeComponents {
     data: import('./base').PartyInfoDisplayData;
     className?: string;
   }>;
+  CustomizationEditor?: React.ComponentType<ThemeCustomizationEditorProps>;
+}
+
+export interface ThemeCustomizationEditorProps {
+  customizationSettings: Record<string, unknown>;
+  onCustomizationSettingsChange: (settings: Record<string, unknown>) => void;
 }
 
 export interface PartyTheme {
@@ -95,21 +106,30 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Cyberpunk',
     description: 'Неоновая тема в стиле киберпанк',
     cssPath: './cyberpunk/index.css',
-    customizationOptions: ['accentColor', 'glowIntensity'],
+    customizationOptions: [],
+    overrides: {
+      CustomizationEditor: CyberpunkThemeCustomizationEditor,
+    },
   }),
   sakura: createPartyTheme({
     id: 'sakura',
     name: 'Sakura',
     description: 'Нежная пастельная тема',
     cssPath: './sakura/index.css',
-    customizationOptions: ['pinkTint', 'backgroundOpacity'],
+    customizationOptions: [],
+    overrides: {
+      CustomizationEditor: SakuraThemeCustomizationEditor,
+    },
   }),
   'art-deco': createPartyTheme({
     id: 'art-deco',
     name: 'Art Deco',
     description: 'Элегантная тема в стиле ар-деко',
     cssPath: './art-deco/index.css',
-    customizationOptions: ['goldColor', 'patternStyle'],
+    customizationOptions: [],
+    overrides: {
+      CustomizationEditor: ArtDecoThemeCustomizationEditor,
+    },
   }),
   basic: createPartyTheme({
     id: 'basic',
@@ -117,17 +137,22 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     description: 'Простой и чистый стиль в духе приложения',
     cssPath: './basic/index.css',
     customizationOptions: [...BASIC_THEME_CUSTOMIZATION_OPTION_KEYS],
+    overrides: {
+      CustomizationEditor: BasicThemeCustomizationEditor,
+    },
   }),
   'spring-cross-step': createPartyTheme({
     id: 'spring-cross-step',
     name: 'Весенний кросс-степ',
     description: 'Светлая весенняя тема с зелёными акцентами и мягкими тонами',
     cssPath: './spring-cross-step/index.css',
+    customizationOptions: [],
     overrides: {
       PartyDisplay: SpringCrossStepPartyDisplay,
       PlaylistView: SpringCrossStepPlaylistView,
       CurrentTrackDisplay: SpringCrossStepCurrentTrackDisplay,
       PartyInfoDisplay: SpringCrossStepPartyInfoDisplay,
+      CustomizationEditor: SpringCrossStepThemeCustomizationEditor,
     },
   }),
 };

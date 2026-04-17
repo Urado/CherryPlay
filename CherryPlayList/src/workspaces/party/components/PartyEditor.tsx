@@ -1,12 +1,4 @@
-import {
-  partyThemes,
-  type PartyThemeId,
-  getThemeMetadata,
-  getPartyTheme,
-  getBasicThemePaletteCatalog,
-  normalizeBasicThemePaletteSettings,
-  type BasicThemePaletteCatalogItem,
-} from '@cherryplay/components';
+import { partyThemes, type PartyThemeId, getPartyTheme } from '@cherryplay/components';
 import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -19,49 +11,6 @@ import {
   PREDEFINED_DANCE_TAGS,
 } from '@shared/services/partyService';
 import './PartyEditor.css';
-
-type HexDraftState = Record<string, string>;
-
-const BASIC_CUSTOM_COLOR_FIELDS = [
-  { key: 'customAccentPrimary', paletteKey: 'accentPrimary', label: 'Акцент' },
-  { key: 'customTextPrimary', paletteKey: 'textPrimary', label: 'Основной текст' },
-  { key: 'customBackgroundPrimary', paletteKey: 'backgroundPrimary', label: 'Фон страницы' },
-  { key: 'customTrackAreaBackground', paletteKey: 'trackAreaBackground', label: 'Фон списка' },
-  { key: 'customTrackBackground', paletteKey: 'trackBackground', label: 'Фон трека' },
-] as const;
-
-type BasicCustomField = (typeof BASIC_CUSTOM_COLOR_FIELDS)[number];
-
-function normalizeHexInput(value: string): string | null {
-  const trimmed = value.trim();
-  const withoutHash = trimmed.startsWith('#') ? trimmed.slice(1) : trimmed;
-
-  if (/^[\da-fA-F]{6}$/.test(withoutHash)) {
-    return `#${withoutHash.toLowerCase()}`;
-  }
-
-  if (/^[\da-fA-F]{3}$/.test(withoutHash)) {
-    const expanded = withoutHash
-      .split('')
-      .map((char) => `${char}${char}`)
-      .join('');
-    return `#${expanded.toLowerCase()}`;
-  }
-
-  return null;
-}
-
-function getBasicPalettePreviewStyle(
-  paletteItem: BasicThemePaletteCatalogItem,
-): React.CSSProperties {
-  return {
-    ['--palette-preview-accent' as string]: paletteItem.palette.accentPrimary,
-    ['--palette-preview-text' as string]: paletteItem.palette.textPrimary,
-    ['--palette-preview-bg-primary' as string]: paletteItem.palette.backgroundPrimary,
-    ['--palette-preview-bg-secondary' as string]: paletteItem.palette.trackAreaBackground,
-    ['--palette-preview-bg-tertiary' as string]: paletteItem.palette.trackBackground,
-  };
-}
 
 interface DanceTagsFieldProps {
   tags: string[];
@@ -318,8 +267,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   onOpenLinkParty,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [hexDrafts, setHexDrafts] = useState<HexDraftState>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const warnedThemeIdsRef = useRef<Set<PartyThemeId>>(new Set());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -339,243 +288,36 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const selectedStyle = AVAILABLE_STYLES.find((s) => s.id === themeId) || AVAILABLE_STYLES[0];
 
-  const handleCustomizationChange = (key: string, value: string | number) => {
-    onCustomizationSettingsChange({
-      ...customizationSettings,
-      [key]: value,
-    });
-  };
-
-  const handleBasicCustomColorChange = (field: BasicCustomField, nextHex: string) => {
-    const nextCustomPalette = {
-      ...basicPaletteSettings.customPalette,
-      [field.paletteKey]: nextHex,
-    };
-
-    onCustomizationSettingsChange({
-      ...customizationSettings,
-      paletteId: 'custom',
-      customPalette: nextCustomPalette,
-    });
-  };
-
-  const basicPaletteSettings = normalizeBasicThemePaletteSettings(customizationSettings);
-  const basicPaletteCatalog = getBasicThemePaletteCatalog(customizationSettings);
-
-  const handleBasicPaletteSelect = (paletteId: string) => {
-    setHexDrafts({});
-    if (paletteId === 'custom') {
-      handleCustomizationChange('paletteId', paletteId);
-      return;
-    }
-
-    const selectedPalette = basicPaletteCatalog.find(
-      (paletteItem) => paletteItem.id === paletteId && !paletteItem.isCustom,
-    )?.palette;
-
-    if (!selectedPalette) {
-      handleCustomizationChange('paletteId', paletteId);
-      return;
-    }
-
-    onCustomizationSettingsChange({
-      ...customizationSettings,
-      paletteId,
-      customPalette: {
-        accentPrimary: selectedPalette.accentPrimary,
-        textPrimary: selectedPalette.textPrimary,
-        backgroundPrimary: selectedPalette.backgroundPrimary,
-        trackAreaBackground: selectedPalette.trackAreaBackground,
-        trackBackground: selectedPalette.trackBackground,
-      },
-    });
-  };
-
-  const handleBasicColorPickerChange = (field: BasicCustomField, nextValue: string) => {
-    const normalized =
-      normalizeHexInput(nextValue) ?? basicPaletteSettings.customPalette[field.paletteKey];
-    setHexDrafts((prev) => ({ ...prev, [field.key]: normalized }));
-    handleBasicCustomColorChange(field, normalized);
-  };
-
-  const handleBasicHexInputChange = (field: BasicCustomField, nextValue: string) => {
-    setHexDrafts((prev) => ({ ...prev, [field.key]: nextValue }));
-    const normalized = normalizeHexInput(nextValue);
-    if (normalized) {
-      handleBasicCustomColorChange(field, normalized);
-    }
-  };
-
-  const handleBasicHexInputBlur = (field: BasicCustomField) => {
-    const currentDraft = hexDrafts[field.key] ?? '';
-    const normalized = normalizeHexInput(currentDraft);
-    const fallback = basicPaletteSettings.customPalette[field.paletteKey];
-    const nextValue = normalized ?? fallback;
-    setHexDrafts((prev) => ({ ...prev, [field.key]: nextValue }));
-    handleBasicCustomColorChange(field, nextValue);
-  };
-
-  const renderBasicPaletteSettings = () => {
-    return (
-      <div className="party-editor-section">
-        <div className="party-editor-label">Палитра базовой темы</div>
-        <div className="party-editor-basic-palette-grid">
-          {basicPaletteCatalog.map((paletteItem) => {
-            const isSelected = basicPaletteSettings.paletteId === paletteItem.id;
-            return (
-              <button
-                key={paletteItem.id}
-                type="button"
-                className={`party-editor-palette-option ${isSelected ? 'party-editor-palette-option--selected' : ''}`}
-                onClick={() => handleBasicPaletteSelect(paletteItem.id)}
-                aria-pressed={isSelected}
-              >
-                <div
-                  className="party-editor-palette-preview"
-                  style={getBasicPalettePreviewStyle(paletteItem)}
-                  aria-hidden="true"
-                >
-                  <span className="party-editor-palette-swatch party-editor-palette-swatch--bg-primary" />
-                  <span className="party-editor-palette-swatch party-editor-palette-swatch--bg-secondary" />
-                  <span className="party-editor-palette-swatch party-editor-palette-swatch--bg-tertiary" />
-                  <span className="party-editor-palette-swatch party-editor-palette-swatch--accent" />
-                  <span className="party-editor-palette-swatch party-editor-palette-swatch--text" />
-                </div>
-                <span className="party-editor-palette-option-label">{paletteItem.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {basicPaletteSettings.paletteId === 'custom' && (
-          <div className="party-editor-custom-colors">
-            {BASIC_CUSTOM_COLOR_FIELDS.map((field) => {
-              const resolvedHex = basicPaletteSettings.customPalette[field.paletteKey];
-              const draftHex = hexDrafts[field.key] ?? resolvedHex;
-              return (
-                <div key={field.key} className="party-editor-custom-color-row">
-                  <label
-                    className="party-editor-custom-color-label"
-                    htmlFor={`basic-color-${field.key}`}
-                  >
-                    {field.label}
-                  </label>
-                  <div className="party-editor-custom-color-controls">
-                    <input
-                      id={`basic-color-${field.key}`}
-                      type="color"
-                      value={resolvedHex}
-                      onChange={(e) => handleBasicColorPickerChange(field, e.target.value)}
-                      className="party-editor-custom-color-picker"
-                      aria-label={`${field.label} - выбор цвета`}
-                    />
-                    <input
-                      type="text"
-                      value={draftHex}
-                      onChange={(e) => handleBasicHexInputChange(field, e.target.value)}
-                      onBlur={() => handleBasicHexInputBlur(field)}
-                      placeholder="#ffffff"
-                      className="party-editor-input party-editor-custom-color-hex-input"
-                      aria-label={`${field.label} - HEX`}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const renderCustomizationOptions = () => {
-    if (themeId === 'basic') {
-      return renderBasicPaletteSettings();
+    const theme = getPartyTheme(themeId);
+    const hasCustomizationOptions = (theme?.customizationOptions?.length ?? 0) > 0;
+    const ThemeCustomizationEditor = theme?.components.CustomizationEditor;
+
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      hasCustomizationOptions &&
+      !ThemeCustomizationEditor &&
+      !warnedThemeIdsRef.current.has(themeId)
+    ) {
+      warnedThemeIdsRef.current.add(themeId);
+      console.warn(
+        `[PartyEditor] Theme customization contract mismatch for "${themeId}": customizationOptions and CustomizationEditor should be aligned.`,
+      );
     }
 
-    const metadata = getThemeMetadata(themeId, customizationSettings);
-    const theme = getPartyTheme(themeId);
-    if (!metadata || metadata.customizationOptions.length === 0) {
+    if (!ThemeCustomizationEditor) {
       return null;
     }
 
     return (
-      <div className="party-editor-section">
-        <label className="party-editor-label">Настройки {theme?.name || themeId}</label>
-        <div className="party-editor-customization">
-          {metadata.customizationOptions.map((option) => {
-            const currentValue = customizationSettings[option.key] ?? option.defaultValue;
-
-            return (
-              <label key={option.key} className="party-editor-customization-item">
-                {option.label}
-                {option.type === 'color' && (
-                  <input
-                    type="color"
-                    value={String(currentValue)}
-                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
-                  />
-                )}
-                {option.type === 'number' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <input
-                      type="range"
-                      min={option.min ?? 0}
-                      max={option.max ?? 100}
-                      step={option.step ?? 1}
-                      value={Number(currentValue)}
-                      onInput={(e) => {
-                        const value = parseInt((e.target as HTMLInputElement).value, 10);
-                        handleCustomizationChange(option.key, value);
-                      }}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        handleCustomizationChange(option.key, value);
-                      }}
-                      style={{ flex: 1, cursor: 'pointer' }}
-                    />
-                    <span
-                      style={{
-                        minWidth: '40px',
-                        textAlign: 'right',
-                        fontSize: '14px',
-                        color: 'var(--text-secondary, #666666)',
-                        fontWeight: '500',
-                      }}
-                    >
-                      {String(currentValue)}
-                    </span>
-                  </div>
-                )}
-                {option.type === 'select' && option.options && (
-                  <select
-                    value={String(currentValue)}
-                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
-                  >
-                    {option.options.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {option.type === 'text' && (
-                  <input
-                    type="text"
-                    value={String(currentValue)}
-                    onChange={(e) => handleCustomizationChange(option.key, e.target.value)}
-                  />
-                )}
-              </label>
-            );
-          })}
-        </div>
-      </div>
+      <ThemeCustomizationEditor
+        customizationSettings={customizationSettings}
+        onCustomizationSettingsChange={onCustomizationSettingsChange}
+      />
     );
   };
 
   const handleStyleSelect = (themeId: PartyThemeId) => {
-    setHexDrafts({});
     onThemeIdChange(themeId);
     setIsDropdownOpen(false);
   };

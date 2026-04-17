@@ -117,7 +117,7 @@
 - Добавьте идентификатор PartyTheme в union type `PartyThemeId`
 - Добавьте PartyTheme в объект `PARTY_THEME_REGISTRY` используя функцию `createPartyTheme()`
 - Укажите: `id`, `name`, `description`, `cssPath`
-- Если PartyTheme поддерживает кастомизацию, укажите `customizationOptions` (массив строк с названиями опций)
+- Если PartyTheme поддерживает кастомизацию, укажите `customizationOptions` (массив ключей опций) и добавьте `CustomizationEditor` в папку темы
 - Если тема использует собственный layout или декор, передайте в `createPartyTheme()` параметр `overrides` с переопределёнными компонентами: `PartyDisplay`, `PlaylistView`, `CurrentTrackDisplay`, `PartyInfoDisplay` (только нужные)
 
 **2.2. Добавьте импорт CSS в `CherryPlayComponents/src/themes/index.css`:**
@@ -161,8 +161,9 @@
 
 **5.2. Если PartyTheme поддерживает кастомизацию:**
 
-- Добавьте блок настроек в `PartyEditor.tsx` с условием `{themeId === '<theme-id>' && ...}`
-- Добавьте поля для всех опций кастомизации из `customizationOptions`
+- Реализуйте `CustomizationEditor.tsx` внутри `CherryPlayComponents/src/themes/<theme-id>/`
+- Подключите компонент через `overrides.CustomizationEditor` в `PARTY_THEME_REGISTRY`
+- В `CherryPlayList/src/workspaces/party/components/PartyEditor.tsx` правки не нужны: он рендерит `theme.components.CustomizationEditor` из контракта темы
 
 **5.3. Обновите обработчик `handleThemeChange` в `CherryPlayList/src/workspaces/party/PartyView.tsx`:**
 
@@ -221,7 +222,8 @@
 ### CherryPlayList (опционально)
 
 - [ ] Добавлено превью в `PARTY_THEME_PREVIEWS` в `PartyEditor.tsx`
-- [ ] Добавлен блок настроек кастомизации в `PartyEditor.tsx` (если есть)
+- [ ] Добавлен `CustomizationEditor.tsx` в папку темы (если есть кастомизация)
+- [ ] Подключён `overrides.CustomizationEditor` в `themes/index.ts` (если есть кастомизация)
 - [ ] Обновлен обработчик `handleThemeChange` в `PartyView.tsx` (если есть настройки)
 
 ### Тестирование

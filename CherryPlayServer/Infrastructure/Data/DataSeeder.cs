@@ -27,7 +27,6 @@ public class DataSeeder : IDataSeeder
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Создание тестового пользователя (временное решение для тестов)
         var testEmail = "t@t.ru";
         var existingTestAccount = await _emailAccountRepository.GetByEmailAsync(testEmail);
         if (existingTestAccount == null)
@@ -55,18 +54,13 @@ public class DataSeeder : IDataSeeder
         var existingParties = await _partyRepository.GetAllAsync();
         if (existingParties.Any()) return;
 
-        // Cyberpunk вечеринка
         var cyberpunkParty = new Party
         {
             Id = Guid.NewGuid(),
             Name = "Cyberpunk Night",
             ShortCode = "cyber",
             PartyThemeId = PartyThemeId.Cyberpunk,
-            CustomizationSettings = new Dictionary<string, object>
-            {
-                { "accentColor", "#00ff00" },
-                { "glowIntensity", 0.8 }
-            },
+            CustomizationSettings = null,
             Playlist = new PartyPlaylist
             {
                 Items =
@@ -128,18 +122,13 @@ public class DataSeeder : IDataSeeder
             Description = "Ночная вечеринка в стиле киберпанк."
         };
 
-        // Sakura вечеринка
         var sakuraParty = new Party
         {
             Id = Guid.NewGuid(),
             Name = "Sakura Festival",
             ShortCode = "sakura",
             PartyThemeId = PartyThemeId.Sakura,
-            CustomizationSettings = new Dictionary<string, object>
-            {
-                { "pinkTint", 0.6 },
-                { "backgroundOpacity", 0.9 }
-            },
+            CustomizationSettings = null,
             Playlist = new PartyPlaylist
             {
                 Items =
@@ -192,18 +181,13 @@ public class DataSeeder : IDataSeeder
             Description = "Фестиваль цветения сакуры."
         };
 
-        // Art Deco вечеринка
         var artDecoParty = new Party
         {
             Id = Guid.NewGuid(),
             Name = "Art Deco Gala",
             ShortCode = "artdeco",
             PartyThemeId = PartyThemeId.ArtDeco,
-            CustomizationSettings = new Dictionary<string, object>
-            {
-                { "goldColor", "#d4af37" },
-                { "patternStyle", "geometric" }
-            },
+            CustomizationSettings = null,
             Playlist = new PartyPlaylist
             {
                 Items =
@@ -273,7 +257,6 @@ public class DataSeeder : IDataSeeder
             IsListedInCatalog = false
         };
 
-        // Базовый вечеринка
         var basicParty = new Party
         {
             Id = Guid.NewGuid(),
