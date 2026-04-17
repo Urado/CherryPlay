@@ -6,37 +6,6 @@ public static class CustomizationSettingsValidator
 {
     public static bool IsValidCustomizationSettings(Dictionary<string, object>? settings)
     {
-        if (settings == null)
-        {
-            return true;
-        }
-
-        foreach (var kvp in settings)
-        {
-            var value = kvp.Value;
-
-            if (value is JsonElement jsonElement)
-            {
-                if (jsonElement.ValueKind == JsonValueKind.String ||
-                    jsonElement.ValueKind == JsonValueKind.Number ||
-                    jsonElement.ValueKind == JsonValueKind.Null)
-                {
-                    continue;
-                }
-                return false;
-            }
-
-            if (value is not string && value is not int && value is not long &&
-                value is not float && value is not double && value is not decimal)
-            {
-                if (value == null)
-                {
-                    continue;
-                }
-                return false;
-            }
-        }
-
         return true;
     }
 
@@ -50,69 +19,71 @@ public static class CustomizationSettingsValidator
         var normalized = new Dictionary<string, object>();
         foreach (var kvp in settings)
         {
-            var value = kvp.Value;
-
-            if (value is JsonElement jsonElement)
-            {
-                if (jsonElement.ValueKind == JsonValueKind.String)
-                {
-                    normalized[kvp.Key] = jsonElement.GetString()!;
-                }
-                else if (jsonElement.ValueKind == JsonValueKind.Number)
-                {
-                    if (jsonElement.TryGetInt32(out var intValue))
-                    {
-                        normalized[kvp.Key] = (double)intValue;
-                    }
-                    else if (jsonElement.TryGetInt64(out var longValue))
-                    {
-                        normalized[kvp.Key] = (double)longValue;
-                    }
-                    else if (jsonElement.TryGetDouble(out var doubleValue))
-                    {
-                        normalized[kvp.Key] = doubleValue;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            normalized[kvp.Key] = jsonElement.GetDouble();
-                        }
-                        catch
-                        {
-                        }
-                    }
-                }
-                continue;
-            }
-
-            if (value == null)
+            var value = NormalizeValue(kvp.Value);
+            if (value is null)
             {
                 continue;
             }
 
-            if (value is int intVal)
-            {
-                normalized[kvp.Key] = (double)intVal;
-            }
-            else if (value is long longVal)
-            {
-                normalized[kvp.Key] = (double)longVal;
-            }
-            else if (value is float floatVal)
-            {
-                normalized[kvp.Key] = (double)floatVal;
-            }
-            else if (value is decimal decimalVal)
-            {
-                normalized[kvp.Key] = (double)decimalVal;
-            }
-            else if (value is string || value is double)
-            {
-                normalized[kvp.Key] = value;
-            }
+            normalized[kvp.Key] = value;
         }
 
         return normalized;
+    }
+
+    private static object? NormalizeValue(object? value)
+    {
+        if (value is JsonElement jsonElement)
+        {
+            return NormalizeJsonElement(jsonElement);
+        }
+
+        if (value is Dictionary<string, object> dict)
+        {
+            return NormalizeCustomizationSettings(dict);
+        }
+
+        if (value is List<object> list)
+        {
+            return list.Select(NormalizeValue).ToList();
+        }
+
+        if (value is null ||
+            value is string ||
+            value is bool ||
+            value is int ||
+            value is long ||
+            value is float ||
+            value is double ||
+            value is decimal)
+        {
+            return value;
+        }
+
+        return value.ToString();
+    }
+
+    private static object? NormalizeJsonElement(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => element
+                .EnumerateObject()
+                .ToDictionary(
+                    property => property.Name,
+                    property => NormalizeJsonElement(property.Value)),
+            JsonValueKind.Array => element
+                .EnumerateArray()
+                .Select(NormalizeJsonElement)
+                .ToList(),
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.TryGetInt64(out var longValue)
+                ? longValue
+                : element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => null,
+        };
     }
 }

@@ -1,3 +1,11 @@
+import {
+  DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS,
+  getBasicThemePaletteCatalog,
+  normalizeBasicThemePaletteSettings,
+  type BasicThemeCanonicalCustomizationSettings,
+  type BasicThemeCompatibilityCustomizationSettings,
+} from './base/colors';
+
 import type { PartyThemeId } from './index';
 
 export type CustomizationOptionType = 'color' | 'number' | 'text' | 'select';
@@ -22,7 +30,7 @@ export interface ThemeCustomizationOption {
 
 export interface ThemeMetadata {
   id: PartyThemeId;
-  defaultCustomizationSettings: Record<string, string | number>;
+  defaultCustomizationSettings: Record<string, unknown>;
   customizationOptions: ThemeCustomizationOption[];
 }
 
@@ -41,7 +49,11 @@ export type ArtDecoCustomizationSettings = {
   patternStyle: 'geometric' | 'floral' | 'linear';
 };
 
-export type BasicCustomizationSettings = Record<string, never>;
+// Canonical storage contract for basic theme settings.
+export type BasicCustomizationSettings = BasicThemeCanonicalCustomizationSettings;
+
+// Compatibility contract for option-based UI payloads (`paletteId` + `custom*` keys).
+export type BasicCustomizationOptionSettings = BasicThemeCompatibilityCustomizationSettings;
 
 export type SpringCrossStepCustomizationSettings = Record<string, never>;
 
@@ -55,6 +67,55 @@ export type ThemeCustomizationSettingsMap = {
 
 export type CustomizationSettings<T extends PartyThemeId = PartyThemeId> =
   ThemeCustomizationSettingsMap[T];
+
+function createBasicThemeCustomizationOptions(
+  settings?: Partial<Record<string, unknown>>,
+): ThemeCustomizationOption[] {
+  const normalized = normalizeBasicThemePaletteSettings(settings);
+
+  return [
+    {
+      key: 'paletteId',
+      type: 'select',
+      defaultValue: normalized.paletteId,
+      label: 'Палитра',
+      options: getBasicThemePaletteCatalog(settings).map((palette) => ({
+        value: palette.id,
+        label: palette.label,
+      })),
+    },
+    {
+      key: 'customAccentPrimary',
+      type: 'color',
+      defaultValue: normalized.customPalette.accentPrimary,
+      label: 'Кастом: основной акцент',
+    },
+    {
+      key: 'customTextPrimary',
+      type: 'color',
+      defaultValue: normalized.customPalette.textPrimary,
+      label: 'Кастом: основной текст',
+    },
+    {
+      key: 'customBackgroundPrimary',
+      type: 'color',
+      defaultValue: normalized.customPalette.backgroundPrimary,
+      label: 'Кастом: фон',
+    },
+    {
+      key: 'customTrackAreaBackground',
+      type: 'color',
+      defaultValue: normalized.customPalette.trackAreaBackground,
+      label: 'Кастом: фон списка',
+    },
+    {
+      key: 'customTrackBackground',
+      type: 'color',
+      defaultValue: normalized.customPalette.trackBackground,
+      label: 'Кастом: фон трека',
+    },
+  ];
+}
 
 export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   cyberpunk: {
@@ -137,8 +198,8 @@ export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   },
   basic: {
     id: 'basic',
-    defaultCustomizationSettings: {},
-    customizationOptions: [],
+    defaultCustomizationSettings: DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS,
+    customizationOptions: createBasicThemeCustomizationOptions(),
   },
   'spring-cross-step': {
     id: 'spring-cross-step',
@@ -147,8 +208,23 @@ export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   },
 };
 
-export function getThemeMetadata(partyThemeId: PartyThemeId): ThemeMetadata {
-  return THEME_METADATA[partyThemeId];
+// Dynamic form usage: pass current `customizationSettings` to get live default values
+// for basic custom colors and custom-palette preview option.
+// Static usage (docs, schema listing): call without runtime settings.
+export function getThemeMetadata(
+  partyThemeId: PartyThemeId,
+  customizationSettings?: Partial<Record<string, unknown>>,
+): ThemeMetadata {
+  const metadata = THEME_METADATA[partyThemeId];
+
+  if (partyThemeId !== 'basic') {
+    return metadata;
+  }
+
+  return {
+    ...metadata,
+    customizationOptions: createBasicThemeCustomizationOptions(customizationSettings),
+  };
 }
 
 export function getDefaultCustomizationSettings<T extends PartyThemeId>(

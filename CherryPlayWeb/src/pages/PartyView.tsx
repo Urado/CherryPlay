@@ -1,10 +1,5 @@
-/**
- * Страница просмотра вечеринки
- * Отображает плейлист и состояние воспроизведения
- */
-
-import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 import type { PlaybackState, PartyThemeId } from '@cherryplay/components';
+import { PartyDisplay, PartyDisplayData, usePartyThemeVars } from '@cherryplay/components';
 import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -73,7 +68,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const sessionEndGraceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isDisconnectFreezeActive, setIsDisconnectFreezeActive] = useState(false);
 
-  // Clear both timers (on unmount or when live stream returns); also exits freeze display
   const clearSessionTimers = useCallback(() => {
     if (disconnectFreezeTimerRef.current !== null) {
       clearTimeout(disconnectFreezeTimerRef.current);
@@ -86,14 +80,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setIsDisconnectFreezeActive(false);
   }, []);
 
-  // Clear timers on unmount
   useEffect(() => {
     return () => {
       clearSessionTimers();
     };
   }, [clearSessionTimers]);
 
-  // Синхронизируем ref с state
   useEffect(() => {
     playbackStateRef.current = playbackState;
   }, [playbackState]);
@@ -102,7 +94,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     playlistRef.current = playlist;
   }, [playlist]);
 
-  // Запрашивает полное состояние вечеринки через SignalR
   const requestFullState = useCallback(async () => {
     if (!shortCode) {
       devLog('[PartyView] requestFullState skipped - no shortCode');
@@ -143,10 +134,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, [shortCode, clearSessionTimers, setPlaybackState, setIsSessionActive]);
 
-  // Используем хук для управления SignalR подключением
   const signalR = useSignalR({
     shortCode,
-    autoConnect: false, // Подключаемся вручную в useEffect
+    autoConnect: false,
     onSessionStarted: useCallback(
       (_partyId: string) => {
         clearSessionTimers();
@@ -280,13 +270,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
   });
 
-  // Подключаемся к SignalR после загрузки плейлиста
   const connectingRef = useRef(false);
   const hasConnectedRef = useRef(false);
   const hasAttemptedConnectionRef = useRef(false);
   const prevConnectionStatusRef = useRef(signalR.connectionStatus);
 
-  // После (первого) подключения или восстановления соединения запрашиваем полное состояние
   useEffect(() => {
     if (isDemo || !shortCode) return;
     const prev = prevConnectionStatusRef.current;
@@ -299,7 +287,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, [signalR.connectionStatus, shortCode, isDemo, requestFullState]);
 
-  // Периодическая попытка переподключения раз в 30 с при отвале соединения
   const RECONNECT_INTERVAL_MS = 30_000;
   useEffect(() => {
     if (isDemo || !shortCode || signalR.connectionStatus !== 'disconnected') {
@@ -315,30 +302,25 @@ export const PartyView: React.FC<PartyViewProps> = ({
       });
     }, RECONNECT_INTERVAL_MS);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- зависим только от status и connect, не от всего signalR
-  }, [isDemo, shortCode, signalR.connectionStatus, signalR.connect]);
+  }, [isDemo, shortCode, signalR.connectionStatus, signalR.connect, signalR]);
 
   useEffect(() => {
     if (isDemo || !shortCode || loading) {
       return;
     }
 
-    // Если уже подключены, просто запрашиваем состояние один раз
     if (signalR.isConnected) {
       if (!hasConnectedRef.current) {
         hasConnectedRef.current = true;
-        // Запрашиваем состояние только один раз после подключения
         requestFullState();
       }
       return;
     }
 
-    // Если уже была попытка подключения (успешная или нет), не пытаемся снова
     if (hasAttemptedConnectionRef.current) {
       return;
     }
 
-    // Если уже идет подключение, не запускаем еще одно
     if (connectingRef.current) {
       return;
     }
@@ -346,12 +328,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
     connectingRef.current = true;
     hasAttemptedConnectionRef.current = true;
 
-    // Подключаемся автоматически после загрузки плейлиста
     signalR
       .connect()
       .then(() => {
         hasConnectedRef.current = true;
-        // После подключения запрашиваем начальное состояние
         requestFullState();
         connectingRef.current = false;
       })
@@ -365,13 +345,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
       });
 
     return () => {
-      // Отключаемся при размонтировании
       connectingRef.current = false;
-      // НЕ сбрасываем hasAttemptedConnectionRef и hasConnectedRef при cleanup,
-      // чтобы не пытаться подключиться снова при следующем рендере
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shortCode, isDemo, loading]); // Убрали функции из зависимостей намеренно
+  }, [shortCode, isDemo, loading, requestFullState, setError, signalR]);
 
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(() => {
     const pl = playlist || { items: [], totalDuration: 0, totalTracks: 0 };
@@ -408,6 +384,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
     isDemo,
   ]);
 
+  const themeVars = usePartyThemeVars(themeId, customizationSettings);
+
   const handleRetry = () => {
     loadPlaylist();
   };
@@ -437,7 +415,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   }
 
   return (
-    <div className="party-view" data-theme={themeId}>
+    <div className="party-view" data-theme={themeId} style={themeVars}>
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">

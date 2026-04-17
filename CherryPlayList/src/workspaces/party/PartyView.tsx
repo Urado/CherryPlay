@@ -92,9 +92,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [partyTitle, setPartyTitle] = useState('');
   const [partySubtitle, setPartySubtitle] = useState('');
   const [themeId, setThemeId] = useState<PartyThemeId>('cyberpunk');
-  const [customizationSettings, setCustomizationSettings] = useState<
-    Record<string, string | number>
-  >(getDefaultCustomizationSettings('cyberpunk'));
+  const [customizationSettings, setCustomizationSettings] = useState<Record<string, unknown>>(
+    getDefaultCustomizationSettings('cyberpunk'),
+  );
   const [eventDateTime, setEventDateTime] = useState<string>('');
   const [eventEndDateTime, setEventEndDateTime] = useState<string>('');
   const [hasInitialEventEndDateTime, setHasInitialEventEndDateTime] = useState<boolean>(false);
@@ -127,7 +127,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const isAuthenticated = authStore.isAuthenticated;
   const isAuth = isAuthenticated();
 
-  // Обработка OAuth callback для автоматического входа
   useEffect(() => {
     if (typeof window === 'undefined' || !window.api || isAuth) {
       return;
@@ -148,7 +147,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
             const token = await authService.exchangeCode(code, provider, deviceId);
             authStore.setToken(token);
 
-            // Загружаем информацию об организаторе
             const organizerInfo = await authService.getCurrentOrganizer();
             authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
 
@@ -166,7 +164,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
           }
         }
       } catch (error) {
-        // Игнорируем ошибки таймаута и другие
         if (isMounted && error instanceof Error && !error.message.includes('timeout')) {
           console.error('Error handling OAuth callback:', error);
         }
@@ -239,7 +236,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
       canUseAimpLiveSnapshots(aimpBridgeState)
     ) {
       const dto = createAimpPlaybackStateDto(aimpBridgeState) as PlaybackState;
-      // Resolve currentTrackId to the playlist track key so findTrack() matches (casing/format)
       const resolvedCurrentTrackId =
         dto.currentTrackId && aimpBridgeState.playlistSnapshot
           ? (() => {
@@ -388,7 +384,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
               }
             }
           } catch {
-            // сервер всё ещё недоступен, ждём следующей попытки
+            void 0;
           } finally {
             if (!reconnectCancelledRef.current) setIsReconnecting(false);
           }
@@ -501,24 +497,21 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, [meta.linkedParty, startReconnectTimer, stopReconnectTimer]);
 
-  // Загружаем метаданные вечеринки при наличии linkedParty
   useEffect(() => {
     if (meta.linkedParty && isAuth) {
       void loadPartyMetadata(meta.linkedParty.id);
     }
   }, [meta.linkedParty, isAuth, loadPartyMetadata]);
 
-  // Нормализует customizationSettings, оставляя только значения типа string или number
   const normalizeCustomizationSettings = (
-    settings: Record<string, string | number> | undefined,
-  ): Record<string, string | number> | undefined => {
+    settings: Record<string, unknown> | undefined,
+  ): Record<string, unknown> | undefined => {
     if (!settings) {
       return undefined;
     }
 
     const normalized = Object.entries(settings).reduce(
       (acc, [key, value]) => {
-        // Строгая проверка типов и исключение null/undefined
         if (value === null || value === undefined) {
           return acc;
         }
@@ -528,18 +521,18 @@ export const PartyView: React.FC<PartyViewProps> = ({
           acc[key] = value as string;
         } else if (valueType === 'number' && !isNaN(value as number) && isFinite(value as number)) {
           acc[key] = value as number;
+        } else if (valueType === 'object' && !Array.isArray(value)) {
+          acc[key] = value as Record<string, unknown>;
         }
-        // Игнорируем все остальные типы (boolean, object, function и т.д.)
         return acc;
       },
-      {} as Record<string, string | number>,
+      {} as Record<string, unknown>,
     );
 
     return Object.keys(normalized).length > 0 ? normalized : undefined;
   };
 
   const handleCreateParty = async () => {
-    // Проверяем авторизацию перед созданием вечеринки
     if (!isAuth) {
       addNotification({
         type: 'warning',
@@ -653,7 +646,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
             : convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
 
-        // Обновляем метаданные вечеринки
         const tz = timeZone.trim() || getDefaultTimeZone();
         let eventEndDateTimeForUpdate: string | null | undefined = undefined;
 
@@ -789,7 +781,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   };
 
-  // Если пользователь не авторизован, показываем форму входа
   if (!isAuth) {
     return (
       <div className="party-view">
@@ -798,9 +789,6 @@ export const PartyView: React.FC<PartyViewProps> = ({
           description="Для работы с вечеринками необходимо войти в аккаунт"
           compact={false}
           authService={authService}
-          onLoginSuccess={() => {
-            // Компонент автоматически обновит состояние через authService
-          }}
         />
       </div>
     );

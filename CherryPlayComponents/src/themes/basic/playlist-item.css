@@ -12,8 +12,8 @@
 }
 
 [data-theme='basic'] .party-playlist-item--group {
-  background: rgba(74, 158, 255, 0.08);
-  border: 1px solid rgba(74, 158, 255, 0.2);
+  background: color-mix(in srgb, var(--primaryColor) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primaryColor) 20%, transparent);
   font-weight: 600;
 }
 
@@ -24,19 +24,19 @@
 [data-theme='basic'] .party-playlist-item:hover {
   background: var(--bg-hover);
   border-color: var(--border-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-black-15);
 }
 
 [data-theme='basic'] .party-playlist-item--group:hover {
-  background: rgba(74, 158, 255, 0.12);
-  border-color: rgba(74, 158, 255, 0.3);
+  background: color-mix(in srgb, var(--primaryColor) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primaryColor) 30%, transparent);
 }
 
 [data-theme='basic'] .party-playlist-item--current {
   background: var(--selected-bg);
   border: 2px solid var(--selected-border);
   border-left-color: var(--selected-border);
-  box-shadow: 0 4px 12px rgba(100, 149, 237, 0.4);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--secondaryColor) 40%, transparent);
   font-weight: 600;
   margin: 6px 10px;
 }

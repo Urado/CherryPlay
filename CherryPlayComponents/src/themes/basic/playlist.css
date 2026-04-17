@@ -10,7 +10,7 @@
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border-color);
   padding: 16px 18px 14px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 0 var(--shadow-white-05);
 }
 
 [data-theme='basic'] .party-playlist-stats {

@@ -231,17 +231,10 @@ public static class DomainToEfMappers
         var node = new Dictionary<string, JsonElement>();
         foreach (var kv in dict)
         {
-            if (kv.Value == null) continue;
-            node[kv.Key] = kv.Value switch
-            {
-                string s => JsonSerializer.SerializeToElement(s),
-                int i => JsonSerializer.SerializeToElement(i),
-                long l => JsonSerializer.SerializeToElement(l),
-                double d => JsonSerializer.SerializeToElement(d),
-                float f => JsonSerializer.SerializeToElement(f),
-                bool b => JsonSerializer.SerializeToElement(b),
-                _ => JsonSerializer.SerializeToElement(kv.Value.ToString() ?? string.Empty),
-            };
+            if (kv.Value is null) continue;
+            node[kv.Key] = kv.Value is JsonElement jsonElement
+                ? jsonElement.Clone()
+                : JsonSerializer.SerializeToElement(kv.Value, JsonOptions);
         }
         return JsonSerializer.Serialize(node, JsonOptions);
     }

@@ -162,14 +162,13 @@ public static class EfToDomainMappers
             var result = new Dictionary<string, object>();
             foreach (var kv in dict)
             {
-                result[kv.Key] = kv.Value.ValueKind switch
+                var value = JsonElementToObject(kv.Value);
+                if (value is null)
                 {
-                    JsonValueKind.String => kv.Value.GetString() ?? (object)string.Empty,
-                    JsonValueKind.Number => kv.Value.TryGetInt32(out var i) ? i : kv.Value.GetDouble(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    _ => kv.Value.GetRawText(),
-                };
+                    continue;
+                }
+
+                result[kv.Key] = value;
             }
             return result;
         }
@@ -177,6 +176,30 @@ public static class EfToDomainMappers
         {
             return null;
         }
+    }
+
+    private static object? JsonElementToObject(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => element
+                .EnumerateObject()
+                .ToDictionary(
+                    property => property.Name,
+                    property => JsonElementToObject(property.Value)),
+            JsonValueKind.Array => element
+                .EnumerateArray()
+                .Select(JsonElementToObject)
+                .ToList(),
+            JsonValueKind.String => element.GetString(),
+            JsonValueKind.Number => element.TryGetInt64(out var longValue)
+                ? longValue
+                : element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => null,
+            _ => element.GetRawText(),
+        };
     }
 
     private static PlaybackStatus ParsePlaybackStatus(string? value)

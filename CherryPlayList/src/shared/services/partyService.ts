@@ -27,7 +27,7 @@ export interface CreatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId: string;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
   playlistData: {
     items: PlayerItemForApi[];
     totalDuration: number;
@@ -74,7 +74,7 @@ export interface UpdatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId?: string;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
   eventDateTime?: string | null;
   eventEndDateTime?: string | null;
   description?: string;
@@ -144,6 +144,10 @@ class PartyService {
   }
 
   async getParty(partyId: string): Promise<PartyDto> {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      throw new Error('Для получения данных вечеринки необходимо войти в аккаунт');
+    }
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/${partyId}`, {
       method: 'GET',
@@ -245,26 +249,17 @@ class PartyService {
       const protocol = url.protocol;
       const hostname = url.hostname;
 
-      // Определяем порт веб-приложения
-      // По умолчанию веб-приложение работает на порту 3000 (dev) или 80 (prod через nginx)
-      // Если API сервер на порту 5000, веб обычно на 3000
       const apiPort = url.port;
 
-      // В dev режиме: если API на 5000, веб на 3000
-      // В prod через nginx: оба на одном домене без порта или на стандартных портах
       let webPort: string | null = null;
       if (apiPort && apiPort !== '80' && apiPort !== '443') {
         if (apiPort === '5000') {
-          // Dev режим: веб на 3000
           webPort = '3000';
         } else {
-          // Для других портов используем стандартные
           webPort = url.protocol === 'https:' ? '443' : '80';
         }
       }
-      // Если порт стандартный или отсутствует (nginx), используем тот же домен без порта
 
-      // Используем формат /party/:shortCode
       if (webPort) {
         return `${protocol}//${hostname}:${webPort}/party/${shortCode}`;
       }
@@ -273,7 +268,6 @@ class PartyService {
     } catch {
       const cleanUrl = serverUrl.replace(/^https?:\/\//, '').split('/')[0];
       const protocol = serverUrl.startsWith('https') ? 'https' : 'http';
-      // По умолчанию используем порт 3000 для веб-приложения в dev режиме
       const defaultWebPort = serverUrl.includes(':5000') ? '3000' : null;
       if (defaultWebPort) {
         return `${protocol}://${cleanUrl}:${defaultWebPort}/party/${shortCode}`;

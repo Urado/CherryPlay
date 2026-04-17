@@ -4,24 +4,16 @@
 @import './party-info.css';
 
 [data-theme='basic'] {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2a2a2a;
-  --bg-tertiary: #333333;
-  --bg-hover: #3d3d3d;
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
-  --text-tertiary: #808080;
-  --accent-primary: #4a9eff;
-  --accent-primary-light: rgba(74, 158, 255, 0.15);
-  --border-color: rgba(74, 158, 255, 0.3);
-  --selected-bg: #3a4a5a;
-  --selected-border: #6495ed;
+  --accent-primary: var(--primaryColor);
+  --accent-primary-light: color-mix(in srgb, var(--primaryColor) 15%, transparent);
+  --border-color: color-mix(in srgb, var(--primaryColor) 30%, transparent);
+  --selected-border: var(--secondaryColor);
   background: var(--bg-primary);
   color: var(--text-primary);
 }
 
 [data-theme='basic'] .party-display {
-  background: transparent;
+  background: var(--bg-primary);
   color: var(--text-primary);
 }
 
@@ -37,12 +29,12 @@
   color: var(--text-primary);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px var(--shadow-black-20);
 }
 
 [data-theme='basic'] .party-current-track-display {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-black-15);
 }

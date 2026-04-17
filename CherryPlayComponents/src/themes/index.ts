@@ -7,6 +7,7 @@ import {
   PlaylistView as BasePlaylistView,
   CurrentTrackDisplay as BaseCurrentTrackDisplay,
   PartyInfoDisplay as BasePartyInfoDisplay,
+  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
 } from './base';
 import {
   PartyDisplay as SpringCrossStepPartyDisplay,
@@ -115,6 +116,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Базовый',
     description: 'Простой и чистый стиль в духе приложения',
     cssPath: './basic/index.css',
+    customizationOptions: [...BASIC_THEME_CUSTOMIZATION_OPTION_KEYS],
   }),
   'spring-cross-step': createPartyTheme({
     id: 'spring-cross-step',
@@ -166,5 +168,28 @@ export {
   type SakuraCustomizationSettings,
   type ArtDecoCustomizationSettings,
   type BasicCustomizationSettings,
+  type BasicCustomizationOptionSettings,
   type SpringCrossStepCustomizationSettings,
 } from './themeMetadata';
+
+export {
+  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
+  getBasicThemePaletteCatalog,
+  normalizeBasicThemePaletteSettings,
+  resolveBasicThemePalette,
+  resolveBasicThemeCssSettings,
+} from './base';
+export type {
+  BaseThemeColorPaletteCatalogItem,
+  BaseThemeColorPaletteId,
+  BaseThemeColorPaletteSelectionId,
+  BaseThemeColorPaletteSettings,
+  BaseThemeColorCustomizationSettings,
+  BaseThemeCustomColorPalette,
+  BasicThemePaletteCatalogItem,
+  BasicThemePaletteId,
+  BasicThemePaletteSelectionId,
+  BasicThemePaletteSettings,
+  BasicThemeCustomizationSettings,
+  BasicThemeCustomPalette,
+} from './base';

@@ -51,7 +51,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       playerAudioDeviceId: null,
       demoPlayerAudioDeviceId: null,
       keyBindings: {},
-      enableStreaming: false,
+      enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
 
       setExportPath: (path) => set({ exportPath: path }),

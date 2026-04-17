@@ -149,7 +149,6 @@
   color: var(--state-error, #c62828);
 }
 
-/* datetime-local: согласованность с формой и тёмной темой */
 .party-editor input[type='datetime-local'] {
   color-scheme: dark;
 }
@@ -160,7 +159,6 @@
   cursor: pointer;
 }
 
-/* Dropdown Styles */
 .party-editor-dropdown {
   position: relative;
   width: 100%;
@@ -348,6 +346,115 @@
   font-size: 14px;
   background: var(--bg-primary, #ffffff);
   color: var(--text-primary, #000000);
+}
+
+.party-editor-basic-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.party-editor-palette-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background: var(--bg-primary, #ffffff);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.party-editor-palette-option:hover {
+  border-color: var(--accent-primary, #2196f3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.party-editor-palette-option--selected {
+  border-color: var(--accent-primary, #2196f3);
+  box-shadow: 0 0 0 1px var(--accent-primary, #2196f3);
+}
+
+.party-editor-palette-preview {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.party-editor-palette-swatch {
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.party-editor-palette-swatch--bg-primary {
+  background: var(--palette-preview-bg-primary);
+}
+
+.party-editor-palette-swatch--bg-secondary {
+  background: var(--palette-preview-bg-secondary);
+}
+
+.party-editor-palette-swatch--bg-tertiary {
+  background: var(--palette-preview-bg-tertiary);
+}
+
+.party-editor-palette-swatch--accent {
+  background: var(--palette-preview-accent);
+}
+
+.party-editor-palette-swatch--text {
+  background: var(--palette-preview-text);
+}
+
+.party-editor-palette-option-label {
+  font-size: 13px;
+  color: var(--text-primary, #000000);
+}
+
+.party-editor-custom-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.party-editor-custom-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.party-editor-custom-color-label {
+  min-width: 130px;
+  font-size: 13px;
+  color: var(--text-primary, #000000);
+}
+
+.party-editor-custom-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.party-editor-custom-color-picker {
+  width: 44px;
+  height: 32px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 4px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.party-editor-custom-color-hex-input {
+  flex: 1;
+  min-width: 0;
 }
 
 .party-editor-button {
@@ -618,7 +725,6 @@
   text-decoration: underline;
 }
 
-/* Общий блок «Связано с вечеринкой» / «Вечеринка создана!» внизу */
 .party-editor-party-block {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
