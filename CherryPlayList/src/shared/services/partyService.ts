@@ -54,6 +54,7 @@ export interface PartyDto {
   subtitle?: string;
   shortCode: string;
   partyThemeId: string;
+  customizationSettings?: Record<string, unknown>;
   createdAt: string;
   hasActiveSession: boolean;
   eventDateTime?: string;

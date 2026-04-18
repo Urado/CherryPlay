@@ -132,6 +132,8 @@ export interface ProjectStateData {
   sessionState?: ProjectSessionState;
   linkedParty?: LinkedParty | null;
   partyTrackDisplay?: PartyTrackDisplaySettings;
+  partyThemeId?: string;
+  partyCustomizationSettings?: Record<string, unknown>;
 }
 
 class ProjectService {
@@ -250,6 +252,10 @@ class ProjectService {
       sessionState: state.sessionState,
       ...(state.linkedParty && { linkedParty: state.linkedParty }),
       partyTrackDisplay: state.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+      ...(state.partyThemeId !== undefined ? { partyThemeId: state.partyThemeId } : {}),
+      ...(state.partyCustomizationSettings !== undefined
+        ? { partyCustomizationSettings: state.partyCustomizationSettings }
+        : {}),
     };
   }
 
@@ -338,6 +344,8 @@ class ProjectService {
       sessionState: file.sessionState,
       linkedParty: file.linkedParty ?? null,
       partyTrackDisplay: file.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+      partyThemeId: file.partyThemeId,
+      partyCustomizationSettings: file.partyCustomizationSettings,
     };
   }
 }

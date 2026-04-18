@@ -29,7 +29,7 @@ dotnet run
 - Чтобы запустить сервер с этими переменными:
   - **Вариант 1:** подгрузите их перед запуском, например: `source .env.development` (Bash), затем `cd CherryPlayServer && dotnet run`.
   - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
-- Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings__DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
+- Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings\_\_DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
 - В режиме по умолчанию используется InMemory хранилище и тестовые данные (см. [CherryPlayServer/README.md](CherryPlayServer/README.md))
   > **Примечание:** Это временное состояние для разработки. По плану релиза v1 (Epic A) будет реализована персистентная БД PostgreSQL.
@@ -44,7 +44,7 @@ npm run dev
 
 - Приложение будет доступно по адресу **http://localhost:3000**
 - По умолчанию подключается к серверу на `http://localhost:5000` (см. раздел «Переменные окружения» ниже)
-- Переменные окружения (VITE_*) читаются из **корня репозитория** (файлы `.env`, `.env.development`, `.env.production`). Создайте в корне `.env.development` из `.env.example` при необходимости (см. [ENV.md](ENV.md)).
+- Переменные окружения (VITE\_\*) читаются из **корня репозитория** (файлы `.env`, `.env.development`, `.env.production`). Создайте в корне `.env.development` из `.env.example` при необходимости (см. [ENV.md](ENV.md)).
 
 ## 3. CherryPlayList (Electron)
 
@@ -55,20 +55,20 @@ npm run dev
 ```
 
 - Запускается Vite (http://localhost:5173) и Electron
-- URL сервера задаётся в настройках приложения или через `serverConfig.json` в корне проекта (ключ `serverUrl`), либо через переменную окружения `VITE_API_URL` при сборке
+- URL сервера задаётся в настройках приложения или через `serverConfig.development.json` / `serverConfig.production.json` (ключ `serverUrl`), либо через переменную окружения `VITE_API_URL` при сборке
 
 ### Настройка URL сервера в CherryPlayList
 
 - **Через приложение**: Настройки → указать адрес сервера (например, `http://localhost:5000`)
-- **Через конфиг**: в корне CherryPlayList создать/изменить `serverConfig.json`: `{ "serverUrl": "http://localhost:5000" }`
+- **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например: `{ "serverUrl": "http://localhost:5000" }`
 - **Через переменную окружения**: при сборке/запуске задать `VITE_API_URL=http://localhost:5000`
 
 ## Переменные окружения (сводка)
 
-| Переменная | Проект | Описание |
-|------------|--------|----------|
-| `VITE_API_URL` | CherryPlayWeb | Базовый URL API сервера (по умолчанию подставляется при сборке; для dev часто задаётся в `.env`). Пример: `http://localhost:5000` |
-| `VITE_API_URL` | CherryPlayList | URL сервера (при сборке; иначе используется serverConfig.json или настройки в UI) |
+| Переменная     | Проект         | Описание                                                                                                                          |
+| -------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_URL` | CherryPlayWeb  | Базовый URL API сервера (по умолчанию подставляется при сборке; для dev часто задаётся в `.env`). Пример: `http://localhost:5000` |
+| `VITE_API_URL` | CherryPlayList | URL сервера (при сборке; иначе `serverConfig.*.json` или настройки в UI)                                                          |
 
 ## Проверка связки
 

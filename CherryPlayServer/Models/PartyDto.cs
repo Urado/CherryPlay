@@ -14,6 +14,7 @@ public record PartyDto(
     string? EventDateTime = null,
     string? EventEndDateTime = null,
     bool IsListedInCatalog = false,
+    Dictionary<string, object>? CustomizationSettings = null,
     string? Description = null,
     string? Place = null,
     string? City = null,

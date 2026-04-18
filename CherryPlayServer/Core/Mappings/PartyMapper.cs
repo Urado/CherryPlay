@@ -19,6 +19,7 @@ public static class PartyMapper
             EventDateTime: party.EventDateTime?.ToString("O"),
             EventEndDateTime: party.EventEndDateTime?.ToString("O"),
             IsListedInCatalog: party.IsListedInCatalog,
+            CustomizationSettings: party.CustomizationSettings,
             Description: party.Description,
             Place: party.Place,
             City: party.City,

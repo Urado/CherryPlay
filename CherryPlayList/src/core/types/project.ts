@@ -110,6 +110,16 @@ export interface ProjectMeta {
   linkedParty: LinkedParty | null;
   /** Отображение треков на странице вечеринки; сохраняется в .cherry и в persist стора */
   partyTrackDisplay: PartyTrackDisplaySettings;
+  /**
+   * Черновик/кэш темы вечеринки (совпадает по смыслу с Party.partyThemeId на сервере).
+   * Локальное состояние до синхронизации и после офлайн-редактирования.
+   */
+  partyThemeId?: string;
+  /**
+   * Черновик/кэш настроек кастомизации темы (совпадает с Party.customizationSettings на сервере).
+   * Локальный JSON-объект; не подставляется автоматически как источник правды для API без явной публикации.
+   */
+  partyCustomizationSettings?: Record<string, unknown>;
 }
 
 // ============================================
@@ -159,6 +169,10 @@ export interface ProjectFile {
   linkedParty?: Pick<LinkedParty, 'id' | 'shortCode'>;
   /** Настройки отображения имён треков для вечеринки (не customization вечеринки на API) */
   partyTrackDisplay?: PartyTrackDisplaySettings;
+  /** Черновик темы вечеринки (локально; зеркало серверного поля) */
+  partyThemeId?: string;
+  /** Черновик customization темы (локально; зеркало серверного поля) */
+  partyCustomizationSettings?: Record<string, unknown>;
 }
 
 // ============================================

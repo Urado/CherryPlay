@@ -347,6 +347,7 @@ _Примечание:_ в текущей реализации веб может
 | `subtitle`          | `string \| undefined`   | Подзаголовок.                                                                                  |
 | `shortCode`         | `string`                | Неизменяемый короткий код.                                                                     |
 | `partyThemeId`      | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                    |
+| `customizationSettings` | `Record<string, unknown> \| undefined` | Оформление темы (generic JSON), семантика как у **PublicPartyDto**; для `basic` — канонический формат как у **CreatePartyDto**. |
 | `createdAt`         | `string`                | ISO 8601.                                                                                      |
 | `hasActiveSession`  | `boolean`               | Активна ли сессия.                                                                             |
 | `eventDateTime`     | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
@@ -361,6 +362,12 @@ _Примечание:_ в текущей реализации веб может
 | `externalLinkUrl`   | `string \| undefined`   | URL внешней ссылки.                                                                            |
 | `externalLinkText`  | `string \| undefined`   | Текст ссылки (подпись).                                                                        |
 | `danceTags`         | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                  |
+
+#### Источник правды для темы вечеринки
+
+Для организаторских ответов **PartyDto** актуальные `partyThemeId` и `customizationSettings` соответствуют значениям, сохранённым в БД после последних успешных операций создания/обновления (POST/PUT). Клиенты (в т.ч. CherryPlayList) при синхронизации считают эти поля эталоном для опубликованной вечеринки. Локальные копии в persist и в файле проекта `.cherry` — кэш/черновик и не подменяют сервер после успешного получения данных с API; см. [CherryPlayList: клиентское состояние](CherryPlayList/docs/modules/systems/persisted-client-state.md).
+
+Ответ авторизованного `GET /api/parties/{partyId}` (и списка `GET /api/parties`) должен включать сохранённые настройки темы в `customizationSettings`; иначе клиенты (CherryPlayList) не могут восстановить палитру после перезапуска.
 
 **CreatePartyDto** (тело POST `/api/parties`)
 

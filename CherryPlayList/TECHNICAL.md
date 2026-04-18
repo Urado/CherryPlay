@@ -209,35 +209,32 @@ CherryPlayList/
 
 ### Хранение данных
 
-Приложение использует **localforage** (IndexedDB) для надёжного хранения состояния между сессиями через Zustand `persist` middleware.
+Приложение использует **localforage** (по умолчанию **IndexedDB** в Chromium) для сохранения части клиентского состояния между сессиями через Zustand **`persist`** и адаптер **`electronStorage`**.
 
-**Проблема, которую решает localforage:**
+**Проблема, которую решает localforage относительно «голого» localStorage:**
 
-- `localStorage` в Electron может терять данные при спящем режиме или аварийном завершении
-- `localStorage` синхронный и блокирует UI поток
-- Ограниченный объём хранения (~5-10 МБ)
+- в Electron `localStorage` может терять данные при спящем режиме или аварийном завершении
+- `localStorage` синхронный и блокирует поток UI
+- ограниченный объём (~5–10 МБ)
 
-**Преимущества localforage:**
+**Преимущества localforage в этой цепочке:**
 
-- **Асинхронное хранение** - не блокирует UI поток
-- **Надёжность** - данные сохраняются на диск, не теряются при спящем режиме
-- **Больший объём** - до 50% свободного места на диске (vs ~5-10 МБ для localStorage)
-- **Поддержка сложных типов** - объекты, массивы, Blobs без сериализации
-- **Автоматический выбор драйвера** - IndexedDB > WebSQL > localStorage
+- **асинхронное** хранение — не блокирует UI
+- **больший практический объём** и типично лучшая устойчивость для крупных объектов (плейлист, layout)
+- **выбор драйвера:** IndexedDB → WebSQL → localStorage
 
-**Обновлённые stores:**
-Все stores с `persist` middleware используют `electronStorage` (localforage):
+**Сторы с `persist` + `electronStorage`:**
 
-- `projectStore` - главный store проекта (треки, группы, настройки, состояние сессии, undo/redo). Заменяет устаревшие `playlistStore` и `playerItemsStore`.
-- `playerAudioStore` - управление аудио воспроизведением в Player workspace
-- `playerSessionStore` - состояние сессии плеера (режим, проигранные треки, отключённые элементы)
-- `trackWorkspaceStoreFactory` - используется для коллекций (создаёт отдельные stores для каждого workspace)
-- `settingsStore` - общие настройки приложения (экспорт, размеры элементов, отсечки по времени)
-- `layoutStore` - layout интерфейса (расположение workspace зон)
-- `partyStore` - состояние вечеринки (созданная вечеринка, подключение к серверу)
-- `demoPlayerStore` - демо-плеер для предпрослушивания треков
+- **`authStore`** — токен и организатор
+- **`settingsStore`** — настройки приложения (экспорт, пути, аудиоустройства, горячие клавиши, стриминг и т.д.)
+- **`layoutStore`** — дерево зон интерфейса
+- **`projectStore`** — основной плейлист-проект (треки, группы, сессия, мета, привязка к party в урезанном виде)
+- **`ensureProjectStore`** с `persist: true` — отдельные персистентные проекты по **`workspaceId`** (например коллекции), ключ `cherryplaylist-<workspaceId>`
 
-**Расположение:**
+Подробно: **[Storage](./docs/modules/systems/storage.md)** (обзор), **[архитектура клиентского хранения](./docs/modules/systems/storage-architecture.md)**, **[что именно хранится в persist](./docs/modules/systems/persisted-client-state.md)**.
 
-- Storage адаптер: `src/shared/storage/electronStorage.ts`
-- Подробнее: модуль [Storage](./docs/modules/systems/storage.md) в документации.
+**Расположение в коде:**
+
+- адаптер: `src/shared/storage/electronStorage.ts`
+
+Явное сохранение проекта в файл **`.cherry`** и портативный режим описаны отдельно: [Save / Load](./docs/modules/systems/save-load.md).

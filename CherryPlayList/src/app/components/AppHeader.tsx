@@ -119,6 +119,8 @@ export const AppHeader: React.FC = () => {
           sessionState,
           linkedParty: linkedPartyForFile,
           partyTrackDisplay: meta.partyTrackDisplay,
+          partyThemeId: meta.partyThemeId,
+          partyCustomizationSettings: meta.partyCustomizationSettings,
         });
         await projectService.saveProject(path, projectFile, {
           portableMode: settings.portableMode,
@@ -142,6 +144,8 @@ export const AppHeader: React.FC = () => {
     sessionState,
     meta.linkedParty,
     meta.partyTrackDisplay,
+    meta.partyThemeId,
+    meta.partyCustomizationSettings,
     setFilePath,
     resetDirty,
     setLastOpenedPlaylist,
@@ -165,6 +169,8 @@ export const AppHeader: React.FC = () => {
           sessionState,
           linkedParty: linkedPartyForFile,
           partyTrackDisplay: meta.partyTrackDisplay,
+          partyThemeId: meta.partyThemeId,
+          partyCustomizationSettings: meta.partyCustomizationSettings,
         });
         await projectService.saveProject(meta.filePath, projectFile, {
           portableMode: settings.portableMode,
@@ -184,6 +190,8 @@ export const AppHeader: React.FC = () => {
     meta.filePath,
     meta.linkedParty,
     meta.partyTrackDisplay,
+    meta.partyThemeId,
+    meta.partyCustomizationSettings,
     name,
     items,
     settings,

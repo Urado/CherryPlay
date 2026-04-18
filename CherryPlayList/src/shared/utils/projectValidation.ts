@@ -55,6 +55,25 @@ function isBoolean(value: unknown): value is boolean {
   return typeof value === 'boolean';
 }
 
+function validatePartyCustomizationSettings(
+  raw: unknown,
+  warnings: string[],
+): Record<string, unknown> | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (!isObject(raw) || isArray(raw)) {
+    warnings.push('Invalid partyCustomizationSettings, omitting');
+    return undefined;
+  }
+  try {
+    return JSON.parse(JSON.stringify(raw)) as Record<string, unknown>;
+  } catch {
+    warnings.push('Invalid partyCustomizationSettings, omitting');
+    return undefined;
+  }
+}
+
 function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrackDisplaySettings {
   if (!isObject(raw)) {
     warnings.push('Invalid partyTrackDisplay, using defaults');
@@ -412,6 +431,20 @@ export function validateProjectFile(data: unknown): ValidationResult {
       ? validatePartyTrackDisplay(data.partyTrackDisplay, warnings)
       : { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS };
 
+  let partyThemeId: string | undefined;
+  if (data.partyThemeId !== undefined) {
+    if (isString(data.partyThemeId)) {
+      partyThemeId = data.partyThemeId;
+    } else {
+      warnings.push('Invalid partyThemeId, omitting');
+    }
+  }
+
+  const partyCustomizationSettings =
+    data.partyCustomizationSettings !== undefined
+      ? validatePartyCustomizationSettings(data.partyCustomizationSettings, warnings)
+      : undefined;
+
   // Если есть критические ошибки, возвращаем null
   if (errors.length > 0) {
     return {
@@ -433,6 +466,8 @@ export function validateProjectFile(data: unknown): ValidationResult {
     groupSettings,
     sessionState,
     partyTrackDisplay,
+    ...(partyThemeId !== undefined ? { partyThemeId } : {}),
+    ...(partyCustomizationSettings !== undefined ? { partyCustomizationSettings } : {}),
   };
 
   return {

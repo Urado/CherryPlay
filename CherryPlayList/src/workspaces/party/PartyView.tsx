@@ -3,6 +3,8 @@ import {
   type PartyThemeId,
   type CustomizationSettings,
   getDefaultCustomizationSettings,
+  isValidPartyTheme,
+  normalizeBasicThemePaletteSettings,
   convertUtcToLocalDateTime,
   convertLocalDateTimeToUtc,
   getDefaultTimeZone,
@@ -48,6 +50,32 @@ interface PartyViewProps {
   zoneId: string;
 }
 
+function resolveLoadedCustomizationSettings(
+  resolvedThemeId: PartyThemeId,
+  customizationSettings: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+  const defaults = getDefaultCustomizationSettings(resolvedThemeId);
+  const hasMeaningful =
+    customizationSettings &&
+    typeof customizationSettings === 'object' &&
+    !Array.isArray(customizationSettings) &&
+    Object.keys(customizationSettings).length > 0;
+
+  if (!hasMeaningful) {
+    return defaults as Record<string, unknown>;
+  }
+
+  const raw = customizationSettings as Record<string, unknown>;
+  if (resolvedThemeId === 'basic') {
+    return normalizeBasicThemePaletteSettings({
+      ...defaults,
+      ...raw,
+    }) as Record<string, unknown>;
+  }
+
+  return { ...defaults, ...raw } as Record<string, unknown>;
+}
+
 export const PartyView: React.FC<PartyViewProps> = ({
   workspaceId: _workspaceId,
   zoneId: _zoneId,
@@ -62,6 +90,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
   const setPartyTrackDisplaySettings = useProjectStore(
     (state) => state.setPartyTrackDisplaySettings,
+  );
+  const setPartyThemeIdInMeta = useProjectStore((state) => state.setPartyThemeId);
+  const setPartyCustomizationSettingsInMeta = useProjectStore(
+    (state) => state.setPartyCustomizationSettings,
   );
 
   const sessionState = useProjectStore((state) => state.sessionState);
@@ -179,8 +211,34 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   const handleThemeChange = (newThemeId: PartyThemeId) => {
     setThemeId(newThemeId);
-    setCustomizationSettings(getDefaultCustomizationSettings(newThemeId));
+    const next = getDefaultCustomizationSettings(newThemeId) as Record<string, unknown>;
+    setCustomizationSettings(next);
+    setPartyThemeIdInMeta(newThemeId);
+    setPartyCustomizationSettingsInMeta(next);
   };
+
+  const handleCustomizationSettingsChange = useCallback(
+    (settings: Record<string, unknown>) => {
+      setCustomizationSettings(settings);
+      setPartyCustomizationSettingsInMeta(settings);
+    },
+    [setPartyCustomizationSettingsInMeta],
+  );
+
+  useEffect(() => {
+    const tid = meta.partyThemeId;
+    if (tid && isValidPartyTheme(tid)) {
+      setThemeId(tid as PartyThemeId);
+      setCustomizationSettings(
+        resolveLoadedCustomizationSettings(tid as PartyThemeId, meta.partyCustomizationSettings),
+      );
+    } else {
+      setThemeId('cyberpunk');
+      setCustomizationSettings(
+        getDefaultCustomizationSettings('cyberpunk') as Record<string, unknown>,
+      );
+    }
+  }, [meta.partyThemeId, meta.partyCustomizationSettings]);
 
   const componentItems = useMemo(() => {
     const converted = convertToComponentPlayerItems(items);
@@ -288,47 +346,61 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, []);
 
-  const loadPartyMetadata = useCallback(async (partyId: string) => {
-    try {
-      const party = await partyService.getParty(partyId);
-      if (party.name) setPartyName(party.name);
-      setPartyTitle(party.title ?? '');
-      setPartySubtitle(party.subtitle ?? '');
-      if (party.partyThemeId) setThemeId(party.partyThemeId as PartyThemeId);
-      const tz = party.timeZone || getDefaultTimeZone();
-      setTimeZone(tz);
-      if (party.eventDateTime) {
-        const local = convertUtcToLocalDateTime(party.eventDateTime, tz);
-        if (local) setEventDateTime(local);
-      } else {
-        setEventDateTime('');
-      }
-      if (party.eventEndDateTime) {
-        const localEnd = convertUtcToLocalDateTime(party.eventEndDateTime, tz);
-        if (localEnd) {
-          setEventEndDateTime(localEnd);
-          setHasInitialEventEndDateTime(true);
+  const loadPartyMetadata = useCallback(
+    async (partyId: string) => {
+      try {
+        const party = await partyService.getParty(partyId);
+        if (party.name) setPartyName(party.name);
+        setPartyTitle(party.title ?? '');
+        setPartySubtitle(party.subtitle ?? '');
+        const resolvedThemeId: PartyThemeId =
+          party.partyThemeId && isValidPartyTheme(party.partyThemeId)
+            ? party.partyThemeId
+            : 'cyberpunk';
+        setThemeId(resolvedThemeId);
+        const resolvedCustomization = resolveLoadedCustomizationSettings(
+          resolvedThemeId,
+          party.customizationSettings,
+        );
+        setCustomizationSettings(resolvedCustomization);
+        setPartyThemeIdInMeta(resolvedThemeId, { skipMarkDirty: true });
+        setPartyCustomizationSettingsInMeta(resolvedCustomization, { skipMarkDirty: true });
+        const tz = party.timeZone || getDefaultTimeZone();
+        setTimeZone(tz);
+        if (party.eventDateTime) {
+          const local = convertUtcToLocalDateTime(party.eventDateTime, tz);
+          if (local) setEventDateTime(local);
+        } else {
+          setEventDateTime('');
+        }
+        if (party.eventEndDateTime) {
+          const localEnd = convertUtcToLocalDateTime(party.eventEndDateTime, tz);
+          if (localEnd) {
+            setEventEndDateTime(localEnd);
+            setHasInitialEventEndDateTime(true);
+          } else {
+            setEventEndDateTime('');
+            setHasInitialEventEndDateTime(false);
+          }
         } else {
           setEventEndDateTime('');
           setHasInitialEventEndDateTime(false);
         }
-      } else {
-        setEventEndDateTime('');
-        setHasInitialEventEndDateTime(false);
+        if (party.description) setDescription(party.description);
+        if (party.place) setPlace(party.place);
+        if (party.city) setCity(party.city);
+        if (party.schedule) setSchedule(party.schedule);
+        setShortDescription(party.shortDescription ?? '');
+        setExternalLinkUrl(party.externalLinkUrl ?? '');
+        setExternalLinkText(party.externalLinkText ?? '');
+        setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
+        setEventEndDateTimeTouched(false);
+      } catch (error) {
+        console.error('Failed to load party metadata:', error);
       }
-      if (party.description) setDescription(party.description);
-      if (party.place) setPlace(party.place);
-      if (party.city) setCity(party.city);
-      if (party.schedule) setSchedule(party.schedule);
-      setShortDescription(party.shortDescription ?? '');
-      setExternalLinkUrl(party.externalLinkUrl ?? '');
-      setExternalLinkText(party.externalLinkText ?? '');
-      setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
-      setEventEndDateTimeTouched(false);
-    } catch (error) {
-      console.error('Failed to load party metadata:', error);
-    }
-  }, []);
+    },
+    [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
+  );
 
   const handleEventEndDateTimeChange = useCallback((value: string) => {
     setEventEndDateTime(value);
@@ -882,7 +954,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onPartyTitleChange={setPartyTitle}
             onPartySubtitleChange={setPartySubtitle}
             onThemeIdChange={handleThemeChange}
-            onCustomizationSettingsChange={setCustomizationSettings}
+            onCustomizationSettingsChange={handleCustomizationSettingsChange}
             onEventDateTimeChange={setEventDateTime}
             onEventEndDateTimeChange={handleEventEndDateTimeChange}
             onDescriptionChange={setDescription}

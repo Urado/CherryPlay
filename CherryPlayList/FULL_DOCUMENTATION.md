@@ -510,33 +510,23 @@ Previously, application state could be lost when the system entered sleep mode b
 
 - **Asynchronous storage** - does not block UI thread
 - **Reliability** - data is persisted to disk, survives sleep mode and unexpected shutdowns
-- **Larger capacity** - up to 50% of free disk space (vs ~5-10 MB for localStorage)
-- **Complex data types** - supports objects, arrays, Blobs without serialization
+- **Larger practical quota than `localStorage`** — typically IndexedDB; exact limits depend on Chromium/Electron and available storage (not a fixed fraction of disk)
+- **Structured data** — Zustand state is serialized to JSON via `electronStorage` for storage in localforage (plain serializable fields only; see each store’s `partialize`)
 - **Automatic driver selection** - IndexedDB > WebSQL > localStorage
 
 ### Implementation
 
-The `electronStorage` adapter wraps localforage to provide a Zustand-compatible storage interface:
-
-```typescript
-export const electronStorage = {
-  getItem: async (name: string): Promise<string | null>
-  setItem: async (name: string, value: string): Promise<void>
-  removeItem: async (name: string): Promise<void>
-}
-```
+The `electronStorage` adapter implements Zustand’s `PersistStorage<unknown>`: values are **`JSON.stringify` / `JSON.parse`** of Zustand’s `StorageValue` (state + version metadata) on top of localforage string values. See `src/shared/storage/electronStorage.ts` for the exact implementation.
 
 ### Stores Using electronStorage
 
-All stores with `persist` middleware now use `electronStorage`:
+All stores with `persist` middleware use `electronStorage` (authoritative list is maintained in module docs):
 
-- **playerSessionStore** - player session state (mode, played tracks, disabled tracks/groups, current track)
-- **playerItemsStore** - player items and groups structure
-- **playerSettingsStore** - player settings (defaults, track/group settings, planned end time)
-- **trackWorkspaceStoreFactory** - used for `playerStore` and collection stores (when `maxTracks: null`)
-- **settingsStore** - application settings (export path, track item sizes, hour dividers)
-- **layoutStore** - UI layout configuration
-- **partyStore** - party state (created party, streaming status)
+- **authStore** — access token and organizer profile
+- **settingsStore** — application settings (export, paths, audio devices, shortcuts, streaming flags, etc.)
+- **layoutStore** — workspace zone tree and split layout
+- **projectStore** — main playlist project (items, groups, session state, reduced meta including party id/shortCode where applicable)
+- **ensureProjectStore** with `persist: true` — per-`workspaceId` projects (e.g. collections); persist key `cherryplaylist-<workspaceId>`
 
 ### Configuration
 
@@ -559,7 +549,7 @@ When upgrading to this version:
 - New data will be stored in IndexedDB via localforage
 - This is expected behavior - users can reload their playlists from saved files
 
-For more details, see [Storage](docs/modules/systems/storage.md) and the "Хранение данных" section in [TECHNICAL.md](./TECHNICAL.md).
+For more details, see [Storage overview](docs/modules/systems/storage.md), [storage architecture](docs/modules/systems/storage-architecture.md), [persisted client state (keys and fields)](docs/modules/systems/persisted-client-state.md), and the «Хранение данных» section in [TECHNICAL.md](./TECHNICAL.md).
 
 ---
 
@@ -1393,7 +1383,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Persistence:**
 
-- Layout structure is saved to localStorage using Zustand persist middleware
+- Layout structure is persisted via Zustand `persist` and `electronStorage` (localforage, typically IndexedDB), not raw `window.localStorage`
 - Layout is restored on application startup
 - Version field allows for future migration of layout structure
 

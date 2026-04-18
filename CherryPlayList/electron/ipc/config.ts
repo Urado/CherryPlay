@@ -7,14 +7,16 @@ interface ServerConfig {
   serverUrl: string;
 }
 
+/** Config file name: dev vs packaged app. */
+const CONFIG_FILE = {
+  development: 'serverConfig.development.json',
+  production: 'serverConfig.production.json',
+} as const;
+
 function getConfigPath(): string {
-  if (app.isPackaged) {
-    return path.join(app.getAppPath(), 'serverConfig.json');
-  } else {
-    const projectRoot = process.cwd();
-    const configPath = path.join(projectRoot, 'serverConfig.json');
-    return configPath;
-  }
+  const root = app.isPackaged ? app.getAppPath() : process.cwd();
+  const fileName = app.isPackaged ? CONFIG_FILE.production : CONFIG_FILE.development;
+  return path.join(root, fileName);
 }
 
 function readConfig(): ServerConfig | null {
@@ -82,7 +84,7 @@ export function registerConfigHandlers(): void {
         return {
           success: false,
           error:
-            'Server URL is not configured. Please create serverConfig.json file in the project root directory with serverUrl field. See serverConfig.example.json for reference.',
+            'Server URL is not configured. Add serverUrl to serverConfig.development.json (dev) or serverConfig.production.json (release build).',
         };
       }
       return {
@@ -101,7 +103,7 @@ export function registerConfigHandlers(): void {
     try {
       const currentConfig = readConfig();
       const newConfig: ServerConfig = {
-        ...currentConfig,
+        ...(currentConfig ?? {}),
         serverUrl: payload.serverUrl,
       };
       writeConfig(newConfig);
@@ -124,7 +126,7 @@ export function registerConfigHandlers(): void {
         return {
           success: false,
           error:
-            'Server URL is not configured. Please create serverConfig.json file in the project root directory with serverUrl field.',
+            'Server URL is not configured. Add serverUrl to serverConfig.development.json or serverConfig.production.json.',
         };
       }
       return {

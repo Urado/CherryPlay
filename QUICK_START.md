@@ -9,9 +9,10 @@ docker-compose up -d
 ```
 
 После запуска доступны:
-- **Сервер (API):** http://localhost:5000  
-- **Веб-приложение:** http://localhost:3000  
-- **Swagger:** http://localhost:5000/swagger  
+
+- **Сервер (API):** http://localhost:5000
+- **Веб-приложение:** http://localhost:3000
+- **Swagger:** http://localhost:5000/swagger
 - **pgAdmin:** http://localhost:5050 (при наличии в docker-compose)
 
 Подробнее: [README.md](./README.md#docker).
@@ -46,7 +47,7 @@ npm install
 npm run electron:dev
 ```
 
-Приложение организатора (Electron + Vite). URL сервера задаётся в настройках или в `serverConfig.json` (например, `http://localhost:5000`). Подробнее: [DEV_SETUP.md](./DEV_SETUP.md).
+Приложение организатора (Electron + Vite). URL сервера задаётся в настройках или в `serverConfig.development.json` / `serverConfig.production.json` (например, `http://localhost:5000`). Подробнее: [DEV_SETUP.md](./DEV_SETUP.md).
 
 ## Что делает приложение
 

@@ -20,7 +20,7 @@ export async function getServerUrl(): Promise<string> {
       throw new Error(
         result.success === false
           ? result.error
-          : 'Server URL is not configured. Please set serverUrl in serverConfig.json file in the project root directory.',
+          : 'Server URL is not configured. Set serverUrl in serverConfig.development.json (dev) or serverConfig.production.json (release).',
       );
     } catch (error) {
       cachedServerUrl = null;
@@ -28,13 +28,13 @@ export async function getServerUrl(): Promise<string> {
         throw error;
       }
       throw new Error(
-        'Failed to get server URL from config file. Please configure serverUrl in serverConfig.json.',
+        'Failed to get server URL from config file. Configure serverUrl in serverConfig.development.json or serverConfig.production.json.',
       );
     }
   }
 
   throw new Error(
-    'Server URL is not configured. Please set VITE_API_URL environment variable or configure serverUrl in serverConfig.json file in the project root directory.',
+    'Server URL is not configured. Set VITE_API_URL or serverUrl in serverConfig.development.json / serverConfig.production.json.',
   );
 }
 
@@ -48,7 +48,7 @@ export function getServerUrlSync(): string {
   }
 
   throw new Error(
-    'Server URL is not configured. Please set VITE_API_URL environment variable or configure serverUrl in serverConfig.json file in the project root directory and restart the application.',
+    'Server URL is not configured. Set VITE_API_URL or serverUrl in server config and restart the application.',
   );
 }
 

@@ -90,10 +90,20 @@ interface ProjectState {
     filePath?: string;
     linkedParty?: LinkedParty | null;
     partyTrackDisplay?: PartyTrackDisplaySettings;
+    partyThemeId?: string;
+    partyCustomizationSettings?: Record<string, unknown>;
   }) => void;
   setFilePath: (path: string | null) => void;
   setLinkedParty: (linkedParty: LinkedParty | null) => void;
   setPartyTrackDisplaySettings: (settings: PartyTrackDisplaySettings) => void;
+  setPartyThemeId: (
+    partyThemeId: string | undefined,
+    options?: { skipMarkDirty?: boolean },
+  ) => void;
+  setPartyCustomizationSettings: (
+    partyCustomizationSettings: Record<string, unknown> | undefined,
+    options?: { skipMarkDirty?: boolean },
+  ) => void;
   markAsDirty: () => void;
   resetDirty: () => void;
 
@@ -253,6 +263,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
             partyTrackDisplay: data.partyTrackDisplay ?? {
               ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
             },
+            partyThemeId: data.partyThemeId,
+            partyCustomizationSettings: data.partyCustomizationSettings,
           },
           selectedItemIds: new Set(),
           _skipHistory: false,
@@ -265,6 +277,24 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           meta: { ...state.meta, partyTrackDisplay },
         }));
         get().markAsDirty();
+      },
+
+      setPartyThemeId: (partyThemeId, options) => {
+        set((state) => ({
+          meta: { ...state.meta, partyThemeId },
+        }));
+        if (!options?.skipMarkDirty) {
+          get().markAsDirty();
+        }
+      },
+
+      setPartyCustomizationSettings: (partyCustomizationSettings, options) => {
+        set((state) => ({
+          meta: { ...state.meta, partyCustomizationSettings },
+        }));
+        if (!options?.skipMarkDirty) {
+          get().markAsDirty();
+        }
       },
 
       setLinkedParty: (linkedParty) => {
@@ -1111,6 +1141,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
             ? { id: state.meta.linkedParty.id, shortCode: state.meta.linkedParty.shortCode }
             : null,
           partyTrackDisplay: state.meta.partyTrackDisplay,
+          partyThemeId: state.meta.partyThemeId,
+          partyCustomizationSettings: state.meta.partyCustomizationSettings,
         },
       }),
       merge: (persistedState: unknown, currentState: ProjectState) => {
@@ -1144,6 +1176,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
               partyTrackDisplay: persistedMeta.partyTrackDisplay ?? {
                 ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
               },
+              partyThemeId: persistedMeta.partyThemeId,
+              partyCustomizationSettings: persistedMeta.partyCustomizationSettings,
             }
           : currentState.meta;
 
