@@ -8,4 +8,18 @@ public record AdminOrganizerDetailDto(Guid Id, string Name, string? Email, List<
 public record AdminOauthAccountDto(string Provider, string ProviderUserId, string? ProviderUserName);
 public record GrantEntitlementRequest(Guid PackageId, [param: System.ComponentModel.DataAnnotations.StringLength(2000)] string? Note);
 public record RevokeEntitlementRequest([param: System.ComponentModel.DataAnnotations.StringLength(2000)] string? Note);
-public record EntitlementDto(Guid Id, Guid PackageId, string PackageCode, string PackageName, string Kind, string Source, DateTime GrantedAt, DateTime? ExpiresAt, int? UsesRemaining, DateTime? RevokedAt, string? Note);
+public record EntitlementDto(
+    Guid Id,
+    Guid PackageId,
+    string PackageCode,
+    string PackageName,
+    string Kind,
+    string Source,
+    DateTime GrantedAt,
+    Guid? GrantedByAdminId,
+    string? GrantedByAdminName,
+    DateTime? ExpiresAt,
+    int? UsesRemaining,
+    DateTime? RevokedAt,
+    Guid? RevokedByAdminId,
+    string? Note);

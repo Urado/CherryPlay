@@ -1,5 +1,5 @@
 using CherryPlayServer.Core.Entities;
-using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core;
 using CherryPlayServer.Core.Interfaces;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
@@ -19,7 +19,7 @@ public class EfAdminAuditLogRepository : IAdminAuditLogRepository
         {
             Id = log.Id,
             AdminId = log.AdminId,
-            Action = log.Action == AdminAuditAction.RevokePackage ? "revoke_package" : "grant_package",
+            Action = AdminAuditActionNames.ToStorageValue(log.Action),
             TargetOrganizerId = log.TargetOrganizerId,
             PackageId = log.PackageId,
             EntitlementId = log.EntitlementId,

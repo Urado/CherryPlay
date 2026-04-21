@@ -8,7 +8,7 @@ namespace CherryPlayServer.Tests;
 
 public class ThemeAccessServiceRulesTests
 {
-    [Fact]
+    [Test]
     public async Task CheckThemeAccess_AutoGrantedPackage_GrantsWithoutEntitlementRows()
     {
         var organizerId = Guid.NewGuid();
@@ -18,11 +18,11 @@ public class ThemeAccessServiceRulesTests
 
         var result = await service.CheckThemeAccessAsync(organizerId, "basic");
 
-        Assert.True(result.IsAllowed);
-        Assert.True(result.IsThemeVisible);
+        Assert.That(result.IsAllowed, Is.True);
+        Assert.That(result.IsThemeVisible, Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task CheckThemeAccess_ActiveEntitlement_GrantsAccess()
     {
         var organizerId = Guid.NewGuid();
@@ -43,14 +43,13 @@ public class ThemeAccessServiceRulesTests
 
         var result = await service.CheckThemeAccessAsync(organizerId, "cyberpunk");
 
-        Assert.True(result.IsAllowed);
-        Assert.Empty(result.RequiredPackageCodes);
+        Assert.That(result.IsAllowed, Is.True);
+        Assert.That(result.RequiredPackageCodes, Is.Empty);
     }
 
-    [Theory]
-    [InlineData(true, false, null)]
-    [InlineData(false, true, null)]
-    [InlineData(false, false, 0)]
+    [TestCase(true, false, null)]
+    [TestCase(false, true, null)]
+    [TestCase(false, false, 0)]
     public async Task CheckThemeAccess_RevokedExpiredOrExhaustedEntitlement_DoesNotGrant(
         bool revoked,
         bool expired,
@@ -78,12 +77,12 @@ public class ThemeAccessServiceRulesTests
 
         var result = await service.CheckThemeAccessAsync(organizerId, "cyberpunk");
 
-        Assert.False(result.IsAllowed);
-        Assert.True(result.IsThemeVisible);
-        Assert.Contains("extended", result.RequiredPackageCodes);
+        Assert.That(result.IsAllowed, Is.False);
+        Assert.That(result.IsThemeVisible, Is.True);
+        Assert.That(result.RequiredPackageCodes, Does.Contain("extended"));
     }
 
-    [Fact]
+    [Test]
     public async Task GetAccessSummary_PrivateInaccessibleTheme_IsHidden()
     {
         var organizerId = Guid.NewGuid();
@@ -101,11 +100,11 @@ public class ThemeAccessServiceRulesTests
 
         var summary = await service.GetAccessSummaryAsync(organizerId);
 
-        Assert.DoesNotContain("vip-only", summary.GrantedThemeIds);
-        Assert.DoesNotContain(summary.VisibleLockedThemes, x => x.ThemeId == "vip-only");
+        Assert.That(summary.GrantedThemeIds, Does.Not.Contain("vip-only"));
+        Assert.That(summary.VisibleLockedThemes.Any(x => x.ThemeId == "vip-only"), Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task GetAccessSummary_PublicInaccessibleTheme_ShowsLockedWithPackageInfo()
     {
         var organizerId = Guid.NewGuid();
@@ -122,12 +121,13 @@ public class ThemeAccessServiceRulesTests
             ]);
 
         var summary = await service.GetAccessSummaryAsync(organizerId);
-        var locked = Assert.Single(summary.VisibleLockedThemes);
-        Assert.Equal("cyberpunk", locked.ThemeId);
-        Assert.Equal("extended", locked.PackageCode);
+        Assert.That(summary.VisibleLockedThemes, Has.Count.EqualTo(1));
+        var locked = summary.VisibleLockedThemes.Single();
+        Assert.That(locked.ThemeId, Is.EqualTo("cyberpunk"));
+        Assert.That(locked.PackageCode, Is.EqualTo("extended"));
     }
 
-    [Fact]
+    [Test]
     public async Task GetAccessSummary_WhenThemeInMultiplePackages_UsesCanonicalCodeOrder()
     {
         var organizerId = Guid.NewGuid();
@@ -140,11 +140,12 @@ public class ThemeAccessServiceRulesTests
             ]);
 
         var summary = await service.GetAccessSummaryAsync(organizerId);
-        var locked = Assert.Single(summary.VisibleLockedThemes);
-        Assert.Equal("aaa-pack", locked.PackageCode);
+        Assert.That(summary.VisibleLockedThemes, Has.Count.EqualTo(1));
+        var locked = summary.VisibleLockedThemes.Single();
+        Assert.That(locked.PackageCode, Is.EqualTo("aaa-pack"));
     }
 
-    [Fact]
+    [Test]
     public async Task GetAccessSummary_ContactUrl_PrefersEnvironmentVariableThenConfigThenFallback()
     {
         var withEnv = await CreateServiceAsync(
@@ -153,7 +154,7 @@ public class ThemeAccessServiceRulesTests
             configurationValue: "https://config-admin.example",
             environmentContactUrl: "https://env-admin.example");
         var envSummary = await withEnv.GetAccessSummaryAsync(Guid.NewGuid());
-        Assert.Equal("https://env-admin.example", envSummary.ContactUrl);
+        Assert.That(envSummary.ContactUrl, Is.EqualTo("https://env-admin.example"));
 
         var withConfig = await CreateServiceAsync(
             [],
@@ -161,11 +162,11 @@ public class ThemeAccessServiceRulesTests
             configurationValue: "https://config-admin.example",
             environmentContactUrl: null);
         var configSummary = await withConfig.GetAccessSummaryAsync(Guid.NewGuid());
-        Assert.Equal("https://config-admin.example", configSummary.ContactUrl);
+        Assert.That(configSummary.ContactUrl, Is.EqualTo("https://config-admin.example"));
 
         var withFallback = await CreateServiceAsync([], [], configurationValue: null, environmentContactUrl: null);
         var fallbackSummary = await withFallback.GetAccessSummaryAsync(Guid.NewGuid());
-        Assert.Equal("https://vk.com/<owner>", fallbackSummary.ContactUrl);
+        Assert.That(fallbackSummary.ContactUrl, Is.EqualTo("https://vk.com/<owner>"));
     }
 
     private static async Task<ThemeAccessService> CreateServiceAsync(
@@ -216,7 +217,6 @@ public class ThemeAccessServiceRulesTests
         ThemeId = themeId,
         DisplayName = themeId,
         Visibility = visibility,
-        CreatedAt = DateTime.UtcNow,
     };
 
     private static ThemePackage Package(
@@ -232,6 +232,5 @@ public class ThemeAccessServiceRulesTests
         IsAutoGranted = isAutoGranted,
         IsActive = isActive,
         ThemeIds = themeIds ?? [],
-        CreatedAt = DateTime.UtcNow,
     };
 }

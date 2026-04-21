@@ -11,7 +11,7 @@ namespace CherryPlayServer.Tests;
 
 public class AdminAuthorizationHandlerTests
 {
-    [Fact]
+    [Test]
     public async Task HandleRequirementAsync_Succeeds_WhenOrganizerRoleInDatabaseIsAdmin()
     {
         var organizerId = Guid.NewGuid();
@@ -33,10 +33,10 @@ public class AdminAuthorizationHandlerTests
 
         await handler.HandleAsync(authContext);
 
-        Assert.True(authContext.HasSucceeded);
+        Assert.That(authContext.HasSucceeded, Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task HandleRequirementAsync_DoesNotSucceed_WhenOrganizerRoleInDatabaseIsNotAdmin()
     {
         var organizerId = Guid.NewGuid();
@@ -59,7 +59,7 @@ public class AdminAuthorizationHandlerTests
 
         await handler.HandleAsync(authContext);
 
-        Assert.False(authContext.HasSucceeded);
+        Assert.That(authContext.HasSucceeded, Is.False);
     }
 
     private static IServiceScopeFactory CreateScopeFactory(IOrganizerRepository organizerRepository)

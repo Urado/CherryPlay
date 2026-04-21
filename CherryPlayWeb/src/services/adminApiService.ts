@@ -8,7 +8,7 @@ import type {
   RevokeEntitlementRequest,
   ThemePackageListResponse,
 } from '../types/api';
-import { handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
+import { createApiError, handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
 
 function formatAdminError(payload: ApiErrorPayload | null, fallback: string): string {
   if (!payload) return fallback;
@@ -30,7 +30,21 @@ function formatAdminError(payload: ApiErrorPayload | null, fallback: string): st
   if (payload.code === 'entitlement_not_found') {
     return 'Выбранный доступ не найден.';
   }
-  return payload.detail || payload.message || fallback;
+  return payload.detail || payload.message || payload.error || fallback;
+}
+
+async function createAdminApiError(
+  response: Response,
+  payload: ApiErrorPayload | null,
+  fallback: string,
+) {
+  const error = await createApiError(response, fallback);
+  return {
+    ...error,
+    message: formatAdminError(payload, error.message || fallback),
+    code: payload?.code ?? error.code,
+    details: payload ?? error.details,
+  };
 }
 
 class AdminApiService {
@@ -44,14 +58,16 @@ class AdminApiService {
     if (params.page) searchParams.set('page', String(params.page));
     if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
 
-    const response = await fetch(
-      getApiUrl(`${API_ENDPOINTS.ADMIN.ORGANIZERS}?${searchParams.toString()}`),
-      {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-cache',
-      },
-    );
+    const queryString = searchParams.toString();
+    const organizersUrl = queryString
+      ? `${API_ENDPOINTS.ADMIN.ORGANIZERS}?${queryString}`
+      : API_ENDPOINTS.ADMIN.ORGANIZERS;
+
+    const response = await fetch(getApiUrl(organizersUrl), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-cache',
+    });
 
     return handleApiResponse<AdminOrganizerListResponse>(response, 'Ошибка загрузки организаторов');
   }
@@ -91,8 +107,8 @@ class AdminApiService {
     );
 
     if (!response.ok) {
-      const payload = await parseApiErrorPayload<ApiErrorPayload>(response);
-      throw new Error(formatAdminError(payload, 'Ошибка выдачи пакета'));
+      const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+      throw await createAdminApiError(response, payload, 'Ошибка выдачи пакета');
     }
 
     return response.json() as Promise<EntitlementDto>;
@@ -114,8 +130,8 @@ class AdminApiService {
     );
 
     if (!response.ok) {
-      const payload = await parseApiErrorPayload<ApiErrorPayload>(response);
-      throw new Error(formatAdminError(payload, 'Ошибка отзыва доступа'));
+      const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+      throw await createAdminApiError(response, payload, 'Ошибка отзыва доступа');
     }
   }
 }

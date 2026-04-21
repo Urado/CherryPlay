@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { ROUTES } from '../../constants/routes';
 import { useRequireAdmin } from '../../hooks/useRequireAdmin';
 import { adminApiService } from '../../services/adminApiService';
 import type { AdminOrganizerListItemDto } from '../../types/api';
+import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
 
 import './AdminPages.css';
 
@@ -35,7 +36,6 @@ function getOrganizerContactLabel(item: AdminOrganizerListItemDto): string {
 }
 
 export function AdminOrganizersPage() {
-  const navigate = useNavigate();
   const { checking, isAdmin } = useRequireAdmin();
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
@@ -63,7 +63,7 @@ export function AdminOrganizersPage() {
         setItems(result.items);
         setTotal(result.total);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить список организаторов');
+        setError(extractApiErrorMessage(err, 'Не удалось загрузить список организаторов'));
       } finally {
         setLoading(false);
       }
@@ -115,12 +115,16 @@ export function AdminOrganizersPage() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => navigate(ROUTES.ADMIN_ORGANIZER_DETAIL(item.id))}
-                  className="admin-table__row-clickable"
-                >
-                  <td>{item.name}</td>
+                <tr key={item.id} className="admin-table__row-navigable">
+                  <td>
+                    <Link
+                      to={ROUTES.ADMIN_ORGANIZER_DETAIL(item.id)}
+                      className="admin-table__row-link"
+                      aria-label={`Открыть карточку организатора ${item.name}`}
+                    >
+                      {item.name}
+                    </Link>
+                  </td>
                   <td>{getOrganizerContactLabel(item)}</td>
                   <td>
                     <span className={`admin-badge admin-badge--${item.role}`}>

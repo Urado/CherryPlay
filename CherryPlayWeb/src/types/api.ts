@@ -158,6 +158,7 @@ export interface ApiErrorPayload {
   code?: string;
   message?: string;
   detail?: string;
+  error?: string;
   themeId?: string;
   requiredPackageCodes?: string[];
   existingEntitlementId?: string;
@@ -230,7 +231,7 @@ export interface ThemePackageListResponse {
 
 export interface GrantEntitlementRequest {
   packageId: string;
-  note: string;
+  note?: string;
 }
 
 export interface RevokeEntitlementRequest {

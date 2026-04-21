@@ -10,11 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CherryPlayServer.Tests.IntegrationDb;
 
-[CollectionDefinition("IntegrationDb", DisableParallelization = true)]
-public sealed class IntegrationDbCollectionDefinition : ICollectionFixture<PostgresContainerFixture>;
-
-[Collection("IntegrationDb")]
-[Trait("Category", "IntegrationDb")]
+[TestFixture]
+[NonParallelizable]
+[Category("IntegrationDb")]
 public sealed class IntegrationDbTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -22,14 +20,22 @@ public sealed class IntegrationDbTests
         PropertyNameCaseInsensitive = true
     };
 
-    private readonly PostgresContainerFixture _postgresFixture;
+    private PostgresContainerFixture _postgresFixture = null!;
 
-    public IntegrationDbTests(PostgresContainerFixture postgresFixture)
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
     {
-        _postgresFixture = postgresFixture;
+        _postgresFixture = new PostgresContainerFixture();
+        await _postgresFixture.InitializeAsync();
     }
 
-    [Fact]
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
+    {
+        await _postgresFixture.DisposeAsync();
+    }
+
+    [Test]
     public async Task DatabaseMigrate_FromZero_AppliesMigrations()
     {
         var connectionString = await _postgresFixture.CreateFreshDatabaseConnectionStringAsync();
@@ -40,18 +46,21 @@ public sealed class IntegrationDbTests
 
         await using var db = new AppDbContext(options);
         var before = await db.Database.GetAppliedMigrationsAsync();
-        Assert.Empty(before);
+        Assert.That(before, Is.Empty);
 
         await db.Database.MigrateAsync();
 
         var after = await db.Database.GetAppliedMigrationsAsync();
         var knownMigrations = db.Database.GetMigrations().ToArray();
-        Assert.NotEmpty(after);
-        Assert.NotEmpty(knownMigrations);
-        Assert.All(knownMigrations, migrationId => Assert.Contains(migrationId, after));
+        Assert.That(after, Is.Not.Empty);
+        Assert.That(knownMigrations, Is.Not.Empty);
+        foreach (var migrationId in knownMigrations)
+        {
+            Assert.That(after, Does.Contain(migrationId));
+        }
     }
 
-    [Fact]
+    [Test]
     public async Task AppStart_FreshDatabase_RunsMigrationsAndSeeding()
     {
         var connectionString = await _postgresFixture.CreateFreshDatabaseConnectionStringAsync();
@@ -59,22 +68,25 @@ public sealed class IntegrationDbTests
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/config");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var appliedMigrations = await db.Database.GetAppliedMigrationsAsync();
         var knownMigrations = db.Database.GetMigrations().ToArray();
-        Assert.NotEmpty(appliedMigrations);
-        Assert.NotEmpty(knownMigrations);
-        Assert.All(knownMigrations, migrationId => Assert.Contains(migrationId, appliedMigrations));
+        Assert.That(appliedMigrations, Is.Not.Empty);
+        Assert.That(knownMigrations, Is.Not.Empty);
+        foreach (var migrationId in knownMigrations)
+        {
+            Assert.That(appliedMigrations, Does.Contain(migrationId));
+        }
 
-        Assert.True(await db.Themes.AnyAsync(), "Expected seeded themes.");
-        Assert.True(await db.ThemePackages.AnyAsync(), "Expected seeded theme packages.");
+        Assert.That(await db.Themes.AnyAsync(), Is.True, "Expected seeded themes.");
+        Assert.That(await db.ThemePackages.AnyAsync(), Is.True, "Expected seeded theme packages.");
     }
 
-    [Fact]
+    [Test]
     public async Task MigrationHistory_ContainsExpectedLatestMigration()
     {
         var connectionString = await _postgresFixture.CreateFreshDatabaseConnectionStringAsync();
@@ -88,12 +100,15 @@ public sealed class IntegrationDbTests
         var appliedMigrations = await db.Database.GetAppliedMigrationsAsync();
         var knownMigrations = db.Database.GetMigrations().ToArray();
 
-        Assert.NotEmpty(appliedMigrations);
-        Assert.NotEmpty(knownMigrations);
-        Assert.All(knownMigrations, migrationId => Assert.Contains(migrationId, appliedMigrations));
+        Assert.That(appliedMigrations, Is.Not.Empty);
+        Assert.That(knownMigrations, Is.Not.Empty);
+        foreach (var migrationId in knownMigrations)
+        {
+            Assert.That(appliedMigrations, Does.Contain(migrationId));
+        }
     }
 
-    [Fact]
+    [Test]
     public async Task MonetizationSmoke_ThemeAccess_HidesPrivateAndShowsPublicLocked()
     {
         var connectionString = await _postgresFixture.CreateFreshDatabaseConnectionStringAsync();
@@ -105,15 +120,16 @@ public sealed class IntegrationDbTests
 
         using var response = await client.GetAsync("/api/organizer/me/theme-access");
         var body = await response.Content.ReadAsStringAsync();
-        Assert.True(
+        Assert.That(
             response.StatusCode == HttpStatusCode.OK,
+            Is.True,
             $"Theme access failed with status {(int)response.StatusCode}: {body}");
         var payload = JsonSerializer.Deserialize<ThemeAccessResponse>(body, JsonOptions);
-        Assert.NotNull(payload);
+        Assert.That(payload, Is.Not.Null);
 
-        Assert.Contains("basic", payload!.GrantedThemeIds);
-        Assert.DoesNotContain(payload.VisibleLockedThemes, x => x.ThemeId == "cyberpunk");
-        Assert.Contains(payload.VisibleLockedThemes, x => x.ThemeId == "sakura");
+        Assert.That(payload!.GrantedThemeIds, Does.Contain("basic"));
+        Assert.That(payload.VisibleLockedThemes.Any(x => x.ThemeId == "cyberpunk"), Is.False);
+        Assert.That(payload.VisibleLockedThemes.Any(x => x.ThemeId == "sakura"), Is.True);
     }
 
     private static async Task<string> SeedThemeAccessScenarioAsync(IServiceProvider services)

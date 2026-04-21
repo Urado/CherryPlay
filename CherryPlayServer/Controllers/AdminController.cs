@@ -1,5 +1,6 @@
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Extensions;
+using CherryPlayServer.Core;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Queries;
 using CherryPlayServer.Infrastructure.Persistence;
@@ -147,6 +148,35 @@ public class AdminController : ControllerBase
             .OrderByDescending(x => x.GrantedAt)
             .ToListAsync();
 
+        var entitlementIds = entitlementRows.Select(x => x.Id).ToList();
+        var auditRows = entitlementIds.Count == 0
+            ? []
+            : await _db.AdminAuditLogs.AsNoTracking()
+                .Where(x => x.EntitlementId != null && entitlementIds.Contains(x.EntitlementId.Value))
+                .Where(x => x.Action == AdminAuditActionNames.GrantPackage || x.Action == AdminAuditActionNames.RevokePackage)
+                .Select(x => new { x.EntitlementId, x.AdminId, x.Action, x.CreatedAt })
+                .ToListAsync();
+
+        var grantByEntitlement = auditRows
+            .Where(x => x.Action == AdminAuditActionNames.GrantPackage && x.EntitlementId != null)
+            .GroupBy(x => x.EntitlementId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CreatedAt).First().AdminId);
+
+        var revokeByEntitlement = auditRows
+            .Where(x => x.Action == AdminAuditActionNames.RevokePackage && x.EntitlementId != null)
+            .GroupBy(x => x.EntitlementId!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CreatedAt).First().AdminId);
+
+        var adminIds = grantByEntitlement.Values
+            .Concat(revokeByEntitlement.Values)
+            .Distinct()
+            .ToList();
+        var adminNames = adminIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Organizers.AsNoTracking()
+                .Where(x => adminIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.Name);
+
         var entitlements = entitlementRows.Select(x => new EntitlementDto(
             x.Id,
             x.PackageId,
@@ -155,9 +185,12 @@ public class AdminController : ControllerBase
             x.Kind,
             x.Source,
             x.GrantedAt,
+            grantByEntitlement.GetValueOrDefault(x.Id),
+            adminNames.GetValueOrDefault(grantByEntitlement.GetValueOrDefault(x.Id, Guid.Empty)),
             x.ExpiresAt,
             x.UsesRemaining,
             x.RevokedAt,
+            revokeByEntitlement.GetValueOrDefault(x.Id),
             x.Note)).ToList();
 
         return Ok(new AdminOrganizerDetailDto(organizer.Id, organizer.Name, email, oauthAccounts, organizer.Role, organizer.CreatedAt, entitlements));
@@ -195,7 +228,7 @@ public class AdminController : ControllerBase
         {
             Id = Guid.NewGuid(),
             AdminId = adminId,
-            Action = "grant_package",
+            Action = AdminAuditActionNames.GrantPackage,
             TargetOrganizerId = id,
             PackageId = body.PackageId,
             EntitlementId = entitlement.Id,
@@ -204,40 +237,156 @@ public class AdminController : ControllerBase
         });
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
-        return StatusCode(201, new EntitlementDto(entitlement.Id, entitlement.PackageId, package.Code, package.Name, entitlement.Kind, entitlement.Source, entitlement.GrantedAt, entitlement.ExpiresAt, entitlement.UsesRemaining, entitlement.RevokedAt, entitlement.Note));
+        var admin = await _db.Organizers.AsNoTracking()
+            .Where(x => x.Id == adminId)
+            .Select(x => x.Name)
+            .FirstOrDefaultAsync();
+
+        return StatusCode(201, new EntitlementDto(
+            entitlement.Id,
+            entitlement.PackageId,
+            package.Code,
+            package.Name,
+            entitlement.Kind,
+            entitlement.Source,
+            entitlement.GrantedAt,
+            adminId,
+            admin,
+            entitlement.ExpiresAt,
+            entitlement.UsesRemaining,
+            entitlement.RevokedAt,
+            null,
+            entitlement.Note));
     }
 
     [HttpDelete("organizers/{id:guid}/entitlements/{entitlementId:guid}")]
     public async Task<ActionResult> Revoke(Guid id, Guid entitlementId, [FromBody] RevokeEntitlementRequest? body)
     {
-        var entitlement = await _db.OrganizerEntitlements.FirstOrDefaultAsync(x => x.Id == entitlementId && x.OrganizerId == id);
-        if (entitlement == null) return NotFound(new { code = "entitlement_not_found", message = "Entitlement not found" });
-        if (entitlement.RevokedAt != null) return Conflict(new { code = "entitlement_already_revoked", message = "Entitlement already revoked" });
-
         var adminId = HttpContext.RequireOrganizerId();
         var now = DateTime.UtcNow;
-        entitlement.RevokedAt = now;
-        if (!string.IsNullOrWhiteSpace(body?.Note))
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        var rowsUpdated = await TryAtomicRevokeAsync(id, entitlementId, now, body?.Note);
+
+        if (rowsUpdated == 0)
         {
-            entitlement.Note = string.IsNullOrWhiteSpace(entitlement.Note)
-                ? body.Note
-                : $"{entitlement.Note}\n\n--- revoke: {now:O} ---\n{body.Note}";
+            await tx.RollbackAsync();
+            var currentState = await _db.OrganizerEntitlements.AsNoTracking()
+                .Where(x => x.Id == entitlementId && x.OrganizerId == id)
+                .Select(x => new { x.RevokedAt })
+                .FirstOrDefaultAsync();
+
+            if (currentState == null)
+            {
+                return NotFound(new { code = "entitlement_not_found", message = "Entitlement not found" });
+            }
+
+            return Conflict(new { code = "entitlement_already_revoked", message = "Entitlement already revoked" });
         }
 
-        await using var tx = await _db.Database.BeginTransactionAsync();
+        var packageId = await _db.OrganizerEntitlements.AsNoTracking()
+            .Where(x => x.Id == entitlementId && x.OrganizerId == id)
+            .Select(x => x.PackageId)
+            .SingleAsync();
+
+        // Race-hardening invariant: a successful revoke must commit state change and audit record atomically.
         _db.AdminAuditLogs.Add(new Infrastructure.Persistence.Entities.AdminAuditLogEf
         {
             Id = Guid.NewGuid(),
             AdminId = adminId,
-            Action = "revoke_package",
+            Action = AdminAuditActionNames.RevokePackage,
             TargetOrganizerId = id,
-            PackageId = entitlement.PackageId,
-            EntitlementId = entitlement.Id,
+            PackageId = packageId,
+            EntitlementId = entitlementId,
             Note = body?.Note,
             CreatedAt = now
         });
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
         return NoContent();
+    }
+
+    private async Task<int> TryAtomicRevokeAsync(Guid organizerId, Guid entitlementId, DateTime now, string? revokeNote)
+    {
+        var providerName = _db.Database.ProviderName;
+
+        if (_db.Database.IsNpgsql())
+        {
+            if (string.IsNullOrWhiteSpace(revokeNote))
+            {
+                return await _db.Database.ExecuteSqlInterpolatedAsync($"""
+                    UPDATE organizer_entitlements
+                    SET revoked_at = {now}
+                    WHERE id = {entitlementId} AND organizer_id = {organizerId} AND revoked_at IS NULL
+                    """);
+            }
+
+            var separator = $"\n\n--- revoke: {now:O} ---\n";
+            return await _db.Database.ExecuteSqlInterpolatedAsync($"""
+                UPDATE organizer_entitlements
+                SET revoked_at = {now},
+                    note = CASE
+                        WHEN note IS NULL OR btrim(note) = '' THEN {revokeNote}
+                        ELSE note || {separator} || {revokeNote}
+                    END
+                WHERE id = {entitlementId} AND organizer_id = {organizerId} AND revoked_at IS NULL
+                """);
+        }
+
+        if (_db.Database.IsRelational())
+        {
+            var hasRevokeNote = !string.IsNullOrWhiteSpace(revokeNote);
+            var separator = hasRevokeNote ? $"\n\n--- revoke: {now:O} ---\n" : null;
+            var baseQuery = _db.OrganizerEntitlements
+                .Where(x => x.Id == entitlementId && x.OrganizerId == organizerId && x.RevokedAt == null);
+
+            if (!hasRevokeNote)
+            {
+                return await baseQuery.ExecuteUpdateAsync(
+                    updates => updates.SetProperty(x => x.RevokedAt, _ => now));
+            }
+
+            var safeNote = revokeNote!;
+            var safeSeparator = separator!;
+            var replaceRows = await baseQuery
+                .Where(x => x.Note == null || x.Note.Trim() == string.Empty)
+                .ExecuteUpdateAsync(
+                    updates => updates
+                        .SetProperty(x => x.RevokedAt, _ => now)
+                        .SetProperty(x => x.Note, _ => safeNote));
+
+            if (replaceRows > 0)
+            {
+                return replaceRows;
+            }
+
+            return await baseQuery.ExecuteUpdateAsync(
+                updates => updates
+                    .SetProperty(x => x.RevokedAt, _ => now)
+                    .SetProperty(
+                        x => x.Note,
+                        x => x.Note + safeSeparator + safeNote));
+        }
+
+        if (!string.Equals(providerName, "Microsoft.EntityFrameworkCore.InMemory", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Non-relational revoke fallback is only supported for tests with InMemory provider. Current provider: {providerName ?? "<unknown>"}.");
+        }
+
+        var trackedEntitlement = await _db.OrganizerEntitlements.FirstOrDefaultAsync(x => x.Id == entitlementId && x.OrganizerId == organizerId);
+        if (trackedEntitlement == null || trackedEntitlement.RevokedAt != null)
+        {
+            return 0;
+        }
+
+        trackedEntitlement.RevokedAt = now;
+        if (!string.IsNullOrWhiteSpace(revokeNote))
+        {
+            trackedEntitlement.Note = string.IsNullOrWhiteSpace(trackedEntitlement.Note)
+                ? revokeNote
+                : $"{trackedEntitlement.Note}\n\n--- revoke: {now:O} ---\n{revokeNote}";
+        }
+
+        return 1;
     }
 }

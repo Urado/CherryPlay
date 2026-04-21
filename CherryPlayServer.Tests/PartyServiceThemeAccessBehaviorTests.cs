@@ -13,7 +13,7 @@ namespace CherryPlayServer.Tests;
 
 public class PartyServiceThemeAccessBehaviorTests
 {
-    [Fact]
+    [Test]
     public async Task CreateParty_WithBasicTheme_SucceedsForNewOrganizer()
     {
         var themeAccess = new FakeThemeAccessService();
@@ -26,27 +26,27 @@ public class PartyServiceThemeAccessBehaviorTests
             PartyThemeId = PartyThemeId.Basic,
         });
 
-        Assert.Equal(PartyThemeId.Basic, result.PartyThemeId);
+        Assert.That(result.PartyThemeId, Is.EqualTo(PartyThemeId.Basic));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateParty_WithPaidThemeWithoutEntitlement_ThrowsThemeNotEntitled()
     {
         var themeAccess = new FakeThemeAccessService();
         themeAccess.SetResult("cyberpunk", new ThemeAccessCheckResult(false, true, ["extended"]));
         var service = CreateService(themeAccessService: themeAccess);
 
-        var exception = await Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.CreatePartyAsync(new CreatePartyDto
+        var exception = Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.CreatePartyAsync(new CreatePartyDto
         {
             Name = "Paid Theme Attempt",
             PartyThemeId = PartyThemeId.Cyberpunk,
-        }));
+        }))!;
 
-        Assert.Equal("cyberpunk", exception.ThemeId);
-        Assert.Contains("extended", exception.RequiredPackageCodes);
+        Assert.That(exception.ThemeId, Is.EqualTo("cyberpunk"));
+        Assert.That(exception.RequiredPackageCodes, Does.Contain("extended"));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdatePartyMetadata_WithoutPartyThemeId_DoesNotCheckEntitlement()
     {
         var organizerId = Guid.NewGuid();
@@ -68,10 +68,10 @@ public class PartyServiceThemeAccessBehaviorTests
 
         await service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { Name = "Renamed" });
 
-        Assert.Equal(0, themeAccess.CheckCallCount);
+        Assert.That(themeAccess.CheckCallCount, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdatePartyMetadata_WithUnchangedPartyThemeId_DoesNotCheckEntitlement()
     {
         var organizerId = Guid.NewGuid();
@@ -93,10 +93,10 @@ public class PartyServiceThemeAccessBehaviorTests
 
         await service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { PartyThemeId = PartyThemeId.Basic });
 
-        Assert.Equal(0, themeAccess.CheckCallCount);
+        Assert.That(themeAccess.CheckCallCount, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdatePartyMetadata_WhenThemeChangesToInaccessible_ThrowsThemeNotEntitled()
     {
         var organizerId = Guid.NewGuid();
@@ -117,14 +117,14 @@ public class PartyServiceThemeAccessBehaviorTests
         themeAccess.SetResult("sakura", new ThemeAccessCheckResult(false, true, ["extended"]));
         var service = CreateService(organizerId, partyRepository, themeAccess);
 
-        var exception = await Assert.ThrowsAsync<ThemeNotEntitledException>(() =>
-            service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { PartyThemeId = PartyThemeId.Sakura }));
+        var exception = Assert.ThrowsAsync<ThemeNotEntitledException>(() =>
+            service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { PartyThemeId = PartyThemeId.Sakura }))!;
 
-        Assert.Equal("sakura", exception.ThemeId);
-        Assert.Contains("extended", exception.RequiredPackageCodes);
+        Assert.That(exception.ThemeId, Is.EqualTo("sakura"));
+        Assert.That(exception.RequiredPackageCodes, Does.Contain("extended"));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdatePartyMetadata_WhenThemeIsNotVisibleAndNotAllowed_ThrowsThemeNotEntitled()
     {
         var organizerId = Guid.NewGuid();
@@ -145,11 +145,11 @@ public class PartyServiceThemeAccessBehaviorTests
         themeAccess.SetResult("cyberpunk", new ThemeAccessCheckResult(false, false, []));
         var service = CreateService(organizerId, partyRepository, themeAccess);
 
-        var exception = await Assert.ThrowsAsync<ThemeNotEntitledException>(() =>
-            service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { PartyThemeId = PartyThemeId.Cyberpunk }));
+        var exception = Assert.ThrowsAsync<ThemeNotEntitledException>(() =>
+            service.UpdatePartyMetadataAsync(partyId, new UpdatePartyDto { PartyThemeId = PartyThemeId.Cyberpunk }))!;
 
-        Assert.Equal("cyberpunk", exception.ThemeId);
-        Assert.Empty(exception.RequiredPackageCodes);
+        Assert.That(exception.ThemeId, Is.EqualTo("cyberpunk"));
+        Assert.That(exception.RequiredPackageCodes, Is.Empty);
     }
 
     private static PartyService CreateService(

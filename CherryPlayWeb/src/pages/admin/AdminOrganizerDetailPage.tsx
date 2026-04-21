@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { ROUTES } from '../../constants/routes';
 import { useRequireAdmin } from '../../hooks/useRequireAdmin';
 import { adminApiService } from '../../services/adminApiService';
 import type { AdminOrganizerDetailDto, EntitlementDto, ThemePackageDto } from '../../types/api';
+import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
 
 import './AdminPages.css';
 
@@ -17,6 +18,7 @@ function isActiveEntitlement(entitlement: EntitlementDto): boolean {
 export function AdminOrganizerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { checking, isAdmin } = useRequireAdmin();
+  const loadRequestIdRef = useRef(0);
   const [organizer, setOrganizer] = useState<AdminOrganizerDetailDto | null>(null);
   const [packages, setPackages] = useState<ThemePackageDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,9 +34,23 @@ export function AdminOrganizerDetailPage() {
   const [revokeNote, setRevokeNote] = useState('');
   const [revokeError, setRevokeError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState(false);
+  const grantOpenButtonRef = useRef<HTMLButtonElement | null>(null);
+  const revokeOpenButtonRef = useRef<HTMLButtonElement | null>(null);
+  const grantModalTitleId = 'admin-grant-modal-title';
+  const revokeModalTitleId = 'admin-revoke-modal-title';
 
   const load = useCallback(async () => {
-    if (!id) return;
+    const requestId = ++loadRequestIdRef.current;
+
+    if (!id) {
+      if (requestId === loadRequestIdRef.current) {
+        setOrganizer(null);
+        setLoading(false);
+        setError('Не указан organizerId.');
+      }
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -42,6 +58,7 @@ export function AdminOrganizerDetailPage() {
         adminApiService.getOrganizerById(id),
         adminApiService.getThemePackages(),
       ]);
+      if (requestId !== loadRequestIdRef.current) return;
       setOrganizer(organizerData);
       const grantablePackages = packageData.items.filter(
         (item) => item.isActive && !item.isAutoGranted,
@@ -54,9 +71,13 @@ export function AdminOrganizerDetailPage() {
         return grantablePackages[0]?.id ?? '';
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось загрузить данные');
+      if (requestId !== loadRequestIdRef.current) return;
+      setOrganizer(null);
+      setError(extractApiErrorMessage(err, 'Не удалось загрузить данные'));
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [id]);
 
@@ -64,6 +85,41 @@ export function AdminOrganizerDetailPage() {
     if (!isAdmin || !id) return;
     void load();
   }, [id, isAdmin, load]);
+
+  useEffect(
+    () => () => {
+      loadRequestIdRef.current += 1;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!grantOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !granting) {
+        setGrantOpen(false);
+        setGrantError(null);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [grantOpen, granting]);
+
+  useEffect(() => {
+    if (!revokeEntitlement) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !revoking) {
+        setRevokeEntitlement(null);
+        setRevokeError(null);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [revokeEntitlement, revoking]);
 
   const activeEntitlements = useMemo(
     () => (organizer?.entitlements ?? []).filter(isActiveEntitlement),
@@ -97,8 +153,21 @@ export function AdminOrganizerDetailPage() {
         </div>
       )}
 
-      {loading || !organizer ? (
+      {loading ? (
         <p>Загрузка…</p>
+      ) : error ? (
+        <section className="admin-card" aria-live="polite">
+          <p>Не удалось загрузить карточку организатора.</p>
+          <div className="admin-modal__actions admin-modal__actions--start">
+            <button type="button" onClick={() => void load()}>
+              Повторить
+            </button>
+          </div>
+        </section>
+      ) : !organizer ? (
+        <section className="admin-card">
+          <p>Организатор не найден.</p>
+        </section>
       ) : (
         <>
           <section className="admin-card">
@@ -111,7 +180,7 @@ export function AdminOrganizerDetailPage() {
           <section className="admin-card">
             <div className="admin-card__header">
               <h3>Активные доступы</h3>
-              <button type="button" onClick={() => setGrantOpen(true)}>
+              <button ref={grantOpenButtonRef} type="button" onClick={() => setGrantOpen(true)}>
                 Выдать пакет
               </button>
             </div>
@@ -129,6 +198,8 @@ export function AdminOrganizerDetailPage() {
                     <button
                       type="button"
                       onClick={() => {
+                        revokeOpenButtonRef.current =
+                          document.activeElement as HTMLButtonElement | null;
                         setRevokeEntitlement(entitlement);
                         setRevokeNote('');
                         setRevokeError(null);
@@ -171,8 +242,13 @@ export function AdminOrganizerDetailPage() {
 
       {grantOpen && (
         <div className="admin-modal-backdrop">
-          <div className="admin-modal">
-            <h3>Выдать пакет</h3>
+          <div
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={grantModalTitleId}
+          >
+            <h3 id={grantModalTitleId}>Выдать пакет</h3>
             <label>
               Пакет
               <select value={grantPackageId} onChange={(e) => setGrantPackageId(e.target.value)}>
@@ -184,7 +260,7 @@ export function AdminOrganizerDetailPage() {
               </select>
             </label>
             <label>
-              Note
+              Note (опционально)
               <textarea value={grantNote} onChange={(e) => setGrantNote(e.target.value)} rows={4} />
             </label>
             {grantError && (
@@ -198,26 +274,28 @@ export function AdminOrganizerDetailPage() {
                 onClick={() => {
                   setGrantOpen(false);
                   setGrantError(null);
+                  grantOpenButtonRef.current?.focus();
                 }}
               >
                 Отмена
               </button>
               <button
                 type="button"
-                disabled={granting || grantNote.trim().length < 1 || !grantPackageId}
+                disabled={granting || !grantPackageId}
                 onClick={async () => {
                   setGranting(true);
                   setGrantError(null);
                   try {
                     await adminApiService.grantEntitlement(id, {
                       packageId: grantPackageId,
-                      note: grantNote.trim(),
+                      note: grantNote.trim() || undefined,
                     });
                     setGrantOpen(false);
                     setGrantNote('');
+                    grantOpenButtonRef.current?.focus();
                     await load();
                   } catch (err) {
-                    setGrantError(err instanceof Error ? err.message : 'Ошибка выдачи пакета');
+                    setGrantError(extractApiErrorMessage(err, 'Ошибка выдачи пакета'));
                   } finally {
                     setGranting(false);
                   }
@@ -232,8 +310,13 @@ export function AdminOrganizerDetailPage() {
 
       {revokeEntitlement && (
         <div className="admin-modal-backdrop">
-          <div className="admin-modal">
-            <h3>Отозвать пакет</h3>
+          <div
+            className="admin-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={revokeModalTitleId}
+          >
+            <h3 id={revokeModalTitleId}>Отозвать пакет</h3>
             <p>
               {revokeEntitlement.packageName} ({revokeEntitlement.packageCode})
             </p>
@@ -256,6 +339,7 @@ export function AdminOrganizerDetailPage() {
                 onClick={() => {
                   setRevokeEntitlement(null);
                   setRevokeError(null);
+                  revokeOpenButtonRef.current?.focus();
                 }}
               >
                 Отмена
@@ -272,9 +356,10 @@ export function AdminOrganizerDetailPage() {
                     });
                     setRevokeEntitlement(null);
                     setRevokeNote('');
+                    revokeOpenButtonRef.current?.focus();
                     await load();
                   } catch (err) {
-                    setRevokeError(err instanceof Error ? err.message : 'Ошибка отзыва');
+                    setRevokeError(extractApiErrorMessage(err, 'Ошибка отзыва'));
                   } finally {
                     setRevoking(false);
                   }

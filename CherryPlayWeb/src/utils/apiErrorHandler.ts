@@ -10,6 +10,19 @@ export interface ApiError {
   details?: unknown;
 }
 
+function isApiError(error: unknown): error is ApiError {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as Partial<ApiError>;
+  return (
+    typeof candidate.message === 'string' &&
+    typeof candidate.status === 'number' &&
+    typeof candidate.statusText === 'string'
+  );
+}
+
 /**
  * Обрабатывает ответ от API и выбрасывает ошибку если запрос неуспешен
  */
@@ -76,4 +89,20 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
  */
 export function isAuthError(status: number): boolean {
   return status === 401 || status === 403;
+}
+
+export function extractApiErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (isApiError(error)) {
+    return error.message || fallbackMessage;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallbackMessage;
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  return fallbackMessage;
 }

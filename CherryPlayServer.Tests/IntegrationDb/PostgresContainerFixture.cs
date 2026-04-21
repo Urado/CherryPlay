@@ -3,7 +3,7 @@ using Testcontainers.PostgreSql;
 
 namespace CherryPlayServer.Tests.IntegrationDb;
 
-public sealed class PostgresContainerFixture : IAsyncLifetime
+public sealed class PostgresContainerFixture
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine")
         .WithDatabase("postgres")

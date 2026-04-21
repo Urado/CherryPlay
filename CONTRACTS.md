@@ -259,6 +259,8 @@
 - `POST grant` возвращает `409 entitlement_already_active` и `existingEntitlementId`, если активная выдача уже есть.
 - `DELETE revoke` возвращает `404 entitlement_not_found`, если выдача не найдена для указанного организатора.
 - `DELETE revoke` возвращает `409 entitlement_already_revoked`, если выдача уже отозвана.
+- `DELETE revoke` выполняется атомарно и идемпотентно относительно состояния entitlement: при конкурентных/повторных запросах только первый успешный revoke меняет состояние, остальные получают `409 entitlement_already_revoked`.
+- При успешном `DELETE revoke` поле `revokedAt` заполняется; если в теле передан `note`, он добавляется к существующему `note` с разделителем `--- revoke: <UTC ISO8601> ---` (без потери предыдущего текста).
 
 ---
 
@@ -344,8 +346,8 @@ _Примечание:_ в текущей реализации веб может
 
 **PublicPartyDto** (ответ публичного API; по плану — метаданные + флаг «в каталоге»)
 
-| Поле                    | Тип                                             | Описание                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| Поле                    | Тип                                    | Описание                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `id`                    | `string`                                        | GUID вечеринки.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `name`                  | `string`                                        | Название.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `title`                 | `string \| undefined`                           | Заголовок на экране; если пусто — отображается `name`.                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -357,8 +359,8 @@ _Примечание:_ в текущей реализации веб может
 | `hasActiveSession`      | `boolean`                                       | Идёт ли сессия.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `sessionStartedAt`      | `string \| undefined`                           | ISO 8601 начала сессии.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `timeZone`              | `string \| undefined`                           | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                                                                                                                                                                                                                                                                                                                                                               |
-| _(по плану)_            | `isListedInCatalog`                             | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Включена ли в каталог. |
-| _(по плану)_            | описание, место, город, дата/расписание, ссылки | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Для страницы `/info`.  |
+| _(по плану)_ `isListedInCatalog` | `boolean` | Включена ли в каталог. |
+| _(по плану)_ описание, место, город, дата/расписание, ссылки | — | Для страницы `/info`. |
 
 **PublicPartyListItemDto** (элемент каталога — только вечеринки, включённые в каталог)
 
@@ -516,7 +518,7 @@ _Примечание:_ в текущей реализации веб может
 | --- | ---- |
 | `ThemeAccessDto` | `grantedThemeIds`, `visibleLockedThemes`, `contactUrl` |
 | `VisibleLockedThemeDto` | `themeId`, `packageCode`, `packageName` |
-| `AdminThemePackageDto` | `id`, `code`, `name`, `description`, `isAutoGranted`, `isActive`, `themeIds` |
+| `AdminThemePackageDto` | `id`, `code`, `name`, `isAutoGranted`, `isActive`, `themeIds` |
 | `AdminThemePackageListDto` | `items: AdminThemePackageDto[]` |
 | `AdminOrganizerListItemDto` | `id`, `name`, `email`, `oauthProviders`, `role`, `activeEntitlementsCount`, `createdAt` |
 | `AdminOrganizerListDto` | `items`, `total`, `page`, `pageSize` |
@@ -525,6 +527,10 @@ _Примечание:_ в текущей реализации веб может
 | `EntitlementDto` | `id`, `packageId`, `packageCode`, `packageName`, `kind`, `source`, `grantedAt`, `grantedByAdminId`, `grantedByAdminName`, `expiresAt`, `usesRemaining`, `revokedAt`, `revokedByAdminId`, `note` |
 | `GrantEntitlementRequest` | `packageId`, `note?` (`maxLength: 2000`) |
 | `RevokeEntitlementRequest` | `note?` (`maxLength: 2000`) |
+
+Дополнительно по `EntitlementDto`:
+- `grantedByAdminId`/`grantedByAdminName` и `revokedByAdminId` восстанавливаются по последним audit-записям `grant_package`/`revoke_package` для entitlement.
+- Поля админа могут быть `null` для legacy-записей (например, если исторический аудит отсутствует).
 
 ---
 

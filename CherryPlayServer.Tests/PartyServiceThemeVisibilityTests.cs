@@ -13,7 +13,7 @@ namespace CherryPlayServer.Tests;
 
 public class PartyServiceThemeVisibilityTests
 {
-    [Fact]
+    [Test]
     public async Task CreateParty_ThrowsThemeNotEntitled_WhenThemeIsInvisibleAndNotAllowed()
     {
         var service = CreateService(
@@ -25,10 +25,10 @@ public class PartyServiceThemeVisibilityTests
             PartyThemeId = PartyThemeId.Cyberpunk
         };
 
-        await Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.CreatePartyAsync(createDto));
+        Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.CreatePartyAsync(createDto));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateParty_ThrowsThemeNotEntitled_WhenChangingToInvisibleTheme()
     {
         var organizerId = Guid.NewGuid();
@@ -53,10 +53,10 @@ public class PartyServiceThemeVisibilityTests
 
         var updateDto = new UpdatePartyDto { PartyThemeId = PartyThemeId.Cyberpunk };
 
-        await Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.UpdatePartyMetadataAsync(partyId, updateDto));
+        Assert.ThrowsAsync<ThemeNotEntitledException>(() => service.UpdatePartyMetadataAsync(partyId, updateDto));
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateParty_DoesNotCheckThemeAccess_WhenThemeIsUnchanged()
     {
         var organizerId = Guid.NewGuid();
@@ -82,7 +82,7 @@ public class PartyServiceThemeVisibilityTests
         var updateDto = new UpdatePartyDto { PartyThemeId = PartyThemeId.Basic };
         await service.UpdatePartyMetadataAsync(partyId, updateDto);
 
-        Assert.Equal(0, themeAccess.CheckCount);
+        Assert.That(themeAccess.CheckCount, Is.EqualTo(0));
     }
 
     private static PartyService CreateService(

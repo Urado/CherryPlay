@@ -113,13 +113,31 @@
   font-size: 14px;
 }
 
-.admin-table__row-clickable {
-  cursor: pointer;
+.admin-table__row-navigable {
   transition: background-color 0.12s ease;
 }
 
-.admin-table__row-clickable:hover {
+.admin-table__row-navigable:hover {
   background: var(--admin-surface-hover);
+}
+
+.admin-table__row-navigable:focus-within {
+  background: var(--admin-surface-hover);
+}
+
+.admin-table__row-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-table__row-link:hover {
+  text-decoration: underline;
+}
+
+.admin-table__row-link:focus-visible {
+  outline: 2px solid var(--admin-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .admin-table tbody tr:last-child td {
@@ -319,6 +337,10 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+.admin-modal__actions--start {
+  justify-content: flex-start;
 }
 
 .admin-link {
