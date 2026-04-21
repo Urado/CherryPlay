@@ -133,10 +133,13 @@ CherryPlayComponents/
 │   │   ├── PartyDisplay/        # Фасадный компонент
 │   │   ├── Playlist/
 │   │   └── Player/
-│   └── themes/                  # Изолированные темы
-│       ├── cyberpunk/            # Компоненты темы Cyberpunk
-│       ├── sakura/              # Компоненты темы Sakura
-│       └── art-deco/            # Компоненты темы Art Deco
+│   └── themes/                  # Изолированные темы PartyTheme
+│       ├── partyThemeTypes.ts   # PartyThemeId, ThemeCustomizationEditorProps
+│       ├── basic/palette/       # Палитра и настройки темы basic (публичный API — index.ts)
+│       ├── cyberpunk/
+│       ├── sakura/
+│       ├── art-deco/
+│       └── …                    # прочие темы — см. [THEMES.md](../THEMES.md)
 ```
 
 ## Темы
@@ -151,16 +154,20 @@ CherryPlayComponents/
 
 ### Доступные темы
 
-- **cyberpunk** - Неоновая тема в стиле киберпанк
-- **sakura** - Нежная пастельная тема
-- **art-deco** - Элегантная тема в стиле ар-деко
+Список идентификаторов и поведение (в т.ч. модуль палитры `basic` в `src/themes/basic/palette/`) описаны в [THEMES.md](../THEMES.md).
+
+- **cyberpunk** — неоновая тема в стиле киберпанк
+- **sakura** — пастельная тема
+- **art-deco** — ар-деко
+- **basic** — настраиваемая палитра; исходники палитры — `src/themes/basic/palette/`
+- **spring-cross-step** — расширенная весенняя тема с переопределёнными компонентами
 
 ### Добавление новой темы
 
 1. Создайте директорию `src/themes/<theme-id>/`
 2. Реализуйте компоненты темы (PartyDisplay, PlaylistView, PlaylistItem, CurrentTrackDisplay)
 3. Добавьте CSS стили в `styles/`
-4. Зарегистрируйте PartyTheme в `src/themes/index.ts` в `PARTY_THEME_REGISTRY` используя `createPartyTheme()`
+4. Добавьте идентификатор в `src/themes/partyThemeTypes.ts` и зарегистрируйте PartyTheme в `src/themes/index.ts` в `PARTY_THEME_REGISTRY` через `createPartyTheme()`
 
 ## Стилизация
 

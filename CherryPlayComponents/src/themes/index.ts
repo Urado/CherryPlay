@@ -8,10 +8,11 @@ import {
   PlaylistView as BasePlaylistView,
   CurrentTrackDisplay as BaseCurrentTrackDisplay,
   PartyInfoDisplay as BasePartyInfoDisplay,
-  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
 } from './base';
 import { BasicThemeCustomizationEditor } from './basic';
+import { BASIC_THEME_CUSTOMIZATION_OPTION_KEYS } from './basic/palette';
 import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
+import type { PartyThemeId, ThemeCustomizationEditorProps } from './partyThemeTypes';
 import { SakuraThemeCustomizationEditor } from './sakura/CustomizationEditor';
 import {
   PartyDisplay as SpringCrossStepPartyDisplay,
@@ -20,8 +21,6 @@ import {
   PartyInfoDisplay as SpringCrossStepPartyInfoDisplay,
 } from './spring-cross-step';
 import { SpringCrossStepThemeCustomizationEditor } from './spring-cross-step/CustomizationEditor';
-
-export type PartyThemeId = 'cyberpunk' | 'sakura' | 'art-deco' | 'basic' | 'spring-cross-step';
 
 export interface PartyThemeComponents {
   PartyDisplay: React.ComponentType<{
@@ -52,10 +51,7 @@ export interface PartyThemeComponents {
   CustomizationEditor?: React.ComponentType<ThemeCustomizationEditorProps>;
 }
 
-export interface ThemeCustomizationEditorProps {
-  customizationSettings: Record<string, unknown>;
-  onCustomizationSettingsChange: (settings: Record<string, unknown>) => void;
-}
+export type { PartyThemeId, ThemeCustomizationEditorProps };
 
 export interface PartyTheme {
   id: PartyThemeId;
@@ -199,11 +195,34 @@ export {
 
 export {
   BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
+  DEFAULT_BASIC_THEME_ACCENT,
+  DEFAULT_BASIC_THEME_CUSTOM_PALETTE,
+  DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS,
+  BASIC_THEME_FAMILY_IDS,
+  BASIC_THEME_DARK_GRADIENT_PRESETS,
+  BASIC_THEME_LIGHT_GRADIENT_PRESETS,
+  BASIC_THEME_DARK_NEON_PRESETS,
+  BASIC_THEME_LIGHT_ACCENT_PRESETS,
+  BASIC_THEME_MANUAL_PALETTE_LABEL,
+  BASIC_THEME_USER_SAVED_CATALOG_PREFIX,
+  areBasicCustomPalettesEqual,
+  buildBasicFamilyCustomPalette,
+  buildBasicThemePaletteCatalog,
+  deriveDarkGradientFromAccent,
+  deriveDarkNeonFromAccent,
+  deriveLightAccentFromAccent,
+  deriveLightGradientFromAccent,
   getBasicThemePaletteCatalog,
+  getDefaultBasicThemeCustomPalette,
+  isBasicThemeFamilyPaletteId,
+  isBasicThemePaletteId,
   normalizeBasicThemePaletteSettings,
+  normalizeHexColor,
+  parseBasicThemeUserSavedCatalogId,
   resolveBasicThemePalette,
   resolveBasicThemeCssSettings,
-} from './base';
+  sanitizeBasicUserSavedPalettes,
+} from './basic/palette';
 export type {
   BaseThemeColorPaletteCatalogItem,
   BaseThemeColorPaletteId,
@@ -211,10 +230,7 @@ export type {
   BaseThemeColorPaletteSettings,
   BaseThemeColorCustomizationSettings,
   BaseThemeCustomColorPalette,
-  BasicThemePaletteCatalogItem,
-  BasicThemePaletteId,
-  BasicThemePaletteSelectionId,
-  BasicThemePaletteSettings,
-  BasicThemeCustomizationSettings,
-  BasicThemeCustomPalette,
-} from './base';
+  BaseThemeFamilyPaletteId,
+  BaseThemeUserSavedPalette,
+  BaseThemeResolvedCssVars,
+} from './basic/palette';

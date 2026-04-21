@@ -29,12 +29,14 @@ CherryPlay использует систему PartyTheme на основе ба
 ```
 themes/
 ├── index.ts           # PARTY_THEME_REGISTRY, createPartyTheme(), BASE_COMPONENTS
+├── partyThemeTypes.ts # PartyThemeId, ThemeCustomizationEditorProps (узкий модуль без цикла с index)
 ├── index.css          # Импорты CSS всех PartyTheme
-├── base/              # Базовые компоненты (единственный набор)
+├── base/              # Базовые React-компоненты (единственный набор)
 │   ├── PartyDisplay.tsx
 │   ├── PlaylistView.tsx
 │   ├── PlaylistItem.tsx
 │   ├── CurrentTrackDisplay.tsx
+│   ├── colors.ts      # Реэкспорт ../basic/palette (совместимость старых импортов)
 │   └── index.ts
 ├── cyberpunk/         # CSS + CustomizationEditor (stub)
 │   ├── index.css
@@ -45,10 +47,40 @@ themes/
 ├── sakura/            # CSS + CustomizationEditor (stub)
 │   ├── *.css
 │   └── CustomizationEditor.tsx
+├── basic/             # CSS, CustomizationEditor, модуль палитры
+│   ├── palette/       # Логика палитры basic (см. ниже)
+│   ├── *.css
+│   └── CustomizationEditor.tsx
 └── art-deco/          # CSS + CustomizationEditor (stub)
     ├── *.css
     └── CustomizationEditor.tsx
 ```
+
+### Модуль палитры темы `basic` (`themes/basic/palette/`)
+
+Исходники палитры сгруппированы в одной папке; публичный API — `palette/index.ts` (реэкспорт функций, констант и типов).
+
+| Файл                          | Назначение                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`                    | Публичный API: `getBasicThemePaletteCatalog`, `resolveBasicThemePalette`, `resolveBasicThemeCssSettings`, константы, типы |
+| `paletteTypes.ts`             | Типы настроек и палитр                                                                                                    |
+| `paletteConstants.ts`         | Константы и пресеты                                                                                                       |
+| `paletteUtils.ts`             | Утилиты для цветов                                                                                                        |
+| `familyPalettes.ts`           | Семейные палитры и производные от акцента                                                                                 |
+| `paletteCatalog.ts`           | Построение каталога плиток для редактора                                                                                  |
+| `normalizePaletteSettings.ts` | Нормализация входных настроек, дефолты, санитизация сохранённых палитр                                                    |
+
+Публичные хелперы: `isBasicThemePaletteId`, `normalizeHexColor`, `getDefaultBasicThemeCustomPalette` (см. реэкспорт в `themes/index.ts`).
+
+**Импорты в коде пакета:** предпочтительно `.../themes/basic/palette` или через barrel `themes/index.ts` / `themes/basic/index.ts`. Файл `themes/base/colors.ts` — тонкий реэкспорт `export * from '../basic/palette'` для совместимости со старыми путями.
+
+**Каталог плиток в редакторе и `paletteId`**
+
+| Контекст                                               | Поведение                                                                                                      |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Сетка каталога в UI                                    | Плитки строятся из каталога (`getBasicThemePaletteCatalog`); отдельной плитки «Базовый» для `base` нет         |
+| Хранение и резолв                                      | `paletteId: 'base'` — валидный дефолт и безопасный fallback при битых/отсутствующих настройках                 |
+| Метаданные темы, селект «Палитра» (`themeMetadata.ts`) | Опция `base` при необходимости добавляется первой в список, чтобы `defaultValue` совпадал с доступными опциями |
 
 ### Как это работает
 
@@ -88,12 +120,12 @@ PartyTheme в стиле ар-деко: золотые акценты и гео�
 PartyTheme: простой стиль в духе приложения CherryPlayList, с настраиваемой палитрой.
 
 - Базовая палитра теперь полностью setting-driven: CSS vars вычисляются из `customizationSettings`, а не из жёстко выбранного CSS-варианта
-- Цветовая схема: выбираемая палитра (`base` + 16 предустановленных + `custom`)
+- Цветовая схема: выбираемая палитра (`darkGradient` / `lightGradient` / `darkNeon` / `lightAccent` + `custom` + сохранённые пользователем)
 - Шрифты: системные, стандартные
 - Эффекты: минимальные, простые переходы
 - Кастомизация: выбор палитры и 5 кастомных цветов (акцент, основной текст, фон страницы, фон списка, фон трека)
-- Палитра по умолчанию: `base` (бывшая `current`)
-- В UI каталога палитр порядок: `base`, затем `custom`, затем остальные предустановленные палитры
+- Палитра по умолчанию и fallback: `base` (подробнее — подраздел «Модуль палитры темы `basic`» в разделе «Архитектура» выше)
+- В сетке каталога: без плитки `base`; порядок плиток — по логике `paletteCatalog` (family-палитры, сохранённые пользователем, `custom`)
 - При выборе предустановленной палитры её 5 цветов автоматически сохраняются в `customPalette`; при последующем переключении на `custom` пользователь видит цвета последней выбранной палитры
 
 ### 5. Весенний кросс-степ (`spring-cross-step`)
@@ -150,14 +182,10 @@ PartyTheme не поддерживает настройки кастомизац
 
 Поддерживается палитра базовой темы. Канонический контракт для сохранения/передачи настроек:
 
-| Параметр                    | Тип          | По умолчанию | Описание                                                                                                                                                                                                                                                             |
-| --------------------------- | ------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `paletteId`                 | string       | `base`       | Идентификатор палитры (`base`, `nightMoss`, `dustyRose`, `mutedOcean`, `duskAmber`, `neonCyber`, `voltOrange`, `acidLime`, `obsidian`, `paperSage`, `porcelainBlue`, `linenBlush`, `oatMilk`, `arcticBerry`, `limeSnow`, `electricCobalt`, `paperInk`) или `custom`. |
-| `customAccentPrimary`       | string (hex) | `#4a9eff`    | Кастом: основной акцент (legacy-flat ключ для UI).                                                                                                                                                                                                                   |
-| `customTextPrimary`         | string (hex) | `#ffffff`    | Кастом: основной текст (legacy-flat ключ для UI).                                                                                                                                                                                                                    |
-| `customBackgroundPrimary`   | string (hex) | `#1a1a1a`    | Кастом: фон страницы (legacy-flat ключ для UI).                                                                                                                                                                                                                      |
-| `customTrackAreaBackground` | string (hex) | `#2a2a2a`    | Кастом: фон списка (legacy-flat ключ для UI).                                                                                                                                                                                                                        |
-| `customTrackBackground`     | string (hex) | `#333333`    | Кастом: фон трека (legacy-flat ключ для UI).                                                                                                                                                                                                                         |
+| Параметр        | Тип    | По умолчанию | Описание                                                                                                                                                                                           |
+| --------------- | ------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `paletteId`     | string | `base`       | Идентификатор палитры (`base`, `darkGradient`, `lightGradient`, `darkNeon`, `lightAccent`) или `custom`. `base` остаётся валидным fallback id, но как отдельная плитка в каталоге не отображается. |
+| `customPalette` | object | base palette | Канонический объект из 5 hex-цветов: `accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`.                                                                |
 
 Канонический формат хранения для `basic`:
 
@@ -174,7 +202,7 @@ PartyTheme не поддерживает настройки кастомизац
 }
 ```
 
-Для обратной совместимости также поддерживается legacy-flat формат с ключами `customAccentPrimary`/`customTextPrimary`/`customBackgroundPrimary`/`customTrackAreaBackground`/`customTrackBackground`. При чтении настроек канонический nested и legacy-flat форматы считаются эквивалентными, приоритет у канонического nested `customPalette`.
+Если входные настройки невалидны или не парсятся, применяется безопасный fallback: `paletteId: "base"` и дефолтный `customPalette` для `base`.
 
 ### Весенний кросс-степ (`spring-cross-step`)
 
@@ -219,7 +247,14 @@ interface ThemeCustomizationEditorProps {
 }
 ```
 
+Тип `PartyThemeId` и интерфейс `ThemeCustomizationEditorProps` объявлены в `themes/partyThemeTypes.ts` и реэкспортируются из `themes/index.ts`, чтобы редакторы тем не тянули barrel `index.ts` только ради типов (избегаем лишних циклов зависимостей).
+
 Для текущих встроенных тем `customizationOptions` не пустой только у `basic`; у остальных тем редактор возвращает `null`, а `customizationOptions` остаётся пустым.
+
+### Метаданные опций (`themeMetadata.ts`)
+
+- **`getThemeMetadata('basic', customizationSettings?)`** — для basic возвращает актуальные `defaultValue` и списки опций (палитра, user-saved).
+- **`getCustomizationOption(themeId, optionKey, customizationSettings?)`** — для `basic` передавайте текущие `customizationSettings` третьим аргументом, если нужны актуальные `defaultValue`/опции как у `getThemeMetadata`; без него для `basic` возможен устаревший снимок из `THEME_METADATA`.
 
 ### createPartyTheme
 
@@ -243,7 +278,7 @@ interface CreatePartyThemeConfig {
 Для добавления новой PartyTheme нужно:
 
 1. Создать CSS-файлы в `CherryPlayComponents/src/themes/<theme-id>/`
-2. Зарегистрировать PartyTheme в `CherryPlayComponents/src/themes/index.ts` (union `PartyThemeId`, `PARTY_THEME_REGISTRY`, `createPartyTheme()`)
+2. Зарегистрировать PartyTheme в `CherryPlayComponents/src/themes/index.ts` и добавить `PartyThemeId` в `partyThemeTypes.ts` (`PARTY_THEME_REGISTRY`, `createPartyTheme()`)
 3. Добавить значение в C# enum `CherryPlayServer/Core/Enums/PartyThemeId.cs`
 4. Обновить документацию
 
@@ -291,9 +326,9 @@ interface CreatePartyThemeConfig {
 5. **Персист и ре-гидрация**
    - Сохранить/опубликовать изменения, перезапустить приложение (или переоткрыть проект).
    - Проверить, что выбранный `paletteId` и кастомные цвета восстановлены.
-6. **Совместимость старых данных**
-   - Проверить загрузку проекта с legacy-flat ключами (`customAccentPrimary` и т.д.).
-   - Убедиться, что цвета корректно применяются без ручной миграции.
+6. **Невалидные настройки и fallback**
+   - Передать невалидный `paletteId`/`customPalette` в `customizationSettings`.
+   - Убедиться, что применяется безопасный дефолт (`paletteId: "base"` + base `customPalette`).
 7. **Регрессия базового рендера**
    - Удалить/повредить часть `customizationSettings` для `basic`.
    - Убедиться, что применяется безопасный дефолт (`base`), без падений рендера.

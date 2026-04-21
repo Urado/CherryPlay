@@ -1,12 +1,11 @@
 import {
+  BASE_THEME_COLOR_PALETTES,
   DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS,
   getBasicThemePaletteCatalog,
   normalizeBasicThemePaletteSettings,
-  type BasicThemeCanonicalCustomizationSettings,
-  type BasicThemeCompatibilityCustomizationSettings,
-} from './base/colors';
-
-import type { PartyThemeId } from './index';
+  type BaseThemeColorCustomizationSettings,
+} from './basic/palette';
+import type { PartyThemeId } from './partyThemeTypes';
 
 export type CustomizationOptionType = 'color' | 'number' | 'text' | 'select';
 
@@ -41,10 +40,10 @@ export type SakuraCustomizationSettings = Record<string, never>;
 export type ArtDecoCustomizationSettings = Record<string, never>;
 
 // Canonical storage contract for basic theme settings.
-export type BasicCustomizationSettings = BasicThemeCanonicalCustomizationSettings;
+export type BasicCustomizationSettings = BaseThemeColorCustomizationSettings;
 
-// Compatibility contract for option-based UI payloads (`paletteId` + `custom*` keys).
-export type BasicCustomizationOptionSettings = BasicThemeCompatibilityCustomizationSettings;
+// Option metadata uses the same canonical settings contract.
+export type BasicCustomizationOptionSettings = BaseThemeColorCustomizationSettings;
 
 export type SpringCrossStepCustomizationSettings = Record<string, never>;
 
@@ -64,43 +63,49 @@ function createBasicThemeCustomizationOptions(
 ): ThemeCustomizationOption[] {
   const normalized = normalizeBasicThemePaletteSettings(settings);
 
+  const catalogSelectOptions = getBasicThemePaletteCatalog(settings).map((palette) => ({
+    value: palette.id,
+    label: palette.label,
+  }));
+  /** `base` не входит в визуальный каталог плиток, но остаётся валидным `paletteId` и дефолтом при fallback. */
+  const paletteIdOptions = catalogSelectOptions.some((o) => o.value === 'base')
+    ? catalogSelectOptions
+    : [{ value: 'base', label: BASE_THEME_COLOR_PALETTES.base.nameRu }, ...catalogSelectOptions];
+
   return [
     {
       key: 'paletteId',
       type: 'select',
       defaultValue: normalized.paletteId,
       label: 'Палитра',
-      options: getBasicThemePaletteCatalog(settings).map((palette) => ({
-        value: palette.id,
-        label: palette.label,
-      })),
+      options: paletteIdOptions,
     },
     {
-      key: 'customAccentPrimary',
+      key: 'customPalette.accentPrimary',
       type: 'color',
       defaultValue: normalized.customPalette.accentPrimary,
       label: 'Кастом: основной акцент',
     },
     {
-      key: 'customTextPrimary',
+      key: 'customPalette.textPrimary',
       type: 'color',
       defaultValue: normalized.customPalette.textPrimary,
       label: 'Кастом: основной текст',
     },
     {
-      key: 'customBackgroundPrimary',
+      key: 'customPalette.backgroundPrimary',
       type: 'color',
       defaultValue: normalized.customPalette.backgroundPrimary,
       label: 'Кастом: фон',
     },
     {
-      key: 'customTrackAreaBackground',
+      key: 'customPalette.trackAreaBackground',
       type: 'color',
       defaultValue: normalized.customPalette.trackAreaBackground,
       label: 'Кастом: фон списка',
     },
     {
-      key: 'customTrackBackground',
+      key: 'customPalette.trackBackground',
       type: 'color',
       defaultValue: normalized.customPalette.trackBackground,
       label: 'Кастом: фон трека',
@@ -108,6 +113,7 @@ function createBasicThemeCustomizationOptions(
   ];
 }
 
+/** Снимок метаданных при загрузке модуля. Для `basic` актуальные опции/defaultValue — через `getThemeMetadata('basic', settings)`. */
 export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   cyberpunk: {
     id: 'cyberpunk',
@@ -165,7 +171,8 @@ export function getDefaultCustomizationSettings<T extends PartyThemeId>(
 export function getCustomizationOption(
   partyThemeId: PartyThemeId,
   optionKey: string,
+  customizationSettings?: Partial<Record<string, unknown>>,
 ): ThemeCustomizationOption | undefined {
-  const metadata = THEME_METADATA[partyThemeId];
+  const metadata = getThemeMetadata(partyThemeId, customizationSettings);
   return metadata.customizationOptions.find((opt) => opt.key === optionKey);
 }
