@@ -28,6 +28,7 @@ docker-compose down
 ```
 
 После запуска будут доступны:
+
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
@@ -41,12 +42,14 @@ docker-compose down
 Если вы хотите запускать проекты локально без Docker:
 
 **Сервер (.NET):**
+
 ```bash
 cd CherryPlayServer
 dotnet run
 ```
 
 **Веб-приложение (React):**
+
 ```bash
 cd CherryPlayWeb
 npm install
@@ -54,6 +57,7 @@ npm run dev
 ```
 
 **Десктопное приложение (CherryPlayList):**
+
 ```bash
 cd CherryPlayList
 npm install
@@ -61,6 +65,7 @@ npm run electron:dev
 ```
 
 **Компоненты (для разработки):**
+
 ```bash
 cd CherryPlayComponents
 npm install
@@ -68,11 +73,13 @@ npm run build
 ```
 
 **Требования для локального запуска:**
+
 - Node.js установлен
 - .NET 9.0 SDK установлен
 - PostgreSQL установлен и запущен (или используйте Docker только для БД)
 
 **Локально с PostgreSQL в Docker:** чтобы бэкенд (запущенный с хоста через `dotnet run`) работал с БД в контейнере:
+
 1. Поднимите только Postgres: `docker compose up postgres -d`
 2. В `CherryPlayServer/appsettings.Development.json` уже указана строка подключения к `localhost:5433`, пользователь `cherryplay`, пароль `cherryplay_password` (совпадает с `docker-compose.yml`)
 3. Запустите сервер: `cd CherryPlayServer && dotnet run` — миграции применятся при старте.
@@ -92,6 +99,7 @@ npm run build
 - [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.)
 - [QUICK_START.md](QUICK_START.md) — быстрый старт (локальная разработка)
 - [SCRIPTS.md](SCRIPTS.md) — скрипты для сборки компонентов
+- [BACKUP_RESTORE.md](BACKUP_RESTORE.md) — инструкция по backup/restore PostgreSQL (prod и local)
 - [THEMES.md](THEMES.md) — документация по темам оформления
 - [ADDING_THEME.md](ADDING_THEME.md) — инструкция по добавлению новой темы
 - [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) — документация по деплою (GitHub Secrets, автоматический деплой, ручной деплой, откат)
@@ -159,6 +167,7 @@ docker-compose down -v
 ### Доступ к сервисам
 
 После запуска `docker-compose up -d` будут доступны:
+
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
@@ -183,7 +192,7 @@ docker-compose down -v
 
 Если при раскрытии сервера появляется **«Crypt key is missing»** — в docker-compose для pgAdmin включён `PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'`. Перезапустите контейнеры (`docker compose down`, затем `docker compose -f docker-compose.debug.yml up -d`), чтобы применить настройку.
 
-**Таблицы (схема public):** после подключения откройте *Servers → CherryPlay DB → Databases → cherryplay → Schemas → public → Tables*. Таблицы EF Core: `organizers`, `parties`, `party_playlists`, `session_states`, `email_accounts`, `oauth_accounts`, `organizer_sessions`.
+**Таблицы (схема public):** после подключения откройте _Servers → CherryPlay DB → Databases → cherryplay → Schemas → public → Tables_. Таблицы EF Core: `organizers`, `parties`, `party_playlists`, `session_states`, `email_accounts`, `oauth_accounts`, `organizer_sessions`.
 
 ### Переменные окружения
 
@@ -226,6 +235,7 @@ docker-compose -f docker-compose.debug.yml down
 ```
 
 **Особенности debug режима:**
+
 - Используется `Development` окружение вместо `Production`
 - Исходники монтируются через volume для hot reload (изменения кода применяются автоматически)
 - Открыт порт `5678` для подключения отладчика (VS Code)
@@ -248,6 +258,7 @@ docker-compose -f docker-compose.debug.yml down
 ### Отдельные Dockerfile
 
 Каждый сервис имеет свой Dockerfile:
+
 - `CherryPlayServer/Dockerfile` - .NET 9.0 приложение
 - `CherryPlayWeb/Dockerfile` - React приложение с Nginx
 
@@ -256,6 +267,7 @@ docker-compose -f docker-compose.debug.yml down
 Каждый проект имеет свой собственный `package.json` и может быть запущен независимо. Для разработки в монорепозитории используйте локальные пути и TypeScript path mapping.
 
 Подробная документация по каждому проекту находится в соответствующих папках:
+
 - `CherryPlayList/README.md` - документация Desktop приложения
 - `CherryPlayComponents/README.md` - документация компонентов
 - `CherryPlayServer/README.md` - документация сервера
@@ -268,15 +280,16 @@ docker-compose -f docker-compose.debug.yml down
 Проект настроен для автоматической сборки Docker образов и деплоя через GitHub Actions.
 
 **Основные возможности:**
+
 - 🔄 Автоматическая сборка образов при изменениях в коде
 - 🏷️ Версионирование образов через GitHub Releases
 - 🚀 Автоматический деплой на сервер при создании релиза
 - 🔙 Возможность отката на предыдущую версию
 
 **Быстрый старт:**
+
 1. Настройте GitHub Secrets (см. `.github/DEPLOYMENT.md`)
 2. Создайте тег: `git tag v1.0.0 && git push origin v1.0.0`
 3. Создайте Release в GitHub - деплой запустится автоматически
 
 Подробная документация: `.github/DEPLOYMENT.md`
-

@@ -1,0 +1,45 @@
+services:
+  restore-db:
+    image: postgres:16-alpine
+    container_name: cherryplay-restore-db
+    environment:
+      POSTGRES_DB: ${RESTORE_DB_NAME:-cherryplay_restore_preview}
+      POSTGRES_USER: ${RESTORE_DB_USER:-cherryplay}
+      POSTGRES_PASSWORD: ${RESTORE_DB_PASSWORD:-cherryplay_restore_password}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - restore_preview_data:/var/lib/postgresql/data
+      - ./backups:/backups:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${RESTORE_DB_USER:-cherryplay} -d ${RESTORE_DB_NAME:-cherryplay_restore_preview}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  restore-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cherryplay-restore-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${RESTORE_PGADMIN_EMAIL:-restore@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${RESTORE_PGADMIN_PASSWORD:-restore_pgadmin_password}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "127.0.0.1:5051:80"
+    volumes:
+      - restore_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      restore-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  restore_preview_data:
+    driver: local
+  restore_pgadmin_data:
+    driver: local
