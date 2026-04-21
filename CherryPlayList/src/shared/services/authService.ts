@@ -8,6 +8,7 @@ import type {
 import { getServerUrl } from '../config/serverConfig';
 import { useAuthStore } from '../stores/authStore';
 import { handleAuthError } from '../utils/authErrorHandler';
+import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
 // Re-export types for backward compatibility
@@ -170,7 +171,7 @@ class AuthService implements IAuthService {
     const token = data.accessToken;
 
     // Сохраняем токен в store
-    useAuthStore.getState().setToken(token);
+    setAuthSessionToken(token);
 
     // Загружаем информацию об организаторе
     try {
@@ -207,7 +208,7 @@ class AuthService implements IAuthService {
     const token = data.accessToken;
 
     // Сохраняем токен в store
-    useAuthStore.getState().setToken(token);
+    setAuthSessionToken(token);
 
     // Загружаем информацию об организаторе
     try {
@@ -238,7 +239,7 @@ class AuthService implements IAuthService {
       }
     }
 
-    useAuthStore.getState().clearAuth();
+    clearAuthSession();
   }
 }
 

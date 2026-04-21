@@ -1,6 +1,7 @@
 export interface AppConfigResponse {
   oauthEnabled: boolean;
   partyInfoPageEnabled: boolean;
+  adminContactUrl?: string;
 }
 
 export interface PartyPlaylistDto {
@@ -139,6 +140,101 @@ export interface UpdatePartyDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+}
+
+export interface VisibleLockedThemeDto {
+  themeId: string;
+  packageCode: string;
+  packageName: string;
+}
+
+export interface ThemeAccessDto {
+  grantedThemeIds: string[];
+  visibleLockedThemes: VisibleLockedThemeDto[];
+  contactUrl: string;
+}
+
+export interface ApiErrorPayload {
+  code?: string;
+  message?: string;
+  detail?: string;
+  themeId?: string;
+  requiredPackageCodes?: string[];
+  existingEntitlementId?: string;
+}
+
+export interface AdminOrganizerListItemDto {
+  id: string;
+  name: string;
+  email?: string;
+  oauthProviders?: string[];
+  oauthAccounts?: AdminOAuthAccountDto[];
+  role: 'organizer' | 'admin';
+  activeEntitlementsCount: number;
+  createdAt: string;
+}
+
+export interface AdminOrganizerListResponse {
+  items: AdminOrganizerListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminOAuthAccountDto {
+  provider: string;
+  providerUserId?: string;
+  providerUserName?: string;
+}
+
+export interface EntitlementDto {
+  id: string;
+  packageId: string;
+  packageCode: string;
+  packageName: string;
+  kind: string;
+  source: string;
+  grantedAt: string;
+  grantedByAdminId?: string | null;
+  grantedByAdminName?: string | null;
+  expiresAt?: string | null;
+  usesRemaining?: number | null;
+  revokedAt?: string | null;
+  revokedByAdminId?: string | null;
+  note?: string | null;
+}
+
+export interface AdminOrganizerDetailDto {
+  id: string;
+  name: string;
+  email?: string;
+  oauthAccounts?: AdminOAuthAccountDto[];
+  role: 'organizer' | 'admin';
+  createdAt: string;
+  entitlements: EntitlementDto[];
+}
+
+export interface ThemePackageDto {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  isAutoGranted: boolean;
+  isActive: boolean;
+  themeIds: string[];
+}
+
+export interface ThemePackageListResponse {
+  items: ThemePackageDto[];
+}
+
+export interface GrantEntitlementRequest {
+  packageId: string;
+  note: string;
+}
+
+export interface RevokeEntitlementRequest {
+  note?: string;
 }
 
 export type { OrganizerDto } from '@cherryplay/components';

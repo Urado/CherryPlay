@@ -1,8 +1,6 @@
-/**
- * Централизованный обработчик ошибок аутентификации
- */
-import { useAuthStore } from '../stores/authStore';
 import { useUIStore } from '../stores/uiStore';
+
+import { clearAuthSession } from './authSession';
 
 /**
  * Обрабатывает ошибку аутентификации (401)
@@ -17,7 +15,7 @@ export function handleAuthError(error?: Error | string): void {
         : 'Authentication token expired or invalid. Please login again.';
 
   // Очищаем токен
-  useAuthStore.getState().clearAuth();
+  clearAuthSession();
 
   // Закрываем модалку аккаунта, чтобы UI визуально обновился
   const uiStore = useUIStore.getState();

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
-import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
+import type { CreatePartyDto, PartyDto, ThemeAccessDto, UpdatePartyDto } from '../types/api';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
 
@@ -14,6 +14,9 @@ export interface CabinetPartyListProps {
   editForm: UpdatePartyDto;
   setEditForm: React.Dispatch<React.SetStateAction<UpdatePartyDto>>;
   savingEdit: boolean;
+  themeAccess: ThemeAccessDto | null;
+  themeAccessError: string | null;
+  onSelectLockedTheme: (themeId: string) => void;
   onEdit: (party: PartyDto) => void;
   onEditSubmit: (e: React.FormEvent) => void;
   onEditCancel: () => void;
@@ -23,7 +26,7 @@ export interface CabinetPartyListProps {
 
 const emptyCreateForm: CreatePartyDto = {
   name: '',
-  partyThemeId: 'cyberpunk',
+  partyThemeId: 'basic',
   isListedInCatalog: false,
 };
 
@@ -36,6 +39,9 @@ export function CabinetPartyList({
   editForm,
   setEditForm,
   savingEdit,
+  themeAccess,
+  themeAccessError,
+  onSelectLockedTheme,
   onEdit,
   onEditSubmit,
   onEditCancel,
@@ -100,6 +106,9 @@ export function CabinetPartyList({
                 setCreateForm={() => {}}
                 savingEdit={savingEdit}
                 creating={false}
+                themeAccess={themeAccess}
+                themeAccessError={themeAccessError}
+                onSelectLockedTheme={onSelectLockedTheme}
                 onSubmit={onEditSubmit}
                 onCancel={onEditCancel}
               />

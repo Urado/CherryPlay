@@ -41,5 +41,15 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "prettier": "^3.6.2",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.13"
+    },
+    "minimatch@9.0.9": {
+      "brace-expansion": "2.0.3"
+    },
+    "flatted": "^3.4.0",
+    "picomatch": "^4.0.4"
   }
 }

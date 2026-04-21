@@ -14,6 +14,7 @@ import {
   initializeGlobalHistory,
   initializeProjectStoreHistory,
 } from '@shared/stores';
+import { clearAuthSession } from '@shared/utils/authSession';
 import {
   isTokenExpired,
   isTokenExpiringSoon,
@@ -61,7 +62,7 @@ const App: React.FC = () => {
       // Проверяем, не истек ли токен локально
       if (isTokenExpired(token)) {
         console.warn('[App] Token expired on startup, clearing auth');
-        useAuthStore.getState().clearAuth();
+        clearAuthSession();
         return;
       }
 

@@ -35,6 +35,7 @@ public class JwtAuthenticationMiddleware
                     {
                         context.Items["OrganizerId"] = validationResult.OrganizerId.Value;
                         context.Items["OrganizerName"] = validationResult.Name;
+                        context.Items["OrganizerRole"] = validationResult.Role ?? "organizer";
                         if (validationResult.SessionId.HasValue)
                             context.Items["SessionId"] = validationResult.SessionId.Value;
                     }

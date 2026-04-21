@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "tsc --noEmit",
     "preview": "vite preview",
     "lint": "node scripts/eslint-wrapper.js . --max-warnings=10",
     "lint:fix": "node scripts/eslint-wrapper.js . --fix",

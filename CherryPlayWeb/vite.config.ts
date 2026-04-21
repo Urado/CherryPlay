@@ -41,4 +41,18 @@ export default defineConfig({
       // Proxy для WebSocket может работать нестабильно
     },
   },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore known third-party signalr pure-annotation noise in production build logs.
+        if (
+          warning.message?.includes('contains an annotation that Rollup cannot interpret') &&
+          warning.id?.includes('@microsoft/signalr/dist/esm/Utils.js')
+        ) {
+          return;
+        }
+        warn(warning);
+      },
+    },
+  },
 });

@@ -15,19 +15,104 @@
 
 Один аккаунт = одна организация. Профиль организатора для брендинга и кабинета.
 
-| Колонка                        | Тип         | Ограничения             | Описание                                                      |
-| ------------------------------ | ----------- | ----------------------- | ------------------------------------------------------------- |
-| `Id`                           | GUID        | PK                      | Идентификатор организатора.                                   |
-| `Name`                         | string      | NOT NULL                | Название организации / отображаемое имя.                      |
-| `LogoUrl`                      | string      | NULL                    | URL логотипа (опционально).                                   |
-| `Links`                        | JSON/string | NULL                    | Ссылки (соцсети, сайт) — JSON-объект или текст.               |
-| `DefaultPartyThemeId`          | string      | NULL                    | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
-| `DefaultCustomizationSettings` | JSON        | NULL                    | Настройки оформления по умолчанию (override на уровне party). |
-| `CreatedAt`                    | datetime    | NOT NULL                | Дата создания.                                                |
-| `UpdatedAt`                    | datetime    | NULL                    | Дата последнего обновления.                                   |
-| `IsDeleted`                    | boolean     | NOT NULL, default false | Soft delete (скрытие из выборок).                             |
+| Колонка                        | Тип         | Ограничения                                                  | Описание                                                      |
+| ------------------------------ | ----------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
+| `Id`                           | GUID        | PK                                                           | Идентификатор организатора.                                   |
+| `Name`                         | string      | NOT NULL                                                     | Название организации / отображаемое имя.                      |
+| `LogoUrl`                      | string      | NULL                                                         | URL логотипа (опционально).                                   |
+| `Links`                        | JSON/string | NULL                                                         | Ссылки (соцсети, сайт) — JSON-объект или текст.               |
+| `DefaultPartyThemeId`          | string      | NULL                                                         | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `Role`                         | string      | NOT NULL, default organizer, CHECK IN (`organizer`, `admin`) | Роль организатора: `organizer` или `admin`.                   |
+| `DefaultCustomizationSettings` | JSON        | NULL                                                         | Настройки оформления по умолчанию (override на уровне party). |
+| `CreatedAt`                    | datetime    | NOT NULL                                                     | Дата создания.                                                |
+| `UpdatedAt`                    | datetime    | NULL                                                         | Дата последнего обновления.                                   |
+| `IsDeleted`                    | boolean     | NOT NULL, default false                                      | Soft delete (скрытие из выборок).                             |
+
+Индекс: `IsDeleted` (global query filter).
 
 _Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам._
+
+---
+
+## Themes (каталог тем)
+
+Каталог метаданных тем, используемый для проверки доступа и отображения в UI.
+
+| Колонка       | Тип    | Ограничения                              | Описание                                                                                              |
+| ------------- | ------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ThemeId`     | string | PK                                       | Стабильный идентификатор темы (`basic`, `cyberpunk`, ...).                                            |
+| `DisplayName` | string | NOT NULL                                 | Отображаемое имя темы.                                                                                |
+| `Description` | text   | NULL                                     | Описание темы.                                                                                        |
+| `Visibility`  | string | NOT NULL, CHECK IN (`public`, `private`) | **AccessScope**: кто видит тему без entitlement (`public` = видна как lock/free, `private` = скрыта). |
+
+---
+
+## ThemePackages (пакеты тем)
+
+Коммерческие пакеты, через которые организатор получает доступ к темам.
+
+| Колонка         | Тип     | Ограничения             | Описание                                                              |
+| --------------- | ------- | ----------------------- | --------------------------------------------------------------------- |
+| `Id`            | GUID    | PK                      | Идентификатор пакета.                                                 |
+| `Code`          | string  | UNIQUE, NOT NULL        | Стабильный машинный код (`free`, `extended`, ...).                    |
+| `Name`          | string  | NOT NULL                | Отображаемое название пакета.                                         |
+| `IsAutoGranted` | boolean | NOT NULL, default false | Если `true`, темы пакета доступны всем организаторам без entitlement. |
+| `IsActive`      | boolean | NOT NULL, default true  | Неактивный пакет не участвует в расчете доступа.                      |
+
+Индексы: `Code` (UNIQUE), `IsActive`.
+
+---
+
+## ThemePackageItems (состав пакета)
+
+Связующая таблица many-to-many между `ThemePackages` и `Themes`.
+
+| Колонка     | Тип    | Ограничения                                         | Описание                |
+| ----------- | ------ | --------------------------------------------------- | ----------------------- |
+| `PackageId` | GUID   | PK (part), FK → ThemePackages.Id, ON DELETE CASCADE | Пакет.                  |
+| `ThemeId`   | string | PK (part), FK → Themes.ThemeId, ON DELETE RESTRICT  | Тема, входящая в пакет. |
+
+Индекс: `ThemeId`.
+
+---
+
+## OrganizerEntitlements (выданные права)
+
+Выдачи пакетов конкретным организаторам.
+
+| Колонка         | Тип      | Ограничения                                                    | Описание                                     |
+| --------------- | -------- | -------------------------------------------------------------- | -------------------------------------------- |
+| `Id`            | GUID     | PK                                                             | Идентификатор выдачи.                        |
+| `OrganizerId`   | GUID     | FK → Organizer.Id, NOT NULL, ON DELETE CASCADE                 | Организатор, получивший доступ.              |
+| `PackageId`     | GUID     | FK → ThemePackages.Id, NOT NULL, ON DELETE RESTRICT            | Выданный пакет.                              |
+| `Kind`          | string   | NOT NULL, CHECK IN (`lifetime`, `subscription`, `event_quota`) | Тип доступа (в MVP используется `lifetime`). |
+| `Source`        | string   | NOT NULL, CHECK IN (`admin_grant`, `purchase`, `trial`)        | Источник выдачи.                             |
+| `GrantedAt`     | datetime | NOT NULL                                                       | Когда выдано.                                |
+| `ExpiresAt`     | datetime | NULL                                                           | Время окончания (для подписки).              |
+| `UsesRemaining` | int      | NULL                                                           | Остаток использований (для квот).            |
+| `RevokedAt`     | datetime | NULL                                                           | Когда доступ отозван.                        |
+| `Note`          | text     | NULL                                                           | Служебная заметка по выдаче/отзыву.          |
+
+Индексы: `OrganizerId`, `(OrganizerId, PackageId, RevokedAt)`, `ExpiresAt`.
+
+---
+
+## AdminAuditLog (аудит админ-действий)
+
+Неперезаписываемый журнал успешных `grant/revoke` операций.
+
+| Колонка             | Тип      | Ограничения                                            | Описание                                    |
+| ------------------- | -------- | ------------------------------------------------------ | ------------------------------------------- |
+| `Id`                | GUID     | PK                                                     | Идентификатор записи аудита.                |
+| `AdminId`           | GUID     | FK → Organizer.Id, NOT NULL                            | Админ, выполнивший действие.                |
+| `Action`            | string   | NOT NULL, CHECK IN (`grant_package`, `revoke_package`) | Тип действия.                               |
+| `TargetOrganizerId` | GUID     | FK → Organizer.Id, NULL                                | Организатор, к которому применено действие. |
+| `PackageId`         | GUID     | FK → ThemePackages.Id, NULL                            | Контекстный пакет.                          |
+| `EntitlementId`     | GUID     | FK → OrganizerEntitlements.Id, NULL                    | Контекстная выдача.                         |
+| `Note`              | text     | NULL                                                   | Примечание администратора.                  |
+| `CreatedAt`         | datetime | NOT NULL                                               | Время записи в аудит.                       |
+
+Индексы: `AdminId`, `TargetOrganizerId`, `CreatedAt`.
 
 ---
 
@@ -80,7 +165,7 @@ _Связь с учётной записью: email+пароль (таблица
 | `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                 |
 | `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                    |
 | `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                              |
-| `ShortDescription`      | string    | NULL, длина до 200             | Краткое описание для карточки вечеринки.                        |
+| `ShortDescription`      | string    | NULL, длина до 200             | Краткое описание для карточки вечеринки.                       |
 | `ExternalLinkUrl`       | string    | NULL, длина до 2048            | URL внешней ссылки.                                            |
 | `ExternalLinkText`      | string    | NULL, длина до 200             | Текст ссылки (подпись).                                        |
 | `DanceTagsJson`         | text/JSON | NULL                           | Массив тегов танцев (JSON), макс. 20 элементов.                |
@@ -135,6 +220,10 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## Связи и политика удаления
 
-- **Organizer** — владелец многих **Party**. Удаление организатора (если предусмотрено) — каскад или запрет при наличии вечеринок (по политике v1).
+- **Organizer** — владелец многих **Party**. FK `Party.OrganizerId` использует `RESTRICT`; soft-delete организатора не удаляет вечеринки физически.
 - **Party** — хранится «навсегда» до удаления организатором; в v1 без автоархивации. При удалении вечеринки удаляются связанные **PartyPlaylist** и **SessionState**.
+- **ThemePackages** ↔ **Themes**: связь many-to-many через **ThemePackageItems**. Удаление пакета каскадно удаляет его элементы (`ThemePackageItems`), удаление темы ограничено (`RESTRICT`), если она входит в пакет.
+- **OrganizerEntitlements**: удаляются каскадно при удалении организатора, но пакет (`ThemePackage`) удалять при наличии выдач нельзя (`RESTRICT`).
+- **AdminAuditLog**: хранит ссылки на организаторов, пакеты и entitlement для трассировки действий; записи аудита создаются вместе с выдачей/отзывом в одной транзакции.
+- В `AdminAuditLog` удаление ссылочных сущностей переводит внешние ключи в `NULL` (`SET NULL`) для сохранения истории аудита.
 - Каталог: в выборку попадают только вечеринки с `IsListedInCatalog = true`. Лимит «будущих» вечеринок на организатора (например, 2) проверяется при создании/обновлении (по §4.2).

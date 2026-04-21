@@ -63,7 +63,7 @@ GitHub Container Registry уже настроен и доступен автом
 | `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK                                                                                                      |
 | `GHCR_TOKEN`             | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
 
-Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). Отдельный секрет для строки подключения не нужен.
+Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). В `release-and-deploy.yml` при релизе принудительно выставляется `Database__AutoMigrateOnStartup=true`, чтобы накат миграций происходил автоматически.
 
 ### 3. Настройка SSH ключа
 

@@ -10,6 +10,7 @@ public class OrganizerSessionEfConfiguration : IEntityTypeConfiguration<Organize
     {
         builder.ToTable("organizer_sessions");
         builder.HasKey(e => e.Id);
+        builder.HasQueryFilter(e => !e.Organizer.IsDeleted);
         builder.HasOne(e => e.Organizer)
             .WithMany(o => o.Sessions)
             .HasForeignKey(e => e.OrganizerId)

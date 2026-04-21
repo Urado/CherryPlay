@@ -24,6 +24,7 @@ public static class EfToDomainMappers
             DefaultPartyThemeId = PartyThemeIdExtensions.ParsePartyThemeId(ef.DefaultPartyThemeId),
             DefaultCustomizationSettings = DeserializeDictObject(ef.DefaultCustomizationSettingsJson),
             TimeZone = ef.TimeZone,
+            Role = ef.Role == "admin" ? OrganizerRole.Admin : OrganizerRole.Organizer,
             CreatedAt = ef.CreatedAt,
             UpdatedAt = ef.UpdatedAt,
         };

@@ -5,9 +5,10 @@ import React, { useEffect, useState } from 'react';
 import { authService } from '@shared/services/authService';
 import { useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
+import { clearAuthSession, setAuthSessionToken } from '@shared/utils/authSession';
 
 export const AccountView: React.FC = () => {
-  const { accessToken, setToken, setOrganizer, clearAuth, isAuthenticated } = useAuthStore();
+  const { accessToken, setOrganizer, isAuthenticated } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +70,7 @@ export const AccountView: React.FC = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load organizer info';
       setError(errorMessage);
       if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
-        clearAuth();
+        clearAuthSession();
       }
     } finally {
       setLoading(false);
@@ -85,7 +86,7 @@ export const AccountView: React.FC = () => {
       const deviceId = `desktop-${Date.now()}`;
 
       const token = await authService.exchangeCode(code, provider, deviceId);
-      setToken(token);
+      setAuthSessionToken(token);
 
       // Загружаем информацию об организаторе
       await loadOrganizerInfo();

@@ -14,6 +14,7 @@ public static class AuthConstants
     // Rate limiting
     public const int AuthRateLimitPermits = 10;
     public const int PublicApiRateLimitPermits = 60;
+    public const int AdminApiRateLimitPermits = 30;
     public const int SignalRRateLimitPermits = 100;
     public static readonly TimeSpan RateLimitWindow = TimeSpan.FromMinutes(1);
 

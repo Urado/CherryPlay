@@ -57,6 +57,10 @@ if (useInMemoryStorage)
     builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
     builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
     builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
+    builder.Services.AddSingleton<IThemeRepository, InMemoryThemeRepository>();
+    builder.Services.AddSingleton<IThemePackageRepository, InMemoryThemePackageRepository>();
+    builder.Services.AddSingleton<IOrganizerEntitlementRepository, InMemoryOrganizerEntitlementRepository>();
+    builder.Services.AddSingleton<IAdminAuditLogRepository, InMemoryAdminAuditLogRepository>();
 }
 else
 {
@@ -73,6 +77,10 @@ else
     builder.Services.AddScoped<IOrganizerSessionRepository, EfOrganizerSessionRepository>();
     builder.Services.AddScoped<IOAuthAccountRepository, EfOAuthAccountRepository>();
     builder.Services.AddScoped<IEmailAccountRepository, EfEmailAccountRepository>();
+    builder.Services.AddScoped<IThemeRepository, EfThemeRepository>();
+    builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
+    builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
+    builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
 }
 
 builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
@@ -85,6 +93,7 @@ builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
 builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
+builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
 
 builder.Services.AddMemoryCache();
@@ -107,9 +116,12 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("OrganizerOnly", policy =>
         policy.Requirements.Add(new OrganizerRequirement()));
+    options.AddPolicy("AdminOnly", policy =>
+        policy.Requirements.Add(new AdminRequirement()));
 });
 
 builder.Services.AddSingleton<IAuthorizationHandler, OrganizerAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, AdminAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, OrganizerAuthorizationResultHandler>();
 
 builder.Services.AddRateLimiter(options =>
@@ -124,6 +136,13 @@ builder.Services.AddRateLimiter(options =>
     options.AddFixedWindowLimiter("public", opt =>
     {
         opt.PermitLimit = AuthConstants.PublicApiRateLimitPermits;
+        opt.Window = AuthConstants.RateLimitWindow;
+        opt.QueueLimit = 0;
+    });
+
+    options.AddFixedWindowLimiter("admin-strict", opt =>
+    {
+        opt.PermitLimit = AuthConstants.AdminApiRateLimitPermits;
         opt.Window = AuthConstants.RateLimitWindow;
         opt.QueueLimit = 0;
     });
@@ -145,16 +164,14 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-if (useInMemoryStorage)
-{
-    builder.Services.AddScoped<IDataSeeder, DataSeeder>();
-    builder.Services.AddHostedService<DataSeederHostedService>();
-}
+builder.Services.AddScoped<IDataSeeder, DataSeeder>();
+builder.Services.AddHostedService<DataSeederHostedService>();
 
 var app = builder.Build();
 
-// Apply EF migrations at startup when using PostgreSQL (optional; can instead run in CI/CD)
-if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage"))
+// Apply EF migrations at startup only when explicitly enabled.
+var autoMigrateOnStartup = builder.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup");
+if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage") && autoMigrateOnStartup)
 {
     using (var scope = app.Services.CreateScope())
     {
@@ -248,4 +265,6 @@ app.MapControllers();
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
 
 app.Run();
+
+public partial class Program { }
 

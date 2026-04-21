@@ -7,7 +7,7 @@ description: Runs build verification, lint, format checks, and optional Docker b
 
 ## Script (recommended)
 
-From repo root, run all checks (Server + Components + Web):
+From repo root, run all checks (Server + Server tests + Components + Web):
 
 ```bash
 node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
@@ -17,6 +17,7 @@ Options:
 
 - `--docker` — also build Docker images (server and web), same as `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
 - `--skip-ci` — skip the Components install step (use when you want to rely on existing `node_modules` and not run `npm ci` / `npm install`).
+- `--integration-db` — run backend containerized integration tests (`Category=IntegrationDb`). Requires Docker.
 
 **Note:** The script tries `npm ci` in CherryPlayComponents first; if it fails (e.g. EPERM on Windows when files are locked), it automatically falls back to `npm install` so the full check can complete.
 
@@ -24,6 +25,12 @@ Example with Docker (full CI parity):
 
 ```bash
 node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs --docker
+```
+
+Example including IntegrationDb tests:
+
+```bash
+node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs --integration-db
 ```
 
 **CI alignment:** The script runs the same steps and order as in CI. Native steps mirror `CherryPlayServer/Dockerfile` and `CherryPlayWeb/Dockerfile`; with `--docker` it runs the same `docker build` commands as in `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
@@ -55,7 +62,8 @@ Either run the script above or run the following steps manually in this order (m
 
 ### 1. CherryPlayServer (.NET)
 
-Order as in `CherryPlayServer/Dockerfile`: restore → format → build.
+Order as in `CherryPlayServer/Dockerfile`: restore → format → build.  
+Then run server tests split by category: fast tests always, IntegrationDb optionally.
 
 From repo root:
 
@@ -63,9 +71,16 @@ From repo root:
 dotnet restore CherryPlayServer/CherryPlayServer.csproj
 dotnet format CherryPlayServer/CherryPlayServer.csproj --verify-no-changes --verbosity minimal
 dotnet build CherryPlayServer/CherryPlayServer.csproj -c Release --no-restore
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb" --no-build
 ```
 
 To fix format issues run `dotnet format` (no `--verify-no-changes`) in `CherryPlayServer/`.
+
+IntegrationDb (requires Docker):
+
+```bash
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category=IntegrationDb" --no-build
+```
 
 ### 2. CherryPlayComponents (Node)
 
@@ -121,6 +136,8 @@ After running the requested checks, report:
 | Server: restore           | ✅ / ❌ |
 | Server: format            | ✅ / ❌ |
 | Server: build (Release)   | ✅ / ❌ |
+| Server: tests (fast)      | ✅ / ❌ |
+| Server: tests (IntegrationDb) | ✅ / ❌ / skipped |
 | Components: npm ci       | ✅ / ❌ / skipped |
 | Components: lint         | ✅ / ❌ |
 | Components: build        | ✅ / ❌ |
@@ -139,11 +156,11 @@ Keep the table to the checks you actually ran (e.g. omit Docker if not requested
 
 ## Quick Reference
 
-| Project    | Lint/format                         | Build                        |
-| ---------- | ----------------------------------- | ---------------------------- |
-| Server     | `dotnet format --verify-no-changes` | `dotnet build -c Release`    |
-| Components | `npm run lint` (max-warnings=0)     | `npm run build` (tsc)        |
-| Web        | `npm run lint` (max-warnings=10)    | `npm run build` (tsc + vite) |
+| Project    | Lint/format                         | Build                                     |
+| ---------- | ----------------------------------- | ----------------------------------------- |
+| Server     | `dotnet format --verify-no-changes` | `dotnet build -c Release` + `dotnet test` |
+| Components | `npm run lint` (max-warnings=0)     | `npm run build` (tsc)                     |
+| Web        | `npm run lint` (max-warnings=10)    | `npm run build` (tsc + vite)              |
 
 Fix hints:
 

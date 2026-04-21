@@ -15,12 +15,45 @@ public class OrganizerAuthorizationResultHandler : IAuthorizationMiddlewareResul
         AuthorizationPolicy policy,
         PolicyAuthorizationResult authorizeResult)
     {
+        var hasOrganizerRequirement = policy.Requirements.Any(r => r is OrganizerRequirement);
+        var hasAdminRequirement = policy.Requirements.Any(r => r is AdminRequirement);
+
+        if (authorizeResult.Challenged && hasOrganizerRequirement)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            var body = JsonSerializer.Serialize(new { title = "Unauthorized", detail = "Authentication required" },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+
+        if (authorizeResult.Challenged && hasAdminRequirement)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            var body = JsonSerializer.Serialize(new { code = "admin_only", message = "Admin access required" },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+
         if (authorizeResult.Forbidden &&
             authorizeResult.AuthorizationFailure?.FailedRequirements?.Any(r => r is OrganizerRequirement) == true)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
             var body = JsonSerializer.Serialize(new { title = "Unauthorized", detail = "Authentication required" },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+        if (authorizeResult.Forbidden &&
+            authorizeResult.AuthorizationFailure?.FailedRequirements?.Any(r => r is AdminRequirement) == true)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            var body = JsonSerializer.Serialize(new { code = "admin_only", message = "Admin access required" },
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             await context.Response.WriteAsync(body);
             return;

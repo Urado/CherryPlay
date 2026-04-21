@@ -17,9 +17,12 @@
 | **Profile** (профиль организатора: GET me, PATCH profile)                                                   | §3.3                |
 | **REST Organizer** (CRUD вечеринок, playlist, JWT)                                                          | §3.4                |
 | **SignalR organizer** (StartSession, EndSession, Update\*, JoinPartyAsOrganizer)                            | §3.5                |
+| **Theme access** (`GET /api/organizer/me/theme-access`)                                                     | §3.6                |
+| **Admin API** (`/api/admin/*`: organizers, packages, entitlements)                                          | §3.7                |
 | Streaming (поведение Desktop ↔ Server ↔ Web)                                                                | §4                  |
 | Идентичность вечеринки (shortCode, partyId), ссылки                                                         | §5                  |
 | **DTO** (PartyPlaylistDto, PlaybackStateDto, PublicPartyDto, PartyDto, CreatePartyDto, PartyStateDto и др.) | §6                  |
+| **DTO monetization/admin** (`ThemeAccessDto`, `EntitlementDto`, `AdminOrganizer*`, `ThemePackage*`)        | §6.8                |
 | Соответствие компонентов архитектуре                                                                        | §9                  |
 | Версионирование и обратная совместимость                                                                    | §10                 |
 

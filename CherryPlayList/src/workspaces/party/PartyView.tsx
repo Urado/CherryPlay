@@ -1,5 +1,6 @@
 import {
   PlaybackState,
+  partyThemes,
   type PartyThemeId,
   type CustomizationSettings,
   getDefaultCustomizationSettings,
@@ -16,7 +17,13 @@ import { WorkspaceId } from '@core/types/workspace';
 import { Spinner } from '@shared/components';
 import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import { authService } from '@shared/services/authService';
-import { partyService, CreatePartyDto } from '@shared/services/partyService';
+import {
+  partyService,
+  CreatePartyDto,
+  ThemeAccessDto,
+  LockedThemeDto,
+  ThemeNotEntitledError,
+} from '@shared/services/partyService';
 import {
   useAuthStore,
   useAimpStore,
@@ -34,7 +41,9 @@ import {
   convertPlaylistForApi,
   createAimpPlaybackStateDto,
   applyPartyTrackDisplayToComponentPlaylist,
+  sanitizeExternalUrl,
 } from '@shared/utils';
+import { setAuthSessionToken } from '@shared/utils/authSession';
 
 import { PartyEditor } from './components/PartyEditor';
 import { PartyTrackDisplaySection } from './components/PartyTrackDisplaySection';
@@ -44,11 +53,51 @@ import './PartyView.css';
 const RECONNECT_INTERVAL_MS = 60_000;
 const ERROR_PARTY_NOT_FOUND = 'Вечеринка не найдена на сервере';
 const ERROR_CONNECTION = 'Ошибка соединения с сервером';
+const THEME_ACCESS_FALLBACK_ERROR =
+  'Не удалось проверить доступ к темам. Для безопасности доступны только базовая и текущая темы.';
+
+function isThemeNotEntitledError(error: unknown): error is ThemeNotEntitledError {
+  return error instanceof ThemeNotEntitledError;
+}
+
+function resolveLockedThemeByPackageCode(
+  access: ThemeAccessDto | null,
+  packageCode: string,
+): LockedThemeDto | null {
+  if (!access) {
+    return null;
+  }
+  return access.visibleLockedThemes.find((item) => item.packageCode === packageCode) ?? null;
+}
+
+function buildThemeNotEntitledMessage(
+  error: ThemeNotEntitledError,
+  access: ThemeAccessDto | null,
+): string {
+  const firstRequiredPackage = error.requiredPackageCodes[0];
+  const lockedThemeInfo = firstRequiredPackage
+    ? resolveLockedThemeByPackageCode(access, firstRequiredPackage)
+    : null;
+  const resolvedPackageLabel = lockedThemeInfo?.packageName ?? firstRequiredPackage ?? null;
+  if (resolvedPackageLabel) {
+    return `Тема доступна в пакете "${resolvedPackageLabel}".`;
+  }
+
+  return 'У вас нет доступа к выбранной теме.';
+}
 
 interface PartyViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
 }
+
+interface ThemeEntitlementModalState {
+  message: string;
+  safeContactUrl: string | null;
+}
+
+const REVOKED_THEME_PACKAGE_CODE = 'revoked-current-theme';
+const REVOKED_THEME_PACKAGE_NAME = 'Не доступна в пакетах';
 
 function resolveLoadedCustomizationSettings(
   resolvedThemeId: PartyThemeId,
@@ -148,6 +197,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [serverUnreachable, setServerUnreachable] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [lastManualCheckFailed, setLastManualCheckFailed] = useState(false);
+  const [themeAccess, setThemeAccess] = useState<ThemeAccessDto | null>(null);
+  const [isThemeAccessLoading, setIsThemeAccessLoading] = useState(false);
+  const [themeAccessErrorMessage, setThemeAccessErrorMessage] = useState<string | null>(null);
+  const [themeEntitlementModal, setThemeEntitlementModal] =
+    useState<ThemeEntitlementModalState | null>(null);
   const reconnectIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reconnectCancelledRef = useRef(false);
 
@@ -177,7 +231,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           try {
             const deviceId = `desktop-${Date.now()}`;
             const token = await authService.exchangeCode(code, provider, deviceId);
-            authStore.setToken(token);
+            setAuthSessionToken(token);
 
             const organizerInfo = await authService.getCurrentOrganizer();
             authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
@@ -216,6 +270,30 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setPartyThemeIdInMeta(newThemeId);
     setPartyCustomizationSettingsInMeta(next);
   };
+
+  const loadThemeAccess = useCallback(
+    async (forceRefresh = false) => {
+      if (!isAuth) {
+        setThemeAccess(null);
+        setThemeAccessErrorMessage(null);
+        return;
+      }
+
+      setIsThemeAccessLoading(true);
+      try {
+        const access = await partyService.getThemeAccess(forceRefresh);
+        setThemeAccess(access);
+        setThemeAccessErrorMessage(null);
+      } catch (error) {
+        console.warn('Failed to load theme access:', error);
+        setThemeAccess(null);
+        setThemeAccessErrorMessage(THEME_ACCESS_FALLBACK_ERROR);
+      } finally {
+        setIsThemeAccessLoading(false);
+      }
+    },
+    [isAuth],
+  );
 
   const handleCustomizationSettingsChange = useCallback(
     (settings: Record<string, unknown>) => {
@@ -575,6 +653,65 @@ export const PartyView: React.FC<PartyViewProps> = ({
     }
   }, [meta.linkedParty, isAuth, loadPartyMetadata]);
 
+  useEffect(() => {
+    void loadThemeAccess();
+  }, [loadThemeAccess]);
+
+  const visibleThemeIds: PartyThemeId[] | null = useMemo(() => {
+    if (!themeAccess) {
+      return null;
+    }
+
+    const visible = new Set<PartyThemeId>();
+    for (const id of themeAccess.grantedThemeIds) {
+      if (isValidPartyTheme(id)) {
+        visible.add(id);
+      }
+    }
+    for (const item of themeAccess.visibleLockedThemes) {
+      if (isValidPartyTheme(item.themeId)) {
+        visible.add(item.themeId);
+      }
+    }
+    if (isValidPartyTheme(themeId)) {
+      visible.add(themeId);
+    }
+
+    return partyThemes.map((theme) => theme.id).filter((id) => visible.has(id));
+  }, [themeAccess, themeId]);
+
+  const lockedThemeInfos = useMemo(() => {
+    if (!themeAccess) {
+      return [];
+    }
+
+    const locked = new Map<
+      PartyThemeId,
+      { themeId: PartyThemeId; packageCode: string; packageName: string }
+    >();
+    for (const item of themeAccess.visibleLockedThemes) {
+      if (!isValidPartyTheme(item.themeId)) {
+        continue;
+      }
+      locked.set(item.themeId, {
+        themeId: item.themeId,
+        packageCode: item.packageCode,
+        packageName: item.packageName,
+      });
+    }
+
+    const isCurrentThemeGranted = themeAccess.grantedThemeIds.some((id) => id === themeId);
+    if (!isCurrentThemeGranted && isValidPartyTheme(themeId) && !locked.has(themeId)) {
+      locked.set(themeId, {
+        themeId,
+        packageCode: REVOKED_THEME_PACKAGE_CODE,
+        packageName: REVOKED_THEME_PACKAGE_NAME,
+      });
+    }
+
+    return Array.from(locked.values());
+  }, [themeAccess, themeId]);
+
   const normalizeCustomizationSettings = (
     settings: Record<string, unknown> | undefined,
   ): Record<string, unknown> | undefined => {
@@ -603,6 +740,27 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
     return Object.keys(normalized).length > 0 ? normalized : undefined;
   };
+
+  const handleThemeNotEntitled = useCallback(
+    async (error: ThemeNotEntitledError) => {
+      const message = buildThemeNotEntitledMessage(error, themeAccess);
+      const safeContactUrl = sanitizeExternalUrl(themeAccess?.contactUrl);
+
+      addNotification({
+        type: 'error',
+        message,
+        duration: 7000,
+      });
+
+      setThemeEntitlementModal({
+        message,
+        safeContactUrl,
+      });
+
+      await loadThemeAccess(true);
+    },
+    [themeAccess, addNotification, loadThemeAccess],
+  );
 
   const handleCreateParty = async () => {
     if (!isAuth) {
@@ -656,6 +814,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       };
 
       const party = await partyService.createParty(createData);
+      await loadThemeAccess(true);
 
       const exists = await checkPartyExists(party.id);
 
@@ -679,6 +838,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
       });
     } catch (error) {
       console.error('Failed to create party:', error);
+      if (isThemeNotEntitledError(error)) {
+        await handleThemeNotEntitled(error);
+        return;
+      }
       const reachable = await partyService.checkServerReachable();
       if (!reachable) {
         setServerUnreachable(true);
@@ -747,10 +910,15 @@ export const PartyView: React.FC<PartyViewProps> = ({
           externalLinkText: externalLinkText.trim(),
           danceTags,
         });
+        await loadThemeAccess(true);
 
         addNotification({ type: 'success', message: 'Плейлист и метаданные опубликованы' });
       } catch (error) {
         console.error('Failed to publish playlist:', error);
+        if (isThemeNotEntitledError(error)) {
+          await handleThemeNotEntitled(error);
+          return;
+        }
         addNotification({
           type: 'error',
           message: error instanceof Error ? error.message : 'Ошибка публикации',
@@ -799,6 +967,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       };
 
       const party = await partyService.createParty(createData);
+      await loadThemeAccess(true);
       const exists = await checkPartyExists(party.id);
       if (!exists) {
         addNotification({ type: 'error', message: 'Вечеринка создана, но сервер недоступен' });
@@ -813,6 +982,10 @@ export const PartyView: React.FC<PartyViewProps> = ({
       addNotification({ type: 'success', message: 'Вечеринка создана и опубликована' });
     } catch (error) {
       console.error('Failed to publish:', error);
+      if (isThemeNotEntitledError(error)) {
+        await handleThemeNotEntitled(error);
+        return;
+      }
       const reachable = await partyService.checkServerReachable();
       if (!reachable) {
         setServerUnreachable(true);
@@ -991,6 +1164,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
             onCopyUrl={handleCopyUrl}
             onRetry={handleRetry}
             onOpenLinkParty={() => openModal('linkParty')}
+            lockedThemes={lockedThemeInfos}
+            accessContactUrl={themeAccess?.contactUrl ?? ''}
+            isThemeAccessLoading={isThemeAccessLoading}
+            visibleThemeIds={visibleThemeIds}
+            themeAccessErrorMessage={themeAccessErrorMessage}
           />
         </div>
 
@@ -1006,6 +1184,37 @@ export const PartyView: React.FC<PartyViewProps> = ({
           />
         </div>
       </div>
+      {themeEntitlementModal && (
+        <div className="party-editor-locked-theme-modal-overlay" role="dialog" aria-modal="true">
+          <div className="party-editor-locked-theme-modal">
+            <h4 className="party-editor-locked-theme-title">Тема недоступна</h4>
+            <p className="party-editor-locked-theme-text">
+              {themeEntitlementModal.message} Можно подключить быстро, если нужно.
+            </p>
+            {themeEntitlementModal.safeContactUrl ? (
+              <a
+                href={themeEntitlementModal.safeContactUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="party-editor-locked-theme-cta"
+              >
+                Напиши в ВК
+              </a>
+            ) : (
+              <p className="party-editor-locked-theme-text">
+                Ссылка на ВК сейчас недоступна. Попробуй чуть позже.
+              </p>
+            )}
+            <button
+              type="button"
+              className="party-editor-button party-editor-button-secondary"
+              onClick={() => setThemeEntitlementModal(null)}
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

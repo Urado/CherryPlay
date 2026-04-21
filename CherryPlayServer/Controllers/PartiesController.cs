@@ -41,9 +41,13 @@ public class PartiesController : ControllerBase
                 partyDto.Id, partyDto.ShortCode);
             return Ok(partyDto);
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyLimitReachedException ex)
         {
@@ -96,9 +100,13 @@ public class PartiesController : ControllerBase
 
             return Ok(partyDto);
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -126,9 +134,13 @@ public class PartiesController : ControllerBase
             await _partyService.UpdatePartyMetadataAsync(partyGuid, dto);
             return NoContent();
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {
@@ -157,7 +169,7 @@ public class PartiesController : ControllerBase
         }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {
@@ -191,7 +203,7 @@ public class PartiesController : ControllerBase
         }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {

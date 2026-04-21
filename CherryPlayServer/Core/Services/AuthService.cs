@@ -241,7 +241,8 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
         await _sessionRepository.AddAsync(session);
-        return await _jwtService.GenerateTokenAsync(organizer.Id, organizer.Name, session.Id);
+        var role = organizer.Role == OrganizerRole.Admin ? "admin" : "organizer";
+        return await _jwtService.GenerateTokenAsync(organizer.Id, organizer.Name, session.Id, role);
     }
 
     private async Task<Organizer> GetOrCreateOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)

@@ -16,10 +16,14 @@
 | `/login` | Вход | `LoginPage` |
 | `/register` | Регистрация | `RegisterPage` |
 | `/cabinet` | Кабинет организатора | `CabinetPage` |
+| `/admin` | Корневой админ-маршрут (redirect) | `Navigate -> /admin/organizers` |
+| `/admin/organizers` | Список организаторов (admin only) | `AdminOrganizersPage` |
+| `/admin/organizers/:id` | Детальная карточка организатора (admin only) | `AdminOrganizerDetailPage` |
 
 - **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
 - **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
+- **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
 
 ---
 
@@ -49,6 +53,26 @@
 
 При потере связи (freeze): блок «сейчас играет» скрывается; плейлист и пометки проигранных остаются (данные уже получены через API/SignalR).
 
+### CabinetPage / CabinetPartyForm
+
+- **GET** `/api/organizer/me/theme-access` — получение доступных тем, locked-плиток и `contactUrl`.
+- При выборе темы в форме:
+  - доступные темы выбираются напрямую;
+  - locked-темы (`visibleLockedThemes`) показываются с замком и CTA к `contactUrl`;
+  - приватные недоступные темы не отображаются.
+
+### AdminOrganizersPage
+
+- **GET** `/api/admin/organizers?query=&page=&pageSize=` — список организаторов, поиск, пагинация.
+- По клику на строку — переход на `/admin/organizers/:id`.
+
+### AdminOrganizerDetailPage
+
+- **GET** `/api/admin/organizers/{id}` — профиль, OAuth-аккаунты, история entitlements.
+- **GET** `/api/admin/theme-packages` — список пакетов для формы grant.
+- **POST** `/api/admin/organizers/{id}/entitlements` — выдача пакета.
+- **DELETE** `/api/admin/organizers/{id}/entitlements/{entitlementId}` — отзыв выдачи.
+
 ---
 
 ## Структура файлов (кратко)
@@ -59,7 +83,10 @@
 - `src/pages/PartyView.tsx` — просмотр вечеринки по shortCode.
 - `src/pages/PartyInfoPage.tsx` — информация о вечеринке.
 - `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора.
+- `src/pages/admin/AdminOrganizersPage.tsx`, `src/pages/admin/AdminOrganizerDetailPage.tsx` — админ-раздел.
 - `src/services/partyApiService.ts` — вызовы REST API.
+- `src/services/adminApiService.ts`, `src/services/themeAccessService.ts` — admin и theme-access API.
+- `src/hooks/useRequireAdmin.ts`, `src/hooks/useThemeAccess.ts` — role guard и загрузка theme-access.
 - `src/services/signalRService.ts` — подключение к Hub и обработка событий.
 - `src/hooks/usePartyState.ts`, `useSignalR.ts` — состояние вечеринки и SignalR.
 - `src/utils/playbackState.ts` — мерж позиции воспроизведения (requestFullState / OnFullStateUpdated).

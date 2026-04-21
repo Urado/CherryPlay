@@ -200,6 +200,18 @@ import '@cherryplay/components/styles/shell-palette.css'; // Палитра об
 import "@cherryplay/components/themes/index.css";
 ```
 
+## Доступ к темам и монетизация
+
+Текущая модель доступа описана в [FEATURE_THEME_MONETIZATION.md](./FEATURE_THEME_MONETIZATION.md).
+
+- Серверный источник правды: таблицы `themes`, `theme_packages`, `theme_package_items`, `organizer_entitlements`.
+- Доступ к теме проверяется через пакеты:
+  - auto-granted пакеты (`isAutoGranted=true`, например `free`) дают доступ всем;
+  - остальные пакеты требуют активный entitlement у организатора.
+- `visibility=public` + нет доступа -> тема возвращается в `visibleLockedThemes` и показывается в UI с замком/CTA.
+- `visibility=private` + нет доступа -> тема скрывается из UI полностью.
+- Если `isVisible=false`, тема запрещена для использования (`theme_not_visible`) и не возвращается в summary.
+
 ## API и типы данных
 
 ### PartyThemeComponents

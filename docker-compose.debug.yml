@@ -30,9 +30,9 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@cherryplay.com
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
       # Без мастер-пароля (для локальной разработки), иначе при открытии серверов — "Crypt key is missing"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
       - "5050:80"
     volumes:
@@ -44,6 +44,32 @@ services:
       - cherryplay-network
 
   # Backend Server (.NET) - DEBUG режим
+  migrate:
+    build:
+      context: ./CherryPlayServer
+      dockerfile: Dockerfile.debug
+    container_name: cherryplay-migrate-debug
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
+    volumes:
+      - ./CherryPlayServer:/app
+      - /app/bin
+      - /app/obj
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+    command:
+      [
+        "sh",
+        "-lc",
+        'dotnet tool install --global dotnet-ef --version 9.* && export PATH="$$PATH:/root/.dotnet/tools" && dotnet ef database update --project CherryPlayServer.csproj --startup-project CherryPlayServer.csproj',
+      ]
+    restart: "no"
+
   server:
     build:
       context: ./CherryPlayServer
@@ -57,7 +83,7 @@ services:
       - Cors__AllowedOrigins__1=http://web:80
     ports:
       - "5000:8080"
-      - "5678:5678"  # Порт для VS Code debugger
+      - "5678:5678" # Порт для VS Code debugger
     volumes:
       # Монтируем исходники для hot reload
       - ./CherryPlayServer:/app
@@ -67,9 +93,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - cherryplay-network
-    command: ["dotnet", "watch", "run", "--urls", "http://+:8080", "--no-launch-profile"]
+    command:
+      [
+        "dotnet",
+        "watch",
+        "run",
+        "--urls",
+        "http://+:8080",
+        "--no-launch-profile",
+      ]
     # Для attach отладчика используйте:
     # command: ["dotnet", "run", "--urls", "http://+:8080", "--no-launch-profile"]
 

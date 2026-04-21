@@ -97,7 +97,39 @@ export interface PartyStateDto {
   serverTrackIds?: string[];
 }
 
+export interface LockedThemeDto {
+  themeId: string;
+  packageCode: string;
+  packageName: string;
+}
+
+export interface ThemeAccessDto {
+  grantedThemeIds: string[];
+  visibleLockedThemes: LockedThemeDto[];
+  contactUrl: string;
+}
+
+export class ThemeNotEntitledError extends Error {
+  readonly code: 'theme_not_entitled';
+  readonly themeId?: string;
+  readonly requiredPackageCodes: string[];
+
+  constructor(message: string, themeId?: string, requiredPackageCodes: string[] = []) {
+    super(message);
+    this.name = 'ThemeNotEntitledError';
+    this.code = 'theme_not_entitled';
+    this.themeId = themeId;
+    this.requiredPackageCodes = requiredPackageCodes;
+  }
+}
+
 class PartyService {
+  private themeAccessCache: ThemeAccessDto | null = null;
+  private themeAccessCacheToken: string | null = null;
+  private themeAccessInFlight: Promise<ThemeAccessDto> | null = null;
+  private static readonly guidRegex =
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
   private async getBaseUrl(): Promise<string> {
     const config = await getApiConfig();
     return config.apiUrl;
@@ -114,6 +146,12 @@ class PartyService {
     return headers;
   }
 
+  invalidateThemeAccessCache(): void {
+    this.themeAccessCache = null;
+    this.themeAccessCacheToken = null;
+    this.themeAccessInFlight = null;
+  }
+
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
     const token = useAuthStore.getState().accessToken;
     if (!token) {
@@ -127,6 +165,7 @@ class PartyService {
       cache: 'no-cache',
     });
 
+    await this.throwIfThemeNotEntitled(response);
     return handleApiResponse<PartyDto>(response, 'Failed to create party');
   }
 
@@ -150,7 +189,8 @@ class PartyService {
       throw new Error('Для получения данных вечеринки необходимо войти в аккаунт');
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       cache: 'no-cache',
@@ -190,13 +230,15 @@ class PartyService {
 
   async updateParty(partyId: string, data: UpdatePartyDto): Promise<void> {
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
       cache: 'no-cache',
     });
 
+    await this.throwIfThemeNotEntitled(response);
     await handleApiResponse<void>(response, 'Failed to update party');
   }
 
@@ -205,7 +247,8 @@ class PartyService {
     playlist: { items: PlayerItemForApi[]; totalTracks: number; totalDuration: number },
   ): Promise<void> {
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties/${partyId}/playlist`, {
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}/playlist`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(playlist),
@@ -219,7 +262,8 @@ class PartyService {
 
   async deleteParty(partyId: string): Promise<void> {
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties/${partyId}`, {
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
       cache: 'no-cache',
@@ -275,6 +319,98 @@ class PartyService {
       }
       return `${protocol}://${cleanUrl}/party/${shortCode}`;
     }
+  }
+
+  async getThemeAccess(forceRefresh = false): Promise<ThemeAccessDto> {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      this.invalidateThemeAccessCache();
+      throw new Error('Для получения доступа к темам необходимо войти в аккаунт');
+    }
+
+    if (this.themeAccessCacheToken !== token) {
+      this.invalidateThemeAccessCache();
+      this.themeAccessCacheToken = token;
+    }
+
+    if (!forceRefresh && this.themeAccessCache) {
+      return this.themeAccessCache;
+    }
+
+    if (!forceRefresh && this.themeAccessInFlight) {
+      return this.themeAccessInFlight;
+    }
+
+    this.themeAccessInFlight = (async () => {
+      const baseUrl = await this.getBaseUrl();
+      const response = await fetch(`${baseUrl}/organizer/me/theme-access`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        cache: 'no-cache',
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        this.invalidateThemeAccessCache();
+      }
+      const data = await handleApiResponse<ThemeAccessDto>(response, 'Failed to load theme access');
+      this.themeAccessCache = data;
+      return data;
+    })();
+
+    try {
+      return await this.themeAccessInFlight;
+    } finally {
+      this.themeAccessInFlight = null;
+    }
+  }
+
+  private async throwIfThemeNotEntitled(response: Response): Promise<void> {
+    if (response.status !== 403) {
+      return;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.clone().json();
+    } catch {
+      return;
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      return;
+    }
+
+    const body = payload as {
+      code?: unknown;
+      message?: unknown;
+      detail?: unknown;
+      themeId?: unknown;
+      requiredPackageCodes?: unknown;
+    };
+
+    if (body.code !== 'theme_not_entitled') {
+      return;
+    }
+
+    const message =
+      (typeof body.message === 'string' && body.message) ||
+      (typeof body.detail === 'string' && body.detail) ||
+      'У вас нет доступа к выбранной теме.';
+
+    const themeId = typeof body.themeId === 'string' ? body.themeId : undefined;
+    const requiredPackageCodes = Array.isArray(body.requiredPackageCodes)
+      ? body.requiredPackageCodes.filter((code): code is string => typeof code === 'string')
+      : [];
+
+    throw new ThemeNotEntitledError(message, themeId, requiredPackageCodes);
+  }
+
+  private normalizePartyId(partyId: string): string {
+    const normalized = partyId.trim().replace(/^\{|\}$/g, '');
+    if (!PartyService.guidRegex.test(normalized)) {
+      throw new Error('Некорректный идентификатор вечеринки');
+    }
+    return normalized.toLowerCase();
   }
 }
 

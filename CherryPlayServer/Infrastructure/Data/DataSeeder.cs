@@ -10,22 +10,29 @@ public class DataSeeder : IDataSeeder
     private readonly IOrganizerRepository _organizerRepository;
     private readonly IEmailAccountRepository _emailAccountRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IThemeRepository _themeRepository;
+    private readonly IThemePackageRepository _themePackageRepository;
 
     public DataSeeder(
         IPartyRepository partyRepository,
         IOrganizerRepository organizerRepository,
         IEmailAccountRepository emailAccountRepository,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IThemeRepository themeRepository,
+        IThemePackageRepository themePackageRepository)
     {
         _partyRepository = partyRepository;
         _organizerRepository = organizerRepository;
         _emailAccountRepository = emailAccountRepository;
         _passwordHasher = passwordHasher;
+        _themeRepository = themeRepository;
+        _themePackageRepository = themePackageRepository;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        await SeedThemeMonetizationAsync();
 
         var testEmail = "t@t.ru";
         var existingTestAccount = await _emailAccountRepository.GetByEmailAsync(testEmail);
@@ -337,5 +344,62 @@ public class DataSeeder : IDataSeeder
         await _partyRepository.AddAsync(sakuraParty);
         await _partyRepository.AddAsync(artDecoParty);
         await _partyRepository.AddAsync(basicParty);
+    }
+
+    private async Task SeedThemeMonetizationAsync()
+    {
+        var existingThemes = await _themeRepository.GetAllAsync();
+        var existingPackages = await _themePackageRepository.GetAllWithItemsAsync();
+        var themeMap = new Dictionary<string, string>
+        {
+            ["basic"] = "Базовый",
+            ["cyberpunk"] = "Cyberpunk",
+            ["sakura"] = "Sakura",
+            ["art-deco"] = "Art Deco",
+            ["spring-cross-step"] = "Весенний кросс-степ",
+        };
+        var missingThemes = themeMap
+            .Where(x => existingThemes.All(t => t.ThemeId != x.Key))
+            .Select(x => new Theme { ThemeId = x.Key, DisplayName = x.Value, Visibility = ThemeVisibility.Public })
+            .ToList();
+        if (missingThemes.Count > 0)
+        {
+            await _themeRepository.AddRangeAsync(missingThemes);
+        }
+
+        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
+        {
+            Code = "free",
+            Name = "Бесплатный",
+            IsAutoGranted = true,
+            IsActive = true,
+            ThemeIds = ["basic"]
+        });
+        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
+        {
+            Code = "extended",
+            Name = "Расширенный",
+            IsAutoGranted = false,
+            IsActive = true,
+            ThemeIds = ["cyberpunk", "sakura", "art-deco"]
+        });
+        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
+        {
+            Code = "spring-cross-step",
+            Name = "Весенний кросс-степ",
+            IsAutoGranted = false,
+            IsActive = true,
+            ThemeIds = ["spring-cross-step"]
+        });
+    }
+
+    private async Task AddPackageIfMissingAsync(IEnumerable<ThemePackage> existingPackages, ThemePackage package)
+    {
+        if (existingPackages.Any(x => string.Equals(x.Code, package.Code, StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        await _themePackageRepository.UpsertAsync(package);
     }
 }

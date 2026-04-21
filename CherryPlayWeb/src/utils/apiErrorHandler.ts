@@ -6,6 +6,8 @@ export interface ApiError {
   message: string;
   status: number;
   statusText: string;
+  code?: string;
+  details?: unknown;
 }
 
 /**
@@ -28,6 +30,8 @@ export async function createApiError(
   defaultMessage: string,
 ): Promise<ApiError> {
   let errorMessage = defaultMessage;
+  let code: string | undefined;
+  let details: unknown;
 
   try {
     const text = await response.text();
@@ -35,6 +39,8 @@ export async function createApiError(
       // Пытаемся распарсить JSON с сообщением об ошибке
       try {
         const json = JSON.parse(text);
+        code = typeof json.code === 'string' ? json.code : undefined;
+        details = json;
         errorMessage = json.detail || json.message || json.error || text;
       } catch {
         errorMessage = text;
@@ -50,7 +56,19 @@ export async function createApiError(
     message: errorMessage,
     status: response.status,
     statusText: response.statusText,
+    code,
+    details,
   };
+}
+
+export async function parseApiErrorPayload<T>(response: Response): Promise<T | null> {
+  try {
+    const text = await response.text();
+    if (!text) return null;
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**

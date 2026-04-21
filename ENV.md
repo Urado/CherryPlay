@@ -33,6 +33,7 @@
 | **CORS_ORIGIN_2**                          | Третий разрешённый CORS origin                                   | Backend (через Cors:AllowedOrigins:2), docker-compose.prod.yml                            | `http://web:80`                                     | Часто `http://web:80` для nginx                 | Не секрет                          |
 | **VITE_API_URL**                           | Базовый URL API бэкенда (подставляется при сборке)               | Frontend (Vite), Dockerfile CherryPlayWeb                                                 | `http://localhost:5000`                             | Пусто для относительных URL за nginx            | Не секрет                          |
 | **VITE_SIGNALR_URL**                       | URL хаба SignalR (опционально; иначе VITE_API_URL + `/partyHub`) | Frontend (Vite), Dockerfile CherryPlayWeb                                                 | `http://localhost:5000/partyHub`                    | Опционально в prod                              | Не секрет                          |
+| **ADMIN_CONTACT_URL**                      | Публичная ссылка для связи с админом по платным темам            | Backend (`/api/config`, `/api/organizer/me/theme-access`)                                  | `https://vk.com/<owner>`                            | Укажите реальный URL контакта                   | Не секрет                          |
 
 ---
 
@@ -51,6 +52,7 @@
 | **OAUTH_VK_CLIENT_ID**, **OAUTH_VK_CLIENT_SECRET**         | `Configuration["OAUTH_VK_CLIENT_ID"]`, `Configuration["OAUTH_VK_CLIENT_SECRET"]`                                               |
 | **OAUTH_MAILRU_CLIENT_ID**, **OAUTH_MAILRU_CLIENT_SECRET** | `Configuration["OAUTH_MAILRU_CLIENT_ID"]`, `Configuration["OAUTH_MAILRU_CLIENT_SECRET"]`                                       |
 | **OAUTH_TELEGRAM_BOT_TOKEN**                               | `Configuration["OAUTH_TELEGRAM_BOT_TOKEN"]`                                                                                    |
+| **ADMIN_CONTACT_URL**                                      | `Environment["ADMIN_CONTACT_URL"]` или `Admin:ContactUrl` (используется в `GET /api/config` и `GET /api/organizer/me/theme-access`) |
 
 ---
 

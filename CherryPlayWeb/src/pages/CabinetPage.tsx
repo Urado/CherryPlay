@@ -1,20 +1,25 @@
 import type { OrganizerDto } from '@cherryplay/components';
 import { getDefaultTimeZone } from '@cherryplay/components';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
+import { clearThemeAccessCache, useThemeAccess } from '../hooks/useThemeAccess';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
+import { sanitizeExternalUrl } from '../utils/urlSafety';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
 import { CabinetPartyList } from './CabinetPartyList';
 import './CabinetPage.css';
 
+type OrganizerWithRole = OrganizerDto & { role?: 'organizer' | 'admin' };
+type CabinetLocationState = { deniedToast?: string; error?: string } | null;
+
 const emptyForm: CreatePartyDto = {
   name: '',
-  partyThemeId: 'cyberpunk',
+  partyThemeId: 'basic',
   isListedInCatalog: false,
   timeZone: getDefaultTimeZone(),
   shortDescription: '',
@@ -25,7 +30,8 @@ const emptyForm: CreatePartyDto = {
 
 export function CabinetPage() {
   const navigate = useNavigate();
-  const [organizer, setOrganizer] = useState<OrganizerDto | null>(null);
+  const location = useLocation();
+  const [organizer, setOrganizer] = useState<OrganizerWithRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [parties, setParties] = useState<PartyDto[]>([]);
   const [loadingParties, setLoadingParties] = useState(false);
@@ -39,6 +45,13 @@ export function CabinetPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingPartyId, setDeletingPartyId] = useState<string | null>(null);
   const [togglingPartyId, setTogglingPartyId] = useState<string | null>(null);
+  const [themeSelectionError, setThemeSelectionError] = useState<string | null>(null);
+  const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
+  const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
+  const { data: themeAccess, error: themeAccessError } = useThemeAccess(
+    !!organizer,
+    organizer?.id ?? null,
+  );
 
   const loadParties = useCallback(async () => {
     setLoadingParties(true);
@@ -56,7 +69,7 @@ export function CabinetPage() {
   useEffect(() => {
     const loadOrganizer = async () => {
       try {
-        const currentOrganizer = await authService.checkAuth();
+        const currentOrganizer = (await authService.checkAuth()) as OrganizerWithRole | null;
         if (!currentOrganizer) {
           navigate(ROUTES.LOGIN);
           return;
@@ -75,8 +88,29 @@ export function CabinetPage() {
 
   const handleLogout = async () => {
     await authService.logout();
+    clearThemeAccessCache();
     navigate(ROUTES.LOGIN);
   };
+
+  useEffect(() => {
+    const state = location.state as CabinetLocationState;
+    if (state?.deniedToast) {
+      setDeniedToastMessage(state.deniedToast);
+      navigate(location.pathname, { replace: true });
+      return;
+    }
+
+    if (state?.error) {
+      setError(state.error);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  useEffect(() => {
+    if (!deniedToastMessage) return;
+    const timeoutId = window.setTimeout(() => setDeniedToastMessage(null), 4000);
+    return () => window.clearTimeout(timeoutId);
+  }, [deniedToastMessage]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +118,7 @@ export function CabinetPage() {
     setCreating(true);
     setError(null);
     try {
+      setThemeSelectionError(null);
       await partyApiService.createParty({
         ...createForm,
         name: createForm.name.trim(),
@@ -126,6 +161,7 @@ export function CabinetPage() {
     setSavingEdit(true);
     setError(null);
     try {
+      setThemeSelectionError(null);
       await partyApiService.updatePartyMetadata(editingParty.id, editForm);
       setEditingParty(null);
       setExpandedPartyId(null);
@@ -135,6 +171,19 @@ export function CabinetPage() {
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  const handleSelectLockedTheme = (themeId: string) => {
+    const lockedTheme = themeAccess?.visibleLockedThemes.find((item) => item.themeId === themeId);
+    if (!lockedTheme) return;
+
+    const safeContactUrl = sanitizeExternalUrl(themeAccess?.contactUrl);
+    setLockedThemeCtaUrl(safeContactUrl);
+    setThemeSelectionError(
+      safeContactUrl
+        ? `Тема доступна в пакете "${lockedTheme.packageName}". Свяжитесь с администратором.`
+        : `Тема доступна в пакете "${lockedTheme.packageName}". Обратитесь к администратору для подключения пакета.`,
+    );
   };
 
   const handleEditCancel = () => {
@@ -182,12 +231,28 @@ export function CabinetPage() {
 
   return (
     <div className="cabinet-page">
+      {deniedToastMessage && (
+        <div className="cabinet-toast" role="status" aria-live="polite">
+          {deniedToastMessage}
+        </div>
+      )}
       <div className="cabinet-container">
         <div className="cabinet-header">
           <h1>Мой кабинет</h1>
-          <button className="logout-button" onClick={handleLogout} type="button">
-            Выйти
-          </button>
+          <div className="cabinet-header-actions">
+            {organizer.role === 'admin' && (
+              <button
+                type="button"
+                className="cabinet-btn"
+                onClick={() => navigate(ROUTES.ADMIN_ORGANIZERS)}
+              >
+                Админка
+              </button>
+            )}
+            <button className="logout-button" onClick={handleLogout} type="button">
+              Выйти
+            </button>
+          </div>
         </div>
 
         <div className="organizer-info">
@@ -199,13 +264,24 @@ export function CabinetPage() {
             <div className="organizer-links">
               <h3>Ссылки:</h3>
               <ul>
-                {Object.entries(organizer.links).map(([key, value]) => (
-                  <li key={key}>
-                    <a href={String(value)} target="_blank" rel="noopener noreferrer">
-                      {key}
-                    </a>
-                  </li>
-                ))}
+                {Object.entries(organizer.links).map(([key, value]) => {
+                  const originalUrl = String(value);
+                  const safeUrl = sanitizeExternalUrl(originalUrl);
+
+                  return (
+                    <li key={key}>
+                      {safeUrl ? (
+                        <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                          {key}
+                        </a>
+                      ) : (
+                        <span>
+                          {key}: {originalUrl}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -235,6 +311,19 @@ export function CabinetPage() {
               {error}
             </div>
           )}
+          {themeSelectionError && lockedThemeCtaUrl && (
+            <div className="cabinet-error" role="alert">
+              <div>{themeSelectionError}</div>
+              <a href={lockedThemeCtaUrl} target="_blank" rel="noopener noreferrer">
+                Написать администратору
+              </a>
+            </div>
+          )}
+          {themeSelectionError && !lockedThemeCtaUrl && (
+            <div className="cabinet-error" role="alert">
+              {themeSelectionError}
+            </div>
+          )}
 
           {showCreateForm && (
             <CabinetPartyForm
@@ -245,6 +334,9 @@ export function CabinetPage() {
               setCreateForm={setCreateForm}
               savingEdit={false}
               creating={creating}
+              themeAccess={themeAccess}
+              themeAccessError={themeAccessError}
+              onSelectLockedTheme={handleSelectLockedTheme}
               onSubmit={handleCreateSubmit}
               onCancel={() => {
                 setShowCreateForm(false);
@@ -265,6 +357,9 @@ export function CabinetPage() {
               editForm={editForm}
               setEditForm={setEditForm}
               savingEdit={savingEdit}
+              themeAccess={themeAccess}
+              themeAccessError={themeAccessError}
+              onSelectLockedTheme={handleSelectLockedTheme}
               onEdit={handleEditOpen}
               onEditSubmit={handleEditSubmit}
               onEditCancel={handleEditCancel}

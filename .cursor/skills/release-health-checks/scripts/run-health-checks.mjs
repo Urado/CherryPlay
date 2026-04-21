@@ -4,7 +4,10 @@
  * Step order and commands mirror GitHub Actions (build-images.yml, release-and-deploy.yml)
  * and Dockerfiles (CherryPlayServer/Dockerfile, CherryPlayWeb/Dockerfile).
  * Run from repo root: node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
- * Options: --docker (include Docker image builds); --skip-ci (skip npm ci in Components).
+ * Options:
+ *   --docker (include Docker image builds)
+ *   --skip-ci (skip npm ci in Components)
+ *   --integration-db (run IntegrationDb tests; requires Docker)
  */
 
 import { execSync } from "node:child_process";
@@ -49,6 +52,7 @@ function exec(cmd, cwd = repoRoot) {
 const args = process.argv.slice(2);
 const withDocker = args.includes("--docker");
 const skipCi = args.includes("--skip-ci");
+const withIntegrationDb = args.includes("--integration-db");
 
 // --- Server (order matches CherryPlayServer/Dockerfile: restore → format → build)
 run("Server: restore", () =>
@@ -65,6 +69,18 @@ run("Server: build (Release)", () =>
     "dotnet build CherryPlayServer/CherryPlayServer.csproj -c Release --no-restore",
   ),
 );
+run("Server: tests (fast)", () =>
+  exec(
+    'dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb" --no-build',
+  ),
+);
+if (withIntegrationDb) {
+  run("Server: tests (IntegrationDb)", () =>
+    exec(
+      'dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category=IntegrationDb" --no-build',
+    ),
+  );
+}
 
 // --- Components (order matches CherryPlayWeb/Dockerfile first stage: npm ci → lint → build)
 const componentsDir = resolve(repoRoot, "CherryPlayComponents");

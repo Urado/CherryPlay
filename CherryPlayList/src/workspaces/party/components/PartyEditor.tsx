@@ -10,7 +10,16 @@ import {
   MAX_EXTERNAL_LINK_TEXT_LENGTH,
   PREDEFINED_DANCE_TAGS,
 } from '@shared/services/partyService';
+import { sanitizeExternalUrl } from '@shared/utils/urlSafety';
 import './PartyEditor.css';
+
+interface LockedThemeInfo {
+  themeId: PartyThemeId;
+  packageCode: string;
+  packageName: string;
+}
+
+const REVOKED_CURRENT_THEME_PACKAGE_CODE = 'revoked-current-theme';
 
 interface DanceTagsFieldProps {
   tags: string[];
@@ -204,6 +213,11 @@ interface PartyEditorProps {
   onCopyUrl: () => void;
   onRetry?: () => void;
   onOpenLinkParty?: () => void;
+  lockedThemes?: LockedThemeInfo[];
+  accessContactUrl?: string;
+  isThemeAccessLoading?: boolean;
+  visibleThemeIds?: PartyThemeId[] | null;
+  themeAccessErrorMessage?: string | null;
 }
 
 const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
@@ -265,10 +279,45 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   onCopyUrl,
   onRetry,
   onOpenLinkParty,
+  lockedThemes = [],
+  accessContactUrl = '',
+  isThemeAccessLoading = false,
+  visibleThemeIds = null,
+  themeAccessErrorMessage = null,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [lockedThemeModal, setLockedThemeModal] = useState<LockedThemeInfo | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const warnedThemeIdsRef = useRef<Set<PartyThemeId>>(new Set());
+  const lockedThemeMap = new Map<PartyThemeId, LockedThemeInfo>(
+    lockedThemes.map((item) => [item.themeId, item]),
+  );
+  const visibleThemeIdSet = visibleThemeIds ? new Set(visibleThemeIds) : null;
+  const stylesForDropdown = AVAILABLE_STYLES.filter((style) => {
+    if (!visibleThemeIdSet) {
+      return true;
+    }
+    return visibleThemeIdSet.has(style.id) || style.id === themeId;
+  });
+  const sortedStylesForDropdown = [...stylesForDropdown].sort((a, b) => {
+    if (a.id === 'basic' && b.id !== 'basic') {
+      return -1;
+    }
+    if (b.id === 'basic' && a.id !== 'basic') {
+      return 1;
+    }
+
+    const aLocked = lockedThemeMap.has(a.id);
+    const bLocked = lockedThemeMap.has(b.id);
+    if (aLocked === bLocked) {
+      return 0;
+    }
+    return aLocked ? 1 : -1;
+  });
+  const accessibleStyleIds = new Set(
+    stylesForDropdown.map((style) => style.id).filter((styleId) => !lockedThemeMap.has(styleId)),
+  );
+  const selectedLockedTheme = lockedThemeMap.get(themeId) ?? null;
+  const safeContactUrl = sanitizeExternalUrl(accessContactUrl);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -290,20 +339,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const renderCustomizationOptions = () => {
     const theme = getPartyTheme(themeId);
-    const hasCustomizationOptions = (theme?.customizationOptions?.length ?? 0) > 0;
     const ThemeCustomizationEditor = theme?.components.CustomizationEditor;
-
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      hasCustomizationOptions &&
-      !ThemeCustomizationEditor &&
-      !warnedThemeIdsRef.current.has(themeId)
-    ) {
-      warnedThemeIdsRef.current.add(themeId);
-      console.warn(
-        `[PartyEditor] Theme customization contract mismatch for "${themeId}": customizationOptions and CustomizationEditor should be aligned.`,
-      );
-    }
 
     if (!ThemeCustomizationEditor) {
       return null;
@@ -317,8 +353,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     );
   };
 
-  const handleStyleSelect = (themeId: PartyThemeId) => {
-    onThemeIdChange(themeId);
+  const handleStyleSelect = (nextThemeId: PartyThemeId) => {
+    const lockedTheme = lockedThemeMap.get(nextThemeId);
+    if (lockedTheme) {
+      setLockedThemeModal(lockedTheme);
+      return;
+    }
+
+    onThemeIdChange(nextThemeId);
     setIsDropdownOpen(false);
   };
 
@@ -548,34 +590,69 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               <div className="party-editor-dropdown-selected">
                 <span className="party-editor-dropdown-name">{selectedStyle.name}</span>
                 <span className="party-editor-dropdown-preview">{selectedStyle.preview}</span>
+                {selectedLockedTheme && (
+                  <span className="party-editor-theme-status-badge">Ограничен доступ</span>
+                )}
               </div>
               <span className="party-editor-dropdown-arrow">{isDropdownOpen ? '▲' : '▼'}</span>
             </div>
           </button>
           {isDropdownOpen && (
             <div className="party-editor-dropdown-menu">
-              {AVAILABLE_STYLES.map((style) => (
-                <button
-                  key={style.id}
-                  type="button"
-                  className={`party-editor-dropdown-item ${themeId === style.id ? 'party-editor-dropdown-item--selected' : ''}`}
-                  onClick={() => handleStyleSelect(style.id)}
-                >
-                  <div className="party-editor-dropdown-item-content">
-                    <div className="party-editor-dropdown-item-name">{style.name}</div>
-                    <div className="party-editor-dropdown-item-description">
-                      {style.description}
+              {sortedStylesForDropdown.map((style) => {
+                const lockedTheme = lockedThemeMap.get(style.id);
+                const isLocked = Boolean(lockedTheme);
+                const isSelected = themeId === style.id;
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    className={`party-editor-dropdown-item ${isSelected ? 'party-editor-dropdown-item--selected' : ''} ${isLocked ? 'party-editor-dropdown-item--locked' : ''}`}
+                    onClick={() => handleStyleSelect(style.id)}
+                    aria-label={
+                      isLocked
+                        ? `${style.name}. Требуется пакет ${lockedTheme?.packageName}.`
+                        : style.name
+                    }
+                  >
+                    <div className="party-editor-dropdown-item-content">
+                      <div className="party-editor-dropdown-item-name">{style.name}</div>
+                      <div className="party-editor-dropdown-item-description">
+                        {style.description}
+                      </div>
+                      <div className="party-editor-dropdown-item-preview">{style.preview}</div>
+                      {isLocked && lockedTheme && (
+                        <div className="party-editor-theme-lock-info">
+                          {lockedTheme.packageCode === REVOKED_CURRENT_THEME_PACKAGE_CODE
+                            ? 'Не доступна в пакетах'
+                            : `Доступно в пакете ${lockedTheme.packageName}`}
+                        </div>
+                      )}
                     </div>
-                    <div className="party-editor-dropdown-item-preview">{style.preview}</div>
-                  </div>
-                  {themeId === style.id && (
-                    <span className="party-editor-dropdown-item-check">✓</span>
-                  )}
-                </button>
-              ))}
+                    {isSelected && <span className="party-editor-dropdown-item-check">✓</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
+        {isThemeAccessLoading && (
+          <div className="party-editor-theme-access-hint">Проверяем доступные темы...</div>
+        )}
+        {themeAccessErrorMessage && (
+          <div className="party-editor-theme-access-hint party-editor-theme-access-hint--warning">
+            {themeAccessErrorMessage}
+          </div>
+        )}
+        {!isThemeAccessLoading && accessibleStyleIds.size === 0 && (
+          <div className="party-editor-theme-access-hint">Нет доступных тем в вашем тарифе.</div>
+        )}
+        {selectedLockedTheme && (
+          <div className="party-editor-theme-restricted-note">
+            Текущая тема больше не входит в ваш доступ. Вы можете сохранить как есть или
+            переключиться на доступную тему.
+          </div>
+        )}
       </div>
 
       {renderCustomizationOptions()}
@@ -692,6 +769,40 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               Плеер подключается к серверу по привязанной вечеринке. Статус соединения отображается
               в плеере.
             </p>
+          </div>
+        </div>
+      )}
+
+      {lockedThemeModal && (
+        <div className="party-editor-locked-theme-modal-overlay" role="dialog" aria-modal="true">
+          <div className="party-editor-locked-theme-modal">
+            <h4 className="party-editor-locked-theme-title">Тема недоступна</h4>
+            <p className="party-editor-locked-theme-text">
+              {lockedThemeModal.packageCode === REVOKED_CURRENT_THEME_PACKAGE_CODE
+                ? 'Эта тема не доступна в пакетах.'
+                : `Эта тема есть в пакете ${lockedThemeModal.packageName}. Можно подключить в пару кликов.`}
+            </p>
+            {safeContactUrl ? (
+              <a
+                href={safeContactUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="party-editor-locked-theme-cta"
+              >
+                Напиши в ВК
+              </a>
+            ) : (
+              <p className="party-editor-locked-theme-text">
+                Ссылка на ВК сейчас недоступна. Попробуй чуть позже.
+              </p>
+            )}
+            <button
+              type="button"
+              className="party-editor-button party-editor-button-secondary"
+              onClick={() => setLockedThemeModal(null)}
+            >
+              Закрыть
+            </button>
           </div>
         </div>
       )}

@@ -496,6 +496,12 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
           logger.warn(
             '[PlayerViewContainer] Party does not exist on server, skipping SignalR connection',
           );
+          useProjectStore.getState().setLinkedParty(null);
+          addNotification({
+            type: 'warning',
+            message: 'Привязанная вечеринка не найдена на сервере. Привязка удалена.',
+            duration: 5000,
+          });
           setConnectionState(signalR.HubConnectionState.Disconnected);
           return;
         }

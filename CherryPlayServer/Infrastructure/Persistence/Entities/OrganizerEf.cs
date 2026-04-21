@@ -9,6 +9,7 @@ public class OrganizerEf
     public string? DefaultPartyThemeId { get; set; }
     public string? DefaultCustomizationSettingsJson { get; set; }
     public string? TimeZone { get; set; }
+    public string Role { get; set; } = "organizer";
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }

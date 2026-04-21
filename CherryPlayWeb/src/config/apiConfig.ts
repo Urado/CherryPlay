@@ -51,6 +51,17 @@ export const API_ENDPOINTS = {
     ME: '/api/organizer/me',
     PROFILE: '/api/organizer/profile',
     SESSION_CHECK: '/api/organizer/session/check',
+    THEME_ACCESS: '/api/organizer/me/theme-access',
+  },
+
+  ADMIN: {
+    ORGANIZERS: '/api/admin/organizers',
+    ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,
+    ORGANIZER_ENTITLEMENTS: (organizerId: string) =>
+      `/api/admin/organizers/${organizerId}/entitlements`,
+    ORGANIZER_ENTITLEMENT_BY_ID: (organizerId: string, entitlementId: string) =>
+      `/api/admin/organizers/${organizerId}/entitlements/${entitlementId}`,
+    THEME_PACKAGES: '/api/admin/theme-packages',
   },
 
   // Вечеринки (публичные и организатор)

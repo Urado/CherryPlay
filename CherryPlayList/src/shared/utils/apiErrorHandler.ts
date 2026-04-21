@@ -71,6 +71,9 @@ export async function createApiError(
       try {
         const json = JSON.parse(text);
         errorMessage = json.detail || json.message || json.error || text;
+        if (typeof json.code === 'string' && !errorMessage.includes(json.code)) {
+          errorMessage = `${errorMessage} (${json.code})`;
+        }
       } catch {
         errorMessage = text;
       }

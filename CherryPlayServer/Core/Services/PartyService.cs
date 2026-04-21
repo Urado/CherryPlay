@@ -5,6 +5,7 @@ using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Core.Validators;
 using CherryPlayServer.Core;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Models;
 
 using static CherryPlayServer.Core.PartyConstants;
@@ -22,6 +23,7 @@ public class PartyService : IPartyService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IPartyPlaylistNotifier _playlistNotifier;
     private readonly IPartyAccessService _partyAccessService;
+    private readonly IThemeAccessService _themeAccessService;
     private readonly ILogger<PartyService> _logger;
 
     public PartyService(
@@ -31,6 +33,7 @@ public class PartyService : IPartyService
         IHttpContextAccessor httpContextAccessor,
         IPartyPlaylistNotifier playlistNotifier,
         IPartyAccessService partyAccessService,
+        IThemeAccessService themeAccessService,
         ILogger<PartyService> logger)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
@@ -39,6 +42,7 @@ public class PartyService : IPartyService
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _playlistNotifier = playlistNotifier ?? throw new ArgumentNullException(nameof(playlistNotifier));
         _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
+        _themeAccessService = themeAccessService ?? throw new ArgumentNullException(nameof(themeAccessService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -67,6 +71,10 @@ public class PartyService : IPartyService
             throw new UnauthorizedAccessException("HTTP context is required");
         }
         var organizerId = httpContext.RequireOrganizerId("create a party");
+        var selectedThemeId = dto.PartyThemeId.ToStringValue();
+        var access = await _themeAccessService.CheckThemeAccessAsync(organizerId, selectedThemeId);
+        if (!access.IsAllowed)
+            throw new ThemeNotEntitledException(selectedThemeId, access.RequiredPackageCodes);
 
         _logger.LogInformation(
             "Creating party: name={Name}, partyThemeId={PartyThemeId}, organizerId={OrganizerId}",
@@ -248,7 +256,16 @@ public class PartyService : IPartyService
         if (dto.Subtitle != null)
             party.Subtitle = dto.Subtitle;
         if (dto.PartyThemeId.HasValue)
+        {
+            var newThemeId = dto.PartyThemeId.Value.ToStringValue();
+            if (!string.Equals(newThemeId, party.PartyThemeId.ToStringValue(), StringComparison.Ordinal))
+            {
+                var access = await _themeAccessService.CheckThemeAccessAsync(organizerId, newThemeId);
+                if (!access.IsAllowed)
+                    throw new ThemeNotEntitledException(newThemeId, access.RequiredPackageCodes);
+            }
             party.PartyThemeId = dto.PartyThemeId.Value;
+        }
         if (dto.EventDateTime.HasValue)
             party.EventDateTime = dto.EventDateTime;
         if (dto.EventEndDateTime.HasValue)

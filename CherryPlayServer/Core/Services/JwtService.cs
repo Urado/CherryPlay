@@ -31,7 +31,7 @@ public class JwtService : IJwtService
         _audience = configuration["JWT_AUDIENCE"] ?? "CherryPlayClient";
     }
 
-    public Task<string> GenerateTokenAsync(Guid organizerId, string name, Guid sessionId)
+    public Task<string> GenerateTokenAsync(Guid organizerId, string name, Guid sessionId, string role)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -41,6 +41,7 @@ public class JwtService : IJwtService
             new Claim("organizerId", organizerId.ToString()),
             new Claim("name", name),
             new Claim("sessionId", sessionId.ToString()),
+            new Claim("role", role),
             new Claim(JwtRegisteredClaimNames.Jti, sessionId.ToString()),
             new Claim(JwtRegisteredClaimNames.Iat,
                 DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
@@ -82,6 +83,7 @@ public class JwtService : IJwtService
             var organizerIdClaim = principal.FindFirst("organizerId")?.Value;
             var nameClaim = principal.FindFirst("name")?.Value;
             var sessionIdClaim = principal.FindFirst("sessionId")?.Value ?? principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            var roleClaim = principal.FindFirst("role")?.Value;
 
             if (Guid.TryParse(organizerIdClaim, out var organizerId) && Guid.TryParse(sessionIdClaim, out var sessionId))
             {
@@ -90,6 +92,7 @@ public class JwtService : IJwtService
                     OrganizerId: organizerId,
                     SessionId: sessionId,
                     Name: nameClaim,
+                    Role: roleClaim ?? "organizer",
                     ErrorMessage: null
                 ));
             }
@@ -99,6 +102,7 @@ public class JwtService : IJwtService
                 OrganizerId: null,
                 SessionId: null,
                 Name: null,
+                Role: null,
                 ErrorMessage: "Invalid organizer ID or session ID in token"
             ));
         }
@@ -109,6 +113,7 @@ public class JwtService : IJwtService
                 OrganizerId: null,
                 SessionId: null,
                 Name: null,
+                Role: null,
                 ErrorMessage: "Token has expired"
             ));
         }
@@ -119,6 +124,7 @@ public class JwtService : IJwtService
                 OrganizerId: null,
                 SessionId: null,
                 Name: null,
+                Role: null,
                 ErrorMessage: ex.Message
             ));
         }
@@ -129,6 +135,7 @@ public class JwtService : IJwtService
                 OrganizerId: null,
                 SessionId: null,
                 Name: null,
+                Role: null,
                 ErrorMessage: $"Token validation failed: {ex.Message}"
             ));
         }

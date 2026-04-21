@@ -3,6 +3,7 @@
  */
 import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import type {
+  ApiErrorPayload,
   PartyPlaylistDto,
   PublicPartyDto,
   PartyStateDto,
@@ -12,6 +13,19 @@ import type {
   UpdatePartyDto,
 } from '../types/api';
 import { handleApiResponse, createApiError } from '../utils/apiErrorHandler';
+
+function buildThemeEntitlementError(payload: ApiErrorPayload): string {
+  if (payload.code !== 'theme_not_entitled') {
+    return payload.detail || payload.message || 'Ошибка доступа к теме';
+  }
+
+  const packageCodes = payload.requiredPackageCodes ?? [];
+  if (!packageCodes.length) {
+    return 'Выбранная тема недоступна. Обратитесь к администратору для выдачи пакета.';
+  }
+
+  return `Тема недоступна без пакета: ${packageCodes.join(', ')}. Обратитесь к администратору.`;
+}
 
 class PartyApiService {
   /**
@@ -38,7 +52,13 @@ class PartyApiService {
       body: JSON.stringify(dto),
     });
 
-    return handleApiResponse<PartyDto>(response, 'Ошибка создания вечеринки');
+    if (!response.ok) {
+      const error = await createApiError(response, 'Ошибка создания вечеринки');
+      const payload = (error.details ?? null) as ApiErrorPayload | null;
+      throw new Error(payload ? buildThemeEntitlementError(payload) : error.message);
+    }
+
+    return response.json() as Promise<PartyDto>;
   }
 
   /**
@@ -54,7 +74,8 @@ class PartyApiService {
 
     if (!response.ok) {
       const error = await createApiError(response, 'Ошибка обновления вечеринки');
-      throw new Error(error.message);
+      const payload = (error.details ?? null) as ApiErrorPayload | null;
+      throw new Error(payload ? buildThemeEntitlementError(payload) : error.message);
     }
   }
 

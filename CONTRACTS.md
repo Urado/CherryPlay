@@ -12,6 +12,7 @@
 | ------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **viewer**    | Зритель в CherryPlayWeb                        | Read-only: публичные API по `shortCode`, подключение к SignalR по `shortCode`, получение обновлений состояния. Не может отправлять write-события. |
 | **organizer** | Организатор (CherryPlayList или кабинет в Web) | Write: создание/редактирование/удаление вечеринок, публикация плейлиста, управление сессией и состоянием воспроизведения. Только к своим данным.  |
+| **admin**     | Организатор с ролью admin                      | Всё из `organizer` + доступ к `/api/admin/*` (управление выдачами пакетов тем).                                                                  |
 
 В v1 авторизация write-операций: **JWT** для REST и SignalR; в Web сессия через **httpOnly cookie**. Зрители — анонимные, без логина.
 
@@ -21,6 +22,15 @@
 | -------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | **401 Unauthorized** | Не авторизован  | Нет или невалидный JWT, истёк токен, сессия не найдена, не передан организатор в контексте. Клиенту нужно войти заново.          |
 | **403 Forbidden**    | Доступ запрещён | Пользователь авторизован, но не имеет прав на действие (например, попытка изменить чужую вечеринку). Повторный логин не поможет. |
+| **403 admin_only**   | Только для admin | Запрос на `/api/admin/*` от не-админа (или без валидной админ-роли в БД).                                                     |
+| **403 theme_not_entitled** | Нет права на тему | Создание/обновление вечеринки с темой, которая не входит в доступные пакеты организатора.                                     |
+| **403 theme_not_visible** | Тема скрыта | Создание/обновление вечеринки с темой, у которой `isVisible=false` в каталоге тем.                                              |
+| **404 package_not_found** | Пакет не найден | `POST /api/admin/organizers/{id}/entitlements`: пакет не существует или `isActive=false`.                                      |
+| **404 organizer_not_found** | Организатор не найден | `GET /api/admin/organizers/{id}` или `POST /api/admin/organizers/{id}/entitlements` для отсутствующего организатора.      |
+| **404 entitlement_not_found** | Выдача не найдена | `DELETE /api/admin/organizers/{id}/entitlements/{entitlementId}` для отсутствующей или чужой выдачи.                        |
+| **409 entitlement_already_active** | Выдача уже активна | Повторный grant активного пакета одному организатору.                                                                       |
+| **409 entitlement_already_revoked** | Выдача уже отозвана | Повторный revoke уже отозванной выдачи.                                                                                   |
+| **400 package_is_auto_granted** | Автовыдаваемый пакет | Попытка вручную выдать пакет с `isAutoGranted=true` (например `free`).                                                     |
 
 Эндпоинты организатора при отсутствии/невалидности токена возвращают **401** (в т.ч. при срабатывании `[AuthorizeOrganizer]` до входа в действие); при валидном токене, но отсутствии прав на ресурс — **403**.
 
@@ -48,9 +58,9 @@
 | GET   | `/api/parties/public/{shortCode}/state`    | Полное состояние вечеринки (плейлист + сессия + playback state)                             | `PartyStateDto` или 404                                                               |
 | GET   | `/api/parties/public/list`                 | Список вечеринок **каталога** (только включённые организатором)                             | `PublicPartyListItemDto[]`                                                            |
 | GET   | `/api/parties/public/first`                | _(опционально)_ Плейлист первой доступной вечеринки (демо)                                  | `PartyPlaylistDto` или 404                                                            |
-| GET   | `/api/config`                              | Публичная конфигурация для UI (флаги: OAuth, страница «Инфо о вечеринке»). Без авторизации. | 200, JSON: `{ "oauthEnabled": boolean, "partyInfoPageEnabled": boolean }` (camelCase) |
+| GET   | `/api/config`                              | Публичная конфигурация для UI (OAuth, страница «Инфо», ссылка на админа). Без авторизации. | 200, JSON: `{ "oauthEnabled": boolean, "partyInfoPageEnabled": boolean, "adminContactUrl": string }` (camelCase) |
 
-Ответ `GET /api/config`: клиент должен ожидать поля **`oauthEnabled`** и **`partyInfoPageEnabled`** (camelCase). При `oauthEnabled: false` веб-приложение скрывает на странице входа вкладку и кнопки OAuth (значение задаётся конфигом `Auth:OAuthEnabled`, см. [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md)). При `partyInfoPageEnabled: false` веб-приложение скрывает страницу «Инфо о вечеринке» и все ссылки на неё в UI; данные вечеринки по-прежнему хранятся на сервере. Значение задаётся конфигом `Features:PartyInfoPageEnabled` (см. OPS); по умолчанию `false`, если ключ отсутствует.
+Ответ `GET /api/config`: клиент должен ожидать поля **`oauthEnabled`**, **`partyInfoPageEnabled`** и **`adminContactUrl`** (camelCase). При `oauthEnabled: false` веб-приложение скрывает на странице входа вкладку и кнопки OAuth (значение задаётся конфигом `Auth:OAuthEnabled`, см. [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md)). При `partyInfoPageEnabled: false` веб-приложение скрывает страницу «Инфо о вечеринке» и все ссылки на неё в UI; данные вечеринки по-прежнему хранятся на сервере. `adminContactUrl` берётся из `ADMIN_CONTACT_URL` (fallback: `Admin:ContactUrl`, далее `https://vk.com/<owner>`).
 
 **Использует:** CherryPlayWeb (страница просмотра `party/<shortCode>`, каталог, получение состояния для отображения).
 
@@ -169,6 +179,7 @@
 | `defaultPartyThemeId`          | `string \| null`                  | Тема по умолчанию.                                |
 | `defaultCustomizationSettings` | `Record<string, unknown> \| null` | Настройки оформления по умолчанию (generic JSON). |
 | `timeZone`                     | `string \| null`                  | Часовой пояс организатора.                        |
+| `role`                         | `"organizer" \| "admin"`          | Роль организатора (возвращается в `/api/organizer/me`). |
 | `createdAt`                    | `string`                          | ISO 8601.                                         |
 | `updatedAt`                    | `string \| null`                  | ISO 8601.                                         |
 
@@ -181,16 +192,18 @@
 | `links`    | `Record<string, string>` | нет          | Ссылки (соцсети, сайт). |
 | `timeZone` | `string`                 | нет          | Часовой пояс.           |
 
+`defaultPartyThemeId` в MVP не принимается в `UpdateOrganizerDto`: сервер его не ожидает в контракте PATCH и не меняет значение в БД через `/api/organizer/profile`.
+
 ### 3.4 REST API (вечеринки)
 
 Все запросы с авторизацией (JWT в заголовке или cookie по плану).
 
 | Метод  | Путь                              | Описание                                                                                                                                                                                  | Тело               | Ответ              |
 | ------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ |
-| POST   | `/api/parties`                    | Создать вечеринку                                                                                                                                                                         | `CreatePartyDto`   | `PartyDto`         |
+| POST   | `/api/parties`                    | Создать вечеринку (с проверкой доступа к `partyThemeId`; при отсутствии поля используется `basic`)                                                                                       | `CreatePartyDto`   | `PartyDto`         |
 | GET    | `/api/parties`                    | Список вечеринок текущего организатора                                                                                                                                                    | —                  | `PartyDto[]`       |
 | GET    | `/api/parties/{partyId}`          | Получить вечеринку (свою)                                                                                                                                                                 | —                  | `PartyDto` или 404 |
-| PUT    | `/api/parties/{partyId}`          | Редактировать метаданные вечеринки (описание, место, город, дата, расписание, краткое описание для карточки, внешняя ссылка, теги танцев, флаг «в каталоге» и др.; тело — UpdatePartyDto) | `UpdatePartyDto`   | 204 или 404        |
+| PUT    | `/api/parties/{partyId}`          | Редактировать метаданные вечеринки; проверка доступа к теме выполняется только когда `partyThemeId` передан и отличается от текущего значения                                              | `UpdatePartyDto`   | 204 или 404        |
 | DELETE | `/api/parties/{partyId}`          | Удалить вечеринку                                                                                                                                                                         | —                  | 204 или 404        |
 | PUT    | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию)                                                                                                                  | `PartyPlaylistDto` | 204 или 404        |
 
@@ -211,6 +224,41 @@
 | `NotifyPlaylistChanged`  | `partyId: string`                                        | Уведомление зрителей об изменении плейлиста (опционально; сервер рассылает `OnPlaylistChanged` и после PUT `.../playlist`). Только организатор, владелец вечеринки.                        |
 
 Обновление плейлиста в session mode может идти через REST PUT `.../playlist` или по контракту «live» (по плану — изменения плейлиста и состояния в session идут live). Сервер при PUT плейлиста рассылает зрителям `OnPlaylistChanged`.
+
+### 3.6 Theme access (organizer)
+
+| Метод | Путь                            | Описание                                                                                     | Ответ            |
+| ----- | ------------------------------- | -------------------------------------------------------------------------------------------- | ---------------- |
+| GET   | `/api/organizer/me/theme-access` | Сводка доступа к темам для текущего организатора: доступные темы, публичные locked и ссылка на контакт | `ThemeAccessDto` |
+
+`ThemeAccessDto`:
+- `grantedThemeIds: string[]` — темы с доступом (включая auto-granted пакеты).
+- `visibleLockedThemes: VisibleLockedThemeDto[]` — публичные темы без доступа, которые нужно показывать с замком.
+- `contactUrl: string` — ссылка на администратора (из `ADMIN_CONTACT_URL` / `Admin:ContactUrl`).
+
+`VisibleLockedThemeDto`:
+- `themeId: string`
+- `packageCode: string`
+- `packageName: string`
+
+### 3.7 Admin API
+
+Все эндпоинты ниже защищены `AuthorizeAdmin`, требуют админскую роль и используют rate limit `admin-strict`.
+
+| Метод  | Путь                                                      | Описание                                                  | Ответ |
+| ------ | --------------------------------------------------------- | --------------------------------------------------------- | ----- |
+| GET    | `/api/admin/theme-packages`                               | Список пакетов тем (с `themeIds`)                         | `AdminThemePackageListDto` |
+| GET    | `/api/admin/organizers`                                   | Поиск/список организаторов (`query`, `page`, `pageSize`) | `AdminOrganizerListDto` |
+| GET    | `/api/admin/organizers/{id}`                              | Карточка организатора и история выдач                     | `AdminOrganizerDetailDto` |
+| POST   | `/api/admin/organizers/{id}/entitlements`                 | Выдать пакет организатору                                 | `EntitlementDto` (201) |
+| DELETE | `/api/admin/organizers/{id}/entitlements/{entitlementId}` | Отозвать выдачу пакета                                    | 204 |
+
+Правила:
+- `POST grant` возвращает `404 package_not_found`, если пакет отсутствует или неактивен.
+- `POST grant` возвращает `400 package_is_auto_granted` для пакетов `isAutoGranted=true`.
+- `POST grant` возвращает `409 entitlement_already_active` и `existingEntitlementId`, если активная выдача уже есть.
+- `DELETE revoke` возвращает `404 entitlement_not_found`, если выдача не найдена для указанного организатора.
+- `DELETE revoke` возвращает `409 entitlement_already_revoked`, если выдача уже отозвана.
 
 ---
 
@@ -376,7 +424,7 @@ _Примечание:_ в текущей реализации веб может
 | `name`                  | `string`                  | да           | Название (1–200 символов).                                                                                                                                                                                                                                                                                                                                                                                     |
 | `title`                 | `string`                  | нет          | Заголовок на экране; если пусто — отображается название.                                                                                                                                                                                                                                                                                                                                                       |
 | `subtitle`              | `string`                  | нет          | Подзаголовок.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `partyThemeId`          | `PartyThemeId`            | нет          | По умолчанию `cyberpunk`.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `partyThemeId`          | `PartyThemeId`            | нет          | По умолчанию `basic`.                                                                                                                                                                                                                                                                                                                                                                                          |
 | `customizationSettings` | `Record<string, unknown>` | нет          | Настройки темы (generic JSON). Для `basic` канонический формат `{ paletteId, customPalette }`, где `customPalette` содержит 5 цветов (`accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`); палитра по умолчанию — `base`; при выборе предустановленной палитры её цвета синхронизируются в `customPalette`; legacy-flat `custom*` поддерживаются для совместимости. |
 | `playlistData`          | `PartyPlaylistDto`        | нет          | Начальный плейлист.                                                                                                                                                                                                                                                                                                                                                                                            |
 | `eventDateTime`         | `string` (ISO 8601, UTC)  | нет          | Дата/время начала мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                                                                                                                                                                                                                                                                      |
@@ -430,6 +478,8 @@ _Примечание:_ в текущей реализации веб может
 | `links`                        | `Record<string, string> \| null`  | Ссылки (соцсети, сайт) — JSON-объект.                                            |
 | `defaultPartyThemeId`          | `string \| null`                  | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic, spring-cross-step). |
 | `defaultCustomizationSettings` | `Record<string, unknown> \| null` | Настройки оформления по умолчанию (generic JSON).                                |
+| `timeZone`                     | `string \| null`                  | Часовой пояс организатора.                                                       |
+| `role`                         | `"organizer" \| "admin"`          | Роль организатора.                                                               |
 | `createdAt`                    | `string`                          | ISO 8601.                                                                        |
 | `updatedAt`                    | `string \| null`                  | ISO 8601.                                                                        |
 
@@ -440,6 +490,7 @@ _Примечание:_ в текущей реализации веб может
 | `name`    | `string`                 | нет          | Название организации.   |
 | `logoUrl` | `string`                 | нет          | URL логотипа.           |
 | `links`   | `Record<string, string>` | нет          | Ссылки (соцсети, сайт). |
+| `timeZone`| `string`                 | нет          | Часовой пояс.           |
 
 ### 6.6 Состояние вечеринки (SignalR)
 
@@ -459,11 +510,27 @@ _Примечание:_ в текущей реализации веб может
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
 **PlaybackMode:** `"preparation"` \| `"session"`
 
+### 6.8 DTO Theme Monetization
+
+| DTO | Поля |
+| --- | ---- |
+| `ThemeAccessDto` | `grantedThemeIds`, `visibleLockedThemes`, `contactUrl` |
+| `VisibleLockedThemeDto` | `themeId`, `packageCode`, `packageName` |
+| `AdminThemePackageDto` | `id`, `code`, `name`, `description`, `isAutoGranted`, `isActive`, `themeIds` |
+| `AdminThemePackageListDto` | `items: AdminThemePackageDto[]` |
+| `AdminOrganizerListItemDto` | `id`, `name`, `email`, `oauthProviders`, `role`, `activeEntitlementsCount`, `createdAt` |
+| `AdminOrganizerListDto` | `items`, `total`, `page`, `pageSize` |
+| `AdminOrganizerDetailDto` | `id`, `name`, `email`, `oauthAccounts`, `role`, `createdAt`, `entitlements` |
+| `AdminOauthAccountDto` | `provider`, `providerUserId`, `providerUserName` |
+| `EntitlementDto` | `id`, `packageId`, `packageCode`, `packageName`, `kind`, `source`, `grantedAt`, `grantedByAdminId`, `grantedByAdminName`, `expiresAt`, `usesRemaining`, `revokedAt`, `revokedByAdminId`, `note` |
+| `GrantEntitlementRequest` | `packageId`, `note?` (`maxLength: 2000`) |
+| `RevokeEntitlementRequest` | `note?` (`maxLength: 2000`) |
+
 ---
 
 ## 7. Branding (Organizer + Party) — по плану §4.4
 
-Модель двухуровневая: дефолт на уровне organizer, override на уровне party (опционально). В v1 в вебе: логотип + имя организатора + базовые поля info. Темы/кастомизация хранятся в модели; расширенные «приватные темы» — позже. Контракты профиля организатора и полей вечеринки для info уточняются в Epic C/D.
+Модель двухуровневая: дефолт на уровне organizer, override на уровне party (опционально). В v1 в вебе: логотип + имя организатора + базовые поля info. Доступ к PartyTheme работает через monetization-модель (пакеты, entitlement, `isAutoGranted`, `visibility=private/public`) по [FEATURE_THEME_MONETIZATION.md](FEATURE_THEME_MONETIZATION.md) и разделам §3.6–§3.7 этого документа. Контракты профиля организатора и полей вечеринки для info уточняются в Epic C/D.
 
 ---
 

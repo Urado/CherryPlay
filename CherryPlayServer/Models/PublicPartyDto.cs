@@ -7,9 +7,6 @@ public record PublicPartyDto(
     string Name,
     string? Title,
     string? Subtitle,
-    /// <summary>
-    /// PartyTheme идентификатор (см. GLOSSARY.md)
-    /// </summary>
     PartyThemeId PartyThemeId,
     bool HasActiveSession,
     bool IsListedInCatalog,
