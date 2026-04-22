@@ -730,6 +730,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
           acc[key] = value as string;
         } else if (valueType === 'number' && !isNaN(value as number) && isFinite(value as number)) {
           acc[key] = value as number;
+        } else if (key === 'basicUserSavedPalettes' && Array.isArray(value)) {
+          acc[key] = value;
         } else if (valueType === 'object' && !Array.isArray(value)) {
           acc[key] = value as Record<string, unknown>;
         }
