@@ -5,6 +5,15 @@ description: Runs build verification, lint, format checks, and optional Docker b
 
 # Release & Build Health Checks
 
+## Purpose
+
+Use this skill to run deterministic release-health validation for CherryPlay and report pass/fail status in a consistent format.
+
+## When to not apply
+
+- Do not use for feature implementation tasks.
+- Do not use when the user asks only conceptual questions without running checks.
+
 ## Script (recommended)
 
 From repo root, run all checks (Server + Server tests + Components + Web):
@@ -51,6 +60,12 @@ Use this skill when the user asks to:
 ## Scope
 
 CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). CI builds only Docker images (`.github/workflows/build-images.yml` on push/PR; `release-and-deploy.yml` on release). The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
+
+## Artifacts
+
+- Optional terminal output from health-check commands.
+- Optional Docker build output when `--docker` is used.
+- Final status table in the response (required).
 
 **Shell note:** On Windows PowerShell use `;` to chain commands. Use `&&` in Bash (e.g. GitHub Actions, Linux Docker).
 
@@ -167,3 +182,8 @@ Fix hints:
 - **Server format:** Run `dotnet format` in `CherryPlayServer/` and commit the changes (e.g. line endings CRLF→LF).
 - **Components/Web lint:** Fix reported files; use `npm run lint:fix` where available; for unused vars use `_` prefix or remove.
 - **EPERM on Windows (npm ci):** If `npm ci` fails with EPERM when unlocking files in `node_modules` (e.g. `.resolver-binding-win32-x64-msvc` or `.rollup-win32-x64-msvc`), the script falls back to `npm install`. To make `npm ci` work: close IDE/terminals using the project, then remove `node_modules` and run `npm ci` again; or add the project folder to antivirus exclusions. Alternatively run health checks with `--skip-ci` to skip the install step and use existing `node_modules`.
+
+## Return of control
+
+- After checks finish, return a concise summary table and list only failed steps with actionable hints.
+- Do not continue with unrelated implementation tasks unless explicitly requested.

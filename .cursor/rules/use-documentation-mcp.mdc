@@ -7,6 +7,11 @@ alwaysApply: true
 
 When you need to see **any documentation** (libraries, APIs, frameworks, packages), use the **Context7** MCP server to retrieve up-to-date docs and code examples instead of relying only on built-in knowledge or web search.
 
+## Scope boundary
+
+- Use this rule for **external** documentation (libraries/frameworks/APIs).
+- For **internal project docs** (`README.md`, `CONTRACTS.md`, `docs/**`, `CherryPlayList/docs/**`), follow the project documentation rule first.
+
 ## When to use
 
 - Looking up library/framework API (React, Vue, TypeScript, Vite, etc.)

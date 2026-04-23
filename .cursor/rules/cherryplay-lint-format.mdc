@@ -5,23 +5,33 @@ alwaysApply: true
 
 # CherryPlay Lint, Format and Completion
 
-После любых изменений в файлах TypeScript/JavaScript/React (.ts, .tsx, .js, .jsx) в проектах CherryPlayWeb, CherryPlayList или CherryPlayComponents соблюдай следующие правила.
+After any changes to TypeScript/JavaScript/React files (.ts, .tsx, .js, .jsx) in CherryPlayWeb, CherryPlayList, or CherryPlayComponents, follow these rules.
 
-## Автоматический запуск линтера
+## Rule priority
 
-1. Если изменены файлы в `CherryPlayWeb/src/` — запусти `cd CherryPlayWeb && npm run lint:fix`
-2. Если изменены файлы в `CherryPlayList/src/` — запусти `cd CherryPlayList && npm run lint:fix`
-3. Если изменены файлы в `CherryPlayComponents/src/` — запусти `cd CherryPlayComponents && npm run lint:fix`
-4. Если изменены файлы в нескольких проектах — запусти линтер для каждого из них
+- This rule applies to implementation tasks that modify files.
+- If the interaction is question-only (no edits), lint commands are not required.
 
-## Форматирование кода
+## Automatic linter runs
 
-Все изменения должны соответствовать правилам ESLint и Prettier проекта. При необходимости автоматически исправляй форматирование через `lint:fix`.
+1. If files under `CherryPlayWeb/src/` were changed — run `cd CherryPlayWeb && npm run lint:fix`
+2. If files under `CherryPlayList/src/` were changed — run `cd CherryPlayList && npm run lint:fix`
+3. If files under `CherryPlayComponents/src/` were changed — run `cd CherryPlayComponents && npm run lint:fix`
+4. If files in more than one project were changed — run the linter for each affected project
 
-## Проверка перед завершением задачи
+## Code formatting
 
-Перед завершением задачи убедись, что:
+All changes must comply with the project's ESLint and Prettier rules. When needed, fix formatting automatically via `lint:fix`.
 
-- Линтер пройден без ошибок
-- Код соответствует стандартам проекта
-- Все изменения протестированы
+## Checks before finishing a task
+
+Before closing out a task, ensure that:
+
+- The linter completes with no errors
+- Code matches the project's standards
+- All changes have been tested
+
+## Blocking policy
+
+- Lint errors are **blocking** for task completion.
+- Warnings may be accepted only if they are pre-existing or explicitly documented as follow-up work.
