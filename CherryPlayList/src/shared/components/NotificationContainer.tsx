@@ -34,7 +34,7 @@ export const NotificationContainer: React.FC = () => {
       {notifications.map((notification) => (
         <div
           key={notification.id}
-          className={`notification notification-${notification.type}`}
+          className={`notification notification-${notification.type}${notification.action ? ' notification--with-action' : ''}`}
           onClick={() => removeNotification(notification.id)}
           role="button"
           tabIndex={0}
@@ -46,7 +46,27 @@ export const NotificationContainer: React.FC = () => {
           }}
         >
           <div className="notification-icon">{getIcon(notification.type)}</div>
-          <div className="notification-message">{notification.message}</div>
+          <div className="notification-message">
+            {notification.message}
+            {notification.action && (
+              <div className="notification-actions">
+                <button
+                  type="button"
+                  className="notification-action"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    try {
+                      notification.action?.onAction();
+                    } finally {
+                      removeNotification(notification.id);
+                    }
+                  }}
+                >
+                  {notification.action.label}
+                </button>
+              </div>
+            )}
+          </div>
           <button
             className="notification-close"
             onClick={(e) => {

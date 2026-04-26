@@ -1,14 +1,19 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import AddIcon from '@mui/icons-material/Add';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import SaveIcon from '@mui/icons-material/Save';
-import SaveAsIcon from '@mui/icons-material/SaveAs';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import {
+  type ProjectItem,
+  type ProjectMeta,
+  type ProjectSessionState,
+  type ProjectSettings,
+  type ProjectGroupSettings,
+  type ProjectTrackSettings,
+} from '@core/types/project';
 import { DemoPlayer } from '@shared/components';
 import { ipcService, projectService } from '@shared/services';
+import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
@@ -22,8 +27,64 @@ import {
 } from '@shared/stores';
 import { getAimpPartyPresetState, getLayoutPresetFromLayout } from '@shared/utils';
 
+import { SaveProjectAsModal } from './SaveProjectAsModal';
+
+function caughtErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Неизвестная ошибка';
+}
+
+/** Parent directory of a .cherry file path (cross-platform). */
+function directoryOfProjectFile(filePath: string): string {
+  const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
+  return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
+}
+
+/**
+ * Assembles the project state snapshot passed to `serializeProject` (quick save and save-as).
+ */
+function projectStateDataForSave(params: {
+  name: string;
+  items: ProjectItem[];
+  settings: ProjectSettings;
+  trackSettings: Map<string, ProjectTrackSettings>;
+  groupSettings: Map<string, ProjectGroupSettings>;
+  sessionState: ProjectSessionState;
+  meta: Pick<
+    ProjectMeta,
+    'linkedParty' | 'partyTrackDisplay' | 'partyThemeId' | 'partyCustomizationSettings'
+  >;
+}): ProjectStateData {
+  const { name, items, settings, trackSettings, groupSettings, sessionState, meta } = params;
+  const linkedParty = meta.linkedParty
+    ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
+    : undefined;
+  return {
+    name,
+    items,
+    settings,
+    trackSettings,
+    groupSettings,
+    sessionState,
+    linkedParty,
+    partyTrackDisplay: meta.partyTrackDisplay,
+    partyThemeId: meta.partyThemeId,
+    partyCustomizationSettings: meta.partyCustomizationSettings,
+  };
+}
+
 export const AppHeader: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
+  const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
+  const [saveAsModalKey, setSaveAsModalKey] = useState(0);
+  const [saveAsInitialDirectory, setSaveAsInitialDirectory] = useState('');
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const projectMenuRef = useRef<HTMLDivElement>(null);
+  const projectMenuPanelRef = useRef<HTMLDivElement>(null);
+  const projectMenuTriggerRef = useRef<HTMLButtonElement>(null);
+  const projectMenuTriggerId = useId();
+  const projectMenuPanelId = useId();
 
   const {
     name,
@@ -37,6 +98,7 @@ export const AppHeader: React.FC = () => {
     newProject,
     loadProject,
     setFilePath,
+    setPortableMode,
     resetDirty,
     getAllTracksInOrder,
   } = useProjectStore();
@@ -92,106 +154,251 @@ export const AppHeader: React.FC = () => {
     setLayoutPreset,
   ]);
 
+  const closeProjectMenu = useCallback(() => setProjectMenuOpen(false), []);
+
+  const openSaveAsModal = useCallback(() => {
+    setSaveAsInitialDirectory(meta.filePath ? directoryOfProjectFile(meta.filePath) : '');
+    setSaveAsModalKey((k) => k + 1);
+    setSaveAsModalOpen(true);
+  }, [meta.filePath]);
+
+  const focusProjectMenuItemAt = useCallback((index: number) => {
+    const panel = projectMenuPanelRef.current;
+    if (!panel) return;
+    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+    if (items.length === 0) return;
+    const i = ((index % items.length) + items.length) % items.length;
+    items[i]?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!projectMenuOpen) return;
+    const onDocMouseDown = (e: MouseEvent) => {
+      if (projectMenuRef.current && !projectMenuRef.current.contains(e.target as Node)) {
+        setProjectMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setProjectMenuOpen(false);
+        queueMicrotask(() => projectMenuTriggerRef.current?.focus());
+      }
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [projectMenuOpen]);
+
+  useEffect(() => {
+    if (!projectMenuOpen) return;
+    const id = window.requestAnimationFrame(() => {
+      focusProjectMenuItemAt(0);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [projectMenuOpen, focusProjectMenuItemAt]);
+
+  const onProjectMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const panel = projectMenuPanelRef.current;
+      if (!panel) return;
+      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+      if (items.length === 0) return;
+      const current = items.indexOf(document.activeElement as HTMLElement);
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          focusProjectMenuItemAt(current < 0 ? 0 : current + 1);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          focusProjectMenuItemAt(current < 0 ? items.length - 1 : current - 1);
+          break;
+        case 'Home':
+          e.preventDefault();
+          focusProjectMenuItemAt(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          focusProjectMenuItemAt(items.length - 1);
+          break;
+        default:
+          break;
+      }
+    },
+    [focusProjectMenuItemAt],
+  );
+
+  const onProjectMenuTriggerKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (projectMenuOpen) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setProjectMenuOpen(true);
+      }
+    },
+    [projectMenuOpen],
+  );
+
   const handleNew = useCallback(() => {
     newProject();
     addNotification({ type: 'info', message: 'Создан новый проект' });
   }, [newProject, addNotification]);
 
-  const handleSaveAs = useCallback(async () => {
+  const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      const path = await ipcService.showSaveDialog({
-        title: 'Сохранить проект',
-        defaultPath: name || 'project',
-        filters: [{ name: 'Cherry Project', extensions: ['cherry'] }],
-      });
-
-      if (path) {
-        const linkedPartyForFile = meta.linkedParty
-          ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
-          : undefined;
-        const projectFile = projectService.serializeProject({
-          name,
-          items,
-          settings,
-          trackSettings,
-          groupSettings,
-          sessionState,
-          linkedParty: linkedPartyForFile,
-          partyTrackDisplay: meta.partyTrackDisplay,
-          partyThemeId: meta.partyThemeId,
-          partyCustomizationSettings: meta.partyCustomizationSettings,
-        });
-        await projectService.saveProject(path, projectFile, {
-          portableMode: settings.portableMode,
-        });
-        setFilePath(path);
-        resetDirty();
-        setLastOpenedPlaylist(path);
-        addNotification({ type: 'success', message: 'Проект сохранён' });
-      }
-    } catch (error) {
-      addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
+      await operation();
     } finally {
       setIsSaving(false);
     }
-  }, [
-    name,
-    items,
-    settings,
-    trackSettings,
-    groupSettings,
-    sessionState,
-    meta.linkedParty,
-    meta.partyTrackDisplay,
-    meta.partyThemeId,
-    meta.partyCustomizationSettings,
-    setFilePath,
-    resetDirty,
-    setLastOpenedPlaylist,
-    addNotification,
-  ]);
+  }, []);
+
+  const addSaveSuccessWithOpenFolder = useCallback(
+    (folderToOpen: string, message: string) => {
+      addNotification({
+        type: 'success',
+        message,
+        duration: 8000,
+        action: {
+          label: 'Открыть папку',
+          onAction: () => {
+            void ipcService.openPath(folderToOpen);
+          },
+        },
+      });
+    },
+    [addNotification],
+  );
+
+  const runSaveAsFromModal = useCallback(
+    async (payload: { portable: boolean; projectName: string; targetDirectory: string }) => {
+      const projectName = payload.projectName.trim();
+      const targetDirectory = payload.targetDirectory.trim();
+      const portablePackage = payload.portable;
+      const baseName = projectName.toLowerCase().endsWith('.cherry')
+        ? projectName.slice(0, -7).trim()
+        : projectName;
+
+      if (!baseName) {
+        addNotification({ type: 'error', message: 'Укажите название проекта' });
+        return;
+      }
+      if (!targetDirectory) {
+        addNotification({ type: 'error', message: 'Укажите папку назначения' });
+        return;
+      }
+
+      const stateData = projectStateDataForSave({
+        name: baseName,
+        items,
+        settings,
+        trackSettings,
+        groupSettings,
+        sessionState,
+        meta,
+      });
+      const projectFile = projectService.serializeProject(stateData);
+
+      if (portablePackage) {
+        const { cherryPath, folderPath } = await projectService.savePortableAs(
+          targetDirectory,
+          projectFile,
+          {
+            notifyOnIpcError: false,
+          },
+        );
+        setName(baseName);
+        setFilePath(cherryPath);
+        resetDirty();
+        setLastOpenedPlaylist(cherryPath);
+        setPortableMode(true);
+        setSaveAsModalOpen(false);
+        addSaveSuccessWithOpenFolder(folderPath, 'Проект сохранён (переносимый пакет)');
+        return;
+      }
+      const normalizedDir = targetDirectory.replace(/[\\/]+$/, '');
+      const path = `${normalizedDir}\\${baseName}.cherry`;
+
+      await projectService.saveProject(path, projectFile, {
+        portableMode: settings.portableMode,
+        notifyOnIpcError: false,
+      });
+      setName(baseName);
+      setFilePath(path);
+      resetDirty();
+      setLastOpenedPlaylist(path);
+      setSaveAsModalOpen(false);
+      addSaveSuccessWithOpenFolder(directoryOfProjectFile(path), 'Проект сохранён');
+    },
+    [
+      items,
+      settings,
+      trackSettings,
+      groupSettings,
+      sessionState,
+      meta,
+      addNotification,
+      setFilePath,
+      setName,
+      setPortableMode,
+      resetDirty,
+      setLastOpenedPlaylist,
+      addSaveSuccessWithOpenFolder,
+    ],
+  );
+
+  const handleSaveAsModalConfirm = useCallback(
+    async (payload: { portable: boolean; projectName: string; targetDirectory: string }) => {
+      try {
+        await runWithSavingIndicator(() => runSaveAsFromModal(payload));
+      } catch (error) {
+        addNotification({
+          type: 'error',
+          message: `Ошибка сохранения: ${caughtErrorMessage(error)}`,
+        });
+      }
+    },
+    [runWithSavingIndicator, runSaveAsFromModal, addNotification],
+  );
 
   const handleSave = useCallback(async () => {
+    const quickSavePath = meta.filePath;
+    if (!quickSavePath) {
+      openSaveAsModal();
+      return;
+    }
     try {
-      setIsSaving(true);
-      // Если есть сохранённый путь - быстрое сохранение
-      if (meta.filePath) {
-        const linkedPartyForFile = meta.linkedParty
-          ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
-          : undefined;
-        const projectFile = projectService.serializeProject({
-          name,
-          items,
-          settings,
-          trackSettings,
-          groupSettings,
-          sessionState,
-          linkedParty: linkedPartyForFile,
-          partyTrackDisplay: meta.partyTrackDisplay,
-          partyThemeId: meta.partyThemeId,
-          partyCustomizationSettings: meta.partyCustomizationSettings,
-        });
-        await projectService.saveProject(meta.filePath, projectFile, {
+      await runWithSavingIndicator(async () => {
+        const projectFile = projectService.serializeProject(
+          projectStateDataForSave({
+            name,
+            items,
+            settings,
+            trackSettings,
+            groupSettings,
+            sessionState,
+            meta,
+          }),
+        );
+        await projectService.saveProject(quickSavePath, projectFile, {
           portableMode: settings.portableMode,
         });
         resetDirty();
         addNotification({ type: 'success', message: 'Проект сохранён' });
-      } else {
-        // Иначе - Save As
-        await handleSaveAs();
-      }
+      });
     } catch (error) {
-      addNotification({ type: 'error', message: `Ошибка сохранения: ${(error as Error).message}` });
-    } finally {
-      setIsSaving(false);
+      addNotification({
+        type: 'error',
+        message: `Ошибка сохранения: ${caughtErrorMessage(error)}`,
+      });
     }
   }, [
-    meta.filePath,
-    meta.linkedParty,
-    meta.partyTrackDisplay,
-    meta.partyThemeId,
-    meta.partyCustomizationSettings,
+    runWithSavingIndicator,
+    meta,
     name,
     items,
     settings,
@@ -200,7 +407,7 @@ export const AppHeader: React.FC = () => {
     sessionState,
     resetDirty,
     addNotification,
-    handleSaveAs,
+    openSaveAsModal,
   ]);
 
   const handleLoad = useCallback(async () => {
@@ -239,17 +446,39 @@ export const AppHeader: React.FC = () => {
         }
       }
     } catch (error) {
-      addNotification({ type: 'error', message: `Ошибка загрузки: ${(error as Error).message}` });
+      addNotification({ type: 'error', message: `Ошибка загрузки: ${caughtErrorMessage(error)}` });
     }
   }, [loadProject, setLastOpenedPlaylist, addNotification]);
 
-  // Register global keyboard shortcuts
-  useGlobalShortcuts({
-    'global.save': handleSave,
-    'global.saveAs': handleSaveAs,
-    'global.open': handleLoad,
-    'global.new': handleNew,
-  });
+  const globalShortcutHandlers = useMemo(
+    () => ({
+      'global.save': () => {
+        closeProjectMenu();
+        void handleSave();
+      },
+      'global.saveAs': () => {
+        closeProjectMenu();
+        // With no file path, menu only shows "Сохранить" (not "Сохранить как…") — first-save flow
+        // is handleSave → open save-as modal. Reuse the same path so the shortcut never diverges.
+        if (!meta.filePath) {
+          void handleSave();
+        } else {
+          openSaveAsModal();
+        }
+      },
+      'global.open': () => {
+        closeProjectMenu();
+        void handleLoad();
+      },
+      'global.new': () => {
+        closeProjectMenu();
+        handleNew();
+      },
+    }),
+    [closeProjectMenu, handleSave, handleLoad, handleNew, openSaveAsModal, meta.filePath],
+  );
+
+  useGlobalShortcuts(globalShortcutHandlers);
 
   const handleExport = () => {
     const allTracks = getAllTracksInOrder();
@@ -311,53 +540,112 @@ export const AppHeader: React.FC = () => {
         <div className="app-header-left">
           <div className="app-header-actions">
             <div className="action-group">
-              <button className="header-button" onClick={handleNew} title="Новый проект (Ctrl+N)">
-                <AddIcon style={{ fontSize: '32px' }} />
-              </button>
-              <button
-                className="header-button"
-                onClick={handleSave}
-                title={meta.filePath ? 'Сохранить (Ctrl+S)' : 'Сохранить как... (Ctrl+S)'}
-                disabled={isSaving}
-              >
-                {isSaving ? (
-                  <span
-                    className="header-button-loader"
-                    aria-label="Сохранение..."
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      border: '3px solid rgba(255,255,255,0.2)',
-                      borderTopColor: '#fff',
-                      boxSizing: 'border-box',
-                      animation: 'spin 0.8s linear infinite',
-                    }}
-                  />
-                ) : (
-                  <SaveIcon style={{ fontSize: '32px' }} />
+              <div className="project-menu" ref={projectMenuRef}>
+                <button
+                  ref={projectMenuTriggerRef}
+                  type="button"
+                  id={projectMenuTriggerId}
+                  className="project-menu__trigger header-button"
+                  onClick={() => setProjectMenuOpen((o) => !o)}
+                  onKeyDown={onProjectMenuTriggerKeyDown}
+                  aria-haspopup="menu"
+                  aria-expanded={projectMenuOpen}
+                  aria-controls={projectMenuPanelId}
+                  aria-busy={isSaving}
+                  title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
+                >
+                  {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
+                  <MoreVertIcon style={{ fontSize: 28 }} aria-hidden />
+                </button>
+                {projectMenuOpen && (
+                  <div
+                    ref={projectMenuPanelRef}
+                    id={projectMenuPanelId}
+                    className="project-menu__panel"
+                    role="menu"
+                    tabIndex={-1}
+                    aria-labelledby={projectMenuTriggerId}
+                    onKeyDown={onProjectMenuKeyDown}
+                  >
+                    <button
+                      type="button"
+                      className="project-menu__item"
+                      role="menuitem"
+                      disabled={isSaving}
+                      onClick={() => {
+                        closeProjectMenu();
+                        handleNew();
+                      }}
+                    >
+                      Новый проект
+                    </button>
+                    <button
+                      type="button"
+                      className="project-menu__item"
+                      role="menuitem"
+                      disabled={isSaving}
+                      onClick={() => {
+                        closeProjectMenu();
+                        void handleLoad();
+                      }}
+                    >
+                      Открыть проект…
+                    </button>
+                    <button
+                      type="button"
+                      className="project-menu__item"
+                      role="menuitem"
+                      disabled={isSaving}
+                      onClick={() => {
+                        closeProjectMenu();
+                        handleExport();
+                      }}
+                    >
+                      Экспорт
+                    </button>
+                    <button
+                      type="button"
+                      className="project-menu__item"
+                      role="menuitem"
+                      disabled={isSaving}
+                      onClick={() => {
+                        closeProjectMenu();
+                        void handleSave();
+                      }}
+                    >
+                      {isSaving ? (
+                        <span className="project-menu__item-with-loader">
+                          <span
+                            className="project-menu__save-spinner"
+                            aria-label="Сохранение…"
+                            role="status"
+                          />
+                          Сохранить
+                        </span>
+                      ) : (
+                        'Сохранить'
+                      )}
+                    </button>
+                    {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
+                        no filePath (only «Сохранить») vs with filePath (+ «Сохранить как…») and
+                        `globalShortcutHandlers` when a renderer test harness exists. */}
+                    {meta.filePath ? (
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          openSaveAsModal();
+                        }}
+                      >
+                        Сохранить как…
+                      </button>
+                    ) : null}
+                  </div>
                 )}
-              </button>
-              <button
-                className="header-button"
-                onClick={handleSaveAs}
-                title="Сохранить как... (Ctrl+Shift+S)"
-              >
-                <SaveAsIcon style={{ fontSize: '32px' }} />
-              </button>
-              <button
-                className="header-button"
-                onClick={handleLoad}
-                title="Открыть проект (Ctrl+O)"
-              >
-                <FolderOpenIcon style={{ fontSize: '32px' }} />
-              </button>
-            </div>
-
-            <div className="action-group">
-              <button className="header-button" onClick={handleExport} title="Экспортировать">
-                <FileDownloadIcon style={{ fontSize: '32px' }} />
-              </button>
+              </div>
             </div>
 
             <div className="action-group">
@@ -439,6 +727,26 @@ export const AppHeader: React.FC = () => {
 
         <DemoPlayer className="app-header-demo-player" onShowInBrowser={focusFileInBrowser} />
       </div>
+
+      <SaveProjectAsModal
+        key={saveAsModalKey}
+        open={saveAsModalOpen}
+        isSaving={isSaving}
+        initialProjectName={name}
+        initialDirectory={saveAsInitialDirectory}
+        onRequestDirectory={(currentDirectory) =>
+          ipcService.showFolderDialog({
+            title: 'Выберите папку для сохранения проекта',
+            defaultPath: currentDirectory || undefined,
+          })
+        }
+        onClose={() => {
+          if (!isSaving) {
+            setSaveAsModalOpen(false);
+          }
+        }}
+        onConfirm={handleSaveAsModalConfirm}
+      />
     </div>
   );
 };

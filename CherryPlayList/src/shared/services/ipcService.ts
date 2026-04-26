@@ -137,6 +137,13 @@ class IPCService {
   async getSystemPath(name: string): Promise<string> {
     return this.invoke<string>('system:getPath', { name });
   }
+
+  /**
+   * Открывает файл или папку в ассоциированном приложении (Проводник для каталога).
+   */
+  async openPath(fileOrFolderPath: string): Promise<void> {
+    return this.invoke<void>('system:openPath', { path: fileOrFolderPath });
+  }
 }
 
 export const ipcService = new IPCService();

@@ -1,5 +1,7 @@
 import { ipcMain, app, shell } from 'electron';
 
+import { validatePath } from '../utils/fsHelpers.js';
+
 /**
  * Get system path (documents, music, downloads, etc.)
  */
@@ -57,6 +59,32 @@ export function registerSystemHandlers(): void {
   ipcMain.handle('system:openExternal', async (event, payload: { url: string }) => {
     try {
       await shell.openExternal(payload.url);
+      return {
+        success: true,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  });
+
+  ipcMain.handle('system:openPath', async (event, payload: { path: string }) => {
+    try {
+      if (!validatePath(payload.path)) {
+        return {
+          success: false,
+          error: 'Invalid path: path traversal detected',
+        };
+      }
+      const openErr = await shell.openPath(payload.path);
+      if (openErr) {
+        return {
+          success: false,
+          error: openErr,
+        };
+      }
       return {
         success: true,
       };

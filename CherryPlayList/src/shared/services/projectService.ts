@@ -143,13 +143,38 @@ class ProjectService {
   async saveProject(
     path: string,
     projectFile: ProjectFile,
-    options?: { portableMode?: boolean },
+    options?: { portableMode?: boolean; strictSourceFiles?: boolean; notifyOnIpcError?: boolean },
   ): Promise<void> {
-    await ipcService.invoke<void>('project:save', {
-      path,
-      projectFile,
-      portableMode: options?.portableMode,
-    });
+    const notify = options?.notifyOnIpcError !== false;
+    await ipcService.invoke<void>(
+      'project:save',
+      {
+        path,
+        projectFile,
+        portableMode: options?.portableMode,
+        strictSourceFiles: options?.strictSourceFiles,
+      },
+      notify,
+    );
+  }
+
+  /**
+   * Переносимый «пакет»: вложенная папка с именем проекта, .cherry и копия треков (строгий режим в main).
+   */
+  async savePortableAs(
+    parentPath: string,
+    projectFile: ProjectFile,
+    options?: { notifyOnIpcError?: boolean },
+  ): Promise<{ cherryPath: string; folderPath: string }> {
+    const notify = options?.notifyOnIpcError !== false;
+    return ipcService.invoke<{ cherryPath: string; folderPath: string }>(
+      'project:savePortableAs',
+      {
+        parentPath,
+        projectFile,
+      },
+      notify,
+    );
   }
 
   /**

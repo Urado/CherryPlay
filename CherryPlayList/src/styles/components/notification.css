@@ -34,6 +34,32 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
+.notification--with-action {
+  align-items: flex-start;
+}
+
+.notification--with-action .notification-icon {
+  margin-top: 2px;
+}
+
+.notification-actions {
+  margin-top: 8px;
+}
+
+.notification-action {
+  background: var(--bg-primary, #1e1e1e);
+  border: 1px solid var(--ui-border);
+  color: var(--text-primary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.notification-action:hover {
+  background: var(--bg-hover);
+}
+
 .notification-success {
   border-left: 4px solid var(--state-success);
 }
