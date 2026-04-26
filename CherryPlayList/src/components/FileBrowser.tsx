@@ -19,12 +19,20 @@ import { fileService, ipcService, isIpcRendererAvailable } from '@shared/service
 import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
 import { formatTrackDuration } from '@shared/utils/durationUtils';
+import {
+  createFileBrowserNavState,
+  goBackInFileBrowserHistory,
+  normalizeFileBrowserPath,
+  type FileBrowserNavState,
+  pushFileBrowserPath,
+} from '@shared/utils/fileBrowserNavigationHistory';
 
 import { FileBrowserItemRow } from './FileBrowserItemRow';
 
 export const FileBrowser: React.FC = () => {
   const setFileBrowserPath = useSettingsStore((state) => state.setFileBrowserPath);
-  const [currentPath, setCurrentPath] = useState<string>('');
+  const [pathNav, setPathNav] = useState<FileBrowserNavState>(() => createFileBrowserNavState(''));
+  const currentPath = pathNav.entries[pathNav.index] ?? '';
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [draggedPath, setDraggedPath] = useState<string | null>(null);
@@ -70,7 +78,7 @@ export const FileBrowser: React.FC = () => {
             initialPath = await ipcService.getSystemPath('home');
           }
         }
-        setCurrentPath(initialPath);
+        setPathNav(createFileBrowserNavState(initialPath));
       } catch (err) {
         setError((err as Error).message || 'Failed to initialize file browser');
         logger.error('Failed to initialize file browser', err);
@@ -87,6 +95,10 @@ export const FileBrowser: React.FC = () => {
     }
   }, [currentPath, setFileBrowserPath]);
 
+  const goToPath = useCallback((path: string) => {
+    setPathNav((state) => pushFileBrowserPath(state, path));
+  }, []);
+
   const handleChooseFolder = useCallback(async () => {
     if (!isIpcRendererAvailable()) {
       return;
@@ -97,12 +109,12 @@ export const FileBrowser: React.FC = () => {
         defaultPath: currentPath || undefined,
       });
       if (path && path.trim() !== '') {
-        setCurrentPath(path.trim());
+        goToPath(path.trim());
       }
     } catch (err) {
       logger.error('Failed to choose folder', err);
     }
-  }, [currentPath]);
+  }, [currentPath, goToPath]);
 
   const loadDirectory = async (path: string) => {
     if (!isIpcRendererAvailable()) {
@@ -172,12 +184,15 @@ export const FileBrowser: React.FC = () => {
     setSearchQuery('');
     setPendingRevealPath(path);
 
-    if (directory && directory !== currentPath) {
-      setCurrentPath(directory);
+    if (
+      directory &&
+      normalizeFileBrowserPath(directory) !== normalizeFileBrowserPath(currentPath)
+    ) {
+      goToPath(directory);
     }
 
     acknowledgeFocusRequest();
-  }, [focusRequest, currentPath, acknowledgeFocusRequest]);
+  }, [focusRequest, currentPath, acknowledgeFocusRequest, goToPath]);
 
   useEffect(() => {
     if (!pendingRevealPath) {
@@ -232,6 +247,7 @@ export const FileBrowser: React.FC = () => {
 
   const hasSelectedPaths = selectedPaths.size > 0;
 
+  // Breadcrumbs jump by path (handleNavigate); Back still uses history only — same as typical file managers.
   const breadcrumbs = useMemo(() => {
     if (!currentPath) return [];
     return fileService.getPathSegments(currentPath);
@@ -304,7 +320,7 @@ export const FileBrowser: React.FC = () => {
     try {
       const stats = await fileService.readFileMeta(path);
       if (stats && stats.isDirectory) {
-        setCurrentPath(path);
+        goToPath(path);
         setSelectedPaths(new Set());
       }
     } catch (err) {
@@ -318,13 +334,10 @@ export const FileBrowser: React.FC = () => {
     }
   };
 
-  const handleBack = () => {
-    const parent = fileService.getParentPath(currentPath);
-    if (parent) {
-      setCurrentPath(parent);
-      setSelectedPaths(new Set());
-    }
-  };
+  const handleBack = useCallback(() => {
+    setPathNav((state) => goBackInFileBrowserHistory(state));
+    setSelectedPaths(new Set());
+  }, []);
 
   const selectSingleItem = (path: string) => {
     setSelectedPaths(new Set([path]));
@@ -349,9 +362,16 @@ export const FileBrowser: React.FC = () => {
     }
   };
 
-  const handleUp = () => {
-    handleBack();
-  };
+  const handleUp = useCallback(() => {
+    const parent = fileService.getParentPath(currentPath);
+    if (
+      parent != null &&
+      normalizeFileBrowserPath(parent) !== normalizeFileBrowserPath(currentPath)
+    ) {
+      goToPath(parent);
+      setSelectedPaths(new Set());
+    }
+  }, [currentPath, goToPath]);
 
   const handleBreadcrumbClick = (path: string) => {
     handleNavigate(path);
@@ -468,7 +488,12 @@ export const FileBrowser: React.FC = () => {
   );
 
   const parentPath = fileService.getParentPath(currentPath);
-  const canGoBack = parentPath !== null;
+  const canGoBack = pathNav.index > 0;
+  const hasDifferentParentPath =
+    parentPath != null
+      ? normalizeFileBrowserPath(parentPath) !== normalizeFileBrowserPath(currentPath)
+      : false;
+  const canGoUp = hasDifferentParentPath;
 
   return (
     <div className="file-browser">
@@ -478,15 +503,19 @@ export const FileBrowser: React.FC = () => {
             className="nav-button"
             onClick={handleBack}
             disabled={!canGoBack || loading}
-            title="Назад"
+            title="Назад (по истории навигации)"
+            type="button"
+            aria-label="Назад по истории навигации"
           >
             <ArrowBackIcon />
           </button>
           <button
             className="nav-button"
             onClick={handleUp}
-            disabled={!canGoBack || loading}
-            title="Вверх"
+            disabled={!canGoUp || loading}
+            title="К родительской папке"
+            type="button"
+            aria-label="К родительской папке"
           >
             <ArrowUpwardIcon />
           </button>
