@@ -85,12 +85,15 @@ class IPCService {
     return this.invoke<DirectoryItem[]>('fileBrowser:listDirectory', { path });
   }
 
-  async statFile(path: string): Promise<{
+  async statFile(
+    path: string,
+    showNotification: boolean = true,
+  ): Promise<{
     size: number;
     modified: number;
     isDirectory: boolean;
   }> {
-    return this.invoke('fileBrowser:statFile', { path });
+    return this.invoke('fileBrowser:statFile', { path }, showNotification);
   }
 
   async findAudioFilesRecursive(path: string): Promise<string[]> {

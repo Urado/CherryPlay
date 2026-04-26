@@ -13,6 +13,7 @@ declare global {
     api: {
       invoke: <T = unknown>(channel: string, payload?: unknown) => Promise<T>;
       on: (channel: string, listener: (event: unknown, ...args: unknown[]) => void) => () => void;
+      getPathForFile: (file: File) => string;
       aimp: {
         getState: () => Promise<{ success: boolean; data?: AimpBridgeState; error?: string }>;
         setSourceSelection: (
