@@ -41,11 +41,16 @@ export {
   formatTimeFromDuration,
   calculateDividerMarkers,
   calculatePlannedEndDividerPosition,
+  calculateTrackAnchorDividerPosition,
+  calculateQueueEndMarker,
+  calculateQueueEndDividerPosition,
   calculateProjectedEndTime,
   calculatePlannedEndMarker,
+  getPriorityHourDividerKind,
   type DividerCalculationContext,
   type StartPosition,
   type DividerMarkers,
+  type QueueEndMarker,
 } from './dividerUtils';
 export { cloneItem, cloneItems } from './historyCore';
 export {

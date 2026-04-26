@@ -8,12 +8,19 @@ import {
   calculateDividerMarkers as calculateDividerMarkersUtil,
   formatDividerLabel as formatDividerLabelUtil,
   calculatePlannedEndDividerPosition,
+  calculateQueueEndDividerPosition,
+  calculateQueueEndMarker,
   calculateProjectedEndTime,
   calculatePlannedEndMarker,
+  formatTimeFromDuration,
   formatTimeFromTimestamp,
   type DividerCalculationContext,
   type DividerMarkers,
 } from '../dividerUtils';
+import {
+  PLAYER_TIMELINE_PLANNED_END_PREFIX,
+  PLAYER_TIMELINE_QUEUE_END_PREFIX,
+} from '../timelineCopy';
 
 interface UsePlayerDividersOptions {
   allTracks: Track[];
@@ -44,6 +51,10 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
 
   const mode = useProjectStore((state) => state.sessionState.mode);
   const plannedEndTime = useProjectStore((state) => state.settings.plannedEndTime);
+  const disabledTrackIds = useProjectStore((state) => state.sessionState.disabledTrackIds);
+  const disabledGroupIds = useProjectStore((state) => state.sessionState.disabledGroupIds);
+  const disabledTrackIdsKey = disabledTrackIds.join(',');
+  const disabledGroupIdsKey = disabledGroupIds.join(',');
   const isPreparationMode = mode === 'preparation';
   const { hourDividerInterval, showHourDividers } = useSettingsStore();
 
@@ -67,6 +78,8 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
         return duration;
       },
     }),
+    // isTrackOrGroupDisabled is listed for hook correctness; disabled* keys still needed because zustand action refs stay stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
     [
       allTracks,
       activePlayerTrackId,
@@ -76,6 +89,8 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
       isTrackOrGroupDisabled,
       isTrackPlayed,
       getEffectiveTrackSettings,
+      disabledTrackIdsKey,
+      disabledGroupIdsKey,
     ],
   );
 
@@ -123,22 +138,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     return calculateProjectedEndTime(dividerCalculationContext);
   }, [dividerCalculationContext]);
 
-  // Форматирование прогнозируемого времени окончания
-  const formatProjectedEndTime = useCallback((): string => {
-    if (projectedEndTime === null) {
-      return '';
-    }
-    return formatTimeFromTimestamp(projectedEndTime);
-  }, [projectedEndTime]);
-
-  // Форматирование метки планового времени окончания
-  const formatPlannedEndTimeLabel = useCallback((): string => {
-    if (plannedEndTime === null) {
-      return '';
-    }
-    return formatTimeFromTimestamp(plannedEndTime);
-  }, [plannedEndTime]);
-
   // Вычисление plannedEndMarker независимо от showHourDividers
   // Красная отсечка должна показываться всегда при наличии plannedEndTime
   const plannedEndMarker = useMemo(() => {
@@ -148,14 +147,17 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     return null;
   }, [isPreparationMode, allTracks.length, plannedEndTime, dividerCalculationContext]);
 
-  // Форматирование времени из plannedEndMarker (для отображения на отсечке)
-  const formatPlannedEndMarkerTime = useCallback((): string => {
-    const markerTime = plannedEndMarker?.time;
-    if (markerTime !== null && markerTime !== undefined && markerTime > 0) {
-      return formatTimeFromTimestamp(markerTime);
+  // Время в подписи: из маркера (граница сегмента при плане внутри трека), иначе настройка
+  const formatPlannedEndTimeLabel = useCallback((): string => {
+    if (plannedEndTime === null) {
+      return '';
     }
-    return formatPlannedEndTimeLabel();
-  }, [plannedEndMarker, formatPlannedEndTimeLabel]);
+    const ts =
+      plannedEndMarker !== null && plannedEndMarker.time !== null
+        ? plannedEndMarker.time
+        : plannedEndTime;
+    return formatTimeFromTimestamp(ts);
+  }, [plannedEndTime, plannedEndMarker]);
 
   // Вычисление позиции красной отсечки о конце
   // Использует plannedEndMarker, вычисленный независимо от showHourDividers
@@ -180,14 +182,61 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     dividerMarkersResult.startPosition,
   ]);
 
+  const queueEndMarker = useMemo(() => {
+    if (!showHourDividers || hourDividerInterval <= 0 || allTracks.length === 0) {
+      return null;
+    }
+    return calculateQueueEndMarker(dividerCalculationContext);
+  }, [showHourDividers, hourDividerInterval, allTracks.length, dividerCalculationContext]);
+
+  const queueEndDividerPosition = useMemo(() => {
+    return calculateQueueEndDividerPosition(queueEndMarker, displayItems, isProjectTrack);
+  }, [queueEndMarker, displayItems]);
+
+  const formatQueueEndTimelineLabel = useCallback((): string => {
+    if (queueEndMarker === null) {
+      return '';
+    }
+    if (isPreparationMode) {
+      const sec = queueEndMarker.preparationDurationSeconds;
+      if (sec === null) {
+        return '';
+      }
+      return `${PLAYER_TIMELINE_QUEUE_END_PREFIX} ${formatTimeFromDuration(sec)}`;
+    }
+    const ts = queueEndMarker.sessionEndTimestamp;
+    if (ts === null) {
+      return '';
+    }
+    return `${PLAYER_TIMELINE_QUEUE_END_PREFIX} ${formatTimeFromTimestamp(ts)}`;
+  }, [queueEndMarker, isPreparationMode]);
+
+  const formatPlannedEndTimelineLabel = useCallback((): string => {
+    const timePart = formatPlannedEndTimeLabel();
+    if (!timePart) {
+      return '';
+    }
+    return `${PLAYER_TIMELINE_PLANNED_END_PREFIX} ${timePart}`;
+  }, [formatPlannedEndTimeLabel]);
+
+  const showQueueEndDividerAtListBottom = useMemo(() => {
+    return (
+      showHourDividers &&
+      queueEndMarker !== null &&
+      queueEndDividerPosition === null &&
+      displayItems.length > 0
+    );
+  }, [showHourDividers, queueEndMarker, queueEndDividerPosition, displayItems.length]);
+
   return {
     calculateDividerMarkers,
     formatDividerLabel,
     projectedEndTime,
-    formatProjectedEndTime,
-    formatPlannedEndTimeLabel,
-    formatPlannedEndMarkerTime,
+    formatPlannedEndTimelineLabel,
     plannedEndDividerPosition,
     plannedEndMarker,
+    queueEndDividerPosition,
+    formatQueueEndTimelineLabel,
+    showQueueEndDividerAtListBottom,
   };
 }

@@ -69,3 +69,9 @@ export type {
 // WorkspaceHeader - Unified header for workspace views
 export { WorkspaceHeader } from './WorkspaceHeader';
 export type { WorkspaceHeaderProps } from './WorkspaceHeader';
+
+export { HourDividerAfterTrackRow, HourDividerListBottom } from './PlaylistHourDividerRows';
+export type {
+  HourDividerAfterTrackRowProps,
+  HourDividerListBottomProps,
+} from './PlaylistHourDividerRows';

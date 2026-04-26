@@ -181,15 +181,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
         findItemById,
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      isTrackDisabled,
-      isGroupDisabled,
-      getItemPath,
-      findItemById,
-      disabledTracksKey,
-      disabledGroupsKey,
-    ],
+    [isTrackDisabled, isGroupDisabled, getItemPath, findItemById],
   );
 
   const isTrackActive = useCallback(
@@ -292,10 +284,11 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
     calculateDividerMarkers,
     formatDividerLabel,
     projectedEndTime,
-    formatProjectedEndTime,
-    formatPlannedEndTimeLabel,
-    formatPlannedEndMarkerTime,
+    formatPlannedEndTimelineLabel,
     plannedEndDividerPosition,
+    queueEndDividerPosition,
+    formatQueueEndTimelineLabel,
+    showQueueEndDividerAtListBottom,
   } = usePlayerDividers({
     allTracks,
     activePlayerTrackId,
@@ -428,7 +421,15 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       }
     }
     return total;
-  }, [allTracks, isTrackOrGroupDisabled, getEffectiveTrackSettings]);
+    // isTrackOrGroupDisabled + disabled* keys: see usePlayerDividers (zustand stable refs).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
+  }, [
+    allTracks,
+    isTrackOrGroupDisabled,
+    getEffectiveTrackSettings,
+    disabledTracksKey,
+    disabledGroupsKey,
+  ]);
 
   const areItemsConsecutive = useCallback(
     (itemIds: string[]): boolean => {
@@ -457,14 +458,14 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
   useEffect(() => {
-    logger.debug('[PlayerViewContainer] Streaming effect:', {
+    logger.info('[PlayerViewContainer] Streaming effect:', {
       enableStreaming,
       hasLinkedParty: !!linkedParty,
       partyId: linkedParty?.id,
     });
 
     if (!enableStreaming) {
-      logger.debug('[PlayerViewContainer] SignalR skipped: streaming disabled');
+      logger.info('[PlayerViewContainer] SignalR skipped: streaming disabled');
       if (signalRService.isServiceConnected()) {
         signalRService.disconnect().catch((err) => logger.error('SignalR disconnect error', err));
       }
@@ -473,7 +474,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
     }
 
     if (!linkedParty) {
-      logger.debug(
+      logger.info(
         '[PlayerViewContainer] SignalR skipped: no party linked (create/link a party first)',
       );
       if (signalRService.isServiceConnected()) {
@@ -556,7 +557,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [linkedParty, mode, enableStreaming]);
+  }, [linkedParty, mode, enableStreaming, addNotification]);
 
   useEffect(() => {
     if (!enableStreaming || !linkedParty || !signalRService.isServiceConnected()) {
@@ -656,7 +657,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       onNameChange={setName}
       allTracksCount={allTracks.length}
       totalDuration={totalDuration}
-      projectedEndTime={projectedEndTime !== null ? formatProjectedEndTime() : null}
+      projectedEndTime={projectedEndTime}
       hasSelectedItems={hasSelectedItems}
       canCreateGroup={canCreateGroup}
       canRemoveSelectedItems={canRemoveSelectedItems}
@@ -688,8 +689,10 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       isTrackOrGroupDisabled={isTrackOrGroupDisabled}
       getEffectiveTrackSettings={getEffectiveTrackSettings}
       formatDividerLabel={formatDividerLabel}
-      formatPlannedEndTimeLabel={formatPlannedEndTimeLabel}
-      formatPlannedEndMarkerTime={formatPlannedEndMarkerTime}
+      formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+      queueEndDividerPosition={queueEndDividerPosition}
+      formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+      showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
       toggleItemSelection={toggleItemSelection}
       selectRange={selectRange}
       removeItem={removeItem}

@@ -4,7 +4,14 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
-import { ItemList, DropIndicator, ProjectItemRow, EmptyState } from '@shared/components';
+import {
+  ItemList,
+  DropIndicator,
+  ProjectItemRow,
+  EmptyState,
+  HourDividerAfterTrackRow,
+  HourDividerListBottom,
+} from '@shared/components';
 import { useSelectionWithModifiers } from '@shared/hooks';
 import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
@@ -12,7 +19,6 @@ import { getDuplicateTrackIdsFromDisplayItems } from '@shared/utils';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
-import { formatTimeFromTimestamp } from '../dividerUtils';
 import { TrackActionsDropdown } from '../TrackActionsDropdown';
 import { TrackSettingsDropdown } from '../TrackSettingsDropdown';
 import {
@@ -58,8 +64,10 @@ interface PlayerTracksListProps {
     pauseBetweenTracks: number;
   };
   formatDividerLabel: (trackId: string) => string;
-  formatPlannedEndTimeLabel: () => string;
-  formatPlannedEndMarkerTime: () => string;
+  formatPlannedEndTimelineLabel: () => string;
+  queueEndDividerPosition: number | null;
+  formatQueueEndTimelineLabel: () => string;
+  showQueueEndDividerAtListBottom: boolean;
   toggleItemSelection: (id: string) => void;
   selectRange: (fromId: string, toId: string) => void;
   removeItem: (id: string) => void;
@@ -81,7 +89,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   activePlayerTrackId,
   playerStatus,
   isPreparationMode,
-  mode,
+  mode: _mode,
   showHourDividers,
   plannedEndTime,
   plannedEndDividerPosition,
@@ -93,8 +101,10 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   isTrackOrGroupDisabled,
   getEffectiveTrackSettings,
   formatDividerLabel,
-  formatPlannedEndTimeLabel,
-  formatPlannedEndMarkerTime,
+  formatPlannedEndTimelineLabel,
+  queueEndDividerPosition,
+  formatQueueEndTimelineLabel,
+  showQueueEndDividerAtListBottom,
   toggleItemSelection,
   selectRange,
   removeItem,
@@ -127,6 +137,9 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   } | null>(null);
 
   const closeTrackActionsDropdown = useCallback(() => setTrackActionsDropdown(null), []);
+
+  const showPlannedEndDividerAtListBottom =
+    !isPreparationMode && plannedEndTime !== null && plannedEndDividerPosition === null;
 
   const { handleToggleSelect } = useSelectionWithModifiers({
     toggleSelection: toggleItemSelection,
@@ -229,13 +242,15 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             !isPreparationMode &&
             plannedEndTime !== null &&
             plannedEndDividerPosition === flatIndex;
+          const hasQueueEndDivider =
+            showHourDividers &&
+            queueEndDividerPosition !== null &&
+            queueEndDividerPosition === flatIndex;
           const showDivider =
             showHourDividers &&
             isProjectTrack(item) &&
             track !== null &&
-            calculateDividerMarkers.has(track.id) &&
-            !hasPlannedEndDivider;
-          const dividerTime = track ? (calculateDividerMarkers.get(track.id) ?? null) : null;
+            calculateDividerMarkers.has(track.id);
 
           const itemState = getItemState(
             item,
@@ -266,7 +281,9 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
               <DropIndicator index={flatIndex} />
               {showPlannedEndDividerBeforeActive && (
                 <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-                  <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
+                  <span className="playlist-hour-divider-label">
+                    {formatPlannedEndTimelineLabel()}
+                  </span>
                 </div>
               )}
               <ProjectItemRow
@@ -327,39 +344,26 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 }
                 trackActionsDisabled={!jumpToTrack || item.id === activePlayerTrackId}
               />
-              {showDivider && track && (
-                <div className="playlist-hour-divider">
-                  <span className="playlist-hour-divider-label">
-                    {mode === 'session' &&
-                    dividerTime !== undefined &&
-                    dividerTime !== null &&
-                    dividerTime > 0
-                      ? formatTimeFromTimestamp(dividerTime)
-                      : formatDividerLabel(track.id)}
-                  </span>
-                </div>
-              )}
-              {hasPlannedEndDivider && (
-                <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-                  <span className="playlist-hour-divider-label">
-                    {mode === 'session'
-                      ? formatPlannedEndMarkerTime()
-                      : formatPlannedEndTimeLabel()}
-                  </span>
-                </div>
-              )}
+              <HourDividerAfterTrackRow
+                hasPlannedEndDivider={hasPlannedEndDivider}
+                hasQueueEndDivider={hasQueueEndDivider}
+                showIntervalDivider={showDivider && track !== null}
+                intervalTrackId={track?.id}
+                formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+                formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+                formatDividerLabel={formatDividerLabel}
+              />
             </React.Fragment>
           );
         })}
         <DropIndicator index={displayItems.length} />
-        {!isPreparationMode &&
-          plannedEndTime !== null &&
-          plannedEndDividerPosition === null &&
-          displayItems.length > 0 && (
-            <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-              <span className="playlist-hour-divider-label">{formatPlannedEndTimeLabel()}</span>
-            </div>
-          )}
+        <HourDividerListBottom
+          showPlannedEndDividerAtListBottom={showPlannedEndDividerAtListBottom}
+          displayItemsLength={displayItems.length}
+          showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+          formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+          formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+        />
       </ItemList>
     </>
   );

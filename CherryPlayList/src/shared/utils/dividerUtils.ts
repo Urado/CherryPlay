@@ -62,10 +62,11 @@ export function calculateStartPosition(context: DividerCalculationContext): Star
   let currentRealTime: number | null = null;
 
   if (mode === 'session') {
-    // В режиме сессии: используем текущее время как базовую точку
-    // Нам не важно когда начали сессию, важно только предсказать будущее
+    // База — «сейчас» в wall-clock. Границы трека на таймлайне и остаток очереди
+    // сдвигаются на −currentTrackPosition в calculateDividerMarkers / plannedEnd
+    // и в calculateAccumulatedDuration, чтобы тайм не дрейфовал каждую секунду.
     currentRealTime = Date.now();
-    currentTimeOffset = 0; // Не используется, так как используем Date.now()
+    currentTimeOffset = 0; // смещение внутри трека учитывается при расчёте отрезков, не здесь
   }
 
   return {
@@ -96,6 +97,52 @@ export function calculateNextEvenTime(currentTime: number, hourDividerInterval: 
 }
 
 /**
+ * Секунды до конца трека и далее по очереди: в сессии на активном треке
+ * — остаток (duration − currentTrackPosition), иначе полная длительность.
+ */
+function getSessionOrFullTrackDurationSeconds(
+  context: DividerCalculationContext,
+  track: Track,
+): number {
+  const full = context.calculateTrackDurationWithPause(track);
+  if (context.mode !== 'session' || context.activeTrackId !== track.id) {
+    return full;
+  }
+  if (context.isTrackPlayed(track.id)) {
+    return full;
+  }
+  const pos = context.currentTrackPosition;
+  if (pos === undefined || pos <= 0) {
+    return full;
+  }
+  return Math.max(0, full - Math.min(pos, full));
+}
+
+/**
+ * В сессии сдвигает нулевую точку накопления к началу трека в wall time:
+ * trackStart = now − pos, trackEnd = trackStart + full.
+ */
+function shiftAccumulatedForSessionCurrentTrackStart(
+  context: DividerCalculationContext,
+  track: Track,
+  accumulatedDuration: number,
+): number {
+  if (
+    context.mode !== 'session' ||
+    context.isTrackPlayed(track.id) ||
+    context.activeTrackId !== track.id
+  ) {
+    return accumulatedDuration;
+  }
+  const pos = context.currentTrackPosition;
+  if (pos === undefined || pos <= 0) {
+    return accumulatedDuration;
+  }
+  const full = context.calculateTrackDurationWithPause(track);
+  return accumulatedDuration - Math.min(pos, full);
+}
+
+/**
  * Вычисляет накопленную длительность от startIndex до endIndex (включительно)
  */
 export function calculateAccumulatedDuration(
@@ -104,7 +151,7 @@ export function calculateAccumulatedDuration(
   endIndex: number,
   context: DividerCalculationContext,
 ): number {
-  const { mode, isTrackDisabled, isTrackPlayed, calculateTrackDurationWithPause } = context;
+  const { mode, isTrackDisabled, isTrackPlayed } = context;
 
   let accumulatedDuration = 0;
 
@@ -121,9 +168,7 @@ export function calculateAccumulatedDuration(
       continue;
     }
 
-    // Добавляем длительность трека с учетом паузы
-    const trackDuration = calculateTrackDurationWithPause(track);
-
+    const trackDuration = getSessionOrFullTrackDurationSeconds(context, track);
     accumulatedDuration += trackDuration;
   }
 
@@ -137,6 +182,7 @@ export interface DividerMarkers {
   markers: Map<string, number | null>; // trackId -> timestamp или null
   startPosition: StartPosition;
   nextEvenTime: number | null;
+  /** time — для отрисовки в session: при плане внутри трека — граница сегмента (trackEnd), как у интервальных отсечек; иначе plannedEndTime */
   plannedEndMarker: {
     trackId: string | null;
     time: number | null;
@@ -201,9 +247,8 @@ export function calculateDividerMarkers(
       }
     }
   } else {
-    // В режиме сессии: отсчет от текущего трека и текущего момента
-    // currentRealTime уже включает проигранное время до текущего момента
-    // accumulatedDuration начинается с 0 и накапливается от текущего трека
+    // В режиме сессии: now — текущий момент; для активного трека
+    // start в прошлом на currentTrackPosition, конец = start + full.
     let previousTrack: Track | null = null;
 
     for (let i = startFromIndex; i < tracks.length; i++) {
@@ -219,8 +264,12 @@ export function calculateDividerMarkers(
         continue;
       }
 
-      // Добавляем длительность трека с учетом паузы
-      const trackDuration = context.calculateTrackDurationWithPause(track);
+      const fullTrackDuration = context.calculateTrackDurationWithPause(track);
+      accumulatedDuration = shiftAccumulatedForSessionCurrentTrackStart(
+        context,
+        track,
+        accumulatedDuration,
+      );
 
       // Проверяем, попадает ли отсечка внутри этого трека
       // Для этого проверяем ДО того, как добавим длительность трека
@@ -228,13 +277,14 @@ export function calculateDividerMarkers(
         // Время начала трека (в реальном времени)
         const trackStartRealTime = currentRealTime + accumulatedDuration * 1000;
         // Время окончания трека (в реальном времени)
-        const trackEndRealTime = trackStartRealTime + trackDuration * 1000;
+        const trackEndRealTime = trackStartRealTime + fullTrackDuration * 1000;
 
         // Проверяем обычные отсечки (ровное время)
         if (nextEvenTime !== null) {
-          // Проверяем, попадает ли отсечка внутри трека
+          // nextEvenTime попадает внутрь интервала трека: визуально отсечка после трека, в map кладётся
+          // wall-clock на конец трека (trackEndRealTime), а не «ровный» nextEvenTime — метка в UI
+          // совпадает с границей трека на таймлайне, как в formatSessionDividerLabel.
           if (nextEvenTime >= trackStartRealTime && nextEvenTime <= trackEndRealTime) {
-            // Отсечка попадает внутри трека - сохраняем время отсечки
             markers.set(track.id, trackEndRealTime);
             // Вычисляем следующее ровное время
             nextEvenTime += hourDividerInterval * 1000;
@@ -265,8 +315,8 @@ export function calculateDividerMarkers(
       // Сохраняем текущий трек как предыдущий для следующей итерации
       previousTrack = track;
 
-      // Накопленная длительность от текущего момента (начинается с 0)
-      accumulatedDuration += trackDuration;
+      // Отрезок на таймлайне имеет длину full (смещение start уже в accumulated)
+      accumulatedDuration += fullTrackDuration;
     }
   }
 
@@ -278,23 +328,27 @@ export function calculateDividerMarkers(
   };
 }
 
-/**
- * Форматирует время из timestamp в формат "hh:mm"
- */
-export function formatTimeFromTimestamp(timestamp: number): string {
-  const date = new Date(timestamp);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+function padTimePart(value: number): string {
+  return Math.max(0, Math.floor(value)).toString().padStart(2, '0');
 }
 
 /**
- * Форматирует время из длительности в секундах в формат "hh:mm"
+ * Форматирует время из timestamp в формат hh:mm:ss (локальные часы)
+ */
+export function formatTimeFromTimestamp(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}:${padTimePart(date.getSeconds())}`;
+}
+
+/**
+ * Форматирует длительность в секундах в формат hh:mm:ss
  */
 export function formatTimeFromDuration(durationSeconds: number): string {
-  const hours = Math.floor(durationSeconds / 3600);
-  const minutes = Math.floor((durationSeconds % 3600) / 60);
-  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  const total = Math.max(0, Math.floor(durationSeconds));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  return `${padTimePart(hours)}:${padTimePart(minutes)}:${padTimePart(seconds)}`;
 }
 
 /**
@@ -330,10 +384,55 @@ export function formatSimpleDividerLabel(tracks: Track[], index: number): string
     .slice(0, index + 1)
     .reduce((sum, track) => sum + (track.duration || 0), 0);
 
-  const hours = Math.floor(accumulatedDuration / 3600);
-  const minutes = Math.floor((accumulatedDuration % 3600) / 60);
+  return formatTimeFromDuration(accumulatedDuration);
+}
 
-  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+/**
+ * Не больше одной отсечки на строку списка. Приоритет: план — конец очереди — интервал.
+ * Используется плеером и плейлистом, чтобы визуальная иерархия совпадала.
+ */
+export function getPriorityHourDividerKind(
+  hasPlannedEndDivider: boolean,
+  hasQueueEndDivider: boolean,
+  showIntervalDivider: boolean,
+): 'planned-end' | 'queue-end' | 'interval' | null {
+  if (hasPlannedEndDivider) {
+    return 'planned-end';
+  }
+  if (hasQueueEndDivider) {
+    return 'queue-end';
+  }
+  if (showIntervalDivider) {
+    return 'interval';
+  }
+  return null;
+}
+
+/**
+ * Позиция отсечки, привязанной к треку в списке отображения (flatIndex строки трека)
+ */
+export function calculateTrackAnchorDividerPosition<T extends { id: string }>(
+  anchor: { trackId: string | null } | null,
+  displayItems: Array<{ item: T }>,
+  isPlayerTrack: (item: T) => boolean,
+): number | null {
+  if (anchor === null) {
+    return null;
+  }
+
+  if (anchor.trackId === null) {
+    return -1;
+  }
+
+  const trackIdToDisplayIndex = new Map<string, number>();
+  displayItems.forEach((di, idx) => {
+    if (isPlayerTrack(di.item)) {
+      trackIdToDisplayIndex.set(di.item.id, idx);
+    }
+  });
+
+  const trackDisplayIndex = trackIdToDisplayIndex.get(anchor.trackId);
+  return trackDisplayIndex !== undefined ? trackDisplayIndex : null;
 }
 
 /**
@@ -345,28 +444,95 @@ export function calculatePlannedEndDividerPosition<T extends { id: string }>(
   displayItems: Array<{ item: T }>,
   isPlayerTrack: (item: T) => boolean,
 ): number | null {
-  const { plannedEndMarker } = dividerMarkers;
+  return calculateTrackAnchorDividerPosition(
+    dividerMarkers.plannedEndMarker,
+    displayItems,
+    isPlayerTrack,
+  );
+}
 
-  if (plannedEndMarker === null) {
+/** Фактический конец текущей очереди / раскладки (не плановое окончание) */
+export interface QueueEndMarker {
+  trackId: string;
+  sessionEndTimestamp: number | null;
+  preparationDurationSeconds: number | null;
+}
+
+/**
+ * Последний учитываемый трек и время конца очереди: в сессии — wall-clock, в подготовке — накопленная длительность.
+ */
+export function calculateQueueEndMarker(context: DividerCalculationContext): QueueEndMarker | null {
+  const { tracks, mode } = context;
+  if (tracks.length === 0) {
     return null;
   }
 
-  // Если trackId === null, это означает, что отсечка должна быть вверху (перед первым элементом)
-  if (plannedEndMarker.trackId === null) {
-    return -1; // Специальное значение для отображения вверху
+  if (mode === 'preparation') {
+    let lastTrackId: string | null = null;
+    let totalSeconds = 0;
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
+      if (context.isTrackDisabled(track.id)) {
+        continue;
+      }
+      totalSeconds += context.calculateTrackDurationWithPause(track);
+      lastTrackId = track.id;
+    }
+    if (lastTrackId === null) {
+      return null;
+    }
+    return {
+      trackId: lastTrackId,
+      sessionEndTimestamp: null,
+      preparationDurationSeconds: totalSeconds,
+    };
   }
 
-  // Создаем Map для быстрого поиска индекса трека в displayItems
-  const trackIdToDisplayIndex = new Map<string, number>();
-  displayItems.forEach((di, idx) => {
-    if (isPlayerTrack(di.item)) {
-      trackIdToDisplayIndex.set(di.item.id, idx);
-    }
-  });
+  const startPosition = calculateStartPosition(context);
+  const { startFromIndex, currentRealTime } = startPosition;
+  if (currentRealTime === null) {
+    return null;
+  }
 
-  // Используем Map для быстрого поиска индекса
-  const trackDisplayIndex = trackIdToDisplayIndex.get(plannedEndMarker.trackId);
-  return trackDisplayIndex !== undefined ? trackDisplayIndex : null;
+  let accumulatedDuration = 0;
+  let lastTrackId: string | null = null;
+
+  for (let i = startFromIndex; i < tracks.length; i++) {
+    const track = tracks[i];
+    if (context.isTrackDisabled(track.id)) {
+      continue;
+    }
+    if (context.isTrackPlayed(track.id)) {
+      continue;
+    }
+    accumulatedDuration += getSessionOrFullTrackDurationSeconds(context, track);
+    lastTrackId = track.id;
+  }
+
+  if (lastTrackId === null) {
+    return null;
+  }
+
+  return {
+    trackId: lastTrackId,
+    sessionEndTimestamp: currentRealTime + accumulatedDuration * 1000,
+    preparationDurationSeconds: null,
+  };
+}
+
+export function calculateQueueEndDividerPosition<T extends { id: string }>(
+  queueEndMarker: QueueEndMarker | null,
+  displayItems: Array<{ item: T }>,
+  isPlayerTrack: (item: T) => boolean,
+): number | null {
+  if (queueEndMarker === null) {
+    return null;
+  }
+  return calculateTrackAnchorDividerPosition(
+    { trackId: queueEndMarker.trackId },
+    displayItems,
+    isPlayerTrack,
+  );
 }
 
 /**
@@ -375,7 +541,7 @@ export function calculatePlannedEndDividerPosition<T extends { id: string }>(
  * @param trackStartRealTime - Время начала трека (timestamp)
  * @param trackEndRealTime - Время окончания трека (timestamp)
  * @param previousTrack - Предыдущий трек или null для первого трека
- * @returns Объект с trackId и time, или null если не найдено
+ * @returns Якорь (trackId) и время подписи в поле time (при плане внутри трека — trackEndRealTime, как у ровных отсечек), или null если искать в следующем треке
  */
 function findPlannedEndPosition(
   plannedEndTime: number,
@@ -394,11 +560,10 @@ function findPlannedEndPosition(
 
   // Проверяем, попадает ли плановое время окончания внутри или после трека
   if (plannedEndTime >= trackStartRealTime && plannedEndTime <= trackEndRealTime) {
-    // Плановое время попадает внутри трека - округляем вверх
-    // Используем предыдущий трек, если он есть, иначе null (отсечка вверху)
+    // План внутри сегмента трека на таймлайне — подпись по границе сегмента (дрейф/смещение как у интервальных маркеров)
     return {
       trackId: previousTrack?.id ?? null,
-      time: trackStartRealTime,
+      time: trackEndRealTime,
     };
   }
 
@@ -473,13 +638,17 @@ export function calculatePlannedEndMarker(
       continue;
     }
 
-    // Добавляем длительность трека с учетом паузы
-    const trackDuration = context.calculateTrackDurationWithPause(track);
+    const fullTrackDuration = context.calculateTrackDurationWithPause(track);
+    accumulatedDuration = shiftAccumulatedForSessionCurrentTrackStart(
+      context,
+      track,
+      accumulatedDuration,
+    );
 
     // Время начала трека (в реальном времени)
     const trackStartRealTime = currentRealTime + accumulatedDuration * 1000;
     // Время окончания трека (в реальном времени)
-    const trackEndRealTime = trackStartRealTime + trackDuration * 1000;
+    const trackEndRealTime = trackStartRealTime + fullTrackDuration * 1000;
 
     // Проверяем позицию планового времени окончания
     const position = findPlannedEndPosition(
@@ -492,7 +661,7 @@ export function calculatePlannedEndMarker(
       return position;
     }
     previousTrack = track;
-    accumulatedDuration += trackDuration;
+    accumulatedDuration += fullTrackDuration;
   }
 
   // Если не нашли позицию, возвращаем null (отсечка будет показана в конце)

@@ -384,9 +384,31 @@
   opacity: 0.8;
 }
 
+/* Слот списка — одна отсечка; две подряд возможны лишь как редкий крайний случай. */
+.playlist-hour-divider + .playlist-hour-divider {
+  margin-top: 24px;
+}
+
+.playlist-hour-divider--interval {
+  opacity: 0.8;
+}
+
+.playlist-hour-divider--queue-end {
+  background-color: #00897b;
+  opacity: 1;
+}
+
+.playlist-hour-divider--queue-end .playlist-hour-divider-label {
+  border-color: #00897b;
+}
+
 .playlist-hour-divider--planned-end {
   background-color: #f44336;
   opacity: 1;
+}
+
+.playlist-hour-divider--planned-end .playlist-hour-divider-label {
+  border-color: #f44336;
 }
 
 .playlist-hour-divider-label {
@@ -399,6 +421,9 @@
   font-size: var(--font-size-secondary);
   font-weight: 500;
   white-space: nowrap;
+  max-width: min(340px, calc(100% - 12px));
+  overflow: hidden;
+  text-overflow: ellipsis;
   border: 1px solid var(--accent-primary);
   border-radius: 4px;
 }

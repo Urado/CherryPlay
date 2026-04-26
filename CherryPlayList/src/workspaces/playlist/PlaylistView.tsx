@@ -10,6 +10,8 @@ import {
   ProjectItemRow,
   EmptyState,
   WorkspaceHeader,
+  HourDividerAfterTrackRow,
+  HourDividerListBottom,
 } from '@shared/components';
 import {
   useWorkspaceDragAndDrop,
@@ -22,13 +24,17 @@ import { fileService, ipcService } from '@shared/services';
 import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
+import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
+import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
+import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
+
+import { usePlayerDividers } from '../player/hooks/usePlayerDividers';
+import { usePlayerMode } from '../player/hooks/usePlayerMode';
+import { usePlayerStateHelpers } from '../player/hooks/usePlayerStateHelpers';
 import {
-  logger,
-  calculateSimpleDividerMarkers,
-  formatSimpleDividerLabel,
-  getDuplicateTrackIdsByPathAndFilename,
-} from '@shared/utils';
-import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
+  isTrackActive as isTrackActiveUtil,
+  isTrackOrGroupDisabled as isTrackOrGroupDisabledUtil,
+} from '../player/utils/playerStateUtils';
 
 interface PlaylistViewProps {
   workspaceId: WorkspaceId;
@@ -43,6 +49,8 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     name,
     items,
     selectedItemIds,
+    settings,
+    sessionState,
     setName,
     removeItem,
     addItems,
@@ -52,20 +60,29 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     removeSelectedItems,
     selectRange,
     updateTrackDuration,
-    getAllTracksInOrder,
+    getItemPath,
+    findItemById,
     createGroup,
     ungroupGroup,
     setGroupName,
     newProject,
     undo,
     redo,
+    isTrackPlayed,
+    isTrackDisabled,
+    isGroupDisabled,
   } = useProjectStore();
+
+  const { plannedEndTime } = settings;
+  const isPreparationMode = sessionState.mode === 'preparation';
+  const disabledTracksKey = sessionState.disabledTrackIds.join(',');
+  const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
 
   // Flatten items for display (supports groups)
   const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
 
-  // Get flat list of tracks for duration loading and dividers
-  const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
+  // Flat track order aligned with on-screen list (for dividers, same as player)
+  const tracks = useMemo(() => getTracksFromDisplayItems(displayItems), [displayItems]);
 
   const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
 
@@ -83,7 +100,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   });
 
   // Use unified playback preview hook
-  const { activeTrackId, playerStatus, startPlayback, pausePlayback } = usePlaybackPreview({
+  const { startPlayback, pausePlayback } = usePlaybackPreview({
     workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
   });
 
@@ -136,27 +153,96 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     onError: handleError,
   });
 
-  const { hourDividerInterval, showHourDividers } = useSettingsStore();
+  const { showHourDividers } = useSettingsStore();
 
-  // Calculate divider positions
-  const calculateDividerMarkers = useMemo(
-    () => calculateSimpleDividerMarkers(tracks, hourDividerInterval),
-    [tracks, hourDividerInterval],
+  const isTrackOrGroupDisabled = useCallback(
+    (itemId: string): boolean => {
+      return isTrackOrGroupDisabledUtil(
+        itemId,
+        isTrackDisabled,
+        isGroupDisabled,
+        getItemPath,
+        findItemById,
+      );
+    },
+    [isTrackDisabled, isGroupDisabled, getItemPath, findItemById],
   );
 
-  // Format divider label
-  const formatDividerLabel = useCallback(
-    (index: number): string => formatSimpleDividerLabel(tracks, index),
-    [tracks],
+  const isTrackActive = useCallback(
+    (trackId: string): boolean => {
+      return isTrackActiveUtil(trackId, isTrackPlayed, isTrackOrGroupDisabled);
+    },
+    [isTrackPlayed, isTrackOrGroupDisabled],
   );
+
+  const playerMode = usePlayerMode();
+  const { position: currentTrackPosition, currentTrack: activePlayerFromAudio } =
+    usePlayerAudioStore();
+  const activePlayerTrackId = activePlayerFromAudio?.id;
+
+  const activeTrackIdForDividers = isPreparationMode
+    ? playerMode.currentTrack?.id
+    : activePlayerTrackId;
+
+  const { getEffectiveTrackSettings } = usePlayerStateHelpers({
+    allTracks: tracks,
+    activePlayerTrackId: activeTrackIdForDividers,
+    getItemPath,
+    findItemById,
+    isTrackActive,
+  });
+
+  const {
+    calculateDividerMarkers,
+    formatPlannedEndTimelineLabel,
+    formatDividerLabel,
+    plannedEndDividerPosition,
+    queueEndDividerPosition,
+    formatQueueEndTimelineLabel,
+    showQueueEndDividerAtListBottom,
+  } = usePlayerDividers({
+    allTracks: tracks,
+    activePlayerTrackId: activeTrackIdForDividers,
+    currentTrackPosition,
+    isTrackOrGroupDisabled,
+    isTrackPlayed,
+    getEffectiveTrackSettings,
+    displayItems,
+  });
+
+  const showPlannedEndDividerAtListBottom =
+    !isPreparationMode && plannedEndTime !== null && plannedEndDividerPosition === null;
+
+  // Интервальные отсечки: те же calculateDividerMarkers / formatDividerLabel, что и в плеере
+  // (таймлайн сессии, паузы, disabled), а не наивная сумма длительностей — см. usePlayerDividers.
 
   const hasSelectedItems = selectedItemIds.size > 0;
 
-  // Calculate total duration
-  const totalDuration = useMemo(
-    () => tracks.reduce((sum, track) => sum + (track.duration || 0), 0),
-    [tracks],
-  );
+  // Total duration aligned with player header: skip disabled tracks, include pause-between gaps.
+  const totalDuration = useMemo(() => {
+    let total = 0;
+    for (let i = 0; i < tracks.length; i++) {
+      const track = tracks[i];
+      if (isTrackOrGroupDisabled(track.id)) {
+        continue;
+      }
+      total += track.duration || 0;
+      if (i < tracks.length - 1) {
+        const trackSettings = getEffectiveTrackSettings(track.id);
+        if (trackSettings.actionAfterTrack === 'pauseAndNext') {
+          total += trackSettings.pauseBetweenTracks;
+        }
+      }
+    }
+    return total;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change (zustand stable isTrackOrGroupDisabled)
+  }, [
+    tracks,
+    isTrackOrGroupDisabled,
+    getEffectiveTrackSettings,
+    disabledTracksKey,
+    disabledGroupsKey,
+  ]);
 
   // Check if can create group (need 2+ consecutive selected items)
   const canCreateGroup = useMemo(() => {
@@ -205,14 +291,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     'list.escape': deselectAll,
   });
 
-  // Get track index in the flat track list (for dividers)
-  const getTrackIndexInFlatList = useCallback(
-    (trackId: string): number => {
-      return tracks.findIndex((t) => t.id === trackId);
-    },
-    [tracks],
-  );
-
   return (
     <div className="playlist-view">
       <WorkspaceHeader
@@ -244,19 +322,42 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
           const { item, level, flatIndex } = displayItem;
           const isTrack = isProjectTrack(item);
           const track = isTrack ? item : null;
-          const trackIndex = track ? getTrackIndexInFlatList(track.id) : -1;
 
           const isDraggedItem =
             isItemDragState(playlistDrag.draggedItems) &&
             playlistDrag.draggedItems.allFlatIndices.has(flatIndex);
-          const isActive = track ? activeTrackId === track.id : false;
-          const isPlaying = isActive && playerStatus === 'playing';
+          // Подсветка строки и делители: один источник «текущего трека» (демо в подготовке, аудио в сессии), не demo preview из другого workspace
+          const isActive = track ? activeTrackIdForDividers === track.id : false;
+          const isPlaying = isActive && playerMode.status === 'playing';
+
+          const showPlannedEndDividerBeforeActive =
+            !isPreparationMode &&
+            plannedEndTime !== null &&
+            plannedEndDividerPosition === -1 &&
+            track !== null &&
+            item.id === activeTrackIdForDividers;
+
+          const hasPlannedEndDivider =
+            !isPreparationMode &&
+            plannedEndTime !== null &&
+            plannedEndDividerPosition === flatIndex;
+          const hasQueueEndDivider =
+            showHourDividers &&
+            queueEndDividerPosition !== null &&
+            queueEndDividerPosition === flatIndex;
           const showDivider =
-            isTrack && trackIndex >= 0 && calculateDividerMarkers.includes(trackIndex);
+            showHourDividers && isTrack && track !== null && calculateDividerMarkers.has(track.id);
 
           return (
             <React.Fragment key={item.id}>
               <DropIndicator index={flatIndex} />
+              {showPlannedEndDividerBeforeActive && (
+                <div className="playlist-hour-divider playlist-hour-divider--planned-end">
+                  <span className="playlist-hour-divider-label">
+                    {formatPlannedEndTimelineLabel()}
+                  </span>
+                </div>
+              )}
               <ProjectItemRow
                 item={item}
                 index={displayItem.displayIndex}
@@ -285,18 +386,26 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
                 onRenameGroup={setGroupName}
                 onUngroupGroup={ungroupGroup}
               />
-              {/* Hour divider after track */}
-              {showHourDividers && showDivider && (
-                <div className="playlist-hour-divider">
-                  <span className="playlist-hour-divider-label">
-                    {formatDividerLabel(trackIndex)}
-                  </span>
-                </div>
-              )}
+              <HourDividerAfterTrackRow
+                hasPlannedEndDivider={hasPlannedEndDivider}
+                hasQueueEndDivider={hasQueueEndDivider}
+                showIntervalDivider={showDivider && track !== null}
+                intervalTrackId={track?.id}
+                formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+                formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+                formatDividerLabel={formatDividerLabel}
+              />
             </React.Fragment>
           );
         })}
         <DropIndicator index={displayItems.length} />
+        <HourDividerListBottom
+          showPlannedEndDividerAtListBottom={showPlannedEndDividerAtListBottom}
+          displayItemsLength={displayItems.length}
+          showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+          formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+          formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+        />
       </ItemList>
     </div>
   );

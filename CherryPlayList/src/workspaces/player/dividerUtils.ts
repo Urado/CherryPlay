@@ -6,8 +6,12 @@ export {
   formatTimeFromDuration,
   calculateDividerMarkers,
   calculatePlannedEndDividerPosition,
+  calculateTrackAnchorDividerPosition,
+  calculateQueueEndMarker,
+  calculateQueueEndDividerPosition,
   calculateProjectedEndTime,
   calculatePlannedEndMarker,
+  getPriorityHourDividerKind,
   calculateStartPosition,
   calculateNextEvenTime,
   calculateAccumulatedDuration,
@@ -18,6 +22,7 @@ export type {
   DividerCalculationContext,
   StartPosition,
   DividerMarkers,
+  QueueEndMarker,
 } from '@shared/utils/dividerUtils';
 
 // Player-specific imports
