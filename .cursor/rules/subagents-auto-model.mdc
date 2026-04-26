@@ -1,0 +1,30 @@
+---
+description: Enforce model auto for all custom subagents in .cursor/agents
+alwaysApply: true
+---
+
+# Subagents Must Use Auto Model
+
+## Core rule
+
+For every custom subagent definition in `.cursor/agents/*.md`, the frontmatter `model` must be set to:
+
+`model: auto`
+
+## Existing subagents
+
+- When touching or reviewing existing subagent files, ensure `model: auto` is present.
+- If another value is found (`default`, `inherit`, `fast`, or a fixed model id), replace it with `auto`.
+
+## New subagents
+
+- Every newly created subagent file must include `model: auto` in frontmatter from the start.
+- Do not create new `.cursor/agents/*.md` files without an explicit `model: auto`.
+
+## Validation checklist
+
+Before finishing tasks that modify or add subagents:
+
+1. Check all `.cursor/agents/*.md` files for `model`.
+2. Confirm there are no values except `auto`.
+3. If any mismatch exists, fix it before finalizing.

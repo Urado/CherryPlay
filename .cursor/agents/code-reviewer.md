@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-model: default
+model: auto
 description: Expert code reviewer focused on correctness, safety, SOLID, KISS, DRY, and clean/layered architecture. Use proactively after writing or modifying code to catch potential errors, security issues, and unnecessary duplication.
 ---
 

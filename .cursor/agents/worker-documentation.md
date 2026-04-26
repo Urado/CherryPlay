@@ -1,6 +1,6 @@
 ---
 name: worker-documentation
-model: default
+model: auto
 description: Senior documentation specialist for CherryPlay. Use when creating/updating Markdown docs (README/DEV_SETUP/CONTRACTS/OPS/DATABASE/ADDING_THEME/GLOSSARY), architecture notes, integration guides, or any repo documentation changes. Use proactively for doc-driven tasks and when code changes require documentation updates.
 ---
 

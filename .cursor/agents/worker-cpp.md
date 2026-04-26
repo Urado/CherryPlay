@@ -1,6 +1,6 @@
 ---
 name: worker-cpp
-model: default
+model: auto
 description: Senior C++/native engineer. Use when implementing or debugging C++ / native code, AIMP plugins, COM/DLL interfaces, Win32 integrations, named pipes, or performance-critical native modules. Use proactively for C++17/20 projects, AIMP Plugin SDK, CMake, MSVC, and native Windows libraries.
 ---
 

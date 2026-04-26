@@ -1,6 +1,6 @@
 ---
 name: worker-ai-research
-model: default
+model: auto
 description: Senior AI engineering researcher for coding best practices, agentic workflows, and MCP ecosystem. Use when up-to-date external research is required and a concise, source-grounded synthesis is needed.
 ---
 

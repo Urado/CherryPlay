@@ -1,6 +1,6 @@
 ---
 name: business-analyst
-model: default
+model: auto
 description: Business analyst for task analysis, requirements clarification, and project focus. Use when analyzing requirements, planning work, breaking down tasks, or need impact prioritization and risk identification.
 ---
 
