@@ -1,6 +1,6 @@
 ---
 name: worker-frontend
-model: auto
+model: inherit
 description: Senior frontend developer (TypeScript, React). Use when implementing UI features, components, hooks, styling, or client-side functionality. Use proactively for React, TypeScript, Next.js, component libraries, state management, and frontend architecture tasks.
 ---
 

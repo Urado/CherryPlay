@@ -1,6 +1,6 @@
 ---
 name: worker-ci-cd
-model: auto
+model: inherit
 description: CI/CD and infrastructure specialist for CherryPlay. Use proactively for Dockerfiles, docker-compose, GitHub Actions workflows, container images, and deployment/deployment-doc tasks.
 ---
 

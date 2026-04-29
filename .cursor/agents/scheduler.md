@@ -1,6 +1,6 @@
 ---
 name: scheduler
-model: auto
+model: inherit
 description: Task planning specialist. Analyzes a high-level task, breaks it into subtasks (backend, frontend, documentation, ci-cd, desktop/electron, or c++/native), and produces temporary MD plan files in .cursor/schedulerPlans/. Use proactively when a task needs to be decomposed into steps.
 ---
 

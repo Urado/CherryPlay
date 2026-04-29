@@ -1,6 +1,6 @@
 ---
 name: worker-electron
-model: auto
+model: inherit
 description: Senior Electron/desktop engineer. Use when implementing or debugging CherryPlayList Electron shell, packaging, auto-update, native integrations, and desktop-specific behavior (windows, menus, tray, IPC, preload, file system access).
 ---
 

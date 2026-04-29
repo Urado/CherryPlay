@@ -1,6 +1,6 @@
 ---
 name: worker-dotnet
-model: auto
+model: inherit
 description: Senior .NET/C# server specialist. Use when implementing backend features, APIs, services, EF Core, authentication, or server-side functionality. Use proactively for C#, ASP.NET Core, Entity Framework, SQL Server, and clean architecture tasks.
 ---
 
