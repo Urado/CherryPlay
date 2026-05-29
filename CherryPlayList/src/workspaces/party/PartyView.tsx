@@ -23,6 +23,8 @@ import {
   ThemeAccessDto,
   LockedThemeDto,
   ThemeNotEntitledError,
+  InvalidPartyLifecycleTransitionError,
+  type PartyLifecycleState,
 } from '@shared/services/partyService';
 import {
   useAuthStore,
@@ -55,6 +57,12 @@ const ERROR_PARTY_NOT_FOUND = 'Вечеринка не найдена на се�
 const ERROR_CONNECTION = 'Ошибка соединения с сервером';
 const THEME_ACCESS_FALLBACK_ERROR =
   'Не удалось проверить доступ к темам. Для безопасности доступны только базовая и текущая темы.';
+
+const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string> = {
+  draft: 'Вечеринка переведена в черновик',
+  ready: 'Вечеринка опубликована и готова к мероприятию',
+  completed: 'Вечеринка завершена',
+};
 
 function isThemeNotEntitledError(error: unknown): error is ThemeNotEntitledError {
   return error instanceof ThemeNotEntitledError;
@@ -191,6 +199,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const [danceTags, setDanceTags] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [partyLifecycleState, setPartyLifecycleState] = useState<PartyLifecycleState | null>(null);
+  const [isTransitioningLifecycle, setIsTransitioningLifecycle] = useState(false);
   const [isCheckingParty, setIsCheckingParty] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [partyVerified, setPartyVerified] = useState(false);
@@ -473,11 +483,51 @@ export const PartyView: React.FC<PartyViewProps> = ({
         setExternalLinkText(party.externalLinkText ?? '');
         setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
         setEventEndDateTimeTouched(false);
+        setPartyLifecycleState(party.partyLifecycleState);
       } catch (error) {
         console.error('Failed to load party metadata:', error);
       }
     },
     [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
+  );
+
+  const handleLifecycleTransition = useCallback(
+    async (targetState: PartyLifecycleState) => {
+      const linkedParty = meta.linkedParty;
+      if (!linkedParty || !isAuth) {
+        addNotification({
+          type: 'warning',
+          message: 'Для смены статуса нужна привязанная вечеринка',
+        });
+        return;
+      }
+
+      setIsTransitioningLifecycle(true);
+      try {
+        const party = await partyService.transitionPartyLifecycle(linkedParty.id, targetState);
+        setPartyLifecycleState(party.partyLifecycleState);
+        addNotification({
+          type: 'success',
+          message: LIFECYCLE_TRANSITION_SUCCESS_MESSAGES[targetState],
+        });
+      } catch (error) {
+        console.error('Failed to transition party lifecycle:', error);
+        if (error instanceof InvalidPartyLifecycleTransitionError) {
+          addNotification({
+            type: 'error',
+            message: error.message,
+          });
+          return;
+        }
+        addNotification({
+          type: 'error',
+          message: error instanceof Error ? error.message : 'Не удалось изменить статус вечеринки',
+        });
+      } finally {
+        setIsTransitioningLifecycle(false);
+      }
+    },
+    [meta.linkedParty, isAuth, addNotification],
   );
 
   const handleEventEndDateTimeChange = useCallback((value: string) => {
@@ -650,6 +700,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   useEffect(() => {
     if (meta.linkedParty && isAuth) {
       void loadPartyMetadata(meta.linkedParty.id);
+    } else if (!meta.linkedParty) {
+      setPartyLifecycleState(null);
     }
   }, [meta.linkedParty, isAuth, loadPartyMetadata]);
 
@@ -832,6 +884,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       const partyData = { id: party.id, shortCode: party.shortCode, url };
       setLinkedParty(partyData);
       setPartyVerified(true);
+      setPartyLifecycleState(party.partyLifecycleState);
       markAsDirty();
 
       addNotification({
@@ -980,6 +1033,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       const partyData = { id: party.id, shortCode: party.shortCode, url };
       setLinkedParty(partyData);
       setPartyVerified(true);
+      setPartyLifecycleState(party.partyLifecycleState);
       markAsDirty();
       addNotification({ type: 'success', message: 'Вечеринка создана и опубликована' });
     } catch (error) {
@@ -1171,6 +1225,9 @@ export const PartyView: React.FC<PartyViewProps> = ({
             isThemeAccessLoading={isThemeAccessLoading}
             visibleThemeIds={visibleThemeIds}
             themeAccessErrorMessage={themeAccessErrorMessage}
+            partyLifecycleState={partyLifecycleState}
+            isTransitioningLifecycle={isTransitioningLifecycle}
+            onLifecycleTransition={(target) => void handleLifecycleTransition(target)}
           />
         </div>
 

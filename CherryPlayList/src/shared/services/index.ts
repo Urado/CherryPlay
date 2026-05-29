@@ -12,8 +12,16 @@ export {
   MAX_EXTERNAL_LINK_URL_LENGTH,
   MAX_EXTERNAL_LINK_TEXT_LENGTH,
   PREDEFINED_DANCE_TAGS,
+  PARTY_LIFECYCLE_STATES,
+  isPartyLifecycleState,
 } from './partyService';
-export type { CreatePartyDto, PartyDto } from './partyService';
+export type {
+  CreatePartyDto,
+  PartyDto,
+  PartyLifecycleState,
+  TransitionPartyLifecycleDto,
+} from './partyService';
+export { ThemeNotEntitledError, InvalidPartyLifecycleTransitionError } from './partyService';
 export { signalRService } from './signalRService';
 export type {
   PlaybackStateDto,

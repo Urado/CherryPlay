@@ -4,6 +4,13 @@ export interface AppConfigResponse {
   adminContactUrl?: string;
 }
 
+/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
+export type PartyLifecycleState = 'draft' | 'ready' | 'completed';
+
+export interface TransitionPartyLifecycleDto {
+  partyLifecycleState: PartyLifecycleState;
+}
+
 export interface PartyPlaylistDto {
   items: PlayerItemDto[];
   totalDuration: number;
@@ -37,6 +44,7 @@ export interface PublicPartyDto {
   eventEndDateTime?: string;
   schedule?: string;
   timeZone?: string;
+  partyLifecycleState: PartyLifecycleState;
 }
 
 export interface PartyStateDto {
@@ -79,6 +87,7 @@ export interface PublicPartyListItemDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  partyLifecycleState: PartyLifecycleState;
 }
 
 export interface PartyDto {
@@ -90,6 +99,7 @@ export interface PartyDto {
   partyThemeId: string;
   createdAt: string;
   hasActiveSession: boolean;
+  partyLifecycleState: PartyLifecycleState;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog: boolean;
@@ -162,6 +172,8 @@ export interface ApiErrorPayload {
   themeId?: string;
   requiredPackageCodes?: string[];
   existingEntitlementId?: string;
+  currentState?: PartyLifecycleState;
+  requestedState?: PartyLifecycleState;
 }
 
 export interface AdminOrganizerListItemDto {

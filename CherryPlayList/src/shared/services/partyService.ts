@@ -22,6 +22,19 @@ export const PREDEFINED_DANCE_TAGS = [
   'Фигурные вальсы',
 ] as const;
 
+/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
+export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
+
+export type PartyLifecycleState = (typeof PARTY_LIFECYCLE_STATES)[number];
+
+export function isPartyLifecycleState(value: unknown): value is PartyLifecycleState {
+  return typeof value === 'string' && (PARTY_LIFECYCLE_STATES as readonly string[]).includes(value);
+}
+
+export interface TransitionPartyLifecycleDto {
+  partyLifecycleState: PartyLifecycleState;
+}
+
 export interface CreatePartyDto {
   name: string;
   title?: string;
@@ -57,6 +70,7 @@ export interface PartyDto {
   customizationSettings?: Record<string, unknown>;
   createdAt: string;
   hasActiveSession: boolean;
+  partyLifecycleState: PartyLifecycleState;
   eventDateTime?: string;
   eventEndDateTime?: string;
   description?: string;
@@ -123,6 +137,23 @@ export class ThemeNotEntitledError extends Error {
   }
 }
 
+export class InvalidPartyLifecycleTransitionError extends Error {
+  readonly code = 'invalid_lifecycle_transition' as const;
+  readonly currentState: PartyLifecycleState;
+  readonly requestedState: PartyLifecycleState;
+
+  constructor(
+    message: string,
+    currentState: PartyLifecycleState,
+    requestedState: PartyLifecycleState,
+  ) {
+    super(message);
+    this.name = 'InvalidPartyLifecycleTransitionError';
+    this.currentState = currentState;
+    this.requestedState = requestedState;
+  }
+}
+
 class PartyService {
   private themeAccessCache: ThemeAccessDto | null = null;
   private themeAccessCacheToken: string | null = null;
@@ -169,6 +200,10 @@ class PartyService {
     return handleApiResponse<PartyDto>(response, 'Failed to create party');
   }
 
+  /**
+   * Список вечеринок организатора. Сервер не возвращает записи в состоянии `draft`
+   * (черновик доступен через {@link getParty}).
+   */
   async getParties(): Promise<PartyDto[]> {
     const token = useAuthStore.getState().accessToken;
     if (!token) {
@@ -269,6 +304,29 @@ class PartyService {
       cache: 'no-cache',
     });
     await handleApiResponse<void>(response, 'Failed to delete party');
+  }
+
+  /**
+   * Перевод вечеринки в целевое состояние жизненного цикла (POST `/api/parties/{partyId}/lifecycle`).
+   * Идемпотентно, если уже в целевом состоянии. При недопустимом переходе — 409
+   * {@link InvalidPartyLifecycleTransitionError}.
+   */
+  async transitionPartyLifecycle(
+    partyId: string,
+    targetState: PartyLifecycleState,
+  ): Promise<PartyDto> {
+    const baseUrl = await this.getBaseUrl();
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const body: TransitionPartyLifecycleDto = { partyLifecycleState: targetState };
+    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}/lifecycle`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(body),
+      cache: 'no-cache',
+    });
+
+    await this.throwIfInvalidLifecycleTransition(response);
+    return handleApiResponse<PartyDto>(response, 'Failed to transition party lifecycle');
   }
 
   async getPartyState(shortCode: string): Promise<PartyStateDto | null> {
@@ -403,6 +461,47 @@ class PartyService {
       : [];
 
     throw new ThemeNotEntitledError(message, themeId, requiredPackageCodes);
+  }
+
+  private async throwIfInvalidLifecycleTransition(response: Response): Promise<void> {
+    if (response.status !== 409) {
+      return;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.clone().json();
+    } catch {
+      return;
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      return;
+    }
+
+    const body = payload as {
+      code?: unknown;
+      message?: unknown;
+      detail?: unknown;
+      currentState?: unknown;
+      requestedState?: unknown;
+    };
+
+    if (body.code !== 'invalid_lifecycle_transition') {
+      return;
+    }
+
+    const message =
+      (typeof body.message === 'string' && body.message) ||
+      (typeof body.detail === 'string' && body.detail) ||
+      'Недопустимый переход состояния вечеринки.';
+
+    const currentState = isPartyLifecycleState(body.currentState) ? body.currentState : 'draft';
+    const requestedState = isPartyLifecycleState(body.requestedState)
+      ? body.requestedState
+      : 'draft';
+
+    throw new InvalidPartyLifecycleTransitionError(message, currentState, requestedState);
   }
 
   private normalizePartyId(partyId: string): string {

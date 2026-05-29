@@ -1,7 +1,14 @@
 import { Link } from 'react-router-dom';
 
+import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
 import { ROUTES } from '../constants/routes';
-import type { CreatePartyDto, PartyDto, ThemeAccessDto, UpdatePartyDto } from '../types/api';
+import type {
+  CreatePartyDto,
+  PartyDto,
+  PartyLifecycleState,
+  ThemeAccessDto,
+  UpdatePartyDto,
+} from '../types/api';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
 
@@ -22,6 +29,8 @@ export interface CabinetPartyListProps {
   onEditCancel: () => void;
   onToggleCatalog: (party: PartyDto) => void;
   onDeleteConfirm: (partyId: string) => void;
+  transitioningPartyId: string | null;
+  onLifecycleTransition: (partyId: string, targetState: PartyLifecycleState) => void;
 }
 
 const emptyCreateForm: CreatePartyDto = {
@@ -47,6 +56,8 @@ export function CabinetPartyList({
   onEditCancel,
   onToggleCatalog,
   onDeleteConfirm,
+  transitioningPartyId,
+  onLifecycleTransition,
 }: CabinetPartyListProps) {
   return (
     <ul className="cabinet-party-list">
@@ -67,6 +78,16 @@ export function CabinetPartyList({
               Открыть
             </Link>
           </div>
+          <PartyLifecycleControls
+            partyLifecycleState={party.partyLifecycleState}
+            isTransitioning={transitioningPartyId === party.id}
+            disabled={
+              deletingPartyId === party.id ||
+              togglingPartyId === party.id ||
+              (expandedPartyId === party.id && savingEdit)
+            }
+            onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
+          />
           <div className="cabinet-party-actions">
             <label className="cabinet-toggle-label">
               <input

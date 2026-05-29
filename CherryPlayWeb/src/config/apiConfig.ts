@@ -68,6 +68,7 @@ export const API_ENDPOINTS = {
   PARTIES: {
     MY: '/api/parties',
     BY_ID: (partyId: string) => `/api/parties/${partyId}`,
+    LIFECYCLE: (partyId: string) => `/api/parties/${partyId}/lifecycle`,
     PUBLIC: {
       FIRST: '/api/parties/public/first',
       LIST: '/api/parties/public/list',

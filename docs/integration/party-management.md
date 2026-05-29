@@ -24,8 +24,11 @@
 - **Редактирование метаданных**: PUT `/api/parties/{partyId}` (описание, место, город, дата, расписание, флаг «в каталоге» и т.д.).
 - **Удаление**: DELETE `/api/parties/{partyId}`.
 - **Публикация плейлиста**: PUT `/api/parties/{partyId}/playlist` с телом PartyPlaylistDto (перетирает серверную версию).
+- **Жизненный цикл**: POST `/api/parties/{partyId}/lifecycle` с телом `TransitionPartyLifecycleDto` (`partyLifecycleState`: `draft` \| `ready` \| `completed`) → ответ `PartyDto`. Разрешённые переходы: `draft` → `ready`; `ready` → `completed`; `ready` → `draft`. Состояние `completed` терминальное. При недопустимом переходе — **409** `invalid_lifecycle_transition` (поля `currentState`, `requestedState` в теле ошибки).
 
-Полная спецификация — в [CONTRACTS.md](../../CONTRACTS.md) §3.4 (REST API вечеринок). Используют: **CherryPlayList** (создание, привязка partyId, Publish); **кабинет в Web** (CRUD, toggle каталога).
+Список `GET /api/parties` (кабинет, модальное окно привязки в CherryPlayList) **не содержит** вечеринок в `draft`; черновик доступен по `GET /api/parties/{partyId}`. Публичный каталог (`GET /api/parties/public/list`) также исключает `draft`.
+
+Полная спецификация — в [CONTRACTS.md](../../CONTRACTS.md) §3.4 (REST API вечеринок). Используют: **CherryPlayList** (создание, привязка partyId, Publish, переходы lifecycle); **кабинет в Web** (CRUD, toggle каталога, переходы lifecycle).
 
 ## Каталог и публичность
 

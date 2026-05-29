@@ -57,7 +57,7 @@
 | GET   | `/api/parties/public/{shortCode}`          | Метаданные вечеринки по shortCode (в т.ч. флаг «в каталоге» по плану)                      | `PublicPartyDto` или 404                                                                                         |
 | GET   | `/api/parties/public/{shortCode}/playlist` | Плейлист вечеринки                                                                         | `PartyPlaylistDto` или 404                                                                                       |
 | GET   | `/api/parties/public/{shortCode}/state`    | Полное состояние вечеринки (плейлист + сессия + playback state)                            | `PartyStateDto` или 404                                                                                          |
-| GET   | `/api/parties/public/list`                 | Список вечеринок **каталога** (только `IsListedInCatalog` и не `draft`)                      | `PublicPartyListItemDto[]`                                                                                       |
+| GET   | `/api/parties/public/list`                 | Список вечеринок **каталога** (только `IsListedInCatalog` и не `draft`)                    | `PublicPartyListItemDto[]`                                                                                       |
 | GET   | `/api/parties/public/first`                | _(опционально)_ Плейлист первой доступной вечеринки (демо)                                 | `PartyPlaylistDto` или 404                                                                                       |
 | GET   | `/api/config`                              | Публичная конфигурация для UI (OAuth, страница «Инфо», ссылка на админа). Без авторизации. | 200, JSON: `{ "oauthEnabled": boolean, "partyInfoPageEnabled": boolean, "adminContactUrl": string }` (camelCase) |
 
@@ -202,7 +202,7 @@
 | Метод  | Путь                               | Описание                                                                                                                                      | Тело                          | Ответ                      |
 | ------ | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | -------------------------- |
 | POST   | `/api/parties`                     | Создать вечеринку (с проверкой доступа к `partyThemeId`; при отсутствии поля используется `basic`)                                            | `CreatePartyDto`              | `PartyDto`                 |
-| GET    | `/api/parties`                     | Список вечеринок текущего организатора (без `draft`; черновик доступен по `GET /api/parties/{partyId}`)                                      | —                             | `PartyDto[]`               |
+| GET    | `/api/parties`                     | Список вечеринок текущего организатора (без `draft`; черновик доступен по `GET /api/parties/{partyId}`)                                       | —                             | `PartyDto[]`               |
 | GET    | `/api/parties/{partyId}`           | Получить вечеринку (свою)                                                                                                                     | —                             | `PartyDto` или 404         |
 | PUT    | `/api/parties/{partyId}`           | Редактировать метаданные вечеринки; проверка доступа к теме выполняется только когда `partyThemeId` передан и отличается от текущего значения | `UpdatePartyDto`              | 204 или 404                |
 | DELETE | `/api/parties/{partyId}`           | Удалить вечеринку                                                                                                                             | —                             | 204 или 404                |
@@ -525,6 +525,7 @@ _Примечание:_ в текущей реализации веб может
 ### 6.7 Перечисляемые типы
 
 **PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` \| `"spring-cross-step"` (PartyTheme идентификатор)  
+**PartyLifecycleState:** `"draft"` \| `"ready"` \| `"completed"` — жизненный цикл вечеринки (JSON snake_case). Новая вечеринка создаётся в `draft`. Список `GET /api/parties` и публичный каталог `GET /api/parties/public/list` **не включают** `draft`. Переходы — только через `POST /api/parties/{partyId}/lifecycle` (см. §3.4).  
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
 **PlaybackMode:** `"preparation"` \| `"session"`
 

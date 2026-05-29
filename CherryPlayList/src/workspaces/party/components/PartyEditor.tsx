@@ -2,6 +2,7 @@ import { partyThemes, type PartyThemeId, getPartyTheme } from '@cherryplay/compo
 import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
 import React, { useState, useRef, useEffect } from 'react';
 
+import type { PartyLifecycleState } from '@shared/services/partyService';
 import {
   MAX_SHORT_DESCRIPTION_LENGTH,
   MAX_DANCE_TAGS,
@@ -11,6 +12,8 @@ import {
   PREDEFINED_DANCE_TAGS,
 } from '@shared/services/partyService';
 import { sanitizeExternalUrl } from '@shared/utils/urlSafety';
+
+import { PartyLifecycleControls } from './PartyLifecycleControls';
 import './PartyEditor.css';
 
 interface LockedThemeInfo {
@@ -218,6 +221,9 @@ interface PartyEditorProps {
   isThemeAccessLoading?: boolean;
   visibleThemeIds?: PartyThemeId[] | null;
   themeAccessErrorMessage?: string | null;
+  partyLifecycleState?: PartyLifecycleState | null;
+  isTransitioningLifecycle?: boolean;
+  onLifecycleTransition?: (targetState: PartyLifecycleState) => void;
 }
 
 const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
@@ -284,6 +290,9 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   isThemeAccessLoading = false,
   visibleThemeIds = null,
   themeAccessErrorMessage = null,
+  partyLifecycleState = null,
+  isTransitioningLifecycle = false,
+  onLifecycleTransition,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [lockedThemeModal, setLockedThemeModal] = useState<LockedThemeInfo | null>(null);
@@ -656,6 +665,15 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
       </div>
 
       {renderCustomizationOptions()}
+
+      {linkedParty && partyLifecycleState && onLifecycleTransition && (
+        <PartyLifecycleControls
+          partyLifecycleState={partyLifecycleState}
+          isTransitioning={isTransitioningLifecycle}
+          disabled={isCreating || isPublishing}
+          onTransition={onLifecycleTransition}
+        />
+      )}
 
       <div className="party-editor-actions">
         {onPublish && (

@@ -7,7 +7,8 @@ import { ROUTES } from '../constants/routes';
 import { clearThemeAccessCache, useThemeAccess } from '../hooks/useThemeAccess';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
-import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
+import type { CreatePartyDto, PartyDto, PartyLifecycleState, UpdatePartyDto } from '../types/api';
+import { extractApiErrorMessage } from '../utils/apiErrorHandler';
 import { sanitizeExternalUrl } from '../utils/urlSafety';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
@@ -28,6 +29,14 @@ const emptyForm: CreatePartyDto = {
   danceTags: [],
 };
 
+function mergePartiesWithLocalDrafts(current: PartyDto[], fromServer: PartyDto[]): PartyDto[] {
+  const serverIds = new Set(fromServer.map((party) => party.id));
+  const localDrafts = current.filter(
+    (party) => party.partyLifecycleState === 'draft' && !serverIds.has(party.id),
+  );
+  return [...localDrafts, ...fromServer];
+}
+
 export function CabinetPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,6 +54,7 @@ export function CabinetPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingPartyId, setDeletingPartyId] = useState<string | null>(null);
   const [togglingPartyId, setTogglingPartyId] = useState<string | null>(null);
+  const [transitioningPartyId, setTransitioningPartyId] = useState<string | null>(null);
   const [themeSelectionError, setThemeSelectionError] = useState<string | null>(null);
   const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
   const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
@@ -58,7 +68,7 @@ export function CabinetPage() {
     setError(null);
     try {
       const list = await partyApiService.getMyParties();
-      setParties(list);
+      setParties((current) => mergePartiesWithLocalDrafts(current, list));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка загрузки вечеринок');
     } finally {
@@ -119,14 +129,14 @@ export function CabinetPage() {
     setError(null);
     try {
       setThemeSelectionError(null);
-      await partyApiService.createParty({
+      const created = await partyApiService.createParty({
         ...createForm,
         name: createForm.name.trim(),
         eventDateTime: createForm.eventDateTime || undefined,
       });
+      setParties((prev) => [created, ...prev.filter((party) => party.id !== created.id)]);
       setShowCreateForm(false);
       setCreateForm(emptyForm);
-      await loadParties();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка создания вечеринки');
     } finally {
@@ -203,6 +213,22 @@ export function CabinetPage() {
       setError(e instanceof Error ? e.message : 'Ошибка обновления');
     } finally {
       setTogglingPartyId(null);
+    }
+  };
+
+  const handleLifecycleTransition = async (partyId: string, targetState: PartyLifecycleState) => {
+    setTransitioningPartyId(partyId);
+    setError(null);
+    try {
+      const updated = await partyApiService.transitionPartyLifecycle(partyId, targetState);
+      setParties((prev) => prev.map((party) => (party.id === partyId ? updated : party)));
+      if (editingParty?.id === partyId) {
+        setEditingParty(updated);
+      }
+    } catch (e) {
+      setError(extractApiErrorMessage(e, 'Ошибка смены состояния вечеринки'));
+    } finally {
+      setTransitioningPartyId(null);
     }
   };
 
@@ -365,6 +391,8 @@ export function CabinetPage() {
               onEditCancel={handleEditCancel}
               onToggleCatalog={handleToggleCatalog}
               onDeleteConfirm={handleDeleteConfirm}
+              transitioningPartyId={transitioningPartyId}
+              onLifecycleTransition={handleLifecycleTransition}
             />
           )}
           {!loadingParties && parties.length === 0 && !showCreateForm && !expandedPartyId && (
