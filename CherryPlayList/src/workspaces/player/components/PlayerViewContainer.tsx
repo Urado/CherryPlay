@@ -263,6 +263,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   const handleResetSession = useCallback(async () => {
     if (enableStreaming && linkedParty) {
       try {
+        signalRService.stopPositionUpdates();
         await signalRService.resetPlaybackState(linkedParty.id);
       } catch (error) {
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
@@ -271,9 +272,13 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
           message: 'Не удалось сбросить состояние на сервере',
           duration: 5000,
         });
+        return;
       }
     }
     handleResetSessionFromHook();
+    if (enableStreaming && linkedParty && signalRService.isServiceConnected()) {
+      signalRService.sendFullStateUpdate(linkedParty.id);
+    }
   }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
   useSessionRecovery();

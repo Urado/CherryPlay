@@ -4,7 +4,7 @@
 import * as signalR from '@microsoft/signalr';
 
 import { API_ENDPOINTS, getSignalRUrl } from '../config/apiConfig';
-import type { PlaybackStateDto, PartyStateDto } from '../types/api';
+import type { PartyDisplayStatusId, PlaybackStateDto, PartyStateDto } from '../types/api';
 import { devLog } from '../utils/logger';
 
 /** Логировать в консоль полученные сообщения SignalR (только в dev) */
@@ -326,6 +326,26 @@ class SignalRService {
     const wrappedCallback = (partyId: string, isOnline: boolean) => {
       logReceived(eventName, { partyId, isOnline });
       callback(partyId, isOnline);
+    };
+    this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
+    if (this.connection) {
+      this.connection.off(eventName);
+      this.connection.on(eventName, wrappedCallback);
+    } else if (this.pendingCallbacks.length === 0) {
+      this.pendingCallbacks.push(() => this.registerHandlers());
+    }
+  }
+
+  /**
+   * Подписывается на изменение статуса отображения вечеринки (сервер).
+   */
+  onPartyDisplayStatusChanged(
+    callback: (partyId: string, partyDisplayStatus: PartyDisplayStatusId) => void,
+  ): void {
+    const eventName = 'OnPartyDisplayStatusChanged';
+    const wrappedCallback = (partyId: string, partyDisplayStatus: PartyDisplayStatusId) => {
+      logReceived(eventName, { partyId, partyDisplayStatus });
+      callback(partyId, partyDisplayStatus);
     };
     this.eventHandlers.set(eventName, wrappedCallback as (...args: unknown[]) => void);
     if (this.connection) {

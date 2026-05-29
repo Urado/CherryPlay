@@ -3,10 +3,13 @@ using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
 using CherryPlayServer.Core.Services;
+using CherryPlayServer.Infrastructure;
 using CherryPlayServer.Infrastructure.Repositories;
 using CherryPlayServer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using CherryPlayServer.Core.Options;
 
 namespace CherryPlayServer.Tests;
 
@@ -35,10 +38,7 @@ public class PartyListLifecycleFilterTests
         var repository = new InMemoryPartyRepository();
         await SeedParty(repository, organizerId, PartyLifecycleState.Draft, "DRAFT2", listedInCatalog: true);
         await SeedParty(repository, organizerId, PartyLifecycleState.Ready, "READY2", listedInCatalog: true);
-        var service = new PublicPartyQueryService(
-            repository,
-            new InMemoryStreamingRepository(),
-            NullLogger<PublicPartyQueryService>.Instance);
+        var service = CreatePublicPartyQueryService(repository);
 
         var result = await service.GetAllPublicPartiesAsync();
 
@@ -97,10 +97,7 @@ public class PartyListLifecycleFilterTests
         var organizerId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
         await SeedParty(repository, organizerId, PartyLifecycleState.Draft, "DRFT99");
-        var service = new PublicPartyQueryService(
-            repository,
-            new InMemoryStreamingRepository(),
-            NullLogger<PublicPartyQueryService>.Instance);
+        var service = CreatePublicPartyQueryService(repository);
 
         var result = await service.GetPublicPartyAsync("DRFT99");
 
@@ -130,6 +127,15 @@ public class PartyListLifecycleFilterTests
         });
         return partyId;
     }
+
+    private static PublicPartyQueryService CreatePublicPartyQueryService(InMemoryPartyRepository repository) =>
+        new(
+            repository,
+            new InMemoryStreamingRepository(),
+            new PartyDisplayStatusService(
+                new OrganizerConnectionTracker(),
+                Options.Create(new PartyDisplayStatusOptions())),
+            NullLogger<PublicPartyQueryService>.Instance);
 
     private static PartyService CreatePartyService(Guid organizerId, IPartyRepository partyRepository)
     {

@@ -5,7 +5,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 import { signalRService } from '../services/signalRService';
-import type { PlaybackStateDto, PartyStateDto } from '../types/api';
+import type { PartyDisplayStatusId, PlaybackStateDto, PartyStateDto } from '../types/api';
 
 export interface UseSignalROptions {
   shortCode?: string;
@@ -16,6 +16,7 @@ export interface UseSignalROptions {
   onStateChanged?: (partyId: string) => void;
   onPlaylistChanged?: (partyId: string) => void;
   onConnectionStatusChanged?: (partyId: string, isOnline: boolean) => void;
+  onPartyDisplayStatusChanged?: (partyId: string, partyDisplayStatus: PartyDisplayStatusId) => void;
   onError?: (error: string) => void;
   autoConnect?: boolean;
 }
@@ -42,6 +43,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onStateChanged,
     onPlaylistChanged,
     onConnectionStatusChanged,
+    onPartyDisplayStatusChanged,
     onError,
     autoConnect = false,
   } = options;
@@ -58,6 +60,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onStateChanged,
     onPlaylistChanged,
     onConnectionStatusChanged,
+    onPartyDisplayStatusChanged,
     onError,
   });
 
@@ -71,6 +74,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
       onStateChanged,
       onPlaylistChanged,
       onConnectionStatusChanged,
+      onPartyDisplayStatusChanged,
       onError,
     };
   }, [
@@ -81,6 +85,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onStateChanged,
     onPlaylistChanged,
     onConnectionStatusChanged,
+    onPartyDisplayStatusChanged,
     onError,
   ]);
 
@@ -128,6 +133,12 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
       });
     }
 
+    if (onPartyDisplayStatusChanged) {
+      signalRService.onPartyDisplayStatusChanged((partyId, partyDisplayStatus) => {
+        callbacksRef.current.onPartyDisplayStatusChanged?.(partyId, partyDisplayStatus);
+      });
+    }
+
     if (onError) {
       signalRService.onError((error) => {
         callbacksRef.current.onError?.(error);
@@ -143,6 +154,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
       if (onStateChanged) signalRService.off('OnStateChanged');
       if (onPlaylistChanged) signalRService.off('OnPlaylistChanged');
       if (onConnectionStatusChanged) signalRService.off('OnConnectionStatusChanged');
+      if (onPartyDisplayStatusChanged) signalRService.off('OnPartyDisplayStatusChanged');
       if (onError) signalRService.off('Error');
     };
   }, [
@@ -153,6 +165,7 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onStateChanged,
     onPlaylistChanged,
     onConnectionStatusChanged,
+    onPartyDisplayStatusChanged,
     onError,
   ]);
 

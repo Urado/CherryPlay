@@ -34,7 +34,11 @@ public static class PartyMapper
         );
     }
 
-    public static PublicPartyDto ToPublicDto(this Party party, bool hasActiveSession, DateTime? sessionStartedAt = null)
+    public static PublicPartyDto ToPublicDto(
+        this Party party,
+        bool hasActiveSession,
+        PartyDisplayStatus partyDisplayStatus,
+        DateTime? sessionStartedAt = null)
     {
         return new PublicPartyDto(
             Id: party.Id.ToString(),
@@ -45,6 +49,7 @@ public static class PartyMapper
             HasActiveSession: hasActiveSession,
             IsListedInCatalog: party.IsListedInCatalog,
             PartyLifecycleState: party.PartyLifecycleState,
+            PartyDisplayStatus: partyDisplayStatus,
             CustomizationSettings: party.CustomizationSettings,
             SessionStartedAt: sessionStartedAt?.ToString("O"),
             Description: party.Description,

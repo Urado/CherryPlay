@@ -10,15 +10,19 @@ public class PublicPartyQueryService : IPublicPartyQueryService
 {
     private readonly IPartyRepository _partyRepository;
     private readonly IStreamingRepository _streamingRepository;
+    private readonly IPartyDisplayStatusService _partyDisplayStatusService;
     private readonly ILogger<PublicPartyQueryService> _logger;
 
     public PublicPartyQueryService(
         IPartyRepository partyRepository,
         IStreamingRepository streamingRepository,
+        IPartyDisplayStatusService partyDisplayStatusService,
         ILogger<PublicPartyQueryService> logger)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
+        _partyDisplayStatusService = partyDisplayStatusService
+            ?? throw new ArgumentNullException(nameof(partyDisplayStatusService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -39,7 +43,14 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
-        return party.ToPublicDto(state?.IsActive ?? false, state?.SessionStartedAt);
+        var displayStatus = _partyDisplayStatusService.Compute(
+            party.PartyLifecycleState,
+            state,
+            party.Id);
+        return party.ToPublicDto(
+            state?.IsActive ?? false,
+            displayStatus,
+            state?.SessionStartedAt);
     }
 
     public async Task<PartyPlaylistDto?> GetPartyPlaylistByShortCodeAsync(string shortCode)

@@ -7,5 +7,10 @@ namespace CherryPlayServer.Core.Interfaces;
 public interface IOrganizerConnectionTracker
 {
     void RegisterOrganizer(string connectionId, Guid partyId);
+
     Guid? TryRemoveOrganizer(string connectionId);
+
+    bool IsOrganizerConnected(Guid partyId);
+
+    bool TryGetOrganizerDisconnectedAt(Guid partyId, out DateTime disconnectedAt);
 }

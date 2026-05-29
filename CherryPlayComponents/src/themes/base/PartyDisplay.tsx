@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { PartySessionIndicator } from '../../components/PartySessionIndicator/PartySessionIndicator';
 import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
 import { PartyDisplayData } from '../../types';
 
@@ -27,17 +28,7 @@ export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
           <div className="party-display-header-text">
             <h1 className="party-display-title">{data.partyName}</h1>
             {data.subtitle && <p className="party-display-subtitle">{data.subtitle}</p>}
-            <div
-              className="party-display-session-indicator"
-              role="status"
-              aria-live="polite"
-              aria-label={data.isSessionActive ? 'Вечеринка идёт' : 'Скоро начнём'}
-            >
-              <span className="party-display-session-dot" />
-              <span className="party-display-session-label">
-                {data.isSessionActive ? 'Вечеринка идёт' : 'Скоро начнём'}
-              </span>
-            </div>
+            <PartySessionIndicator status={data.viewerStatus} />
           </div>
         </div>
         <div className="party-display-container">

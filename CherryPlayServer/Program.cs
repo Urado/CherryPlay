@@ -95,6 +95,9 @@ builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
+builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
+    builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));
+builder.Services.AddSingleton<IPartyDisplayStatusService, PartyDisplayStatusService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IJwtService, JwtService>();

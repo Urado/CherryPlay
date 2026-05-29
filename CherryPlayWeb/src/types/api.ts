@@ -7,6 +7,15 @@ export interface AppConfigResponse {
 /** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
 export type PartyLifecycleState = 'draft' | 'ready' | 'completed';
 
+/** Статус отображения для зрителя (сервер, CONTRACTS §6.7). */
+export type PartyDisplayStatusId =
+  | 'draft'
+  | 'scheduled'
+  | 'starting_soon'
+  | 'live'
+  | 'organizer_offline'
+  | 'party_ended';
+
 export interface TransitionPartyLifecycleDto {
   partyLifecycleState: PartyLifecycleState;
 }
@@ -45,11 +54,13 @@ export interface PublicPartyDto {
   schedule?: string;
   timeZone?: string;
   partyLifecycleState: PartyLifecycleState;
+  partyDisplayStatus: PartyDisplayStatusId;
 }
 
 export interface PartyStateDto {
   partyId: string;
   isSessionActive: boolean;
+  partyDisplayStatus: PartyDisplayStatusId;
   sessionStartedAt?: string;
   playbackState?: PlaybackStateDto;
   playlist: PartyPlaylistDto;

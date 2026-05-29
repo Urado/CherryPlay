@@ -79,15 +79,16 @@
 
 **События от сервера (on)** — зритель подписывается и получает обновления:
 
-| Событие                     | Аргументы                                                | Описание                                                       |
-| --------------------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
-| `OnSessionStarted`          | `partyId: string`                                        | Сессия начата.                                                 |
-| `OnSessionEnded`            | `partyId: string`                                        | Сессия завершена.                                              |
-| `OnFullStateUpdated`        | `partyId: string`, `state: PlaybackStateDto`             | Обновлено полное состояние воспроизведения.                    |
-| `OnPlaybackPositionUpdated` | `partyId: string`, `trackId: string`, `position: number` | Обновлена позиция текущего трека.                              |
-| `OnStateChanged`            | `partyId: string`                                        | Состояние изменилось; клиент может запросить полное состояние. |
-| `OnPlaylistChanged`         | `partyId: string`                                        | Плейлист вечеринки изменён.                                    |
-| `Error`                     | `message: string`                                        | Ошибка (например, вечеринка не найдена).                       |
+| Событие                       | Аргументы                                                   | Описание                                                       |
+| ----------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- |
+| `OnSessionStarted`            | `partyId: string`                                           | Сессия начата.                                                 |
+| `OnSessionEnded`              | `partyId: string`                                           | Сессия завершена.                                              |
+| `OnFullStateUpdated`          | `partyId: string`, `state: PlaybackStateDto`                | Обновлено полное состояние воспроизведения.                    |
+| `OnPartyDisplayStatusChanged` | `partyId: string`, `partyDisplayStatus: PartyDisplayStatus` | Изменился серверный статус отображения для зрителя.            |
+| `OnPlaybackPositionUpdated`   | `partyId: string`, `trackId: string`, `position: number`    | Обновлена позиция текущего трека.                              |
+| `OnStateChanged`              | `partyId: string`                                           | Состояние изменилось; клиент может запросить полное состояние. |
+| `OnPlaylistChanged`           | `partyId: string`                                           | Плейлист вечеринки изменён.                                    |
+| `Error`                       | `message: string`                                           | Ошибка (например, вечеринка не найдена).                       |
 
 Зритель **не вызывает** методы write: `UpdatePlaybackPosition`, `UpdateFullState`, `NotifyStateChanged`, `StartSession`, `EndSession`, `JoinPartyAsOrganizer`.
 
@@ -362,6 +363,7 @@ _Примечание:_ в текущей реализации веб может
 | `eventDateTime`                                              | `string \| undefined`                  | Время начала мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `eventEndDateTime`                                           | `string \| undefined`                  | Опциональное время окончания мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `partyLifecycleState`                                        | `string`                               | Жизненный цикл: `draft`, `ready`, `completed` (см. [DATABASE.md](CherryPlayServer/DATABASE.md)).                                                                                                                                                                                                                                                                                                                                                                         |
+| `partyDisplayStatus`                                         | `string`                               | Статус для зрителя (сервер): `draft`, `scheduled`, `starting_soon`, `live`, `organizer_offline`, `party_ended` (см. §6.7).                                                                                                                                                                                                                                                                                                                                               |
 | `partyThemeId`                                               | `PartyThemeId`                         | PartyTheme идентификатор (см. GLOSSARY.md).                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `customizationSettings`                                      | `Record<string, unknown> \| undefined` | Оформление (generic JSON). Для `basic` канонический формат: `{ paletteId, customPalette }`, где `customPalette` содержит 5 цветов (`accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`). Палитра по умолчанию: `base`; в UI `custom` показывается вторым пунктом после `base`; при выборе предустановленной палитры её цвета синхронизируются в `customPalette`. Legacy-flat ключи `custom*` поддерживаются для совместимости. |
 | `hasActiveSession`                                           | `boolean`                              | Идёт ли сессия.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -514,20 +516,22 @@ _Примечание:_ в текущей реализации веб может
 
 **PartyStateDto**
 
-| Поле              | Тип                             | Описание                                                                                                |
-| ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `partyId`         | `string`                        | GUID вечеринки.                                                                                         |
-| `isSessionActive` | `boolean`                       | Активна ли сессия.                                                                                      |
-| `playbackState`   | `PlaybackStateDto \| undefined` | Текущее состояние воспроизведения.                                                                      |
-| `playlist`        | `PartyPlaylistDto`              | Плейлист.                                                                                               |
-| `serverTrackIds`  | `string[]`                      | Список ID треков плейлиста на сервере (только треки, без групп), для индикатора «трека нет на сервере». |
+| Поле                 | Тип                             | Описание                                                                                                |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `partyId`            | `string`                        | GUID вечеринки.                                                                                         |
+| `isSessionActive`    | `boolean`                       | Активна ли сессия.                                                                                      |
+| `partyDisplayStatus` | `PartyDisplayStatus`            | Статус для зрителя (сервер вычисляет, см. §6.7).                                                        |
+| `playbackState`      | `PlaybackStateDto \| undefined` | Текущее состояние воспроизведения.                                                                      |
+| `playlist`           | `PartyPlaylistDto`              | Плейлист.                                                                                               |
+| `serverTrackIds`     | `string[]`                      | Список ID треков плейлиста на сервере (только треки, без групп), для индикатора «трека нет на сервере». |
 
 ### 6.7 Перечисляемые типы
 
 **PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` \| `"spring-cross-step"` (PartyTheme идентификатор)  
 **PartyLifecycleState:** `"draft"` \| `"ready"` \| `"completed"` — жизненный цикл вечеринки (JSON snake_case). Новая вечеринка создаётся в `draft`. Список `GET /api/parties` и публичный каталог `GET /api/parties/public/list` **не включают** `draft`. Переходы — только через `POST /api/parties/{partyId}/lifecycle` (см. §3.4).  
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
-**PlaybackMode:** `"preparation"` \| `"session"`
+**PlaybackMode:** `"preparation"` \| `"session"`  
+**PartyDisplayStatus:** `"draft"` \| `"scheduled"` \| `"starting_soon"` \| `"live"` \| `"organizer_offline"` \| `"party_ended"` — вычисляется на сервере для зрителя. Клиент дополнительно может показывать `connecting`, `server_unreachable` и `program_ended` («Конец программы» — последний трек программы доигран, по snapshot `playbackState` + плейлист; не приходит с API). Приоритет на сервере: `party_ended` (только lifecycle `completed`) → `draft` → `organizer_offline` (сессия активна, организатор отключён ≥ grace) → `live` → `starting_soon` (организатор в Hub, сессия не активна, в т.ч. после `EndSession`) → `scheduled` (сессии нет, организатор не в Hub). При отключении организатора от Hub сессия **не** завершается автоматически (grace ~60 с, см. [docs/integration/streaming.md](docs/integration/streaming.md)).
 
 ### 6.8 DTO Theme Monetization
 
