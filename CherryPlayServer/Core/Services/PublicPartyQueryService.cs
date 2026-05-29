@@ -1,3 +1,4 @@
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Models;
@@ -65,7 +66,9 @@ public class PublicPartyQueryService : IPublicPartyQueryService
         _logger.LogDebug("Getting all public parties (catalog only)");
 
         var allParties = await _partyRepository.GetAllAsync();
-        var parties = allParties.Where(p => p.IsListedInCatalog).ToList();
+        var parties = allParties
+            .Where(p => p.IsListedInCatalog && p.PartyLifecycleState != PartyLifecycleState.Draft)
+            .ToList();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 

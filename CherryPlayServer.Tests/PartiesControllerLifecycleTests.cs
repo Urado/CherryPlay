@@ -57,6 +57,40 @@ public class PartiesControllerLifecycleTests
         Assert.That(root.GetProperty("requestedState").GetString(), Is.EqualTo("completed"));
     }
 
+    [Test]
+    public async Task TransitionPartyLifecycle_FromDraftToReady_Returns200WithUpdatedDto()
+    {
+        var organizerId = Guid.NewGuid();
+        var partyId = Guid.NewGuid();
+        var repository = new InMemoryPartyRepository();
+        await repository.AddAsync(new Party
+        {
+            Id = partyId,
+            OrganizerId = organizerId,
+            Name = "Draft Party",
+            ShortCode = "DRFT02",
+            PartyThemeId = PartyThemeId.Basic,
+            Playlist = new PartyPlaylist(),
+            CreatedAt = DateTime.UtcNow,
+            PartyLifecycleState = PartyLifecycleState.Draft,
+        });
+
+        var controller = CreateController(organizerId, repository);
+        var action = await controller.TransitionPartyLifecycle(
+            partyId.ToString(),
+            new TransitionPartyLifecycleDto(PartyLifecycleState.Ready));
+
+        Assert.That(action.Result, Is.TypeOf<OkObjectResult>());
+        var ok = (OkObjectResult)action.Result!;
+        Assert.That(ok.Value, Is.TypeOf<PartyDto>());
+        var dto = (PartyDto)ok.Value!;
+        Assert.That(dto.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
+
+        var json = JsonSerializer.Serialize(dto, JsonOptions);
+        using var document = JsonDocument.Parse(json);
+        Assert.That(document.RootElement.GetProperty("partyLifecycleState").GetString(), Is.EqualTo("ready"));
+    }
+
     private static PartiesController CreateController(Guid organizerId, IPartyRepository partyRepository)
     {
         var contextAccessor = new HttpContextAccessor
