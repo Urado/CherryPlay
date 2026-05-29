@@ -1,4 +1,5 @@
 using CherryPlayServer.Core.Entities;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Models;
 
 namespace CherryPlayServer.Core.Mappings;
@@ -18,6 +19,7 @@ public static class PartyMapper
             HasActiveSession: hasActiveSession,
             EventDateTime: party.EventDateTime?.ToString("O"),
             EventEndDateTime: party.EventEndDateTime?.ToString("O"),
+            PartyLifecycleState: party.PartyLifecycleState,
             IsListedInCatalog: party.IsListedInCatalog,
             CustomizationSettings: party.CustomizationSettings,
             Description: party.Description,
@@ -42,6 +44,7 @@ public static class PartyMapper
             PartyThemeId: party.PartyThemeId,
             HasActiveSession: hasActiveSession,
             IsListedInCatalog: party.IsListedInCatalog,
+            PartyLifecycleState: party.PartyLifecycleState,
             CustomizationSettings: party.CustomizationSettings,
             SessionStartedAt: sessionStartedAt?.ToString("O"),
             Description: party.Description,

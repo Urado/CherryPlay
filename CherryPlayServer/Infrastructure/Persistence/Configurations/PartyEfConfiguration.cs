@@ -1,6 +1,7 @@
+using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using CherryPlayServer.Infrastructure.Persistence.Entities;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Configurations;
 
@@ -20,6 +21,9 @@ public class PartyEfConfiguration : IEntityTypeConfiguration<PartyEf>
         builder.Property(e => e.ExternalLinkUrl).HasMaxLength(2048);
         builder.Property(e => e.ExternalLinkText).HasMaxLength(200);
         builder.Property(e => e.DanceTagsJson);
+        builder.Property(e => e.PartyLifecycleState)
+            .IsRequired()
+            .HasDefaultValue(PartyLifecycleState.Draft);
         builder.HasIndex(e => e.ShortCode).IsUnique();
         builder.HasIndex(e => e.OrganizerId);
         builder.HasIndex(e => e.IsListedInCatalog);

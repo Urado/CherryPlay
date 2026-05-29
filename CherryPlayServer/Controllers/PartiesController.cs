@@ -219,4 +219,55 @@ public class PartiesController : ControllerBase
             return StatusCode(500, "An error occurred while updating the playlist");
         }
     }
+
+    [HttpPost("{partyId}/lifecycle")]
+    [AuthorizeOrganizer]
+    public async Task<ActionResult<PartyDto>> TransitionPartyLifecycle(
+        string partyId,
+        [FromBody] TransitionPartyLifecycleDto dto)
+    {
+        if (!PartyIdExtensions.TryParsePartyId(partyId, out var partyGuid, out var errorResult))
+        {
+            return errorResult!;
+        }
+
+        if (dto == null)
+        {
+            return BadRequest("Request body cannot be null");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var partyDto = await _partyService.TransitionPartyLifecycleAsync(partyGuid, dto.PartyLifecycleState);
+            return Ok(partyDto);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
+        }
+        catch (PartyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidPartyLifecycleTransitionException ex)
+        {
+            return Conflict(new
+            {
+                code = "invalid_lifecycle_transition",
+                message = ex.Message,
+                currentState = ex.CurrentState,
+                requestedState = ex.RequestedState,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transitioning party lifecycle: {PartyId}", partyId);
+            return StatusCode(500, "An error occurred while updating party lifecycle state");
+        }
+    }
 }

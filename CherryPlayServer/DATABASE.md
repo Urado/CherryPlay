@@ -145,30 +145,31 @@ _Связь с учётной записью: email+пароль (таблица
 
 Метаданные вечеринки и привязка к организатору. shortCode неизменяемый после создания.
 
-| Колонка                 | Тип       | Ограничения                    | Описание                                                       |
-| ----------------------- | --------- | ------------------------------ | -------------------------------------------------------------- |
-| `Id`                    | GUID      | PK                             | Идентификатор вечеринки.                                       |
-| `OrganizerId`           | GUID      | FK → Organizer, NOT NULL       | Владелец вечеринки.                                            |
-| `Name`                  | string    | NOT NULL, длина 1–200          | Название вечеринки.                                            |
-| `Title`                 | string    | NULL, длина до 500             | Заголовок на экране; если пусто — отображается Name.           |
-| `Subtitle`              | string    | NULL, длина до 500             | Подзаголовок под заголовком.                                   |
-| `ShortCode`             | string    | UNIQUE, NOT NULL, неизменяемый | Короткий код для ссылки (устойчивый к 0/O, 1/l).               |
-| `Description`           | text      | NULL                           | Описание вечеринки (для страницы `/info`).                     |
-| `Place`                 | string    | NULL                           | Место проведения.                                              |
-| `City`                  | string    | NULL                           | Город.                                                         |
-| `EventDateTime`         | datetime  | NULL                           | Дата и время начала мероприятия.                               |
-| `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                            |
-| `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                 |
-| `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор (cyberpunk, sakura, art-deco, basic). |
-| `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).              |
-| `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге.      |
-| `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                 |
-| `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                    |
-| `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                              |
-| `ShortDescription`      | string    | NULL, длина до 200             | Краткое описание для карточки вечеринки.                       |
-| `ExternalLinkUrl`       | string    | NULL, длина до 2048            | URL внешней ссылки.                                            |
-| `ExternalLinkText`      | string    | NULL, длина до 200             | Текст ссылки (подпись).                                        |
-| `DanceTagsJson`         | text/JSON | NULL                           | Массив тегов танцев (JSON), макс. 20 элементов.                |
+| Колонка                 | Тип       | Ограничения                    | Описание                                                                                  |
+| ----------------------- | --------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `Id`                    | GUID      | PK                             | Идентификатор вечеринки.                                                                  |
+| `OrganizerId`           | GUID      | FK → Organizer, NOT NULL       | Владелец вечеринки.                                                                       |
+| `Name`                  | string    | NOT NULL, длина 1–200          | Название вечеринки.                                                                       |
+| `Title`                 | string    | NULL, длина до 500             | Заголовок на экране; если пусто — отображается Name.                                      |
+| `Subtitle`              | string    | NULL, длина до 500             | Подзаголовок под заголовком.                                                              |
+| `ShortCode`             | string    | UNIQUE, NOT NULL, неизменяемый | Короткий код для ссылки (устойчивый к 0/O, 1/l).                                          |
+| `Description`           | text      | NULL                           | Описание вечеринки (для страницы `/info`).                                                |
+| `Place`                 | string    | NULL                           | Место проведения.                                                                         |
+| `City`                  | string    | NULL                           | Город.                                                                                    |
+| `EventDateTime`         | datetime  | NULL                           | Дата и время начала мероприятия.                                                          |
+| `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                                                       |
+| `PartyLifecycleState`   | int       | NOT NULL, default 1 (Draft)    | Жизненный цикл: 1 = Draft, 2 = Ready, 3 = Completed. JSON: `draft`, `ready`, `completed`. |
+| `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                                            |
+| `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор (cyberpunk, sakura, art-deco, basic).                            |
+| `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).                                         |
+| `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге.                                 |
+| `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                                            |
+| `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                                               |
+| `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                                                         |
+| `ShortDescription`      | string    | NULL, длина до 200             | Краткое описание для карточки вечеринки.                                                  |
+| `ExternalLinkUrl`       | string    | NULL, длина до 2048            | URL внешней ссылки.                                                                       |
+| `ExternalLinkText`      | string    | NULL, длина до 200             | Текст ссылки (подпись).                                                                   |
+| `DanceTagsJson`         | text/JSON | NULL                           | Массив тегов танцев (JSON), макс. 20 элементов.                                           |
 
 Индексы: `ShortCode` (уникальный), `OrganizerId`, `IsListedInCatalog` (для выборки каталога).
 
@@ -182,13 +183,13 @@ _Связь с учётной записью: email+пароль (таблица
 
 Вариант 1 — одна таблица с JSON:
 
-| Колонка         | Тип      | Ограничения    | Описание                               |
-| --------------- | -------- | -------------- | -------------------------------------- |
-| `PartyId`       | GUID     | PK, FK → Party | Одна запись на вечеринку (1:1).        |
+| Колонка         | Тип      | Ограничения    | Описание                                                                                            |
+| --------------- | -------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| `PartyId`       | GUID     | PK, FK → Party | Одна запись на вечеринку (1:1).                                                                     |
 | `Items`         | JSON     | NOT NULL       | Массив элементов: `{ id, type: "track" \| "group", name, displayOrder, level, duration?, items? }`. |
-| `TotalDuration` | int      | NOT NULL       | Общая длительность в секундах.         |
-| `TotalTracks`   | int      | NOT NULL       | Количество треков.                     |
-| `UpdatedAt`     | datetime | NULL           | Время последней публикации (Publish).  |
+| `TotalDuration` | int      | NOT NULL       | Общая длительность в секундах.                                                                      |
+| `TotalTracks`   | int      | NOT NULL       | Количество треков.                                                                                  |
+| `UpdatedAt`     | datetime | NULL           | Время последней публикации (Publish).                                                               |
 
 Вариант 2 — отдельная сущность в той же таблице Party (колонки `PlaylistItems` JSON, `PlaylistTotalDuration`, `PlaylistTotalTracks`) — на усмотрение реализации.
 

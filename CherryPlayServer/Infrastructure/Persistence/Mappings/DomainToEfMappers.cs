@@ -82,6 +82,7 @@ public static class DomainToEfMappers
         ef.ExternalLinkUrl = domain.ExternalLinkUrl;
         ef.ExternalLinkText = domain.ExternalLinkText;
         ef.DanceTagsJson = SerializeStringList(domain.DanceTags);
+        ef.PartyLifecycleState = domain.PartyLifecycleState;
     }
 
     public static PartyEf ToEf(this Party domain)
@@ -111,6 +112,7 @@ public static class DomainToEfMappers
             ExternalLinkUrl = domain.ExternalLinkUrl,
             ExternalLinkText = domain.ExternalLinkText,
             DanceTagsJson = SerializeStringList(domain.DanceTags),
+            PartyLifecycleState = domain.PartyLifecycleState,
         };
     }
 

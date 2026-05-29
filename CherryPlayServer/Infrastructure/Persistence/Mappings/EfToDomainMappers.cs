@@ -56,6 +56,7 @@ public static class EfToDomainMappers
             ExternalLinkUrl = ef.ExternalLinkUrl,
             ExternalLinkText = ef.ExternalLinkText,
             DanceTags = DeserializeStringList(ef.DanceTagsJson, logger) ?? [],
+            PartyLifecycleState = ef.PartyLifecycleState,
         };
         if (ef.Playlist != null)
         {

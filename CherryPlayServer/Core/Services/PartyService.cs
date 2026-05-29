@@ -361,6 +361,65 @@ public class PartyService : IPartyService
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
     }
 
+    public async Task<PartyDto> TransitionPartyLifecycleAsync(Guid partyId, PartyLifecycleState targetState) =>
+        await TransitionPartyLifecycleCoreAsync(partyId, targetState, "transition party lifecycle");
+
+    private async Task<PartyDto> TransitionPartyLifecycleCoreAsync(
+        Guid partyId,
+        PartyLifecycleState targetState,
+        string actionDescription)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            throw new UnauthorizedAccessException("HTTP context is required");
+        }
+
+        var organizerId = httpContext.RequireOrganizerId(actionDescription);
+
+        var party = await _partyRepository.GetByIdAsync(partyId);
+        if (party == null)
+        {
+            throw new PartyNotFoundException(partyId);
+        }
+
+        if (party.OrganizerId != organizerId)
+        {
+            throw new ForbiddenException("You do not have permission to access this party");
+        }
+
+        var currentState = party.PartyLifecycleState;
+        if (currentState != targetState)
+        {
+            if (!IsAllowedPartyLifecycleTransition(currentState, targetState))
+            {
+                throw new InvalidPartyLifecycleTransitionException(partyId, currentState, targetState);
+            }
+
+            party.PartyLifecycleState = targetState;
+            await _partyRepository.UpdateAsync(party);
+            _logger.LogInformation(
+                "Party lifecycle transitioned: {PartyId} {FromState} -> {ToState}",
+                partyId,
+                currentState,
+                targetState);
+        }
+
+        var sessionState = await _streamingRepository.GetSessionStateAsync(partyId);
+        return party.ToDto(sessionState != null);
+    }
+
+    private static bool IsAllowedPartyLifecycleTransition(
+        PartyLifecycleState current,
+        PartyLifecycleState target) =>
+        (current, target) switch
+        {
+            (PartyLifecycleState.Draft, PartyLifecycleState.Ready) => true,
+            (PartyLifecycleState.Ready, PartyLifecycleState.Completed) => true,
+            (PartyLifecycleState.Ready, PartyLifecycleState.Draft) => true,
+            _ => false,
+        };
+
     private static void ValidatePartyCardFields(string? shortDescription, List<string>? danceTags, string paramName)
     {
         if (shortDescription != null && shortDescription.Length > MaxShortDescriptionLength)

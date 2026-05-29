@@ -13,6 +13,7 @@ public record PartyDto(
     bool HasActiveSession,
     string? EventDateTime = null,
     string? EventEndDateTime = null,
+    PartyLifecycleState PartyLifecycleState = PartyLifecycleState.Draft,
     bool IsListedInCatalog = false,
     Dictionary<string, object>? CustomizationSettings = null,
     string? Description = null,

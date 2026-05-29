@@ -15,6 +15,7 @@ public record PublicPartyListItemDto(
     int TotalDuration,
     string? EventDateTime = null,
     string? EventEndDateTime = null,
+    PartyLifecycleState PartyLifecycleState = PartyLifecycleState.Draft,
     string? TimeZone = null,
     string? City = null,
     string? ShortDescription = null,

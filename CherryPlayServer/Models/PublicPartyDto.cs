@@ -10,6 +10,7 @@ public record PublicPartyDto(
     PartyThemeId PartyThemeId,
     bool HasActiveSession,
     bool IsListedInCatalog,
+    PartyLifecycleState PartyLifecycleState = PartyLifecycleState.Draft,
     Dictionary<string, object>? CustomizationSettings = null,
     string? SessionStartedAt = null,
     string? Description = null,

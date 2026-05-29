@@ -1,3 +1,5 @@
+using CherryPlayServer.Core.Enums;
+
 namespace CherryPlayServer.Infrastructure.Persistence.Entities;
 
 public class PartyEf
@@ -25,6 +27,7 @@ public class PartyEf
     public string? ExternalLinkUrl { get; set; }
     public string? ExternalLinkText { get; set; }
     public string? DanceTagsJson { get; set; }
+    public PartyLifecycleState PartyLifecycleState { get; set; } = PartyLifecycleState.Draft;
 
     public OrganizerEf Organizer { get; set; } = null!;
     public PartyPlaylistEf? Playlist { get; set; }
