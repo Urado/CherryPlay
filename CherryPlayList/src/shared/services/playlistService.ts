@@ -1,3 +1,5 @@
+import { guardNativeFileOperation } from '../demo/guardNativeFileOperation';
+
 import { ipcService } from './ipcService';
 
 /**
@@ -18,10 +20,16 @@ export interface PlaylistData {
  */
 class PlaylistService {
   async savePlaylist(path: string, data: PlaylistData): Promise<void> {
+    if (!guardNativeFileOperation()) {
+      return;
+    }
     await ipcService.invoke('playlist:save', { path, data });
   }
 
   async loadPlaylist(path: string): Promise<PlaylistData> {
+    if (!guardNativeFileOperation()) {
+      throw new Error('Не доступно в демо');
+    }
     return await ipcService.invoke('playlist:load', { path });
   }
 }

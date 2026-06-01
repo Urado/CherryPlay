@@ -16,6 +16,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { WorkspaceId } from '@core/types/workspace';
 import { Spinner } from '@shared/components';
 import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
+import { getAppMode, getPlatform, isPlatformInitialized } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import {
   partyService,
@@ -224,7 +225,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const isAuth = isAuthenticated();
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.api || isAuth) {
+    if (!isPlatformInitialized() || getAppMode() === 'demo' || isAuth) {
       return;
     }
 
@@ -232,7 +233,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
     const registerCallback = async () => {
       try {
-        const result = (await window.api.invoke('auth:registerCallback')) as
+        const result = (await getPlatform().invoke('auth:registerCallback')) as
           | { success: true; data: { code: string; provider: string } }
           | { success: false; error: string };
 

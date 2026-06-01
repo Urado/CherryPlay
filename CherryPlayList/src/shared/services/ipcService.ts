@@ -1,18 +1,11 @@
+import { isNativePlatformAvailable } from '../platform/appMode';
+import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
+import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
+import type { DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
 import { logger } from '../utils/logger';
 
-export interface IPCResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export interface DirectoryItem {
-  name: string;
-  path: string;
-  isDirectory: boolean;
-  size?: number;
-}
+export type { DirectoryItem, IPCResponse };
 
 export interface Track {
   id: string;
@@ -26,8 +19,9 @@ interface AudioFileSource {
   mimeType: string;
 }
 
+/** @deprecated Use `isNativePlatformAvailable()` from `@shared/platform`. */
 export function isIpcRendererAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.api !== 'undefined';
+  return isNativePlatformAvailable();
 }
 
 class IPCService {
@@ -36,8 +30,8 @@ class IPCService {
     payload?: unknown,
     showNotification: boolean = true,
   ): Promise<T> {
-    if (!isIpcRendererAvailable()) {
-      const error = new Error('IPC API not available');
+    if (!isPlatformInitialized()) {
+      const error = new Error('Platform API not available');
       if (showNotification) {
         useUIStore.getState().addNotification({
           type: 'error',
@@ -48,7 +42,10 @@ class IPCService {
     }
 
     try {
-      const response: IPCResponse<T> = await window.api.invoke(channel, payload);
+      const response: IPCResponse<T> = (await getPlatform().invoke(
+        channel,
+        payload as object | undefined,
+      )) as IPCResponse<T>;
 
       if (!response.success) {
         const error = new Error(response.error || 'IPC call failed');
@@ -67,8 +64,9 @@ class IPCService {
 
       if (showNotification && error instanceof Error) {
         if (
-          !error.message.includes('IPC API not available') &&
-          !error.message.includes('IPC call failed')
+          !error.message.includes('Platform API not available') &&
+          !error.message.includes('IPC call failed') &&
+          error.message !== DEMO_UNAVAILABLE_MESSAGE
         ) {
           useUIStore.getState().addNotification({
             type: 'error',

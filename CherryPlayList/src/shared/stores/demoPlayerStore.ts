@@ -4,6 +4,8 @@ import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
+import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
+import { getAppMode } from '../platform/appMode';
 import { ipcService } from '../services/ipcService';
 import { setAudioSinkId, getDefaultDeviceId } from '../utils/audioDevices';
 import { logger } from '../utils/logger';
@@ -243,6 +245,11 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     ...INITIAL_STATE,
 
     loadTrack: async (track, sourceWorkspaceId) => {
+      if (getAppMode() === 'demo') {
+        notifyDemoUnavailable();
+        return;
+      }
+
       try {
         const audio = getAudioElement();
         audio.pause();
@@ -304,6 +311,11 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     play: async () => {
       const { currentTrack, handleError, isDisabled } = get();
       if (!currentTrack || isDisabled) {
+        return;
+      }
+
+      if (getAppMode() === 'demo') {
+        notifyDemoUnavailable();
         return;
       }
 

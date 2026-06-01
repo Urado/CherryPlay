@@ -183,8 +183,13 @@ class ProjectService {
    */
   async loadProject(filePath: string): Promise<ProjectStateData> {
     const rawData = await ipcService.invoke<unknown>('project:load', { path: filePath });
+    return this.loadProjectFromData(rawData, filePath);
+  }
 
-    // Валидируем загруженные данные
+  /**
+   * Parse and validate project JSON (e.g. fetched demo asset) without IPC.
+   */
+  async loadProjectFromData(rawData: unknown, filePath: string): Promise<ProjectStateData> {
     const validationResult = validateProjectFile(rawData);
 
     if (!validationResult.isValid || !validationResult.data) {
@@ -192,12 +197,10 @@ class ProjectService {
       throw new Error(`Invalid project file: ${errorMessage}`);
     }
 
-    // Выводим предупреждения в консоль
     if (validationResult.warnings.length > 0) {
       console.warn('Project file warnings:', validationResult.warnings);
     }
 
-    // Проверяем целостность ссылок
     const integrityWarnings = validateProjectIntegrity(validationResult.data);
     if (integrityWarnings.length > 0) {
       console.warn('Project integrity warnings:', integrityWarnings);
@@ -205,7 +208,6 @@ class ProjectService {
 
     const projectData = this.deserializeProject(validationResult.data);
 
-    // Resolve relative paths to absolute and detect missing tracks
     if (filePath) {
       await resolveAndCheckTracks(projectData.items, filePath);
     }

@@ -12,6 +12,8 @@ import {
   type ProjectTrackSettings,
 } from '@core/types/project';
 import { DemoPlayer } from '@shared/components';
+import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
+import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
@@ -116,6 +118,11 @@ export const AppHeader: React.FC = () => {
     enableStreaming,
   });
   const isAimpPresetVisible = aimpPartyPresetState.visible;
+  const isDemoMode = getAppMode() === 'demo';
+
+  const notifyDemoBlocked = useCallback(() => {
+    addNotification({ type: 'info', message: DEMO_UNAVAILABLE_MESSAGE });
+  }, [addNotification]);
   const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
   const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
     persistedLayoutPreset ?? 'simple',
@@ -274,8 +281,17 @@ export const AppHeader: React.FC = () => {
     [addNotification],
   );
 
+  const handleLoadDemoProject = useCallback(async () => {
+    await loadDemoProjectSafe();
+  }, []);
+
   const runSaveAsFromModal = useCallback(
     async (payload: { portable: boolean; projectName: string; targetDirectory: string }) => {
+      if (isDemoMode) {
+        notifyDemoBlocked();
+        return;
+      }
+
       const projectName = payload.projectName.trim();
       const targetDirectory = payload.targetDirectory.trim();
       const portablePackage = payload.portable;
@@ -348,6 +364,8 @@ export const AppHeader: React.FC = () => {
       resetDirty,
       setLastOpenedPlaylist,
       addSaveSuccessWithOpenFolder,
+      isDemoMode,
+      notifyDemoBlocked,
     ],
   );
 
@@ -366,6 +384,11 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleSave = useCallback(async () => {
+    if (isDemoMode) {
+      notifyDemoBlocked();
+      return;
+    }
+
     const quickSavePath = meta.filePath;
     if (!quickSavePath) {
       openSaveAsModal();
@@ -408,6 +431,8 @@ export const AppHeader: React.FC = () => {
     resetDirty,
     addNotification,
     openSaveAsModal,
+    isDemoMode,
+    notifyDemoBlocked,
   ]);
 
   const handleLoad = useCallback(async () => {
@@ -454,10 +479,18 @@ export const AppHeader: React.FC = () => {
     () => ({
       'global.save': () => {
         closeProjectMenu();
+        if (isDemoMode) {
+          notifyDemoBlocked();
+          return;
+        }
         void handleSave();
       },
       'global.saveAs': () => {
         closeProjectMenu();
+        if (isDemoMode) {
+          notifyDemoBlocked();
+          return;
+        }
         // With no file path, menu only shows "Сохранить" (not "Сохранить как…") — first-save flow
         // is handleSave → open save-as modal. Reuse the same path so the shortcut never diverges.
         if (!meta.filePath) {
@@ -475,7 +508,16 @@ export const AppHeader: React.FC = () => {
         handleNew();
       },
     }),
-    [closeProjectMenu, handleSave, handleLoad, handleNew, openSaveAsModal, meta.filePath],
+    [
+      closeProjectMenu,
+      handleSave,
+      handleLoad,
+      handleNew,
+      openSaveAsModal,
+      meta.filePath,
+      isDemoMode,
+      notifyDemoBlocked,
+    ],
   );
 
   useGlobalShortcuts(globalShortcutHandlers);
@@ -591,6 +633,20 @@ export const AppHeader: React.FC = () => {
                     >
                       Открыть проект…
                     </button>
+                    {isDemoMode && (
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          void handleLoadDemoProject();
+                        }}
+                      >
+                        Загрузить демо-проект
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="project-menu__item"
@@ -720,7 +776,9 @@ export const AppHeader: React.FC = () => {
               </option>
               <option value="player">Плеер (Player + Browser)</option>
               {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
-              {isAimpPresetVisible && <option value="aimp-party">AIMP + Party</option>}
+              {isAimpPresetVisible && !isDemoMode && (
+                <option value="aimp-party">AIMP + Party</option>
+              )}
             </select>
           </div>
         </div>

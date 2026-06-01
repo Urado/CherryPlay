@@ -1,3 +1,5 @@
+import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
+
 import { normalizeFileBrowserPath } from './fileBrowserNavigationHistory';
 import { logger } from './logger';
 
@@ -36,7 +38,7 @@ function getPathForFileSafe(
 
 /**
  * Collects absolute paths from `DataTransfer.files` (Explorer / OS drops).
- * Prefer `window.api.getPathForFile` from preload (Electron `webUtils.getPathForFile`).
+ * Prefer `getPlatform().getPathForFile` (Electron `webUtils.getPathForFile` via preload).
  */
 export function collectNativePathsFromDataTransfer(
   dataTransfer: DataTransfer,
@@ -170,12 +172,12 @@ export function tryParseInternalFileBrowserPayload(
  * Resolves a native path for a dropped `File` in the renderer (Electron preload or legacy `.path`).
  */
 export function getPathForFileInRenderer(file: File): string | undefined {
-  if (
-    typeof window !== 'undefined' &&
-    window.api &&
-    typeof window.api.getPathForFile === 'function'
-  ) {
-    return window.api.getPathForFile(file);
+  if (isPlatformInitialized()) {
+    try {
+      return getPlatform().getPathForFile(file);
+    } catch {
+      // fall through to legacy .path
+    }
   }
   const legacy = (file as FileWithNativePath).path;
   if (typeof legacy === 'string' && legacy.length > 0) {

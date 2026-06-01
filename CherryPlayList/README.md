@@ -114,11 +114,17 @@ npm install
 
 ### Запуск в режиме разработки
 
+**Electron (полный стек, без изменений для веб-демо):**
+
 ```bash
-npm run electron:dev
+npm run dev
 ```
 
-Этот скрипт запустит Vite dev server и Electron приложение.
+Запускает Vite dev server и Electron с preload/IPC.
+
+**Веб-демо (только браузер, фикстуры вместо ФС):** см. **[docs/web-demo.md](docs/web-demo.md)** — `npm run dev:web`, `npm run dev:web:project`, переменные `VITE_*`, ограничения и сообщение **«Не доступно в демо»**.
+
+> Альтернатива только для уже запущенного Vite: `npm run electron:dev` (только процесс Electron).
 
 ### Сборка для production
 

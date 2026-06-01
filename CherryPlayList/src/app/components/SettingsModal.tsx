@@ -2,6 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef } from 'react';
 
 import { APP_VERSION } from '@shared/config';
+import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
 import {
   useAimpStore,
   useSettingsStore,
@@ -45,7 +46,8 @@ export const SettingsModal: React.FC = () => {
   } = useSettingsStore();
   const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const aimpAvailability = getAimpAvailability(aimpBridgeState);
-  const canSelectAimpSource = aimpAvailability.available;
+  const isDemoMode = getAppMode() === 'demo';
+  const canSelectAimpSource = !isDemoMode && aimpAvailability.available;
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
   const [localHourDividerInterval, setLocalHourDividerInterval] = useState(hourDividerInterval);
@@ -259,10 +261,16 @@ export const SettingsModal: React.FC = () => {
                 gap: 4,
               }}
             >
-              <div>AIMP режим сейчас недоступен:</div>
-              {aimpAvailability.gatingReasons.map((reason) => (
-                <div key={reason.code}>- {reason.message}</div>
-              ))}
+              {isDemoMode ? (
+                <div>{DEMO_UNAVAILABLE_MESSAGE}</div>
+              ) : (
+                <>
+                  <div>AIMP режим сейчас недоступен:</div>
+                  {aimpAvailability.gatingReasons.map((reason) => (
+                    <div key={reason.code}>- {reason.message}</div>
+                  ))}
+                </>
+              )}
             </div>
           )}
 

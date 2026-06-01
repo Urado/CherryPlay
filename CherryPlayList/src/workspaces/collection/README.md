@@ -20,7 +20,8 @@
 - `@shared/services/exportService` - экспорт коллекций
 - `@shared/services/fileService` - работа с файлами
 - `@shared/services/ipcService` - IPC коммуникация
-- `@shared/services/playlistService` - сохранение/загрузка плейлистов
+- `@shared/services/collectionPersistenceService` - экспорт JSON, копирование треков, импорт (с guard для web demo)
+- `@shared/services/playlistService` - низкоуровневый IPC save/load JSON
 - `@shared/hooks/useTrackWorkspaceDragAndDrop` - drag-and-drop
 - `@shared/hooks/useTrackDuration` - загрузка длительности треков
 - `@shared/components/ProjectItemRow` - компонент элемента коллекции

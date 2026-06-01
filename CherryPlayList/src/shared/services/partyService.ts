@@ -1,4 +1,15 @@
 import { getApiConfig } from '../config/apiConfig';
+import {
+  DEMO_PARTY_ID,
+  DEMO_THEME_ACCESS,
+  demoCreateParty,
+  demoTransitionPartyLifecycle,
+  demoUpdateParty,
+  getDemoPartyPublicUrl,
+  getDemoPartySnapshot,
+  getDemoPartyState,
+} from '../demo/demoPartyFixture';
+import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { useAuthStore } from '../stores/authStore';
 import { handleApiResponse } from '../utils/apiErrorHandler';
 import type { PlayerItemForApi } from '../utils/partyUtils';
@@ -184,6 +195,9 @@ class PartyService {
   }
 
   async createParty(data: CreatePartyDto): Promise<PartyDto> {
+    if (isDemoAuthMode()) {
+      return demoCreateParty(data);
+    }
     const token = useAuthStore.getState().accessToken;
     if (!token) {
       throw new Error('Для создания вечеринки необходимо войти в аккаунт');
@@ -205,6 +219,9 @@ class PartyService {
    * (черновик доступен через {@link getParty}).
    */
   async getParties(): Promise<PartyDto[]> {
+    if (isDemoAuthMode()) {
+      return [getDemoPartySnapshot()];
+    }
     const token = useAuthStore.getState().accessToken;
     if (!token) {
       throw new Error('Для просмотра списка вечеринок необходимо войти в аккаунт');
@@ -219,6 +236,12 @@ class PartyService {
   }
 
   async getParty(partyId: string): Promise<PartyDto> {
+    if (isDemoAuthMode()) {
+      if (partyId === DEMO_PARTY_ID || partyId.toLowerCase() === DEMO_PARTY_ID) {
+        return getDemoPartySnapshot();
+      }
+      return getDemoPartySnapshot();
+    }
     const token = useAuthStore.getState().accessToken;
     if (!token) {
       throw new Error('Для получения данных вечеринки необходимо войти в аккаунт');
@@ -244,6 +267,9 @@ class PartyService {
   }
 
   async checkServerReachable(): Promise<boolean> {
+    if (isDemoAuthMode()) {
+      return true;
+    }
     try {
       const config = await getApiConfig();
       const controller = new AbortController();
@@ -264,6 +290,10 @@ class PartyService {
   }
 
   async updateParty(partyId: string, data: UpdatePartyDto): Promise<void> {
+    if (isDemoAuthMode()) {
+      demoUpdateParty(partyId, data);
+      return;
+    }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
     const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
@@ -281,6 +311,11 @@ class PartyService {
     partyId: string,
     playlist: { items: PlayerItemForApi[]; totalTracks: number; totalDuration: number },
   ): Promise<void> {
+    if (isDemoAuthMode()) {
+      void partyId;
+      void playlist;
+      return;
+    }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
     const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}/playlist`, {
@@ -296,6 +331,10 @@ class PartyService {
   }
 
   async deleteParty(partyId: string): Promise<void> {
+    if (isDemoAuthMode()) {
+      void partyId;
+      return;
+    }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
     const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
@@ -315,6 +354,10 @@ class PartyService {
     partyId: string,
     targetState: PartyLifecycleState,
   ): Promise<PartyDto> {
+    if (isDemoAuthMode()) {
+      void partyId;
+      return demoTransitionPartyLifecycle(targetState);
+    }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
     const body: TransitionPartyLifecycleDto = { partyLifecycleState: targetState };
@@ -330,6 +373,10 @@ class PartyService {
   }
 
   async getPartyState(shortCode: string): Promise<PartyStateDto | null> {
+    if (isDemoAuthMode()) {
+      void shortCode;
+      return getDemoPartyState();
+    }
     const baseUrl = await this.getBaseUrl();
     const response = await fetch(`${baseUrl}/parties/public/${shortCode}/state`, {
       method: 'GET',
@@ -344,6 +391,9 @@ class PartyService {
   }
 
   async getPartyUrl(shortCode: string): Promise<string> {
+    if (isDemoAuthMode()) {
+      return getDemoPartyPublicUrl(shortCode);
+    }
     const config = await getApiConfig();
     const serverUrl = config.serverUrl;
 
@@ -380,6 +430,10 @@ class PartyService {
   }
 
   async getThemeAccess(forceRefresh = false): Promise<ThemeAccessDto> {
+    if (isDemoAuthMode()) {
+      void forceRefresh;
+      return DEMO_THEME_ACCESS;
+    }
     const token = useAuthStore.getState().accessToken;
     if (!token) {
       this.invalidateThemeAccessCache();

@@ -3,6 +3,8 @@ import { createWithEqualityFn } from 'zustand/traditional';
 import { Track } from '@core/types/track';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
+import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
+import { getAppMode } from '../platform/appMode';
 import { ipcService } from '../services/ipcService';
 import { setAudioSinkId, getDefaultDeviceId } from '../utils/audioDevices';
 import { logger } from '../utils/logger';
@@ -261,6 +263,11 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     ...INITIAL_STATE,
 
     loadTrack: async (track) => {
+      if (getAppMode() === 'demo') {
+        notifyDemoUnavailable();
+        return;
+      }
+
       try {
         // Очищаем таймер паузы при загрузке нового трека
         clearPauseTimer();
@@ -323,6 +330,11 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     play: async () => {
       const { currentTrack, handleError } = get();
       if (!currentTrack) {
+        return;
+      }
+
+      if (getAppMode() === 'demo') {
+        notifyDemoUnavailable();
         return;
       }
 

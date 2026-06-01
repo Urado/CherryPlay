@@ -15,7 +15,9 @@ import React, {
 import { createPortal } from 'react-dom';
 
 import { useAudioPathDurations, useItemSelection } from '@shared/hooks';
-import { fileService, ipcService, isIpcRendererAvailable } from '@shared/services';
+import { getAppMode, isPlatformInitialized } from '@shared/platform';
+import { DEMO_MUSIC_ROOT } from '@shared/platform/fixtures/fileBrowserTree';
+import { fileService, ipcService } from '@shared/services';
 import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDebounce, logger } from '@shared/utils';
 import { formatTrackDuration } from '@shared/utils/durationUtils';
@@ -53,14 +55,13 @@ export const FileBrowser: React.FC = () => {
     pause,
   } = useDemoPlayerStore();
   const activeTrackPath = activeTrack?.path;
+  const isDemoMode = getAppMode() === 'demo';
 
   useEffect(() => {
     const initializePath = async () => {
-      if (!isIpcRendererAvailable()) {
+      if (!isPlatformInitialized()) {
         setLoading(false);
-        setError(
-          'Файловый браузер доступен только в окне CherryPlay (Electron). Если открыт только адрес в браузере — дождитесь запуска окна приложения.',
-        );
+        setError('Платформа приложения не инициализирована.');
         return;
       }
 
@@ -71,6 +72,8 @@ export const FileBrowser: React.FC = () => {
         let initialPath: string;
         if (saved && saved.trim() !== '') {
           initialPath = saved.trim();
+        } else if (getAppMode() === 'demo') {
+          initialPath = DEMO_MUSIC_ROOT;
         } else {
           try {
             initialPath = await ipcService.getSystemPath('music');
@@ -100,7 +103,7 @@ export const FileBrowser: React.FC = () => {
   }, []);
 
   const handleChooseFolder = useCallback(async () => {
-    if (!isIpcRendererAvailable()) {
+    if (!isPlatformInitialized()) {
       return;
     }
     try {
@@ -117,7 +120,7 @@ export const FileBrowser: React.FC = () => {
   }, [currentPath, goToPath]);
 
   const loadDirectory = async (path: string) => {
-    if (!isIpcRendererAvailable()) {
+    if (!isPlatformInitialized()) {
       setLoading(false);
       setItems([]);
       return;
@@ -146,8 +149,8 @@ export const FileBrowser: React.FC = () => {
   );
 
   const requestAudioDuration = useCallback((path: string) => {
-    if (!isIpcRendererAvailable()) {
-      return Promise.reject(new Error('IPC API not available'));
+    if (!isPlatformInitialized()) {
+      return Promise.reject(new Error('Platform API not available'));
     }
     return ipcService.getAudioDuration(path);
   }, []);
@@ -161,7 +164,7 @@ export const FileBrowser: React.FC = () => {
   }, []);
 
   useAudioPathDurations({
-    paths: audioPaths,
+    paths: isDemoMode ? [] : audioPaths,
     requestDuration: requestAudioDuration,
     onResolved: onBrowserDurationResolved,
     onError: onBrowserDurationError,
@@ -458,6 +461,8 @@ export const FileBrowser: React.FC = () => {
     const duration = durations[item.path];
     if (duration != null && Number.isFinite(duration)) {
       parts.push(formatTrackDuration(duration));
+    } else if (isAudio && isDemoMode) {
+      parts.push('Demo');
     } else if (isAudio) {
       parts.push(DURATION_PLACEHOLDER);
     }

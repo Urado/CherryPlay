@@ -2,6 +2,8 @@ import { AuthForm } from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
+import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
+import { getAppMode, getPlatform, isPlatformInitialized } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import { useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
@@ -15,6 +17,13 @@ export const AccountView: React.FC = () => {
   const addNotification = useUIStore((state) => state.addNotification);
 
   useEffect(() => {
+    if (getAppMode() === 'demo') {
+      if (isAuthenticated()) {
+        setOrganizerInfo(getDemoOrganizerDto());
+        setOrganizer({ id: DEMO_ORGANIZER_DTO.id, name: DEMO_ORGANIZER_DTO.name });
+      }
+      return;
+    }
     // Загружаем информацию об организаторе при монтировании, если есть токен
     if (isAuthenticated() && accessToken) {
       loadOrganizerInfo();
@@ -24,7 +33,7 @@ export const AccountView: React.FC = () => {
 
   // Обработка OAuth callback - регистрируем при монтировании компонента
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.api) {
+    if (!isPlatformInitialized() || getAppMode() === 'demo') {
       return;
     }
 
@@ -33,7 +42,7 @@ export const AccountView: React.FC = () => {
     const registerCallback = async () => {
       try {
         // Регистрируем callback handler
-        const result = (await window.api.invoke('auth:registerCallback')) as
+        const result = (await getPlatform().invoke('auth:registerCallback')) as
           | { success: true; data: { code: string; provider: string } }
           | { success: false; error: string };
 
@@ -135,51 +144,66 @@ export const AccountView: React.FC = () => {
     }
   };
 
+  const isDemoMode = getAppMode() === 'demo';
+
   return (
     <div className="account-view">
       <h1>Аккаунт</h1>
+
+      {isDemoMode && (
+        <p className="account-view-demo-hint" style={{ opacity: 0.85, marginBottom: '1rem' }}>
+          Веб-демо: фейковый организатор, без запросов к CherryPlayServer.
+        </p>
+      )}
 
       {error && <div className="account-view-error">{error}</div>}
 
       {loading && <div className="account-view-loading">Загрузка…</div>}
 
-      {isAuthenticated() && organizerInfo ? (
+      {isAuthenticated() && (organizerInfo || isDemoMode) ? (
         <div className="account-info">
-          <div className="account-view-success">✓ Вы авторизованы как организатор</div>
+          <div className="account-view-success">
+            ✓ Вы авторизованы как организатор
+            {isDemoMode ? ' (демо)' : ''}
+          </div>
           <h2>Информация об организаторе</h2>
           <div style={{ marginBottom: '20px' }}>
             <p>
-              <strong>Name:</strong> {organizerInfo.name}
+              <strong>Name:</strong> {(organizerInfo ?? getDemoOrganizerDto()).name}
             </p>
             <p>
-              <strong>ID:</strong> {organizerInfo.id}
+              <strong>ID:</strong> {(organizerInfo ?? getDemoOrganizerDto()).id}
             </p>
-            {organizerInfo.logoUrl && (
+            {(organizerInfo ?? getDemoOrganizerDto()).logoUrl && (
               <p>
                 <strong>Logo:</strong>{' '}
                 <img
-                  src={organizerInfo.logoUrl}
-                  alt={organizerInfo.name}
+                  src={(organizerInfo ?? getDemoOrganizerDto()).logoUrl!}
+                  alt={(organizerInfo ?? getDemoOrganizerDto()).name}
                   style={{ maxWidth: '100px', maxHeight: '100px' }}
                 />
               </p>
             )}
-            {organizerInfo.links && Object.keys(organizerInfo.links).length > 0 && (
-              <div>
-                <strong>Links:</strong>
-                <ul>
-                  {Object.entries(organizerInfo.links).map(([key, value]) => (
-                    <li key={key}>
-                      <a href={value} target="_blank" rel="noopener noreferrer">
-                        {key}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {(organizerInfo ?? getDemoOrganizerDto()).links &&
+              Object.keys((organizerInfo ?? getDemoOrganizerDto()).links!).length > 0 && (
+                <div>
+                  <strong>Links:</strong>
+                  <ul>
+                    {Object.entries((organizerInfo ?? getDemoOrganizerDto()).links!).map(
+                      ([key, value]) => (
+                        <li key={key}>
+                          <a href={value} target="_blank" rel="noopener noreferrer">
+                            {key}
+                          </a>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
+              )}
             <p>
-              <strong>Created:</strong> {new Date(organizerInfo.createdAt).toLocaleDateString()}
+              <strong>Created:</strong>{' '}
+              {new Date((organizerInfo ?? getDemoOrganizerDto()).createdAt).toLocaleDateString()}
             </p>
           </div>
           <button

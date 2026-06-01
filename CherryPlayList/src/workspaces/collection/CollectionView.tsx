@@ -18,7 +18,13 @@ import {
   useSelectionWithModifiers,
   useDragDropExecutor,
 } from '@shared/hooks';
-import { exportService, fileService, ipcService, playlistService } from '@shared/services';
+import { getAppMode } from '@shared/platform';
+import {
+  copyCollectionTracksToFolder,
+  exportCollectionAsJson,
+  fileService,
+  ipcService,
+} from '@shared/services';
 import { useListShortcuts } from '@shared/shortcuts';
 import {
   ensureProjectStore,
@@ -95,6 +101,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     requestDuration: ipcService.getAudioDuration.bind(ipcService),
     resolveTrackById,
     onDurationResolved: updateTrackDuration,
+    enabled: getAppMode() !== 'demo',
   });
 
   // Use unified playback preview hook
@@ -227,39 +234,21 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
 
   const handleExportAsJSON = useCallback(async () => {
     setExportMenuOpen(false);
-    const path = await ipcService.showSaveDialog({
-      title: 'Экспортировать коллекцию',
-      defaultPath: `${name}.json`,
-      filters: [{ name: 'JSON файлы', extensions: ['json'] }],
-    });
-
-    if (!path) {
-      return;
+    const saved = await exportCollectionAsJson({ name, tracks });
+    if (saved) {
+      addNotification({ type: 'success', message: 'Коллекция экспортирована в JSON' });
     }
-
-    const playlistData = {
-      name,
-      tracks: tracks.map((track) => ({
-        path: track.path,
-        name: track.name,
-        duration: track.duration,
-      })),
-    };
-    await playlistService.savePlaylist(path, playlistData);
-    addNotification({ type: 'success', message: 'Коллекция экспортирована в JSON' });
   }, [addNotification, name, tracks]);
 
   const handleCopyTracks = useCallback(async () => {
     setExportMenuOpen(false);
-    const targetPath = await ipcService.showFolderDialog({
-      title: 'Выберите папку для копирования треков',
+    const result = await copyCollectionTracksToFolder({
+      tracks,
+      folderName: getSafeFolderName(),
     });
-
-    if (!targetPath) {
+    if (!result) {
       return;
     }
-
-    const result = await exportService.copyTracksToFolder(tracks, targetPath, getSafeFolderName());
     if (result.failed.length === 0) {
       addNotification({
         type: 'success',
