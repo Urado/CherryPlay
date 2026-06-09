@@ -4,6 +4,7 @@ import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { logger } from '@shared/utils';
+import { isFileNotFoundError } from '@shared/utils/fileErrors';
 
 import { usePlayerMode } from './usePlayerMode';
 
@@ -92,7 +93,9 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           await playPlayer();
         }
       } catch (error) {
-        logger.error('Failed to start track playback', error);
+        if (!isFileNotFoundError(error)) {
+          logger.error('Failed to start track playback', error);
+        }
       }
     },
     [

@@ -1,13 +1,51 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { DemoPlayer, DemoPlayerController } from '../../src/components/DemoPlayer';
-import type { Track } from '../../src/types/track';
+import type { Track } from '@core/types/track';
+import { ipcService } from '@shared/services/ipcService';
+
+import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
 
 const mockAddNotification = jest.fn();
 
-jest.mock('../../src/state/demoPlayerStore', () => {
-  const actual = jest.requireActual('../../src/state/demoPlayerStore');
+jest.mock('../../src/shared/platform/appMode', () => ({
+  getAppMode: jest.fn(() => 'electron'),
+}));
+
+jest.mock('../../src/shared/audio/playback', () => {
+  const mockEngine = {
+    id: 'demo',
+    load: jest.fn().mockResolvedValue(undefined),
+    play: jest.fn().mockResolvedValue(undefined),
+    pause: jest.fn(),
+    stop: jest.fn(),
+    seek: jest.fn(),
+    setVolume: jest.fn(),
+    setOutputDevice: jest.fn().mockResolvedValue(undefined),
+    getSnapshot: jest.fn(() => ({
+      status: 'idle',
+      position: 0,
+      duration: 0,
+      volume: 0.8,
+      outputDeviceId: null,
+      error: null,
+    })),
+    subscribe: jest.fn(() => () => undefined),
+    dispose: jest.fn(),
+  };
+  return {
+    createPlaybackEngine: jest.fn(() => mockEngine),
+    bindPlaybackEngineToStore: jest.fn(),
+    applyPlaybackOutputDeviceWithFallback: jest.fn().mockResolvedValue(undefined),
+    MAIN_PLAYBACK_ENGINE_ID: 'main',
+    DEMO_PLAYBACK_ENGINE_ID: 'demo',
+    DEFAULT_TRACK_GAIN: 1,
+    isPlaybackEffects: jest.fn(() => false),
+  };
+});
+
+jest.mock('../../src/shared/stores/demoPlayerStore', () => {
+  const actual = jest.requireActual('../../src/shared/stores/demoPlayerStore');
   return {
     ...actual,
     useDemoPlayerStore: jest.fn(),
@@ -15,12 +53,12 @@ jest.mock('../../src/state/demoPlayerStore', () => {
 });
 
 const { useDemoPlayerStore: mockUseDemoPlayerStore } = jest.requireMock(
-  '../../src/state/demoPlayerStore',
+  '../../src/shared/stores/demoPlayerStore',
 ) as {
   useDemoPlayerStore: jest.Mock;
 };
 
-jest.mock('../../src/state/uiStore', () => ({
+jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: (selector: (state: { addNotification: typeof mockAddNotification }) => unknown) =>
     selector({ addNotification: mockAddNotification }),
 }));

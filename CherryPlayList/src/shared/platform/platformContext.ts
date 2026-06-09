@@ -24,3 +24,9 @@ export function getPlatformAppMode(): AppMode | null {
 export function isPlatformInitialized(): boolean {
   return platformInstance !== null;
 }
+
+/** Resets platform singleton — for unit tests only. */
+export function resetPlatformForTests(): void {
+  platformInstance = null;
+  currentAppMode = null;
+}

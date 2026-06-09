@@ -108,9 +108,7 @@ async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: strin
         }
 
         const exists = await checkFileExists(item.path);
-        if (!exists) {
-          item.isMissing = true;
-        }
+        item.isMissing = !exists;
       } else if (isProjectGroup(item)) {
         await processItems(item.items);
       }

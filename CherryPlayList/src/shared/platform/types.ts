@@ -20,7 +20,7 @@ export type InvokeChannel =
   | 'fileBrowser:statFile'
   | 'fileBrowser:findAudioFilesRecursive'
   | 'audio:getDuration'
-  | 'audio:getFileSource'
+  | 'audio:getFileUrl'
   | 'export:execute'
   | 'export:copyFile'
   | 'export:aimp'

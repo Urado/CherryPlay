@@ -45,6 +45,7 @@ export {
   getFlatItemList,
   removeItemFromItems,
   updateTrackInItems,
+  markTrackMissingInItems,
   updateGroupInItems,
   collectAllItemIds,
   findItemWithParent,

@@ -150,6 +150,22 @@ export function updateTrackInItems(
   });
 }
 
+export function markTrackMissingInItems(
+  items: ProjectItem[],
+  trackId: string,
+  isMissing = true,
+): ProjectItem[] {
+  return items.map((item) => {
+    if (isProjectTrack(item) && item.id === trackId) {
+      return { ...item, isMissing };
+    }
+    if (isProjectGroup(item)) {
+      return { ...item, items: markTrackMissingInItems(item.items, trackId, isMissing) };
+    }
+    return item;
+  });
+}
+
 export function updateGroupInItems(
   items: ProjectItem[],
   groupId: string,

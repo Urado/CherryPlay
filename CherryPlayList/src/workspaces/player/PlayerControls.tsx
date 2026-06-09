@@ -7,6 +7,7 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import React, { useCallback } from 'react';
 
+import { usePlaybackTimeline } from '@shared/hooks/usePlaybackTimeline';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
 
@@ -36,8 +37,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   const isPlaying = status === 'playing';
   const isDisabled = !isSessionMode || !currentTrack;
   const isNextDisabled = !isSessionMode || !onNext;
-  const safePosition = isDisabled ? 0 : position;
   const resolvedDuration = duration || currentTrack?.duration || 0;
+  const timeline = usePlaybackTimeline({
+    position: isDisabled ? 0 : position,
+    duration: resolvedDuration,
+    disabled: isDisabled,
+    seek,
+  });
   // Show error if there's a loaded track OR if we're in session mode with an expected track
   // (handles the case where loadTrack fails before currentTrack is set in the audio store)
   const hasError =
@@ -72,17 +78,6 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
     }
     onNext();
   }, [isNextDisabled, onNext]);
-
-  const handleSeek = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isDisabled) {
-        return;
-      }
-      const newPosition = parseFloat(e.target.value);
-      seek(newPosition);
-    },
-    [isDisabled, seek],
-  );
 
   const handleVolumeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,14 +151,16 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
       </div>
 
       <div className="player-controls__timeline-row">
-        <span className="player-controls__time">{formatPlayerTime(safePosition)}</span>
+        <span className="player-controls__time">{formatPlayerTime(timeline.displayPosition)}</span>
         <input
           type="range"
           min={0}
-          max={resolvedDuration || 1}
+          max={timeline.resolvedDuration}
           step={0.1}
-          value={safePosition}
-          onChange={handleSeek}
+          value={timeline.displayPosition}
+          onPointerDown={timeline.beginScrub}
+          onInput={timeline.handleInput}
+          onChange={timeline.handleChange}
           disabled={isDisabled}
           className="player-controls__timeline"
         />

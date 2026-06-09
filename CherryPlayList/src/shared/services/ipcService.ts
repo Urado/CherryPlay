@@ -3,6 +3,7 @@ import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
 import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
 import type { DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
+import { isFileNotFoundError } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
 
 export type { DirectoryItem, IPCResponse };
@@ -14,9 +15,8 @@ export interface Track {
   duration?: number;
 }
 
-interface AudioFileSource {
-  buffer: string;
-  mimeType: string;
+interface AudioFileUrl {
+  url: string;
 }
 
 /** @deprecated Use `isNativePlatformAvailable()` from `@shared/platform`. */
@@ -60,10 +60,20 @@ class IPCService {
 
       return response.data as T;
     } catch (error) {
-      logger.error(`IPC call failed: ${channel}`, error);
+      const missingFile = isFileNotFoundError(error);
+      if (missingFile && !showNotification) {
+        logger.warn(`File not found (${channel})`, error);
+      } else {
+        logger.error(`IPC call failed: ${channel}`, error);
+      }
 
       if (showNotification && error instanceof Error) {
-        if (
+        if (missingFile) {
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: 'Файл не найден на диске. Проверьте путь к треку.',
+          });
+        } else if (
           !error.message.includes('Platform API not available') &&
           !error.message.includes('IPC call failed') &&
           error.message !== DEMO_UNAVAILABLE_MESSAGE
@@ -102,11 +112,8 @@ class IPCService {
     return this.invoke<number>('audio:getDuration', { path }, showNotification);
   }
 
-  async getAudioFileSource(
-    path: string,
-    showNotification: boolean = true,
-  ): Promise<AudioFileSource> {
-    return this.invoke<AudioFileSource>('audio:getFileSource', { path }, showNotification);
+  async getAudioFileUrl(path: string, showNotification: boolean = true): Promise<AudioFileUrl> {
+    return this.invoke<AudioFileUrl>('audio:getFileUrl', { path }, showNotification);
   }
 
   async showFolderDialog(options?: {

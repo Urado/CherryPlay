@@ -14,6 +14,10 @@ import { registerFileBrowserHandlers } from './ipc/fileBrowser.js';
 import { registerPlaylistHandlers } from './ipc/playlist.js';
 import { registerProjectHandlers } from './ipc/project.js';
 import { registerSystemHandlers } from './ipc/system.js';
+import {
+  registerCherryplayAudioProtocolHandler,
+  registerCherryplayAudioScheme,
+} from './protocol/cherryplayAudio.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,12 +62,17 @@ if (!app.isDefaultProtocolClient(PROTOCOL)) {
   app.setAsDefaultProtocolClient(PROTOCOL);
 }
 
+registerCherryplayAudioScheme();
+
 app.whenReady().then(() => {
+  registerCherryplayAudioProtocolHandler();
+
   Menu.setApplicationMenu(null);
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = [
-      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:* ws://localhost:* wss://localhost:* http://*:* https://*:* ws://*:* wss://*:* https://fonts.googleapis.com https://fonts.gstatic.com; " +
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: cherryplay-audio: http://localhost:* ws://localhost:* wss://localhost:* http://*:* https://*:* ws://*:* wss://*:* https://fonts.googleapis.com https://fonts.gstatic.com; " +
         "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* http://*:* https://*:* ws://*:* wss://*:* https://fonts.googleapis.com https://fonts.gstatic.com; " +
+        "media-src cherryplay-audio: blob: 'self'; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' data: https://fonts.gstatic.com;",
     ];

@@ -594,12 +594,14 @@ Recursively finds all audio files in a directory and subdirectories.
 
 Gets audio file duration in seconds using `music-metadata` library.
 
-### `getAudioFileSource(path: string, showNotification?: boolean): Promise<AudioFileSource>`
+### `getAudioFileUrl(path: string, showNotification?: boolean): Promise<AudioFileUrl>`
 
-Gets audio file contents as base64 buffer for secure playback in renderer process.
+Returns a playable URL for a local audio file. File contents are **not** sent over IPC — only a base64url-encoded UTF-8 path.
 
-- Returns: `{ buffer: string, mimeType: string }`
-- Used by demo player for loading tracks
+- Returns: `{ url: string }` where `url` is `cherryplay-audio:///<base64url(utf8-absolute-path)>`
+- Main process streams the file via `protocol.handle('cherryplay-audio')` and `net.fetch(file://…)`
+- Used by `createDefaultPlatformAudioAdapter` for main and demo playback engines
+- See [Playback Engine — loading path](./docs/modules/audio/playback-layers.md#загрузка-файлов-electron)
 
 ## Dialog Methods
 
@@ -642,7 +644,7 @@ All IPC channels are whitelisted in `electron/preload.ts` for security. Only whi
 ### Audio Channels
 
 - `audio:getDuration` - Get audio file duration
-- `audio:getFileSource` - Get audio file as base64 buffer
+- `audio:getFileUrl` - Get `cherryplay-audio://` streaming URL for local file (path encoding only)
 
 ### Export Channels
 

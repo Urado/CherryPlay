@@ -3,14 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { APP_VERSION } from '@shared/config';
 import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
-import {
-  useAimpStore,
-  useSettingsStore,
-  useUIStore,
-  useDemoPlayerStore,
-  usePlayerAudioStore,
-  useProjectStore,
-} from '@shared/stores';
+import { useAimpStore, useSettingsStore, useUIStore, useProjectStore } from '@shared/stores';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
@@ -117,7 +110,7 @@ export const SettingsModal: React.FC = () => {
     return null;
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setTrackItemSizePreset(localTrackItemSizePreset);
     setHourDividerInterval(localHourDividerInterval);
     setShowHourDividers(localShowHourDividers);
@@ -126,22 +119,6 @@ export const SettingsModal: React.FC = () => {
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
     setEnableStreaming(localEnableStreaming);
     setStreamingSource(localStreamingSource);
-
-    try {
-      const playerStore = usePlayerAudioStore.getState();
-      const demoPlayerStore = useDemoPlayerStore.getState();
-
-      await Promise.all([
-        playerStore.setAudioDevice(localPlayerDeviceId),
-        demoPlayerStore.setAudioDevice(localDemoPlayerDeviceId),
-      ]);
-    } catch (error) {
-      console.error('Failed to apply audio devices', error);
-      addNotification({
-        type: 'warning',
-        message: 'Не удалось применить выбранные аудиоустройства',
-      });
-    }
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
@@ -308,6 +285,7 @@ export const SettingsModal: React.FC = () => {
                   setLocalPlayerDeviceId(value === getDefaultDeviceId() ? null : value);
                 }}
                 id="player-audio-device"
+                disabled={isDemoMode}
               >
                 <option value={getDefaultDeviceId()}>По умолчанию</option>
                 {audioDevices.map((device) => (
@@ -316,6 +294,18 @@ export const SettingsModal: React.FC = () => {
                   </option>
                 ))}
               </select>
+            )}
+            {isDemoMode && (
+              <div
+                className="settings-description"
+                style={{
+                  marginTop: 4,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary, #9e9e9e)',
+                }}
+              >
+                {DEMO_UNAVAILABLE_MESSAGE}
+              </div>
             )}
           </div>
 
@@ -334,6 +324,7 @@ export const SettingsModal: React.FC = () => {
                   setLocalDemoPlayerDeviceId(value === getDefaultDeviceId() ? null : value);
                 }}
                 id="demo-player-audio-device"
+                disabled={isDemoMode}
               >
                 <option value={getDefaultDeviceId()}>По умолчанию</option>
                 {audioDevices.map((device) => (
@@ -342,6 +333,18 @@ export const SettingsModal: React.FC = () => {
                   </option>
                 ))}
               </select>
+            )}
+            {isDemoMode && (
+              <div
+                className="settings-description"
+                style={{
+                  marginTop: 4,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary, #9e9e9e)',
+                }}
+              >
+                {DEMO_UNAVAILABLE_MESSAGE}
+              </div>
             )}
           </div>
 
