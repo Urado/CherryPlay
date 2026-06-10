@@ -1,9 +1,9 @@
+import { useGlobalHistoryStore } from '../../src/shared/stores/globalHistoryStore';
 import {
   ensureProjectStore,
   getProjectStore,
   removeProjectStore,
 } from '../../src/shared/stores/projectStoreFactory';
-import { useGlobalHistoryStore } from '../../src/shared/stores/globalHistoryStore';
 
 const WORKSPACE_ID = 'factory-test-workspace';
 

@@ -9,7 +9,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
       - name: Restore
         run: dotnet restore CherryPlayServer.Tests/CherryPlayServer.Tests.csproj
@@ -59,11 +59,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fast-tests-trx
-          path: '**/fast-tests.trx'
+          path: "**/fast-tests.trx"
           if-no-files-found: warn
 
   integrationdb-tests:
-    name: IntegrationDb Tests (Testcontainers)
+    name: IntegrationDb Tests (Postgres)
     runs-on: ubuntu-latest
     needs:
       - detect-integrationdb-changes
@@ -77,6 +77,22 @@ jobs:
         github.event_name == 'workflow_dispatch' ||
         needs.detect-integrationdb-changes.outputs.should_run == 'true'
       )
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING: Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,10 +100,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
-
-      - name: Verify Docker daemon for Testcontainers
-        run: docker info
+          dotnet-version: "9.0.x"
 
       - name: Restore
         run: dotnet restore CherryPlayServer.Tests/CherryPlayServer.Tests.csproj
@@ -100,5 +113,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integrationdb-tests-trx
-          path: '**/integrationdb-tests.trx'
+          path: "**/integrationdb-tests.trx"
           if-no-files-found: warn

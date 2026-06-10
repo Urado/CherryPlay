@@ -37,7 +37,7 @@ node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs --docker
 
 **CI alignment:** The script runs the same steps and order as in CI for build/lint. Native steps mirror `CherryPlayServer/Dockerfile` and `CherryPlayWeb/Dockerfile`; with `--docker` it runs the same `docker build` commands as in `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
 
-**IntegrationDb:** Always runs after fast server tests. Requires Docker. The script pulls `postgres:16-alpine`, starts a dedicated Postgres container, passes `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` to the test run, then removes the container. In CI (`.github/workflows/tests.yml`) Testcontainers starts Postgres automatically when the env var is unset.
+**IntegrationDb:** Always runs after fast server tests. Requires Docker locally. The script pulls `postgres:16-alpine`, starts a dedicated Postgres container, passes `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` to the test run, then removes the container. In CI (`.github/workflows/tests.yml`) a GitHub Actions Postgres service supplies the same env var so tests skip Testcontainers and avoid Docker Hub pulls during the test run.
 
 The script resolves the repo root from its own path, so it can be run from any working directory. It prints a summary table at the end and exits with code 1 if any check fails.
 
