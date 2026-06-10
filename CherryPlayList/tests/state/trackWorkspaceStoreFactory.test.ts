@@ -1,8 +1,9 @@
 import {
-  ensureTrackWorkspaceStore,
-  getTrackWorkspaceStore,
-  removeTrackWorkspaceStore,
-} from '../../src/state/trackWorkspaceStoreFactory';
+  ensureProjectStore,
+  getProjectStore,
+  removeProjectStore,
+} from '../../src/shared/stores/projectStoreFactory';
+import { useGlobalHistoryStore } from '../../src/shared/stores/globalHistoryStore';
 
 const WORKSPACE_ID = 'factory-test-workspace';
 
@@ -12,37 +13,38 @@ const createDraft = (label: string) => ({
   duration: 120,
 });
 
-describe('trackWorkspaceStoreFactory', () => {
+describe('projectStoreFactory', () => {
   afterEach(() => {
-    removeTrackWorkspaceStore(WORKSPACE_ID);
+    removeProjectStore(WORKSPACE_ID);
+    useGlobalHistoryStore.getState().clearHistory();
   });
 
   it('returns the same store instance for repeated ensure calls', () => {
-    const storeA = ensureTrackWorkspaceStore({ workspaceId: WORKSPACE_ID });
-    const storeB = ensureTrackWorkspaceStore({ workspaceId: WORKSPACE_ID });
+    const storeA = ensureProjectStore({ workspaceId: WORKSPACE_ID });
+    const storeB = ensureProjectStore({ workspaceId: WORKSPACE_ID });
 
     expect(storeA).toBe(storeB);
   });
 
-  it('respects maxTracks limit across add operations', () => {
-    const store = ensureTrackWorkspaceStore({ workspaceId: WORKSPACE_ID, maxTracks: 2 });
-    const { addTracks } = store.getState();
+  it('respects maxItems limit across add operations', () => {
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID, maxItems: 2 });
+    const { addItems } = store.getState();
 
-    addTracks([createDraft('one'), createDraft('two'), createDraft('three')]);
+    addItems([createDraft('one'), createDraft('two'), createDraft('three')]);
 
-    const tracks = store.getState().tracks;
-    expect(tracks).toHaveLength(2);
-    expect(tracks.map((t) => t.name)).toEqual(['one.mp3', 'two.mp3']);
+    const items = store.getState().items;
+    expect(items).toHaveLength(2);
+    expect(items.map((t) => t.name)).toEqual(['one.mp3', 'two.mp3']);
   });
 
-  it('removes store from registry via removeTrackWorkspaceStore', () => {
-    const originalStore = ensureTrackWorkspaceStore({ workspaceId: WORKSPACE_ID });
-    expect(getTrackWorkspaceStore(WORKSPACE_ID)).toBe(originalStore);
+  it('removes store from registry via removeProjectStore', () => {
+    const originalStore = ensureProjectStore({ workspaceId: WORKSPACE_ID });
+    expect(getProjectStore(WORKSPACE_ID)).toBe(originalStore);
 
-    removeTrackWorkspaceStore(WORKSPACE_ID);
-    expect(getTrackWorkspaceStore(WORKSPACE_ID)).toBeUndefined();
+    removeProjectStore(WORKSPACE_ID);
+    expect(getProjectStore(WORKSPACE_ID)).toBeUndefined();
 
-    const recreatedStore = ensureTrackWorkspaceStore({ workspaceId: WORKSPACE_ID });
+    const recreatedStore = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     expect(recreatedStore).not.toBe(originalStore);
   });
 });

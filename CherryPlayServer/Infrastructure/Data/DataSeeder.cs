@@ -35,6 +35,7 @@ public class DataSeeder : IDataSeeder
         await SeedThemeMonetizationAsync();
 
         var testEmail = "t@t.ru";
+        Guid demoOrganizerId;
         var existingTestAccount = await _emailAccountRepository.GetByEmailAsync(testEmail);
         if (existingTestAccount == null)
         {
@@ -45,6 +46,7 @@ public class DataSeeder : IDataSeeder
                 CreatedAt = DateTime.UtcNow
             };
             await _organizerRepository.AddAsync(testOrganizer);
+            demoOrganizerId = testOrganizer.Id;
 
             var testEmailAccount = new EmailAccount
             {
@@ -57,6 +59,10 @@ public class DataSeeder : IDataSeeder
             };
             await _emailAccountRepository.AddAsync(testEmailAccount);
         }
+        else
+        {
+            demoOrganizerId = existingTestAccount.OrganizerId;
+        }
 
         var existingParties = await _partyRepository.GetAllAsync();
         if (existingParties.Any()) return;
@@ -64,6 +70,7 @@ public class DataSeeder : IDataSeeder
         var cyberpunkParty = new Party
         {
             Id = Guid.NewGuid(),
+            OrganizerId = demoOrganizerId,
             Name = "Cyberpunk Night",
             ShortCode = "cyber",
             PartyThemeId = PartyThemeId.Cyberpunk,
@@ -132,6 +139,7 @@ public class DataSeeder : IDataSeeder
         var sakuraParty = new Party
         {
             Id = Guid.NewGuid(),
+            OrganizerId = demoOrganizerId,
             Name = "Sakura Festival",
             ShortCode = "sakura",
             PartyThemeId = PartyThemeId.Sakura,
@@ -191,6 +199,7 @@ public class DataSeeder : IDataSeeder
         var artDecoParty = new Party
         {
             Id = Guid.NewGuid(),
+            OrganizerId = demoOrganizerId,
             Name = "Art Deco Gala",
             ShortCode = "artdeco",
             PartyThemeId = PartyThemeId.ArtDeco,
@@ -267,6 +276,7 @@ public class DataSeeder : IDataSeeder
         var basicParty = new Party
         {
             Id = Guid.NewGuid(),
+            OrganizerId = demoOrganizerId,
             Name = "Базовый плейлист",
             ShortCode = "basic",
             PartyThemeId = PartyThemeId.Basic,

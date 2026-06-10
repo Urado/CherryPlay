@@ -100,7 +100,9 @@ describe('dragDropStore', () => {
         items: [createTrack('s-1', 'alpha'), createTrack('s-2', 'beta')],
       });
 
-      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, TARGET, 0);
+      const result = useDragDropStore
+        .getState()
+        .prepareMoveCommand(['s-1'], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(true);
       expect(result.command).toEqual({
@@ -108,20 +110,28 @@ describe('dragDropStore', () => {
         itemIds: ['s-1'],
         sourceWorkspaceId: SOURCE,
         targetWorkspaceId: TARGET,
+        targetParentId: null,
         targetIndex: 0,
       });
     });
 
-    it('rejects move when source and target are the same', () => {
-      ensureProjectStore({
+    it('allows move within the same workspace', () => {
+      const sourceStore = ensureProjectStore({
         workspaceId: SOURCE,
         initialName: 'Source',
       });
 
-      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, SOURCE);
+      sourceStore.setState({
+        ...sourceStore.getState(),
+        items: [createTrack('s-1', 'alpha'), createTrack('s-2', 'beta')],
+      });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('same workspace');
+      const result = useDragDropStore
+        .getState()
+        .prepareMoveCommand(['s-1'], SOURCE, SOURCE, null, 1);
+
+      expect(result.success).toBe(true);
+      expect(result.command?.targetWorkspaceId).toBe(SOURCE);
     });
 
     it('rejects move when target workspace is full', () => {
@@ -144,7 +154,9 @@ describe('dragDropStore', () => {
         items: [createTrack('t-1', 'occupied')],
       });
 
-      const result = useDragDropStore.getState().prepareMoveCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore
+        .getState()
+        .prepareMoveCommand(['s-1'], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('full');
@@ -153,7 +165,9 @@ describe('dragDropStore', () => {
     it('returns error when workspace is not found', () => {
       ensureProjectStore({ workspaceId: SOURCE });
 
-      const result = useDragDropStore.getState().prepareMoveCommand(['missing'], SOURCE, TARGET);
+      const result = useDragDropStore
+        .getState()
+        .prepareMoveCommand(['missing'], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('workspace not found');
@@ -163,10 +177,10 @@ describe('dragDropStore', () => {
       ensureProjectStore({ workspaceId: SOURCE });
       ensureProjectStore({ workspaceId: TARGET });
 
-      const result = useDragDropStore.getState().prepareMoveCommand([], SOURCE, TARGET);
+      const result = useDragDropStore.getState().prepareMoveCommand([], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('No tracks selected');
+      expect(result.error).toContain('No items selected');
     });
   });
 
@@ -188,7 +202,9 @@ describe('dragDropStore', () => {
         items: [createTrack('s-1', 'alpha')],
       });
 
-      const result = useDragDropStore.getState().prepareCopyCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore
+        .getState()
+        .prepareCopyCommand(['s-1'], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(true);
       expect(result.command).toEqual({
@@ -196,6 +212,7 @@ describe('dragDropStore', () => {
         itemIds: ['s-1'],
         sourceWorkspaceId: SOURCE,
         targetWorkspaceId: TARGET,
+        targetParentId: null,
         targetIndex: 0,
       });
     });
@@ -220,7 +237,9 @@ describe('dragDropStore', () => {
         items: [createTrack('t-1', 'occupied')],
       });
 
-      const result = useDragDropStore.getState().prepareCopyCommand(['s-1'], SOURCE, TARGET);
+      const result = useDragDropStore
+        .getState()
+        .prepareCopyCommand(['s-1'], SOURCE, TARGET, null, 0);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('full');

@@ -6,6 +6,7 @@ const handleMock = jest.fn(
   },
 );
 const subscribeMock = jest.fn();
+const subscribeLogMock = jest.fn();
 const setLiveStreamStartedMock = jest.fn();
 
 jest.mock('electron', () => ({
@@ -20,6 +21,7 @@ jest.mock('electron', () => ({
 jest.mock('../../electron/aimp/service', () => ({
   aimpIntegrationService: {
     subscribe: subscribeMock,
+    subscribeLog: subscribeLogMock,
     getState: jest.fn(),
     setSourceSelection: jest.fn(),
     setLiveStreamStarted: setLiveStreamStartedMock,
@@ -34,6 +36,7 @@ describe('AIMP IPC handlers', () => {
     getAllWindowsMock.mockClear();
     handleMock.mockClear();
     subscribeMock.mockClear();
+    subscribeLogMock.mockClear();
     setLiveStreamStartedMock.mockReset();
   });
 
@@ -49,6 +52,8 @@ describe('AIMP IPC handlers', () => {
     });
 
     registerAimpHandlers();
+    expect(subscribeMock).toHaveBeenCalledTimes(1);
+    expect(subscribeLogMock).toHaveBeenCalledTimes(1);
     const handler = handlers.get('aimp:setLiveStreamStarted');
 
     const response = await handler?.({}, { liveStreamStarted: true });
