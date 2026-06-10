@@ -1,4 +1,8 @@
-import { formatDateInTimeZone, getDefaultTimeZone } from '@cherryplay/components';
+import {
+  formatDateInTimeZone,
+  getDefaultTimeZone,
+  sortPartiesByEventDateDesc,
+} from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -26,7 +30,7 @@ export const LinkPartyModal: React.FC = () => {
     setError(null);
     try {
       const list = await partyService.getParties();
-      setParties(list);
+      setParties(sortPartiesByEventDateDesc(list));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить список вечеринок');
     } finally {

@@ -1,5 +1,5 @@
 import type { OrganizerDto } from '@cherryplay/components';
-import { getDefaultTimeZone } from '@cherryplay/components';
+import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -34,7 +34,7 @@ function mergePartiesWithLocalDrafts(current: PartyDto[], fromServer: PartyDto[]
   const localDrafts = current.filter(
     (party) => party.partyLifecycleState === 'draft' && !serverIds.has(party.id),
   );
-  return [...localDrafts, ...fromServer];
+  return [...localDrafts, ...sortPartiesByEventDateDesc(fromServer)];
 }
 
 export function CabinetPage() {

@@ -2,9 +2,10 @@ import {
   formatDateInTimeZone,
   getDefaultTimeZone,
   getPopularTimeZones,
+  sortPartiesByEventDateDesc,
   type OrganizerDto,
 } from '@cherryplay/components';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -142,51 +143,55 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
     loadParties();
   };
 
-  const filteredParties = parties.filter((party) => {
-    if (filters.timeZone && party.timeZone !== filters.timeZone) {
-      return false;
-    }
-
-    if (
-      filters.city &&
-      (party.city ?? '').trim().toLowerCase() !== filters.city.trim().toLowerCase()
-    ) {
-      return false;
-    }
-
-    if (party.eventDateTime) {
-      const eventDate = new Date(party.eventDateTime);
-
-      if (filters.dateFrom) {
-        const fromDate = new Date(filters.dateFrom);
-        fromDate.setHours(0, 0, 0, 0);
-        if (eventDate < fromDate) {
-          return false;
-        }
-      }
-
-      if (filters.dateTo) {
-        const toDate = new Date(filters.dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        if (eventDate > toDate) {
-          return false;
-        }
-      }
-
-      if (filters.daysOfWeek.length > 0) {
-        const dayOfWeek = eventDate.getDay();
-        if (!filters.daysOfWeek.includes(dayOfWeek)) {
-          return false;
-        }
-      }
-    } else {
-      if (filters.dateFrom || filters.dateTo || filters.daysOfWeek.length > 0) {
+  const filteredParties = useMemo(() => {
+    const filtered = parties.filter((party) => {
+      if (filters.timeZone && party.timeZone !== filters.timeZone) {
         return false;
       }
-    }
 
-    return true;
-  });
+      if (
+        filters.city &&
+        (party.city ?? '').trim().toLowerCase() !== filters.city.trim().toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (party.eventDateTime) {
+        const eventDate = new Date(party.eventDateTime);
+
+        if (filters.dateFrom) {
+          const fromDate = new Date(filters.dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (eventDate < fromDate) {
+            return false;
+          }
+        }
+
+        if (filters.dateTo) {
+          const toDate = new Date(filters.dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (eventDate > toDate) {
+            return false;
+          }
+        }
+
+        if (filters.daysOfWeek.length > 0) {
+          const dayOfWeek = eventDate.getDay();
+          if (!filters.daysOfWeek.includes(dayOfWeek)) {
+            return false;
+          }
+        }
+      } else {
+        if (filters.dateFrom || filters.dateTo || filters.daysOfWeek.length > 0) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return sortPartiesByEventDateDesc(filtered);
+  }, [parties, filters]);
 
   const handleDayOfWeekToggle = (day: number) => {
     setFilters((prev) => ({
