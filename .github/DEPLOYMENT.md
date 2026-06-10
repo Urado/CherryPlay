@@ -65,6 +65,8 @@ GitHub Container Registry уже настроен и доступен автом
 
 Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). В `release-and-deploy.yml` при релизе принудительно выставляется `Database__AutoMigrateOnStartup=true`, чтобы накат миграций происходил автоматически.
 
+**Перед остановкой контейнеров** `deploy.sh` делает обязательный `pg_dump` в `~/cherryplay-deploy/backups/` (см. [BACKUP_RESTORE.md](../BACKUP_RESTORE.md) §0.1). Если backup не удался, деплой прерывается до миграций.
+
 ### 3. Настройка SSH ключа
 
 На вашем локальном компьютере:

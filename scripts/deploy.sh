@@ -118,6 +118,56 @@ echo "PGADMIN_PASSWORD=${PGADMIN_PASSWORD:-changeme}" >> .env
 [ -n "$OAUTH_VK_CLIENT_ID" ] && echo "OAUTH_VK_CLIENT_ID=$OAUTH_VK_CLIENT_ID" >> .env
 [ -n "$OAUTH_VK_CLIENT_SECRET" ] && echo "OAUTH_VK_CLIENT_SECRET=$OAUTH_VK_CLIENT_SECRET" >> .env
 
+# Mandatory pre-deploy database backup (before stopping postgres)
+BACKUP_DIR="${BACKUP_DIR:-./backups}"
+BACKUP_RETENTION_COUNT="${BACKUP_RETENTION_COUNT:-10}"
+POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-cherryplay-postgres}"
+
+create_pre_deploy_backup() {
+    if ! docker ps --format '{{.Names}}' | grep -qx "$POSTGRES_CONTAINER"; then
+        echo -e "${YELLOW}⚠️  PostgreSQL container not running — skipping pre-deploy backup (first deploy?)${NC}"
+        return 0
+    fi
+
+    mkdir -p "$BACKUP_DIR"
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_file="${BACKUP_DIR}/pre-deploy_${VERSION}_${timestamp}.dump"
+
+    echo -e "${YELLOW}💾 Creating mandatory pre-deploy database backup...${NC}"
+    echo "  File: $backup_file"
+
+    if ! docker exec "$POSTGRES_CONTAINER" pg_dump -U cherryplay -Fc cherryplay > "$backup_file"; then
+        echo -e "${RED}❌ Error: pre-deploy database backup failed${NC}"
+        rm -f "$backup_file"
+        exit 1
+    fi
+
+    if [ ! -s "$backup_file" ]; then
+        echo -e "${RED}❌ Error: backup file is missing or empty${NC}"
+        rm -f "$backup_file"
+        exit 1
+    fi
+
+    local backup_size
+    backup_size=$(du -h "$backup_file" | cut -f1)
+    echo -e "${GREEN}✅ Pre-deploy backup created ($backup_size)${NC}"
+
+    if [ "$BACKUP_RETENTION_COUNT" -gt 0 ]; then
+        local old_backups
+        old_backups=$(ls -1t "${BACKUP_DIR}"/pre-deploy_*.dump 2>/dev/null | tail -n +$((BACKUP_RETENTION_COUNT + 1)) || true)
+        if [ -n "$old_backups" ]; then
+            echo -e "${YELLOW}🧹 Rotating old pre-deploy backups (keeping last $BACKUP_RETENTION_COUNT)...${NC}"
+            echo "$old_backups" | while read -r f; do
+                rm -f "$f"
+                echo "  Removed: $f"
+            done
+        fi
+    fi
+}
+
+create_pre_deploy_backup
+
 # Stop existing containers gracefully
 echo -e "${YELLOW}🛑 Stopping existing containers...${NC}"
 $DOCKER_COMPOSE -f docker-compose.prod.yml down || {
@@ -254,3 +304,6 @@ echo -e "${YELLOW}📋 Local access (on server):${NC}"
 echo "  Frontend: http://localhost"
 echo "  Backend API: http://localhost:5000/api"
 echo "  Swagger UI: http://localhost:5000/swagger"
+echo ""
+echo -e "${YELLOW}💾 Pre-deploy backups:${NC}"
+echo "  Directory: $(cd "$BACKUP_DIR" 2>/dev/null && pwd || echo "$BACKUP_DIR")"

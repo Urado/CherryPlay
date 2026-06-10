@@ -28,6 +28,25 @@
 
 ---
 
+## 0.1) Автоматический backup при деплое релиза
+
+При каждом деплое через `scripts/deploy.sh` (в т.ч. из GitHub Actions `release-and-deploy.yml`) **перед остановкой контейнеров** создаётся обязательный dump PostgreSQL:
+
+- каталог на сервере: `~/cherryplay-deploy/backups/` (переменная `BACKUP_DIR`);
+- имя файла: `pre-deploy_<VERSION>_YYYYMMDD_HHMMSS.dump` (формат Custom, `pg_dump -Fc`);
+- при ошибке `pg_dump` деплой **прерывается** — миграции и перезапуск не выполняются;
+- хранятся последние **10** pre-deploy backup'ов (переменная `BACKUP_RETENTION_COUNT`).
+
+Если контейнер `cherryplay-postgres` не запущен (первый деплой), шаг пропускается с предупреждением.
+
+Скачать последний pre-deploy backup на локальный ПК:
+
+```powershell
+scp -i "C:\path\to\your_key" USER@SERVER:~/cherryplay-deploy/backups/pre-deploy_*.dump "D:\Backups\"
+```
+
+---
+
 ## 1) Как сделать backup базы в проде
 
 ### Вариант A (через pgAdmin + SSH-туннель)
