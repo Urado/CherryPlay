@@ -13,7 +13,7 @@ export interface DirectoryItem {
   size?: number;
 }
 
-export type AppMode = 'electron' | 'demo';
+export type AppMode = 'electron' | 'demo' | 'capacitor';
 
 export type InvokeChannel =
   | 'fileBrowser:listDirectory'

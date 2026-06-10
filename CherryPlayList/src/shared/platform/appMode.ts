@@ -1,3 +1,4 @@
+import { getPlatformCapabilities } from './platformCapabilities';
 import { getPlatformAppMode, isPlatformInitialized } from './platformContext';
 import type { AppMode } from './types';
 
@@ -11,6 +12,10 @@ export function getAppMode(): AppMode {
     return 'demo';
   }
 
+  if (import.meta.env.VITE_APP_MODE === 'capacitor') {
+    return 'capacitor';
+  }
+
   if (typeof window !== 'undefined' && typeof window.api !== 'undefined') {
     return 'electron';
   }
@@ -18,14 +23,18 @@ export function getAppMode(): AppMode {
   return 'electron';
 }
 
-/** True when running in Electron with the real preload bridge (not web demo). */
+/**
+ * @deprecated Prefer {@link getPlatformCapabilities}.supportsAimpWorkspace for feature gating.
+ * True when the AIMP desktop workspace bridge is available (Electron only).
+ */
 export function isNativePlatformAvailable(): boolean {
   if (isPlatformInitialized()) {
-    return getAppMode() === 'electron';
+    return getPlatformCapabilities().supportsAimpWorkspace;
   }
 
   return (
     import.meta.env.VITE_APP_MODE !== 'demo' &&
+    import.meta.env.VITE_APP_MODE !== 'capacitor' &&
     typeof window !== 'undefined' &&
     typeof window.api !== 'undefined'
   );

@@ -16,10 +16,13 @@
 
 ## Этап 0 — Каркас
 
+Подготовка platform-refactor уже сделана: тип `AppMode: 'capacitor'`, ветка bootstrap, класс `CapacitorPlatform` (stub без `@capacitor/*`), `npm run dev:capacitor`, capability-матрица со всеми флагами `false` до плагинов. Детали слоёв и API: **[Platform layer](./modules/platform/README.md)**.
+
+Остаётся на Etap 0:
+
 - Добавить Capacitor-проект к CherryPlayList.
 - Сборка `dist/` → загрузка в WebView (offline).
-- `AppMode: 'capacitor'` + `CapacitorPlatform` в bootstrap.
-- Инжект bridge `window.api` (контракт как у preload).
+- Инжект bridge `window.api` (контракт как у preload) — тогда stub начнёт делегировать IPC; capabilities включаются по этапам 1–5.
 
 ## Этап 1 — Аудио
 

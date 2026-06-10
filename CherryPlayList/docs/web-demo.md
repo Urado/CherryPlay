@@ -22,6 +22,22 @@
 
 ---
 
+## Платформа и capabilities
+
+Веб-демо — это `AppMode: 'demo'` и `WebDemoPlatform`, не отдельная ветка проверок в UI. Ограничения задаёт **[capability-матрица](./modules/platform/README.md)** (`derivePlatformCapabilities('demo')`):
+
+| Флаг | В demo |
+|------|--------|
+| `usesFixtureFileBrowser` | ✓ — фикстурное дерево вместо ФС |
+| `simulatesExport` | ✓ — экспорт без записи на диск |
+| `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAimpWorkspace`, `supportsRealAuth` | ✗ |
+
+Для gating в коде используйте `getPlatformCapabilities()` или guards (`guardNativeFileOperation`, `guardPlaybackUnavailable`, `isDemoAuthMode`), **не** `getAppMode() === 'demo'`. Косметика демо (баннер, title) может читать `getAppMode()`.
+
+Сообщение при блокировке: **`Не доступно в демо`** (`getPlatformUnavailableMessage()` в mode `demo`). Electron: те же guards не срабатывают — полный набор capabilities.
+
+---
+
 ## Переменные окружения
 
 Скрипты задают флаги через `cross-env`; при ручном запуске Vite используйте те же имена.
@@ -105,7 +121,7 @@ npm run dev
 
 ## Для контрибьюторов
 
-- Платформа: `src/shared/platform/` (`webDemoPlatform.ts`, `electronPlatform.ts`, `platformContext.ts`).
+- Платформа и capabilities: [Platform layer](./modules/platform/README.md); исходники `src/shared/platform/`.
 - Bootstrap: `src/bootstrap.ts`, подключение в `src/entry.tsx`.
 - Список IPC-каналов: `electron/preload.ts` (`VALID_INVOKE_CHANNELS`).
 - Детальный план реализации (временный): `.cursor/schedulerPlans/web-demo-01-technical-spec.md`.

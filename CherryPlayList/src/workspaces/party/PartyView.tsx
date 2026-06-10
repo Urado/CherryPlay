@@ -16,7 +16,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { WorkspaceId } from '@core/types/workspace';
 import { Spinner } from '@shared/components';
 import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
-import { getAppMode, getPlatform, isPlatformInitialized } from '@shared/platform';
+import { getPlatform, getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import {
   partyService,
@@ -225,7 +225,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const isAuth = isAuthenticated();
 
   useEffect(() => {
-    if (!isPlatformInitialized() || getAppMode() === 'demo' || isAuth) {
+    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth || isAuth) {
       return;
     }
 

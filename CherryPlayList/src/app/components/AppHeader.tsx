@@ -13,7 +13,7 @@ import {
 } from '@core/types/project';
 import { DemoPlayer } from '@shared/components';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
-import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
+import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
@@ -118,10 +118,11 @@ export const AppHeader: React.FC = () => {
     enableStreaming,
   });
   const isAimpPresetVisible = aimpPartyPresetState.visible;
-  const isDemoMode = getAppMode() === 'demo';
+  const { supportsAimpWorkspace, supportsProjectPersistence, usesFixtureFileBrowser } =
+    usePlatformCapabilities();
 
   const notifyDemoBlocked = useCallback(() => {
-    addNotification({ type: 'info', message: DEMO_UNAVAILABLE_MESSAGE });
+    addNotification({ type: 'info', message: getPlatformUnavailableMessage() });
   }, [addNotification]);
   const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
   const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
@@ -287,7 +288,7 @@ export const AppHeader: React.FC = () => {
 
   const runSaveAsFromModal = useCallback(
     async (payload: { portable: boolean; projectName: string; targetDirectory: string }) => {
-      if (isDemoMode) {
+      if (!supportsProjectPersistence) {
         notifyDemoBlocked();
         return;
       }
@@ -364,7 +365,7 @@ export const AppHeader: React.FC = () => {
       resetDirty,
       setLastOpenedPlaylist,
       addSaveSuccessWithOpenFolder,
-      isDemoMode,
+      supportsProjectPersistence,
       notifyDemoBlocked,
     ],
   );
@@ -384,7 +385,7 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleSave = useCallback(async () => {
-    if (isDemoMode) {
+    if (!supportsProjectPersistence) {
       notifyDemoBlocked();
       return;
     }
@@ -431,11 +432,16 @@ export const AppHeader: React.FC = () => {
     resetDirty,
     addNotification,
     openSaveAsModal,
-    isDemoMode,
+    supportsProjectPersistence,
     notifyDemoBlocked,
   ]);
 
   const handleLoad = useCallback(async () => {
+    if (!supportsProjectPersistence) {
+      notifyDemoBlocked();
+      return;
+    }
+
     try {
       const path = await ipcService.showOpenFileDialog({
         title: 'Открыть проект',
@@ -473,13 +479,19 @@ export const AppHeader: React.FC = () => {
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка загрузки: ${caughtErrorMessage(error)}` });
     }
-  }, [loadProject, setLastOpenedPlaylist, addNotification]);
+  }, [
+    loadProject,
+    setLastOpenedPlaylist,
+    addNotification,
+    supportsProjectPersistence,
+    notifyDemoBlocked,
+  ]);
 
   const globalShortcutHandlers = useMemo(
     () => ({
       'global.save': () => {
         closeProjectMenu();
-        if (isDemoMode) {
+        if (!supportsProjectPersistence) {
           notifyDemoBlocked();
           return;
         }
@@ -487,7 +499,7 @@ export const AppHeader: React.FC = () => {
       },
       'global.saveAs': () => {
         closeProjectMenu();
-        if (isDemoMode) {
+        if (!supportsProjectPersistence) {
           notifyDemoBlocked();
           return;
         }
@@ -515,7 +527,7 @@ export const AppHeader: React.FC = () => {
       handleNew,
       openSaveAsModal,
       meta.filePath,
-      isDemoMode,
+      supportsProjectPersistence,
       notifyDemoBlocked,
     ],
   );
@@ -633,7 +645,7 @@ export const AppHeader: React.FC = () => {
                     >
                       Открыть проект…
                     </button>
-                    {isDemoMode && (
+                    {usesFixtureFileBrowser && (
                       <button
                         type="button"
                         className="project-menu__item"
@@ -776,7 +788,7 @@ export const AppHeader: React.FC = () => {
               </option>
               <option value="player">Плеер (Player + Browser)</option>
               {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
-              {isAimpPresetVisible && !isDemoMode && (
+              {isAimpPresetVisible && supportsAimpWorkspace && (
                 <option value="aimp-party">AIMP + Party</option>
               )}
             </select>

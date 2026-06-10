@@ -18,7 +18,7 @@ import {
   useSelectionWithModifiers,
   useDragDropExecutor,
 } from '@shared/hooks';
-import { getAppMode } from '@shared/platform';
+import { getPlatformCapabilities } from '@shared/platform';
 import {
   copyCollectionTracksToFolder,
   exportCollectionAsJson,
@@ -101,7 +101,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     requestDuration: ipcService.getAudioDuration.bind(ipcService),
     resolveTrackById,
     onDurationResolved: updateTrackDuration,
-    enabled: getAppMode() !== 'demo',
+    enabled: getPlatformCapabilities().supportsNativeFileSystem,
   });
 
   // Use unified playback preview hook

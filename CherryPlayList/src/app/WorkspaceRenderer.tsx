@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
-import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
+import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
 
 import { SourcesPanel } from '../components/SourcesPanel';
 
@@ -15,10 +15,15 @@ interface WorkspaceRendererProps {
  * Использует реестр модулей для динамического рендеринга
  */
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
-  if (zone.workspaceType === 'aimp' && getAppMode() === 'demo') {
+  const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
+  if (zone.workspaceType === 'aimp' && !supportsAimpWorkspace) {
+    const message =
+      mode === 'demo'
+        ? DEMO_UNAVAILABLE_MESSAGE
+        : 'AIMP workspace is not available on this platform.';
     return (
       <div className="empty-state">
-        <p>{DEMO_UNAVAILABLE_MESSAGE}</p>
+        <p>{message}</p>
       </div>
     );
   }

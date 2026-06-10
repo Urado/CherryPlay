@@ -1,6 +1,6 @@
 import type { AimpBridgeState, AimpLogEntry, AimpSourceSelection } from '../contracts/aimp';
 import { getPlatform, isPlatformInitialized } from '../platform';
-import { isNativePlatformAvailable } from '../platform/appMode';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { useUIStore } from '../stores/uiStore';
 import { logger } from '../utils/logger';
 
@@ -12,7 +12,7 @@ interface AimpIpcResponse {
 
 class AimpService {
   private assertAimpAvailable(): void {
-    if (!isPlatformInitialized() || !isNativePlatformAvailable()) {
+    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsAimpWorkspace) {
       throw new Error('AIMP integration is only available in the Electron app');
     }
   }

@@ -1,3 +1,7 @@
+import {
+  refreshPlatformCapabilities,
+  resetPlatformCapabilitiesForTests,
+} from './platformCapabilities';
 import type { AppMode, PlatformAPI } from './types';
 
 let platformInstance: PlatformAPI | null = null;
@@ -6,6 +10,7 @@ let currentAppMode: AppMode | null = null;
 export function setPlatform(api: PlatformAPI, mode: AppMode): void {
   platformInstance = api;
   currentAppMode = mode;
+  refreshPlatformCapabilities(mode);
 }
 
 export function getPlatform(): PlatformAPI {
@@ -29,4 +34,5 @@ export function isPlatformInitialized(): boolean {
 export function resetPlatformForTests(): void {
   platformInstance = null;
   currentAppMode = null;
+  resetPlatformCapabilitiesForTests();
 }

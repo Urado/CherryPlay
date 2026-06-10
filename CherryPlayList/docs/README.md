@@ -9,6 +9,7 @@
 - **[TECHNICAL.md](../TECHNICAL.md)** — техническая документация: стек, архитектура, структура проекта, IPC, хранение данных, интеграция с сервером и вебом.
 - **[README.md](../README.md)** — описание проекта, основные функции, установка и запуск.
 - **[web-demo.md](web-demo.md)** — веб-демо в браузере (`dev:web`, `dev:web:project`), ограничения режима.
+- **[android-capacitor-brief.md](android-capacitor-brief.md)** — план Android/Capacitor (этапы 0–6).
 
 ---
 
@@ -22,7 +23,7 @@
 
 ### Модули приложения
 
-- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections, File Browser, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player, Commands, Streaming).
+- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections, File Browser, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player, Commands, Streaming); инфраструктура: **[Platform layer](modules/platform/README.md)** (capabilities, guards).
 - Документация по каждому модулю — по ссылкам из modules/README.md (workspaces/_.md, systems/_.md, stores/_.md, services/_.md).
 
 ### Проверка и релиз

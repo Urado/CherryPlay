@@ -3,7 +3,12 @@ import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
-import { getAppMode, getPlatform, isPlatformInitialized } from '@shared/platform';
+import {
+  getAppMode,
+  getPlatform,
+  getPlatformCapabilities,
+  isPlatformInitialized,
+} from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import { useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
@@ -17,7 +22,7 @@ export const AccountView: React.FC = () => {
   const addNotification = useUIStore((state) => state.addNotification);
 
   useEffect(() => {
-    if (getAppMode() === 'demo') {
+    if (!getPlatformCapabilities().supportsRealAuth) {
       if (isAuthenticated()) {
         setOrganizerInfo(getDemoOrganizerDto());
         setOrganizer({ id: DEMO_ORGANIZER_DTO.id, name: DEMO_ORGANIZER_DTO.name });
@@ -33,7 +38,7 @@ export const AccountView: React.FC = () => {
 
   // Обработка OAuth callback - регистрируем при монтировании компонента
   useEffect(() => {
-    if (!isPlatformInitialized() || getAppMode() === 'demo') {
+    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth) {
       return;
     }
 

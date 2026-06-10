@@ -1,5 +1,5 @@
-import { getAppMode } from '../platform';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
 
 export function isDemoAuthMode(): boolean {
-  return getAppMode() === 'demo';
+  return !getPlatformCapabilities().supportsRealAuth;
 }

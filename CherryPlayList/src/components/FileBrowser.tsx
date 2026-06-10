@@ -15,7 +15,7 @@ import React, {
 import { createPortal } from 'react-dom';
 
 import { useAudioPathDurations, useItemSelection } from '@shared/hooks';
-import { getAppMode, isPlatformInitialized } from '@shared/platform';
+import { getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
 import { DEMO_MUSIC_ROOT } from '@shared/platform/fixtures/fileBrowserTree';
 import { fileService, ipcService } from '@shared/services';
 import { useDemoPlayerStore, useSettingsStore, useUIStore } from '@shared/stores';
@@ -55,7 +55,7 @@ export const FileBrowser: React.FC = () => {
     pause,
   } = useDemoPlayerStore();
   const activeTrackPath = activeTrack?.path;
-  const isDemoMode = getAppMode() === 'demo';
+  const { usesFixtureFileBrowser } = getPlatformCapabilities();
 
   useEffect(() => {
     const initializePath = async () => {
@@ -72,7 +72,7 @@ export const FileBrowser: React.FC = () => {
         let initialPath: string;
         if (saved && saved.trim() !== '') {
           initialPath = saved.trim();
-        } else if (getAppMode() === 'demo') {
+        } else if (usesFixtureFileBrowser) {
           initialPath = DEMO_MUSIC_ROOT;
         } else {
           try {
@@ -90,7 +90,7 @@ export const FileBrowser: React.FC = () => {
     };
 
     void initializePath();
-  }, []);
+  }, [usesFixtureFileBrowser]);
 
   useEffect(() => {
     if (currentPath && currentPath.trim() !== '') {
@@ -164,7 +164,7 @@ export const FileBrowser: React.FC = () => {
   }, []);
 
   useAudioPathDurations({
-    paths: isDemoMode ? [] : audioPaths,
+    paths: usesFixtureFileBrowser ? [] : audioPaths,
     requestDuration: requestAudioDuration,
     onResolved: onBrowserDurationResolved,
     onError: onBrowserDurationError,
@@ -461,7 +461,7 @@ export const FileBrowser: React.FC = () => {
     const duration = durations[item.path];
     if (duration != null && Number.isFinite(duration)) {
       parts.push(formatTrackDuration(duration));
-    } else if (isAudio && isDemoMode) {
+    } else if (isAudio && usesFixtureFileBrowser) {
       parts.push('Demo');
     } else if (isAudio) {
       parts.push(DURATION_PLACEHOLDER);

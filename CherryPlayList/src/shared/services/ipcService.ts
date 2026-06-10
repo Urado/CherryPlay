@@ -1,5 +1,5 @@
-import { isNativePlatformAvailable } from '../platform/appMode';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
 import type { DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
@@ -19,9 +19,12 @@ interface AudioFileUrl {
   url: string;
 }
 
-/** @deprecated Use `isNativePlatformAvailable()` from `@shared/platform`. */
+/** @deprecated Use {@link getPlatformCapabilities} for feature gating. */
 export function isIpcRendererAvailable(): boolean {
-  return isNativePlatformAvailable();
+  if (!isPlatformInitialized()) {
+    return false;
+  }
+  return getPlatformCapabilities().supportsAimpWorkspace;
 }
 
 class IPCService {

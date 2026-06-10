@@ -2,7 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import React, { useState, useEffect, useRef } from 'react';
 
-import { getAppMode } from '@shared/platform';
+import { getPlatformCapabilities } from '@shared/platform';
 import { exportService, ipcService } from '@shared/services';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 
@@ -83,7 +83,9 @@ export const ExportModal: React.FC = () => {
 
       addNotification({
         type: 'success',
-        message: getAppMode() === 'demo' ? 'Экспорт симулирован (демо)' : 'Экспорт завершён',
+        message: getPlatformCapabilities().simulatesExport
+          ? 'Экспорт симулирован (демо)'
+          : 'Экспорт завершён',
       });
       closeModal();
     } catch (error) {

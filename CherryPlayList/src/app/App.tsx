@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
-import { getAppMode } from '@shared/platform';
+import { getAppMode, usePlatformCapabilities } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import { initializeShortcuts } from '@shared/shortcuts';
 import {
@@ -36,6 +36,7 @@ import { SplitContainer } from './components/SplitContainer';
 const App: React.FC = () => {
   const { layout } = useLayoutStore();
   const isDemoMode = getAppMode() === 'demo';
+  const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
 
   useEffect(() => {
     if (isDemoMode) {
@@ -59,7 +60,7 @@ const App: React.FC = () => {
       });
     });
 
-    if (isDemoMode) {
+    if (!supportsRealAuth) {
       return;
     }
 
@@ -99,7 +100,7 @@ const App: React.FC = () => {
     };
 
     checkAuthOnStart();
-  }, [isDemoMode]);
+  }, [isDemoMode, supportsRealAuth]);
 
   useTrackItemSize();
 
@@ -113,7 +114,7 @@ const App: React.FC = () => {
             <p>Error: Root zone must be a container</p>
           </div>
         </div>
-        {!isDemoMode && <AimpIntegrationController />}
+        {supportsAimpWorkspace && <AimpIntegrationController />}
         <SettingsModal />
         <ExportModal />
         <LinkPartyModal />
@@ -132,7 +133,7 @@ const App: React.FC = () => {
       <div className="app-content">
         <SplitContainer zone={layout.rootZone} />
       </div>
-      {!isDemoMode && <AimpIntegrationController />}
+      {supportsAimpWorkspace && <AimpIntegrationController />}
       <SettingsModal />
       <ExportModal />
       <LinkPartyModal />

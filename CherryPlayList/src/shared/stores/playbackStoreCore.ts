@@ -6,8 +6,7 @@ import { bindPlaybackEngineToStore } from '../audio/playback/bindPlaybackEngineT
 import type { StorePlaybackStatus } from '../audio/playback/bindPlaybackEngineToStore';
 import { clampPlaybackValue } from '../audio/playback/clampPlaybackValue';
 import type { PlaybackEngine } from '../audio/playback/PlaybackEngine';
-import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
-import { getAppMode } from '../platform/appMode';
+import { guardPlaybackUnavailable } from '../demo/guardPlayback';
 import { ipcService } from '../services/ipcService';
 import { formatMissingTrackMessage, isFileNotFoundError } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
@@ -99,8 +98,7 @@ export interface LoadTrackCoreOptions {
 }
 
 export async function loadTrackCore(options: LoadTrackCoreOptions): Promise<void> {
-  if (getAppMode() === 'demo') {
-    notifyDemoUnavailable();
+  if (!guardPlaybackUnavailable()) {
     return;
   }
 
@@ -145,8 +143,7 @@ export async function playTrackCore(options: PlayTrackCoreOptions): Promise<void
     return;
   }
 
-  if (getAppMode() === 'demo') {
-    notifyDemoUnavailable();
+  if (!guardPlaybackUnavailable()) {
     return;
   }
 

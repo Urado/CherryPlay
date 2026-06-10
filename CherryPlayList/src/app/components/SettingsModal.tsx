@@ -2,7 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef } from 'react';
 
 import { APP_VERSION } from '@shared/config';
-import { DEMO_UNAVAILABLE_MESSAGE, getAppMode } from '@shared/platform';
+import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { useAimpStore, useSettingsStore, useUIStore, useProjectStore } from '@shared/stores';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
@@ -39,8 +39,8 @@ export const SettingsModal: React.FC = () => {
   } = useSettingsStore();
   const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const aimpAvailability = getAimpAvailability(aimpBridgeState);
-  const isDemoMode = getAppMode() === 'demo';
-  const canSelectAimpSource = !isDemoMode && aimpAvailability.available;
+  const { supportsAimpWorkspace, supportsAudioDeviceSelection } = usePlatformCapabilities();
+  const canSelectAimpSource = supportsAimpWorkspace && aimpAvailability.available;
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
   const [localHourDividerInterval, setLocalHourDividerInterval] = useState(hourDividerInterval);
@@ -238,8 +238,8 @@ export const SettingsModal: React.FC = () => {
                 gap: 4,
               }}
             >
-              {isDemoMode ? (
-                <div>{DEMO_UNAVAILABLE_MESSAGE}</div>
+              {!supportsAimpWorkspace ? (
+                <div>{getPlatformUnavailableMessage()}</div>
               ) : (
                 <>
                   <div>AIMP режим сейчас недоступен:</div>
@@ -285,7 +285,7 @@ export const SettingsModal: React.FC = () => {
                   setLocalPlayerDeviceId(value === getDefaultDeviceId() ? null : value);
                 }}
                 id="player-audio-device"
-                disabled={isDemoMode}
+                disabled={!supportsAudioDeviceSelection}
               >
                 <option value={getDefaultDeviceId()}>По умолчанию</option>
                 {audioDevices.map((device) => (
@@ -295,7 +295,7 @@ export const SettingsModal: React.FC = () => {
                 ))}
               </select>
             )}
-            {isDemoMode && (
+            {!supportsAudioDeviceSelection && (
               <div
                 className="settings-description"
                 style={{
@@ -304,7 +304,7 @@ export const SettingsModal: React.FC = () => {
                   color: 'var(--text-secondary, #9e9e9e)',
                 }}
               >
-                {DEMO_UNAVAILABLE_MESSAGE}
+                {getPlatformUnavailableMessage()}
               </div>
             )}
           </div>
@@ -324,7 +324,7 @@ export const SettingsModal: React.FC = () => {
                   setLocalDemoPlayerDeviceId(value === getDefaultDeviceId() ? null : value);
                 }}
                 id="demo-player-audio-device"
-                disabled={isDemoMode}
+                disabled={!supportsAudioDeviceSelection}
               >
                 <option value={getDefaultDeviceId()}>По умолчанию</option>
                 {audioDevices.map((device) => (
@@ -334,7 +334,7 @@ export const SettingsModal: React.FC = () => {
                 ))}
               </select>
             )}
-            {isDemoMode && (
+            {!supportsAudioDeviceSelection && (
               <div
                 className="settings-description"
                 style={{
@@ -343,7 +343,7 @@ export const SettingsModal: React.FC = () => {
                   color: 'var(--text-secondary, #9e9e9e)',
                 }}
               >
-                {DEMO_UNAVAILABLE_MESSAGE}
+                {getPlatformUnavailableMessage()}
               </div>
             )}
           </div>

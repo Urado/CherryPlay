@@ -1,10 +1,10 @@
-import { getAppMode } from '../platform/appMode';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
 
 import { notifyDemoUnavailable } from './notifyDemoUnavailable';
 
-/** True when native FS / save dialogs must not run (browser web demo). */
+/** True when native FS / save dialogs must not run (browser web demo, capacitor stub, etc.). */
 export function isNativeFileOperationBlocked(): boolean {
-  return getAppMode() === 'demo';
+  return !getPlatformCapabilities().supportsNativeFileSystem;
 }
 
 /**
