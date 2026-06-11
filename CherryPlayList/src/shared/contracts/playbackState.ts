@@ -1,4 +1,4 @@
-import type { StorePlaybackStatus } from '../audio/playback/bindPlaybackEngineToStore';
+import type { StorePlaybackStatus } from './storePlaybackStatus';
 
 import type { AimpPlaybackStatus } from './aimp';
 

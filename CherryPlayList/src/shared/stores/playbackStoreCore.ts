@@ -3,7 +3,7 @@ import { Track } from '@core/types/track';
 import { applyDefaultPlaybackEffects } from '../audio/playback/applyDefaultPlaybackEffects';
 import { applyPlaybackOutputDeviceWithFallback } from '../audio/playback/applyPlaybackOutputDeviceWithFallback';
 import { bindPlaybackEngineToStore } from '../audio/playback/bindPlaybackEngineToStore';
-import type { StorePlaybackStatus } from '../audio/playback/bindPlaybackEngineToStore';
+import type { StorePlaybackStatus } from '../contracts/storePlaybackStatus';
 import { clampPlaybackValue } from '../audio/playback/clampPlaybackValue';
 import type { PlaybackEngine } from '../audio/playback/PlaybackEngine';
 import { guardPlaybackUnavailable } from '../demo/guardPlayback';

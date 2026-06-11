@@ -1,15 +1,8 @@
+import type { StorePlaybackStatus } from '../../contracts/storePlaybackStatus';
 import type { PlaybackEngine } from './PlaybackEngine';
 import type { PlaybackEngineStatus } from './types';
 
-/** Store-facing status mirrored from engine status (1:1 mapping). */
-export type StorePlaybackStatus =
-  | 'idle'
-  | 'loading'
-  | 'playing'
-  | 'paused'
-  | 'buffering'
-  | 'ended'
-  | 'error';
+export type { StorePlaybackStatus };
 
 export function mapEngineStatusToStoreStatus(status: PlaybackEngineStatus): StorePlaybackStatus {
   switch (status) {
