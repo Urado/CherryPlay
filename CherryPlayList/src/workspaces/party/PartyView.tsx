@@ -14,7 +14,7 @@ import { AuthForm } from '@cherryplay/components';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
-import { Spinner } from '@shared/components';
+import { OnlineUnavailablePanel, Spinner } from '@shared/components';
 import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import { getPlatform, getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
 import { authService } from '@shared/services/authService';
@@ -30,6 +30,7 @@ import {
 import {
   useAuthStore,
   useAimpStore,
+  useClientOutdatedStore,
   useProjectStore,
   usePlayerAudioStore,
   useSettingsStore,
@@ -223,6 +224,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
   const isAuth = isAuthenticated();
+  const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
+    useClientOutdatedStore();
 
   useEffect(() => {
     if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth || isAuth) {
@@ -1084,6 +1087,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
   };
 
   if (!isAuth) {
+    if (isClientOutdated) {
+      return (
+        <div className="party-view">
+          <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
+        </div>
+      );
+    }
+
     return (
       <div className="party-view">
         <AuthForm
@@ -1092,6 +1103,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
           compact={false}
           authService={authService}
         />
+      </div>
+    );
+  }
+
+  if (isClientOutdated) {
+    return (
+      <div className="party-view">
+        <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
       </div>
     );
   }
@@ -1109,24 +1128,12 @@ export const PartyView: React.FC<PartyViewProps> = ({
   if (serverUnreachable) {
     return (
       <div className="party-view">
-        <div className="party-view-no-connection">
-          <div className="party-view-no-connection-icon">🔌</div>
-          <p className="party-view-no-connection-title">Не удалось подключиться к серверу</p>
-          {isReconnecting && (
-            <p className="party-view-no-connection-hint">Проверка соединения...</p>
-          )}
-          <button
-            className="action-button party-view-no-connection-retry"
-            onClick={() => void handleManualReconnect()}
-            disabled={isReconnecting}
-            type="button"
-          >
-            {isReconnecting ? 'Проверка...' : 'Проверить сейчас'}
-          </button>
-          {lastManualCheckFailed && !isReconnecting && (
-            <p className="party-view-no-connection-hint">Сервер недоступен</p>
-          )}
-        </div>
+        <OnlineUnavailablePanel
+          reason="connection"
+          isReconnecting={isReconnecting}
+          lastCheckFailed={lastManualCheckFailed}
+          onRetry={() => void handleManualReconnect()}
+        />
       </div>
     );
   }

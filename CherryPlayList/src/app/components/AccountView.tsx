@@ -2,6 +2,7 @@ import { AuthForm } from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
+import { OnlineUnavailablePanel } from '@shared/components';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
 import {
   getAppMode,
@@ -10,7 +11,7 @@ import {
   isPlatformInitialized,
 } from '@shared/platform';
 import { authService } from '@shared/services/authService';
-import { useUIStore } from '@shared/stores';
+import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
 import { clearAuthSession, setAuthSessionToken } from '@shared/utils/authSession';
 
@@ -20,6 +21,8 @@ export const AccountView: React.FC = () => {
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const addNotification = useUIStore((state) => state.addNotification);
+  const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
+    useClientOutdatedStore();
 
   useEffect(() => {
     if (!getPlatformCapabilities().supportsRealAuth) {
@@ -150,6 +153,15 @@ export const AccountView: React.FC = () => {
   };
 
   const isDemoMode = getAppMode() === 'demo';
+
+  if (!isDemoMode && isClientOutdated) {
+    return (
+      <div className="account-view">
+        <h1>Аккаунт</h1>
+        <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
+      </div>
+    );
+  }
 
   return (
     <div className="account-view">

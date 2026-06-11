@@ -86,11 +86,11 @@ dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Categ
 
 To fix format issues run `dotnet format` (no `--verify-no-changes`) in `CherryPlayServer/`.
 
-IntegrationDb (requires Docker; script starts Postgres container first):
+IntegrationDb (requires Docker; script starts Postgres container first). The script checks `docker image inspect postgres:16-alpine` first and skips `docker pull` when the image is already cached locally; pull runs only when the image is missing.
 
 ```bash
 docker info
-docker pull postgres:16-alpine
+docker image inspect postgres:16-alpine || docker pull postgres:16-alpine
 docker run -d --name cherryplay-healthcheck-postgres -p 0:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres postgres:16-alpine
 # wait until pg_isready, then set CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING (see script)
 dotnet build CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --no-restore

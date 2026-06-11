@@ -9,6 +9,7 @@ import type {
   ThemePackageListResponse,
 } from '../types/api';
 import { createApiError, handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
+import { apiFetch } from '../utils/apiFetch';
 
 function formatAdminError(payload: ApiErrorPayload | null, fallback: string): string {
   if (!payload) return fallback;
@@ -63,7 +64,7 @@ class AdminApiService {
       ? `${API_ENDPOINTS.ADMIN.ORGANIZERS}?${queryString}`
       : API_ENDPOINTS.ADMIN.ORGANIZERS;
 
-    const response = await fetch(getApiUrl(organizersUrl), {
+    const response = await apiFetch(getApiUrl(organizersUrl), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-cache',
@@ -73,7 +74,7 @@ class AdminApiService {
   }
 
   async getOrganizerById(organizerId: string): Promise<AdminOrganizerDetailDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.ORGANIZER_BY_ID(organizerId)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.ORGANIZER_BY_ID(organizerId)), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-cache',
@@ -83,7 +84,7 @@ class AdminApiService {
   }
 
   async getThemePackages(): Promise<ThemePackageListResponse> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.THEME_PACKAGES), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.THEME_PACKAGES), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-cache',
@@ -96,7 +97,7 @@ class AdminApiService {
     organizerId: string,
     request: GrantEntitlementRequest,
   ): Promise<EntitlementDto> {
-    const response = await fetch(
+    const response = await apiFetch(
       getApiUrl(API_ENDPOINTS.ADMIN.ORGANIZER_ENTITLEMENTS(organizerId)),
       {
         method: 'POST',
@@ -119,7 +120,7 @@ class AdminApiService {
     entitlementId: string,
     request: RevokeEntitlementRequest,
   ): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       getApiUrl(API_ENDPOINTS.ADMIN.ORGANIZER_ENTITLEMENT_BY_ID(organizerId, entitlementId)),
       {
         method: 'DELETE',

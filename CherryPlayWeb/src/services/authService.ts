@@ -1,13 +1,14 @@
 import type { AuthService as IAuthService, OrganizerDto } from '@cherryplay/components';
 
 import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
+import { apiFetch } from '../utils/apiFetch';
 
 class AuthService implements IAuthService {
   async checkAuth(): Promise<OrganizerDto | null> {
     try {
       // Сначала проверяем валидность сессии легковесным эндпоинтом
       const sessionCheckUrl = getApiUrl(API_ENDPOINTS.ORGANIZER.SESSION_CHECK);
-      const sessionResponse = await fetch(sessionCheckUrl, {
+      const sessionResponse = await apiFetch(sessionCheckUrl, {
         method: 'GET',
         credentials: 'include',
         cache: 'no-cache',
@@ -23,7 +24,7 @@ class AuthService implements IAuthService {
 
       // Если сессия валидна, получаем полную информацию об организаторе
       const url = getApiUrl(API_ENDPOINTS.ORGANIZER.ME);
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: 'GET',
         credentials: 'include',
         cache: 'no-cache',
@@ -45,7 +46,7 @@ class AuthService implements IAuthService {
   }
 
   async login(email: string, password: string): Promise<void> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.AUTH.LOGIN), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.LOGIN), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ class AuthService implements IAuthService {
   }
 
   async register(email: string, password: string, name: string): Promise<void> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.AUTH.REGISTER), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.REGISTER), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ class AuthService implements IAuthService {
 
   async logout(): Promise<void> {
     try {
-      await fetch(getApiUrl(API_ENDPOINTS.AUTH.LOGOUT), {
+      await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.LOGOUT), {
         method: 'POST',
         credentials: 'include',
         cache: 'no-cache',
@@ -108,7 +109,7 @@ class AuthService implements IAuthService {
     links?: Record<string, string>;
     timeZone?: string;
   }): Promise<OrganizerDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.ORGANIZER.PROFILE), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ORGANIZER.PROFILE), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

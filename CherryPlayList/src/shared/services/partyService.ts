@@ -12,6 +12,7 @@ import {
 import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { useAuthStore } from '../stores/authStore';
 import { handleApiResponse } from '../utils/apiErrorHandler';
+import { apiFetch } from '../utils/apiFetch';
 import type { PlayerItemForApi } from '../utils/partyUtils';
 
 export const MAX_SHORT_DESCRIPTION_LENGTH = 200;
@@ -203,7 +204,7 @@ class PartyService {
       throw new Error('Для создания вечеринки необходимо войти в аккаунт');
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties`, {
+    const response = await apiFetch(`${baseUrl}/parties`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -227,7 +228,7 @@ class PartyService {
       throw new Error('Для просмотра списка вечеринок необходимо войти в аккаунт');
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties`, {
+    const response = await apiFetch(`${baseUrl}/parties`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       cache: 'no-cache',
@@ -248,7 +249,7 @@ class PartyService {
     }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
-    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       cache: 'no-cache',
@@ -296,7 +297,7 @@ class PartyService {
     }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
-    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -318,7 +319,7 @@ class PartyService {
     }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
-    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}/playlist`, {
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}/playlist`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(playlist),
@@ -337,7 +338,7 @@ class PartyService {
     }
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
-    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}`, {
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
       cache: 'no-cache',
@@ -361,7 +362,7 @@ class PartyService {
     const baseUrl = await this.getBaseUrl();
     const normalizedPartyId = this.normalizePartyId(partyId);
     const body: TransitionPartyLifecycleDto = { partyLifecycleState: targetState };
-    const response = await fetch(`${baseUrl}/parties/${normalizedPartyId}/lifecycle`, {
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}/lifecycle`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(body),
@@ -378,7 +379,7 @@ class PartyService {
       return getDemoPartyState();
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/parties/public/${shortCode}/state`, {
+    const response = await apiFetch(`${baseUrl}/parties/public/${shortCode}/state`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-cache',
@@ -455,7 +456,7 @@ class PartyService {
 
     this.themeAccessInFlight = (async () => {
       const baseUrl = await this.getBaseUrl();
-      const response = await fetch(`${baseUrl}/organizer/me/theme-access`, {
+      const response = await apiFetch(`${baseUrl}/organizer/me/theme-access`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
         cache: 'no-cache',

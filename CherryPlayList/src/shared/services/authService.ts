@@ -15,6 +15,7 @@ import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
 import { getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
+import { apiFetch } from '../utils/apiFetch';
 import { handleAuthError } from '../utils/authErrorHandler';
 import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
@@ -77,7 +78,7 @@ class AuthService implements IAuthService {
       return DEMO_ACCESS_TOKEN;
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/exchange`, {
+    const response = await apiFetch(`${baseUrl}/auth/exchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -118,7 +119,7 @@ class AuthService implements IAuthService {
 
     // Сначала проверяем валидность сессии легковесным эндпоинтом
     try {
-      const sessionCheckResponse = await fetch(`${baseUrl}/api/organizer/session/check`, {
+      const sessionCheckResponse = await apiFetch(`${baseUrl}/api/organizer/session/check`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -148,7 +149,7 @@ class AuthService implements IAuthService {
     }
 
     // Если сессия валидна, получаем полную информацию об организаторе
-    const response = await fetch(`${baseUrl}/api/organizer/me`, {
+    const response = await apiFetch(`${baseUrl}/api/organizer/me`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -175,7 +176,7 @@ class AuthService implements IAuthService {
       return DEMO_ACCESS_TOKEN;
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/login`, {
+    const response = await apiFetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -218,7 +219,7 @@ class AuthService implements IAuthService {
       return DEMO_ACCESS_TOKEN;
     }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/register`, {
+    const response = await apiFetch(`${baseUrl}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -265,7 +266,7 @@ class AuthService implements IAuthService {
 
     if (token) {
       try {
-        await fetch(`${baseUrl}/auth/logout`, {
+        await apiFetch(`${baseUrl}/auth/logout`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,

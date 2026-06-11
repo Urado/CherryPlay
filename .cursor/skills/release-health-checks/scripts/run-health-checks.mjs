@@ -115,9 +115,22 @@ run("Server: tests (fast)", () =>
   ),
 );
 run("Server: Docker daemon", () => exec("docker info"));
-run("Server: IntegrationDb postgres image", () =>
-  exec(`docker pull ${INTEGRATION_DB_IMAGE}`),
-);
+run("Server: IntegrationDb postgres image", () => {
+  try {
+    execCapture(`docker image inspect ${INTEGRATION_DB_IMAGE}`);
+    process.stdout.write(
+      `using locally cached ${INTEGRATION_DB_IMAGE}; docker pull skipped\n`,
+    );
+  } catch {
+    try {
+      exec(`docker pull ${INTEGRATION_DB_IMAGE}`);
+    } catch {
+      throw new Error(
+        `${INTEGRATION_DB_IMAGE} is not available locally and docker pull failed`,
+      );
+    }
+  }
+});
 run("Server: IntegrationDb postgres container", () => {
   startIntegrationDbContainer();
 });

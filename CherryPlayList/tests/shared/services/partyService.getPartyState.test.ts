@@ -69,7 +69,7 @@ describe('partyService.getPartyState', () => {
       `${API_URL}/parties/public/${SHORT_CODE}/state`,
       expect.objectContaining({
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         cache: 'no-cache',
       }),
     );

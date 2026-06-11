@@ -1,12 +1,19 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import path from 'path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+
+import { readWebClientVersion } from './scripts/readWebClientVersion.mjs';
 
 const cherryPlayComponentsSrc = path.resolve(__dirname, '../CherryPlayComponents/src');
 const repoRoot = path.resolve(__dirname, '..');
+const clientVersion = readWebClientVersion(__dirname);
 
 export default defineConfig({
   envDir: repoRoot,
+  define: {
+    __APP_VERSION__: JSON.stringify(clientVersion),
+  },
   plugins: [
     react(),
     // Следим за исходниками библиотеки, чтобы изменения подхватывались без перезапуска

@@ -97,6 +97,8 @@ builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
 builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));
+builder.Services.Configure<CherryPlayServer.Core.Options.ClientCompatibilityOptions>(
+    builder.Configuration.GetSection(CherryPlayServer.Core.Options.ClientCompatibilityOptions.SectionName));
 builder.Services.AddSingleton<IPartyDisplayStatusService, PartyDisplayStatusService>();
 
 builder.Services.AddMemoryCache();
@@ -260,6 +262,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseMiddleware<ClientVersionMiddleware>();
 app.UseMiddleware<JwtAuthenticationMiddleware>();
 
 app.UseAuthorization();

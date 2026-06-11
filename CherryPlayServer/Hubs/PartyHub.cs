@@ -660,10 +660,23 @@ public class PartyHub : Hub
         {
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(graceSeconds)).ConfigureAwait(false);
+                var gracePeriod = TimeSpan.FromSeconds(graceSeconds);
 
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var tracker = scope.ServiceProvider.GetRequiredService<IOrganizerConnectionTracker>();
+
+                while (!tracker.IsOrganizerConnected(partyId)
+                    && tracker.TryGetOrganizerDisconnectedAt(partyId, out var disconnectedAt))
+                {
+                    var remaining = gracePeriod - (DateTime.UtcNow - disconnectedAt);
+                    if (remaining <= TimeSpan.Zero)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(remaining).ConfigureAwait(false);
+                }
+
                 if (tracker.IsOrganizerConnected(partyId))
                 {
                     return;

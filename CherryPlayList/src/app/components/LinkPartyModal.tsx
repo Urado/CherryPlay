@@ -7,9 +7,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { OnlineUnavailablePanel } from '@shared/components';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
-import { useProjectStore, useUIStore } from '@shared/stores';
+import { useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { convertPlaylistForApi } from '@shared/utils';
 
 export const LinkPartyModal: React.FC = () => {
@@ -24,6 +25,8 @@ export const LinkPartyModal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [linkingId, setLinkingId] = useState<string | null>(null);
   const [uploadPlaylist, setUploadPlaylist] = useState(true);
+  const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
+    useClientOutdatedStore();
 
   const loadParties = useCallback(async () => {
     setLoading(true);
@@ -115,57 +118,65 @@ export const LinkPartyModal: React.FC = () => {
         </div>
 
         <div className="modal-body">
-          <p className="link-party-modal-description">
-            Выберите вечеринку, созданную на сервере, чтобы связать с ней текущий плейлист.
-          </p>
-
-          {loading && <div className="link-party-modal-loading">Загрузка списка вечеринок...</div>}
-          {error && (
-            <div className="link-party-modal-error" role="alert">
-              {error}
-            </div>
-          )}
-          {!loading && !error && parties.length === 0 && (
-            <div className="link-party-modal-empty">У вас пока нет вечеринок на сервере.</div>
-          )}
-          {!loading && !error && parties.length > 0 && (
+          {isClientOutdated ? (
+            <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
+          ) : (
             <>
-              <label className="link-party-modal-checkbox">
-                <input
-                  type="checkbox"
-                  checked={uploadPlaylist}
-                  onChange={(e) => setUploadPlaylist(e.target.checked)}
-                />
-                <span>Сразу отправить текущий плейлист на сервер</span>
-              </label>
-              <ul className="link-party-modal-list" aria-label="Список вечеринок">
-                {parties.map((party) => (
-                  <li key={party.id} className="link-party-modal-item">
-                    <div className="link-party-modal-item-info">
-                      <span className="link-party-modal-item-name">{party.name}</span>
-                      <span className="link-party-modal-item-code">Код: {party.shortCode}</span>
-                      {party.eventDateTime ? (
-                        <span className="link-party-modal-item-date">
-                          {formatDateInTimeZone(
-                            party.eventDateTime,
-                            party.timeZone ?? getDefaultTimeZone(),
-                          )}
-                        </span>
-                      ) : null}
-                    </div>
-                    <button
-                      type="button"
-                      className="modal-button primary link-party-modal-link-btn"
-                      onClick={() => handleLink(party)}
-                      disabled={linkingId !== null}
-                      aria-label={`Привязать к вечеринке ${party.name}`}
-                    >
-                      <LinkIcon fontSize="small" />
-                      {linkingId === party.id ? 'Привязка...' : 'Привязать'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <p className="link-party-modal-description">
+                Выберите вечеринку, созданную на сервере, чтобы связать с ней текущий плейлист.
+              </p>
+
+              {loading && (
+                <div className="link-party-modal-loading">Загрузка списка вечеринок...</div>
+              )}
+              {error && (
+                <div className="link-party-modal-error" role="alert">
+                  {error}
+                </div>
+              )}
+              {!loading && !error && parties.length === 0 && (
+                <div className="link-party-modal-empty">У вас пока нет вечеринок на сервере.</div>
+              )}
+              {!loading && !error && parties.length > 0 && (
+                <>
+                  <label className="link-party-modal-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={uploadPlaylist}
+                      onChange={(e) => setUploadPlaylist(e.target.checked)}
+                    />
+                    <span>Сразу отправить текущий плейлист на сервер</span>
+                  </label>
+                  <ul className="link-party-modal-list" aria-label="Список вечеринок">
+                    {parties.map((party) => (
+                      <li key={party.id} className="link-party-modal-item">
+                        <div className="link-party-modal-item-info">
+                          <span className="link-party-modal-item-name">{party.name}</span>
+                          <span className="link-party-modal-item-code">Код: {party.shortCode}</span>
+                          {party.eventDateTime ? (
+                            <span className="link-party-modal-item-date">
+                              {formatDateInTimeZone(
+                                party.eventDateTime,
+                                party.timeZone ?? getDefaultTimeZone(),
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          className="modal-button primary link-party-modal-link-btn"
+                          onClick={() => handleLink(party)}
+                          disabled={linkingId !== null}
+                          aria-label={`Привязать к вечеринке ${party.name}`}
+                        >
+                          <LinkIcon fontSize="small" />
+                          {linkingId === party.id ? 'Привязка...' : 'Привязать'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </>
           )}
         </div>

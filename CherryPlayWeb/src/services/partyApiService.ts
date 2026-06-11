@@ -16,6 +16,7 @@ import type {
   UpdatePartyDto,
 } from '../types/api';
 import { handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
+import { apiFetch } from '../utils/apiFetch';
 
 import { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './partyApiErrors';
 
@@ -92,7 +93,7 @@ class PartyApiService {
    * Сервер не возвращает вечеринки в состоянии `draft`.
    */
   async getMyParties(): Promise<PartyDto[]> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-cache',
@@ -105,7 +106,7 @@ class PartyApiService {
    * Получить вечеринку по id (включая черновик `draft`).
    */
   async getPartyById(partyId: string): Promise<PartyDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-cache',
@@ -118,7 +119,7 @@ class PartyApiService {
    * Создать вечеринку (требует авторизации)
    */
   async createParty(dto: CreatePartyDto): Promise<PartyDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -133,7 +134,7 @@ class PartyApiService {
    * Обновить метаданные вечеринки (требует авторизации)
    */
   async updatePartyMetadata(partyId: string, dto: UpdatePartyDto): Promise<void> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -148,7 +149,7 @@ class PartyApiService {
    * Удалить вечеринку (требует авторизации)
    */
   async deleteParty(partyId: string): Promise<void> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'DELETE',
       credentials: 'include',
     });
@@ -166,7 +167,7 @@ class PartyApiService {
     targetState: PartyLifecycleState,
   ): Promise<PartyDto> {
     const body: TransitionPartyLifecycleDto = { partyLifecycleState: targetState };
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.LIFECYCLE(partyId)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.LIFECYCLE(partyId)), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -184,7 +185,7 @@ class PartyApiService {
    * Получает плейлист первого доступного вечеринки (для демо)
    */
   async getFirstPartyPlaylist(): Promise<PartyPlaylistDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.FIRST), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.FIRST), {
       cache: 'no-cache',
     });
 
@@ -195,7 +196,7 @@ class PartyApiService {
    * Получает публичную информацию о вечеринке
    */
   async getPublicParty(shortCode: string): Promise<PublicPartyDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.BY_CODE(shortCode)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.BY_CODE(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -206,7 +207,7 @@ class PartyApiService {
    * Получает плейлист вечеринки по shortCode
    */
   async getPartyPlaylist(shortCode: string): Promise<PartyPlaylistDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.PLAYLIST(shortCode)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.PLAYLIST(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -217,7 +218,7 @@ class PartyApiService {
    * Получает полное состояние вечеринки
    */
   async getPartyState(shortCode: string): Promise<PartyStateDto> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.STATE(shortCode)), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.STATE(shortCode)), {
       cache: 'no-cache',
     });
 
@@ -228,7 +229,7 @@ class PartyApiService {
    * Получает список всех публичных вечеринок
    */
   async getAllParties(): Promise<PublicPartyListItemDto[]> {
-    const response = await fetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.LIST), {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.LIST), {
       cache: 'no-cache',
     });
 

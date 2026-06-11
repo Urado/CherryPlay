@@ -91,6 +91,16 @@ export async function createApiError(
   };
 }
 
+export async function parseApiErrorPayload<T>(response: Response): Promise<T | null> {
+  try {
+    const text = await response.text();
+    if (!text) return null;
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Проверяет статус ответа и обрабатывает специфичные ошибки авторизации
  */

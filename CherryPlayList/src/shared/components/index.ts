@@ -1,6 +1,8 @@
 export { DemoPlayer, useDemoPlayerController } from './DemoPlayer';
 export type { DemoPlayerController } from './DemoPlayer';
 export { NotificationContainer } from './NotificationContainer';
+export { OnlineUnavailablePanel } from './OnlineUnavailablePanel';
+export type { OnlineUnavailableReason } from './OnlineUnavailablePanel';
 export { Spinner } from './Spinner';
 
 // ListRow - Compound Components for list items
