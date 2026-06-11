@@ -37,6 +37,14 @@ public static partial class SemverComparer
         return left.Patch.CompareTo(right.Patch);
     }
 
+    /// <summary>Compares only major and minor components (patch is ignored).</summary>
+    public static int CompareMajorMinor(VersionTriple left, VersionTriple right)
+    {
+        if (left.Major != right.Major)
+            return left.Major.CompareTo(right.Major);
+        return left.Minor.CompareTo(right.Minor);
+    }
+
     public static int Compare(string left, string right)
     {
         if (!TryParse(left, out var leftParsed))

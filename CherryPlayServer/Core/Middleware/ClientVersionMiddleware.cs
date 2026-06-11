@@ -104,7 +104,7 @@ public class ClientVersionMiddleware
                 return;
             }
 
-            if (SemverComparer.Compare(parsedClientVersion, parsedRequiredDesktopVersion) < 0)
+            if (SemverComparer.CompareMajorMinor(parsedClientVersion, parsedRequiredDesktopVersion) < 0)
             {
                 await WriteErrorAsync(
                     context,

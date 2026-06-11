@@ -12,6 +12,6 @@ public class ClientCompatibilityOptions
 
 public class DesktopClientCompatibilityOptions
 {
-    /// <summary>Minimum supported CherryPlayList (desktop) version.</summary>
+    /// <summary>Minimum supported CherryPlayList (desktop) major.minor version (patch is ignored).</summary>
     public string MinVersion { get; set; } = "0.0.0";
 }
