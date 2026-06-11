@@ -15,6 +15,9 @@ RUN cd CherryPlayWeb && npm ci --ignore-scripts
 # Исходники веба (для hot reload при монтировании тома в compose)
 COPY CherryPlayWeb ./CherryPlayWeb
 
+# Версия web-клиента для X-Client-Version (как в production Dockerfile)
+COPY CherryPlayServer/appsettings.json ./CherryPlayServer/appsettings.json
+
 WORKDIR /app/CherryPlayWeb
 
 # Переменные для Vite (dev-сервер подхватит при старте)

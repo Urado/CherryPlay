@@ -2,13 +2,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import React, { useState, useEffect, useRef } from 'react';
 
+import { getPlatformCapabilities } from '@shared/platform';
 import { exportService, ipcService } from '@shared/services';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 
 export const ExportModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
   const { name, getAllTracksInOrder } = useProjectStore();
-  const tracks = getAllTracksInOrder();
   const { exportPath, setExportPath, exportStrategy, setExportStrategy } = useSettingsStore();
   const [localExportPath, setLocalExportPath] = useState(exportPath);
   const [localExportStrategy, setLocalExportStrategy] = useState(exportStrategy);
@@ -81,7 +81,12 @@ export const ExportModal: React.FC = () => {
         await exportService.exportWithNumberPrefix(tracksToExport, localExportPath);
       }
 
-      addNotification({ type: 'success', message: 'Экспорт завершён' });
+      addNotification({
+        type: 'success',
+        message: getPlatformCapabilities().simulatesExport
+          ? 'Экспорт симулирован (демо)'
+          : 'Экспорт завершён',
+      });
       closeModal();
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка экспорта: ${(error as Error).message}` });

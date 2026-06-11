@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
+import { getAppMode, usePlatformCapabilities } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import { initializeShortcuts } from '@shared/shortcuts';
 import {
@@ -14,6 +15,7 @@ import {
   initializeGlobalHistory,
   initializeProjectStoreHistory,
 } from '@shared/stores';
+import { clearAuthSession } from '@shared/utils/authSession';
 import {
   isTokenExpired,
   isTokenExpiringSoon,
@@ -25,6 +27,7 @@ import { AccountModal } from './components/AccountModal';
 import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
+import { DemoModeBanner } from './components/DemoModeBanner';
 import { ExportModal } from './components/ExportModal';
 import { LinkPartyModal } from './components/LinkPartyModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -32,8 +35,14 @@ import { SplitContainer } from './components/SplitContainer';
 
 const App: React.FC = () => {
   const { layout } = useLayoutStore();
+  const isDemoMode = getAppMode() === 'demo';
+  const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
 
   useEffect(() => {
+    if (isDemoMode) {
+      document.title = 'CherryPlayList (Demo)';
+    }
+
     initializeProjectStoreHistory();
     initializeGlobalHistory();
 
@@ -51,6 +60,10 @@ const App: React.FC = () => {
       });
     });
 
+    if (!supportsRealAuth) {
+      return;
+    }
+
     // Проверяем валидность токена при старте приложения
     const checkAuthOnStart = async () => {
       const token = useAuthStore.getState().accessToken;
@@ -61,7 +74,7 @@ const App: React.FC = () => {
       // Проверяем, не истек ли токен локально
       if (isTokenExpired(token)) {
         console.warn('[App] Token expired on startup, clearing auth');
-        useAuthStore.getState().clearAuth();
+        clearAuthSession();
         return;
       }
 
@@ -87,19 +100,21 @@ const App: React.FC = () => {
     };
 
     checkAuthOnStart();
-  }, []);
+  }, [isDemoMode, supportsRealAuth]);
 
   useTrackItemSize();
 
   if (layout.rootZone.type !== 'container') {
     return (
       <div className="app">
+        {isDemoMode && <DemoModeBanner />}
         <AppHeader />
         <div className="app-content">
           <div className="empty-state">
             <p>Error: Root zone must be a container</p>
           </div>
         </div>
+        {supportsAimpWorkspace && <AimpIntegrationController />}
         <SettingsModal />
         <ExportModal />
         <LinkPartyModal />
@@ -113,11 +128,12 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
+      {isDemoMode && <DemoModeBanner />}
       <AppHeader />
       <div className="app-content">
         <SplitContainer zone={layout.rootZone} />
       </div>
-      <AimpIntegrationController />
+      {supportsAimpWorkspace && <AimpIntegrationController />}
       <SettingsModal />
       <ExportModal />
       <LinkPartyModal />

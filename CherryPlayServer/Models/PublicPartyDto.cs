@@ -7,12 +7,11 @@ public record PublicPartyDto(
     string Name,
     string? Title,
     string? Subtitle,
-    /// <summary>
-    /// PartyTheme идентификатор (см. GLOSSARY.md)
-    /// </summary>
     PartyThemeId PartyThemeId,
     bool HasActiveSession,
     bool IsListedInCatalog,
+    PartyLifecycleState PartyLifecycleState = PartyLifecycleState.Draft,
+    PartyDisplayStatus PartyDisplayStatus = PartyDisplayStatus.Scheduled,
     Dictionary<string, object>? CustomizationSettings = null,
     string? SessionStartedAt = null,
     string? Description = null,

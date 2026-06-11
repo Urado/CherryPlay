@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 
 import { useProjectStore } from '@shared/stores';
+import {
+  syncDemoWithMainPlayer,
+  syncMainWithDemoPlayer,
+} from '@shared/stores/playbackDeviceConflictSync';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
+import { useSettingsStore } from '@shared/stores/settingsStore';
 import { logger } from '@shared/utils';
 
 /**
@@ -30,7 +35,13 @@ export function useSessionRecovery(): void {
       const projectState = useProjectStore.getState();
       const { mode, currentTrackId } = projectState.sessionState;
 
-      if (mode !== 'session' || !currentTrackId) return;
+      if (mode !== 'session') return;
+
+      const { playerAudioDeviceId, demoPlayerAudioDeviceId } = useSettingsStore.getState();
+      syncMainWithDemoPlayer(playerAudioDeviceId);
+      syncDemoWithMainPlayer(demoPlayerAudioDeviceId);
+
+      if (!currentTrackId) return;
 
       // Already loaded — user navigated away and back (remount guard, see comment above)
       if (usePlayerAudioStore.getState().currentTrack?.id === currentTrackId) return;

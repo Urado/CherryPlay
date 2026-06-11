@@ -5,6 +5,9 @@
   "main": "dist-electron/electron/main.mjs",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--no-deprecation concurrently -k \"vite\" \"wait-on http://localhost:5173 && npm run compile:electron && electron .\"",
+    "dev:web": "cross-env VITE_APP_MODE=demo vite",
+    "dev:web:project": "cross-env VITE_APP_MODE=demo VITE_LOAD_DEMO_PROJECT=1 vite",
+    "dev:capacitor": "cross-env VITE_APP_MODE=capacitor vite",
     "compile:electron": "tsc -p tsconfig.electron.json && node scripts/bundle-preload.mjs && node -e \"const fs=require('fs');const p='dist-electron/electron/main.js';if(fs.existsSync(p)){fs.renameSync(p,'dist-electron/electron/main.mjs')}const pkg='dist-electron/electron/package.json';if(!fs.existsSync(pkg)){fs.writeFileSync(pkg,'{\\\"type\\\":\\\"module\\\"}\\n')}\"",
     "build": "cross-env NODE_OPTIONS=--no-deprecation vite build",
     "build:electron": "npm run compile:electron && npm run build",

@@ -10,6 +10,7 @@ public class EmailAccountEfConfiguration : IEntityTypeConfiguration<EmailAccount
     {
         builder.ToTable("email_accounts");
         builder.HasKey(e => e.Id);
+        builder.HasQueryFilter(e => !e.Organizer.IsDeleted);
         builder.Property(e => e.Email).IsRequired().HasMaxLength(256);
         builder.Property(e => e.PasswordHash).IsRequired();
         builder.HasIndex(e => e.Email).IsUnique();

@@ -1,0 +1,51 @@
+{
+  "version": "2.0",
+  "name": "Web Demo Sample",
+  "items": [
+    {
+      "type": "track",
+      "id": "demo-track-1",
+      "path": "/demo/music/Artist A/Album One/morning-light.mp3",
+      "name": "Morning Light",
+      "duration": 245
+    },
+    {
+      "type": "track",
+      "id": "demo-track-2",
+      "path": "/demo/music/Artist A/Album One/evening-echo.mp3",
+      "name": "Evening Echo",
+      "duration": 312
+    },
+    {
+      "type": "track",
+      "id": "demo-track-3",
+      "path": "/demo/music/Artist B/starlight.mp3",
+      "name": "Starlight",
+      "duration": 198
+    },
+    {
+      "type": "track",
+      "id": "demo-track-4",
+      "path": "/demo/music/demo-track.mp3",
+      "name": "Demo Track",
+      "duration": 180
+    }
+  ],
+  "rootItems": ["demo-track-1", "demo-track-2", "demo-track-3", "demo-track-4"],
+  "settings": {
+    "defaultPauseBetweenTracks": 0,
+    "defaultActionAfterTrack": "next",
+    "plannedEndTime": null,
+    "portableMode": false
+  },
+  "trackSettings": {},
+  "groupSettings": {},
+  "sessionState": {
+    "mode": "preparation",
+    "playedTrackIds": [],
+    "disabledTrackIds": [],
+    "disabledGroupIds": [],
+    "currentTrackId": null,
+    "sessionStartTime": null
+  }
+}

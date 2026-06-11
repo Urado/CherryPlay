@@ -54,6 +54,14 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [IPC Service](./services/ipc-service.md) - Сервис IPC коммуникации с Electron
 - [Project Service](./services/project-service.md) - Сервис работы с файлами проектов
 
+### Platform
+
+- [Platform layer](./platform/README.md) — bootstrap, `PlatformAPI`, capabilities, guards; Electron / web demo / Capacitor stub
+
+### Audio
+
+- [Playback Engine — слои](./audio/playback-layers.md) — целевая архитектура воспроизведения (PlaybackEngine, adapter, гибридное состояние, main + demo)
+
 ### Hooks & Utils
 
 - [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Hook для клавиатурных сокращений

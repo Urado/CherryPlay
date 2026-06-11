@@ -48,6 +48,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - Database__AutoMigrateOnStartup=${DATABASE__AutoMigrateOnStartup:-false}
       - OAUTH_VK_CLIENT_ID=${OAUTH_VK_CLIENT_ID:-}
       - OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET:-}
       - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
@@ -74,6 +75,8 @@ services:
     container_name: cherryplay-web
     ports:
       - "127.0.0.1:8080:80"
+    volumes:
+      - ./CherryPlayServer/appsettings.json:/app/CherryPlayServer/appsettings.json:ro
     depends_on:
       - server
     networks:

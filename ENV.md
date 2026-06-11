@@ -33,6 +33,7 @@
 | **CORS_ORIGIN_2**                          | Третий разрешённый CORS origin                                   | Backend (через Cors:AllowedOrigins:2), docker-compose.prod.yml                            | `http://web:80`                                     | Часто `http://web:80` для nginx                 | Не секрет                          |
 | **VITE_API_URL**                           | Базовый URL API бэкенда (подставляется при сборке)               | Frontend (Vite), Dockerfile CherryPlayWeb                                                 | `http://localhost:5000`                             | Пусто для относительных URL за nginx            | Не секрет                          |
 | **VITE_SIGNALR_URL**                       | URL хаба SignalR (опционально; иначе VITE_API_URL + `/partyHub`) | Frontend (Vite), Dockerfile CherryPlayWeb                                                 | `http://localhost:5000/partyHub`                    | Опционально в prod                              | Не секрет                          |
+| **ADMIN_CONTACT_URL**                      | Публичная ссылка для связи с админом по платным темам            | Backend (`/api/config`, `/api/organizer/me/theme-access`)                                 | `https://vk.com/<owner>`                            | Укажите реальный URL контакта                   | Не секрет                          |
 
 ---
 
@@ -40,17 +41,18 @@
 
 Бэкенд читает конфигурацию из переменных окружения (и appsettings). Двойное подчёркивание `__` в переменной окружения соответствует `:` в IConfiguration.
 
-| Переменная окружения                                       | Ключ IConfiguration / использование                                                                                            |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **JWT_SECRET_KEY**                                         | `Configuration["JWT_SECRET_KEY"]`                                                                                              |
-| **JWT_ISSUER**                                             | `Configuration["JWT_ISSUER"]`                                                                                                  |
-| **JWT_AUDIENCE**                                           | `Configuration["JWT_AUDIENCE"]`                                                                                                |
-| **CORS_ORIGIN_0**, **CORS_ORIGIN_1**, **CORS_ORIGIN_2**    | `Cors:AllowedOrigins:0`, `:1`, `:2` — в docker-compose.prod.yml задаётся как `Cors__AllowedOrigins__0=${CORS_ORIGIN_0}` и т.д. |
-| **ConnectionStrings\_\_DefaultConnection**                 | `ConnectionStrings:DefaultConnection` (EF Core)                                                                                |
-| **OAUTH_REDIRECT_BASE_URL**                                | `Configuration["OAUTH_REDIRECT_BASE_URL"]`                                                                                     |
-| **OAUTH_VK_CLIENT_ID**, **OAUTH_VK_CLIENT_SECRET**         | `Configuration["OAUTH_VK_CLIENT_ID"]`, `Configuration["OAUTH_VK_CLIENT_SECRET"]`                                               |
-| **OAUTH_MAILRU_CLIENT_ID**, **OAUTH_MAILRU_CLIENT_SECRET** | `Configuration["OAUTH_MAILRU_CLIENT_ID"]`, `Configuration["OAUTH_MAILRU_CLIENT_SECRET"]`                                       |
-| **OAUTH_TELEGRAM_BOT_TOKEN**                               | `Configuration["OAUTH_TELEGRAM_BOT_TOKEN"]`                                                                                    |
+| Переменная окружения                                       | Ключ IConfiguration / использование                                                                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **JWT_SECRET_KEY**                                         | `Configuration["JWT_SECRET_KEY"]`                                                                                                   |
+| **JWT_ISSUER**                                             | `Configuration["JWT_ISSUER"]`                                                                                                       |
+| **JWT_AUDIENCE**                                           | `Configuration["JWT_AUDIENCE"]`                                                                                                     |
+| **CORS_ORIGIN_0**, **CORS_ORIGIN_1**, **CORS_ORIGIN_2**    | `Cors:AllowedOrigins:0`, `:1`, `:2` — в docker-compose.prod.yml задаётся как `Cors__AllowedOrigins__0=${CORS_ORIGIN_0}` и т.д.      |
+| **ConnectionStrings\_\_DefaultConnection**                 | `ConnectionStrings:DefaultConnection` (EF Core)                                                                                     |
+| **OAUTH_REDIRECT_BASE_URL**                                | `Configuration["OAUTH_REDIRECT_BASE_URL"]`                                                                                          |
+| **OAUTH_VK_CLIENT_ID**, **OAUTH_VK_CLIENT_SECRET**         | `Configuration["OAUTH_VK_CLIENT_ID"]`, `Configuration["OAUTH_VK_CLIENT_SECRET"]`                                                    |
+| **OAUTH_MAILRU_CLIENT_ID**, **OAUTH_MAILRU_CLIENT_SECRET** | `Configuration["OAUTH_MAILRU_CLIENT_ID"]`, `Configuration["OAUTH_MAILRU_CLIENT_SECRET"]`                                            |
+| **OAUTH_TELEGRAM_BOT_TOKEN**                               | `Configuration["OAUTH_TELEGRAM_BOT_TOKEN"]`                                                                                         |
+| **ADMIN_CONTACT_URL**                                      | `Environment["ADMIN_CONTACT_URL"]` или `Admin:ContactUrl` (используется в `GET /api/config` и `GET /api/organizer/me/theme-access`) |
 
 ---
 

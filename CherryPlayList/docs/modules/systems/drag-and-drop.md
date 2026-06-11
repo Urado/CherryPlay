@@ -15,7 +15,7 @@ Workspace-agnostic система drag & drop, работающая с любы�
 - **types** (`src/modules/dragDrop/types.ts`) — типы команд и состояния
 - **dropPositionUtils** (`src/modules/dragDrop/dropPositionUtils.ts`) — утилиты расчёта позиции вставки
 - **dragDropStore** (`src/shared/stores/dragDropStore.ts`) — глобальное состояние drag-and-drop
-- **useWorkspaceDragAndDrop** (`src/shared/hooks/useWorkspaceDragAndDrop.ts`) — единый хук для всех workspaces
+- **useWorkspaceDragAndDrop** (`src/shared/hooks/useWorkspaceDragAndDrop.ts`) — единый хук для всех workspaces; внешний OS drop обрабатывается через `nativeDataTransferPaths` (`src/shared/utils/nativeDataTransferPaths.ts`), preload `window.api.getPathForFile` и IPC `fileBrowser:statFile` (см. раздел про нативный drop ниже)
 - **useDragDropExecutor** (`src/shared/hooks/useDragDropExecutor.ts`) — выполнение cross-workspace операций
 - **ItemList** (`src/shared/components/ItemList/ItemList.tsx`) — контейнер списка с поддержкой drop-индикаторов; при drop на пустую область контейнера передаёт в обработчик позицию курсора как `insertIndex`, поэтому вставка идёт не обязательно в конец списка
 
@@ -131,13 +131,34 @@ Drop на Трек 4 (position: 'bottom'):
 
 - Перетаскивание внутри workspace (reordering)
 - Cross-workspace операции (playlist ↔ collection ↔ player)
-- Перетаскивание файлов из FileBrowser
+- Перетаскивание файлов и папок из FileBrowser и **внешний drop из ОС** (например Проводник Windows) — см. подраздел ниже
 - Копирование с Ctrl/Cmd (cross-workspace)
 - Визуальные индикаторы (линия вставки, полупрозрачность)
 - Групповое перетаскивание выделенных элементов
 - Вставка внутрь групп
 - Drop на пустую область списка или на нижнюю часть отсечки/между треками: позиция вставки определяется по положению курсора (ItemList передаёт `insertIndex` в `onDrop`/`onDragOver`); расчёт `rawInsertIndex` с учётом `bottom` и конвертация flatIndex → (parentId, localIndex) обеспечивают вставку в нужное место, а не всегда в конец списка
 - Полная поддержка undo/redo через CompositeAction
+
+### Внутренний JSON и нативный OS drop (`DataTransfer.files`)
+
+Два независимых способа передать файлы/папки в track-based workspace (плейлист, коллекция, список треков плеера):
+
+| Источник | Представление в `DataTransfer` | Пути и тип (файл / каталог) |
+| -------- | ------------------------------ | --------------------------- |
+| **FileBrowser** | MIME `application/json`: `type: fileBrowser` (массивы `paths` / `directories`) или устаревший `type: files` | Пути уже в JSON; для этого drop не вызываются `getPathForFile` и `statFile` |
+| **ОС (Проводник и др.)** | Непустой `DataTransfer.files` | Абсолютный путь: `window.api.getPathForFile` (preload — обёртка над Electron `webUtils.getPathForFile`), при необходимости запасной вариант — поле `.path` у `File`; файл или каталог — по IPC **`fileBrowser:statFile`** (как в браузере файлов). Утилиты: `tryParseInternalFileBrowserPayload`, `collectNativePathsFromDataTransfer`, `classifyNativePathsWithStat` в `nativeDataTransferPaths.ts` |
+
+**Приоритет:** сначала разбирается внутренний JSON (`tryParseInternalFileBrowserPayload`). Если пейлоад распознан, обрабатывается только он; ветка по нативным `files` для этого события **не выполняется** — иначе смешанный drag мог бы подменить пути из FileBrowser данными ОС.
+
+**После получения путей:** для файлов остаются только пути, проходящие `isValidAudioFile`; остальные отбрасываются **без отдельного сообщения**. Каталоги раскрываются через **`loadFolderTracks`** (тот же сценарий, что при перетаскивании папки из FileBrowser).
+
+**Ошибки и частичный успех (нативный drop):**
+
+- Не удалось извлечь ни одного пути из элементов `files` — вставки нет, пользователю показывается ошибка.
+- Пути есть, но после вызовов **`statFile`** ни один не классифицирован как файл или каталог (все попытки завершились исключением на стороне main, например нет доступа или объект не найден) — вставки нет, ошибка; если известно число таких сбоев, оно может попасть в текст сообщения. Это именно **сбой stat по IPC**, а не проверка «валидности аудио».
+- Часть путей успешно классифицирована, часть дала сбой `statFile` — успешные обрабатываются, дополнительно показывается предупреждение, что часть элементов пропущена.
+- Ошибка чтения **одной** папки в `loadFolderTracks` логируется, остальные папки обрабатываются; если после фильтра аудио не осталось, треки могут не добавиться без отдельного сообщения.
+- Непойманное исключение в асинхронной ветке нативного drop приводит к сообщению об ошибке через общий обработчик.
 
 ## Зависимости
 

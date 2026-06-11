@@ -13,7 +13,10 @@ import {
   type AimpPlaylistSnapshotDto,
   type AimpPlaylistTrackDto,
 } from '../contracts/aimp';
-import type { PlaybackStateDto } from '../services/signalRService';
+import {
+  mapAimpPlaybackStatusToWireStatus,
+  type PlaybackStateDto,
+} from '../contracts/playbackState';
 
 import { applyPartyTrackDisplayToTrackName, type PlayerItemForApi } from './partyUtils';
 
@@ -91,20 +94,6 @@ export function getAimpEffectiveProgressMs(
   return Math.max(0, progressMs);
 }
 
-function mapAimpPlaybackStatus(
-  status: AimpPlaybackStatus | null | undefined,
-): PlaybackStateDto['status'] {
-  switch (status) {
-    case 'playing':
-      return 'playing';
-    case 'paused':
-      return 'paused';
-    case 'stopped':
-    default:
-      return 'idle';
-  }
-}
-
 export function createAimpPlaybackStateDto(
   state: Pick<
     AimpBridgeState,
@@ -119,7 +108,7 @@ export function createAimpPlaybackStateDto(
 
   return {
     currentTrackId: currentTrackKey,
-    status: mapAimpPlaybackStatus(state.playbackSnapshot?.status),
+    status: mapAimpPlaybackStatusToWireStatus(state.playbackSnapshot?.status),
     position: getAimpEffectiveProgressMs(state, nowMs) / 1000,
     duration: convertDurationMsToSeconds(
       state.playbackSnapshot?.durationMs ?? currentTrack?.durationMs,

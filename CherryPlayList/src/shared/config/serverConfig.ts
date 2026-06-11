@@ -1,26 +1,43 @@
+import { getPlatform, isPlatformInitialized } from '../platform';
+
 let cachedServerUrl: string | null = null;
+
+async function invokeConfig<T>(channel: string, payload?: object): Promise<T | null> {
+  if (!isPlatformInitialized()) {
+    return null;
+  }
+
+  const result = (await getPlatform().invoke(channel, payload)) as
+    | { success: true; data: T }
+    | { success: false; error: string };
+
+  if (result.success && result.data !== undefined) {
+    return result.data;
+  }
+
+  if (result.success === false) {
+    throw new Error(result.error);
+  }
+
+  return null;
+}
 
 export async function getServerUrl(): Promise<string> {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
 
-  if (typeof window !== 'undefined' && window.api) {
+  if (isPlatformInitialized()) {
     try {
-      const result = (await window.api.invoke('config:getServerUrl')) as
-        | { success: true; data: string }
-        | { success: false; error: string };
-
-      if (result.success && result.data) {
-        cachedServerUrl = result.data;
-        return result.data;
+      const data = await invokeConfig<string>('config:getServerUrl');
+      if (data) {
+        cachedServerUrl = data;
+        return data;
       }
 
       cachedServerUrl = null;
       throw new Error(
-        result.success === false
-          ? result.error
-          : 'Server URL is not configured. Set serverUrl in serverConfig.development.json (dev) or serverConfig.production.json (release).',
+        'Server URL is not configured. Set serverUrl in serverConfig.development.json (dev) or serverConfig.production.json (release).',
       );
     } catch (error) {
       cachedServerUrl = null;
@@ -53,15 +70,13 @@ export function getServerUrlSync(): string {
 }
 
 export async function setServerUrl(serverUrl: string): Promise<boolean> {
-  if (typeof window === 'undefined' || !window.api) {
+  if (!isPlatformInitialized()) {
     return false;
   }
 
   try {
-    const result = (await window.api.invoke('config:setServerUrl', { serverUrl })) as
-      | { success: true; data: string }
-      | { success: false; error: string };
-    if (result.success) {
+    const data = await invokeConfig<string>('config:setServerUrl', { serverUrl });
+    if (data) {
       cachedServerUrl = serverUrl;
       return true;
     }
@@ -76,38 +91,32 @@ export function clearServerUrlCache(): void {
 }
 
 export async function getConfigFilePath(): Promise<string | null> {
-  if (typeof window === 'undefined' || !window.api) {
+  if (!isPlatformInitialized()) {
     return null;
   }
 
   try {
-    const result = (await window.api.invoke('config:getConfigPath')) as
-      | { success: true; data: string }
-      | { success: false; error: string };
-    if (result.success) {
-      return result.data;
-    }
-    return null;
+    return await invokeConfig<string>('config:getConfigPath');
   } catch {
     return null;
   }
 }
 
 export async function initializeServerConfig(): Promise<void> {
-  if (typeof window !== 'undefined' && window.api) {
-    try {
-      const result = (await window.api.invoke('config:getServerUrl')) as
-        | { success: true; data: string }
-        | { success: false; error: string };
-      if (result.success && result.data) {
-        cachedServerUrl = result.data;
-        const { clearApiConfigCache } = await import('./apiConfig');
-        clearApiConfigCache();
-      } else {
-        cachedServerUrl = null;
-      }
-    } catch {
+  if (!isPlatformInitialized()) {
+    return;
+  }
+
+  try {
+    const data = await invokeConfig<string>('config:getServerUrl');
+    if (data) {
+      cachedServerUrl = data;
+      const { clearApiConfigCache } = await import('./apiConfig');
+      clearApiConfigCache();
+    } else {
       cachedServerUrl = null;
     }
+  } catch {
+    cachedServerUrl = null;
   }
 }

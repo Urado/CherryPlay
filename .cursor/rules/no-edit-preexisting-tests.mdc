@@ -1,0 +1,47 @@
+---
+description: Do not modify test files that were not created in the current session without explicit user confirmation.
+alwaysApply: true
+---
+
+# No Editing Pre-existing Tests Without Confirmation
+
+## Core rule
+
+Do **not** change test files that were **not created in the current session** unless the user **explicitly confirms** that those tests may be edited.
+
+## What counts as a test file
+
+Any file whose primary purpose is automated testing, including but not limited to:
+
+- `**/*Tests/**/*.cs`, `**/*Test*.cs` (.NET)
+- `**/*.test.ts`, `**/*.test.tsx`, `**/*.spec.ts`, `**/*.spec.tsx`
+- `**/__tests__/**`, `**/tests/**`, `**/test/**` (when used for automated tests)
+
+## Current session vs pre-existing
+
+- **Created in the current session** — the agent created or substantially authored the test file during this conversation. Such tests may be edited freely while working on the same task.
+- **Pre-existing** — any test file that was already in the repo before this session, or created in a prior conversation. Treat as read-only until the user confirms otherwise.
+
+When unsure whether a test was created in the current session, treat it as **pre-existing**.
+
+## When you may edit pre-existing tests
+
+Only after the user **explicitly** allows it, for example:
+
+- «исправь тест X», «обнови существующие тесты», «можно менять тесты»
+- a direct reply confirming your question about editing specific pre-existing tests
+
+A general implementation request (e.g. «добавь фичу», «исправь баг») is **not** sufficient confirmation to edit pre-existing tests.
+
+## When pre-existing tests block the task
+
+If implementation would require changing pre-existing tests:
+
+1. **Do not edit** those tests silently.
+2. Explain which test(s) would need changes and why.
+3. Ask the user to confirm editing them, or choose an alternative (e.g. add new tests only, adjust production code instead).
+4. Proceed only after explicit confirmation.
+
+## Before every test edit
+
+Before editing any test file, check: _Was this test file created in the current session?_ If no → stop and get user confirmation first.

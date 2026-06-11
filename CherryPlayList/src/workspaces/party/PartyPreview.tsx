@@ -3,6 +3,7 @@ import {
   PartyDisplayData,
   PartyPlaylistData,
   PlaybackState,
+  partyViewerStatusFromId,
   type PartyThemeId,
   type CustomizationSettings,
 } from '@cherryplay/components';
@@ -41,6 +42,7 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
       playlist,
       playbackState: playbackState || null,
       isSessionActive: playbackState !== null,
+      viewerStatus: partyViewerStatusFromId(playbackState !== null ? 'live' : 'starting_soon'),
     }),
     [partyId, partyName, subtitle, themeId, customizationSettings, playlist, playbackState],
   );

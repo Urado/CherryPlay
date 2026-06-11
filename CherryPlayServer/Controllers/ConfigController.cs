@@ -23,7 +23,10 @@ public class ConfigController : ControllerBase
     {
         var oauthEnabled = _configuration.GetValue("Auth:OAuthEnabled", false);
         var partyInfoPageEnabled = _configuration.GetValue("Features:PartyInfoPageEnabled", false);
-        return Ok(new AppConfigResponse(oauthEnabled, partyInfoPageEnabled));
+        var adminContactUrl = Environment.GetEnvironmentVariable("ADMIN_CONTACT_URL")
+            ?? _configuration["Admin:ContactUrl"]
+            ?? "https://vk.com/<owner>";
+        return Ok(new AppConfigResponse(oauthEnabled, partyInfoPageEnabled, adminContactUrl));
     }
 }
 
@@ -32,4 +35,5 @@ public class ConfigController : ControllerBase
 /// </summary>
 public record AppConfigResponse(
     [property: JsonPropertyName("oauthEnabled")] bool OAuthEnabled,
-    [property: JsonPropertyName("partyInfoPageEnabled")] bool PartyInfoPageEnabled);
+    [property: JsonPropertyName("partyInfoPageEnabled")] bool PartyInfoPageEnabled,
+    [property: JsonPropertyName("adminContactUrl")] string AdminContactUrl);

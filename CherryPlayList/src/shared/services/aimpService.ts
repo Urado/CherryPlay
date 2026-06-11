@@ -1,4 +1,6 @@
 import type { AimpBridgeState, AimpLogEntry, AimpSourceSelection } from '../contracts/aimp';
+import { getPlatform, isPlatformInitialized } from '../platform';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { useUIStore } from '../stores/uiStore';
 import { logger } from '../utils/logger';
 
@@ -9,6 +11,12 @@ interface AimpIpcResponse {
 }
 
 class AimpService {
+  private assertAimpAvailable(): void {
+    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsAimpWorkspace) {
+      throw new Error('AIMP integration is only available in the Electron app');
+    }
+  }
+
   private async unwrapResponse(promise: Promise<AimpIpcResponse>): Promise<AimpBridgeState> {
     try {
       const response = await promise;
@@ -29,23 +37,28 @@ class AimpService {
   }
 
   async getState(): Promise<AimpBridgeState> {
-    return this.unwrapResponse(window.api.aimp.getState());
+    this.assertAimpAvailable();
+    return this.unwrapResponse(getPlatform().aimp.getState());
   }
 
   async setSourceSelection(sourceSelection: AimpSourceSelection): Promise<AimpBridgeState> {
-    return this.unwrapResponse(window.api.aimp.setSourceSelection(sourceSelection));
+    this.assertAimpAvailable();
+    return this.unwrapResponse(getPlatform().aimp.setSourceSelection(sourceSelection));
   }
 
   async setLiveStreamStarted(liveStreamStarted: boolean): Promise<AimpBridgeState> {
-    return this.unwrapResponse(window.api.aimp.setLiveStreamStarted(liveStreamStarted));
+    this.assertAimpAvailable();
+    return this.unwrapResponse(getPlatform().aimp.setLiveStreamStarted(liveStreamStarted));
   }
 
   subscribe(listener: (state: AimpBridgeState) => void): () => void {
-    return window.api.aimp.onStateChanged(listener);
+    this.assertAimpAvailable();
+    return getPlatform().aimp.onStateChanged(listener);
   }
 
   subscribeToLog(listener: (entry: AimpLogEntry) => void): () => void {
-    return window.api.aimp.onLog(listener);
+    this.assertAimpAvailable();
+    return getPlatform().aimp.onLog(listener);
   }
 }
 

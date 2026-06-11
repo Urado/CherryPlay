@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
+import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
 
 import { SourcesPanel } from '../components/SourcesPanel';
 
@@ -14,6 +15,19 @@ interface WorkspaceRendererProps {
  * Использует реестр модулей для динамического рендеринга
  */
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
+  const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
+  if (zone.workspaceType === 'aimp' && !supportsAimpWorkspace) {
+    const message =
+      mode === 'demo'
+        ? DEMO_UNAVAILABLE_MESSAGE
+        : 'AIMP workspace is not available on this platform.';
+    return (
+      <div className="empty-state">
+        <p>{message}</p>
+      </div>
+    );
+  }
+
   // Special case for fileBrowser - it uses SourcesPanel
   if (zone.workspaceType === 'fileBrowser') {
     return (

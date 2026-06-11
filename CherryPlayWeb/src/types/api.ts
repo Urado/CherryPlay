@@ -1,6 +1,23 @@
 export interface AppConfigResponse {
   oauthEnabled: boolean;
   partyInfoPageEnabled: boolean;
+  adminContactUrl?: string;
+}
+
+/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
+export type PartyLifecycleState = 'draft' | 'ready' | 'completed';
+
+/** Статус отображения для зрителя (сервер, CONTRACTS §6.7). */
+export type PartyDisplayStatusId =
+  | 'draft'
+  | 'scheduled'
+  | 'starting_soon'
+  | 'live'
+  | 'organizer_offline'
+  | 'party_ended';
+
+export interface TransitionPartyLifecycleDto {
+  partyLifecycleState: PartyLifecycleState;
 }
 
 export interface PartyPlaylistDto {
@@ -36,11 +53,14 @@ export interface PublicPartyDto {
   eventEndDateTime?: string;
   schedule?: string;
   timeZone?: string;
+  partyLifecycleState: PartyLifecycleState;
+  partyDisplayStatus: PartyDisplayStatusId;
 }
 
 export interface PartyStateDto {
   partyId: string;
   isSessionActive: boolean;
+  partyDisplayStatus: PartyDisplayStatusId;
   sessionStartedAt?: string;
   playbackState?: PlaybackStateDto;
   playlist: PartyPlaylistDto;
@@ -78,6 +98,7 @@ export interface PublicPartyListItemDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  partyLifecycleState: PartyLifecycleState;
 }
 
 export interface PartyDto {
@@ -89,6 +110,7 @@ export interface PartyDto {
   partyThemeId: string;
   createdAt: string;
   hasActiveSession: boolean;
+  partyLifecycleState: PartyLifecycleState;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog: boolean;
@@ -139,6 +161,104 @@ export interface UpdatePartyDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+}
+
+export interface VisibleLockedThemeDto {
+  themeId: string;
+  packageCode: string;
+  packageName: string;
+}
+
+export interface ThemeAccessDto {
+  grantedThemeIds: string[];
+  visibleLockedThemes: VisibleLockedThemeDto[];
+  contactUrl: string;
+}
+
+export interface ApiErrorPayload {
+  code?: string;
+  message?: string;
+  detail?: string;
+  error?: string;
+  themeId?: string;
+  requiredPackageCodes?: string[];
+  existingEntitlementId?: string;
+  currentState?: PartyLifecycleState;
+  requestedState?: PartyLifecycleState;
+}
+
+export interface AdminOrganizerListItemDto {
+  id: string;
+  name: string;
+  email?: string;
+  oauthProviders?: string[];
+  oauthAccounts?: AdminOAuthAccountDto[];
+  role: 'organizer' | 'admin';
+  activeEntitlementsCount: number;
+  createdAt: string;
+}
+
+export interface AdminOrganizerListResponse {
+  items: AdminOrganizerListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminOAuthAccountDto {
+  provider: string;
+  providerUserId?: string;
+  providerUserName?: string;
+}
+
+export interface EntitlementDto {
+  id: string;
+  packageId: string;
+  packageCode: string;
+  packageName: string;
+  kind: string;
+  source: string;
+  grantedAt: string;
+  grantedByAdminId?: string | null;
+  grantedByAdminName?: string | null;
+  expiresAt?: string | null;
+  usesRemaining?: number | null;
+  revokedAt?: string | null;
+  revokedByAdminId?: string | null;
+  note?: string | null;
+}
+
+export interface AdminOrganizerDetailDto {
+  id: string;
+  name: string;
+  email?: string;
+  oauthAccounts?: AdminOAuthAccountDto[];
+  role: 'organizer' | 'admin';
+  createdAt: string;
+  entitlements: EntitlementDto[];
+}
+
+export interface ThemePackageDto {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  isAutoGranted: boolean;
+  isActive: boolean;
+  themeIds: string[];
+}
+
+export interface ThemePackageListResponse {
+  items: ThemePackageDto[];
+}
+
+export interface GrantEntitlementRequest {
+  packageId: string;
+  note?: string;
+}
+
+export interface RevokeEntitlementRequest {
+  note?: string;
 }
 
 export type { OrganizerDto } from '@cherryplay/components';

@@ -10,6 +10,7 @@ public class OAuthAccountEfConfiguration : IEntityTypeConfiguration<OAuthAccount
     {
         builder.ToTable("oauth_accounts");
         builder.HasKey(e => e.Id);
+        builder.HasQueryFilter(e => !e.Organizer.IsDeleted);
         builder.Property(e => e.Provider).IsRequired().HasMaxLength(50);
         builder.Property(e => e.ProviderUserId).IsRequired().HasMaxLength(256);
         builder.HasIndex(e => new { e.Provider, e.ProviderUserId }).IsUnique();

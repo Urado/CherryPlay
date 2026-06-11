@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Models;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Extensions;
+using CherryPlayServer.Core.Options;
+using Microsoft.Extensions.Options;
 
 namespace CherryPlayServer.Hubs;
 
@@ -14,6 +17,12 @@ public class PartyHub : Hub
     private readonly IJwtService _jwtService;
     private readonly IPartyAccessService _partyAccessService;
     private readonly IOrganizerConnectionTracker _organizerConnectionTracker;
+    private readonly IPartyRepository _partyRepository;
+    private readonly IStreamingRepository _streamingRepository;
+    private readonly IPartyDisplayStatusService _partyDisplayStatusService;
+    private readonly IHubContext<PartyHub> _hubContext;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly PartyDisplayStatusOptions _displayStatusOptions;
     private readonly ILogger<PartyHub> _logger;
 
     public PartyHub(
@@ -22,6 +31,12 @@ public class PartyHub : Hub
         IJwtService jwtService,
         IPartyAccessService partyAccessService,
         IOrganizerConnectionTracker organizerConnectionTracker,
+        IPartyRepository partyRepository,
+        IStreamingRepository streamingRepository,
+        IPartyDisplayStatusService partyDisplayStatusService,
+        IHubContext<PartyHub> hubContext,
+        IServiceScopeFactory scopeFactory,
+        IOptions<PartyDisplayStatusOptions> displayStatusOptions,
         ILogger<PartyHub> logger)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
@@ -29,6 +44,14 @@ public class PartyHub : Hub
         _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
         _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
         _organizerConnectionTracker = organizerConnectionTracker ?? throw new ArgumentNullException(nameof(organizerConnectionTracker));
+        _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
+        _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
+        _partyDisplayStatusService = partyDisplayStatusService
+            ?? throw new ArgumentNullException(nameof(partyDisplayStatusService));
+        _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+        _displayStatusOptions = displayStatusOptions?.Value
+            ?? throw new ArgumentNullException(nameof(displayStatusOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -44,14 +67,16 @@ public class PartyHub : Hub
                 connectionId, partyIdStr);
             try
             {
-                await _streamingService.EndSessionAsync(partyId.Value);
-                await Clients.Group(partyIdStr).SendAsync("OnSessionEnded", partyIdStr);
                 await Clients.Group(partyIdStr).SendAsync("OnConnectionStatusChanged", partyIdStr, false);
-                _logger.LogInformation("[SignalR Server] -> Sending OnSessionEnded + OnConnectionStatusChanged(offline): partyId={PartyId}", partyIdStr);
+                await NotifyPartyDisplayStatusChangedAsync(partyId.Value);
+                ScheduleOrganizerOfflineStatusAfterGrace(partyId.Value);
+                _logger.LogInformation(
+                    "[SignalR Server] -> Organizer disconnect: OnConnectionStatusChanged(offline) + display status, partyId={PartyId}",
+                    partyIdStr);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "[SignalR Server] Failed to end session or notify on organizer disconnect: partyId={PartyId}", partyIdStr);
+                _logger.LogWarning(ex, "[SignalR Server] Failed to notify on organizer disconnect: partyId={PartyId}", partyIdStr);
             }
         }
 
@@ -337,6 +362,7 @@ public class PartyHub : Hub
             _logger.LogInformation("[SignalR Server] -> Sending OnFullStateUpdated: partyId={PartyId}, currentTrackId={CurrentTrackId}, status={Status}, position={Position}, group={Group}",
                 partyId, state.CurrentTrackId, state.Status, state.Position, groupName);
             await Clients.Group(groupName).SendAsync("OnFullStateUpdated", partyId, state);
+            await NotifyPartyDisplayStatusChangedAsync(partyGuid);
         }
         catch (PartyNotFoundException ex)
         {
@@ -458,6 +484,8 @@ public class PartyHub : Hub
             var groupName = partyGuid.ToString();
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             _organizerConnectionTracker.RegisterOrganizer(Context.ConnectionId, partyGuid);
+            await Clients.Group(groupName).SendAsync("OnConnectionStatusChanged", partyId, true);
+            await NotifyPartyDisplayStatusChangedAsync(partyGuid);
             _logger.LogInformation("[SignalR Server] Added connection to group: partyId={PartyId}, group={Group}, connectionId={ConnectionId}",
                 partyId, groupName, Context.ConnectionId);
         }
@@ -498,6 +526,7 @@ public class PartyHub : Hub
             _logger.LogInformation("[SignalR Server] -> Sending OnSessionStarted: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnSessionStarted", partyId);
+            await NotifyPartyDisplayStatusChangedAsync(partyGuid);
         }
         catch (PartyNotFoundException ex)
         {
@@ -541,6 +570,7 @@ public class PartyHub : Hub
             _logger.LogInformation("[SignalR Server] -> Sending OnSessionEnded: partyId={PartyId}, group={Group}",
                 partyId, groupName);
             await Clients.Group(groupName).SendAsync("OnSessionEnded", partyId);
+            await NotifyPartyDisplayStatusChangedAsync(partyGuid);
         }
         catch (PartyNotFoundException ex)
         {
@@ -552,5 +582,133 @@ public class PartyHub : Hub
             _logger.LogError(ex, "[SignalR Server] Error in EndSession: partyId={PartyId}", partyId);
             await SendErrorAsync("An error occurred while ending session");
         }
+    }
+
+    public async Task ResetPlaybackState(string partyId)
+    {
+        var organizerId = await RequireOrganizerAuthAsync();
+        if (!organizerId.HasValue)
+        {
+            return;
+        }
+
+        _logger.LogInformation(
+            "[SignalR Server] <- Received ResetPlaybackState: partyId={PartyId}, connectionId={ConnectionId}",
+            partyId, Context.ConnectionId);
+
+        if (!_partyIdValidator.TryParsePartyId(partyId, out var partyGuid))
+        {
+            await SendErrorAsync("Invalid party ID format");
+            return;
+        }
+
+        if (!await EnsurePartyOwnershipAsync(partyGuid, organizerId.Value))
+        {
+            return;
+        }
+
+        try
+        {
+            await _streamingService.ResetPlaybackStateAsync(partyGuid);
+
+            var groupName = partyGuid.ToString();
+            _logger.LogInformation(
+                "[SignalR Server] -> Sending OnSessionEnded + PlaybackStateReset: partyId={PartyId}, group={Group}",
+                partyId, groupName);
+            await Clients.Group(groupName).SendAsync("OnSessionEnded", partyId);
+            await Clients.Group(groupName).SendAsync("PlaybackStateReset", partyId);
+            await NotifyPartyDisplayStatusChangedAsync(partyGuid);
+        }
+        catch (PartyNotFoundException ex)
+        {
+            _logger.LogWarning("[SignalR Server] -> Sending Error: {Message}, partyId={PartyId}", ex.Message, partyId);
+            await SendErrorAsync(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SignalR Server] Error in ResetPlaybackState: partyId={PartyId}", partyId);
+            await SendErrorAsync("An error occurred while resetting playback state");
+        }
+    }
+
+    private async Task NotifyPartyDisplayStatusChangedAsync(Guid partyId)
+    {
+        var party = await _partyRepository.GetByIdAsync(partyId);
+        if (party == null)
+        {
+            return;
+        }
+
+        var sessionState = await _streamingRepository.GetSessionStateAsync(partyId);
+        var displayStatus = _partyDisplayStatusService.Compute(
+            party.PartyLifecycleState,
+            sessionState,
+            partyId);
+        var partyIdStr = partyId.ToString();
+        await _hubContext.Clients.Group(partyIdStr).SendAsync("OnPartyDisplayStatusChanged", partyIdStr, displayStatus);
+    }
+
+    private void ScheduleOrganizerOfflineStatusAfterGrace(Guid partyId)
+    {
+        var graceSeconds = _displayStatusOptions.OrganizerOfflineGraceSeconds;
+        if (graceSeconds <= 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var gracePeriod = TimeSpan.FromSeconds(graceSeconds);
+
+                await using var scope = _scopeFactory.CreateAsyncScope();
+                var tracker = scope.ServiceProvider.GetRequiredService<IOrganizerConnectionTracker>();
+
+                while (!tracker.IsOrganizerConnected(partyId)
+                    && tracker.TryGetOrganizerDisconnectedAt(partyId, out var disconnectedAt))
+                {
+                    var remaining = gracePeriod - (DateTime.UtcNow - disconnectedAt);
+                    if (remaining <= TimeSpan.Zero)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(remaining).ConfigureAwait(false);
+                }
+
+                if (tracker.IsOrganizerConnected(partyId))
+                {
+                    return;
+                }
+
+                var partyRepository = scope.ServiceProvider.GetRequiredService<IPartyRepository>();
+                var streamingRepository = scope.ServiceProvider.GetRequiredService<IStreamingRepository>();
+                var displayStatusService = scope.ServiceProvider.GetRequiredService<IPartyDisplayStatusService>();
+
+                var party = await partyRepository.GetByIdAsync(partyId).ConfigureAwait(false);
+                if (party == null)
+                {
+                    return;
+                }
+
+                var sessionState = await streamingRepository.GetSessionStateAsync(partyId).ConfigureAwait(false);
+                var displayStatus = displayStatusService.Compute(
+                    party.PartyLifecycleState,
+                    sessionState,
+                    partyId);
+                var partyIdStr = partyId.ToString();
+                await _hubContext.Clients.Group(partyIdStr)
+                    .SendAsync("OnPartyDisplayStatusChanged", partyIdStr, displayStatus)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[SignalR Server] Failed grace-expiry display status notify: partyId={PartyId}",
+                    partyId);
+            }
+        });
     }
 }

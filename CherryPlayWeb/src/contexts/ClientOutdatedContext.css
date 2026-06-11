@@ -1,0 +1,53 @@
+.client-outdated-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.client-outdated-modal {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: #f5f5f5;
+  text-align: center;
+}
+
+.client-outdated-modal h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+
+.client-outdated-modal p {
+  margin: 0 0 20px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+}
+
+.client-outdated-modal button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #e63946;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.client-outdated-modal button:hover {
+  background: #d62839;
+}
+
+.client-outdated-modal button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

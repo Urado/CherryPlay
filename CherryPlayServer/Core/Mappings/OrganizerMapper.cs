@@ -15,6 +15,7 @@ public static class OrganizerMapper
             DefaultPartyThemeId: organizer.DefaultPartyThemeId,
             DefaultCustomizationSettings: organizer.DefaultCustomizationSettings,
             TimeZone: organizer.TimeZone,
+            Role: organizer.Role == Core.Enums.OrganizerRole.Admin ? "admin" : "organizer",
             CreatedAt: organizer.CreatedAt.ToString("O"),
             UpdatedAt: organizer.UpdatedAt?.ToString("O")
         );

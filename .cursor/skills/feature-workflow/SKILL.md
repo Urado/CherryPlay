@@ -15,7 +15,7 @@ The workflow:
 - **Selects the appropriate worker** (`worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, or `worker-cpp`)
 - **Delegates implementation to that worker** (invoke the worker subagent; do not implement the feature yourself)
 - **Runs a code review** via `code-reviewer`
-- **Loops back to the worker** to fix any **critical** review comments
+- **Loops back to the worker** to fix any **critical or warning-level** review comments
 
 ## When to Apply This Skill
 
@@ -23,12 +23,17 @@ Apply this skill whenever:
 
 - The user requests a **new feature**, **enhancement**, or **non-trivial bug fix**
 - The work involves **.NET / C# backend**, **TypeScript/React frontend**, **C++ / native code**, **documentation**, or **CI/CD / infrastructure** (Docker, docker-compose, GitHub Actions, deployment automation)
-- You need a **structured flow**: implement → review → fix critical issues
+- You need a **structured flow**: implement → review → fix blocking issues (Critical/Warnings)
 
 Avoid this workflow for:
 
 - Tiny, isolated text changes or config toggles that do not need review
 - Purely exploratory questions (use ask/debug modes instead)
+
+## When to not apply
+
+- Non-implementation requests (analysis-only, explanation-only).
+- Large, multi-team initiatives better handled by `large-task-orchestration`.
 
 ## Workflow
 
@@ -86,7 +91,7 @@ Select the worker subagent based on task characteristics:
 
 ### 3. Implement the feature with the worker
 
-**You MUST delegate implementation to the worker subagent.** Do not implement the feature yourself (do not use search_replace, write, or similar edit tools for the feature code). Invoke the chosen worker via the subagent/task tool (e.g. `mcp_task` with the appropriate `subagent_type`: `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, or `worker-cpp`).
+**You MUST delegate implementation to the worker subagent.** Do not implement the feature yourself (do not use search_replace, write, or similar edit tools for the feature code). Invoke the chosen worker via the subagent/task tool (e.g. `Subagent` with the appropriate `subagent_type`: `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, or `worker-cpp`).
 
 For the chosen worker:
 
@@ -110,13 +115,14 @@ After the worker finishes:
 2. Ask it to:
    - Review the new/changed code for **correctness, security, maintainability, and alignment with project standards**
    - Explicitly distinguish between:
-     - **Critical issues** (must-fix before completion)
-     - **Non-critical suggestions** (nice-to-have or style-only)
+   - **Critical issues** (must-fix before completion)
+   - **Warnings** (important, should be fixed before completion)
+   - **Non-critical suggestions** (nice-to-have or style-only)
 3. Capture and summarize the feedback.
 
 ### 5. Handle critical feedback and iterate
 
-If `code-reviewer` reports **critical issues** (for example):
+If `code-reviewer` reports **critical issues or warnings** (for example):
 
 - Logic bugs, broken flows, or regressions
 - Failing or missing essential tests
@@ -125,16 +131,22 @@ If `code-reviewer` reports **critical issues** (for example):
 
 Then:
 
-1. Summarize the critical comments.
+1. Summarize the blocking comments (Critical + Warnings).
 2. Re-invoke the **same worker** that did the implementation (`worker-dotnet`, `worker-frontend`, `worker-cpp`, etc.) with:
    - The **original task description**
-   - The **review summary**, highlighting **critical issues** to fix
-   - **This step is NOT optional**: if there is at least one critical issue, you MUST re-run the worker without asking the user for confirmation, even if the issue seems \"tiny\" (e.g. a single prop fix).
+
+- The **review summary**, highlighting **Critical** and **Warnings** to fix
+- **This step is NOT optional**: if there is at least one Critical or Warning, you MUST re-run the worker without asking the user for confirmation, even if the issue seems \"tiny\" (e.g. a single prop fix).
+
 3. Have the worker:
-   - Apply fixes targeting the critical issues
-   - Update or add tests as needed
+
+- Apply fixes targeting Critical and Warning issues
+- Update or add tests as needed
+
 4. **Re-run `code-reviewer`** to confirm that critical issues are resolved.
-5. Repeat this loop **until there are no remaining critical issues**. Do not finalize the feature or report it as \"done\" while any critical item remains.
+5. Require explicit approval (HITL) before any irreversible or external side-effect action (for example deletes, production-impacting actions, external writes).
+6. Repeat this loop **until there are no remaining Critical or Warnings**. Do not finalize the feature or report it as \"done\" while any blocking item remains.
+7. **Hard cap:** if the worker ↔ reviewer loop reaches 3 full iterations and blocking issues remain, stop and return control with a blocker summary and recommended next action instead of looping indefinitely.
 
 For **non-critical suggestions**:
 
@@ -143,7 +155,7 @@ For **non-critical suggestions**:
 
 ### 6. Finalize and report to the user
 
-When there are **no remaining critical review comments**:
+When there are **no remaining blocking review comments** (Critical/Warnings):
 
 1. Summarize for the user:
    - **What was implemented** at a high level
@@ -153,6 +165,12 @@ When there are **no remaining critical review comments**:
    - That `code-reviewer` validated the changes
    - Any remaining **optional** improvements (if relevant)
 3. Provide basic guidance on **how to run or test** the changes locally, if applicable.
+
+## Artifacts
+
+- Worker implementation output (changed files and verification notes).
+- Code-reviewer findings with severity (`Critical`, `Warnings`, `Suggestions`).
+- Final user-facing summary with assumptions and optional follow-ups.
 
 ## Examples
 
@@ -183,3 +201,8 @@ When there are **no remaining critical review comments**:
   - Then, run the workflow for the **frontend sub-task**:
     - Use `worker-frontend` → `code-reviewer` → fix loop until clean.
   - Summarize the final result across both layers for the user.
+
+## Return of control
+
+- Stop after final summary when there are no blocking findings.
+- If blocking findings remain, return control only after stating unresolved blockers and next required worker pass.

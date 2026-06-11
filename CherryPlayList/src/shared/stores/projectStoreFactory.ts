@@ -47,6 +47,7 @@ import {
   getFlatItemList,
   removeItemFromItems,
   updateTrackInItems,
+  markTrackMissingInItems,
   removeItemsById,
   collectItemsById,
   collectAllItemIds,
@@ -103,6 +104,7 @@ export interface ProjectStoreState {
   getAllTracksInOrder: (items?: ProjectItem[]) => Track[];
   getItemPath: (itemId: string) => string[];
   updateTrackDuration: (id: string, duration: number) => void;
+  markTrackAsMissing: (id: string, isMissing?: boolean) => void;
 
   createGroup: (itemIds: string[], name?: string) => string;
   ungroupGroup: (groupId: string) => void;
@@ -426,6 +428,12 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
     updateTrackDuration: (id, duration) => {
       set((state) => ({
         items: updateTrackInItems(state.items, id, duration),
+      }));
+    },
+
+    markTrackAsMissing: (id, isMissing = true) => {
+      set((state) => ({
+        items: markTrackMissingInItems(state.items, id, isMissing),
       }));
     },
 
@@ -962,11 +970,7 @@ export function getProjectStore(workspaceId: WorkspaceId): ProjectStore | undefi
 }
 
 export function removeProjectStore(workspaceId: WorkspaceId): void {
-  const store = projectStores.get(workspaceId);
-  if (!store) return;
-
   projectStores.delete(workspaceId);
-  store.destroy();
 }
 
 export function getAllProjectStoreIds(): WorkspaceId[] {

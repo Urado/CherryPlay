@@ -4,11 +4,11 @@ import type {
   PartyThemeId,
   CustomizationSettings,
 } from '@cherryplay/components';
-import { isValidPartyTheme } from '@cherryplay/components';
+import { isPartyDisplayStatusId, isValidPartyTheme } from '@cherryplay/components';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { partyApiService } from '../services/partyApiService';
-import type { PlayerItemDto } from '../types/api';
+import type { PartyDisplayStatusId, PlayerItemDto } from '../types/api';
 
 export interface UsePartyStateOptions {
   shortCode?: string;
@@ -27,9 +27,13 @@ export interface UsePartyStateReturn {
   customizationSettings: CustomizationSettings<PartyThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
+  partyDisplayStatus: PartyDisplayStatusId | null;
+  apiReachable: boolean;
   loadPlaylist: (options?: { silent?: boolean }) => Promise<void>;
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
+  setPartyDisplayStatus: (status: PartyDisplayStatusId | null) => void;
+  setApiReachable: (reachable: boolean) => void;
   setError: (error: string | null) => void;
   setThemeId: (themeId: PartyThemeId) => void;
   setCustomizationSettings: (settings: CustomizationSettings<PartyThemeId>) => void;
@@ -66,6 +70,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const [partyId, setPartyId] = useState<string | null>(null);
   const [playbackState, setPlaybackState] = useState<PlaybackState | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [partyDisplayStatus, setPartyDisplayStatus] = useState<PartyDisplayStatusId | null>(null);
+  const [apiReachable, setApiReachable] = useState(true);
 
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef<PartyPlaylistData | null>(null);
@@ -102,6 +108,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
         if (!silent) {
           setLoading(true);
           setError(null);
+          setApiReachable(true);
         }
 
         let playlistData: PartyPlaylistData;
@@ -145,6 +152,9 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
                   party.customizationSettings as CustomizationSettings<PartyThemeId>,
                 );
               }
+              if (isPartyDisplayStatusId(party.partyDisplayStatus)) {
+                setPartyDisplayStatus(party.partyDisplayStatus);
+              }
             } catch (err) {
               console.warn('[usePartyState] Failed to load party info:', err);
             }
@@ -158,6 +168,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
         if (currentPartyKeyRef.current !== partyKey) return;
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке';
         setError(errorMessage);
+        setApiReachable(false);
         console.error('[usePartyState] Failed to load playlist:', err);
       } finally {
         if (!silent) {
@@ -184,9 +195,13 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     customizationSettings,
     playbackState,
     isSessionActive,
+    partyDisplayStatus,
+    apiReachable,
     loadPlaylist,
     setPlaybackState,
     setIsSessionActive,
+    setPartyDisplayStatus,
+    setApiReachable,
     setError,
     setThemeId,
     setCustomizationSettings,

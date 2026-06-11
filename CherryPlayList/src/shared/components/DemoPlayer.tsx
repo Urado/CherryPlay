@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { Track } from '../../core/types/track';
+import { usePlaybackTimeline } from '../hooks/usePlaybackTimeline';
 import { useDemoPlayerStore } from '../stores/demoPlayerStore';
 import type { PlayerStatus } from '../stores/demoPlayerStore';
 import { useUIStore } from '../stores/uiStore';
@@ -110,9 +111,18 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
   const isPlaying = status === 'playing';
   const isDisabled = storeIsDisabled || !currentTrack || Boolean(error);
   const resolvedDuration =
-    (Number.isFinite(duration) && duration > 0 ? duration : currentTrack?.duration) ??
-    (isDisabled ? 0 : 1);
-  const safePosition = Number.isFinite(position) ? Math.min(position, resolvedDuration) : 0;
+    (Number.isFinite(duration) && duration > 0 ? duration : currentTrack?.duration) ?? 0;
+  const timeline = usePlaybackTimeline({
+    position,
+    duration: resolvedDuration,
+    disabled: isDisabled,
+    seek,
+    onSeekCommitted: () => {
+      if (status === 'ended' && currentTrack) {
+        void play();
+      }
+    },
+  });
 
   useEffect(() => {
     return () => {
@@ -138,16 +148,6 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
       });
     }
   }, [addNotification, currentTrack, isPlaying, pause, play]);
-
-  const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(event.target.value);
-    if (Number.isFinite(value)) {
-      seek(value);
-      if (status === 'ended' && currentTrack) {
-        void play();
-      }
-    }
-  };
 
   const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(event.target.value);
@@ -233,14 +233,16 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
       </div>
 
       <div className="demo-player__controls-row">
-        <span className="demo-player__time">{formatPlayerTime(safePosition)}</span>
+        <span className="demo-player__time">{formatPlayerTime(timeline.displayPosition)}</span>
         <input
           type="range"
           min={0}
-          max={resolvedDuration || 1}
+          max={timeline.resolvedDuration}
           step={0.1}
-          value={isDisabled ? 0 : safePosition}
-          onChange={handleSeek}
+          value={isDisabled ? 0 : timeline.displayPosition}
+          onPointerDown={timeline.beginScrub}
+          onInput={timeline.handleInput}
+          onChange={timeline.handleChange}
           disabled={isDisabled}
           className="demo-player__timeline"
         />

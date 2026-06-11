@@ -87,6 +87,7 @@ export default [
       'eslint.config.mjs',
       'vite.config.ts', // Использует tsconfig.node.json через references
       'scripts/**', // Исключаем скрипты из проверки
+      'vitest.config.ts',
       'CherryPlayComponents/**', // Исключаем CherryPlayComponents из проверки
     ],
   },

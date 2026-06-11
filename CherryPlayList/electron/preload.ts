@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 import {
   isAimpSourceSelection,
@@ -28,18 +28,20 @@ const VALID_INVOKE_CHANNELS = [
   'fileBrowser:statFile',
   'fileBrowser:findAudioFilesRecursive',
   'audio:getDuration',
-  'audio:getFileSource',
+  'audio:getFileUrl',
   'export:execute',
   'export:copyFile',
   'export:aimp',
   'export:copyTracksToFolder',
   'project:save',
+  'project:savePortableAs',
   'project:load',
   'plugins:list',
   'dialog:showOpenDialog',
   'dialog:showSaveDialog',
   'dialog:showOpenFileDialog',
   'system:getPath',
+  'system:openPath',
   'system:openExternal',
   'config:getConfigPath',
   'config:getServerUrl',
@@ -90,6 +92,13 @@ function assertValidAimpState(state: unknown): AimpBridgeState {
 }
 
 contextBridge.exposeInMainWorld('api', {
+  getPathForFile: (file: File) => {
+    if (!file || typeof file !== 'object') {
+      throw new Error('getPathForFile: expected a File object');
+    }
+    return webUtils.getPathForFile(file);
+  },
+
   invoke: (channel: string, payload?: object) => {
     assertValidInvokeChannel(channel);
     return ipcRenderer.invoke(channel, payload);
@@ -151,6 +160,7 @@ export {};
 declare global {
   interface Window {
     api: {
+      getPathForFile: (file: File) => string;
       invoke: (channel: string, payload?: object) => ReturnType<typeof ipcRenderer.invoke>;
       on: (channel: string, listener: (event: unknown, ...args: unknown[]) => void) => () => void;
       aimp: {
@@ -162,6 +172,7 @@ declare global {
           liveStreamStarted: boolean,
         ) => Promise<{ success: boolean; data?: AimpBridgeState; error?: string }>;
         onStateChanged: (listener: (state: AimpBridgeState) => void) => () => void;
+        onLog: (listener: (entry: AimpLogEntry) => void) => () => void;
       };
     };
   }

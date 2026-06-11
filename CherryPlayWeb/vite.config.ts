@@ -1,12 +1,19 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import path from 'path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+
+import { readWebClientVersion } from './scripts/readWebClientVersion.mjs';
 
 const cherryPlayComponentsSrc = path.resolve(__dirname, '../CherryPlayComponents/src');
 const repoRoot = path.resolve(__dirname, '..');
+const clientVersion = readWebClientVersion(__dirname);
 
 export default defineConfig({
   envDir: repoRoot,
+  define: {
+    __APP_VERSION__: JSON.stringify(clientVersion),
+  },
   plugins: [
     react(),
     // Следим за исходниками библиотеки, чтобы изменения подхватывались без перезапуска
@@ -39,6 +46,20 @@ export default defineConfig({
       },
       // SignalR использует прямой URL (CORS настроен на сервере)
       // Proxy для WebSocket может работать нестабильно
+    },
+  },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore known third-party signalr pure-annotation noise in production build logs.
+        if (
+          warning.message?.includes('contains an annotation that Rollup cannot interpret') &&
+          warning.id?.includes('@microsoft/signalr/dist/esm/Utils.js')
+        ) {
+          return;
+        }
+        warn(warning);
+      },
     },
   },
 });

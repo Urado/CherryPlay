@@ -24,6 +24,7 @@ public static class EfToDomainMappers
             DefaultPartyThemeId = PartyThemeIdExtensions.ParsePartyThemeId(ef.DefaultPartyThemeId),
             DefaultCustomizationSettings = DeserializeDictObject(ef.DefaultCustomizationSettingsJson),
             TimeZone = ef.TimeZone,
+            Role = ef.Role == "admin" ? OrganizerRole.Admin : OrganizerRole.Organizer,
             CreatedAt = ef.CreatedAt,
             UpdatedAt = ef.UpdatedAt,
         };
@@ -55,6 +56,7 @@ public static class EfToDomainMappers
             ExternalLinkUrl = ef.ExternalLinkUrl,
             ExternalLinkText = ef.ExternalLinkText,
             DanceTags = DeserializeStringList(ef.DanceTagsJson, logger) ?? [],
+            PartyLifecycleState = ef.PartyLifecycleState,
         };
         if (ef.Playlist != null)
         {

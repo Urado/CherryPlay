@@ -22,6 +22,67 @@ namespace CherryPlayServer.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.AdminAuditLogEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("EntitlementId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entitlement_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<Guid?>("TargetOrganizerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_organizer_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_audit_log");
+
+                    b.HasIndex("AdminId")
+                        .HasDatabaseName("ix_admin_audit_log_admin_id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_admin_audit_log_created_at");
+
+                    b.HasIndex("EntitlementId")
+                        .HasDatabaseName("ix_admin_audit_log_entitlement_id");
+
+                    b.HasIndex("PackageId")
+                        .HasDatabaseName("ix_admin_audit_log_package_id");
+
+                    b.HasIndex("TargetOrganizerId")
+                        .HasDatabaseName("ix_admin_audit_log_target_organizer_id");
+
+                    b.ToTable("admin_audit_log", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_admin_audit_log_action", "action IN ('grant_package','revoke_package')");
+                        });
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>
                 {
                     b.Property<Guid>("Id")
@@ -156,6 +217,14 @@ namespace CherryPlayServer.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("name");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("organizer")
+                        .HasColumnName("role");
+
                     b.Property<string>("TimeZone")
                         .HasColumnType("text")
                         .HasColumnName("time_zone");
@@ -170,7 +239,84 @@ namespace CherryPlayServer.Migrations
                     b.HasIndex("IsDeleted")
                         .HasDatabaseName("ix_organizers_is_deleted");
 
-                    b.ToTable("organizers", (string)null);
+                    b.ToTable("organizers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_organizers_role", "role IN ('organizer','admin')");
+                        });
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEntitlementEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("granted_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("lifetime")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("OrganizerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organizer_id");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("admin_grant")
+                        .HasColumnName("source");
+
+                    b.Property<int?>("UsesRemaining")
+                        .HasColumnType("integer")
+                        .HasColumnName("uses_remaining");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organizer_entitlements");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("ix_organizer_entitlements_expires_at");
+
+                    b.HasIndex("OrganizerId")
+                        .HasDatabaseName("ix_organizer_entitlements_organizer_id");
+
+                    b.HasIndex("PackageId")
+                        .HasDatabaseName("ix_organizer_entitlements_package_id");
+
+                    b.HasIndex("OrganizerId", "PackageId", "RevokedAt")
+                        .HasDatabaseName("ix_organizer_entitlements_organizer_id_package_id_revoked_at");
+
+                    b.ToTable("organizer_entitlements", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_organizer_entitlements_kind", "kind IN ('lifetime','subscription','event_quota')");
+
+                            t.HasCheckConstraint("ck_organizer_entitlements_source", "source IN ('admin_grant','purchase','trial')");
+                        });
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerSessionEf", b =>
@@ -261,6 +407,12 @@ namespace CherryPlayServer.Migrations
                     b.Property<Guid>("OrganizerId")
                         .HasColumnType("uuid")
                         .HasColumnName("organizer_id");
+
+                    b.Property<int>("PartyLifecycleState")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("party_lifecycle_state");
 
                     b.Property<string>("PartyThemeId")
                         .IsRequired()
@@ -417,6 +569,132 @@ namespace CherryPlayServer.Migrations
                     b.ToTable("session_states", (string)null);
                 });
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemeEf", b =>
+                {
+                    b.Property<string>("ThemeId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("theme_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("public")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("ThemeId")
+                        .HasName("pk_themes");
+
+                    b.ToTable("themes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_themes_visibility", "visibility IN ('public','private')");
+                        });
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsAutoGranted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_auto_granted");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_theme_packages");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_theme_packages_code");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("ix_theme_packages_is_active");
+
+                    b.ToTable("theme_packages", (string)null);
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageItemEf", b =>
+                {
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<string>("ThemeId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("theme_id");
+
+                    b.HasKey("PackageId", "ThemeId")
+                        .HasName("pk_theme_package_items");
+
+                    b.HasIndex("ThemeId")
+                        .HasDatabaseName("ix_theme_package_items_theme_id");
+
+                    b.ToTable("theme_package_items", (string)null);
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.AdminAuditLogEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", null)
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_audit_log_organizers_admin_id");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEntitlementEf", null)
+                        .WithMany()
+                        .HasForeignKey("EntitlementId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_admin_audit_log_organizer_entitlements_entitlement_id");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageEf", null)
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_admin_audit_log_theme_packages_package_id");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", null)
+                        .WithMany()
+                        .HasForeignKey("TargetOrganizerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_admin_audit_log_organizers_target_organizer_id");
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>
                 {
                     b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", "Organizer")
@@ -439,6 +717,23 @@ namespace CherryPlayServer.Migrations
                         .HasConstraintName("fk_oauth_accounts_organizers_organizer_id");
 
                     b.Navigation("Organizer");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEntitlementEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_organizer_entitlements_organizers_organizer_id");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageEf", null)
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_organizer_entitlements_theme_packages_package_id");
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerSessionEf", b =>
@@ -489,6 +784,27 @@ namespace CherryPlayServer.Migrations
                     b.Navigation("Party");
                 });
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageItemEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageEf", "Package")
+                        .WithMany("Items")
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_theme_package_items_theme_packages_package_id");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.ThemeEf", "Theme")
+                        .WithMany("PackageItems")
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_theme_package_items_themes_theme_id");
+
+                    b.Navigation("Package");
+
+                    b.Navigation("Theme");
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", b =>
                 {
                     b.Navigation("EmailAccounts");
@@ -505,6 +821,16 @@ namespace CherryPlayServer.Migrations
                     b.Navigation("Playlist");
 
                     b.Navigation("SessionState");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemeEf", b =>
+                {
+                    b.Navigation("PackageItems");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ThemePackageEf", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

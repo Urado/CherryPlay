@@ -42,16 +42,14 @@
   letter-spacing: -0.02em;
 }
 
-[data-theme='spring-cross-step'] .party-display-session-indicator {
-  display: flex;
-  align-items: center;
+[data-theme='spring-cross-step'] .party-session-indicator {
   gap: 6px;
 }
 
-[data-theme='spring-cross-step'] .party-display-session-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+[data-theme='spring-cross-step'] .party-session-indicator--live .party-session-indicator-dot,
+[data-theme='spring-cross-step']
+  .party-session-indicator--starting_soon
+  .party-session-indicator-dot {
   background: var(--accent-primary-light);
   animation: spring-pulse 2s ease-in-out infinite;
 }

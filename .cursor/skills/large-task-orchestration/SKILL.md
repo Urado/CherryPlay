@@ -5,6 +5,10 @@ description: Orchestrates subagents to complete a large task in six stages: chat
 
 # Large Task Orchestration
 
+## Purpose
+
+Run a deterministic end-to-end orchestration for large tasks: analysis, planning, implementation, review loops, verification, and documentation updates.
+
 Use this skill when the user gives a **large or multi-step task** that should be executed in a structured way with planning, implementation by specialized workers, and review cycles.
 
 ## Subagents and roles
@@ -21,15 +25,15 @@ Use this skill when the user gives a **large or multi-step task** that should be
 | **worker-electron**      | Desktop/Electron subtasks (CherryPlayList shell, windows, menus, tray, IPC, preload, packaging, auto-update)            |
 | **worker-cpp**           | Native/C++ subtasks (AIMP plugins, COM/DLL interfaces, Win32 integrations, C++17/20 native modules)                     |
 
-Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. `business-analyst`, `scheduler`, `code-reviewer`, `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, `worker-cpp`). Pass the user request and context in `prompt`.
+Invoke subagents with the **Subagent tool**: set `subagent_type` to the agent name (e.g. `business-analyst`, `scheduler`, `code-reviewer`, `worker-dotnet`, `worker-frontend`, `worker-documentation`, `worker-ci-cd`, `worker-electron`, `worker-cpp`). Pass the user request and context in `prompt`.
 
 ### Subagent control and return of control
 
-- **Blocking behavior**: Each `mcp_task` call runs the subagent to completion; control returns to you (the orchestrator) when the subagent **finishes**. The tool result contains the subagent's output — use it before proceeding.
+- **Blocking behavior**: Each Subagent call runs the subagent to completion; control returns to you (the orchestrator) when the subagent **finishes**. The tool result contains the subagent's output — use it before proceeding.
 - **Wait for the result**: After every subagent invocation, **wait for the call to complete**, read the returned result (e.g. analysis, plan, review, or changed files), then decide the next step. Do not start the next stage or call another subagent until you have processed the current subagent's result.
 - **Do not use `run_in_background`** for orchestration steps where you need the subagent's output (Stage 0–5: analyst, scheduler, workers, code-reviewer). Use `run_in_background: true` only for tasks that explicitly run in parallel and do not need to block the next step. For this skill, **do not set** `run_in_background` so that control and results return to you in order.
 - **Explicit handoff**: After each subagent returns, summarize or use its output in your next action (e.g. pass analyst restatement to scheduler, pass worker changes to code-reviewer). This keeps the workflow correct and makes it clear that control has returned.
-- **Prompt each subagent to return control**: In every `mcp_task` prompt, add a short instruction so the subagent knows when to stop and what to return, e.g. "When done, end with a clear **Summary** (what you did and key outputs) so control returns to the orchestrator. Do not start unrelated tasks or wait for user input."
+- **Prompt each subagent to return control**: In every Subagent prompt, add a short instruction so the subagent knows when to stop and what to return, e.g. "When done, end with a clear **Summary** (what you did and key outputs) so control returns to the orchestrator. Do not start unrelated tasks or wait for user input."
 - **Business-analyst must not edit code**: The business-analyst subagent is analysis-only. In your prompt to the analyst, state: "Do not edit source code, config, or plan files; only produce analysis and recommendations in text. The orchestrator will assign implementation to workers." Exception: the analyst **may** write the technical spec file `01-technical-spec.md` as instructed in Stage 1.
 
 ## When to apply
@@ -37,6 +41,11 @@ Invoke subagents with **mcp_task**: set `subagent_type` to the agent name (e.g. 
 - User explicitly asks to complete a **large task**, **multi-step feature**, or **end-to-end delivery** that needs a plan and several implementation steps.
 - The task likely spans **multiple areas** (backend, frontend, docs, CI/CD) or needs **analysis and planning** before implementation.
 - Do not use for single, small changes that fit a single worker and one review pass (use the feature-workflow skill or direct worker invocation instead).
+
+## When to not apply
+
+- Single-file or trivial edits that do not require planning.
+- Pure Q&A requests with no implementation intent.
 
 ## Task type → worker mapping
 
@@ -84,7 +93,9 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 1. Invoke **scheduler** with:
    - The **task prefix** (same as Stage 0).
    - Instruction to **read** `.cursor/schedulerPlans/{prefix}-01-technical-spec.md` first — that file is the sole task specification for planning.
-   - Instruction to create a plan in `.cursor/schedulerPlans/`: root plan file + one MD file per subtask, each subtask typed as Backend / Frontend / Documentation / CI/CD. Prefer **fewer, coherent subtasks** (e.g. 3–5) when the task allows; split into more only when dependencies or worker boundaries clearly require it.
+
+- Instruction to create a plan in `.cursor/schedulerPlans/`: root plan file + one MD file per subtask, each subtask typed as Backend / Frontend / Documentation / CI/CD / Desktop/Electron / C++/Native. Prefer **fewer, coherent subtasks** (e.g. 3–5) when the task allows; split into more only when dependencies or worker boundaries clearly require it.
+
 2. After the scheduler returns, invoke **business-analyst** to **review the plan**:
    - Pass the plan (root + subtask files or their paths).
    - Ask: does the plan meet the requirements and minimal path? Are there missing steps, wrong scope, or ordering issues?
@@ -93,11 +104,12 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 4. If the analyst has **blocking comments or requirements not met**:
    - Invoke **scheduler** again with: the current plan location and the analyst's feedback (explicit comments and required changes).
    - **Then invoke business-analyst again** to review the **updated** plan. Do not skip this step.
-   - **Repeat** this **scheduler → business-analyst** loop as many times as needed until the analyst explicitly has **no blocking comments** (typically 2–3 rounds). Only then proceed to Stage 3.
+   - **Repeat** this **scheduler → business-analyst** loop until the analyst explicitly has **no blocking comments**.
+   - **Hard cap:** at most 3 review-update rounds. If still blocked after round 3, stop and return control with unresolved blockers and a recommendation.
 
 ### Stage 3 — Execute the plan
 
-**You MUST delegate each subtask to the appropriate worker subagent.** Do not implement subtasks yourself (do not use search_replace, write, or similar edit tools for the subtask implementation). Invoke the worker via **mcp_task** with the correct `subagent_type`; the worker performs the implementation and returns control to you.
+**You MUST delegate each subtask to the appropriate worker subagent.** Do not implement subtasks yourself (do not use search_replace, write, or similar edit tools for the subtask implementation). Invoke the worker via the **Subagent** tool with the correct `subagent_type`; the worker performs the implementation and returns control to you.
 
 1. Read the plan in `.cursor/schedulerPlans/`: root file and subtask files. Determine the **ordered list of subtasks**.
 2. For each **unfinished subtask**, in order:
@@ -115,6 +127,8 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
      - Invoke the **same worker** again with: the subtask description, the review summary, and a clear list of **Critical**, **Warnings**, and **Suggestions** to fix (fix Suggestions when calling the worker again so they are addressed in the same pass).
      - Then invoke **code-reviewer** again on the updated work.
      - Repeat this **worker → code-reviewer** loop until there are **no Critical and no important (Warnings)** comments left. Then mark the subtask done and proceed to the next.
+     - Require explicit approval (HITL) before any irreversible or external side-effect action (for example deletes, production-impacting actions, external writes).
+     - **Hard cap:** at most 3 worker-review iterations per subtask. If still blocked, stop and return control with unresolved blockers.
 3. Continue until **all subtasks** are done.
 
 ### Stage 4 — Final verification (with optional re-plan)
@@ -137,8 +151,8 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 
 ## Execution checklist
 
-- [ ] Task prefix chosen; Stage 0: chat/session summarized into `.cursor/schedulerPlans/{prefix}-00-chat-summary.md` (temporary; will be deleted).
-- [ ] Stage 1: business-analyst read the summary, wrote technical spec to `.cursor/schedulerPlans/{prefix}-01-technical-spec.md` (temporary; will be deleted).
+- [ ] Task prefix chosen; Stage 0: chat/session summarized into `.cursor/schedulerPlans/{prefix}-00-chat-summary.md` (temporary; kept by default, removable manually later).
+- [ ] Stage 1: business-analyst read the summary, wrote technical spec to `.cursor/schedulerPlans/{prefix}-01-technical-spec.md` (temporary; kept by default, removable manually later).
 - [ ] Stage 2: scheduler read `{prefix}-01-technical-spec.md`, created/updated plan in `.cursor/schedulerPlans/`; business-analyst reviewed the plan; loop repeated until no blocking comments.
 - [ ] Stage 3: each subtask executed in order; workers read their subtask file and root docs first; correct worker per type (Backend→worker-dotnet, Frontend→worker-frontend, Documentation→worker-documentation, CI/CD→worker-ci-cd, Desktop/Electron→worker-electron, C++/Native→worker-cpp); code-reviewer loop until no Critical/Warnings; all subtasks marked done.
 - [ ] Stage 4: business-analyst verified outcome; if comments, re-plan (Stage 2 → Stage 3) used at most 3 times.
@@ -148,5 +162,11 @@ All orchestration artifacts live in `.cursor/schedulerPlans/`. Use a **task-uniq
 
 - **Plan location**: Plans live in `.cursor/schedulerPlans/`. Do not delete plan files as part of this skill; the scheduler does not delete them either. **Temporary files** (`{prefix}-00-chat-summary.md`, `{prefix}-01-technical-spec.md`) are **kept by default** and may be removed manually by the user; they are marked as temporary inside the file.
 - **Review severity**: **Critical** and **Warnings** trigger a worker re-invoke; **Suggestions** alone do not. When re-invoking the worker, pass **Critical**, **Warnings**, and **Suggestions** so the worker fixes all of them in one pass.
+- **Approval gate (HITL)**: before irreversible or external side-effect actions, require explicit human approval with a short action preview (tool/action/target/side effects).
 - **One worker per subtask**: Each subtask is assigned exactly one worker based on its type; if a subtask spans two areas (e.g. backend + frontend), the scheduler should split it into two subtasks.
 - **If a subagent does not return**: If you do not receive a result from a subagent (e.g. no tool result or timeout), do not assume the task is done. Summarize what was requested and what is missing for the user; they may need to re-run the step or retry the orchestration.
+
+## Return of control
+
+- End by summarizing completed stages, touched areas, and any open points.
+- If unresolved blockers remain after allowed loops, report them explicitly and stop.

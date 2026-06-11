@@ -7,12 +7,10 @@ public record OrganizerDto(
     string Name,
     string? LogoUrl,
     Dictionary<string, string>? Links,
-    /// <summary>
-    /// PartyTheme по умолчанию (см. GLOSSARY.md)
-    /// </summary>
     PartyThemeId? DefaultPartyThemeId,
     Dictionary<string, object>? DefaultCustomizationSettings,
     string? TimeZone,
+    string Role,
     string CreatedAt,
     string? UpdatedAt
 );

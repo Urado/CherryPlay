@@ -26,4 +26,5 @@ public class Party
     public string? ExternalLinkUrl { get; set; }
     public string? ExternalLinkText { get; set; }
     public List<string> DanceTags { get; set; } = [];
+    public PartyLifecycleState PartyLifecycleState { get; set; } = PartyLifecycleState.Draft;
 }

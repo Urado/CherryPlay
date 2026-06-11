@@ -30,7 +30,7 @@ interface PlayerViewProps {
   onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
-  projectedEndTime: string | null;
+  projectedEndTime: number | null;
   hasSelectedItems: boolean;
   canCreateGroup: boolean;
   canRemoveSelectedItems: boolean;
@@ -65,8 +65,10 @@ interface PlayerViewProps {
     pauseBetweenTracks: number;
   };
   formatDividerLabel: (trackId: string) => string;
-  formatPlannedEndTimeLabel: () => string;
-  formatPlannedEndMarkerTime: () => string;
+  formatPlannedEndTimelineLabel: () => string;
+  queueEndDividerPosition: number | null;
+  formatQueueEndTimelineLabel: () => string;
+  showQueueEndDividerAtListBottom: boolean;
   toggleItemSelection: (id: string) => void;
   selectRange: (fromId: string, toId: string) => void;
   removeItem: (id: string) => void;
@@ -124,8 +126,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   isTrackOrGroupDisabled,
   getEffectiveTrackSettings,
   formatDividerLabel,
-  formatPlannedEndTimeLabel,
-  formatPlannedEndMarkerTime,
+  formatPlannedEndTimelineLabel,
+  queueEndDividerPosition,
+  formatQueueEndTimelineLabel,
+  showQueueEndDividerAtListBottom,
   toggleItemSelection,
   selectRange,
   removeItem,
@@ -186,8 +190,10 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         isTrackOrGroupDisabled={isTrackOrGroupDisabled}
         getEffectiveTrackSettings={getEffectiveTrackSettings}
         formatDividerLabel={formatDividerLabel}
-        formatPlannedEndTimeLabel={formatPlannedEndTimeLabel}
-        formatPlannedEndMarkerTime={formatPlannedEndMarkerTime}
+        formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+        queueEndDividerPosition={queueEndDividerPosition}
+        formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+        showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
         toggleItemSelection={toggleItemSelection}
         selectRange={selectRange}
         removeItem={removeItem}

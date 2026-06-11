@@ -10,4 +10,7 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   CABINET: '/cabinet',
+  ADMIN_ROOT: '/admin',
+  ADMIN_ORGANIZERS: '/admin/organizers',
+  ADMIN_ORGANIZER_DETAIL: (organizerId: string) => `/admin/organizers/${organizerId}`,
 } as const;

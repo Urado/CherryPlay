@@ -6,6 +6,7 @@ import {
 } from '@cherryplay/components';
 import { useState, useRef, useEffect } from 'react';
 
+import { ThemeLockedTile } from '../components/ThemeLockedTile';
 import {
   MAX_SHORT_DESCRIPTION_LENGTH,
   MAX_DANCE_TAGS,
@@ -15,7 +16,7 @@ import {
   PREDEFINED_DANCE_TAGS,
 } from '../constants/partyCard';
 import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
-import type { CreatePartyDto, PartyDto, UpdatePartyDto } from '../types/api';
+import type { CreatePartyDto, PartyDto, ThemeAccessDto, UpdatePartyDto } from '../types/api';
 
 export interface CabinetPartyFormProps {
   editingParty: PartyDto | null;
@@ -25,6 +26,9 @@ export interface CabinetPartyFormProps {
   setCreateForm: React.Dispatch<React.SetStateAction<CreatePartyDto>>;
   savingEdit: boolean;
   creating: boolean;
+  themeAccess: ThemeAccessDto | null;
+  themeAccessError: string | null;
+  onSelectLockedTheme: (themeId: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
@@ -37,10 +41,24 @@ export function CabinetPartyForm({
   setCreateForm,
   savingEdit,
   creating,
+  themeAccess,
+  themeAccessError,
+  onSelectLockedTheme,
   onSubmit,
   onCancel,
 }: CabinetPartyFormProps) {
   const isEditing = !!editingParty;
+  const grantedThemes = new Set(themeAccess?.grantedThemeIds ?? []);
+  const lockedByThemeId = new Map(
+    (themeAccess?.visibleLockedThemes ?? []).map((item) => [item.themeId, item]),
+  );
+  const selectedThemeId = isEditing ? (editForm.partyThemeId ?? 'basic') : createForm.partyThemeId;
+  const selectableThemeOptions = PARTY_THEME_OPTIONS.filter((option) => {
+    if (grantedThemes.has(option.value)) return true;
+    if (lockedByThemeId.has(option.value)) return true;
+    return option.value === selectedThemeId;
+  });
+
   const [customTagInput, setCustomTagInput] = useState('');
   const [showCustomTagInput, setShowCustomTagInput] = useState(false);
   const customBlockRef = useRef<HTMLDivElement>(null);
@@ -140,20 +158,46 @@ export function CabinetPartyForm({
       <label>
         Тема
         <select
-          value={isEditing ? (editForm.partyThemeId ?? 'cyberpunk') : createForm.partyThemeId}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, partyThemeId: e.target.value }))
-              : setCreateForm((f) => ({ ...f, partyThemeId: e.target.value }))
-          }
+          value={selectedThemeId}
+          onChange={(e) => {
+            const nextThemeId = e.target.value;
+            if (lockedByThemeId.has(nextThemeId)) {
+              onSelectLockedTheme(nextThemeId);
+              return;
+            }
+            if (isEditing) {
+              setEditForm((f) => ({ ...f, partyThemeId: nextThemeId }));
+            } else {
+              setCreateForm((f) => ({ ...f, partyThemeId: nextThemeId }));
+            }
+          }}
         >
-          {PARTY_THEME_OPTIONS.map((opt) => (
+          {selectableThemeOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {lockedByThemeId.has(opt.value) ? `🔒 ${opt.label}` : opt.label}
             </option>
           ))}
         </select>
       </label>
+      {themeAccessError && <div className="cabinet-error">{themeAccessError}</div>}
+      {!!themeAccess?.visibleLockedThemes.length && (
+        <div className="cabinet-theme-locked-list">
+          {themeAccess.visibleLockedThemes
+            .map((item) => ({
+              item,
+              option: PARTY_THEME_OPTIONS.find((opt) => opt.value === item.themeId),
+            }))
+            .filter((entry) => !!entry.option)
+            .map((entry) => (
+              <ThemeLockedTile
+                key={entry.item.themeId}
+                themeName={entry.option?.label ?? entry.item.themeId}
+                lockedTheme={entry.item}
+                contactUrl={themeAccess.contactUrl}
+              />
+            ))}
+        </div>
+      )}
       <label>
         Таймзона
         <select

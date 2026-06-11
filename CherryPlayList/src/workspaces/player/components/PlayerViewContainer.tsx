@@ -181,15 +181,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
         findItemById,
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      isTrackDisabled,
-      isGroupDisabled,
-      getItemPath,
-      findItemById,
-      disabledTracksKey,
-      disabledGroupsKey,
-    ],
+    [isTrackDisabled, isGroupDisabled, getItemPath, findItemById],
   );
 
   const isTrackActive = useCallback(
@@ -271,6 +263,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   const handleResetSession = useCallback(async () => {
     if (enableStreaming && linkedParty) {
       try {
+        signalRService.stopPositionUpdates();
         await signalRService.resetPlaybackState(linkedParty.id);
       } catch (error) {
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
@@ -279,9 +272,13 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
           message: 'Не удалось сбросить состояние на сервере',
           duration: 5000,
         });
+        return;
       }
     }
     handleResetSessionFromHook();
+    if (enableStreaming && linkedParty && signalRService.isServiceConnected()) {
+      signalRService.sendFullStateUpdate(linkedParty.id);
+    }
   }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
   useSessionRecovery();
@@ -292,10 +289,11 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
     calculateDividerMarkers,
     formatDividerLabel,
     projectedEndTime,
-    formatProjectedEndTime,
-    formatPlannedEndTimeLabel,
-    formatPlannedEndMarkerTime,
+    formatPlannedEndTimelineLabel,
     plannedEndDividerPosition,
+    queueEndDividerPosition,
+    formatQueueEndTimelineLabel,
+    showQueueEndDividerAtListBottom,
   } = usePlayerDividers({
     allTracks,
     activePlayerTrackId,
@@ -428,7 +426,15 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       }
     }
     return total;
-  }, [allTracks, isTrackOrGroupDisabled, getEffectiveTrackSettings]);
+    // isTrackOrGroupDisabled + disabled* keys: see usePlayerDividers (zustand stable refs).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
+  }, [
+    allTracks,
+    isTrackOrGroupDisabled,
+    getEffectiveTrackSettings,
+    disabledTracksKey,
+    disabledGroupsKey,
+  ]);
 
   const areItemsConsecutive = useCallback(
     (itemIds: string[]): boolean => {
@@ -457,14 +463,14 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
   useEffect(() => {
-    logger.debug('[PlayerViewContainer] Streaming effect:', {
+    logger.info('[PlayerViewContainer] Streaming effect:', {
       enableStreaming,
       hasLinkedParty: !!linkedParty,
       partyId: linkedParty?.id,
     });
 
     if (!enableStreaming) {
-      logger.debug('[PlayerViewContainer] SignalR skipped: streaming disabled');
+      logger.info('[PlayerViewContainer] SignalR skipped: streaming disabled');
       if (signalRService.isServiceConnected()) {
         signalRService.disconnect().catch((err) => logger.error('SignalR disconnect error', err));
       }
@@ -473,7 +479,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
     }
 
     if (!linkedParty) {
-      logger.debug(
+      logger.info(
         '[PlayerViewContainer] SignalR skipped: no party linked (create/link a party first)',
       );
       if (signalRService.isServiceConnected()) {
@@ -496,6 +502,12 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
           logger.warn(
             '[PlayerViewContainer] Party does not exist on server, skipping SignalR connection',
           );
+          useProjectStore.getState().setLinkedParty(null);
+          addNotification({
+            type: 'warning',
+            message: 'Привязанная вечеринка не найдена на сервере. Привязка удалена.',
+            duration: 5000,
+          });
           setConnectionState(signalR.HubConnectionState.Disconnected);
           return;
         }
@@ -550,7 +562,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [linkedParty, mode, enableStreaming]);
+  }, [linkedParty, mode, enableStreaming, addNotification]);
 
   useEffect(() => {
     if (!enableStreaming || !linkedParty || !signalRService.isServiceConnected()) {
@@ -650,7 +662,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       onNameChange={setName}
       allTracksCount={allTracks.length}
       totalDuration={totalDuration}
-      projectedEndTime={projectedEndTime !== null ? formatProjectedEndTime() : null}
+      projectedEndTime={projectedEndTime}
       hasSelectedItems={hasSelectedItems}
       canCreateGroup={canCreateGroup}
       canRemoveSelectedItems={canRemoveSelectedItems}
@@ -682,8 +694,10 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       isTrackOrGroupDisabled={isTrackOrGroupDisabled}
       getEffectiveTrackSettings={getEffectiveTrackSettings}
       formatDividerLabel={formatDividerLabel}
-      formatPlannedEndTimeLabel={formatPlannedEndTimeLabel}
-      formatPlannedEndMarkerTime={formatPlannedEndMarkerTime}
+      formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+      queueEndDividerPosition={queueEndDividerPosition}
+      formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+      showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
       toggleItemSelection={toggleItemSelection}
       selectRange={selectRange}
       removeItem={removeItem}

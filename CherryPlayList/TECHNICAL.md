@@ -192,7 +192,7 @@ CherryPlayList/
 **Основные IPC каналы:**
 
 - **File Browser**: `fileBrowser:listDirectory`, `fileBrowser:statFile`, `fileBrowser:findAudioFilesRecursive`
-- **Audio**: `audio:getDuration`, `audio:getFileSource`
+- **Audio**: `audio:getDuration`, `audio:getFileUrl` (→ `cherryplay-audio://` streaming protocol)
 - **Export**: `export:execute`, `export:aimp`, `export:copyTracksToFolder`
 - **Playlist**: `playlist:save`, `playlist:load`
 - **Dialog**: `dialog:showOpenDialog`, `dialog:showSaveDialog`, `dialog:showOpenFileDialog`

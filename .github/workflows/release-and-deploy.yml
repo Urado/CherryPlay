@@ -138,6 +138,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           PGADMIN_EMAIL: ${{ secrets.PGADMIN_EMAIL }}
           PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
+          DATABASE__AUTOMIGRATEONSTARTUP: "true"
           CORS_ORIGIN_0: ${{ secrets.CORS_ORIGIN_0 }}
           CORS_ORIGIN_1: ${{ secrets.CORS_ORIGIN_1 }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
@@ -158,6 +159,7 @@ jobs:
             export POSTGRES_PASSWORD='$POSTGRES_PASSWORD'
             export PGADMIN_EMAIL='$PGADMIN_EMAIL'
             export PGADMIN_PASSWORD='$PGADMIN_PASSWORD'
+            export DATABASE__AutoMigrateOnStartup='$DATABASE__AUTOMIGRATEONSTARTUP'
             export CORS_ORIGIN_0='$CORS_ORIGIN_0'
             export CORS_ORIGIN_1='$CORS_ORIGIN_1'
             export OAUTH_VK_CLIENT_ID='$OAUTH_VK_CLIENT_ID'

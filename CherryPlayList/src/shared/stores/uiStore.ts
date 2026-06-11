@@ -26,6 +26,7 @@ export interface Notification {
   type: 'success' | 'error' | 'info' | 'warning';
   message: string;
   duration?: number; // in milliseconds, default 3000
+  action?: { label: string; onAction: () => void };
 }
 
 // Базовая структура для workspace (будет расширена в будущем)

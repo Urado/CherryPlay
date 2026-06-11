@@ -12,13 +12,15 @@ If the user's message is a **question**, **clarification**, or **request for exp
 ## When this rule applies
 
 - Message contains question words or intent: «как?», «почему?», «можно ли?», «что значит?», «зачем?», «не лучше ли?», уточнение, просьба объяснить или проанализировать.
-- **Mixed messages**: If the message contains both questions and a phrase that could be read as a request to change something (e.g. «Почему X? И добавь Y») — **treat the whole message as question**. Do not edit. Answer the questions in text; for the “add/change” part, describe _what_ you would do and _where_, and say that you can do it in a follow-up if the user asks (e.g. «сделай», «добавь», «реализуй»).
+- **Mixed messages**: If the message contains both questions and a change request, classify by **primary intent**:
+  - If the user gives an explicit implementation command (e.g. «сделай», «добавь», «исправь», «реализуй», «обнови X», imperative form), proceed with implementation and answer key question(s) briefly as context.
+  - If implementation intent is ambiguous or weak, treat as question-only and do not edit.
 - **Unclear intent**: If it is unclear whether the user wants an answer or implementation — answer first, offer to implement in a follow-up, and do **not** run edit tools until the user explicitly asks to implement.
 
 ## When you may edit
 
 Only when the user **clearly and primarily** asks to implement, fix, or change something, in a message that is **not** a question or clarification. Examples of explicit implementation requests: «сделай», «добавь», «исправь», «реализуй», «запусти воркфлоу», «обнови правило», «добавь в файл X».  
-If the same message also contains questions, apply the “mixed messages” rule above: answer only, no edit.
+If the same message also contains questions, use primary-intent classification from “mixed messages” above.
 
 ## Scope of “no code”
 

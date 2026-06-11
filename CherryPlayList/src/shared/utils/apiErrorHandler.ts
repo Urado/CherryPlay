@@ -71,6 +71,9 @@ export async function createApiError(
       try {
         const json = JSON.parse(text);
         errorMessage = json.detail || json.message || json.error || text;
+        if (typeof json.code === 'string' && !errorMessage.includes(json.code)) {
+          errorMessage = `${errorMessage} (${json.code})`;
+        }
       } catch {
         errorMessage = text;
       }
@@ -86,6 +89,16 @@ export async function createApiError(
     status: response.status,
     statusText: response.statusText,
   };
+}
+
+export async function parseApiErrorPayload<T>(response: Response): Promise<T | null> {
+  try {
+    const text = await response.text();
+    if (!text) return null;
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**

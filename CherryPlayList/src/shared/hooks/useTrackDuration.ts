@@ -96,6 +96,8 @@ interface UseTrackDurationOptions {
   onDurationResolved: (trackId: string, duration: number) => void;
   onError?: (path: string, error: Error) => void;
   batchSize?: number;
+  /** When false, skips IPC duration requests (e.g. web demo). */
+  enabled?: boolean;
 }
 
 export function useTrackDuration({
@@ -106,6 +108,7 @@ export function useTrackDuration({
   onDurationResolved,
   onError,
   batchSize = DEFAULT_BATCH_SIZE,
+  enabled = true,
 }: UseTrackDurationOptions) {
   const tracksRef = useRef(tracks);
   const resolveRef = useRef(resolveTrackById);
@@ -159,6 +162,7 @@ export function useTrackDuration({
     onError,
     shouldApply,
     batchSize,
+    enabled,
   });
 
   const loadDurationsForTracks = useCallback(

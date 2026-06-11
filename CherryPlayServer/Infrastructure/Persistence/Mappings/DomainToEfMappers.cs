@@ -39,6 +39,7 @@ public static class DomainToEfMappers
         ef.DefaultPartyThemeId = domain.DefaultPartyThemeId?.ToStringValue();
         ef.DefaultCustomizationSettingsJson = SerializeDictObject(domain.DefaultCustomizationSettings);
         ef.TimeZone = domain.TimeZone;
+        ef.Role = domain.Role == OrganizerRole.Admin ? "admin" : "organizer";
         ef.UpdatedAt = DateTime.UtcNow;
     }
 
@@ -53,6 +54,7 @@ public static class DomainToEfMappers
             DefaultPartyThemeId = domain.DefaultPartyThemeId?.ToStringValue(),
             DefaultCustomizationSettingsJson = SerializeDictObject(domain.DefaultCustomizationSettings),
             TimeZone = domain.TimeZone,
+            Role = domain.Role == OrganizerRole.Admin ? "admin" : "organizer",
             CreatedAt = EnsureUtc(domain.CreatedAt),
             UpdatedAt = EnsureUtc(domain.UpdatedAt ?? domain.CreatedAt),
             IsDeleted = false,
@@ -80,6 +82,7 @@ public static class DomainToEfMappers
         ef.ExternalLinkUrl = domain.ExternalLinkUrl;
         ef.ExternalLinkText = domain.ExternalLinkText;
         ef.DanceTagsJson = SerializeStringList(domain.DanceTags);
+        ef.PartyLifecycleState = domain.PartyLifecycleState;
     }
 
     public static PartyEf ToEf(this Party domain)
@@ -109,6 +112,7 @@ public static class DomainToEfMappers
             ExternalLinkUrl = domain.ExternalLinkUrl,
             ExternalLinkText = domain.ExternalLinkText,
             DanceTagsJson = SerializeStringList(domain.DanceTags),
+            PartyLifecycleState = domain.PartyLifecycleState,
         };
     }
 

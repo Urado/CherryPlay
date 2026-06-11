@@ -12,15 +12,26 @@
 | ------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **viewer**    | Зритель в CherryPlayWeb                        | Read-only: публичные API по `shortCode`, подключение к SignalR по `shortCode`, получение обновлений состояния. Не может отправлять write-события. |
 | **organizer** | Организатор (CherryPlayList или кабинет в Web) | Write: создание/редактирование/удаление вечеринок, публикация плейлиста, управление сессией и состоянием воспроизведения. Только к своим данным.  |
+| **admin**     | Организатор с ролью admin                      | Всё из `organizer` + доступ к `/api/admin/*` (управление выдачами пакетов тем).                                                                   |
 
 В v1 авторизация write-операций: **JWT** для REST и SignalR; в Web сессия через **httpOnly cookie**. Зрители — анонимные, без логина.
 
 ### 1.1 Коды ответов по авторизации (REST)
 
-| Код                  | Значение        | Когда возвращается                                                                                                               |
-| -------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **401 Unauthorized** | Не авторизован  | Нет или невалидный JWT, истёк токен, сессия не найдена, не передан организатор в контексте. Клиенту нужно войти заново.          |
-| **403 Forbidden**    | Доступ запрещён | Пользователь авторизован, но не имеет прав на действие (например, попытка изменить чужую вечеринку). Повторный логин не поможет. |
+| Код                                  | Значение                              | Когда возвращается                                                                                                               |
+| ------------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **401 Unauthorized**                 | Не авторизован                        | Нет или невалидный JWT, истёк токен, сессия не найдена, не передан организатор в контексте. Клиенту нужно войти заново.          |
+| **403 Forbidden**                    | Доступ запрещён                       | Пользователь авторизован, но не имеет прав на действие (например, попытка изменить чужую вечеринку). Повторный логин не поможет. |
+| **403 admin_only**                   | Только для admin                      | Запрос на `/api/admin/*` от не-админа (или без валидной админ-роли в БД).                                                        |
+| **403 theme_not_entitled**           | Нет права на тему                     | Создание/обновление вечеринки с темой, которая не входит в доступные пакеты организатора.                                        |
+| **403 theme_not_visible**            | Тема скрыта                           | Создание/обновление вечеринки с темой, у которой `isVisible=false` в каталоге тем.                                               |
+| **404 package_not_found**            | Пакет не найден                       | `POST /api/admin/organizers/{id}/entitlements`: пакет не существует или `isActive=false`.                                        |
+| **404 organizer_not_found**          | Организатор не найден                 | `GET /api/admin/organizers/{id}` или `POST /api/admin/organizers/{id}/entitlements` для отсутствующего организатора.             |
+| **404 entitlement_not_found**        | Выдача не найдена                     | `DELETE /api/admin/organizers/{id}/entitlements/{entitlementId}` для отсутствующей или чужой выдачи.                             |
+| **409 entitlement_already_active**   | Выдача уже активна                    | Повторный grant активного пакета одному организатору.                                                                            |
+| **409 entitlement_already_revoked**  | Выдача уже отозвана                   | Повторный revoke уже отозванной выдачи.                                                                                          |
+| **409 invalid_lifecycle_transition** | Недопустимый переход жизненного цикла | Запрос смены `partyLifecycleState` вне разрешённых переходов (например `draft` → `completed`, любой переход из `completed`).     |
+| **400 package_is_auto_granted**      | Автовыдаваемый пакет                  | Попытка вручную выдать пакет с `isAutoGranted=true` (например `free`).                                                           |
 
 Эндпоинты организатора при отсутствии/невалидности токена возвращают **401** (в т.ч. при срабатывании `[AuthorizeOrganizer]` до входа в действие); при валидном токене, но отсутствии прав на ресурс — **403**.
 
@@ -41,16 +52,16 @@
 
 Базовый URL сервера: по умолчанию `http://localhost:5000` (или из конфигурации).
 
-| Метод | Путь                                       | Описание                                                                                    | Ответ                                                                                 |
-| ----- | ------------------------------------------ | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| GET   | `/api/parties/public/{shortCode}`          | Метаданные вечеринки по shortCode (в т.ч. флаг «в каталоге» по плану)                       | `PublicPartyDto` или 404                                                              |
-| GET   | `/api/parties/public/{shortCode}/playlist` | Плейлист вечеринки                                                                          | `PartyPlaylistDto` или 404                                                            |
-| GET   | `/api/parties/public/{shortCode}/state`    | Полное состояние вечеринки (плейлист + сессия + playback state)                             | `PartyStateDto` или 404                                                               |
-| GET   | `/api/parties/public/list`                 | Список вечеринок **каталога** (только включённые организатором)                             | `PublicPartyListItemDto[]`                                                            |
-| GET   | `/api/parties/public/first`                | _(опционально)_ Плейлист первой доступной вечеринки (демо)                                  | `PartyPlaylistDto` или 404                                                            |
-| GET   | `/api/config`                              | Публичная конфигурация для UI (флаги: OAuth, страница «Инфо о вечеринке»). Без авторизации. | 200, JSON: `{ "oauthEnabled": boolean, "partyInfoPageEnabled": boolean }` (camelCase) |
+| Метод | Путь                                       | Описание                                                                                   | Ответ                                                                                                            |
+| ----- | ------------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/parties/public/{shortCode}`          | Метаданные вечеринки по shortCode (в т.ч. флаг «в каталоге» по плану)                      | `PublicPartyDto` или 404                                                                                         |
+| GET   | `/api/parties/public/{shortCode}/playlist` | Плейлист вечеринки                                                                         | `PartyPlaylistDto` или 404                                                                                       |
+| GET   | `/api/parties/public/{shortCode}/state`    | Полное состояние вечеринки (плейлист + сессия + playback state)                            | `PartyStateDto` или 404                                                                                          |
+| GET   | `/api/parties/public/list`                 | Список вечеринок **каталога** (только `IsListedInCatalog` и не `draft`)                    | `PublicPartyListItemDto[]`                                                                                       |
+| GET   | `/api/parties/public/first`                | _(опционально)_ Плейлист первой доступной вечеринки (демо)                                 | `PartyPlaylistDto` или 404                                                                                       |
+| GET   | `/api/config`                              | Публичная конфигурация для UI (OAuth, страница «Инфо», ссылка на админа). Без авторизации. | 200, JSON: `{ "oauthEnabled": boolean, "partyInfoPageEnabled": boolean, "adminContactUrl": string }` (camelCase) |
 
-Ответ `GET /api/config`: клиент должен ожидать поля **`oauthEnabled`** и **`partyInfoPageEnabled`** (camelCase). При `oauthEnabled: false` веб-приложение скрывает на странице входа вкладку и кнопки OAuth (значение задаётся конфигом `Auth:OAuthEnabled`, см. [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md)). При `partyInfoPageEnabled: false` веб-приложение скрывает страницу «Инфо о вечеринке» и все ссылки на неё в UI; данные вечеринки по-прежнему хранятся на сервере. Значение задаётся конфигом `Features:PartyInfoPageEnabled` (см. OPS); по умолчанию `false`, если ключ отсутствует.
+Ответ `GET /api/config`: клиент должен ожидать поля **`oauthEnabled`**, **`partyInfoPageEnabled`** и **`adminContactUrl`** (camelCase). При `oauthEnabled: false` веб-приложение скрывает на странице входа вкладку и кнопки OAuth (значение задаётся конфигом `Auth:OAuthEnabled`, см. [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md)). При `partyInfoPageEnabled: false` веб-приложение скрывает страницу «Инфо о вечеринке» и все ссылки на неё в UI; данные вечеринки по-прежнему хранятся на сервере. `adminContactUrl` берётся из `ADMIN_CONTACT_URL` (fallback: `Admin:ContactUrl`, далее `https://vk.com/<owner>`).
 
 **Использует:** CherryPlayWeb (страница просмотра `party/<shortCode>`, каталог, получение состояния для отображения).
 
@@ -68,15 +79,16 @@
 
 **События от сервера (on)** — зритель подписывается и получает обновления:
 
-| Событие                     | Аргументы                                                | Описание                                                       |
-| --------------------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
-| `OnSessionStarted`          | `partyId: string`                                        | Сессия начата.                                                 |
-| `OnSessionEnded`            | `partyId: string`                                        | Сессия завершена.                                              |
-| `OnFullStateUpdated`        | `partyId: string`, `state: PlaybackStateDto`             | Обновлено полное состояние воспроизведения.                    |
-| `OnPlaybackPositionUpdated` | `partyId: string`, `trackId: string`, `position: number` | Обновлена позиция текущего трека.                              |
-| `OnStateChanged`            | `partyId: string`                                        | Состояние изменилось; клиент может запросить полное состояние. |
-| `OnPlaylistChanged`         | `partyId: string`                                        | Плейлист вечеринки изменён.                                    |
-| `Error`                     | `message: string`                                        | Ошибка (например, вечеринка не найдена).                       |
+| Событие                       | Аргументы                                                   | Описание                                                       |
+| ----------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- |
+| `OnSessionStarted`            | `partyId: string`                                           | Сессия начата.                                                 |
+| `OnSessionEnded`              | `partyId: string`                                           | Сессия завершена.                                              |
+| `OnFullStateUpdated`          | `partyId: string`, `state: PlaybackStateDto`                | Обновлено полное состояние воспроизведения.                    |
+| `OnPartyDisplayStatusChanged` | `partyId: string`, `partyDisplayStatus: PartyDisplayStatus` | Изменился серверный статус отображения для зрителя.            |
+| `OnPlaybackPositionUpdated`   | `partyId: string`, `trackId: string`, `position: number`    | Обновлена позиция текущего трека.                              |
+| `OnStateChanged`              | `partyId: string`                                           | Состояние изменилось; клиент может запросить полное состояние. |
+| `OnPlaylistChanged`           | `partyId: string`                                           | Плейлист вечеринки изменён.                                    |
+| `Error`                       | `message: string`                                           | Ошибка (например, вечеринка не найдена).                       |
 
 Зритель **не вызывает** методы write: `UpdatePlaybackPosition`, `UpdateFullState`, `NotifyStateChanged`, `StartSession`, `EndSession`, `JoinPartyAsOrganizer`.
 
@@ -160,17 +172,18 @@
 
 **OrganizerDto**
 
-| Поле                           | Тип                               | Описание                                          |
-| ------------------------------ | --------------------------------- | ------------------------------------------------- |
-| `id`                           | `string`                          | GUID организатора.                                |
-| `name`                         | `string`                          | Название организации / отображаемое имя.          |
-| `logoUrl`                      | `string \| null`                  | URL логотипа (опционально).                       |
-| `links`                        | `Record<string, string> \| null`  | Ссылки (соцсети, сайт) — JSON-объект.             |
-| `defaultPartyThemeId`          | `string \| null`                  | Тема по умолчанию.                                |
-| `defaultCustomizationSettings` | `Record<string, unknown> \| null` | Настройки оформления по умолчанию (generic JSON). |
-| `timeZone`                     | `string \| null`                  | Часовой пояс организатора.                        |
-| `createdAt`                    | `string`                          | ISO 8601.                                         |
-| `updatedAt`                    | `string \| null`                  | ISO 8601.                                         |
+| Поле                           | Тип                               | Описание                                                |
+| ------------------------------ | --------------------------------- | ------------------------------------------------------- |
+| `id`                           | `string`                          | GUID организатора.                                      |
+| `name`                         | `string`                          | Название организации / отображаемое имя.                |
+| `logoUrl`                      | `string \| null`                  | URL логотипа (опционально).                             |
+| `links`                        | `Record<string, string> \| null`  | Ссылки (соцсети, сайт) — JSON-объект.                   |
+| `defaultPartyThemeId`          | `string \| null`                  | Тема по умолчанию.                                      |
+| `defaultCustomizationSettings` | `Record<string, unknown> \| null` | Настройки оформления по умолчанию (generic JSON).       |
+| `timeZone`                     | `string \| null`                  | Часовой пояс организатора.                              |
+| `role`                         | `"organizer" \| "admin"`          | Роль организатора (возвращается в `/api/organizer/me`). |
+| `createdAt`                    | `string`                          | ISO 8601.                                               |
+| `updatedAt`                    | `string \| null`                  | ISO 8601.                                               |
 
 **UpdateOrganizerDto**
 
@@ -181,18 +194,23 @@
 | `links`    | `Record<string, string>` | нет          | Ссылки (соцсети, сайт). |
 | `timeZone` | `string`                 | нет          | Часовой пояс.           |
 
+`defaultPartyThemeId` в MVP не принимается в `UpdateOrganizerDto`: сервер его не ожидает в контракте PATCH и не меняет значение в БД через `/api/organizer/profile`.
+
 ### 3.4 REST API (вечеринки)
 
 Все запросы с авторизацией (JWT в заголовке или cookie по плану).
 
-| Метод  | Путь                              | Описание                                                                                                                                                                                  | Тело               | Ответ              |
-| ------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ |
-| POST   | `/api/parties`                    | Создать вечеринку                                                                                                                                                                         | `CreatePartyDto`   | `PartyDto`         |
-| GET    | `/api/parties`                    | Список вечеринок текущего организатора                                                                                                                                                    | —                  | `PartyDto[]`       |
-| GET    | `/api/parties/{partyId}`          | Получить вечеринку (свою)                                                                                                                                                                 | —                  | `PartyDto` или 404 |
-| PUT    | `/api/parties/{partyId}`          | Редактировать метаданные вечеринки (описание, место, город, дата, расписание, краткое описание для карточки, внешняя ссылка, теги танцев, флаг «в каталоге» и др.; тело — UpdatePartyDto) | `UpdatePartyDto`   | 204 или 404        |
-| DELETE | `/api/parties/{partyId}`          | Удалить вечеринку                                                                                                                                                                         | —                  | 204 или 404        |
-| PUT    | `/api/parties/{partyId}/playlist` | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию)                                                                                                                  | `PartyPlaylistDto` | 204 или 404        |
+| Метод  | Путь                               | Описание                                                                                                                                      | Тело                          | Ответ                      |
+| ------ | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | -------------------------- |
+| POST   | `/api/parties`                     | Создать вечеринку (с проверкой доступа к `partyThemeId`; при отсутствии поля используется `basic`)                                            | `CreatePartyDto`              | `PartyDto`                 |
+| GET    | `/api/parties`                     | Список вечеринок текущего организатора (без `draft`; черновик доступен по `GET /api/parties/{partyId}`)                                       | —                             | `PartyDto[]`               |
+| GET    | `/api/parties/{partyId}`           | Получить вечеринку (свою)                                                                                                                     | —                             | `PartyDto` или 404         |
+| PUT    | `/api/parties/{partyId}`           | Редактировать метаданные вечеринки; проверка доступа к теме выполняется только когда `partyThemeId` передан и отличается от текущего значения | `UpdatePartyDto`              | 204 или 404                |
+| DELETE | `/api/parties/{partyId}`           | Удалить вечеринку                                                                                                                             | —                             | 204 или 404                |
+| PUT    | `/api/parties/{partyId}/playlist`  | Опубликовать плейлист (Publish в edit mode; перетирает серверную версию)                                                                      | `PartyPlaylistDto`            | 204 или 404                |
+| POST   | `/api/parties/{partyId}/lifecycle` | Перевести вечеринку в целевое состояние `partyLifecycleState` (идемпотентно, если уже в целевом состоянии)                                    | `TransitionPartyLifecycleDto` | `PartyDto` или 404/403/409 |
+
+Разрешённые переходы `partyLifecycleState`: `draft` → `ready`; `ready` → `completed`; `ready` → `draft`. Состояние `completed` терминальное (дальнейшие переходы запрещены). При недопустимом переходе — **409** с телом `{ code: "invalid_lifecycle_transition", message, currentState, requestedState }` (значения состояний — snake_case: `draft`, `ready`, `completed`).
 
 **Использует:** CherryPlayList (создание, список, Publish, привязка partyId к проекту); кабинет организатора в Web (CRUD, toggle каталога).
 
@@ -211,6 +229,46 @@
 | `NotifyPlaylistChanged`  | `partyId: string`                                        | Уведомление зрителей об изменении плейлиста (опционально; сервер рассылает `OnPlaylistChanged` и после PUT `.../playlist`). Только организатор, владелец вечеринки.                        |
 
 Обновление плейлиста в session mode может идти через REST PUT `.../playlist` или по контракту «live» (по плану — изменения плейлиста и состояния в session идут live). Сервер при PUT плейлиста рассылает зрителям `OnPlaylistChanged`.
+
+### 3.6 Theme access (organizer)
+
+| Метод | Путь                             | Описание                                                                                               | Ответ            |
+| ----- | -------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------- |
+| GET   | `/api/organizer/me/theme-access` | Сводка доступа к темам для текущего организатора: доступные темы, публичные locked и ссылка на контакт | `ThemeAccessDto` |
+
+`ThemeAccessDto`:
+
+- `grantedThemeIds: string[]` — темы с доступом (включая auto-granted пакеты).
+- `visibleLockedThemes: VisibleLockedThemeDto[]` — публичные темы без доступа, которые нужно показывать с замком.
+- `contactUrl: string` — ссылка на администратора (из `ADMIN_CONTACT_URL` / `Admin:ContactUrl`).
+
+`VisibleLockedThemeDto`:
+
+- `themeId: string`
+- `packageCode: string`
+- `packageName: string`
+
+### 3.7 Admin API
+
+Все эндпоинты ниже защищены `AuthorizeAdmin`, требуют админскую роль и используют rate limit `admin-strict`.
+
+| Метод  | Путь                                                      | Описание                                                 | Ответ                      |
+| ------ | --------------------------------------------------------- | -------------------------------------------------------- | -------------------------- |
+| GET    | `/api/admin/theme-packages`                               | Список пакетов тем (с `themeIds`)                        | `AdminThemePackageListDto` |
+| GET    | `/api/admin/organizers`                                   | Поиск/список организаторов (`query`, `page`, `pageSize`) | `AdminOrganizerListDto`    |
+| GET    | `/api/admin/organizers/{id}`                              | Карточка организатора и история выдач                    | `AdminOrganizerDetailDto`  |
+| POST   | `/api/admin/organizers/{id}/entitlements`                 | Выдать пакет организатору                                | `EntitlementDto` (201)     |
+| DELETE | `/api/admin/organizers/{id}/entitlements/{entitlementId}` | Отозвать выдачу пакета                                   | 204                        |
+
+Правила:
+
+- `POST grant` возвращает `404 package_not_found`, если пакет отсутствует или неактивен.
+- `POST grant` возвращает `400 package_is_auto_granted` для пакетов `isAutoGranted=true`.
+- `POST grant` возвращает `409 entitlement_already_active` и `existingEntitlementId`, если активная выдача уже есть.
+- `DELETE revoke` возвращает `404 entitlement_not_found`, если выдача не найдена для указанного организатора.
+- `DELETE revoke` возвращает `409 entitlement_already_revoked`, если выдача уже отозвана.
+- `DELETE revoke` выполняется атомарно и идемпотентно относительно состояния entitlement: при конкурентных/повторных запросах только первый успешный revoke меняет состояние, остальные получают `409 entitlement_already_revoked`.
+- При успешном `DELETE revoke` поле `revokedAt` заполняется; если в теле передан `note`, он добавляется к существующему `note` с разделителем `--- revoke: <UTC ISO8601> ---` (без потери предыдущего текста).
 
 ---
 
@@ -272,18 +330,20 @@ _Примечание:_ в текущей реализации веб может
 
 **PlaybackStateDto**
 
-| Поле               | Тип                                          | Описание                          |
-| ------------------ | -------------------------------------------- | --------------------------------- |
-| `currentTrackId`   | `string \| null`                             | ID текущего трека.                |
-| `status`           | `"idle" \| "playing" \| "paused" \| "ended"` | Статус плеера.                    |
-| `position`         | `number`                                     | Позиция, сек.                     |
-| `duration`         | `number`                                     | Длительность текущего трека, сек. |
-| `volume`           | `number`                                     | Громкость (0–1).                  |
-| `mode`             | `"preparation" \| "session"`                 | Режим.                            |
-| `playedTrackIds`   | `string[]`                                   | ID отыгранных треков.             |
-| `disabledTrackIds` | `string[]`                                   | ID отключённых треков.            |
-| `disabledGroupIds` | `string[]`                                   | ID отключённых групп.             |
-| `lastUpdatedAt`    | `string`                                     | ISO 8601.                         |
+| Поле               | Тип                                          | Описание                              |
+| ------------------ | -------------------------------------------- | ------------------------------------- |
+| `currentTrackId`   | `string \| null`                             | ID текущего трека.                    |
+| `status`           | `"idle" \| "playing" \| "paused" \| "ended"` | Статус плеера на wire (REST/SignalR). |
+| `position`         | `number`                                     | Позиция, сек.                         |
+| `duration`         | `number`                                     | Длительность текущего трека, сек.     |
+| `volume`           | `number`                                     | Громкость (0–1).                      |
+| `mode`             | `"preparation" \| "session"`                 | Режим.                                |
+| `playedTrackIds`   | `string[]`                                   | ID отыгранных треков.                 |
+| `disabledTrackIds` | `string[]`                                   | ID отключённых треков.                |
+| `disabledGroupIds` | `string[]`                                   | ID отключённых групп.                 |
+| `lastUpdatedAt`    | `string`                                     | ISO 8601.                             |
+
+**Статусы плеера: wire vs локальный store (CherryPlayList).** На wire допустимы только четыре значения выше — они совпадают с enum `PlaybackStatus` на сервере. Встроенный плеер CherryPlayList в store additionally использует переходные статусы `loading`, `buffering`, `error`; перед вызовом `UpdateFullState` клиент **обязан** привести их к wire-контракту: `loading`/`buffering` → `playing`, `error` → `idle`. Промежуточные store-статусы не публикуются отдельно (смена `playing` → `loading` → `playing` не должна слать лишний `UpdateFullState`, если wire-статус не изменился). Маппинг: `CherryPlayList/src/shared/contracts/playbackState.ts` (`mapStoreStatusToWireStatus`, `mapAimpPlaybackStatusToWireStatus`).
 
 ### 6.4 Вечеринка (публичная и организаторская)
 
@@ -296,72 +356,76 @@ _Примечание:_ в текущей реализации веб может
 
 **PublicPartyDto** (ответ публичного API; по плану — метаданные + флаг «в каталоге»)
 
-| Поле                    | Тип                                             | Описание                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
-| `id`                    | `string`                                        | GUID вечеринки.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `name`                  | `string`                                        | Название.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `title`                 | `string \| undefined`                           | Заголовок на экране; если пусто — отображается `name`.                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `subtitle`              | `string \| undefined`                           | Подзаголовок под заголовком.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `eventDateTime`         | `string \| undefined`                           | Время начала мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `eventEndDateTime`      | `string \| undefined`                           | Опциональное время окончания мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `partyThemeId`          | `PartyThemeId`                                  | PartyTheme идентификатор (см. GLOSSARY.md).                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `customizationSettings` | `Record<string, unknown> \| undefined`          | Оформление (generic JSON). Для `basic` канонический формат: `{ paletteId, customPalette }`, где `customPalette` содержит 5 цветов (`accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`). Палитра по умолчанию: `base`; в UI `custom` показывается вторым пунктом после `base`; при выборе предустановленной палитры её цвета синхронизируются в `customPalette`. Legacy-flat ключи `custom*` поддерживаются для совместимости. |
-| `hasActiveSession`      | `boolean`                                       | Идёт ли сессия.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `sessionStartedAt`      | `string \| undefined`                           | ISO 8601 начала сессии.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `timeZone`              | `string \| undefined`                           | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                                                                                                                                                                                                                                                                                                                                                               |
-| _(по плану)_            | `isListedInCatalog`                             | `boolean`                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Включена ли в каталог. |
-| _(по плану)_            | описание, место, город, дата/расписание, ссылки | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Для страницы `/info`.  |
+| Поле                                                         | Тип                                    | Описание                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                                                         | `string`                               | GUID вечеринки.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `name`                                                       | `string`                               | Название.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `title`                                                      | `string \| undefined`                  | Заголовок на экране; если пусто — отображается `name`.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `subtitle`                                                   | `string \| undefined`                  | Подзаголовок под заголовком.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `eventDateTime`                                              | `string \| undefined`                  | Время начала мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `eventEndDateTime`                                           | `string \| undefined`                  | Опциональное время окончания мероприятия в UTC, ISO 8601.                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `partyLifecycleState`                                        | `string`                               | Жизненный цикл: `draft`, `ready`, `completed` (см. [DATABASE.md](CherryPlayServer/DATABASE.md)).                                                                                                                                                                                                                                                                                                                                                                         |
+| `partyDisplayStatus`                                         | `string`                               | Статус для зрителя (сервер): `draft`, `scheduled`, `starting_soon`, `live`, `organizer_offline`, `party_ended` (см. §6.7).                                                                                                                                                                                                                                                                                                                                               |
+| `partyThemeId`                                               | `PartyThemeId`                         | PartyTheme идентификатор (см. GLOSSARY.md).                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `customizationSettings`                                      | `Record<string, unknown> \| undefined` | Оформление (generic JSON). Для `basic` канонический формат: `{ paletteId, customPalette }`, где `customPalette` содержит 5 цветов (`accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`). Палитра по умолчанию: `base`; в UI `custom` показывается вторым пунктом после `base`; при выборе предустановленной палитры её цвета синхронизируются в `customPalette`. Legacy-flat ключи `custom*` поддерживаются для совместимости. |
+| `hasActiveSession`                                           | `boolean`                              | Идёт ли сессия.                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `sessionStartedAt`                                           | `string \| undefined`                  | ISO 8601 начала сессии.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `timeZone`                                                   | `string \| undefined`                  | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                                                                                                                                                                                                                                                                                                                                                               |
+| _(по плану)_ `isListedInCatalog`                             | `boolean`                              | Включена ли в каталог.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| _(по плану)_ описание, место, город, дата/расписание, ссылки | —                                      | Для страницы `/info`.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 **PublicPartyListItemDto** (элемент каталога — только вечеринки, включённые в каталог)
 
 Ответ GET `/api/parties/public/list`. В карточке каталога (PartyListPage) отображаются **только** 6 полей в порядке: название, краткое описание, город, дата/время, теги танцев, внешняя ссылка. Остальные поля (theme, track count, duration, shortCode, кнопка «Подробнее», бейдж «В эфире») на карточке не показываются.
 
-| Поле               | Тип                     | Описание                                                                                       |
-| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `id`               | `string`                | GUID.                                                                                          |
-| `name`             | `string`                | Название.                                                                                      |
-| `title`            | `string \| undefined`   | Заголовок на экране.                                                                           |
-| `subtitle`         | `string \| undefined`   | Подзаголовок.                                                                                  |
-| `shortCode`        | `string`                | Короткий код.                                                                                  |
-| `partyThemeId`     | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                    |
-| `hasActiveSession` | `boolean`               | Активна ли сессия.                                                                             |
-| `createdAt`        | `string`                | ISO 8601.                                                                                      |
-| `totalTracks`      | `number`                | Количество треков.                                                                             |
-| `totalDuration`    | `number`                | Длительность, сек.                                                                             |
-| `eventDateTime`    | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
-| `eventEndDateTime` | `string \| undefined`   | Опциональное время окончания мероприятия в UTC, ISO 8601.                                      |
-| `timeZone`         | `string \| undefined`   | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                     |
-| `city`             | `string \| undefined`   | Город.                                                                                         |
-| `shortDescription` | `string \| undefined`   | Краткое описание для карточки (макс. 200 символов).                                            |
-| `externalLinkUrl`  | `string \| undefined`   | URL внешней ссылки.                                                                            |
-| `externalLinkText` | `string \| undefined`   | Текст ссылки (подпись).                                                                        |
-| `danceTags`        | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                  |
+| Поле                  | Тип                     | Описание                                                                                         |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `id`                  | `string`                | GUID.                                                                                            |
+| `name`                | `string`                | Название.                                                                                        |
+| `title`               | `string \| undefined`   | Заголовок на экране.                                                                             |
+| `subtitle`            | `string \| undefined`   | Подзаголовок.                                                                                    |
+| `shortCode`           | `string`                | Короткий код.                                                                                    |
+| `partyThemeId`        | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                      |
+| `hasActiveSession`    | `boolean`               | Активна ли сессия.                                                                               |
+| `createdAt`           | `string`                | ISO 8601.                                                                                        |
+| `totalTracks`         | `number`                | Количество треков.                                                                               |
+| `totalDuration`       | `number`                | Длительность, сек.                                                                               |
+| `eventDateTime`       | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)).   |
+| `eventEndDateTime`    | `string \| undefined`   | Опциональное время окончания мероприятия в UTC, ISO 8601.                                        |
+| `partyLifecycleState` | `string`                | Жизненный цикл: `draft`, `ready`, `completed` (см. [DATABASE.md](CherryPlayServer/DATABASE.md)). |
+| `timeZone`            | `string \| undefined`   | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                       |
+| `city`                | `string \| undefined`   | Город.                                                                                           |
+| `shortDescription`    | `string \| undefined`   | Краткое описание для карточки (макс. 200 символов).                                              |
+| `externalLinkUrl`     | `string \| undefined`   | URL внешней ссылки.                                                                              |
+| `externalLinkText`    | `string \| undefined`   | Текст ссылки (подпись).                                                                          |
+| `danceTags`           | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                    |
 
 **PartyDto** (API организатора)
 
-| Поле                | Тип                     | Описание                                                                                       |
-| ------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `id`                | `string`                | GUID.                                                                                          |
-| `name`              | `string`                | Название.                                                                                      |
-| `title`             | `string \| undefined`   | Заголовок на экране; если пусто — отображается `name`.                                         |
-| `subtitle`          | `string \| undefined`   | Подзаголовок.                                                                                  |
-| `shortCode`         | `string`                | Неизменяемый короткий код.                                                                     |
-| `partyThemeId`      | `PartyThemeId`          | PartyTheme идентификатор (см. GLOSSARY.md).                                                    |
+| Поле                    | Тип                                    | Описание                                                                                                                        |
+| ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                    | `string`                               | GUID.                                                                                                                           |
+| `name`                  | `string`                               | Название.                                                                                                                       |
+| `title`                 | `string \| undefined`                  | Заголовок на экране; если пусто — отображается `name`.                                                                          |
+| `subtitle`              | `string \| undefined`                  | Подзаголовок.                                                                                                                   |
+| `shortCode`             | `string`                               | Неизменяемый короткий код.                                                                                                      |
+| `partyThemeId`          | `PartyThemeId`                         | PartyTheme идентификатор (см. GLOSSARY.md).                                                                                     |
 | `customizationSettings` | `Record<string, unknown> \| undefined` | Оформление темы (generic JSON), семантика как у **PublicPartyDto**; для `basic` — канонический формат как у **CreatePartyDto**. |
-| `createdAt`         | `string`                | ISO 8601.                                                                                      |
-| `hasActiveSession`  | `boolean`               | Активна ли сессия.                                                                             |
-| `eventDateTime`     | `string \| undefined`   | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)). |
-| `eventEndDateTime`  | `string \| undefined`   | Опциональное время окончания мероприятия в UTC, ISO 8601.                                      |
-| `timeZone`          | `string \| undefined`   | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                     |
-| `isListedInCatalog` | `boolean`               | Включена ли в каталог.                                                                         |
-| `description`       | `string \| undefined`   | Описание для страницы `/info`.                                                                 |
-| `place`             | `string \| undefined`   | Место проведения.                                                                              |
-| `city`              | `string \| undefined`   | Город.                                                                                         |
-| `schedule`          | `string \| undefined`   | Расписание.                                                                                    |
-| `shortDescription`  | `string \| undefined`   | Краткое описание для карточки каталога (макс. 200 символов).                                   |
-| `externalLinkUrl`   | `string \| undefined`   | URL внешней ссылки.                                                                            |
-| `externalLinkText`  | `string \| undefined`   | Текст ссылки (подпись).                                                                        |
-| `danceTags`         | `string[] \| undefined` | Теги танцев (до 20: предопределённые + свои).                                                  |
+| `createdAt`             | `string`                               | ISO 8601.                                                                                                                       |
+| `hasActiveSession`      | `boolean`                              | Активна ли сессия.                                                                                                              |
+| `eventDateTime`         | `string \| undefined`                  | Время начала мероприятия в UTC, ISO 8601 (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                  |
+| `eventEndDateTime`      | `string \| undefined`                  | Опциональное время окончания мероприятия в UTC, ISO 8601.                                                                       |
+| `partyLifecycleState`   | `string`                               | Жизненный цикл: `draft`, `ready`, `completed` (см. [DATABASE.md](CherryPlayServer/DATABASE.md)).                                |
+| `timeZone`              | `string \| undefined`                  | IANA (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                      |
+| `isListedInCatalog`     | `boolean`                              | Включена ли в каталог.                                                                                                          |
+| `description`           | `string \| undefined`                  | Описание для страницы `/info`.                                                                                                  |
+| `place`                 | `string \| undefined`                  | Место проведения.                                                                                                               |
+| `city`                  | `string \| undefined`                  | Город.                                                                                                                          |
+| `schedule`              | `string \| undefined`                  | Расписание.                                                                                                                     |
+| `shortDescription`      | `string \| undefined`                  | Краткое описание для карточки каталога (макс. 200 символов).                                                                    |
+| `externalLinkUrl`       | `string \| undefined`                  | URL внешней ссылки.                                                                                                             |
+| `externalLinkText`      | `string \| undefined`                  | Текст ссылки (подпись).                                                                                                         |
+| `danceTags`             | `string[] \| undefined`                | Теги танцев (до 20: предопределённые + свои).                                                                                   |
 
 #### Источник правды для темы вечеринки
 
@@ -376,7 +440,7 @@ _Примечание:_ в текущей реализации веб может
 | `name`                  | `string`                  | да           | Название (1–200 символов).                                                                                                                                                                                                                                                                                                                                                                                     |
 | `title`                 | `string`                  | нет          | Заголовок на экране; если пусто — отображается название.                                                                                                                                                                                                                                                                                                                                                       |
 | `subtitle`              | `string`                  | нет          | Подзаголовок.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `partyThemeId`          | `PartyThemeId`            | нет          | По умолчанию `cyberpunk`.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `partyThemeId`          | `PartyThemeId`            | нет          | По умолчанию `basic`.                                                                                                                                                                                                                                                                                                                                                                                          |
 | `customizationSettings` | `Record<string, unknown>` | нет          | Настройки темы (generic JSON). Для `basic` канонический формат `{ paletteId, customPalette }`, где `customPalette` содержит 5 цветов (`accentPrimary`, `textPrimary`, `backgroundPrimary`, `trackAreaBackground`, `trackBackground`); палитра по умолчанию — `base`; при выборе предустановленной палитры её цвета синхронизируются в `customPalette`; legacy-flat `custom*` поддерживаются для совместимости. |
 | `playlistData`          | `PartyPlaylistDto`        | нет          | Начальный плейлист.                                                                                                                                                                                                                                                                                                                                                                                            |
 | `eventDateTime`         | `string` (ISO 8601, UTC)  | нет          | Дата/время начала мероприятия в UTC (см. [Дата/время и таймзона](#датавремя-и-таймзона)).                                                                                                                                                                                                                                                                                                                      |
@@ -391,6 +455,12 @@ _Примечание:_ в текущей реализации веб может
 | `externalLinkUrl`       | `string`                  | нет          | URL внешней ссылки.                                                                                                                                                                                                                                                                                                                                                                                            |
 | `externalLinkText`      | `string`                  | нет          | Текст ссылки (подпись).                                                                                                                                                                                                                                                                                                                                                                                        |
 | `danceTags`             | `string[]`                | нет          | Теги танцев (до 20: предопределённые + свои).                                                                                                                                                                                                                                                                                                                                                                  |
+
+**TransitionPartyLifecycleDto** (тело POST `/api/parties/{partyId}/lifecycle`)
+
+| Поле                  | Тип                   | Обязательное | Описание                                                              |
+| --------------------- | --------------------- | ------------ | --------------------------------------------------------------------- |
+| `partyLifecycleState` | `PartyLifecycleState` | да           | Целевое состояние: `draft`, `ready`, `completed` (snake_case в JSON). |
 
 **UpdatePartyDto** (тело PUT `/api/parties/{partyId}`)
 
@@ -430,40 +500,67 @@ _Примечание:_ в текущей реализации веб может
 | `links`                        | `Record<string, string> \| null`  | Ссылки (соцсети, сайт) — JSON-объект.                                            |
 | `defaultPartyThemeId`          | `string \| null`                  | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic, spring-cross-step). |
 | `defaultCustomizationSettings` | `Record<string, unknown> \| null` | Настройки оформления по умолчанию (generic JSON).                                |
+| `timeZone`                     | `string \| null`                  | Часовой пояс организатора.                                                       |
+| `role`                         | `"organizer" \| "admin"`          | Роль организатора.                                                               |
 | `createdAt`                    | `string`                          | ISO 8601.                                                                        |
 | `updatedAt`                    | `string \| null`                  | ISO 8601.                                                                        |
 
 **UpdateOrganizerDto** (тело PATCH `/api/organizer/profile`)
 
-| Поле      | Тип                      | Обязательное | Описание                |
-| --------- | ------------------------ | ------------ | ----------------------- |
-| `name`    | `string`                 | нет          | Название организации.   |
-| `logoUrl` | `string`                 | нет          | URL логотипа.           |
-| `links`   | `Record<string, string>` | нет          | Ссылки (соцсети, сайт). |
+| Поле       | Тип                      | Обязательное | Описание                |
+| ---------- | ------------------------ | ------------ | ----------------------- |
+| `name`     | `string`                 | нет          | Название организации.   |
+| `logoUrl`  | `string`                 | нет          | URL логотипа.           |
+| `links`    | `Record<string, string>` | нет          | Ссылки (соцсети, сайт). |
+| `timeZone` | `string`                 | нет          | Часовой пояс.           |
 
 ### 6.6 Состояние вечеринки (SignalR)
 
 **PartyStateDto**
 
-| Поле              | Тип                             | Описание                                                                                                |
-| ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `partyId`         | `string`                        | GUID вечеринки.                                                                                         |
-| `isSessionActive` | `boolean`                       | Активна ли сессия.                                                                                      |
-| `playbackState`   | `PlaybackStateDto \| undefined` | Текущее состояние воспроизведения.                                                                      |
-| `playlist`        | `PartyPlaylistDto`              | Плейлист.                                                                                               |
-| `serverTrackIds`  | `string[]`                      | Список ID треков плейлиста на сервере (только треки, без групп), для индикатора «трека нет на сервере». |
+| Поле                 | Тип                             | Описание                                                                                                |
+| -------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `partyId`            | `string`                        | GUID вечеринки.                                                                                         |
+| `isSessionActive`    | `boolean`                       | Активна ли сессия.                                                                                      |
+| `partyDisplayStatus` | `PartyDisplayStatus`            | Статус для зрителя (сервер вычисляет, см. §6.7).                                                        |
+| `playbackState`      | `PlaybackStateDto \| undefined` | Текущее состояние воспроизведения.                                                                      |
+| `playlist`           | `PartyPlaylistDto`              | Плейлист.                                                                                               |
+| `serverTrackIds`     | `string[]`                      | Список ID треков плейлиста на сервере (только треки, без групп), для индикатора «трека нет на сервере». |
 
 ### 6.7 Перечисляемые типы
 
 **PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` \| `"spring-cross-step"` (PartyTheme идентификатор)  
+**PartyLifecycleState:** `"draft"` \| `"ready"` \| `"completed"` — жизненный цикл вечеринки (JSON snake_case). Новая вечеринка создаётся в `draft`. Список `GET /api/parties` и публичный каталог `GET /api/parties/public/list` **не включают** `draft`. Переходы — только через `POST /api/parties/{partyId}/lifecycle` (см. §3.4).  
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
-**PlaybackMode:** `"preparation"` \| `"session"`
+**PlaybackMode:** `"preparation"` \| `"session"`  
+**PartyDisplayStatus:** `"draft"` \| `"scheduled"` \| `"starting_soon"` \| `"live"` \| `"organizer_offline"` \| `"party_ended"` — вычисляется на сервере для зрителя. Клиент дополнительно может показывать `connecting`, `server_unreachable` и `program_ended` («Конец программы» — последний трек программы доигран, по snapshot `playbackState` + плейлист; не приходит с API). Приоритет на сервере: `party_ended` (только lifecycle `completed`) → `draft` → `organizer_offline` (сессия активна, организатор отключён ≥ grace) → `live` → `starting_soon` (организатор в Hub, сессия не активна, в т.ч. после `EndSession`) → `scheduled` (сессии нет, организатор не в Hub). При отключении организатора от Hub сессия **не** завершается автоматически (grace ~60 с, см. [docs/integration/streaming.md](docs/integration/streaming.md)).
+
+### 6.8 DTO Theme Monetization
+
+| DTO                         | Поля                                                                                                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ThemeAccessDto`            | `grantedThemeIds`, `visibleLockedThemes`, `contactUrl`                                                                                                                                          |
+| `VisibleLockedThemeDto`     | `themeId`, `packageCode`, `packageName`                                                                                                                                                         |
+| `AdminThemePackageDto`      | `id`, `code`, `name`, `isAutoGranted`, `isActive`, `themeIds`                                                                                                                                   |
+| `AdminThemePackageListDto`  | `items: AdminThemePackageDto[]`                                                                                                                                                                 |
+| `AdminOrganizerListItemDto` | `id`, `name`, `email`, `oauthProviders`, `role`, `activeEntitlementsCount`, `createdAt`                                                                                                         |
+| `AdminOrganizerListDto`     | `items`, `total`, `page`, `pageSize`                                                                                                                                                            |
+| `AdminOrganizerDetailDto`   | `id`, `name`, `email`, `oauthAccounts`, `role`, `createdAt`, `entitlements`                                                                                                                     |
+| `AdminOauthAccountDto`      | `provider`, `providerUserId`, `providerUserName`                                                                                                                                                |
+| `EntitlementDto`            | `id`, `packageId`, `packageCode`, `packageName`, `kind`, `source`, `grantedAt`, `grantedByAdminId`, `grantedByAdminName`, `expiresAt`, `usesRemaining`, `revokedAt`, `revokedByAdminId`, `note` |
+| `GrantEntitlementRequest`   | `packageId`, `note?` (`maxLength: 2000`)                                                                                                                                                        |
+| `RevokeEntitlementRequest`  | `note?` (`maxLength: 2000`)                                                                                                                                                                     |
+
+Дополнительно по `EntitlementDto`:
+
+- `grantedByAdminId`/`grantedByAdminName` и `revokedByAdminId` восстанавливаются по последним audit-записям `grant_package`/`revoke_package` для entitlement.
+- Поля админа могут быть `null` для legacy-записей (например, если исторический аудит отсутствует).
 
 ---
 
 ## 7. Branding (Organizer + Party) — по плану §4.4
 
-Модель двухуровневая: дефолт на уровне organizer, override на уровне party (опционально). В v1 в вебе: логотип + имя организатора + базовые поля info. Темы/кастомизация хранятся в модели; расширенные «приватные темы» — позже. Контракты профиля организатора и полей вечеринки для info уточняются в Epic C/D.
+Модель двухуровневая: дефолт на уровне organizer, override на уровне party (опционально). В v1 в вебе: логотип + имя организатора + базовые поля info. Доступ к PartyTheme работает через monetization-модель (пакеты, entitlement, `isAutoGranted`, `visibility=private/public`) по [FEATURE_THEME_MONETIZATION.md](FEATURE_THEME_MONETIZATION.md) и разделам §3.6–§3.7 этого документа. Контракты профиля организатора и полей вечеринки для info уточняются в Epic C/D.
 
 ---
 

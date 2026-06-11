@@ -5,6 +5,8 @@ import {
   type AimpBridgeState,
   type AimpSourceSelection,
 } from '../contracts/aimp';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
+import { isPlatformInitialized } from '../platform/platformContext';
 import { aimpService } from '../services/aimpService';
 import {
   createAimpPublishingPathState,
@@ -18,7 +20,7 @@ let unsubscribeAimpLog: (() => void) | null = null;
 let initializePromise: Promise<void> | null = null;
 
 function canUseRendererAimpBridge(): boolean {
-  return typeof window !== 'undefined' && typeof window.api?.aimp !== 'undefined';
+  return isPlatformInitialized() && getPlatformCapabilities().supportsAimpWorkspace;
 }
 
 interface AimpStoreState {

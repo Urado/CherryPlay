@@ -41,9 +41,13 @@ public class PartiesController : ControllerBase
                 partyDto.Id, partyDto.ShortCode);
             return Ok(partyDto);
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyLimitReachedException ex)
         {
@@ -96,9 +100,13 @@ public class PartiesController : ControllerBase
 
             return Ok(partyDto);
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -126,9 +134,13 @@ public class PartiesController : ControllerBase
             await _partyService.UpdatePartyMetadataAsync(partyGuid, dto);
             return NoContent();
         }
+        catch (ThemeNotEntitledException ex)
+        {
+            return StatusCode(403, new { code = "theme_not_entitled", message = "Theme is not entitled", themeId = ex.ThemeId, requiredPackageCodes = ex.RequiredPackageCodes });
+        }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {
@@ -157,7 +169,7 @@ public class PartiesController : ControllerBase
         }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {
@@ -191,7 +203,7 @@ public class PartiesController : ControllerBase
         }
         catch (ForbiddenException ex)
         {
-            return Forbid(ex.Message);
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
         }
         catch (PartyNotFoundException ex)
         {
@@ -205,6 +217,57 @@ public class PartiesController : ControllerBase
         {
             _logger.LogError(ex, "Error updating playlist for party: {PartyId}", partyId);
             return StatusCode(500, "An error occurred while updating the playlist");
+        }
+    }
+
+    [HttpPost("{partyId}/lifecycle")]
+    [AuthorizeOrganizer]
+    public async Task<ActionResult<PartyDto>> TransitionPartyLifecycle(
+        string partyId,
+        [FromBody] TransitionPartyLifecycleDto dto)
+    {
+        if (!PartyIdExtensions.TryParsePartyId(partyId, out var partyGuid, out var errorResult))
+        {
+            return errorResult!;
+        }
+
+        if (dto == null)
+        {
+            return BadRequest("Request body cannot be null");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var partyDto = await _partyService.TransitionPartyLifecycleAsync(partyGuid, dto.PartyLifecycleState);
+            return Ok(partyDto);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(403, new { code = "forbidden", message = ex.Message });
+        }
+        catch (PartyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidPartyLifecycleTransitionException ex)
+        {
+            return Conflict(new
+            {
+                code = "invalid_lifecycle_transition",
+                message = ex.Message,
+                currentState = ex.CurrentState,
+                requestedState = ex.RequestedState,
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error transitioning party lifecycle: {PartyId}", partyId);
+            return StatusCode(500, "An error occurred while updating party lifecycle state");
         }
     }
 }

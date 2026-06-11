@@ -28,10 +28,10 @@
 - Выделение элементов (single, multiple, range)
 - Undo/Redo через globalHistoryStore
 - Сохранение/загрузка проектов (.cherry формат)
-- `setPortableMode(value: boolean)` — включает/выключает портативный режим; обновляет `settings.portableMode` и помечает проект как изменённый
+- `setPortableMode(value: boolean)` — включает/выключает портативный режим; обновляет `settings.portableMode` и помечает проект как изменённый (в т.ч. из модалки настроек приложения или после успешного **Сохранить как…** с переносимым пакетом)
 
 ## Настройки проекта
 
-`settings.portableMode: boolean` (default `false`) — флаг портативного режима. Хранится в `.cherry` файле как часть `ProjectSettings`. Управляется через `setPortableMode`. Не путать с настройками приложения (`settingsStore`) — это настройка конкретного проекта.
+`settings.portableMode: boolean` (default `false`) — флаг портативного режима. Хранится в `.cherry` файле как часть `ProjectSettings`. Управляется через `setPortableMode` и влияет на последующие **обычные** сохранения; **новый** переносимый пакет выбирается в диалоге **Сохранить как…** (см. [Save/Load](../systems/save-load.md)). Не путать с настройками приложения (`settingsStore`) — это настройка конкретного проекта.
 
 `meta.partyTrackDisplay` (`PartyTrackDisplaySettings`) — отображение имён треков для вечеринки (превью и плейлист для API). Опциональный ключ `partyTrackDisplay` в `.cherry`, персистится вместе с `meta`; обновление через `setPartyTrackDisplaySettings`. Подробнее см. [Party workspace](../workspaces/party.md#отображение-имён-треков-party-track-display) и [`project.ts`](../../../src/core/types/project.ts).

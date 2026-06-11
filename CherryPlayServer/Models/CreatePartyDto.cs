@@ -19,7 +19,7 @@ public record CreatePartyDto
     /// <summary>
     /// PartyTheme идентификатор (см. GLOSSARY.md)
     /// </summary>
-    public PartyThemeId PartyThemeId { get; init; } = PartyThemeId.Cyberpunk;
+    public PartyThemeId PartyThemeId { get; init; } = PartyThemeId.Basic;
 
     public Dictionary<string, object>? CustomizationSettings { get; init; }
 

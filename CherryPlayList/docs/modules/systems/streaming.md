@@ -82,9 +82,10 @@ Streaming System связывает:
 2. `signalRService.startPositionUpdates(partyId)`:
    - Каждую секунду читает `playerAudioStore.position` и текущий трек.
    - Отправляет на сервер `UpdatePlaybackPosition(partyId, trackId, position)`.
-3. При изменении трека/статуса:
+3. При изменении трека или **wire**-статуса (`idle` / `playing` / `paused` / `ended`):
    - `signalRService.notifyStateChanged(partyId)` — уведомление о смене состояния.
    - `signalRService.updateFullState(partyId, fullState)` — отправка полного `PlaybackStateDto`.
+   - Локальные статусы store (`loading`, `buffering`, `error`) перед отправкой маппятся в wire-контракт (`playbackState.ts`); переходные статусы не триггерят отдельную публикацию.
 4. Дополнительно `signalRService` отслеживает изменения плейлиста через `useProjectStore.subscribe` и:
    - конвертирует плейлист в формат API (`convertPlaylistForApi`);
    - вызывает `partyService.updatePartyPlaylist(partyId, playlistForApi)`;

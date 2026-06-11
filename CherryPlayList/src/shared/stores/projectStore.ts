@@ -47,6 +47,7 @@ import {
   getFlatItemList,
   removeItemFromItems,
   updateTrackInItems,
+  markTrackMissingInItems,
   updateGroupInItems,
   collectAllItemIds,
   findItemWithParent,
@@ -116,6 +117,7 @@ interface ProjectState {
   getAllTracksInOrder: (items?: ProjectItem[]) => Track[];
   getItemPath: (itemId: string) => string[];
   updateTrackDuration: (id: string, duration: number) => void;
+  markTrackAsMissing: (id: string, isMissing?: boolean) => void;
 
   createGroup: (itemIds: string[], name?: string) => string;
   ungroupGroup: (groupId: string) => void;
@@ -481,6 +483,12 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
       updateTrackDuration: (id, duration) => {
         set((state) => ({
           items: updateTrackInItems(state.items, id, duration),
+        }));
+      },
+
+      markTrackAsMissing: (id, isMissing = true) => {
+        set((state) => ({
+          items: markTrackMissingInItems(state.items, id, isMissing),
         }));
       },
 

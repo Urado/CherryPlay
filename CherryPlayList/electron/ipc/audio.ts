@@ -4,11 +4,11 @@ import * as path from 'path';
 import { ipcMain } from 'electron';
 import * as mm from 'music-metadata';
 
-import { validatePath } from '../utils/fsHelpers.js';
-
-// Maximum file size for audio playback (200 MB)
-// This prevents loading extremely large files that could cause memory issues
-const MAX_AUDIO_FILE_SIZE = 200 * 1024 * 1024; // 200 MB in bytes
+import {
+  encodePathToCherryplayAudioUrl,
+  MAX_AUDIO_FILE_BYTES,
+} from '../protocol/cherryplayAudio.js';
+import { isAudioFile, validatePath } from '../utils/fsHelpers.js';
 
 /**
  * Get audio file duration in seconds
@@ -43,10 +43,34 @@ export function registerAudioHandlers(): void {
         };
       }
 
-      // Verify file exists
-      await fs.access(payload.path);
+      const resolvedPath = path.resolve(payload.path);
 
-      const duration = await getAudioDuration(payload.path);
+      if (!isAudioFile(resolvedPath)) {
+        return {
+          success: false,
+          error: 'Path is not an audio file',
+        };
+      }
+
+      // Verify file exists and size before parsing metadata
+      const stats = await fs.stat(resolvedPath);
+      if (!stats.isFile()) {
+        return {
+          success: false,
+          error: 'Path is not a file',
+        };
+      }
+
+      if (stats.size > MAX_AUDIO_FILE_BYTES) {
+        return {
+          success: false,
+          error: 'Audio file exceeds maximum allowed size',
+        };
+      }
+
+      await fs.access(resolvedPath);
+
+      const duration = await getAudioDuration(resolvedPath);
       return {
         success: true,
         data: duration,
@@ -59,7 +83,7 @@ export function registerAudioHandlers(): void {
     }
   });
 
-  ipcMain.handle('audio:getFileSource', async (event, payload: { path: string }) => {
+  ipcMain.handle('audio:getFileUrl', async (event, payload: { path: string }) => {
     try {
       if (!validatePath(payload.path)) {
         return {
@@ -68,8 +92,16 @@ export function registerAudioHandlers(): void {
         };
       }
 
-      // Check file existence and size before reading
-      const stats = await fs.stat(payload.path);
+      const resolvedPath = path.resolve(payload.path);
+
+      if (!isAudioFile(resolvedPath)) {
+        return {
+          success: false,
+          error: 'Path is not an audio file',
+        };
+      }
+
+      const stats = await fs.stat(resolvedPath);
       if (!stats.isFile()) {
         return {
           success: false,
@@ -77,31 +109,17 @@ export function registerAudioHandlers(): void {
         };
       }
 
-      if (stats.size > MAX_AUDIO_FILE_SIZE) {
-        const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-        const maxMB = (MAX_AUDIO_FILE_SIZE / (1024 * 1024)).toFixed(0);
+      if (stats.size > MAX_AUDIO_FILE_BYTES) {
         return {
           success: false,
-          error: `File too large: ${sizeMB} MB (maximum: ${maxMB} MB)`,
+          error: 'Audio file exceeds maximum allowed size',
         };
       }
-
-      const fileBuffer = await fs.readFile(payload.path);
-      const extension = path.extname(payload.path).toLowerCase();
-      const mimeType =
-        {
-          '.mp3': 'audio/mpeg',
-          '.wav': 'audio/wav',
-          '.flac': 'audio/flac',
-          '.m4a': 'audio/mp4',
-          '.ogg': 'audio/ogg',
-        }[extension] || 'audio/mpeg';
 
       return {
         success: true,
         data: {
-          buffer: fileBuffer.toString('base64'),
-          mimeType,
+          url: encodePathToCherryplayAudioUrl(resolvedPath),
         },
       };
     } catch (error) {

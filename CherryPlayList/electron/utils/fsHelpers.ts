@@ -73,10 +73,120 @@ export function safeFileName(fileName: string): string {
   );
 }
 
+/** Windows: reserved device / DOS names, case-insensitive (folder segment). */
+const WIN32_RESERVED_DIR_NAMES = new Set(
+  [
+    'CON',
+    'PRN',
+    'AUX',
+    'NUL',
+    'COM1',
+    'COM2',
+    'COM3',
+    'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
+    'LPT1',
+    'LPT2',
+    'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9',
+  ].map((s) => s.toUpperCase()),
+);
+
+/**
+ * For portable project packages the output folder name must match the project name exactly.
+ * Rejects names that need sanitization, path separators, or (on Windows) reserved / trailing rules.
+ * @throws Error with user-facing RU message when invalid
+ */
+export function assertExactPortableProjectFolderName(name: string): void {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Пустое название проекта — укажите имя, которое подойдёт для папки на диске');
+  }
+  if (trimmed !== name) {
+    throw new Error('Название проекта не должно иметь лишние пробелы по краям');
+  }
+  if (name.includes('/') || name.includes('\\')) {
+    throw new Error(
+      'В названии проекта не должно быть символов пути. Измените название и повторите попытку.',
+    );
+  }
+  if (safeFileName(name) !== name) {
+    throw new Error(
+      'В названии проекта есть символы, нельзя использовать в имени папки (например < > : " | ? * \\). ' +
+        'Измените название так, как должна называться папка на диске, и повторите попытку.',
+    );
+  }
+  if (process.platform === 'win32') {
+    if (/[. ]$/.test(name)) {
+      throw new Error(
+        'В Windows имя папки не может заканчиваться точкой или пробелом. Измените название проекта.',
+      );
+    }
+    if (WIN32_RESERVED_DIR_NAMES.has(name.toUpperCase())) {
+      throw new Error(
+        'Это имя зарезервировано в Windows для устройств. Задайте другое название проекта.',
+      );
+    }
+  }
+}
+
 /**
  * Get relative path from one file/folder to another
  * Returns path using forward slashes (M3U standard)
  */
+/**
+ * True when `absolutePath` resolves to a location under `projectDir` (same
+ * drive / root), so it is a normal project-scoped file. Used for strict
+ * portable policy: a relative `srcPath` with `..` is allowed only if the
+ * resulting path either stays inside the project, or (when outside) the file
+ * exists and passes a strict `fs.access` check in the portable copy step.
+ */
+export function isResolvedPathUnderProjectDir(projectDir: string, absolutePath: string): boolean {
+  const resolvedBase = path.resolve(projectDir);
+  const resolved = path.resolve(absolutePath);
+  const rel = path.relative(resolvedBase, resolved);
+  if (rel === '') {
+    return true;
+  }
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Resolves a track path for portable copy and whether it escapes the project
+ * directory (e.g. `../media/a.flac` or an absolute path on another drive).
+ */
+export function getPortableTrackSourceResolutionMeta(
+  projectDir: string,
+  srcPath: string,
+): { absolute: string; outsideProjectDir: boolean } {
+  const absolute = resolveTrackSourceForPortableCopy(projectDir, srcPath);
+  return { absolute, outsideProjectDir: !isResolvedPathUnderProjectDir(projectDir, absolute) };
+}
+
+/**
+ * Resolve a track file path for portable copy: absolute paths stay normalized;
+ * relative paths (including `./` and `../` segments) are resolved against the
+ * directory of the .cherry file, not the process cwd.
+ */
+export function resolveTrackSourceForPortableCopy(projectDir: string, srcPath: string): string {
+  if (path.isAbsolute(srcPath)) {
+    return path.resolve(srcPath);
+  }
+  return path.resolve(projectDir, srcPath);
+}
+
 export function getRelativePath(from: string, to: string): string {
   // Normalize paths
   const fromNormalized = path.resolve(from);

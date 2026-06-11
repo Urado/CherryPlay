@@ -1,18 +1,12 @@
+import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
+import { getPlatformCapabilities } from '../platform/platformCapabilities';
+import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
+import type { DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
+import { isFileNotFoundError } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
 
-export interface IPCResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export interface DirectoryItem {
-  name: string;
-  path: string;
-  isDirectory: boolean;
-  size?: number;
-}
+export type { DirectoryItem, IPCResponse };
 
 export interface Track {
   id: string;
@@ -21,13 +15,16 @@ export interface Track {
   duration?: number;
 }
 
-interface AudioFileSource {
-  buffer: string;
-  mimeType: string;
+interface AudioFileUrl {
+  url: string;
 }
 
+/** @deprecated Use {@link getPlatformCapabilities} for feature gating. */
 export function isIpcRendererAvailable(): boolean {
-  return typeof window !== 'undefined' && typeof window.api !== 'undefined';
+  if (!isPlatformInitialized()) {
+    return false;
+  }
+  return getPlatformCapabilities().supportsAimpWorkspace;
 }
 
 class IPCService {
@@ -36,8 +33,8 @@ class IPCService {
     payload?: unknown,
     showNotification: boolean = true,
   ): Promise<T> {
-    if (!isIpcRendererAvailable()) {
-      const error = new Error('IPC API not available');
+    if (!isPlatformInitialized()) {
+      const error = new Error('Platform API not available');
       if (showNotification) {
         useUIStore.getState().addNotification({
           type: 'error',
@@ -48,7 +45,10 @@ class IPCService {
     }
 
     try {
-      const response: IPCResponse<T> = await window.api.invoke(channel, payload);
+      const response: IPCResponse<T> = (await getPlatform().invoke(
+        channel,
+        payload as object | undefined,
+      )) as IPCResponse<T>;
 
       if (!response.success) {
         const error = new Error(response.error || 'IPC call failed');
@@ -63,12 +63,23 @@ class IPCService {
 
       return response.data as T;
     } catch (error) {
-      logger.error(`IPC call failed: ${channel}`, error);
+      const missingFile = isFileNotFoundError(error);
+      if (missingFile && !showNotification) {
+        logger.warn(`File not found (${channel})`, error);
+      } else {
+        logger.error(`IPC call failed: ${channel}`, error);
+      }
 
       if (showNotification && error instanceof Error) {
-        if (
-          !error.message.includes('IPC API not available') &&
-          !error.message.includes('IPC call failed')
+        if (missingFile) {
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: 'Файл не найден на диске. Проверьте путь к треку.',
+          });
+        } else if (
+          !error.message.includes('Platform API not available') &&
+          !error.message.includes('IPC call failed') &&
+          error.message !== DEMO_UNAVAILABLE_MESSAGE
         ) {
           useUIStore.getState().addNotification({
             type: 'error',
@@ -85,12 +96,15 @@ class IPCService {
     return this.invoke<DirectoryItem[]>('fileBrowser:listDirectory', { path });
   }
 
-  async statFile(path: string): Promise<{
+  async statFile(
+    path: string,
+    showNotification: boolean = true,
+  ): Promise<{
     size: number;
     modified: number;
     isDirectory: boolean;
   }> {
-    return this.invoke('fileBrowser:statFile', { path });
+    return this.invoke('fileBrowser:statFile', { path }, showNotification);
   }
 
   async findAudioFilesRecursive(path: string): Promise<string[]> {
@@ -101,11 +115,8 @@ class IPCService {
     return this.invoke<number>('audio:getDuration', { path }, showNotification);
   }
 
-  async getAudioFileSource(
-    path: string,
-    showNotification: boolean = true,
-  ): Promise<AudioFileSource> {
-    return this.invoke<AudioFileSource>('audio:getFileSource', { path }, showNotification);
+  async getAudioFileUrl(path: string, showNotification: boolean = true): Promise<AudioFileUrl> {
+    return this.invoke<AudioFileUrl>('audio:getFileUrl', { path }, showNotification);
   }
 
   async showFolderDialog(options?: {
@@ -133,6 +144,13 @@ class IPCService {
 
   async getSystemPath(name: string): Promise<string> {
     return this.invoke<string>('system:getPath', { name });
+  }
+
+  /**
+   * Открывает файл или папку в ассоциированном приложении (Проводник для каталога).
+   */
+  async openPath(fileOrFolderPath: string): Promise<void> {
+    return this.invoke<void>('system:openPath', { path: fileOrFolderPath });
   }
 }
 

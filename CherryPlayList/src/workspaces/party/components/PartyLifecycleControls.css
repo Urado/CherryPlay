@@ -1,0 +1,59 @@
+.party-lifecycle {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  background: var(--bg-primary, #fff);
+}
+
+.party-lifecycle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.party-lifecycle-header-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.party-lifecycle-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.party-lifecycle-badge--draft {
+  background: rgba(158, 158, 158, 0.2);
+  color: var(--text-secondary, #555);
+}
+
+.party-lifecycle-badge--ready {
+  background: rgba(0, 204, 136, 0.15);
+  color: var(--accent-primary, #00a86b);
+}
+
+.party-lifecycle-badge--completed {
+  background: rgba(33, 150, 243, 0.12);
+  color: #1565c0;
+}
+
+.party-lifecycle-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.party-lifecycle-action {
+  width: 100%;
+}
+
+.party-lifecycle-action--complete {
+  border-color: rgba(21, 101, 192, 0.35);
+}

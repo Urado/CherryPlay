@@ -5,6 +5,7 @@ using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Mappings;
 using CherryPlayServer.Core.Validators;
 using CherryPlayServer.Core;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Models;
 
 using static CherryPlayServer.Core.PartyConstants;
@@ -22,6 +23,7 @@ public class PartyService : IPartyService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IPartyPlaylistNotifier _playlistNotifier;
     private readonly IPartyAccessService _partyAccessService;
+    private readonly IThemeAccessService _themeAccessService;
     private readonly ILogger<PartyService> _logger;
 
     public PartyService(
@@ -31,6 +33,7 @@ public class PartyService : IPartyService
         IHttpContextAccessor httpContextAccessor,
         IPartyPlaylistNotifier playlistNotifier,
         IPartyAccessService partyAccessService,
+        IThemeAccessService themeAccessService,
         ILogger<PartyService> logger)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
@@ -39,6 +42,7 @@ public class PartyService : IPartyService
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _playlistNotifier = playlistNotifier ?? throw new ArgumentNullException(nameof(playlistNotifier));
         _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
+        _themeAccessService = themeAccessService ?? throw new ArgumentNullException(nameof(themeAccessService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -67,6 +71,10 @@ public class PartyService : IPartyService
             throw new UnauthorizedAccessException("HTTP context is required");
         }
         var organizerId = httpContext.RequireOrganizerId("create a party");
+        var selectedThemeId = dto.PartyThemeId.ToStringValue();
+        var access = await _themeAccessService.CheckThemeAccessAsync(organizerId, selectedThemeId);
+        if (!access.IsAllowed)
+            throw new ThemeNotEntitledException(selectedThemeId, access.RequiredPackageCodes);
 
         _logger.LogInformation(
             "Creating party: name={Name}, partyThemeId={PartyThemeId}, organizerId={OrganizerId}",
@@ -173,11 +181,12 @@ public class PartyService : IPartyService
         _logger.LogDebug("Getting all parties");
 
         var parties = await _partyRepository.GetAllAsync();
+        var visibleParties = parties.Where(p => p.PartyLifecycleState != PartyLifecycleState.Draft).ToList();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 
-        var dtos = new List<PartyDto>(parties.Count);
-        foreach (var party in parties)
+        var dtos = new List<PartyDto>(visibleParties.Count);
+        foreach (var party in visibleParties)
         {
             var hasActiveSession = stateLookup.ContainsKey(party.Id);
             dtos.Add(party.ToDto(hasActiveSession));
@@ -199,14 +208,15 @@ public class PartyService : IPartyService
         _logger.LogDebug("Getting parties for organizer: {OrganizerId}", organizerId);
 
         var parties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
-        _logger.LogDebug("Retrieved {Count} parties from repository for organizer {OrganizerId}",
-            parties.Count, organizerId);
+        var visibleParties = parties.Where(p => p.PartyLifecycleState != PartyLifecycleState.Draft).ToList();
+        _logger.LogDebug("Retrieved {Count} parties from repository for organizer {OrganizerId} ({VisibleCount} visible in list)",
+            parties.Count, organizerId, visibleParties.Count);
 
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 
-        var dtos = new List<PartyDto>(parties.Count);
-        foreach (var party in parties)
+        var dtos = new List<PartyDto>(visibleParties.Count);
+        foreach (var party in visibleParties)
         {
             var hasActiveSession = stateLookup.ContainsKey(party.Id);
             dtos.Add(party.ToDto(hasActiveSession));
@@ -248,7 +258,16 @@ public class PartyService : IPartyService
         if (dto.Subtitle != null)
             party.Subtitle = dto.Subtitle;
         if (dto.PartyThemeId.HasValue)
+        {
+            var newThemeId = dto.PartyThemeId.Value.ToStringValue();
+            if (!string.Equals(newThemeId, party.PartyThemeId.ToStringValue(), StringComparison.Ordinal))
+            {
+                var access = await _themeAccessService.CheckThemeAccessAsync(organizerId, newThemeId);
+                if (!access.IsAllowed)
+                    throw new ThemeNotEntitledException(newThemeId, access.RequiredPackageCodes);
+            }
             party.PartyThemeId = dto.PartyThemeId.Value;
+        }
         if (dto.EventDateTime.HasValue)
             party.EventDateTime = dto.EventDateTime;
         if (dto.EventEndDateTime.HasValue)
@@ -343,6 +362,65 @@ public class PartyService : IPartyService
         await _playlistNotifier.NotifyPlaylistChangedAsync(partyId);
         _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
     }
+
+    public async Task<PartyDto> TransitionPartyLifecycleAsync(Guid partyId, PartyLifecycleState targetState) =>
+        await TransitionPartyLifecycleCoreAsync(partyId, targetState, "transition party lifecycle");
+
+    private async Task<PartyDto> TransitionPartyLifecycleCoreAsync(
+        Guid partyId,
+        PartyLifecycleState targetState,
+        string actionDescription)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            throw new UnauthorizedAccessException("HTTP context is required");
+        }
+
+        var organizerId = httpContext.RequireOrganizerId(actionDescription);
+
+        var party = await _partyRepository.GetByIdAsync(partyId);
+        if (party == null)
+        {
+            throw new PartyNotFoundException(partyId);
+        }
+
+        if (party.OrganizerId != organizerId)
+        {
+            throw new ForbiddenException("You do not have permission to access this party");
+        }
+
+        var currentState = party.PartyLifecycleState;
+        if (currentState != targetState)
+        {
+            if (!IsAllowedPartyLifecycleTransition(currentState, targetState))
+            {
+                throw new InvalidPartyLifecycleTransitionException(partyId, currentState, targetState);
+            }
+
+            party.PartyLifecycleState = targetState;
+            await _partyRepository.UpdateAsync(party);
+            _logger.LogInformation(
+                "Party lifecycle transitioned: {PartyId} {FromState} -> {ToState}",
+                partyId,
+                currentState,
+                targetState);
+        }
+
+        var sessionState = await _streamingRepository.GetSessionStateAsync(partyId);
+        return party.ToDto(sessionState != null);
+    }
+
+    private static bool IsAllowedPartyLifecycleTransition(
+        PartyLifecycleState current,
+        PartyLifecycleState target) =>
+        (current, target) switch
+        {
+            (PartyLifecycleState.Draft, PartyLifecycleState.Ready) => true,
+            (PartyLifecycleState.Ready, PartyLifecycleState.Completed) => true,
+            (PartyLifecycleState.Ready, PartyLifecycleState.Draft) => true,
+            _ => false,
+        };
 
     private static void ValidatePartyCardFields(string? shortDescription, List<string>? danceTags, string paramName)
     {

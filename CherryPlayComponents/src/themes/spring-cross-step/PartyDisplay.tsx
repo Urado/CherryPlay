@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { PartySessionIndicator } from '../../components/PartySessionIndicator/PartySessionIndicator';
 import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
 import { findTrack } from '../../core/utils/playlist';
 import { PartyDisplayData } from '../../types';
@@ -68,12 +69,7 @@ export const PartyDisplay: React.FC<SpringCrossStepPartyDisplayProps> = ({
           <div className="party-display-header-text">
             <h1 className="party-display-title party-display-title--spring-cross-step">{title}</h1>
             {subtitle && <p className="party-display-subtitle">{subtitle}</p>}
-            <div className="party-display-session-indicator">
-              <span className="party-display-session-dot" />
-              <span className="party-display-session-label">
-                {data.isSessionActive ? 'Вечеринка идёт' : 'Скоро начнём'}
-              </span>
-            </div>
+            <PartySessionIndicator status={data.viewerStatus} />
           </div>
         </header>
 

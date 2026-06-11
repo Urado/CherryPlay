@@ -7,11 +7,11 @@
 Для добавления новой PartyTheme нужно:
 
 1. Создать CSS файлы в `CherryPlayComponents/src/themes/<theme-id>/`
-2. Зарегистрировать PartyTheme в `CherryPlayComponents/src/themes/index.ts`
+2. Зарегистрировать PartyTheme (`partyThemeTypes.ts` + `CherryPlayComponents/src/themes/index.ts`)
 3. Добавить значение в C# enum `CherryPlayServer/Core/Enums/PartyThemeId.cs`
 4. Обновить документацию
 
-**Важно**: После добавления PartyTheme в библиотеку компонентов она автоматически становится доступной во всех приложениях. Дополнительные изменения в CherryPlayWeb и CherryPlayList не требуются (кроме опциональных превью).
+**Важно**: После добавления PartyTheme в библиотеку компонентов она автоматически регистрируется технически (типизация, рендер, API-совместимость) во всех приложениях. Фактическая доступность для организаторов определяется активными пакетами и entitlement (см. шаг 3.2), а не автоматической универсальной выдачей.
 
 ## Пошаговая инструкция
 
@@ -112,9 +112,9 @@
 
 ### Шаг 2: Регистрация PartyTheme в CherryPlayComponents
 
-**2.1. Обновите `CherryPlayComponents/src/themes/index.ts`:**
+**2.1. Обновите `CherryPlayComponents/src/themes/partyThemeTypes.ts` и `index.ts`:**
 
-- Добавьте идентификатор PartyTheme в union type `PartyThemeId`
+- Добавьте идентификатор PartyTheme в union type `PartyThemeId` в `partyThemeTypes.ts` (реэкспорт остаётся в `index.ts`)
 - Добавьте PartyTheme в объект `PARTY_THEME_REGISTRY` используя функцию `createPartyTheme()`
 - Укажите: `id`, `name`, `description`, `cssPath`
 - Если PartyTheme поддерживает кастомизацию, укажите `customizationOptions` (массив ключей опций) и добавьте `CustomizationEditor` в папку темы
@@ -137,7 +137,15 @@
 - Добавьте атрибут `[JsonStringEnumMemberName("<theme-id>")]` с идентификатором PartyTheme в нижнем регистре
 - Значение должно соответствовать идентификатору из библиотеки компонентов
 
-**3.2. (Опционально) Добавьте пример вечеринки в `CherryPlayServer/Infrastructure/Data/DataSeeder.cs`:**
+**3.2. Регистрация темы в каталоге БД (обязательно для monetization-модели):**
+
+- При запуске `DataSeeder` автоматически добавит новую тему в `themes`, если её ещё нет (c `visibility=public`, `is_visible=true`).
+- После добавления темы в enum обязательно определить пакетную доступность:
+  - добавить тему в `free` (если тема бесплатная), или
+  - добавить тему в коммерческий пакет в сидере/миграции.
+- Если тему не добавить ни в один активный пакет, она будет существовать в каталоге, но останется недоступной для организаторов (получат `theme_not_entitled`).
+
+**3.3. (Опционально) Добавьте пример вечеринки в `CherryPlayServer/Infrastructure/Data/DataSeeder.cs`:**
 
 - Создайте новый объект `Party` с `PartyThemeId` равным новому значению enum
 - Заполните плейлист тестовыми данными
@@ -162,6 +170,7 @@
 **5.2. Если PartyTheme поддерживает кастомизацию:**
 
 - Реализуйте `CustomizationEditor.tsx` внутри `CherryPlayComponents/src/themes/<theme-id>/`
+- Для темы `basic` логика палитры (каталог, нормализация настроек, типы) вынесена в `CherryPlayComponents/src/themes/basic/palette/`; см. [THEMES.md](./THEMES.md), раздел «Архитектура»
 - Подключите компонент через `overrides.CustomizationEditor` в `PARTY_THEME_REGISTRY`
 - В `CherryPlayList/src/workspaces/party/components/PartyEditor.tsx` правки не нужны: он рендерит `theme.components.CustomizationEditor` из контракта темы
 
@@ -175,10 +184,11 @@
 
 ## Чеклист добавления новой PartyTheme
 
-1. **Автоматическое обновление**: После добавления PartyTheme в библиотеку компонентов она автоматически становится доступной в:
+1. **Автоматическое обновление (техническая регистрация)**: После добавления PartyTheme в библиотеку компонентов она автоматически появляется в кодовой регистрации:
    - CherryPlayWeb (через `isValidPartyTheme()`)
    - CherryPlayList (через массив тем)
    - Всех местах, использующих тип `PartyThemeId` (в API/коде поле `partyThemeId`)
+   - Доступность для конкретного организатора зависит от пакетов/entitlement и проверяется сервером
 
 2. **CSS переменные**: Используйте стандартный набор CSS переменных для консистентности:
    - `--bg-primary`, `--bg-secondary`, `--bg-tertiary`, `--bg-hover`
@@ -203,7 +213,7 @@
 - [ ] Все селекторы используют `[data-theme="<theme-id>"]`
 - [ ] Отступы и размеры соответствуют эталонной сетке (шаг 1); на узком (≤480px) и широком экране поведение одинаковое; при необходимости добавлен медиа-запрос для шапки плейлиста
 - [ ] Нет типичных ошибок (раздел «Типичные ошибки и как их избежать»): один источник отступов у элемента плейлиста, видимая левая граница у current/played, заголовок по эталону (clamp) и по центру, padding шапки плейлиста 20px 24px 16px, блоки плеера и плейлиста разделены (gap 16px, у каждого border-radius 8px)
-- [ ] Добавлен `PartyThemeId` в union type в `themes/index.ts`
+- [ ] Добавлен `PartyThemeId` в union type в `themes/partyThemeTypes.ts`
 - [ ] Добавлена PartyTheme в `PARTY_THEME_REGISTRY` в `themes/index.ts`
 - [ ] Добавлен импорт CSS в `themes/index.css`
 - [ ] Проект собирается без ошибок: `npm run build`

@@ -14,6 +14,7 @@ public class Organizer
     public PartyThemeId? DefaultPartyThemeId { get; set; }
     public Dictionary<string, object>? DefaultCustomizationSettings { get; set; }
     public string? TimeZone { get; set; }
+    public OrganizerRole Role { get; set; } = OrganizerRole.Organizer;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }

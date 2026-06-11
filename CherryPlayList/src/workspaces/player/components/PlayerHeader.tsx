@@ -11,14 +11,15 @@ import React from 'react';
 
 import { signalRService } from '@shared/services';
 import { useSettingsStore } from '@shared/stores';
-import { formatDuration } from '@shared/utils';
+import { formatTimeFromDuration, formatTimeFromTimestamp } from '@shared/utils';
 
 interface PlayerHeaderProps {
   name: string;
   onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
-  projectedEndTime: string | null;
+  /** Прогноз окончания сессии: UNIX epoch в мс (локальные часы, отображение через formatTimeFromTimestamp → hh:mm:ss) */
+  projectedEndTime: number | null;
   hasSelectedItems: boolean;
   canCreateGroup: boolean;
   canRemoveSelectedItems: boolean;
@@ -179,11 +180,15 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           <>
             <span style={{ margin: '0 8px' }}>•</span>
             <TimerIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-            <span>{formatDuration(totalDuration)}</span>
+            <span title="Суммарная длительность (накопленная по таймлайну сессии): hh:mm:ss">
+              Длительность: {formatTimeFromDuration(totalDuration)}
+            </span>
             {projectedEndTime !== null && (
               <>
                 <span style={{ margin: '0 8px' }}>•</span>
-                <span>Окончание: {projectedEndTime}</span>
+                <span title="Прогноз времени окончания по локальным часам: hh:mm:ss (formatTimeFromTimestamp)">
+                  Окончание: {formatTimeFromTimestamp(projectedEndTime)}
+                </span>
               </>
             )}
           </>

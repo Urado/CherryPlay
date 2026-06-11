@@ -1,6 +1,8 @@
 export { DemoPlayer, useDemoPlayerController } from './DemoPlayer';
 export type { DemoPlayerController } from './DemoPlayer';
 export { NotificationContainer } from './NotificationContainer';
+export { OnlineUnavailablePanel } from './OnlineUnavailablePanel';
+export type { OnlineUnavailableReason } from './OnlineUnavailablePanel';
 export { Spinner } from './Spinner';
 
 // ListRow - Compound Components for list items
@@ -69,3 +71,9 @@ export type {
 // WorkspaceHeader - Unified header for workspace views
 export { WorkspaceHeader } from './WorkspaceHeader';
 export type { WorkspaceHeaderProps } from './WorkspaceHeader';
+
+export { HourDividerAfterTrackRow, HourDividerListBottom } from './PlaylistHourDividerRows';
+export type {
+  HourDividerAfterTrackRowProps,
+  HourDividerListBottomProps,
+} from './PlaylistHourDividerRows';

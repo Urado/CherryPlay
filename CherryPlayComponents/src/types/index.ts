@@ -1,6 +1,25 @@
+import type { PartyViewerStatus } from '../constants/partyViewerStatus';
 import type { PartyThemeId, CustomizationSettings } from '../themes';
 
 export * from './auth';
+export {
+  isPartyDisplayStatusId,
+  partyViewerStatusFromId,
+  PARTY_DISPLAY_STATUS_IDS,
+} from '../constants/partyViewerStatus';
+export type {
+  PartyDisplayStatusId,
+  PartyViewerStatus,
+  PartyViewerStatusId,
+} from '../constants/partyViewerStatus';
+export { mergePartyViewerStatus } from '../core/party/mergePartyViewerStatus';
+export { isProgramEnded } from '../core/party/isProgramEnded';
+export type {
+  MergePartyViewerStatusInput,
+  SignalRConnectionStatus,
+} from '../core/party/mergePartyViewerStatus';
+export { PartySessionIndicator } from '../components/PartySessionIndicator/PartySessionIndicator';
+export type { PartySessionIndicatorProps } from '../components/PartySessionIndicator/PartySessionIndicator';
 
 export interface PlayerItem {
   id: string;
@@ -41,4 +60,6 @@ export interface PartyDisplayData<T extends PartyThemeId = PartyThemeId> {
   playlist: PartyPlaylistData;
   playbackState?: PlaybackState | null;
   isSessionActive: boolean;
+  /** Merged viewer status (server + client overlays). */
+  viewerStatus: PartyViewerStatus;
 }

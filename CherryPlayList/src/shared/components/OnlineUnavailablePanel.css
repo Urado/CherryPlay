@@ -1,0 +1,32 @@
+.online-unavailable-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.online-unavailable-panel-icon {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.online-unavailable-panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #000000);
+}
+
+.online-unavailable-panel-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary, #666666);
+}
+
+.online-unavailable-panel-retry {
+  margin-top: 8px;
+}

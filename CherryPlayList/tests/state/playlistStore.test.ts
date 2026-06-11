@@ -1,20 +1,30 @@
 import { act } from '@testing-library/react';
 
-import { useHistoryStore } from '../../src/state/historyStore';
-import { usePlaylistStore } from '../../src/state/playlistStore';
+import { useGlobalHistoryStore } from '../../src/shared/stores/globalHistoryStore';
+import {
+  ensureProjectStore,
+  initializeGlobalHistory,
+  removeProjectStore,
+} from '../../src/shared/stores/projectStoreFactory';
+
+const WORKSPACE_ID = 'playlist-test-workspace';
 
 const resetStores = () => {
-  usePlaylistStore.setState({
+  removeProjectStore(WORKSPACE_ID);
+  const store = ensureProjectStore({
+    workspaceId: WORKSPACE_ID,
+    initialName: 'New Playlist',
+    persist: false,
+  });
+  store.setState({
+    ...store.getState(),
     name: 'New Playlist',
-    tracks: [],
-    selectedTrackIds: new Set<string>(),
+    items: [],
+    selectedItemIds: new Set<string>(),
     _skipHistory: false,
   });
-  useHistoryStore.setState({
-    history: [],
-    historyIndex: -1,
-    maxDepth: 50,
-  });
+  useGlobalHistoryStore.getState().clearHistory();
+  return store;
 };
 
 const createDraft = (label: string) => ({
@@ -24,52 +34,58 @@ const createDraft = (label: string) => ({
 });
 
 const addSampleTracks = (...labels: string[]) => {
-  const store = usePlaylistStore.getState();
+  const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
   act(() => {
-    store.addTracks(labels.map(createDraft));
+    store.getState().addItems(labels.map(createDraft));
   });
-  return usePlaylistStore.getState().tracks.map((track) => track.id);
+  return store.getState().items.map((track) => track.id);
 };
 
 beforeEach(() => {
+  initializeGlobalHistory();
   resetStores();
 });
 
-describe('playlistStore', () => {
+afterEach(() => {
+  removeProjectStore(WORKSPACE_ID);
+  useGlobalHistoryStore.getState().clearHistory();
+});
+
+describe('projectStore (playlist workspace)', () => {
   it('adds tracks and assigns ids', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     act(() => {
-      store.addTracks([createDraft('one'), createDraft('two')]);
+      store.getState().addItems([createDraft('one'), createDraft('two')]);
     });
 
-    const state = usePlaylistStore.getState();
-    expect(state.tracks).toHaveLength(2);
-    expect(state.tracks[0].id).toBeDefined();
+    const state = store.getState();
+    expect(state.items).toHaveLength(2);
+    expect(state.items[0].id).toBeDefined();
   });
 
   it('inserts tracks at specific index', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     const [idA, idB] = addSampleTracks('a', 'b');
 
     act(() => {
-      store.addTracksAt([createDraft('mid')], 1);
+      store.getState().addItems([createDraft('mid')], 1);
     });
 
-    const state = usePlaylistStore.getState();
-    expect(state.tracks.map((t) => t.name)).toEqual(['a.mp3', 'mid.mp3', 'b.mp3']);
-    expect(state.tracks[0].id).toBe(idA);
-    expect(state.tracks[2].id).toBe(idB);
+    const state = store.getState();
+    expect(state.items.map((t) => t.name)).toEqual(['a.mp3', 'mid.mp3', 'b.mp3']);
+    expect(state.items[0].id).toBe(idA);
+    expect(state.items[2].id).toBe(idB);
   });
 
   it('moves single track', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     addSampleTracks('first', 'second', 'third');
 
     act(() => {
-      store.moveTrack(0, 2);
+      store.getState().moveItem(0, 2);
     });
 
-    expect(usePlaylistStore.getState().tracks.map((t) => t.name)).toEqual([
+    expect(store.getState().items.map((t) => t.name)).toEqual([
       'second.mp3',
       'third.mp3',
       'first.mp3',
@@ -77,15 +93,15 @@ describe('playlistStore', () => {
   });
 
   it('moves selected group preserving order', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     const [id1, id2] = addSampleTracks('one', 'two', 'three', 'four');
     act(() => {
-      store.toggleTrackSelection(id1);
-      store.toggleTrackSelection(id2);
-      store.moveSelectedTracks(3);
+      store.getState().toggleItemSelection(id1);
+      store.getState().toggleItemSelection(id2);
+      store.getState().moveSelectedItems(3);
     });
 
-    expect(usePlaylistStore.getState().tracks.map((t) => t.name)).toEqual([
+    expect(store.getState().items.map((t) => t.name)).toEqual([
       'three.mp3',
       'four.mp3',
       'one.mp3',
@@ -94,63 +110,63 @@ describe('playlistStore', () => {
   });
 
   it('handles selection helpers', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     const ids = addSampleTracks('a', 'b', 'c');
 
     act(() => {
-      store.toggleTrackSelection(ids[0]);
-      store.selectRange(ids[0], ids[2]);
+      store.getState().toggleItemSelection(ids[0]);
+      store.getState().selectRange(ids[0], ids[2]);
     });
-    const state = usePlaylistStore.getState();
-    expect(state.selectedTrackIds.has(ids[2])).toBeTruthy();
-    expect(state.selectedTrackIds.size).toBe(3);
+    const state = store.getState();
+    expect(state.selectedItemIds.has(ids[2])).toBeTruthy();
+    expect(state.selectedItemIds.size).toBe(3);
 
-    act(() => store.deselectAll());
-    expect(usePlaylistStore.getState().selectedTrackIds.size).toBe(0);
+    act(() => store.getState().deselectAll());
+    expect(store.getState().selectedItemIds.size).toBe(0);
   });
 
   it('removes selected tracks', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     const ids = addSampleTracks('a', 'b', 'c');
 
     act(() => {
-      store.toggleTrackSelection(ids[1]);
-      store.removeSelectedTracks();
+      store.getState().toggleItemSelection(ids[1]);
+      store.getState().removeSelectedItems();
     });
 
-    expect(usePlaylistStore.getState().tracks.map((t) => t.name)).toEqual(['a.mp3', 'c.mp3']);
+    expect(store.getState().items.map((t) => t.name)).toEqual(['a.mp3', 'c.mp3']);
   });
 
   it('updates track duration', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     const [id] = addSampleTracks('duration');
 
     act(() => {
-      store.updateTrackDuration(id, 120);
+      store.getState().updateTrackDuration(id, 120);
     });
 
-    expect(usePlaylistStore.getState().tracks[0].duration).toBe(120);
+    expect(store.getState().items[0].duration).toBe(120);
   });
 
   it('supports undo/redo for add and move operations', () => {
-    const store = usePlaylistStore.getState();
+    const store = ensureProjectStore({ workspaceId: WORKSPACE_ID });
     act(() => {
-      store.addTracks([createDraft('a'), createDraft('b')]);
+      store.getState().addItems([createDraft('a'), createDraft('b')]);
     });
 
     act(() => {
-      store.moveTrack(0, 1);
+      store.getState().moveItem(0, 1);
     });
-    const orderAfterMove = usePlaylistStore.getState().tracks.map((t) => t.name);
+    const orderAfterMove = store.getState().items.map((t) => t.name);
 
     act(() => {
-      store.undo();
+      useGlobalHistoryStore.getState().undo();
     });
-    expect(usePlaylistStore.getState().tracks.map((t) => t.name)).toEqual(['a.mp3', 'b.mp3']);
+    expect(store.getState().items.map((t) => t.name)).toEqual(['a.mp3', 'b.mp3']);
 
     act(() => {
-      store.redo();
+      useGlobalHistoryStore.getState().redo();
     });
-    expect(usePlaylistStore.getState().tracks.map((t) => t.name)).toEqual(orderAfterMove);
+    expect(store.getState().items.map((t) => t.name)).toEqual(orderAfterMove);
   });
 });

@@ -43,7 +43,7 @@ public class TelegramOAuthClient : IOAuthProviderClient
         return Task.FromResult(url);
     }
 
-    public async Task<OAuthUserInfo> ExchangeCodeAsync(string code, string redirectUri)
+    public Task<OAuthUserInfo> ExchangeCodeAsync(string code, string redirectUri)
     {
         // Telegram Login Widget возвращает данные через query параметры после авторизации
         // Для упрощения в v1 используем заглушку, которая принимает данные напрямую
@@ -65,20 +65,20 @@ public class TelegramOAuthClient : IOAuthProviderClient
             var userName = $"{firstName} {lastName}".Trim();
             var avatarUrl = userData.TryGetProperty("photo_url", out var photo) ? photo.GetString() : null;
 
-            return new OAuthUserInfo(
+            return Task.FromResult(new OAuthUserInfo(
                 ProviderUserId: userId,
                 ProviderUserName: userName,
                 ProviderUserAvatarUrl: avatarUrl
-            );
+            ));
         }
         catch
         {
             // Fallback: используем code как userId для тестирования
-            return new OAuthUserInfo(
+            return Task.FromResult(new OAuthUserInfo(
                 ProviderUserId: code,
                 ProviderUserName: "Telegram User",
                 ProviderUserAvatarUrl: null
-            );
+            ));
         }
     }
 }

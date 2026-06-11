@@ -21,7 +21,10 @@ public class OrganizerAuthorizationHandler : AuthorizationHandler<OrganizerRequi
         if (context.Resource is HttpContext httpContext)
         {
             if (!httpContext.Items.TryGetValue("OrganizerId", out var organizerId) || organizerId is not Guid)
+            {
+                context.Fail(new AuthorizationFailureReason(this, "Organizer ID is required"));
                 return;
+            }
 
             // Проверяем сессию в хранилище: если сессии нет (выход, перезапуск сервера), авторизация не проходит
             if (!httpContext.Items.TryGetValue("SessionId", out var sessionIdObj) || sessionIdObj is not Guid sessionId)

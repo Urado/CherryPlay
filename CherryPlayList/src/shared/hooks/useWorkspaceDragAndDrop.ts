@@ -13,9 +13,17 @@ import {
   filterDisplayItems,
 } from '../../modules/dragDrop/dropPositionUtils';
 import { DragDropCommand, InsertPosition, ItemDragState } from '../../modules/dragDrop/types';
+import { ipcService } from '../services/ipcService';
 import { useDragDropStore, isItemDragState } from '../stores/dragDropStore';
 import { getProjectStore } from '../stores/projectStoreFactory';
 import { logger } from '../utils/logger';
+import {
+  classifyNativePathsWithStat,
+  collectNativePathsFromDataTransfer,
+  getPathForFileInRenderer,
+  isOsNativeFileDataTransfer,
+  tryParseInternalFileBrowserPayload,
+} from '../utils/nativeDataTransferPaths';
 import { DisplayItem } from '../utils/playerItemsUtils';
 import { createTrackDrafts } from '../utils/trackFactory';
 
@@ -49,7 +57,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
     isValidAudioFile,
     onAddTracks,
     onAddTracksAt,
-    onTracksAdded,
+    onTracksAdded: _onTracksAdded,
     loadFolderTracks,
     onMove,
     onCopy,
@@ -125,7 +133,8 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       e.stopPropagation();
 
       const types = Array.from(e.dataTransfer.types);
-      const isFileDrag = types.includes('application/json');
+      const isFileDrag =
+        types.includes('application/json') || isOsNativeFileDataTransfer(e.dataTransfer);
       const isItemDrag = types.includes('text/plain');
 
       if (hoverWorkspaceId !== workspaceId) {
@@ -195,7 +204,8 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       }
 
       const types = Array.from(e.dataTransfer.types);
-      const isFileDrag = types.includes('application/json');
+      const isFileDrag =
+        types.includes('application/json') || isOsNativeFileDataTransfer(e.dataTransfer);
 
       if (isFileDrag) {
         e.dataTransfer.dropEffect = 'copy';
@@ -224,30 +234,6 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       setHoverWorkspaceId,
       workspaceId,
     ],
-  );
-
-  const parseFileBrowserData = useCallback(
-    (rawData: string | undefined): { files: string[]; directories: string[] } => {
-      if (!rawData) {
-        return { files: [], directories: [] };
-      }
-      try {
-        const parsed = JSON.parse(rawData);
-        if (parsed.type === 'fileBrowser') {
-          return {
-            files: Array.isArray(parsed.paths) ? parsed.paths : [],
-            directories: Array.isArray(parsed.directories) ? parsed.directories : [],
-          };
-        }
-        if (parsed.type === 'files' && Array.isArray(parsed.paths)) {
-          return { files: parsed.paths, directories: [] };
-        }
-      } catch {
-        // ignore
-      }
-      return { files: [], directories: [] };
-    },
-    [],
   );
 
   const addTracksFromPaths = useCallback(
@@ -292,6 +278,49 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       addTracksFromPaths(aggregated, parentId, localIndex);
     },
     [addTracksFromPaths, loadFolderTracks],
+  );
+
+  const addTracksFromNativeDataTransfer = useCallback(
+    async (dataTransfer: DataTransfer, parentId: string | null, localIndex: number) => {
+      const raw = collectNativePathsFromDataTransfer(dataTransfer, getPathForFileInRenderer);
+      if (raw.length === 0) {
+        if (onError) {
+          onError('Could not read paths for dropped files');
+        }
+        return;
+      }
+
+      const {
+        files: filePaths,
+        directories: directoryPaths,
+        inputCount,
+        statFailureCount,
+      } = await classifyNativePathsWithStat(raw, (p) => ipcService.statFile(p, false));
+
+      const anyClassified = filePaths.length > 0 || directoryPaths.length > 0;
+      if (!anyClassified) {
+        if (onError) {
+          onError(
+            statFailureCount > 0
+              ? `Could not verify dropped items on disk (${statFailureCount} of ${inputCount} path(s) failed stat or validation).`
+              : 'Could not verify dropped items on disk.',
+          );
+        }
+        return;
+      }
+
+      if (filePaths.length) {
+        addTracksFromPaths(filePaths, parentId, localIndex);
+      }
+      if (directoryPaths.length) {
+        await addFolders(directoryPaths, parentId, localIndex);
+      }
+
+      if (statFailureCount > 0 && onError) {
+        onError('Some dropped items could not be read and were skipped');
+      }
+    },
+    [addFolders, addTracksFromPaths, onError],
   );
 
   const executeDrop = useCallback(
@@ -372,34 +401,48 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       e.stopPropagation();
 
       const currentPosition = insertPosition;
+      const position = currentPosition ?? 'bottom';
+      const { parentId, localIndex } = calculateDropPosition(
+        targetFlatIndex,
+        position,
+        displayItems,
+      );
+
+      const internalPayload = tryParseInternalFileBrowserPayload(e.dataTransfer);
+      if (internalPayload !== null) {
+        const { files, directories } = internalPayload;
+        if (files.length) {
+          addTracksFromPaths(files, parentId, localIndex);
+        }
+        if (directories.length) {
+          void addFolders(directories, parentId, localIndex);
+        }
+        handleClearDragState();
+        return;
+      }
+
+      if (isOsNativeFileDataTransfer(e.dataTransfer)) {
+        void (async () => {
+          try {
+            await addTracksFromNativeDataTransfer(e.dataTransfer, parentId, localIndex);
+          } catch (err) {
+            logger.error('Native file drop failed', err);
+            if (onError) {
+              onError(err instanceof Error ? err.message : 'Drop failed');
+            }
+          } finally {
+            handleClearDragState();
+          }
+        })();
+        return;
+      }
 
       if (!draggedItems) {
         handleClearDragState();
         return;
       }
 
-      const types = Array.from(e.dataTransfer.types);
-      const isFileDrag = types.includes('application/json');
-
-      if (isFileDrag) {
-        const { files, directories } = parseFileBrowserData(
-          e.dataTransfer.getData('application/json'),
-        );
-
-        const position = currentPosition ?? 'bottom';
-        const { parentId, localIndex } = calculateDropPosition(
-          targetFlatIndex,
-          position,
-          displayItems,
-        );
-
-        if (files.length) {
-          addTracksFromPaths(files, parentId, localIndex);
-        }
-        if (directories.length) {
-          addFolders(directories, parentId, localIndex);
-        }
-      } else if (isItemDragState(draggedItems) && currentPosition) {
+      if (isItemDragState(draggedItems) && currentPosition) {
         executeDrop(targetFlatIndex, currentPosition);
       }
 
@@ -408,12 +451,13 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
     [
       addFolders,
       addTracksFromPaths,
+      addTracksFromNativeDataTransfer,
       handleClearDragState,
       executeDrop,
       draggedItems,
       insertPosition,
-      parseFileBrowserData,
       displayItems,
+      onError,
     ],
   );
 
@@ -422,33 +466,48 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       e.preventDefault();
       e.stopPropagation();
 
+      const index =
+        typeof insertIndex === 'number' && insertIndex >= 0 ? insertIndex : displayItems.length;
+
+      const rootInsertIndex = displayItems.filter(
+        (di, i) => i < index && di.parentGroupId === null,
+      ).length;
+
+      const internalPayload = tryParseInternalFileBrowserPayload(e.dataTransfer);
+      if (internalPayload !== null) {
+        const { files, directories } = internalPayload;
+        if (files.length) {
+          addTracksFromPaths(files, null, rootInsertIndex);
+        }
+        if (directories.length) {
+          void addFolders(directories, null, rootInsertIndex);
+        }
+        handleClearDragState();
+        return;
+      }
+
+      if (isOsNativeFileDataTransfer(e.dataTransfer)) {
+        void (async () => {
+          try {
+            await addTracksFromNativeDataTransfer(e.dataTransfer, null, rootInsertIndex);
+          } catch (err) {
+            logger.error('Native file drop on container failed', err);
+            if (onError) {
+              onError(err instanceof Error ? err.message : 'Drop failed');
+            }
+          } finally {
+            handleClearDragState();
+          }
+        })();
+        return;
+      }
+
       if (!draggedItems) {
         handleClearDragState();
         return;
       }
 
-      const index =
-        typeof insertIndex === 'number' && insertIndex >= 0 ? insertIndex : displayItems.length;
-
-      const types = Array.from(e.dataTransfer.types);
-      const isFileDrag = types.includes('application/json');
-
-      if (isFileDrag) {
-        const { files, directories } = parseFileBrowserData(
-          e.dataTransfer.getData('application/json'),
-        );
-
-        const rootInsertIndex = displayItems.filter(
-          (di, i) => i < index && di.parentGroupId === null,
-        ).length;
-
-        if (files.length) {
-          addTracksFromPaths(files, null, rootInsertIndex);
-        }
-        if (directories.length) {
-          addFolders(directories, null, rootInsertIndex);
-        }
-      } else if (isItemDragState(draggedItems)) {
+      if (isItemDragState(draggedItems)) {
         const position: InsertPosition = 'top';
         executeDrop(index, position);
       }
@@ -458,11 +517,12 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
     [
       addFolders,
       addTracksFromPaths,
+      addTracksFromNativeDataTransfer,
       handleClearDragState,
       executeDrop,
       draggedItems,
-      parseFileBrowserData,
       displayItems,
+      onError,
     ],
   );
 

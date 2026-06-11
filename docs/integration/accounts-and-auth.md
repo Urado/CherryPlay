@@ -13,11 +13,13 @@
 | Роль | Кто | REST | SignalR |
 |------|-----|------|---------|
 | **organizer** | CherryPlayList (desktop), кабинет в CherryPlayWeb | Bearer JWT для POST/PUT/DELETE и GET своих вечеринок | JWT при подключении к Hub; вызов StartSession, EndSession, UpdatePlaybackPosition, UpdateFullState, NotifyStateChanged, JoinPartyAsOrganizer |
+| **admin** | Организатор с повышенной ролью | Всё из `organizer` + доступ к `/api/admin/*` (поиск организаторов, grant/revoke пакетов) | Нет отдельных admin-методов в Hub |
 | **viewer** | CherryPlayWeb (страница party/<shortCode>) | Без авторизации: GET по shortCode (метаданные, плейлист, каталог) | Подключение по shortCode: JoinPartyAsViewer, RequestFullState; только приём событий от сервера |
 
 ## JWT
 
 - **Access token** используется для API и SignalR.
+- В токен добавляется claim `role` (`organizer` или `admin`); если claim отсутствует в старом токене, сервер трактует как `organizer`.
 - В **Web** (кабинет организатора): хранение в **httpOnly cookie** (без доступа JS к токенам).
 - В **CherryPlayList**: передача в заголовке Authorization (Bearer) и при вызове `JoinPartyAsOrganizer(partyId, token)`; хранение — предпочтительно защищённое хранилище ОС (например, Windows Credentials).
 - В v1 допускается простая политика TTL (достаточный срок на мероприятие или ручной повторный вход). **Refresh-токены** и self-service восстановление пароля запланированы на последующие версии; до тех пор при истечении токена требуется повторный вход.
@@ -30,6 +32,7 @@
 - **Валидация redirect URI**: для Desktop OAuth принимаются только `cherryplaylist://auth` и `http://127.0.0.1`; произвольный redirect из запроса отклоняется.
 - **Пароли**: хеширование BCrypt с уникальной солью на каждый пароль; минимальная длина пароля и лимиты имени организатора заданы константами (сервер и клиенты согласованы).
 - **Ошибки входа**: единое сообщение при неверных учётных данных (без раскрытия «существует ли email»).
+- **Проверка admin-доступа**: для `/api/admin/*` сервер дополнительно проверяет роль организатора по БД (не только по JWT claim).
 
 ## Логин в CherryPlayList (desktop)
 

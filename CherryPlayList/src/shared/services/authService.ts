@@ -6,8 +6,18 @@ import type {
 } from '@cherryplay/components';
 
 import { getServerUrl } from '../config/serverConfig';
+import {
+  applyDemoAuthSession,
+  DEMO_ACCESS_TOKEN,
+  getDemoOrganizerDto,
+} from '../demo/demoAuthFixture';
+import { isDemoAuthMode } from '../demo/guardDemoAuth';
+import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
+import { getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
+import { apiFetch } from '../utils/apiFetch';
 import { handleAuthError } from '../utils/authErrorHandler';
+import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
 // Re-export types for backward compatibility
@@ -19,6 +29,11 @@ class AuthService implements IAuthService {
   }
 
   async startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      console.info('[AuthService] Demo: OAuth skipped, using demo organizer', { provider });
+      return;
+    }
     const baseUrl = await this.getBaseUrl();
 
     const isDev = import.meta.env.DEV;
@@ -35,8 +50,8 @@ class AuthService implements IAuthService {
       isDev,
     });
 
-    if (typeof window !== 'undefined' && window.api) {
-      const result = (await window.api.invoke('system:openExternal', { url: authUrl })) as
+    if (isPlatformInitialized()) {
+      const result = (await getPlatform().invoke('auth:openExternal', { url: authUrl })) as
         | { success: true }
         | { success: false; error: string };
 
@@ -50,15 +65,20 @@ class AuthService implements IAuthService {
         '[AuthService] Expected callback URL:',
         isDev ? 'http://localhost:5174/auth/callback' : 'cherryplaylist://auth',
       );
-    } else {
-      console.warn('[AuthService] window.api not available, using window.open fallback');
-      window.open(authUrl, '_blank');
+      return;
     }
+
+    console.warn('[AuthService] Platform not available, using window.open fallback');
+    window.open(authUrl, '_blank');
   }
 
   async exchangeCode(code: string, provider: string, deviceId?: string): Promise<string> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      return DEMO_ACCESS_TOKEN;
+    }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/exchange`, {
+    const response = await apiFetch(`${baseUrl}/auth/exchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,6 +101,9 @@ class AuthService implements IAuthService {
   }
 
   async getCurrentOrganizer(): Promise<OrganizerDto> {
+    if (isDemoAuthMode()) {
+      return getDemoOrganizerDto();
+    }
     const baseUrl = await this.getBaseUrl();
     const token = useAuthStore.getState().accessToken;
 
@@ -96,7 +119,7 @@ class AuthService implements IAuthService {
 
     // Сначала проверяем валидность сессии легковесным эндпоинтом
     try {
-      const sessionCheckResponse = await fetch(`${baseUrl}/api/organizer/session/check`, {
+      const sessionCheckResponse = await apiFetch(`${baseUrl}/api/organizer/session/check`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -126,7 +149,7 @@ class AuthService implements IAuthService {
     }
 
     // Если сессия валидна, получаем полную информацию об организаторе
-    const response = await fetch(`${baseUrl}/api/organizer/me`, {
+    const response = await apiFetch(`${baseUrl}/api/organizer/me`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -148,8 +171,12 @@ class AuthService implements IAuthService {
   }
 
   async login(email: string, password: string): Promise<string> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      return DEMO_ACCESS_TOKEN;
+    }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/login`, {
+    const response = await apiFetch(`${baseUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +197,7 @@ class AuthService implements IAuthService {
     const token = data.accessToken;
 
     // Сохраняем токен в store
-    useAuthStore.getState().setToken(token);
+    setAuthSessionToken(token);
 
     // Загружаем информацию об организаторе
     try {
@@ -184,8 +211,15 @@ class AuthService implements IAuthService {
   }
 
   async register(email: string, password: string, name: string): Promise<string> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      useAuthStore
+        .getState()
+        .setOrganizer({ id: getDemoOrganizerDto().id, name: name.trim() || 'Demo Organizer' });
+      return DEMO_ACCESS_TOKEN;
+    }
     const baseUrl = await this.getBaseUrl();
-    const response = await fetch(`${baseUrl}/auth/register`, {
+    const response = await apiFetch(`${baseUrl}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -207,7 +241,7 @@ class AuthService implements IAuthService {
     const token = data.accessToken;
 
     // Сохраняем токен в store
-    useAuthStore.getState().setToken(token);
+    setAuthSessionToken(token);
 
     // Загружаем информацию об организаторе
     try {
@@ -221,12 +255,18 @@ class AuthService implements IAuthService {
   }
 
   async logout(): Promise<void> {
+    if (isDemoAuthMode()) {
+      notifyDemoUnavailable();
+      applyDemoAuthSession();
+      return;
+    }
+
     const baseUrl = await this.getBaseUrl();
     const token = useAuthStore.getState().accessToken;
 
     if (token) {
       try {
-        await fetch(`${baseUrl}/auth/logout`, {
+        await apiFetch(`${baseUrl}/auth/logout`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -238,7 +278,7 @@ class AuthService implements IAuthService {
       }
     }
 
-    useAuthStore.getState().clearAuth();
+    clearAuthSession();
   }
 }
 
