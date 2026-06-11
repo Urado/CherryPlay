@@ -126,6 +126,7 @@ services:
       - ./CherryPlayWeb/vite.config.ts:/app/CherryPlayWeb/vite.config.ts
       - ./CherryPlayWeb/tsconfig.json:/app/CherryPlayWeb/tsconfig.json
       - ./CherryPlayWeb/tsconfig.node.json:/app/CherryPlayWeb/tsconfig.node.json
+      - ./CherryPlayServer/appsettings.json:/app/CherryPlayServer/appsettings.json:ro
     environment:
       - VITE_API_URL=http://localhost:5000
       - VITE_SIGNALR_URL=http://localhost:5000/partyHub

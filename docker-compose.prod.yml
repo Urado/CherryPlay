@@ -75,6 +75,8 @@ services:
     container_name: cherryplay-web
     ports:
       - "127.0.0.1:8080:80"
+    volumes:
+      - ./CherryPlayServer/appsettings.json:/app/CherryPlayServer/appsettings.json:ro
     depends_on:
       - server
     networks:

@@ -12,6 +12,11 @@
 import * as signalR from '@microsoft/signalr';
 
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
+import {
+  mapStoreStatusToWireStatus,
+  type PlaybackStateDto,
+  type PlaybackWireStatus,
+} from '../contracts/playbackState';
 import { useAuthStore, usePlayerAudioStore, useProjectStore } from '../stores';
 import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
 import { convertPlaylistForApi } from '../utils/partyUtils';
@@ -19,18 +24,7 @@ import { isTokenExpired } from '../utils/tokenUtils';
 
 import { partyService } from './partyService';
 
-export interface PlaybackStateDto {
-  currentTrackId: string | null;
-  status: 'idle' | 'playing' | 'paused' | 'ended';
-  position: number;
-  duration: number;
-  volume: number;
-  mode: 'preparation' | 'session';
-  playedTrackIds: string[];
-  disabledTrackIds: string[];
-  disabledGroupIds: string[];
-  lastUpdatedAt: string;
-}
+export type { PlaybackStateDto, PlaybackWireStatus } from '../contracts/playbackState';
 
 /**
  * Константы событий SignalR Hub
@@ -97,7 +91,7 @@ class SignalRService {
 
   // Состояние для отслеживания изменений
   private lastTrackId: string | null = null;
-  private lastStatus: string = 'idle';
+  private lastWireStatus: PlaybackWireStatus = 'idle';
   private lastDisabledTrackIds: string = '';
   private lastDisabledGroupIds: string = '';
 
@@ -751,7 +745,7 @@ class SignalRService {
 
     // Сбрасываем состояние отслеживания
     this.lastTrackId = null;
-    this.lastStatus = 'idle';
+    this.lastWireStatus = 'idle';
     this.lastDisabledTrackIds = '';
     this.lastDisabledGroupIds = '';
 
@@ -760,17 +754,20 @@ class SignalRService {
       const currentTrack = state.currentTrack;
       const status = state.status;
 
-      // Проверяем изменение трека или статуса
-      if (currentTrack?.id !== this.lastTrackId || status !== this.lastStatus) {
+      const wireStatus = mapStoreStatusToWireStatus(status);
+
+      // Публикуем только смену трека или wire-статуса (loading/buffering не шлём отдельно)
+      if (currentTrack?.id !== this.lastTrackId || wireStatus !== this.lastWireStatus) {
         console.log('[SignalR] Audio state changed:', {
           oldTrackId: this.lastTrackId,
           newTrackId: currentTrack?.id || null,
-          oldStatus: this.lastStatus,
-          newStatus: status,
+          oldWireStatus: this.lastWireStatus,
+          newWireStatus: wireStatus,
+          storeStatus: status,
         });
 
         this.lastTrackId = currentTrack?.id || null;
-        this.lastStatus = status;
+        this.lastWireStatus = wireStatus;
 
         this.sendFullStateUpdate(partyId);
       }
@@ -915,7 +912,7 @@ class SignalRService {
 
     const playbackState: PlaybackStateDto = {
       currentTrackId: audioState.currentTrack?.id || null,
-      status: audioState.status,
+      status: mapStoreStatusToWireStatus(audioState.status),
       position: audioState.position,
       duration: audioState.duration,
       volume: audioState.volume,

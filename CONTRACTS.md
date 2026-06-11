@@ -330,18 +330,20 @@ _Примечание:_ в текущей реализации веб может
 
 **PlaybackStateDto**
 
-| Поле               | Тип                                          | Описание                          |
-| ------------------ | -------------------------------------------- | --------------------------------- |
-| `currentTrackId`   | `string \| null`                             | ID текущего трека.                |
-| `status`           | `"idle" \| "playing" \| "paused" \| "ended"` | Статус плеера.                    |
-| `position`         | `number`                                     | Позиция, сек.                     |
-| `duration`         | `number`                                     | Длительность текущего трека, сек. |
-| `volume`           | `number`                                     | Громкость (0–1).                  |
-| `mode`             | `"preparation" \| "session"`                 | Режим.                            |
-| `playedTrackIds`   | `string[]`                                   | ID отыгранных треков.             |
-| `disabledTrackIds` | `string[]`                                   | ID отключённых треков.            |
-| `disabledGroupIds` | `string[]`                                   | ID отключённых групп.             |
-| `lastUpdatedAt`    | `string`                                     | ISO 8601.                         |
+| Поле               | Тип                                          | Описание                              |
+| ------------------ | -------------------------------------------- | ------------------------------------- |
+| `currentTrackId`   | `string \| null`                             | ID текущего трека.                    |
+| `status`           | `"idle" \| "playing" \| "paused" \| "ended"` | Статус плеера на wire (REST/SignalR). |
+| `position`         | `number`                                     | Позиция, сек.                         |
+| `duration`         | `number`                                     | Длительность текущего трека, сек.     |
+| `volume`           | `number`                                     | Громкость (0–1).                      |
+| `mode`             | `"preparation" \| "session"`                 | Режим.                                |
+| `playedTrackIds`   | `string[]`                                   | ID отыгранных треков.                 |
+| `disabledTrackIds` | `string[]`                                   | ID отключённых треков.                |
+| `disabledGroupIds` | `string[]`                                   | ID отключённых групп.                 |
+| `lastUpdatedAt`    | `string`                                     | ISO 8601.                             |
+
+**Статусы плеера: wire vs локальный store (CherryPlayList).** На wire допустимы только четыре значения выше — они совпадают с enum `PlaybackStatus` на сервере. Встроенный плеер CherryPlayList в store additionally использует переходные статусы `loading`, `buffering`, `error`; перед вызовом `UpdateFullState` клиент **обязан** привести их к wire-контракту: `loading`/`buffering` → `playing`, `error` → `idle`. Промежуточные store-статусы не публикуются отдельно (смена `playing` → `loading` → `playing` не должна слать лишний `UpdateFullState`, если wire-статус не изменился). Маппинг: `CherryPlayList/src/shared/contracts/playbackState.ts` (`mapStoreStatusToWireStatus`, `mapAimpPlaybackStatusToWireStatus`).
 
 ### 6.4 Вечеринка (публичная и организаторская)
 

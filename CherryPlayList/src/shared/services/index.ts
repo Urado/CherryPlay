@@ -26,6 +26,7 @@ export { ThemeNotEntitledError, InvalidPartyLifecycleTransitionError } from './p
 export { signalRService } from './signalRService';
 export type {
   PlaybackStateDto,
+  PlaybackWireStatus,
   SessionStartedHandler,
   SessionEndedHandler,
   FullStateUpdatedHandler,
