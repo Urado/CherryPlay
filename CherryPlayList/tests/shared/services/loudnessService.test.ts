@@ -17,6 +17,7 @@ jest.mock('../../../src/shared/stores/settingsStore', () => ({
       loudnessNormalizationEnabled: true,
       loudnessTargetLufs: -18,
       loudnessCompressionEnabled: false,
+      loudnessQuietGapRangeLu: 15,
     })),
   },
 }));
@@ -53,6 +54,7 @@ const enabledSettings: LoudnessSettings = {
   loudnessNormalizationEnabled: true,
   loudnessTargetLufs: -18,
   loudnessCompressionEnabled: false,
+  loudnessQuietGapRangeLu: 15,
 };
 
 const disabledSettings: LoudnessSettings = {

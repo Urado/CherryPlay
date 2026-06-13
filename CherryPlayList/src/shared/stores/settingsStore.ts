@@ -2,11 +2,18 @@ import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
-import { DEFAULT_LOUDNESS_TARGET_LUFS, type LoudnessSettings } from '../contracts/loudness';
+import {
+  clampLoudnessQuietGapRangeLu,
+  DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
+  DEFAULT_LOUDNESS_TARGET_LUFS,
+  LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU,
+  type LoudnessListeningEnvironment,
+  type LoudnessSettings,
+} from '../contracts/loudness';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
+import { electronStorage } from '../storage/electronStorage';
 
 export type { LoudnessSettings };
-import { electronStorage } from '../storage/electronStorage';
 
 interface SettingsState {
   _hasHydrated: boolean;
@@ -26,6 +33,7 @@ interface SettingsState {
   loudnessNormalizationEnabled: boolean;
   loudnessTargetLufs: number;
   loudnessCompressionEnabled: boolean;
+  loudnessQuietGapRangeLu: number;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
@@ -42,6 +50,7 @@ interface SettingsState {
   setLoudnessNormalizationEnabled: (enabled: boolean) => void;
   setLoudnessTargetLufs: (targetLufs: number) => void;
   setLoudnessCompressionEnabled: (enabled: boolean) => void;
+  setLoudnessQuietGapRangeLu: (quietGapRangeLu: number) => void;
 }
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
@@ -65,6 +74,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       loudnessNormalizationEnabled: true,
       loudnessTargetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
       loudnessCompressionEnabled: false,
+      loudnessQuietGapRangeLu: DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
 
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
@@ -85,10 +95,32 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
       setLoudnessTargetLufs: (targetLufs) => set({ loudnessTargetLufs: targetLufs }),
       setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
+      setLoudnessQuietGapRangeLu: (quietGapRangeLu) =>
+        set({ loudnessQuietGapRangeLu: clampLoudnessQuietGapRangeLu(quietGapRangeLu) }),
     }),
     {
       name: 'cherryplaylist-settings',
       storage: electronStorage,
+      version: 1,
+      migrate: (persistedState) => {
+        const state = { ...(persistedState as object) } as Record<string, unknown>;
+        if (typeof state.loudnessQuietGapRangeLu !== 'number') {
+          const environment = state.loudnessListeningEnvironment;
+          if (
+            typeof environment === 'string' &&
+            environment in LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU
+          ) {
+            state.loudnessQuietGapRangeLu =
+              LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU[
+                environment as LoudnessListeningEnvironment
+              ];
+          } else {
+            state.loudnessQuietGapRangeLu = DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU;
+          }
+          delete state.loudnessListeningEnvironment;
+        }
+        return state as unknown as SettingsState;
+      },
       partialize: (state) => ({
         exportPath: state.exportPath,
         exportStrategy: state.exportStrategy,
@@ -105,6 +137,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
         loudnessTargetLufs: state.loudnessTargetLufs,
         loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+        loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
       }),
       onRehydrateStorage: () => (_state, _err) => {
         useSettingsStore.getState().setHasHydrated(true);

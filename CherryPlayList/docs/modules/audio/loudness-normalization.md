@@ -203,25 +203,25 @@ applyPlaybackEffects(engine, track, settings)
 
 Ошибки скана (`status: 'error'`) и unscanned треки **не блокируют** playback — unity gain.
 
-### Порядок Web Audio graph
+### Порядок Web Audio graph (EBU)
 
 ```
 MediaElementSource
       │
       ▼
-trackGainNode          ← setTrackGain (linear)
-      │
-      ▼
 EQ (low → mid → high)  ← setEqualizerBands
       │
       ▼
-DynamicsCompressor     ← setCompressionStrength; bypass при strength = 0
+DynamicsCompressor     ← setCompressionStrength; bypass при strength = 0 (LRA block)
+      │
+      ▼
+trackGainNode          ← setTrackGain (R128 linear normalize)
       │
       ▼
 masterGainNode → destination
 ```
 
-При `compressionStrength > 0` routing: `eqHigh → compressor → masterGain`. При `0`: `eqHigh → masterGain` (compressor disconnected).
+При `compressionStrength > 0` routing: `eqHigh → compressor → trackGain → masterGain`. При `0`: `eqHigh → trackGain → masterGain`.
 
 Placeholder autogain (`setAutoGainEnabled`) **не** применяется при включённой нормализации (`applyLoudnessPlaybackEffects` всегда `setAutoGainEnabled(false)`).
 
@@ -231,29 +231,34 @@ Placeholder autogain (`setAutoGainEnabled`) **не** применяется пр
 
 ### Глобальный toggle
 
-`loudnessCompressionEnabled` в `settingsStore` — активен **только** при `loudnessNormalizationEnabled`. UI: «Адаптивная компрессия (зависит от gain и тихих участков)» в `SettingsModal`.
+`loudnessCompressionEnabled` в `settingsStore` — активен **только** при `loudnessNormalizationEnabled`. UI: «Адаптивная компрессия (LRA и тихие участки, до gain)» в `SettingsModal`.
 
 ### Per-track strength (0…1)
 
 Константы в `compressionStrength.ts`:
 
-| Константа                                     | Значение | Смысл                                    |
-| --------------------------------------------- | -------- | ---------------------------------------- |
-| `COMPRESSION_GAIN_RANGE_DB`                   | 12       | Полная сила по gain при \|gainDb\| ≥ 12  |
-| `COMPRESSION_QUIET_GAP_RANGE_LU`              | 15       | Полная сила по «тихости» при gap ≥ 15 LU |
-| `COMPRESSION_LRA_QUIET_ESTIMATE_FACTOR`       | 0.55     | Fallback: integrated − 0.55×LRA          |
-| `COMPRESSION_INTEGRATED_ONLY_QUIET_OFFSET_LU` | 6        | Fallback без LRA: integrated − 6         |
+| Константа                                     | Значение | Смысл                                              |
+| --------------------------------------------- | -------- | -------------------------------------------------- |
+| `COMPRESSION_QUIET_GAP_RANGE_LU`              | 15       | Полная сила по тихим участкам при gap ≥ 15 LU      |
+| `COMPRESSION_LRA_MIN_LU`                      | 8        | Ниже — считаем уже сжатым (поп)                    |
+| `COMPRESSION_LRA_RANGE_LU`                    | 10       | Полный `dynamicNeed` при LRA ≥ MIN + 10            |
+| `COMPRESSION_BOOST_GATE_DB`                   | 3        | Доп. усиление strength только при gain выше порога |
+| `COMPRESSION_BOOST_RANGE_DB`                  | 12       | Полный boost-множитель над gate                    |
+| `COMPRESSION_LRA_QUIET_ESTIMATE_FACTOR`       | 0.55     | Fallback: integrated − 0.55×LRA                    |
+| `COMPRESSION_INTEGRATED_ONLY_QUIET_OFFSET_LU` | 6        | Fallback без LRA: integrated − 6                   |
 
 **Формула:**
 
 ```text
-gainFactor  = clamp(|gainDb| / 12, 0, 1)
-quietGapLu  = targetLufs - quietPassageLufs
-quietFactor = clamp(quietGapLu / 15, 0, 1)
-strength    = gainFactor × quietFactor
+quietGapLu   = targetLufs - quietPassageLufs
+quietNeed    = clamp(quietGapLu / 15, 0, 1)     // 0 если quiet ≥ target
+dynamicNeed  = clamp((lraLu - 8) / 10, 0, 1)    // resolveDynamicNeed
+strength     = quietNeed × dynamicNeed
+if gainDb > 3:
+  strength   = min(1, strength × (1 + clamp((gainDb - 3) / 12)))
 ```
 
-`gainDb` — effective gain (`getEffectiveGainDb`). При выключенной compression, `status !== 'ok'` или неразрешимом `quietPassageLufs` → **0**.
+`gainDb` — effective gain (`getEffectiveGainDb`); **не** входит в произведение как `|gainDb|`. При выключенной compression, `status !== 'ok'`, `quietGap ≤ 0` или неразрешимом `quietPassageLufs` → **0**.
 
 ### `resolveQuietPassageLufs` (приоритет fallback)
 
@@ -262,23 +267,23 @@ strength    = gainFactor × quietFactor
 3. `integratedLufs - 6`
 4. `undefined` → strength = 0
 
-### Mapping в `DynamicsCompressorNode`
+### Mapping в `DynamicsCompressorNode` (EBU Tech 3343 gentle)
 
-Fixed: `attack = 0.003`, `release = 0.25`.
+Fixed: `attack = 0.015`, `release = 1.0`.
 
 При `strength > 0`:
 
 | strength | threshold (dB) | ratio | knee (dB) |
 | -------- | -------------- | ----- | --------- |
 | **0**    | — (bypass)     | —     | —         |
-| **0.5**  | −23            | 5:1   | 27.5      |
-| **1.0**  | −16            | 8:1   | 15        |
+| **0.5**  | −40            | 1.6:1 | 22.5      |
+| **1.0**  | −35            | 2:1   | 15        |
 
-Интерполяция линейная: `threshold = -30 + strength×14`, `ratio = 2 + strength×6`, `knee = 40 - strength×25`.
+Интерполяция линейная: `threshold = -45 + strength×10`, `ratio = 1.2 + strength×0.8`, `knee = 30 - strength×15`.
 
-### Зачем compression после gain boost
+### Зачем compression до gain
 
-Нормализация поднимает тихие треки (`trackGainDb > 0`). Тихие **участки** внутри трека (ниже integrated) после gain остаются относительно тише пиков — динамический диапазон растёт. Адаптивный compressor (сила зависит от gain и оценки тихих passage через LRA low) сглаживает этот контраст **без** фиксированных −24 dB / 4:1 для всех треков.
+По EBU R128 / Tech 3343: LRA building block (мягкая компрессия) **до** финального линейного gain. Сужает внутритрековую динамику на исходном материале; затем `trackGain` выравнивает integrated к цели. Работает и при отрицательном gain (громкий трек с широким LRA): тихие участки ниже цели → `quietNeed > 0`, узкий LRA (поп) → `dynamicNeed ≈ 0`.
 
 ---
 

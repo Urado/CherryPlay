@@ -27,7 +27,8 @@ export interface WebAudioPlaybackEngineOptions {
 }
 
 /**
- * {@link PlaybackEngine} using Web Audio API: MediaElementSource → track gain → EQ → master gain → destination.
+ * {@link PlaybackEngine} using Web Audio API (EBU order): MediaElementSource → EQ → compressor →
+ * track gain (R128 linear normalize) → master gain → destination.
  *
  * Transport lifecycle (load/play/seek/events) is delegated to {@link MediaElementTransport}.
  */
@@ -180,13 +181,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     eqHighNode.frequency.value = 3200;
 
     const compressorNode = context.createDynamicsCompressor();
-    compressorNode.attack.value = 0.003;
-    compressorNode.release.value = 0.25;
+    compressorNode.attack.value = 0.015;
+    compressorNode.release.value = 1;
 
     const masterGainNode = context.createGain();
 
-    sourceNode.connect(trackGainNode);
-    trackGainNode.connect(eqLowNode);
+    sourceNode.connect(eqLowNode);
     eqLowNode.connect(eqMidNode);
     eqMidNode.connect(eqHighNode);
 
@@ -283,27 +283,29 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       return;
     }
 
-    // Lower threshold / higher ratio = stronger compression as strength → 1.
-    this.compressorNode.threshold.value = -30 + strength * 14;
-    this.compressorNode.ratio.value = 2 + strength * 6;
-    this.compressorNode.knee.value = 40 - strength * 25;
+    // EBU Tech 3343 gentle LRA block: low threshold, moderate ratio, long release.
+    this.compressorNode.threshold.value = -45 + strength * 10;
+    this.compressorNode.ratio.value = 1.2 + strength * 0.8;
+    this.compressorNode.knee.value = 30 - strength * 15;
   }
 
   private applyCompressionRouting(): void {
-    if (!this.eqHighNode || !this.masterGainNode) {
+    if (!this.eqHighNode || !this.trackGainNode || !this.masterGainNode) {
       return;
     }
 
     this.eqHighNode.disconnect();
     this.compressorNode?.disconnect();
+    this.trackGainNode.disconnect();
 
     if (this.compressionStrength > 0 && this.compressorNode) {
       this.eqHighNode.connect(this.compressorNode);
-      this.compressorNode.connect(this.masterGainNode);
-      return;
+      this.compressorNode.connect(this.trackGainNode);
+    } else {
+      this.eqHighNode.connect(this.trackGainNode);
     }
 
-    this.eqHighNode.connect(this.masterGainNode);
+    this.trackGainNode.connect(this.masterGainNode);
   }
 
   private disconnectGraph(): void {

@@ -21,6 +21,13 @@ import {
 } from '@shared/utils/anchorPanelLayout';
 import { formatGainDb } from '@shared/utils/formatGainDb';
 
+import {
+  COMPRESSION_AUTO_MATCH_TOLERANCE,
+  GAIN_AUTO_MATCH_TOLERANCE_DB,
+  isCompressionOverridden,
+  isGainOverridden,
+} from './loudnessOverrides';
+
 export type TrackLoudnessVisualState = 'ok' | 'pending' | 'unscanned' | 'error';
 
 export const LOUDNESS_METRIC_LABEL_GAIN = 'G';
@@ -91,9 +98,10 @@ function hintCalculatedGain(targetLufs: number): string {
 
 const HINT_COMPRESSION = [
   'Сила адаптивной компрессии для этого трека (0–100%), если компрессия включена в настройках.',
-  'Растёт, когда авто-усиление большое и тихие участки заметно ниже целевого уровня — после подъёма gain они могут звучать слишком контрастно.',
-  '0% — компрессор в обходе; 100% — максимальное сглаживание пиков при сохранении общей громкости.',
-  'Слайдер заменяет авто-расчёт для этого трека; «Выставить авто» под слайдером подставляет текущее расчётное значение.',
+  'Рассчитывается по LRA и тихим участкам (LRA low): сужает динамический диапазон до линейной нормализации gain (порядок EBU).',
+  'Глобальный слайдер «Терпимость к провалам громкости» в настройках меняет авто-расчёт для всех треков без ручного override.',
+  'Дополнительно усиливается при большом положительном gain. Плотный поп с узким LRA обычно получает 0%.',
+  'Слайдер заменяет авто-расчёт для этого трека; «Выставить авто» снова следует глобальным настройкам.',
 ].join(' ');
 
 export function getTrackLoudnessVisualState(
@@ -178,6 +186,7 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
     loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
     loudnessTargetLufs: state.loudnessTargetLufs,
     loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+    loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
   }));
   const loudness = track.loudness;
   const visualState = getTrackLoudnessVisualState(loudness);
@@ -189,6 +198,11 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
   const effectiveCompressionStrength =
     loudness?.status === 'ok' ? getEffectiveCompressionStrength(track, loudnessSettings) : 0;
   const sliderCompressionPercent = Math.round(effectiveCompressionStrength * 100);
+  const isGainCustom = isGainOverridden(effectiveGainDb, autoGainDb);
+  const isCompressionCustom = isCompressionOverridden(
+    effectiveCompressionStrength,
+    autoCompressionStrength,
+  );
   const quietPassageLufs =
     loudness?.status === 'ok' ? resolveQuietPassageLufs(loudness) : undefined;
 
@@ -229,7 +243,7 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
   const commitManualGain = (value: number) => {
     const clamped = Math.min(MANUAL_GAIN_DB_MAX, Math.max(MANUAL_GAIN_DB_MIN, value));
 
-    if (autoGainDb !== undefined && Math.abs(clamped - autoGainDb) < 0.05) {
+    if (autoGainDb !== undefined && Math.abs(clamped - autoGainDb) < GAIN_AUTO_MATCH_TOLERANCE_DB) {
       onManualGainChange(undefined);
       return;
     }
@@ -244,7 +258,7 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
     );
     const strength = clamped / 100;
 
-    if (Math.abs(strength - autoCompressionStrength) < 0.005) {
+    if (Math.abs(strength - autoCompressionStrength) < COMPRESSION_AUTO_MATCH_TOLERANCE) {
       onManualCompressionChange(undefined);
       return;
     }
@@ -260,7 +274,7 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
   };
 
   const applyAutoCompression = () => {
-    onManualCompressionChange(autoCompressionStrength);
+    onManualCompressionChange(undefined);
   };
 
   const anchorCenterY = resolveAnchorPanelCenterY(anchorRect);
@@ -330,7 +344,9 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
                 <label htmlFor={`track-gain-${track.id}`}>{LOUDNESS_POPOVER_LABEL_GAIN}</label>
                 <FieldInfoIcon label={LOUDNESS_POPOVER_LABEL_GAIN} hint={HINT_GAIN} />
               </div>
-              <span className="track-loudness-popover__manual-value">
+              <span
+                className={`track-loudness-popover__manual-value${isGainCustom ? ' track-loudness-popover__manual-value--custom' : ''}`}
+              >
                 {formatGainDb(sliderGainDb)} dB
               </span>
             </div>
@@ -365,7 +381,9 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
                 </label>
                 <FieldInfoIcon label={LOUDNESS_POPOVER_LABEL_COMPRESSION} hint={HINT_COMPRESSION} />
               </div>
-              <span className="track-loudness-popover__manual-value">
+              <span
+                className={`track-loudness-popover__manual-value${isCompressionCustom ? ' track-loudness-popover__manual-value--custom' : ''}`}
+              >
                 {sliderCompressionPercent}%
               </span>
             </div>

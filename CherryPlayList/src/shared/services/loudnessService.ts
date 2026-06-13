@@ -300,6 +300,7 @@ export const loudnessService = createLoudnessService({
       loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
       loudnessTargetLufs: state.loudnessTargetLufs,
       loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+      loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
     };
   },
   updateTrackLoudness: (trackId, loudness) => {

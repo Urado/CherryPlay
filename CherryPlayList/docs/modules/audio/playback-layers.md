@@ -151,13 +151,13 @@ Store-специфичная domain-логика при file-not-found (mark mis
 
 ## Граница плейлиста
 
-| В store / session                                   | В PlaybackEngine                            |
-| --------------------------------------------------- | ------------------------------------------- |
-| Очередь, `next()` / `previous()`                    | `load(source)` одного трека                 |
-| Shuffle, repeat, autoplay-on-ended                  | `play`, `pause`, `stop`, `seek`             |
-| `Track` metadata, `currentTrackId`                  | `PlaybackSnapshot` (status, position, …)    |
-| Паузы между треками (таймеры)                       | Событие `ended` → store реагирует           |
-| Demo disable (`devicesMatch && mode === 'session'`) | `setOutputDevice(deviceId)`                 |
+| В store / session                                   | В PlaybackEngine                               |
+| --------------------------------------------------- | ---------------------------------------------- |
+| Очередь, `next()` / `previous()`                    | `load(source)` одного трека                    |
+| Shuffle, repeat, autoplay-on-ended                  | `play`, `pause`, `stop`, `seek`                |
+| `Track` metadata, `currentTrackId`                  | `PlaybackSnapshot` (status, position, …)       |
+| Паузы между треками (таймеры)                       | Событие `ended` → store реагирует              |
+| Demo disable (`devicesMatch && mode === 'session'`) | `setOutputDevice(deviceId)`                    |
 | EQ preset selection (UI)                            | `PlaybackEffects`: track gain, EQ, compression |
 
 **Правило:** методов `next()`, `previous()`, `setQueue()` на `PlaybackEngine` **нет** и не будет.
@@ -182,14 +182,14 @@ Stores подписываются на `engine.subscribe()` через `bindPlay
 
 ## Матрица ответственности по слоям
 
-| Слой                     | Ответственность                              | Не делает                                       |
-| ------------------------ | -------------------------------------------- | ----------------------------------------------- |
-| **UI**                   | Кнопки, таймлайн, выбор устройства           | Прямой доступ к `HTMLAudioElement`              |
-| **Store / Session**      | Плейлист, сессия, demo policy, таймеры       | Разрешение file path → URL (делегирует adapter) |
-| **PlaybackEngine**       | Transport, snapshot, события одного потока   | Очередь, metadata трека                         |
+| Слой                     | Ответственность                                        | Не делает                                                                       |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **UI**                   | Кнопки, таймлайн, выбор устройства                     | Прямой доступ к `HTMLAudioElement`                                              |
+| **Store / Session**      | Плейлист, сессия, demo policy, таймеры                 | Разрешение file path → URL (делегирует adapter)                                 |
+| **PlaybackEngine**       | Transport, snapshot, события одного потока             | Очередь, metadata трека                                                         |
 | **Effects**              | EQ, track gain, adaptive compression (Web Audio chain) | LUFS scan, gain math; см. [loudness-normalization](./loudness-normalization.md) |
-| **PlatformAudioAdapter** | `resolveSource`, `getDuration?`, `setSinkId` | UI state                                        |
-| **Runtime**              | Фактическое воспроизведение                  | Бизнес-правила сессии                           |
+| **PlatformAudioAdapter** | `resolveSource`, `getDuration?`, `setSinkId`           | UI state                                                                        |
+| **Runtime**              | Фактическое воспроизведение                            | Бизнес-правила сессии                                                           |
 
 ---
 
@@ -197,19 +197,19 @@ Stores подписываются на `engine.subscribe()` через `bindPlay
 
 Публичный API (`index.ts`):
 
-| Артефакт                                                                        | Назначение                                   |
-| ------------------------------------------------------------------------------- | -------------------------------------------- |
-| `PlaybackEngine`                                                                | Интерфейс backend                            |
-| `PlatformAudioAdapter`, `ResolvedPlaybackUrl`                                   | Порт платформы                               |
-| `PlaybackSource`, `PlaybackSnapshot`, `PlaybackEngineStatus`                    | Типы                                         |
-| `PlaybackEngineEventMap`, `PlaybackEngineEventName`, …                          | События                                      |
-| `PlaybackEngineOptions`, `PlaybackEnginePair`                                   | Фабрика                                      |
-| `createPlaybackEngine`, `createPlaybackEnginePair`                              | Создание инстансов                           |
-| `createDefaultPlatformAudioAdapter`                                             | Дефолтный adapter (IPC + `setAudioSinkId`)   |
-| `WebAudioPlaybackEngine`, `MediaElementTransport`                               | Единственный backend + shared transport      |
+| Артефакт                                                                              | Назначение                                                   |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `PlaybackEngine`                                                                      | Интерфейс backend                                            |
+| `PlatformAudioAdapter`, `ResolvedPlaybackUrl`                                         | Порт платформы                                               |
+| `PlaybackSource`, `PlaybackSnapshot`, `PlaybackEngineStatus`                          | Типы                                                         |
+| `PlaybackEngineEventMap`, `PlaybackEngineEventName`, …                                | События                                                      |
+| `PlaybackEngineOptions`, `PlaybackEnginePair`                                         | Фабрика                                                      |
+| `createPlaybackEngine`, `createPlaybackEnginePair`                                    | Создание инстансов                                           |
+| `createDefaultPlatformAudioAdapter`                                                   | Дефолтный adapter (IPC + `setAudioSinkId`)                   |
+| `WebAudioPlaybackEngine`, `MediaElementTransport`                                     | Единственный backend + shared transport                      |
 | `applyPlaybackEffects`, `applyLoudnessPlaybackEffects`, `applyDefaultPlaybackEffects` | Per-track loudness gain, EQ, adaptive compression после load |
-| `bindPlaybackEngineToStore`, `mapEngineStatusToStoreStatus`                     | Store ↔ engine wiring                        |
-| `DEFAULT_PLAYBACK_VOLUME`, `MAIN_PLAYBACK_ENGINE_ID`, `DEMO_PLAYBACK_ENGINE_ID` | Константы                                    |
+| `bindPlaybackEngineToStore`, `mapEngineStatusToStoreStatus`                           | Store ↔ engine wiring                                        |
+| `DEFAULT_PLAYBACK_VOLUME`, `MAIN_PLAYBACK_ENGINE_ID`, `DEMO_PLAYBACK_ENGINE_ID`       | Константы                                                    |
 
 ### `PlaybackEngine` — методы
 
@@ -323,19 +323,19 @@ Legacy `HtmlAudioElementEngine` и селектор `implementation: 'html-audio
 
 Слой внутри `WebAudioPlaybackEngine` между transport и destination: `PlaybackEffects` (`effects.ts`) — track gain, 3-band EQ, адаптивный `DynamicsCompressorNode`. Контракт store ↔ engine не меняется; stores не импортируют effects напрямую.
 
-### Порядок узлов Web Audio graph
+### Порядок узлов Web Audio graph (EBU)
 
 ```
   MediaElementSource
-        │
-        ▼
-  trackGainNode          ← setTrackGain(linear)
         │
         ▼
   EQ (low → mid → high)  ← setEqualizerBands
         │
         ▼
   DynamicsCompressor     ← setCompressionStrength(0…1); bypass при 0
+        │
+        ▼
+  trackGainNode          ← setTrackGain(linear, R128 normalize)
         │
         ▼
   masterGainNode → destination
@@ -345,10 +345,10 @@ Legacy `HtmlAudioElementEngine` и селектор `implementation: 'html-audio
 
 ### `applyPlaybackEffects` vs `applyLoudnessPlaybackEffects`
 
-| Функция | Когда | Что делает |
-| ------- | ----- | ---------- |
-| `applyPlaybackEffects` | После `loadTrack` | `applyLoudnessPlaybackEffects` + `setEqualizerBands(DEFAULT)` |
-| `applyLoudnessPlaybackEffects` | Live sync (`wireLoudnessPlaybackSync`) | Только gain + compression; **EQ не сбрасывается** |
+| Функция                        | Когда                                  | Что делает                                                    |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------- |
+| `applyPlaybackEffects`         | После `loadTrack`                      | `applyLoudnessPlaybackEffects` + `setEqualizerBands(DEFAULT)` |
+| `applyLoudnessPlaybackEffects` | Live sync (`wireLoudnessPlaybackSync`) | Только gain + compression; **EQ не сбрасывается**             |
 
 При включённой нормализации: `setTrackGain(resolveLinearGain)`, `setCompressionStrength(resolveCompressionStrength)`. При выключенной — unity gain, compression `0`.
 
@@ -414,34 +414,34 @@ Legacy `HtmlAudioElementEngine` и селектор `implementation: 'html-audio
 
 ## Связанные файлы
 
-| Путь                                                             | Роль                                                                          |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `src/shared/audio/playback/`                                     | Интерфейс, типы, фабрика                                                      |
-| `src/shared/audio/playback/mediaElementTransport.ts`             | Shared HTMLAudioElement transport + buffering/error events                    |
-| `src/shared/audio/playback/WebAudioPlaybackEngine.ts`            | Web Audio graph + effects (единственный backend)                              |
-| `src/shared/audio/playback/effects.ts`                           | `PlaybackEffects`, EQ, `setCompressionStrength`                   |
-| `src/shared/audio/playback/applyPlaybackEffects.ts`              | `applyPlaybackEffects`, `applyLoudnessPlaybackEffects` после load |
-| `src/shared/audio/loudnessGain.ts`                               | `getEffectiveGainDb`, `resolveLinearGain`                         |
-| `src/shared/audio/playback/compressionStrength.ts`               | Adaptive compression strength                                     |
-| `src/shared/services/loudnessService.ts`                         | Scan orchestration, `needsScan`, staleness                        |
-| `electron/audio/loudnessScanner.ts`                              | FFmpeg ebur128, `computeTrackGainDb`                                          |
-| `src/shared/audio/playback/bindPlaybackEngineToStore.ts`         | Store ↔ engine event wiring + status mapping                                  |
-| `src/shared/audio/playback/createDefaultPlatformAudioAdapter.ts` | IPC adapter: `audio:getFileUrl` → `cherryplay-audio://`                       |
-| `src/shared/stores/playbackStoreCore.ts`                         | Shared load/play/error/device logic для stores                                |
+| Путь                                                             | Роль                                                                                    |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `src/shared/audio/playback/`                                     | Интерфейс, типы, фабрика                                                                |
+| `src/shared/audio/playback/mediaElementTransport.ts`             | Shared HTMLAudioElement transport + buffering/error events                              |
+| `src/shared/audio/playback/WebAudioPlaybackEngine.ts`            | Web Audio graph + effects (единственный backend)                                        |
+| `src/shared/audio/playback/effects.ts`                           | `PlaybackEffects`, EQ, `setCompressionStrength`                                         |
+| `src/shared/audio/playback/applyPlaybackEffects.ts`              | `applyPlaybackEffects`, `applyLoudnessPlaybackEffects` после load                       |
+| `src/shared/audio/loudnessGain.ts`                               | `getEffectiveGainDb`, `resolveLinearGain`                                               |
+| `src/shared/audio/playback/compressionStrength.ts`               | Adaptive compression strength                                                           |
+| `src/shared/services/loudnessService.ts`                         | Scan orchestration, `needsScan`, staleness                                              |
+| `electron/audio/loudnessScanner.ts`                              | FFmpeg ebur128, `computeTrackGainDb`                                                    |
+| `src/shared/audio/playback/bindPlaybackEngineToStore.ts`         | Store ↔ engine event wiring + status mapping                                            |
+| `src/shared/audio/playback/createDefaultPlatformAudioAdapter.ts` | IPC adapter: `audio:getFileUrl` → `cherryplay-audio://`                                 |
+| `src/shared/stores/playbackStoreCore.ts`                         | Shared load/play/error/device logic для stores                                          |
 | `electron/ipc/audio.ts`                                          | `audio:getFileUrl`, `audio:getDuration`, `audio:analyzeLoudness`, `audio:statAudioFile` |
-| `electron/protocol/cherryplayAudio.ts`                           | Схема `cherryplay-audio`, encode/decode path, `protocol.handle` + `net.fetch` |
-| `electron/main.ts`                                               | Регистрация scheme/handler, CSP (`cherryplay-audio:`)                         |
-| `src/shared/audio/playback/createPlaybackEngine.ts`              | Фабрика инстансов                                                             |
-| `src/shared/audio/playback/playbackEngines.ts`                   | Shared `mainPlaybackEngine` / `demoPlaybackEngine`                            |
-| `src/shared/stores/playbackDeviceConflictSync.ts`                | Политика demo disable (session + same device only)                            |
-| `src/shared/stores/playerAudioStore.ts`                          | Main session — использует `mainPlaybackEngine`                                |
-| `src/shared/stores/demoPlayerStore.ts`                           | Demo preview — использует `demoPlaybackEngine`                                |
-| `src/shared/utils/audioDevices.ts`                               | `setAudioSinkId`, default device                                              |
-| `src/shared/utils/fileErrors.ts`                                 | `isFileNotFoundError` (ENOENT, RU/EN messages)                                |
-| `src/shared/services/ipcService.ts`                              | IPC audio                                                                     |
-| `src/app/components/SettingsModal.tsx`                           | Audio device selects (disabled in web demo)                                   |
-| `src/workspaces/player/hooks/usePlayerPlayback.ts`               | Player session consumer                                                       |
-| `src/shared/hooks/usePlaybackPreview.ts`                         | Demo preview entry                                                            |
+| `electron/protocol/cherryplayAudio.ts`                           | Схема `cherryplay-audio`, encode/decode path, `protocol.handle` + `net.fetch`           |
+| `electron/main.ts`                                               | Регистрация scheme/handler, CSP (`cherryplay-audio:`)                                   |
+| `src/shared/audio/playback/createPlaybackEngine.ts`              | Фабрика инстансов                                                                       |
+| `src/shared/audio/playback/playbackEngines.ts`                   | Shared `mainPlaybackEngine` / `demoPlaybackEngine`                                      |
+| `src/shared/stores/playbackDeviceConflictSync.ts`                | Политика demo disable (session + same device only)                                      |
+| `src/shared/stores/playerAudioStore.ts`                          | Main session — использует `mainPlaybackEngine`                                          |
+| `src/shared/stores/demoPlayerStore.ts`                           | Demo preview — использует `demoPlaybackEngine`                                          |
+| `src/shared/utils/audioDevices.ts`                               | `setAudioSinkId`, default device                                                        |
+| `src/shared/utils/fileErrors.ts`                                 | `isFileNotFoundError` (ENOENT, RU/EN messages)                                          |
+| `src/shared/services/ipcService.ts`                              | IPC audio                                                                               |
+| `src/app/components/SettingsModal.tsx`                           | Audio device selects (disabled in web demo)                                             |
+| `src/workspaces/player/hooks/usePlayerPlayback.ts`               | Player session consumer                                                                 |
+| `src/shared/hooks/usePlaybackPreview.ts`                         | Demo preview entry                                                                      |
 
 ---
 

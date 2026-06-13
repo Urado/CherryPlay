@@ -109,7 +109,8 @@ export function wireLoudnessPlaybackSync(): void {
     if (
       state.loudnessNormalizationEnabled === prevState.loudnessNormalizationEnabled &&
       state.loudnessTargetLufs === prevState.loudnessTargetLufs &&
-      state.loudnessCompressionEnabled === prevState.loudnessCompressionEnabled
+      state.loudnessCompressionEnabled === prevState.loudnessCompressionEnabled &&
+      state.loudnessQuietGapRangeLu === prevState.loudnessQuietGapRangeLu
     ) {
       return;
     }

@@ -704,6 +704,11 @@
   color: inherit;
 }
 
+.track-loudness-button__metric--custom .track-loudness-button__metric-value {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
 .track-loudness-button--open {
   background: var(--bg-hover);
   color: var(--accent-primary);
@@ -862,9 +867,13 @@
 
 .track-loudness-popover__manual-value {
   font-weight: 600;
-  color: var(--accent-primary);
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+}
+
+.track-loudness-popover__manual-value--custom {
+  color: var(--accent-primary);
 }
 
 .track-loudness-popover__slider {
