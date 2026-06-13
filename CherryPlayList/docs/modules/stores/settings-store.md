@@ -15,6 +15,7 @@ Store для хранения настроек приложения.
 - **Экспорт**: Путь для экспорта, стратегия экспорта (copyWithNumberPrefix, aimpPlaylist)
 - **UI**: Размеры строк треков (small, medium, large), отсечки по времени (интервал, показывать/скрыть)
 - **Аудио**: Выбор устройств для player и demo player
+- **Нормализация громкости** (`loudnessNormalizationEnabled`, `loudnessTargetLufs`, `loudnessCompressionEnabled`) — см. [Нормализация громкости (loudness v1)](../audio/loudness-normalization.md). Toggles в `SettingsModal`; `loudnessCompressionEnabled` включает **адаптивную** компрессию (strength 0…1 per track). При `!supportsLoudnessAnalysis` (web demo, Capacitor stub) элементы disabled. По умолчанию: нормализация включена, target −18 LUFS, compression выключен.
 - **Проекты**: Путь последнего открытого плейлиста
 - **Файловый браузер**: Текущая папка (fileBrowserPath) — одна на всё приложение, сохраняется при переключении воркспейсов и между сессиями
 - **Стриминг**: Включение/выключение модуля стриминга (enableStreaming)

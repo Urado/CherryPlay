@@ -2,7 +2,10 @@ import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
+import { DEFAULT_LOUDNESS_TARGET_LUFS, type LoudnessSettings } from '../contracts/loudness';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
+
+export type { LoudnessSettings };
 import { electronStorage } from '../storage/electronStorage';
 
 interface SettingsState {
@@ -20,6 +23,9 @@ interface SettingsState {
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
   streamingSource: AimpSourceSelection;
+  loudnessNormalizationEnabled: boolean;
+  loudnessTargetLufs: number;
+  loudnessCompressionEnabled: boolean;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
@@ -33,6 +39,9 @@ interface SettingsState {
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
   setStreamingSource: (source: AimpSourceSelection) => void;
+  setLoudnessNormalizationEnabled: (enabled: boolean) => void;
+  setLoudnessTargetLufs: (targetLufs: number) => void;
+  setLoudnessCompressionEnabled: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
@@ -53,6 +62,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       keyBindings: {},
       enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
+      loudnessNormalizationEnabled: true,
+      loudnessTargetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
+      loudnessCompressionEnabled: false,
 
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
@@ -70,6 +82,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
       setStreamingSource: (source) => set({ streamingSource: source }),
+      setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
+      setLoudnessTargetLufs: (targetLufs) => set({ loudnessTargetLufs: targetLufs }),
+      setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
     }),
     {
       name: 'cherryplaylist-settings',
@@ -87,6 +102,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
         streamingSource: state.streamingSource,
+        loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
+        loudnessTargetLufs: state.loudnessTargetLufs,
+        loudnessCompressionEnabled: state.loudnessCompressionEnabled,
       }),
       onRehydrateStorage: () => (_state, _err) => {
         useSettingsStore.getState().setHasHydrated(true);

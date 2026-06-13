@@ -36,10 +36,17 @@ export const SettingsModal: React.FC = () => {
     setEnableStreaming,
     streamingSource,
     setStreamingSource,
+    loudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    loudnessCompressionEnabled,
+    setLoudnessNormalizationEnabled,
+    setLoudnessTargetLufs,
+    setLoudnessCompressionEnabled,
   } = useSettingsStore();
   const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const aimpAvailability = getAimpAvailability(aimpBridgeState);
-  const { supportsAimpWorkspace, supportsAudioDeviceSelection } = usePlatformCapabilities();
+  const { supportsAimpWorkspace, supportsAudioDeviceSelection, supportsLoudnessAnalysis } =
+    usePlatformCapabilities();
   const canSelectAimpSource = supportsAimpWorkspace && aimpAvailability.available;
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
@@ -53,6 +60,15 @@ export const SettingsModal: React.FC = () => {
   );
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
   const [localStreamingSource, setLocalStreamingSource] = useState(streamingSource);
+  const [localLoudnessNormalizationEnabled, setLocalLoudnessNormalizationEnabled] = useState(
+    loudnessNormalizationEnabled,
+  );
+  const [localLoudnessTargetLufs, setLocalLoudnessTargetLufs] = useState(
+    String(loudnessTargetLufs),
+  );
+  const [localLoudnessCompressionEnabled, setLocalLoudnessCompressionEnabled] = useState(
+    loudnessCompressionEnabled,
+  );
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -90,6 +106,9 @@ export const SettingsModal: React.FC = () => {
           setLocalEnableStreaming(enableStreaming);
           setLocalStreamingSource(streamingSource);
         }
+        setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+        setLocalLoudnessTargetLufs(String(loudnessTargetLufs));
+        setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
       }, 0);
       return () => clearTimeout(timeoutId);
     }
@@ -104,6 +123,9 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     enableStreaming,
     streamingSource,
+    loudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    loudnessCompressionEnabled,
   ]);
 
   if (modal !== 'settings') {
@@ -119,6 +141,10 @@ export const SettingsModal: React.FC = () => {
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
     setEnableStreaming(localEnableStreaming);
     setStreamingSource(localStreamingSource);
+    setLoudnessNormalizationEnabled(localLoudnessNormalizationEnabled);
+    const parsedTargetLufs = Number(localLoudnessTargetLufs);
+    setLoudnessTargetLufs(Number.isFinite(parsedTargetLufs) ? parsedTargetLufs : -18);
+    setLoudnessCompressionEnabled(localLoudnessCompressionEnabled);
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
@@ -132,6 +158,9 @@ export const SettingsModal: React.FC = () => {
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
     setLocalEnableStreaming(enableStreaming);
     setLocalStreamingSource(streamingSource);
+    setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+    setLocalLoudnessTargetLufs(String(loudnessTargetLufs));
+    setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
     closeModal();
   };
 
@@ -346,6 +375,88 @@ export const SettingsModal: React.FC = () => {
                 {getPlatformUnavailableMessage()}
               </div>
             )}
+          </div>
+
+          <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
+
+          <div
+            className="settings-section-title"
+            style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+          >
+            Нормализация громкости
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-checkbox-group">
+              <input
+                type="checkbox"
+                className="settings-checkbox"
+                checked={localLoudnessNormalizationEnabled}
+                onChange={(e) => setLocalLoudnessNormalizationEnabled(e.target.checked)}
+                id="settings-loudness-enabled"
+                disabled={!supportsLoudnessAnalysis}
+              />
+              <label
+                className="settings-checkbox-label"
+                htmlFor="settings-loudness-enabled"
+                style={!supportsLoudnessAnalysis ? { opacity: 0.5 } : undefined}
+              >
+                Включить нормализацию громкости
+              </label>
+            </div>
+          </div>
+
+          {!supportsLoudnessAnalysis && (
+            <div
+              className="settings-description"
+              style={{
+                marginTop: 4,
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary, #9e9e9e)',
+              }}
+            >
+              {getPlatformUnavailableMessage()}
+            </div>
+          )}
+
+          <div className="settings-group">
+            <label className="settings-label" htmlFor="settings-loudness-target">
+              Целевая громкость (LUFS)
+            </label>
+            <input
+              type="number"
+              className="settings-select"
+              id="settings-loudness-target"
+              value={localLoudnessTargetLufs}
+              onChange={(e) => setLocalLoudnessTargetLufs(e.target.value)}
+              disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+              step={0.5}
+              max={0}
+            />
+          </div>
+
+          <div className="settings-group">
+            <div className="settings-checkbox-group">
+              <input
+                type="checkbox"
+                className="settings-checkbox"
+                checked={localLoudnessCompressionEnabled}
+                onChange={(e) => setLocalLoudnessCompressionEnabled(e.target.checked)}
+                id="settings-loudness-compression"
+                disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+              />
+              <label
+                className="settings-checkbox-label"
+                htmlFor="settings-loudness-compression"
+                style={
+                  !localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis
+                    ? { opacity: 0.5 }
+                    : undefined
+                }
+              >
+                Адаптивная компрессия (зависит от gain и тихих участков)
+              </label>
+            </div>
           </div>
 
           <div className="settings-group">

@@ -82,6 +82,7 @@
 - [ ] Для аудио выбрать стратегию:
   - [ ] URI streaming (предпочтительно);
   - [ ] либо binary transfer (только если неизбежно).
+- [ ] **Loudness scan:** реализовать `audio:analyzeLoudness` в Android bridge (например `ffmpeg-kit`); renderer `loudnessService`, `track.loudness` в `.cherry` и playback gain уже общие — см. [CherryPlayList playback-layers — loudness](CherryPlayList/docs/modules/audio/playback-layers.md#loudness-normalization-v1-electron).
 - [ ] Описать ограничения DnD на мобильных и альтернативный UX (add/move actions).
 
 Результат: технически работоспособный адаптер вместо Electron.

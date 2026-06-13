@@ -1,7 +1,8 @@
+import type { LoudnessAnalyzeResult } from '../contracts/loudness';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
 import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
-import type { DirectoryItem, IPCResponse } from '../platform/types';
+import type { AudioFileStat, DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
 import { isFileNotFoundError } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
@@ -117,6 +118,22 @@ class IPCService {
 
   async getAudioFileUrl(path: string, showNotification: boolean = true): Promise<AudioFileUrl> {
     return this.invoke<AudioFileUrl>('audio:getFileUrl', { path }, showNotification);
+  }
+
+  async analyzeLoudness(
+    path: string,
+    targetLufs: number,
+    showNotification: boolean = false,
+  ): Promise<LoudnessAnalyzeResult> {
+    return this.invoke<LoudnessAnalyzeResult>(
+      'audio:analyzeLoudness',
+      { path, targetLufs },
+      showNotification,
+    );
+  }
+
+  async statAudioFile(path: string, showNotification: boolean = false): Promise<AudioFileStat> {
+    return this.invoke<AudioFileStat>('audio:statAudioFile', { path }, showNotification);
   }
 
   async showFolderDialog(options?: {

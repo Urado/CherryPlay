@@ -61,6 +61,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 ### Audio
 
 - [Playback Engine — слои](./audio/playback-layers.md) — целевая архитектура воспроизведения (PlaybackEngine, adapter, гибридное состояние, main + demo)
+- [Нормализация громкости (loudness v1)](./audio/loudness-normalization.md) — scan FFmpeg ebur128, `.cherry` metadata, playback gain, адаптивная компрессия
 
 ### Hooks & Utils
 

@@ -36,4 +36,8 @@ export {
 } from './bindPlaybackEngineToStore';
 export type { PlaybackEngineStoreBindings, StorePlaybackStatus } from './bindPlaybackEngineToStore';
 export { createPlaybackEngine, createPlaybackEnginePair } from './createPlaybackEngine';
-export { applyDefaultPlaybackEffects } from './applyDefaultPlaybackEffects';
+export {
+  applyDefaultPlaybackEffects,
+  applyLoudnessPlaybackEffects,
+  applyPlaybackEffects,
+} from './applyPlaybackEffects';

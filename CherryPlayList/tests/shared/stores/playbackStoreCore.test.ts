@@ -1,5 +1,5 @@
 import type { Track } from '../../../src/core/types/track';
-import { applyDefaultPlaybackEffects } from '../../../src/shared/audio/playback/applyDefaultPlaybackEffects';
+import { applyPlaybackEffects } from '../../../src/shared/audio/playback/applyPlaybackEffects';
 import type { PlaybackEngine } from '../../../src/shared/audio/playback/PlaybackEngine';
 import type { PlaybackSnapshot, PlaybackSource } from '../../../src/shared/audio/playback/types';
 import {
@@ -12,22 +12,29 @@ jest.mock('../../../src/shared/platform/appMode', () => ({
   getAppMode: jest.fn(() => 'electron'),
 }));
 
-jest.mock('../../../src/shared/audio/playback/applyDefaultPlaybackEffects', () => ({
-  applyDefaultPlaybackEffects: jest.fn(),
+jest.mock('../../../src/shared/audio/playback/applyPlaybackEffects', () => ({
+  applyPlaybackEffects: jest.fn(),
 }));
 
 jest.mock('../../../src/shared/audio/playback/applyPlaybackOutputDeviceWithFallback', () => ({
   applyPlaybackOutputDeviceWithFallback: jest.fn(async () => undefined),
 }));
 
+const mockLoudnessSettings = {
+  loudnessNormalizationEnabled: true,
+  loudnessTargetLufs: -18,
+  loudnessCompressionEnabled: false,
+};
+
 jest.mock('../../../src/shared/stores/settingsStore', () => ({
   useSettingsStore: {
     subscribe: () => () => undefined,
+    getState: () => mockLoudnessSettings,
   },
 }));
 
-const mockedApplyDefaultPlaybackEffects = applyDefaultPlaybackEffects as jest.MockedFunction<
-  typeof applyDefaultPlaybackEffects
+const mockedApplyPlaybackEffects = applyPlaybackEffects as jest.MockedFunction<
+  typeof applyPlaybackEffects
 >;
 
 const baseTrack: Track = {
@@ -130,10 +137,10 @@ describe('createHandleError', () => {
 
 describe('loadTrackCore', () => {
   beforeEach(() => {
-    mockedApplyDefaultPlaybackEffects.mockClear();
+    mockedApplyPlaybackEffects.mockClear();
   });
 
-  it('applies default playback effects after a successful engine load', async () => {
+  it('applies playback effects after a successful engine load', async () => {
     const engine = createMockEngine();
 
     await loadTrackCore({
@@ -148,8 +155,12 @@ describe('loadTrackCore', () => {
     });
 
     expect(engine.load).toHaveBeenCalledWith({ kind: 'filePath', path: baseTrack.path });
-    expect(mockedApplyDefaultPlaybackEffects).toHaveBeenCalledTimes(1);
-    expect(mockedApplyDefaultPlaybackEffects).toHaveBeenCalledWith(engine);
+    expect(mockedApplyPlaybackEffects).toHaveBeenCalledTimes(1);
+    expect(mockedApplyPlaybackEffects).toHaveBeenCalledWith(
+      engine,
+      baseTrack,
+      mockLoudnessSettings,
+    );
   });
 
   it('does not apply effects when engine load fails', async () => {
@@ -171,6 +182,6 @@ describe('loadTrackCore', () => {
       }),
     ).rejects.toThrow('decode failed');
 
-    expect(mockedApplyDefaultPlaybackEffects).not.toHaveBeenCalled();
+    expect(mockedApplyPlaybackEffects).not.toHaveBeenCalled();
   });
 });

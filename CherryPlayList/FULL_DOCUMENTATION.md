@@ -603,6 +603,14 @@ Returns a playable URL for a local audio file. File contents are **not** sent ov
 - Used by `createDefaultPlatformAudioAdapter` for main and demo playback engines
 - See [Playback Engine — loading path](./docs/modules/audio/playback-layers.md#загрузка-файлов-electron)
 
+### `analyzeLoudness(path: string, targetLufs: number): Promise<LoudnessAnalyzeResult>`
+
+Measures integrated loudness (LUFS) and true peak via FFmpeg `ebur128` in the main process. Does **not** modify source files. Returns `status: 'ok'` with `trackGainDb` (headroom −1 dBTP) or `status: 'error'`. See [IPC Service — analyzeLoudness](./docs/modules/services/ipc-service.md#audio-analyzeloudness).
+
+### `statAudioFile(path: string): Promise<AudioFileStat>`
+
+Returns `{ mtimeMs, size }` for staleness checks without a full loudness scan.
+
 ## Dialog Methods
 
 ### `showFolderDialog(options?: { title?: string; defaultPath?: string }): Promise<string | null>`
@@ -645,6 +653,8 @@ All IPC channels are whitelisted in `electron/preload.ts` for security. Only whi
 
 - `audio:getDuration` - Get audio file duration
 - `audio:getFileUrl` - Get `cherryplay-audio://` streaming URL for local file (path encoding only)
+- `audio:analyzeLoudness` - FFmpeg ebur128 loudness scan (Electron only); see [playback-layers — loudness](./docs/modules/audio/playback-layers.md#loudness-normalization-v1-electron)
+- `audio:statAudioFile` - File mtime/size for loudness staleness
 
 ### Export Channels
 

@@ -12,6 +12,7 @@ import type { AppMode } from './types';
  * | supportsAimpWorkspace | ✓ | ✗ | ✗ |
  * | supportsAudioDeviceSelection | ✓ | ✗ | ✗ |
  * | supportsRealAuth | ✓ | ✗ | ✗ |
+ * | supportsLoudnessAnalysis | ✓ | ✗ | ✗ |
  * | simulatesExport | ✗ | ✓ | ✗ |
  * | usesFixtureFileBrowser | ✗ | ✓ | ✗ |
  */
@@ -23,6 +24,7 @@ export interface PlatformCapabilities {
   readonly supportsAimpWorkspace: boolean;
   readonly supportsAudioDeviceSelection: boolean;
   readonly supportsRealAuth: boolean;
+  readonly supportsLoudnessAnalysis: boolean;
   readonly simulatesExport: boolean;
   readonly usesFixtureFileBrowser: boolean;
 }
@@ -40,6 +42,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: true,
         supportsRealAuth: true,
+        supportsLoudnessAnalysis: true,
         simulatesExport: false,
         usesFixtureFileBrowser: false,
       };
@@ -52,6 +55,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: false,
         supportsAudioDeviceSelection: false,
         supportsRealAuth: false,
+        supportsLoudnessAnalysis: false,
         simulatesExport: true,
         usesFixtureFileBrowser: true,
       };
@@ -64,6 +68,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: false,
         supportsAudioDeviceSelection: false,
         supportsRealAuth: false,
+        supportsLoudnessAnalysis: false,
         simulatesExport: false,
         usesFixtureFileBrowser: false,
       };

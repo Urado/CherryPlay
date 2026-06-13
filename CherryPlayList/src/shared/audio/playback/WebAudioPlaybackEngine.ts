@@ -5,6 +5,8 @@ import {
   AUTO_GAIN_NORMALIZATION,
   DEFAULT_EQUALIZER_BANDS,
   DEFAULT_TRACK_GAIN,
+  TRACK_GAIN_LINEAR_MAX,
+  TRACK_GAIN_LINEAR_MIN,
   type EqualizerBands,
   type PlaybackEffects,
 } from './effects';
@@ -38,10 +40,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
   private eqLowNode: BiquadFilterNode | null = null;
   private eqMidNode: BiquadFilterNode | null = null;
   private eqHighNode: BiquadFilterNode | null = null;
+  private compressorNode: DynamicsCompressorNode | null = null;
   private masterGainNode: GainNode | null = null;
   private trackGain = DEFAULT_TRACK_GAIN;
   private equalizerBands: EqualizerBands = DEFAULT_EQUALIZER_BANDS;
   private autoGainEnabled = false;
+  private compressionStrength = 0;
 
   constructor(options: WebAudioPlaybackEngineOptions) {
     this.adapter = options.adapter;
@@ -95,7 +99,7 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       return;
     }
 
-    this.trackGain = clampPlaybackValue(gain, 0, 2);
+    this.trackGain = clampPlaybackValue(gain, TRACK_GAIN_LINEAR_MIN, TRACK_GAIN_LINEAR_MAX);
     this.applyTrackGain();
   }
 
@@ -115,6 +119,16 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
 
     this.autoGainEnabled = enabled;
     this.applyTrackGain();
+  }
+
+  setCompressionStrength(strength: number): void {
+    if (this.transport.isDisposed()) {
+      return;
+    }
+
+    this.compressionStrength = clampPlaybackValue(strength, 0, 1);
+    this.applyCompressionParams();
+    this.applyCompressionRouting();
   }
 
   setOutputDevice(deviceId: string | null): Promise<void> {
@@ -165,14 +179,16 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     eqHighNode.type = 'highshelf';
     eqHighNode.frequency.value = 3200;
 
+    const compressorNode = context.createDynamicsCompressor();
+    compressorNode.attack.value = 0.003;
+    compressorNode.release.value = 0.25;
+
     const masterGainNode = context.createGain();
 
     sourceNode.connect(trackGainNode);
     trackGainNode.connect(eqLowNode);
     eqLowNode.connect(eqMidNode);
     eqMidNode.connect(eqHighNode);
-    eqHighNode.connect(masterGainNode);
-    masterGainNode.connect(context.destination);
 
     this.audioContext = context;
     this.sourceNode = sourceNode;
@@ -180,7 +196,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     this.eqLowNode = eqLowNode;
     this.eqMidNode = eqMidNode;
     this.eqHighNode = eqHighNode;
+    this.compressorNode = compressorNode;
     this.masterGainNode = masterGainNode;
+
+    this.applyCompressionParams();
+    this.applyCompressionRouting();
+    masterGainNode.connect(context.destination);
 
     this.applyTrackGain();
     this.applyEqualizerBands();
@@ -252,18 +273,53 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     }
   }
 
+  private applyCompressionParams(): void {
+    if (!this.compressorNode) {
+      return;
+    }
+
+    const strength = this.compressionStrength;
+    if (strength <= 0) {
+      return;
+    }
+
+    // Lower threshold / higher ratio = stronger compression as strength → 1.
+    this.compressorNode.threshold.value = -30 + strength * 14;
+    this.compressorNode.ratio.value = 2 + strength * 6;
+    this.compressorNode.knee.value = 40 - strength * 25;
+  }
+
+  private applyCompressionRouting(): void {
+    if (!this.eqHighNode || !this.masterGainNode) {
+      return;
+    }
+
+    this.eqHighNode.disconnect();
+    this.compressorNode?.disconnect();
+
+    if (this.compressionStrength > 0 && this.compressorNode) {
+      this.eqHighNode.connect(this.compressorNode);
+      this.compressorNode.connect(this.masterGainNode);
+      return;
+    }
+
+    this.eqHighNode.connect(this.masterGainNode);
+  }
+
   private disconnectGraph(): void {
     this.sourceNode?.disconnect();
     this.trackGainNode?.disconnect();
     this.eqLowNode?.disconnect();
     this.eqMidNode?.disconnect();
     this.eqHighNode?.disconnect();
+    this.compressorNode?.disconnect();
     this.masterGainNode?.disconnect();
     this.sourceNode = null;
     this.trackGainNode = null;
     this.eqLowNode = null;
     this.eqMidNode = null;
     this.eqHighNode = null;
+    this.compressorNode = null;
     this.masterGainNode = null;
   }
 }

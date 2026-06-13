@@ -1,6 +1,5 @@
-import type { StorePlaybackStatus } from './storePlaybackStatus';
-
 import type { AimpPlaybackStatus } from './aimp';
+import type { StorePlaybackStatus } from './storePlaybackStatus';
 
 /**
  * Playback status on the wire (REST / SignalR).

@@ -29,6 +29,8 @@ const VALID_INVOKE_CHANNELS = [
   'fileBrowser:findAudioFilesRecursive',
   'audio:getDuration',
   'audio:getFileUrl',
+  'audio:analyzeLoudness',
+  'audio:statAudioFile',
   'export:execute',
   'export:copyFile',
   'export:aimp',

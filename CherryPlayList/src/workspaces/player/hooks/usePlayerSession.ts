@@ -13,13 +13,15 @@ interface UsePlayerSessionOptions {
   allTracks: Track[];
   isTrackActive: (trackId: string) => boolean;
   onSessionStart?: () => Promise<void> | void;
+  /** Return false to abort session start (e.g. loudness gate cancelled). */
+  beforeStartSession?: () => Promise<boolean>;
 }
 
 /**
  * Хук для управления сессией (начало/сброс)
  */
 export function usePlayerSession(options: UsePlayerSessionOptions) {
-  const { allTracks, isTrackActive, onSessionStart } = options;
+  const { allTracks, isTrackActive, onSessionStart, beforeStartSession } = options;
 
   const { startSession, resetSession, setCurrentTrack } = useProjectStore();
   const {
@@ -38,6 +40,13 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     const hasActiveTracks = allTracks.some((track) => isTrackActive(track.id));
     if (!hasActiveTracks) {
       return;
+    }
+
+    if (beforeStartSession) {
+      const canStart = await beforeStartSession();
+      if (!canStart) {
+        return;
+      }
     }
 
     // Начинаем сессию (локальное воспроизведение; авторизация не требуется)
@@ -82,6 +91,7 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     setCurrentTrack,
     playPlayer,
     onSessionStart,
+    beforeStartSession,
   ]);
 
   const handleResetSession = useCallback(() => {

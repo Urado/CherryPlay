@@ -12,6 +12,7 @@ import {
   HourDividerAfterTrackRow,
   HourDividerListBottom,
 } from '@shared/components';
+import { TrackLoudnessRowControls } from '@shared/components/loudness/TrackLoudnessRowControls';
 import { useSelectionWithModifiers } from '@shared/hooks';
 import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
@@ -343,6 +344,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                     : undefined
                 }
                 trackActionsDisabled={!jumpToTrack || item.id === activePlayerTrackId}
+                loudnessControls={track ? <TrackLoudnessRowControls track={track} /> : undefined}
               />
               <HourDividerAfterTrackRow
                 hasPlannedEndDivider={hasPlannedEndDivider}
