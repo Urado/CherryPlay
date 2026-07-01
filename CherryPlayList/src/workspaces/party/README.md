@@ -1,59 +1,56 @@
-# Party Workspace
+# Party module
 
-Workspace для создания и управления вечеринками с трансляцией плейлиста.
+Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (store + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md).
 
-## Описание
+## Workspaces
 
-Этот workspace позволяет организаторам:
+| | Party Editor | Party Preview |
+| --- | --- | --- |
+| **ID** | `party-editor-workspace` | `party-preview-workspace` |
+| **Тип** | `party-editor` | `party-preview` |
+| **View** | `PartyEditorView` | `PartyPreviewView` |
+| **Wrapper** | `PartyEditorViewWrapper` | `PartyPreviewViewWrapper` |
 
-- Создавать вечеринки с выбором стиля оформления
-- Настраивать кастомизацию для выбранного стиля
-- Просматривать превью того, как плейлист будет выглядеть в браузере
-- Получать уникальный URL для веб-страницы вечеринки
+Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-## Компоненты
+**Party Editor:** баннер привязки, `PartyTrackDisplaySection`, `PartyEditor`, auth, недоступность сервера, entitlement.
 
-### PartyView
+**Party Preview:** только `PartyPreview` (read-only потребление runtime: тема, кастомизация, preview playlist, playback).
 
-Основной компонент workspace, который содержит:
+Оба wrapper проверяют `enableStreaming`; при `false` — disabled-сообщение (`PartyViewWrapper.css`).
 
-- Форму создания вечеринки (PartyEditor)
-- Превью плейлиста (PartyPreview)
+## Party subsystem
 
-### PartyEditor
+```
+party/
+├── partyWorkspaceStore.ts       # Zustand: форма, server/theme/lifecycle UI state
+├── partyWorkspaceUtils.ts       # константы, нормализация
+├── partyWorkspaceReconnectRefs.ts  # singleton reconnect + mount count
+├── usePartyWorkspace.ts         # usePartyWorkspaceRuntime()
+├── PartyEditorView.tsx / PartyPreviewView.tsx
+├── *ViewWrapper.tsx
+├── index.ts                     # register обоих workspace
+└── components/                  # PartyEditor, PartyTrackDisplaySection, …
+```
 
-Компонент для редактирования настроек вечеринки:
+- **Store** — изменяемое UI-состояние вечеринки (не дублирует `linkedParty` / `partyTrackDisplay` из `projectStore`).
+- **`usePartyWorkspaceRuntime()`** — load linked party, reconnect, theme access, handlers (`handleCreateParty`, `handlePublish`, …), derived для Preview.
+- **Reconnect** — один таймер на сессию через `partyWorkspaceReconnectRefs`, даже если Editor и Preview смонтированы вместе.
 
-- Название вечеринки
-- Выбор стиля (Cyberpunk, Sakura, Art Deco и др.)
-- Настройки кастомизации для выбранного стиля
-- **Поля для карточки каталога:** краткое описание (макс. 200 символов), город, дата/время, внешняя ссылка (URL + опциональный текст), теги танцев (до 20: предопределённые + свои)
-- Кнопка создания вечеринки
-- Отображение созданного URL
+## Состояние и API
 
-Данные сохраняются на сервере (Party entity, CreatePartyDto/UpdatePartyDto) и отображаются в каталоге (GET `/api/parties/public/list` → PublicPartyListItemDto).
+- `projectStore` — плейлист, `meta.linkedParty`, `meta.partyTrackDisplay`
+- `partyService` — HTTP API вечеринок
+- `partyWorkspaceStore` — эфемерное runtime-состояние формы и онлайн-UI
 
-### PartyPreview
+## Layout
 
-Компонент для отображения превью плейлиста:
+Пресеты `party` и `aimp-party` — три колонки: player или aimp (50%), editor (25%), preview (25%). См. `layoutStore.ts`, `layoutPreset.ts`.
 
-- Использует библиотеку CherryPlayComponents
-- Показывает, как плейлист будет выглядеть в браузере
-- Применяет выбранный стиль и настройки кастомизации
-
-## Использование
-
-Workspace автоматически регистрируется при импорте модуля. Для использования в layout добавьте workspace типа `party`.
+Persist layout **v3**: legacy-зона `party` / `party-workspace` автоматически раскладывается в editor + preview (`migrateLegacyPartyLayout`).
 
 ## Зависимости
 
-- `@cherryplay/components` - библиотека компонентов для отображения плейлиста
-- `@shared/stores/projectStore` - главный store проекта (данные плейлиста, группы, настройки)
-- `@shared/services/partyService` - сервис для работы с вечеринками (пока моки)
-
-## Моки
-
-Взаимодействие с сервером пока мокируется через `partyService`:
-
-- `createParty()` - создает вечеринку с фейковыми данными
-- `getPartyUrl()` - генерирует URL для вечеринки
+- `@cherryplay/components`
+- `@shared/stores/projectStore`
+- `@shared/services/partyService`

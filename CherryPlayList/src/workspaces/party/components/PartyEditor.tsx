@@ -13,6 +13,8 @@ import {
 } from '@shared/services/partyService';
 import { sanitizeExternalUrl } from '@shared/utils/urlSafety';
 
+import type { PartyEditorPhase } from '../partyEditorPhase';
+
 import { PartyLifecycleControls } from './PartyLifecycleControls';
 import './PartyEditor.css';
 
@@ -30,6 +32,7 @@ interface DanceTagsFieldProps {
   predefinedOptions: string[];
   maxTags: number;
   maxTagLength: number;
+  readOnly?: boolean;
 }
 
 const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
@@ -38,6 +41,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
   predefinedOptions,
   maxTags,
   maxTagLength,
+  readOnly = false,
 }) => {
   const [customInput, setCustomInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -90,12 +94,12 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
                 addTag(option);
               }
             }}
-            disabled={!tags.includes(option) && tags.length >= maxTags}
+            disabled={readOnly || (!tags.includes(option) && tags.length >= maxTags)}
           >
             {option}
           </button>
         ))}
-        {!showCustomInput ? (
+        {!readOnly && !showCustomInput ? (
           <button
             type="button"
             className="party-editor-tag-button"
@@ -111,7 +115,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
           >
             Другой танец
           </button>
-        ) : (
+        ) : !readOnly ? (
           <div
             ref={customBlockRef}
             className="party-editor-tags-custom party-editor-tags-custom--inline"
@@ -149,21 +153,23 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               Добавить
             </button>
           </div>
-        )}
+        ) : null}
       </div>
       {tags.length > 0 && (
         <div className="party-editor-tags-list">
           {tags.map((tag, index) => (
             <span key={`${tag}-${index}`} className="party-editor-tag-chip">
               {tag}
-              <button
-                type="button"
-                className="party-editor-tag-remove"
-                onClick={() => removeTag(index)}
-                aria-label={`Удалить тег ${tag}`}
-              >
-                ×
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  className="party-editor-tag-remove"
+                  onClick={() => removeTag(index)}
+                  aria-label={`Удалить тег ${tag}`}
+                >
+                  ×
+                </button>
+              )}
             </span>
           ))}
         </div>
@@ -224,6 +230,11 @@ interface PartyEditorProps {
   partyLifecycleState?: PartyLifecycleState | null;
   isTransitioningLifecycle?: boolean;
   onLifecycleTransition?: (targetState: PartyLifecycleState) => void;
+  phase: PartyEditorPhase;
+  /** When true, shell shows linked-party banner — hide duplicate block in editor. */
+  hideLinkedPartyBlock?: boolean;
+  /** When true, shell overlay handles blocked states — hide checking/error UI. */
+  isBlocked?: boolean;
 }
 
 const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
@@ -293,7 +304,20 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   partyLifecycleState = null,
   isTransitioningLifecycle = false,
   onLifecycleTransition,
+  phase,
+  hideLinkedPartyBlock = false,
+  isBlocked = false,
 }) => {
+  const isReadOnly = phase === 'completed';
+  const showExtendedFields = phase !== 'draft-unlinked';
+  const effectiveLifecycle = partyLifecycleState ?? 'draft';
+  const showLifecycle =
+    phase !== 'draft-unlinked' && Boolean(linkedParty) && Boolean(onLifecycleTransition);
+  const showPublish = Boolean(onPublish) && (phase === 'draft-linked' || phase === 'ready');
+  const showCreate = phase === 'draft-unlinked';
+  const showLinkParty = phase === 'draft-unlinked' && Boolean(onOpenLinkParty) && isAuthenticated;
+  const showPartyBlock =
+    Boolean(linkedParty) && phase !== 'draft-unlinked' && !hideLinkedPartyBlock;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [lockedThemeModal, setLockedThemeModal] = useState<LockedThemeInfo | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -376,7 +400,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   const displayParty = !serverError && !isCheckingParty ? (linkedParty ?? null) : null;
 
   return (
-    <div className="party-editor">
+    <div className={`party-editor${isReadOnly ? ' party-editor--read-only' : ''}`}>
       <div className="party-editor-section">
         <label className="party-editor-label">
           Название вечеринки
@@ -386,6 +410,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             value={partyName}
             onChange={(e) => onPartyNameChange(e.target.value)}
             placeholder="Введите название вечеринки"
+            readOnly={isReadOnly}
+            disabled={isReadOnly}
           />
         </label>
       </div>
@@ -399,6 +425,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             value={partyTitle}
             onChange={(e) => onPartyTitleChange?.(e.target.value)}
             placeholder="Если пусто — показывается название"
+            readOnly={isReadOnly}
+            disabled={isReadOnly}
           />
         </label>
       </div>
@@ -412,6 +440,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             value={partySubtitle}
             onChange={(e) => onPartySubtitleChange?.(e.target.value)}
             placeholder="Строка под заголовком"
+            readOnly={isReadOnly}
+            disabled={isReadOnly}
           />
         </label>
       </div>
@@ -424,6 +454,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               className="party-editor-input"
               value={timeZone || getDefaultTimeZone()}
               onChange={(e) => onTimeZoneChange(e.target.value)}
+              disabled={isReadOnly}
             >
               {getPopularTimeZones().map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -435,19 +466,23 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      <div className="party-editor-section">
-        <label className="party-editor-label">
-          Дата и время мероприятия (по местному времени выбранной таймзоны)
-          <input
-            type="datetime-local"
-            className="party-editor-input"
-            value={eventDateTime}
-            onChange={(e) => onEventDateTimeChange(e.target.value)}
-          />
-        </label>
-      </div>
+      {showExtendedFields && (
+        <div className="party-editor-section">
+          <label className="party-editor-label">
+            Дата и время мероприятия (по местному времени выбранной таймзоны)
+            <input
+              type="datetime-local"
+              className="party-editor-input"
+              value={eventDateTime}
+              onChange={(e) => onEventDateTimeChange(e.target.value)}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
+            />
+          </label>
+        </div>
+      )}
 
-      {onEventEndDateTimeChange && (
+      {showExtendedFields && onEventEndDateTimeChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Время окончания мероприятия (по местному времени выбранной таймзоны)
@@ -456,12 +491,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               className="party-editor-input"
               value={eventEndDateTime}
               onChange={(e) => onEventEndDateTimeChange(e.target.value)}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onDescriptionChange && (
+      {showExtendedFields && onDescriptionChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Описание
@@ -471,12 +508,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               onChange={(e) => onDescriptionChange(e.target.value)}
               placeholder="Описание вечеринки"
               rows={3}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onPlaceChange && (
+      {showExtendedFields && onPlaceChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Место
@@ -486,12 +525,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               value={place}
               onChange={(e) => onPlaceChange(e.target.value)}
               placeholder="Место проведения"
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onCityChange && (
+      {showExtendedFields && onCityChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Город
@@ -501,12 +542,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               value={city}
               onChange={(e) => onCityChange(e.target.value)}
               placeholder="Город"
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onScheduleChange && (
+      {showExtendedFields && onScheduleChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Расписание
@@ -516,12 +559,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               onChange={(e) => onScheduleChange(e.target.value)}
               placeholder="Расписание мероприятия"
               rows={3}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onShortDescriptionChange && (
+      {showExtendedFields && onShortDescriptionChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Краткое описание (для карточки)
@@ -534,6 +579,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               placeholder="Краткое описание до 200 символов"
               rows={2}
               maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
             <span className="party-editor-char-count">
               {shortDescription.length}/{MAX_SHORT_DESCRIPTION_LENGTH}
@@ -542,7 +589,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {onExternalLinkUrlChange && onExternalLinkTextChange && (
+      {showExtendedFields && onExternalLinkUrlChange && onExternalLinkTextChange && (
         <div className="party-editor-section">
           <label className="party-editor-label">
             Внешняя ссылка (URL)
@@ -555,6 +602,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               }
               placeholder="https://..."
               maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
           <label className="party-editor-label">
@@ -568,18 +617,21 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
               }
               placeholder="Например: Сайт мероприятия"
               maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
+              readOnly={isReadOnly}
+              disabled={isReadOnly}
             />
           </label>
         </div>
       )}
 
-      {onDanceTagsChange && (
+      {showExtendedFields && onDanceTagsChange && (
         <DanceTagsField
           tags={danceTagsProp}
           onChange={onDanceTagsChange}
           predefinedOptions={[...PREDEFINED_DANCE_TAGS]}
           maxTags={MAX_DANCE_TAGS}
           maxTagLength={MAX_DANCE_TAG_LENGTH}
+          readOnly={isReadOnly}
         />
       )}
 
@@ -594,6 +646,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             className="party-editor-dropdown-button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             aria-expanded={isDropdownOpen}
+            disabled={isReadOnly}
           >
             <div className="party-editor-dropdown-button-content">
               <div className="party-editor-dropdown-selected">
@@ -666,58 +719,69 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
       {renderCustomizationOptions()}
 
-      {linkedParty && partyLifecycleState && onLifecycleTransition && (
+      {showLifecycle && onLifecycleTransition && (
         <PartyLifecycleControls
-          partyLifecycleState={partyLifecycleState}
+          partyLifecycleState={effectiveLifecycle}
           isTransitioning={isTransitioningLifecycle}
           disabled={isCreating || isPublishing}
           onTransition={onLifecycleTransition}
         />
       )}
 
-      <div className="party-editor-actions">
-        {onPublish && (
-          <button
-            className="party-editor-button party-editor-button-primary"
-            onClick={onPublish}
-            disabled={isCreating || isPublishing}
-            type="button"
-          >
-            {isPublishing || isCreating
-              ? 'Публикация...'
-              : linkedParty
-                ? 'Опубликовать изменения'
-                : 'Опубликовать'}
-          </button>
-        )}
-        <button
-          className="party-editor-button party-editor-button-secondary"
-          onClick={onCreateParty}
-          disabled={!isAuthenticated || isCreating || !partyName.trim()}
-          type="button"
-          title={!isAuthenticated ? 'Требуется авторизация' : undefined}
-        >
-          {isCreating ? 'Создание...' : 'Создать вечеринку'}
-        </button>
-        {onOpenLinkParty && isAuthenticated && (
-          <button
-            className="party-editor-button party-editor-button-secondary"
-            onClick={onOpenLinkParty}
-            type="button"
-            title="Привязать текущий плейлист к вечеринке, созданной на сервере"
-          >
-            Привязать к вечеринке
-          </button>
-        )}
-      </div>
+      {!isReadOnly && phase === 'ready' && (
+        <p className="party-editor-ready-publish-hint">
+          Вечеринка готова к запуску. Опубликуйте плейлист и метаданные на сервер, чтобы зрители
+          видели актуальную программу.
+        </p>
+      )}
 
-      {isCheckingParty && (
+      {!isReadOnly && (showPublish || showCreate || showLinkParty) && (
+        <div className="party-editor-actions">
+          {showPublish && onPublish && (
+            <button
+              className="party-editor-button party-editor-button-primary"
+              onClick={onPublish}
+              disabled={isCreating || isPublishing}
+              type="button"
+            >
+              {isPublishing || isCreating
+                ? 'Публикация...'
+                : linkedParty
+                  ? 'Опубликовать изменения'
+                  : 'Опубликовать'}
+            </button>
+          )}
+          {showCreate && (
+            <button
+              className="party-editor-button party-editor-button-secondary"
+              onClick={onCreateParty}
+              disabled={!isAuthenticated || isCreating || !partyName.trim()}
+              type="button"
+              title={!isAuthenticated ? 'Требуется авторизация' : undefined}
+            >
+              {isCreating ? 'Создание...' : 'Создать вечеринку'}
+            </button>
+          )}
+          {showLinkParty && onOpenLinkParty && (
+            <button
+              className="party-editor-button party-editor-button-secondary"
+              onClick={onOpenLinkParty}
+              type="button"
+              title="Привязать текущий плейлист к вечеринке, созданной на сервере"
+            >
+              Привязать к вечеринке
+            </button>
+          )}
+        </div>
+      )}
+
+      {!isBlocked && isCheckingParty && (
         <div className="party-editor-checking">
           <div className="party-editor-checking-message">Проверка соединения с сервером...</div>
         </div>
       )}
 
-      {serverError && !linkedParty && !isCheckingParty && (
+      {!isBlocked && serverError && !linkedParty && !isCheckingParty && (
         <div className="party-editor-error">
           <div className="party-editor-error-header">
             <strong className="party-editor-error-title">Ошибка подключения</strong>
@@ -741,7 +805,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </div>
       )}
 
-      {displayParty && (
+      {showPartyBlock && displayParty && (
         <div className="party-editor-party-block">
           <div className="party-editor-party-block-header">
             <span className="party-editor-party-block-icon">🔗</span>

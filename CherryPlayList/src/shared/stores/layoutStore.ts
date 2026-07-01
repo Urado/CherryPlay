@@ -8,7 +8,8 @@ import {
   AIMP_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
-  PARTY_WORKSPACE_ID,
+  PARTY_EDITOR_WORKSPACE_ID,
+  PARTY_PREVIEW_WORKSPACE_ID,
   generateWorkspaceId,
 } from '../../core/constants/workspace';
 import {
@@ -504,12 +505,14 @@ function createPlayerLayout(): Layout {
  * Создает layout для party workspace
  * Структура:
  * - Root (horizontal)
- *   - Player workspace (60%) - слева плеер
- *   - Party workspace (40%) - справа создание вечеринки с превью
+ *   - Player workspace (50%)
+ *   - Party Editor workspace (25%)
+ *   - Party Preview workspace (25%)
  */
 function createPartyLayout(): Layout {
   const playerZoneId = uuidv4();
-  const partyZoneId = uuidv4();
+  const partyEditorZoneId = uuidv4();
+  const partyPreviewZoneId = uuidv4();
   const rootContainerId = uuidv4();
 
   return {
@@ -523,17 +526,24 @@ function createPartyLayout(): Layout {
           type: 'workspace',
           workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
           workspaceType: 'player',
-          size: 60,
+          size: 50,
         },
         {
-          id: partyZoneId,
+          id: partyEditorZoneId,
           type: 'workspace',
-          workspaceId: PARTY_WORKSPACE_ID,
-          workspaceType: 'party',
-          size: 40,
+          workspaceId: PARTY_EDITOR_WORKSPACE_ID,
+          workspaceType: 'party-editor',
+          size: 25,
+        },
+        {
+          id: partyPreviewZoneId,
+          type: 'workspace',
+          workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
+          workspaceType: 'party-preview',
+          size: 25,
         },
       ],
-      sizes: [60, 40],
+      sizes: [50, 25, 25],
     },
     version: 1,
   };
@@ -541,7 +551,8 @@ function createPartyLayout(): Layout {
 
 function createAimpPartyLayout(): Layout {
   const aimpZoneId = uuidv4();
-  const partyZoneId = uuidv4();
+  const partyEditorZoneId = uuidv4();
+  const partyPreviewZoneId = uuidv4();
   const rootContainerId = uuidv4();
 
   return {
@@ -555,17 +566,24 @@ function createAimpPartyLayout(): Layout {
           type: 'workspace',
           workspaceId: AIMP_WORKSPACE_ID,
           workspaceType: 'aimp',
-          size: 60,
+          size: 50,
         },
         {
-          id: partyZoneId,
+          id: partyEditorZoneId,
           type: 'workspace',
-          workspaceId: PARTY_WORKSPACE_ID,
-          workspaceType: 'party',
-          size: 40,
+          workspaceId: PARTY_EDITOR_WORKSPACE_ID,
+          workspaceType: 'party-editor',
+          size: 25,
+        },
+        {
+          id: partyPreviewZoneId,
+          type: 'workspace',
+          workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
+          workspaceType: 'party-preview',
+          size: 25,
         },
       ],
-      sizes: [60, 40],
+      sizes: [50, 25, 25],
     },
     version: 1,
   };
@@ -595,11 +613,130 @@ function createLayoutByPreset(preset: LayoutPreset): Layout {
   }
 }
 
+const LEGACY_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:player,workspace:party)';
+const LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:aimp,workspace:party)';
+
+function getLayoutZoneSignature(zone: Zone): string {
+  if (zone.type === 'workspace') {
+    return `workspace:${zone.workspaceType}`;
+  }
+
+  return `${zone.direction}(${zone.zones.map(getLayoutZoneSignature).join(',')})`;
+}
+
+function isLegacyPartyZone(zone: Zone): zone is WorkspaceZone {
+  return (
+    zone.type === 'workspace' &&
+    (zone.workspaceType === 'party' || zone.workspaceId === 'party-workspace')
+  );
+}
+
+function createPartyEditorZone(size: number): WorkspaceZone {
+  return {
+    id: uuidv4(),
+    type: 'workspace',
+    workspaceId: PARTY_EDITOR_WORKSPACE_ID,
+    workspaceType: 'party-editor',
+    size,
+  };
+}
+
+function createPartyPreviewZone(size: number): WorkspaceZone {
+  return {
+    id: uuidv4(),
+    type: 'workspace',
+    workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
+    workspaceType: 'party-preview',
+    size,
+  };
+}
+
+function splitLegacyPartyZonesInContainer(container: ContainerZone): ContainerZone {
+  const newZones: Zone[] = [];
+  const newSizes: number[] = [];
+
+  for (let i = 0; i < container.zones.length; i++) {
+    const zone = container.zones[i];
+    if (isLegacyPartyZone(zone)) {
+      const halfSize = zone.size / 2;
+      newZones.push(createPartyEditorZone(halfSize));
+      newZones.push(createPartyPreviewZone(halfSize));
+      newSizes.push(halfSize, halfSize);
+    } else if (zone.type === 'container') {
+      newZones.push(splitLegacyPartyZonesInTree(zone));
+      newSizes.push(container.sizes[i]);
+    } else {
+      newZones.push(zone);
+      newSizes.push(container.sizes[i]);
+    }
+  }
+
+  return {
+    ...container,
+    zones: newZones,
+    sizes: newSizes,
+  };
+}
+
+function splitLegacyPartyZonesInTree(zone: Zone): Zone {
+  if (zone.type === 'workspace') {
+    return zone;
+  }
+
+  return splitLegacyPartyZonesInContainer(zone);
+}
+
+function layoutContainsLegacyParty(zone: Zone): boolean {
+  if (zone.type === 'workspace') {
+    return isLegacyPartyZone(zone);
+  }
+
+  return zone.zones.some(layoutContainsLegacyParty);
+}
+
+export function migrateLegacyPartyLayout(layout: Layout): Layout {
+  const signature = getLayoutZoneSignature(layout.rootZone);
+
+  if (signature === LEGACY_PARTY_LAYOUT_SIGNATURE) {
+    return createPartyLayout();
+  }
+
+  if (signature === LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE) {
+    return createAimpPartyLayout();
+  }
+
+  if (!layoutContainsLegacyParty(layout.rootZone)) {
+    return layout;
+  }
+
+  if (layout.rootZone.type === 'container') {
+    return {
+      ...layout,
+      rootZone: splitLegacyPartyZonesInContainer(layout.rootZone),
+    };
+  }
+
+  return createPartyLayout();
+}
+
 /**
  * Создает начальный layout (по умолчанию с коллекциями)
  */
 function createInitialLayout(): Layout {
   return createCollectionsLayout();
+}
+
+/** Persist migration entry point (v3 splits legacy party workspace into editor + preview). */
+export function migratePersistedLayoutState(
+  persistedState: unknown,
+  version: number,
+): { layout: Layout } {
+  if (version < 3) {
+    const state = persistedState as { layout?: Layout } | undefined;
+    const layout = state?.layout ?? createInitialLayout();
+    return { layout: migrateLegacyPartyLayout(layout) };
+  }
+  return persistedState as { layout: Layout };
 }
 
 interface LayoutState {
@@ -942,19 +1079,13 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
     }),
     {
       name: 'cherryplaylist-layout',
-      version: 2, // Увеличена версия для сброса старого layout и применения нового с тестовыми зонами
-      storage: electronStorage, // Используем localforage вместо localStorage
+      version: 3,
+      storage: electronStorage,
       partialize: (state) => ({
-        // Сохраняем только layout, исключаем все методы
         layout: state.layout,
       }),
-      migrate: (persistedState: unknown, version: number) => {
-        // При изменении версии сбрасываем layout и используем новый
-        if (version === 2) {
-          return { layout: createInitialLayout() };
-        }
-        return persistedState as { layout: Layout };
-      },
+      migrate: (persistedState: unknown, version: number) =>
+        migratePersistedLayoutState(persistedState, version),
     },
   ),
 );

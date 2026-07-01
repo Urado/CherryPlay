@@ -4,15 +4,15 @@ import { WorkspaceId } from '@core/types/workspace';
 import { getAppMode } from '@shared/platform';
 import { useSettingsStore } from '@shared/stores';
 
-import { PartyView } from './PartyView';
+import { PartyPreviewView } from './PartyPreviewView';
 import './PartyViewWrapper.css';
 
-interface PartyViewWrapperProps {
+interface PartyPreviewViewWrapperProps {
   workspaceId: WorkspaceId;
   zoneId: string;
 }
 
-export const PartyViewWrapper: React.FC<PartyViewWrapperProps> = (props) => {
+export const PartyPreviewViewWrapper: React.FC<PartyPreviewViewWrapperProps> = (props) => {
   const { enableStreaming } = useSettingsStore();
   const isDemoMode = getAppMode() === 'demo';
 
@@ -36,5 +36,5 @@ export const PartyViewWrapper: React.FC<PartyViewWrapperProps> = (props) => {
     );
   }
 
-  return <PartyView {...props} />;
+  return <PartyPreviewView {...props} />;
 };

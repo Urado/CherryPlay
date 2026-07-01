@@ -1,22 +1,41 @@
-import { PARTY_WORKSPACE_ID, registerWorkspaceType } from '@core/constants/workspace';
+import {
+  PARTY_EDITOR_WORKSPACE_ID,
+  PARTY_PREVIEW_WORKSPACE_ID,
+  registerWorkspaceType,
+} from '@core/constants/workspace';
 import { IWorkspaceModule } from '@core/interfaces';
 import { workspaceRegistry } from '@core/registry';
 
-import { PartyView } from './PartyView';
-import { PartyViewWrapper } from './PartyViewWrapper';
+import { PartyEditorViewWrapper } from './PartyEditorViewWrapper';
+import { PartyPreviewViewWrapper } from './PartyPreviewViewWrapper';
+import { usePartyWorkspaceRuntime } from './usePartyWorkspace';
 
-// Регистрируем тип workspace
-registerWorkspaceType(PARTY_WORKSPACE_ID, 'party');
+registerWorkspaceType(PARTY_EDITOR_WORKSPACE_ID, 'party-editor');
+registerWorkspaceType(PARTY_PREVIEW_WORKSPACE_ID, 'party-preview');
 
-const PartyModule: IWorkspaceModule = {
-  id: PARTY_WORKSPACE_ID,
-  type: 'party',
-  name: 'Party',
-  component: PartyViewWrapper,
+const PartyEditorModule: IWorkspaceModule = {
+  id: PARTY_EDITOR_WORKSPACE_ID,
+  type: 'party-editor',
+  name: 'Party Editor',
+  component: PartyEditorViewWrapper,
 };
 
-// Register the module
-workspaceRegistry.register(PartyModule);
+const PartyPreviewModule: IWorkspaceModule = {
+  id: PARTY_PREVIEW_WORKSPACE_ID,
+  type: 'party-preview',
+  name: 'Party Preview',
+  component: PartyPreviewViewWrapper,
+};
 
-export { PartyView, PartyViewWrapper };
-export default PartyModule;
+workspaceRegistry.register(PartyEditorModule);
+workspaceRegistry.register(PartyPreviewModule);
+
+export {
+  PARTY_EDITOR_WORKSPACE_ID,
+  PARTY_PREVIEW_WORKSPACE_ID,
+  PartyEditorViewWrapper,
+  PartyPreviewViewWrapper,
+  usePartyWorkspaceRuntime,
+};
+
+export default PartyEditorModule;
