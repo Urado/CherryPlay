@@ -1,3 +1,4 @@
+import { isProjectTrack } from '@core/types/project';
 import { LOUDNESS_ALGORITHM_VERSION, type Track, type TrackLoudness } from '@core/types/track';
 
 import { resolveLinearGain } from '../audio/loudnessGain';
@@ -103,6 +104,7 @@ function mapAnalyzeResultToTrackLoudness(
 export type LoudnessServiceDeps = {
   getSettings: () => LoudnessSettings;
   updateTrackLoudness: (trackId: string, loudness: TrackLoudness) => void;
+  getTrackLoudness?: (trackId: string) => TrackLoudness | undefined;
   analyzeLoudness: (path: string, targetLufs: number) => Promise<LoudnessAnalyzeResult>;
   statAudioFile: (path: string) => Promise<{ mtimeMs: number; size: number }>;
   canAnalyze: () => boolean;
@@ -110,6 +112,7 @@ export type LoudnessServiceDeps = {
 
 type ScanOrchestrationState = {
   inFlightTrackIds: Set<string>;
+  inFlightScanPromises: Map<string, Promise<TrackLoudness>>;
   pendingPreviousLoudness: Map<string, TrackLoudness | undefined>;
   scheduledTrackIds: Set<string>;
   scanChain: Promise<void>;
@@ -118,6 +121,7 @@ type ScanOrchestrationState = {
 function createScanOrchestration(): ScanOrchestrationState {
   return {
     inFlightTrackIds: new Set(),
+    inFlightScanPromises: new Map(),
     pendingPreviousLoudness: new Map(),
     scheduledTrackIds: new Set(),
     scanChain: Promise.resolve(),
@@ -153,25 +157,28 @@ export function createLoudnessService(deps: LoudnessServiceDeps) {
     }
   };
 
-  const scanTrack = async (
+  const buildPendingLoudness = (track: Track): TrackLoudness => {
+    if (track.loudness?.status === 'pending') {
+      return track.loudness;
+    }
+
+    const previous = scanState.pendingPreviousLoudness.get(track.id);
+    return {
+      ...(previous ?? track.loudness),
+      status: 'pending',
+    } as TrackLoudness;
+  };
+
+  const runExecuteScanTrack = async (
     track: Track,
     mtimeMs?: number,
     cancelToken?: LoudnessCancelToken,
   ): Promise<TrackLoudness> => {
-    const settings = deps.getSettings();
-    if (!settings.loudnessNormalizationEnabled || !deps.canAnalyze()) {
-      return (
-        track.loudness ?? {
-          status: 'error',
-          errorMessage: 'Loudness analysis unavailable',
-        }
-      );
-    }
-
     scanState.inFlightTrackIds.add(track.id);
     setPending(track);
 
     try {
+      const settings = deps.getSettings();
       const fileMtime = mtimeMs ?? (await deps.statAudioFile(track.path)).mtimeMs;
       const result = await deps.analyzeLoudness(track.path, settings.loudnessTargetLufs);
       if (cancelToken?.cancelled) {
@@ -209,7 +216,59 @@ export function createLoudnessService(deps: LoudnessServiceDeps) {
       return loudness;
     } finally {
       scanState.inFlightTrackIds.delete(track.id);
+      scanState.inFlightScanPromises.delete(track.id);
     }
+  };
+
+  const executeScanTrack = (
+    track: Track,
+    mtimeMs?: number,
+    cancelToken?: LoudnessCancelToken,
+  ): Promise<TrackLoudness> => {
+    const existing = scanState.inFlightScanPromises.get(track.id);
+    if (existing) {
+      return existing;
+    }
+
+    const scanPromise = runExecuteScanTrack(track, mtimeMs, cancelToken);
+    scanState.inFlightScanPromises.set(track.id, scanPromise);
+    return scanPromise;
+  };
+
+  const scanTrack = async (
+    track: Track,
+    mtimeMs?: number,
+    cancelToken?: LoudnessCancelToken,
+  ): Promise<TrackLoudness> => {
+    const settings = deps.getSettings();
+    if (!settings.loudnessNormalizationEnabled || !deps.canAnalyze()) {
+      return (
+        track.loudness ?? {
+          status: 'error',
+          errorMessage: 'Loudness analysis unavailable',
+        }
+      );
+    }
+
+    const inFlight = scanState.inFlightScanPromises.get(track.id);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    if (scanState.scheduledTrackIds.has(track.id)) {
+      await scanState.scanChain;
+      const afterChain = scanState.inFlightScanPromises.get(track.id);
+      if (afterChain) {
+        return afterChain;
+      }
+      const fromStore = deps.getTrackLoudness?.(track.id);
+      if (fromStore) {
+        return fromStore;
+      }
+      return track.loudness ?? buildPendingLoudness(track);
+    }
+
+    return executeScanTrack(track, mtimeMs, cancelToken);
   };
 
   const runScanTracks = async (
@@ -239,7 +298,7 @@ export function createLoudnessService(deps: LoudnessServiceDeps) {
         continue;
       }
 
-      await scanTrack(track, currentMtimeMs, cancelToken);
+      await executeScanTrack(track, currentMtimeMs, cancelToken);
       completed += 1;
       onProgress?.({ completed, total: tracks.length, track });
 
@@ -305,6 +364,10 @@ export const loudnessService = createLoudnessService({
   },
   updateTrackLoudness: (trackId, loudness) => {
     useProjectStore.getState().updateTrackLoudness(trackId, loudness);
+  },
+  getTrackLoudness: (trackId) => {
+    const item = useProjectStore.getState().findItemById(trackId);
+    return item && isProjectTrack(item) ? item.loudness : undefined;
   },
   analyzeLoudness: async (path, targetLufs) => {
     const result = await platformAudioAdapter.analyzeLoudness?.(path, targetLufs);

@@ -200,20 +200,24 @@ describe('createLoudnessService', () => {
   };
 
   function createService(overrides: Partial<Parameters<typeof createLoudnessService>[0]> = {}) {
-    const updateTrackLoudness = jest.fn();
+    const loudnessByTrackId = new Map<string, TrackLoudness>();
+    const updateTrackLoudness = jest.fn((trackId: string, loudness: TrackLoudness) => {
+      loudnessByTrackId.set(trackId, loudness);
+    });
     const analyzeLoudness = jest.fn().mockResolvedValue(okResult);
     const statAudioFile = jest.fn().mockResolvedValue({ mtimeMs: 2000, size: 1024 });
 
     const service = createLoudnessService({
       getSettings: () => enabledSettings,
       updateTrackLoudness,
+      getTrackLoudness: (trackId) => loudnessByTrackId.get(trackId),
       analyzeLoudness,
       statAudioFile,
       canAnalyze: () => true,
       ...overrides,
     });
 
-    return { service, updateTrackLoudness, analyzeLoudness, statAudioFile };
+    return { service, updateTrackLoudness, analyzeLoudness, statAudioFile, loudnessByTrackId };
   }
 
   it('scanTrack is a no-op when normalization is disabled', async () => {
@@ -272,6 +276,59 @@ describe('createLoudnessService', () => {
     const { service, analyzeLoudness } = createService();
 
     await Promise.all([service.scanTracks([track]), service.scanTracks([track])]);
+
+    expect(analyzeLoudness).toHaveBeenCalledTimes(1);
+  });
+
+  it('deduplicates concurrent scanTrack calls for the same track', async () => {
+    const track = createTrack();
+    const { service, analyzeLoudness } = createService();
+
+    const [first, second] = await Promise.all([service.scanTrack(track), service.scanTrack(track)]);
+
+    expect(analyzeLoudness).toHaveBeenCalledTimes(1);
+    expect(first.status).toBe('ok');
+    expect(second.status).toBe('ok');
+    expect(first).toEqual(second);
+  });
+
+  it('deduplicates scanTrack while scanTracks batch is in-flight for the same track', async () => {
+    const track = createTrack();
+    let releaseAnalyze: (() => void) | undefined;
+    const analyzeGate = new Promise<void>((resolve) => {
+      releaseAnalyze = resolve;
+    });
+    const gatedAnalyzeLoudness = jest.fn().mockImplementation(async () => {
+      await analyzeGate;
+      return okResult;
+    });
+    const { service } = createService({ analyzeLoudness: gatedAnalyzeLoudness });
+
+    const batchPromise = service.scanTracks([track]);
+    await Promise.resolve();
+    const singlePromise = service.scanTrack(track);
+
+    releaseAnalyze?.();
+    const [batchResult, singleResult] = await Promise.all([batchPromise, singlePromise]);
+
+    expect(gatedAnalyzeLoudness).toHaveBeenCalledTimes(1);
+    expect(singleResult.status).toBe('ok');
+    expect(singleResult.integratedLufs).toBe(okResult.integratedLufs);
+    expect(batchResult).toBeUndefined();
+  });
+
+  it('does not deadlock when scanTrack awaits a batch-driven executeScanTrack', async () => {
+    const track = createTrack();
+    const { service, analyzeLoudness } = createService();
+
+    await expect(
+      Promise.race([
+        Promise.all([service.scanTracks([track]), service.scanTrack(track)]),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('deadlock')), 2000);
+        }),
+      ]),
+    ).resolves.toBeDefined();
 
     expect(analyzeLoudness).toHaveBeenCalledTimes(1);
   });

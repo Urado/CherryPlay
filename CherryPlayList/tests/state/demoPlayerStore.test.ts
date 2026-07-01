@@ -9,6 +9,10 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
   const deviceState = {
     playerAudioDeviceId: null as string | null,
     demoPlayerAudioDeviceId: null as string | null,
+    loudnessNormalizationEnabled: true,
+    loudnessTargetLufs: -18,
+    loudnessCompressionEnabled: false,
+    loudnessQuietGapRangeLu: 15,
   };
 
   const useSettingsStore = Object.assign(
@@ -28,8 +32,8 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
           deviceState.demoPlayerAudioDeviceId = id;
         },
       }),
-      subscribe: (listener: (state: typeof deviceState) => void) => {
-        listener(deviceState);
+      subscribe: (listener: (state: typeof deviceState, prevState: typeof deviceState) => void) => {
+        listener(deviceState, deviceState);
         return () => undefined;
       },
     },
@@ -99,6 +103,16 @@ class MockMediaElementSource {
   disconnect = jest.fn();
 }
 
+class MockDynamicsCompressorNode {
+  threshold = { value: 0 };
+  ratio = { value: 1 };
+  knee = { value: 0 };
+  attack = { value: 0 };
+  release = { value: 0 };
+  connect = jest.fn();
+  disconnect = jest.fn();
+}
+
 class MockAudioContext {
   static instances: MockAudioContext[] = [];
 
@@ -107,6 +121,7 @@ class MockAudioContext {
 
   createGain = jest.fn(() => new MockGainNode());
   createBiquadFilter = jest.fn(() => new MockBiquadFilterNode());
+  createDynamicsCompressor = jest.fn(() => new MockDynamicsCompressorNode());
   createMediaElementSource = jest.fn(() => new MockMediaElementSource());
   resume = jest.fn().mockResolvedValue(undefined);
   close = jest.fn().mockResolvedValue(undefined);

@@ -92,7 +92,7 @@ function hintCalculatedGain(targetLufs: number): string {
   return [
     `Усиление, которое приложение рассчитало при скане, чтобы подвести трек к ${targetLufs} LUFS.`,
     'Учитывается запас по true peak (−1 dBTP): итоговое авто-усиление — минимум из «подгонки по LUFS» и «лимита по пику».',
-    'Слайдер «Gain» выше заменяет это значение; «Выставить авто» под слайдером подставляет расчётное значение.',
+    'Слайдер «Gain» выше заменяет это значение; «Выставить авто» под слайдером сбрасывает ручную настройку и снова использует расчётное значение.',
   ].join(' ');
 }
 
@@ -270,7 +270,7 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
     if (autoGainDb === undefined) {
       return;
     }
-    onManualGainChange(autoGainDb);
+    onManualGainChange(undefined);
   };
 
   const applyAutoCompression = () => {
