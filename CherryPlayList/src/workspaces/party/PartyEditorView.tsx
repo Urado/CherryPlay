@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
 
@@ -10,6 +10,7 @@ import {
 import { PartyEditorShell } from './components/PartyEditorShell';
 import { PartyLifecycleControls } from './components/PartyLifecycleControls';
 import { PartyTrackDisplaySection } from './components/PartyTrackDisplaySection';
+import { usePartyEditorDemoStore } from './partyEditorDemoStore';
 import {
   applyDemoBlockedOverride,
   resolvePartyEditorPhase,
@@ -17,9 +18,8 @@ import {
   shouldShowPartyTrackDisplaySection,
 } from './partyEditorPhase';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
-import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import './PartyEditorView.css';
-import { usePartyWorkspaceRuntime } from './usePartyWorkspace';
+import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
 
 interface PartyEditorViewProps {
   workspaceId: WorkspaceId;
@@ -32,7 +32,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   zoneId: _zoneId,
   showDemoPanel = false,
 }) => {
-  const runtime = usePartyWorkspaceRuntime();
+  const runtime = usePartyWorkspaceRuntimeContext();
   const {
     isAuth,
     isClientOutdated,
@@ -88,6 +88,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     handleTimeZoneChange,
     handleCreateParty,
     handlePublish,
+    handleCopyUrl,
     handleRetry,
     handleResetAndCreateNewParty,
     handleLifecycleTransition,
@@ -96,8 +97,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     visibleThemeIds,
   } = runtime;
 
-  const demoBlockedOverride = usePartyWorkspaceStore((state) =>
-    showDemoPanel ? state.demoBlockedOverride : null,
+  const blockedOverride = usePartyEditorDemoStore((state) =>
+    showDemoPanel ? state.blockedOverride : null,
   );
 
   const linkedParty = meta.linkedParty;
@@ -112,25 +113,130 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   };
   const basePhaseResult = resolvePartyEditorPhase(phaseInput);
   const phaseResult = showDemoPanel
-    ? applyDemoBlockedOverride(basePhaseResult, phaseInput, demoBlockedOverride)
+    ? applyDemoBlockedOverride(basePhaseResult, phaseInput, blockedOverride)
     : basePhaseResult;
   const phase = phaseResult.phase;
   const isBlocked = phaseResult.isBlocked;
   const blockedReason = phaseResult.blockedReason;
-  const preserveShellContent = shouldPreserveShellContentWhenBlocked(demoBlockedOverride);
+  const preserveShellContent = shouldPreserveShellContentWhenBlocked(blockedOverride);
   const editorPhase = isBlocked && !preserveShellContent ? null : (phase ?? 'draft-unlinked');
   const showTrackDisplay =
     shouldShowPartyTrackDisplaySection(phase) && (!isBlocked || preserveShellContent);
   const showLifecycle =
     editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
 
+  const editorFields = useMemo(
+    () => ({
+      partyName,
+      partyTitle,
+      partySubtitle,
+      eventDateTime,
+      eventEndDateTime,
+      description,
+      place,
+      city,
+      schedule,
+      timeZone,
+      shortDescription,
+      externalLinkUrl,
+      externalLinkText,
+      danceTags,
+    }),
+    [
+      partyName,
+      partyTitle,
+      partySubtitle,
+      eventDateTime,
+      eventEndDateTime,
+      description,
+      place,
+      city,
+      schedule,
+      timeZone,
+      shortDescription,
+      externalLinkUrl,
+      externalLinkText,
+      danceTags,
+    ],
+  );
+
+  const editorHandlers = useMemo(
+    () => ({
+      onPartyNameChange: setPartyName,
+      onPartyTitleChange: setPartyTitle,
+      onPartySubtitleChange: setPartySubtitle,
+      onEventDateTimeChange: setEventDateTime,
+      onEventEndDateTimeChange: handleEventEndDateTimeChange,
+      onDescriptionChange: setDescription,
+      onPlaceChange: setPlace,
+      onCityChange: setCity,
+      onScheduleChange: setSchedule,
+      onShortDescriptionChange: setShortDescription,
+      onExternalLinkUrlChange: setExternalLinkUrl,
+      onExternalLinkTextChange: setExternalLinkText,
+      onDanceTagsChange: setDanceTags,
+      onTimeZoneChange: handleTimeZoneChange,
+    }),
+    [
+      setPartyName,
+      setPartyTitle,
+      setPartySubtitle,
+      setEventDateTime,
+      handleEventEndDateTimeChange,
+      setDescription,
+      setPlace,
+      setCity,
+      setSchedule,
+      setShortDescription,
+      setExternalLinkUrl,
+      setExternalLinkText,
+      setDanceTags,
+      handleTimeZoneChange,
+    ],
+  );
+
+  const editorDesign = useMemo(
+    () => ({
+      themeId,
+      customizationSettings,
+      lockedThemes: lockedThemeInfos,
+      isThemeAccessLoading,
+      visibleThemeIds,
+      themeAccessErrorMessage,
+      onThemeIdChange: handleThemeChange,
+      onCustomizationSettingsChange: handleCustomizationSettingsChange,
+    }),
+    [
+      themeId,
+      customizationSettings,
+      lockedThemeInfos,
+      isThemeAccessLoading,
+      visibleThemeIds,
+      themeAccessErrorMessage,
+      handleThemeChange,
+      handleCustomizationSettingsChange,
+    ],
+  );
+
+  const editorConnection = useMemo(
+    () => ({
+      linkedParty,
+      serverError,
+      isCheckingParty,
+      onRetry: handleRetry,
+    }),
+    [linkedParty, serverError, isCheckingParty, handleRetry],
+  );
+
   return (
     <div className="party-editor-view">
       <PartyEditorShell
         phase={phase}
         linkedParty={linkedParty}
+        onCopyUrl={linkedParty?.url ? () => void handleCopyUrl() : undefined}
         isBlocked={isBlocked}
         blockedReason={blockedReason}
+        hidePhaseBadge={showLifecycle}
         blockedOverlayProps={{
           clientRequiredVersion,
           isReconnecting,
@@ -175,46 +281,10 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
         {editorPhase && (
           <PartyEditor
             phase={editorPhase}
-            partyName={partyName}
-            partyTitle={partyTitle}
-            partySubtitle={partySubtitle}
-            themeId={themeId}
-            customizationSettings={customizationSettings}
-            eventDateTime={eventDateTime}
-            eventEndDateTime={eventEndDateTime}
-            description={description}
-            place={place}
-            city={city}
-            schedule={schedule}
-            timeZone={timeZone}
-            shortDescription={shortDescription}
-            externalLinkUrl={externalLinkUrl}
-            externalLinkText={externalLinkText}
-            danceTags={danceTags}
-            onPartyNameChange={setPartyName}
-            onPartyTitleChange={setPartyTitle}
-            onPartySubtitleChange={setPartySubtitle}
-            onThemeIdChange={handleThemeChange}
-            onCustomizationSettingsChange={handleCustomizationSettingsChange}
-            onEventDateTimeChange={setEventDateTime}
-            onEventEndDateTimeChange={handleEventEndDateTimeChange}
-            onDescriptionChange={setDescription}
-            onPlaceChange={setPlace}
-            onCityChange={setCity}
-            onScheduleChange={setSchedule}
-            onShortDescriptionChange={setShortDescription}
-            onExternalLinkUrlChange={setExternalLinkUrl}
-            onExternalLinkTextChange={setExternalLinkText}
-            onDanceTagsChange={setDanceTags}
-            onTimeZoneChange={handleTimeZoneChange}
-            linkedParty={linkedParty}
-            serverError={serverError}
-            isCheckingParty={isCheckingParty}
-            onRetry={handleRetry}
-            lockedThemes={lockedThemeInfos}
-            isThemeAccessLoading={isThemeAccessLoading}
-            visibleThemeIds={visibleThemeIds}
-            themeAccessErrorMessage={themeAccessErrorMessage}
+            fields={editorFields}
+            handlers={editorHandlers}
+            design={editorDesign}
+            connection={editorConnection}
             isBlocked={isBlocked}
           />
         )}

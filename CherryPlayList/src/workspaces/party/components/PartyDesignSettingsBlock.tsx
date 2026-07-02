@@ -24,6 +24,7 @@ interface PartyDesignSettingsBlockProps {
   showApplyButton?: boolean;
   applyButtonLabel?: string;
   applyButtonClassName?: string;
+  hideSectionLabel?: boolean;
 }
 
 const PARTY_THEME_PREVIEWS: Record<PartyThemeId, string> = {
@@ -55,6 +56,7 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
   showApplyButton = false,
   applyButtonLabel = 'Изменить дизайн',
   applyButtonClassName = 'party-editor-design-apply-button',
+  hideSectionLabel = false,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [pendingThemeId, setPendingThemeId] = useState<PartyThemeId>(themeId);
@@ -222,15 +224,18 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
 
   return (
     <div className="party-editor-section">
-      <label htmlFor="theme-selector" className="party-editor-label">
-        Стиль оформления
-      </label>
+      {!hideSectionLabel && (
+        <label htmlFor="theme-selector" className="party-editor-label">
+          Стиль оформления
+        </label>
+      )}
       <div className="party-editor-dropdown" ref={dropdownRef}>
         <button
           id="theme-selector"
           ref={buttonRef}
           type="button"
           className="party-editor-dropdown-button"
+          aria-label={hideSectionLabel ? 'Стиль оформления' : undefined}
           onClick={() => {
             setIsDropdownOpen((open) => {
               const next = !open;

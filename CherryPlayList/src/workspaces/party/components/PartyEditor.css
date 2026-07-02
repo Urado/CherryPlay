@@ -1,10 +1,16 @@
 .party-editor {
-  padding: 16px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
   min-width: 0;
   overflow-x: hidden;
+}
+
+.party-editor > .party-editor-ready-publish-hint,
+.party-editor > .party-editor-checking,
+.party-editor > .party-editor-error {
+  margin: 16px;
 }
 
 .party-editor-section {
@@ -161,12 +167,11 @@
 }
 
 .party-editor input[type='datetime-local'] {
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 .party-editor input[type='datetime-local']::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.8;
+  opacity: 0.75;
   cursor: pointer;
 }
 
@@ -786,8 +791,8 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .party-editor-actions--header .party-editor-button {
@@ -977,41 +982,9 @@
   outline-offset: 2px;
 }
 
-.party-editor-extended-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.party-editor-extended-summary__text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.party-editor-extended-summary__badge {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.party-editor-extended-summary__badge--partial {
-  color: var(--text-secondary, #666666);
-  background: rgba(158, 158, 158, 0.2);
-}
-
-.party-editor-extended-summary__badge--complete {
-  color: var(--accent-primary, #00a86b);
-  background: rgba(0, 204, 136, 0.15);
-}
-
-@media (max-width: 980px) {
-  .party-editor-actions--header .party-editor-button {
+@container party-editor (max-width: 980px) {
+  .party-editor-actions--header .party-editor-button,
+  .party-editor-actions--header .party-lifecycle-action {
     padding: 6px 9px;
     font-size: 12px;
   }
@@ -1030,16 +1003,13 @@
   }
 }
 
-@media (max-width: 760px) {
+@container party-editor (max-width: 760px) {
   .party-editor-actions--header {
     width: 100%;
   }
 
-  .party-editor-actions--header .party-editor-button {
+  .party-editor-shell-header-toolbar .party-editor-button,
+  .party-editor-shell-header-toolbar .party-lifecycle-action {
     flex: 1 1 140px;
-  }
-
-  .party-editor-extended-summary {
-    width: 100%;
   }
 }

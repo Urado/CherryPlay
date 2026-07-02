@@ -18,20 +18,24 @@ import './PartyEditorShell.css';
 export interface PartyEditorShellProps {
   phase: PartyEditorPhase | null;
   linkedParty?: PartyEditorLinkedParty | null;
+  onCopyUrl?: () => void;
   isBlocked: boolean;
   blockedReason: PartyEditorBlockedReason | null;
   blockedOverlayProps?: Omit<PartyEditorBlockedOverlayProps, 'reason'>;
   headerActions?: React.ReactNode;
+  hidePhaseBadge?: boolean;
   children: React.ReactNode;
 }
 
 export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
   phase,
   linkedParty,
+  onCopyUrl,
   isBlocked,
   blockedReason,
   blockedOverlayProps,
   headerActions,
+  hidePhaseBadge = false,
   children,
 }) => {
   const headerTitle = phase
@@ -42,29 +46,10 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
 
   return (
     <div className="party-editor-shell">
-      {linkedParty && (
-        <div className="party-editor-shell-linked-banner">
-          <span className="party-editor-shell-linked-banner-icon">🔗</span>
-          <span className="party-editor-shell-linked-banner-text">
-            Привязано к вечеринке: <strong>/{linkedParty.shortCode}</strong>
-          </span>
-          {linkedParty.url && (
-            <a
-              href={linkedParty.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="party-editor-shell-linked-banner-link"
-            >
-              Открыть в браузере
-            </a>
-          )}
-        </div>
-      )}
-
       <header className="party-editor-shell-header">
         <div className="party-editor-shell-header-main">
           <h2 className="party-editor-shell-title">{headerTitle}</h2>
-          {badgeLabel && badgeLifecycle && (
+          {badgeLabel && badgeLifecycle && !hidePhaseBadge && (
             <span
               className={`party-editor-shell-phase-badge party-editor-shell-phase-badge--${badgeLifecycle}`}
             >
@@ -74,6 +59,36 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
         </div>
         {headerActions && <div className="party-editor-shell-header-actions">{headerActions}</div>}
       </header>
+
+      {linkedParty && (
+        <div className="party-editor-shell-linked-banner">
+          <span className="party-editor-shell-linked-banner-icon">🔗</span>
+          <span className="party-editor-shell-linked-banner-text">
+            Привязано к вечеринке: <strong>/{linkedParty.shortCode}</strong>
+          </span>
+          {linkedParty.url && (
+            <>
+              <a
+                href={linkedParty.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="party-editor-shell-linked-banner-link"
+              >
+                Открыть в браузере
+              </a>
+              {onCopyUrl && (
+                <button
+                  type="button"
+                  className="party-editor-shell-linked-banner-copy"
+                  onClick={onCopyUrl}
+                >
+                  Скопировать URL
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="party-editor-shell-body">{children}</div>
 

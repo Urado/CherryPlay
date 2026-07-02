@@ -1,9 +1,10 @@
 .party-editor-accordion {
   margin-bottom: 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color, #333);
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-secondary, #1a1a1a);
+  padding: 0.75rem 16px;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--ui-border);
+  background: transparent;
 }
 
 .party-editor-accordion--collapsed {
@@ -99,7 +100,7 @@
 
 .party-editor-fields-group + .party-editor-fields-group {
   padding-top: 1rem;
-  border-top: 1px solid var(--border-color, #333);
+  border-top: 1px solid var(--ui-border);
 }
 
 .party-editor-fields-group__title {
@@ -120,6 +121,35 @@
 
 .party-editor-fields-group__fields .party-editor-section {
   gap: 8px;
+}
+
+@container party-editor (max-width: 900px) {
+  .party-editor-accordion__header {
+    flex-wrap: wrap;
+  }
+
+  .party-editor-accordion__toggle {
+    width: 100%;
+  }
+
+  .party-editor-accordion__summary {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@container party-editor (max-width: 520px) {
+  .party-editor-accordion__summary {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary, #666);
+  }
 }
 
 @media (max-width: 900px) {

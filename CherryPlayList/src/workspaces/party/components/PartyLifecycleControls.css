@@ -63,7 +63,7 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .party-lifecycle-actions--header .party-lifecycle-action {

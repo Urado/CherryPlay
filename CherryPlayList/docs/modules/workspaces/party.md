@@ -1,13 +1,13 @@
 # Party
 
-Модуль вечеринки: создание и управление онлайн-вечеринкой с трансляцией плейлиста. Регистрирует **два** независимых workspace — **PartyEditor** и **PartyPreview** — с общей party-подсистемой (store + runtime hook).
+Модуль вечеринки: создание и управление онлайн-вечеринкой с трансляцией плейлиста. Регистрирует **два** независимых workspace — **PartyEditor** и **PartyPreview** — с общей party-подсистемой (stores + runtime hook).
 
 ## Два workspace
 
 | Workspace | ID | Тип | Назначение |
 | --------- | -- | --- | ---------- |
 | **Party Editor** | `party-editor-workspace` | `party-editor` | Форма, lifecycle, баннер привязки, настройки отображения треков, auth/сервер/entitlement |
-| **Party Preview** | `party-preview-workspace` | `party-preview` | Только браузерное превью плейлиста (`PartyPreview` / `PartyDisplay`) |
+| **Party Preview** | `party-preview-workspace` | `party-preview` | Браузерное превью (`PartyPreview` / `PartyDisplay`), локальный сценарий через нижнюю панель `PartyWorkspaceDemoPanel` `mode="preview"` |
 
 Константы и типы: [`workspace.ts`](../../../src/core/constants/workspace.ts). Регистрация обоих модулей: [`party/index.ts`](../../../src/workspaces/party/index.ts) (side-effect import из `entry.tsx`).
 
@@ -17,12 +17,18 @@
 
 ## Party subsystem (общее состояние)
 
-Логика load/reconnect/theme-access и форма вечеринки **не дублируются** в view-компонентах:
+Логика load/reconnect/theme-access и форма вечеринки **не дублируются** в view-компонентах. Состояние разделено на **три независимых Zustand-store** (production, preview scenario, editor demo):
 
 | Файл | Роль |
 | ---- | ---- |
-| [`partyWorkspaceStore.ts`](../../../src/workspaces/party/partyWorkspaceStore.ts) | Zustand: поля формы, `serverUnreachable`, `themeAccess`, lifecycle-флаги и т.п. |
-| [`usePartyWorkspace.ts`](../../../src/workspaces/party/usePartyWorkspace.ts) | `usePartyWorkspaceRuntime()` — эффекты, обработчики, derived (`previewPlaylistData`, `playbackState`, темы) |
+| [`partyWorkspaceStore.ts`](../../../src/workspaces/party/partyWorkspaceStore.ts) | **Production only:** поля формы, `serverUnreachable`, `themeAccess`, lifecycle-флаги, ошибки сервера и т.п. Без полей preview-сценария и demo-overlay. |
+| [`partyPreviewScenarioStore.ts`](../../../src/workspaces/party/partyPreviewScenarioStore.ts) | **Preview scenario:** локальная симуляция detached-превью (`isSynchronized`, overrides lifecycle/mock live/track/theme/connection break). По умолчанию `isSynchronized: true`. |
+| [`partyPreviewScenarioActions.ts`](../../../src/workspaces/party/partyPreviewScenarioActions.ts) | Продуктовые мутации сценария: `syncPreviewWithProduction()`, `detachPreview()`, `setPreviewLifecycleOverride`, `setPreviewMockLive`, `resetPreviewScenario()` и др. **Не** защищены `guardDemoMode()` — доступны в main player. |
+| [`partyPreviewEffectiveState.ts`](../../../src/workspaces/party/partyPreviewEffectiveState.ts) | Чистая функция `resolvePartyPreviewEffectiveState()` + хук `usePartyPreviewEffectiveState()` — merge production runtime и scenario для рендера `PartyPreview`. |
+| [`partyPreviewMockPlayback.ts`](../../../src/workspaces/party/partyPreviewMockPlayback.ts) | Константы mock live playback и карта connection-break → `PartyViewerStatusId`. |
+| [`partyEditorDemoStore.ts`](../../../src/workspaces/party/partyEditorDemoStore.ts) | **Editor demo overlay only:** `blockedOverride` для симуляции blocked-состояний редактора в demo mode. |
+| [`partyWorkspaceDemoActions.ts`](../../../src/workspaces/party/partyWorkspaceDemoActions.ts) | Demo-оркестрация (editor fixtures, `demoResetToDefault`, link/project manipulation); защищена `guardDemoMode()`. Preview-сценарий делегирует в `partyPreviewScenarioActions`. |
+| [`usePartyWorkspace.ts`](../../../src/workspaces/party/usePartyWorkspace.ts) | `usePartyWorkspaceRuntime()` — эффекты, обработчики, derived (`previewPlaylistData`, `playbackState`, темы). Без импортов scenario store. |
 | [`partyWorkspaceReconnectRefs.ts`](../../../src/workspaces/party/partyWorkspaceReconnectRefs.ts) | Module-level reconnect timer и mount-count (один интервал на сессию при нескольких зонах) |
 | [`partyWorkspaceUtils.ts`](../../../src/workspaces/party/partyWorkspaceUtils.ts) | Константы и нормализация (в т.ч. `RECONNECT_INTERVAL_MS`) |
 
@@ -30,14 +36,89 @@
 
 - **`projectStore`** — источник правды для плейлиста, `meta.linkedParty` (`{ id, shortCode }`), `meta.partyTrackDisplay`; `url` не персистируется, регенерируется через `partyService.getPartyUrl`.
 - **`partyService`** — граница API (без изменений контракта сервера).
-- **Party subsystem store** — эфемерное UI/runtime-состояние онлайн-вечеринки; `linkedParty` в store **не** дублируется.
+- **`partyWorkspaceStore`** — эфемерное production UI/runtime-состояние онлайн-вечеринки; `linkedParty` в store **не** дублируется.
+- **`partyPreviewScenarioStore`** — эфемерный локальный сценарий превью; **не** персистируется между перезапусками приложения.
 
-Editor и Preview могут быть открыты одновременно: изменения в Editor (тема, кастомизация, track display) сразу видны в Preview через общий runtime.
+Editor и Preview могут быть открыты одновременно: изменения в Editor (тема, кастомизация, track display) сразу видны в Preview через общий runtime (в режиме «Синхронизировано»).
+
+### Preview scenario store
+
+Форма [`PartyPreviewScenarioState`](../../../src/workspaces/party/partyPreviewScenarioStore.ts):
+
+| Поле | Назначение |
+| ---- | ---------- |
+| `isSynchronized` | `true` — превью следует runtime/production; overrides игнорируются |
+| `mockLiveEnabled` | Mock live playback в detached-режиме |
+| `viewerStatusOverride` | Принудительный viewer status (connection-break сценарии) |
+| `lifecycleOverride` | Локальный lifecycle badge/state |
+| `currentTrackNumber` | 1-based номер трека для mock live |
+| `themeOverride` | Локальная тема (не пишет production `themeId`) |
+| `customizationSettingsOverride` | Локальная кастомизация выбранной preview-темы |
+
+Начальное состояние: `isSynchronized: true`, все overrides — `null` / `false`.
+
+### Effective-state facade
+
+**Когда использовать:** любой рендер или derived-логика preview workspace должны читать **`usePartyPreviewEffectiveState()`**, а не напрямую поля production или scenario store.
+
+Хук объединяет snapshot из `usePartyWorkspaceRuntime()` и `usePartyPreviewScenarioStore()` через `resolvePartyPreviewEffectiveState()` и возвращает:
+
+| Поле | Назначение |
+| ---- | ---------- |
+| `isSynchronized` | Текущий режим sync/detached |
+| `previewLifecycleState` | Effective lifecycle для badge/`PartyPreview` |
+| `effectivePlaybackState` | Runtime playback или mock live (с bounding по `previewTrackIds`) |
+| `previewViewerStatusOverride` | Override viewer status в detached-режиме |
+| `effectiveThemeId` / `effectiveCustomizationSettings` | Тема и кастомизация с учётом overrides |
+| `isEffectiveThemeUnavailable` | Тема недоступна по entitlement |
+
+В synchronized-режиме effective values = production runtime. В detached — применяются scenario overrides; theme/customization overrides действуют только при `isSynchronized === false`.
+
+Тесты: [`partyPreviewEffectiveState.test.ts`](../../../tests/workspaces/partyPreviewEffectiveState.test.ts), [`partyPreviewScenarioStore.test.ts`](../../../tests/workspaces/partyPreviewScenarioStore.test.ts).
+
+### Матрица сбросов (reset matrix)
+
+Production-события **не** очищают preview scenario и editor demo. Сценарий сбрасывается только явными действиями пользователя.
+
+| Событие / действие | Production (`partyWorkspaceStore`) | Editor demo (`partyEditorDemoStore`) | Preview scenario (`partyPreviewScenarioStore`) |
+| ------------------ | ---------------------------------- | ------------------------------------ | ---------------------------------------------- |
+| `resetPartyWorkspaceState()` (смена проекта/контекста) | Полный initial state | **Без изменений** | **Без изменений** |
+| `resetPartyLinkState()` (отвязка вечеринки) | Очищает link/server/lifecycle flags | **Без изменений** | **Без изменений** |
+| `serverError`, reconnect, party-not-found (production) | Обновляет production flags | Без изменений | **Без изменений** |
+| `handleResetAndCreateNewParty()` | `resetPartyLinkState()` + `setLinkedParty(null)` | Без изменений | Без изменений |
+| `syncPreviewWithProduction()` | Без изменений | Без изменений | `isSynchronized: true`, все overrides сброшены |
+| `resetPreviewScenario()` | Без изменений | Без изменений | Полный initial scenario state |
+| Detach-actions (`setPreviewLifecycleOverride`, mock live, track, theme, connection break) | Без изменений | Без изменений | `isSynchronized: false` + соответствующий override |
+| `demoSetBlockedOverride` и editor fixtures (demo only) | Может менять production для fixture | `blockedOverride` | Без изменений |
+| `demoResetToDefault()` (demo only) | Восстанавливает demo fixture | Сбрасывает `blockedOverride` | Вызывает `resetPreviewScenario()` |
+| Перезапуск приложения | Re-init | Re-init | Re-init (эфемерно) |
+
+### Detached preview UI
+
+В **production** (Electron) и **web demo** (`VITE_APP_MODE=demo`) сценарий превью управляется одинаково — всегда видимой нижней панелью [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"` в [`PartyPreviewView`](../../../src/workspaces/party/PartyPreviewView.tsx):
+
+- grip (свернуть/развернуть), badge **«Сценарии»**, заголовок **«Сценарии превью»**;
+- полный набор [`PartyPreviewScenarioControls`](../../../src/workspaces/party/components/PartyPreviewScenarioControls.tsx) `variant="panel"` (lifecycle, mock live/track, design overrides, connection break, **«Сброс сценария»**).
+
+Заголовок превью показывает только статусные badge: **«Синхронизировано»** / **«Локальный сценарий»** и при необходимости **«Недоступный дизайн»** — без отдельного toolbar и без клика по badge для раскрытия controls.
+
+Возврат к синхронизации с эфиром — кнопка **«Сброс сценария»** в панели (`resetPreviewScenario()`; эквивалентно бывшему header-action **«Синхронизировать с эфиром»** / `syncPreviewWithProduction()`).
+
+**«Сброс демо»** в preview-панели (`demoResetToDefault`, `guardDemoMode()`) показывается **только в demo mode** — через `showDemoReset={showDemoPanel}`; в production Electron скрыт.
+
+`showDemoPanel` (`isDemoMode` из `getAppMode()`) передаётся в [`PartyPreviewView`](../../../src/workspaces/party/PartyPreviewView.tsx) из общего [`PartyWorkspaceViewWrapper`](../../../src/workspaces/party/PartyWorkspaceViewWrapper.tsx) (делегируется из [`PartyPreviewViewWrapper`](../../../src/workspaces/party/PartyPreviewViewWrapper.tsx)); для preview влияет только на видимость **«Сброс демо»**, не на саму панель сценариев.
+
+**Demo panel** — тонкий UI-потребитель тех же scenario actions:
+
+| Режим панели | Editor fixtures | Preview scenario controls |
+| ------------ | --------------- | ------------------------- |
+| `mode="editor"` | `partyWorkspaceDemoActions` | — |
+| `mode="preview"` | Скрыты | `PartyPreviewScenarioControls` (`variant="panel"`) |
 
 ## View-компоненты
 
 - **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — баннер «Привязано к вечеринке», [`PartyTrackDisplaySection`](../../../src/workspaces/party/components/PartyTrackDisplaySection.tsx), [`PartyEditor`](../../../src/workspaces/party/components/PartyEditor.tsx), экраны auth/недоступности сервера, модал entitlement; **без** `PartyPreview`.
-- **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — заголовок и [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) только; **без** баннера, track-display и формы.
+- **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — заголовок (sync/warning badges), [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) через `usePartyPreviewEffectiveState()`, всегда [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"`; **без** баннера, track-display и формы.
 
 Стили: `PartyEditorView.css`, `PartyPreviewView.css`; disabled-обёртка — `PartyViewWrapper.css`.
 

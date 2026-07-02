@@ -2,7 +2,6 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { Track } from '@core/types/track';
-import { ipcService } from '@shared/services/ipcService';
 
 import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
 

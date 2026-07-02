@@ -18,6 +18,7 @@ export const partyWorkspaceReconnectRefs = {
 export const partyWorkspaceOneShotGuards = {
   themeAccessGuardKey: null as string | null,
   loadedPartyMetadataId: null as string | null,
+  oauthCallbackRegistered: false,
 };
 
 /**

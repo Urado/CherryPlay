@@ -116,13 +116,5 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
     </div>
   );
 
-  if (compact) {
-    return (
-      <div className="party-editor-shell-header-group" role="group" aria-label="Данные на сервере">
-        {actions}
-      </div>
-    );
-  }
-
   return actions;
 };

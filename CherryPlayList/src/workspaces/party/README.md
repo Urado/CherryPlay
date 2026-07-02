@@ -1,6 +1,6 @@
 # Party module
 
-Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (store + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md).
+Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (stores + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md).
 
 ## Workspaces
 
@@ -15,33 +15,43 @@
 
 **Party Editor:** баннер привязки, `PartyTrackDisplaySection`, `PartyEditor`, auth, недоступность сервера, entitlement.
 
-**Party Preview:** только `PartyPreview` (read-only потребление runtime: тема, кастомизация, preview playlist, playback).
+**Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"` (grip, badge «Сценарии», `PartyPreviewScenarioControls` `variant="panel"`). В заголовке — только sync/warning badges. `showDemoPanel` (demo mode) влияет только на кнопку «Сброс демо» в панели (см. модульную документацию).
 
 Оба wrapper проверяют `enableStreaming`; при `false` — disabled-сообщение (`PartyViewWrapper.css`).
 
-## Party subsystem
+## Party subsystem (три store)
 
 ```
 party/
-├── partyWorkspaceStore.ts       # Zustand: форма, server/theme/lifecycle UI state
-├── partyWorkspaceUtils.ts       # константы, нормализация
-├── partyWorkspaceReconnectRefs.ts  # singleton reconnect + mount count
-├── usePartyWorkspace.ts         # usePartyWorkspaceRuntime()
+├── partyWorkspaceStore.ts           # production: форма, server/theme/lifecycle UI
+├── partyPreviewScenarioStore.ts   # preview scenario: sync/detached overrides
+├── partyPreviewScenarioActions.ts # продуктовые мутации сценария (не demo-gated)
+├── partyPreviewEffectiveState.ts  # resolvePartyPreviewEffectiveState + usePartyPreviewEffectiveState()
+├── partyPreviewMockPlayback.ts    # mock live + connection-break map
+├── partyEditorDemoStore.ts        # editor demo overlay (blockedOverride)
+├── partyWorkspaceDemoActions.ts   # demo orchestration (guardDemoMode)
+├── partyWorkspaceUtils.ts
+├── partyWorkspaceReconnectRefs.ts
+├── usePartyWorkspace.ts           # usePartyWorkspaceRuntime()
 ├── PartyEditorView.tsx / PartyPreviewView.tsx
+├── PartyWorkspaceDemoPanel.tsx    # thin UI consumer scenario actions (preview mode)
 ├── *ViewWrapper.tsx
-├── index.ts                     # register обоих workspace
-└── components/                  # PartyEditor, PartyTrackDisplaySection, …
+├── index.ts
+└── components/
+    ├── PartyPreviewScenarioControls.tsx  # scenario UI (panel variant in preview)
+    └── PartyEditor, PartyTrackDisplaySection, …
 ```
 
-- **Store** — изменяемое UI-состояние вечеринки (не дублирует `linkedParty` / `partyTrackDisplay` из `projectStore`).
-- **`usePartyWorkspaceRuntime()`** — load linked party, reconnect, theme access, handlers (`handleCreateParty`, `handlePublish`, …), derived для Preview.
-- **Reconnect** — один таймер на сессию через `partyWorkspaceReconnectRefs`, даже если Editor и Preview смонтированы вместе.
+- **Production store** — форма и онлайн-UI; сбросы `resetPartyWorkspaceState` / `resetPartyLinkState` **не** трогают scenario и editor demo.
+- **Preview scenario store** — локальная симуляция превью; default `isSynchronized: true`; сброс — `resetPreviewScenario()` / кнопка «Сброс сценария» в preview-панели (эквивалент `syncPreviewWithProduction()`).
+- **Editor demo store** — только overlay blocked-reason в demo mode редактора.
+- **`usePartyPreviewEffectiveState()`** — единая точка merge для рендера preview (см. модульную документацию).
 
 ## Состояние и API
 
 - `projectStore` — плейлист, `meta.linkedParty`, `meta.partyTrackDisplay`
 - `partyService` — HTTP API вечеринок
-- `partyWorkspaceStore` — эфемерное runtime-состояние формы и онлайн-UI
+- `partyWorkspaceStore` — production runtime (не scenario/demo)
 
 ## Layout
 

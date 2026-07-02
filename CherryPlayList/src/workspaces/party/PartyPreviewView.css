@@ -4,15 +4,17 @@
   height: 100%;
   min-height: 0;
   background: var(--bg-primary, #ffffff);
+  container-type: inline-size;
+  container-name: party-preview;
 }
 
 .party-preview-view-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 10px;
   padding: 16px;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-bottom: 1px solid var(--ui-border);
   background: var(--bg-secondary, #f5f5f5);
   flex-shrink: 0;
 }
@@ -54,7 +56,7 @@
   color: var(--state-error, #c62828);
 }
 
-@media (max-width: 760px) {
+@container party-preview (max-width: 760px) {
   .party-preview-view-header {
     padding: 12px;
     gap: 8px;
@@ -76,7 +78,7 @@
 }
 
 .party-preview-view-content {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   overflow-y: auto;

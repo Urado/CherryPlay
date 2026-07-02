@@ -1,35 +1,41 @@
 import { type PartyThemeId } from '@cherryplay/components';
-import React, { useState } from 'react';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { PartyDesignSettingsBlock } from './components/PartyDesignSettingsBlock';
+import { PartyPreviewScenarioControls } from './components/PartyPreviewScenarioControls';
+import type { PartyPreviewScenarioPlaybackContext } from './components/PartyPreviewScenarioControls';
 import type { PartyEditorBlockedReason } from './partyEditorPhase';
+import { syncPreviewWithProduction } from './partyPreviewScenarioActions';
 import {
-  demoSyncPreviewWithActual,
   demoResetToDefault,
   demoSetBlockedOverride,
-  demoSetPreviewCustomizationSettings,
   demoSetLinkedLifecycle,
   demoSetPartyNotFound,
-  demoSetPreviewConnectionBreak,
-  demoSetPreviewLifecycle,
-  demoSetPreviewLive,
-  demoSetPreviewTheme,
-  demoSetPreviewTrackNumber,
   demoSetUnlinkedDraft,
-  type DemoPreviewConnectionScenario,
 } from './partyWorkspaceDemoActions';
-import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 
 import './PartyWorkspaceDemoPanel.css';
 
 export type PartyWorkspaceDemoPanelMode = 'editor' | 'preview';
 
+const PANEL_HEIGHT_PERCENT: Record<PartyWorkspaceDemoPanelMode, number> = {
+  preview: 0.22,
+  editor: 0.28,
+};
+
+const PANEL_MIN_HEIGHT_PX = 100;
+const PANEL_MAX_HEIGHT_RATIO = 0.7;
+const PANEL_DRAG_CLICK_THRESHOLD_PX = 4;
+
 interface PartyWorkspaceDemoPanelProps {
   mode: PartyWorkspaceDemoPanelMode;
-  previewTrackCount?: number;
+  previewTrackIds?: readonly string[];
+  playbackContext?: PartyPreviewScenarioPlaybackContext;
   previewThemeId?: PartyThemeId;
   previewDesignOptions?: Array<{ id: PartyThemeId; name: string; isAvailable: boolean }>;
   previewCustomizationSettings?: Record<string, unknown>;
+  /** When false, hides demo-only reset in preview mode (production Electron). */
+  showDemoReset?: boolean;
 }
 
 const BLOCKED_SCENARIOS: {
@@ -44,61 +50,157 @@ const BLOCKED_SCENARIOS: {
   { label: 'Вечеринка удалена', reason: 'party-not-found', onClick: demoSetPartyNotFound },
 ];
 
-const PREVIEW_CONNECTION_SCENARIOS: {
-  label: string;
-  scenario: DemoPreviewConnectionScenario;
-}[] = [
-  { label: 'Подключение…', scenario: 'connecting' },
-  { label: 'Нет связи', scenario: 'server_unreachable' },
-  { label: 'Переподключение…', scenario: 'reconnecting' },
-  { label: 'Организатор не в сети', scenario: 'organizer_offline' },
-  { label: 'Вечеринка удалена', scenario: 'party_not_found' },
-];
-
 export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = ({
   mode,
-  previewTrackCount = 0,
+  previewTrackIds = [],
+  playbackContext = {
+    isSynchronized: true,
+    previewLifecycleState: null,
+    effectivePlaybackState: null,
+  },
   previewThemeId = 'cyberpunk',
   previewDesignOptions = [],
   previewCustomizationSettings = {},
+  showDemoReset = true,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const previewCurrentTrackNumber = usePartyWorkspaceStore(
-    (state) => state.previewCurrentTrackNumber,
-  );
-  const hasPreviewTracks = previewTrackCount > 0;
-  const boundedTrackNumber = hasPreviewTracks
-    ? Math.min(Math.max(previewCurrentTrackNumber ?? 1, 1), previewTrackCount)
-    : 1;
+  const [isCollapsed, setIsCollapsed] = useState(mode === 'preview');
+  const [panelHeightPx, setPanelHeightPx] = useState<number | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const dragStateRef = useRef<{ startY: number; startHeight: number; moved: boolean } | null>(null);
 
-  const handlePreviewTrackChange = (nextValue: number | null) => {
-    if (!hasPreviewTracks) {
-      return;
-    }
-    if (nextValue == null) {
-      demoSetPreviewTrackNumber(1);
-      return;
-    }
-    const bounded = Math.min(Math.max(nextValue, 1), previewTrackCount);
-    demoSetPreviewTrackNumber(bounded);
+  const getParentHeight = useCallback(() => panelRef.current?.parentElement?.clientHeight ?? 0, []);
+
+  const getDefaultHeight = useCallback(() => {
+    const parentHeight = getParentHeight();
+    return parentHeight > 0 ? Math.round(parentHeight * PANEL_HEIGHT_PERCENT[mode]) : null;
+  }, [getParentHeight, mode]);
+
+  const clampPanelHeight = useCallback(
+    (height: number) => {
+      const parentHeight = getParentHeight();
+      const minHeight = PANEL_MIN_HEIGHT_PX;
+      const maxHeight =
+        parentHeight > 0 ? Math.round(parentHeight * PANEL_MAX_HEIGHT_RATIO) : height;
+      return Math.max(minHeight, Math.min(maxHeight, height));
+    },
+    [getParentHeight],
+  );
+
+  const getExpandedHeight = useCallback(() => {
+    const measuredDefault = getDefaultHeight();
+    const fallbackHeight = measuredDefault ?? PANEL_MIN_HEIGHT_PX;
+    return panelHeightPx ?? fallbackHeight;
+  }, [getDefaultHeight, panelHeightPx]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setPanelHeightPx((currentHeight) => {
+        if (currentHeight == null) {
+          return currentHeight;
+        }
+        return clampPanelHeight(currentHeight);
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [clampPanelHeight]);
+
+  const toggleCollapsed = useCallback(() => {
+    setIsCollapsed((collapsed) => {
+      if (collapsed) {
+        setPanelHeightPx((currentHeight) => currentHeight ?? getDefaultHeight());
+      }
+      return !collapsed;
+    });
+  }, [getDefaultHeight]);
+
+  const handleCollapsedGripClick = () => {
+    toggleCollapsed();
   };
+
+  const handleExpandedGripPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStateRef.current = {
+      startY: event.clientY,
+      startHeight: getExpandedHeight(),
+      moved: false,
+    };
+  };
+
+  const handleExpandedGripPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const dragState = dragStateRef.current;
+    if (!dragState) {
+      return;
+    }
+
+    const deltaY = dragState.startY - event.clientY;
+    if (Math.abs(deltaY) < PANEL_DRAG_CLICK_THRESHOLD_PX) {
+      return;
+    }
+
+    dragState.moved = true;
+    setPanelHeightPx(clampPanelHeight(dragState.startHeight + deltaY));
+  };
+
+  const finishExpandedGripPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const dragState = dragStateRef.current;
+    dragStateRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (dragState && !dragState.moved) {
+      toggleCollapsed();
+    }
+  };
+
+  const gripLabel = isCollapsed
+    ? mode === 'preview'
+      ? 'Развернуть сценарии превью'
+      : 'Развернуть демо-панель'
+    : mode === 'preview'
+      ? 'Свернуть сценарии превью'
+      : 'Свернуть демо-панель';
 
   return (
     <aside
+      ref={panelRef}
       className={`party-workspace-demo-panel${
-        isCollapsed ? ' party-workspace-demo-panel--collapsed' : ''
+        mode === 'preview' ? ' party-workspace-demo-panel--preview' : ''
+      }${isCollapsed ? ' party-workspace-demo-panel--collapsed' : ''}${
+        !isCollapsed && panelHeightPx != null ? ' party-workspace-demo-panel--sized' : ''
       }`}
+      style={!isCollapsed && panelHeightPx != null ? { height: panelHeightPx } : undefined}
       aria-label="Демо-сценарии вечеринки"
     >
       <button
         type="button"
-        className="party-workspace-demo-panel-grip"
-        onClick={() => setIsCollapsed((value) => !value)}
+        className={`party-workspace-demo-panel-grip${
+          isCollapsed
+            ? ' party-workspace-demo-panel-grip--collapsed'
+            : ' party-workspace-demo-panel-grip--expanded'
+        }`}
+        onClick={isCollapsed ? handleCollapsedGripClick : undefined}
+        onPointerDown={isCollapsed ? undefined : handleExpandedGripPointerDown}
+        onPointerMove={isCollapsed ? undefined : handleExpandedGripPointerMove}
+        onPointerUp={isCollapsed ? undefined : finishExpandedGripPointer}
+        onPointerCancel={isCollapsed ? undefined : finishExpandedGripPointer}
         aria-expanded={!isCollapsed}
-        aria-label={isCollapsed ? 'Развернуть сценарии превью' : 'Свернуть сценарии превью'}
-        title={isCollapsed ? 'Развернуть демо-панель' : 'Свернуть демо-панель'}
+        aria-label={gripLabel}
+        title={
+          isCollapsed
+            ? 'Развернуть панель сценариев'
+            : 'Потяните для изменения высоты, клик — свернуть'
+        }
       >
-        {isCollapsed ? '▴' : '▾'}
+        <DragHandleIcon className="party-workspace-demo-panel-grip-icon" aria-hidden />
       </button>
       <div className="party-workspace-demo-panel-header">
         <span className="party-workspace-demo-panel-badge">
@@ -166,9 +268,9 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
               <button
                 type="button"
                 className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
-                onClick={demoSyncPreviewWithActual}
+                onClick={syncPreviewWithProduction}
               >
-                Синхронизировать с актуальным
+                Синхронизировать превью с эфиром
               </button>
             </div>
 
@@ -186,126 +288,26 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
 
         {mode === 'preview' && (
           <>
-            <details className="party-workspace-demo-panel-accordion" open>
-              <summary className="party-workspace-demo-panel-accordion-summary">
-                Режим превью
-              </summary>
-              <div className="party-workspace-demo-panel-accordion-content">
-                <div className="party-workspace-demo-panel-buttons">
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-button"
-                    onClick={() => demoSetPreviewLifecycle('draft')}
-                  >
-                    Черновик
-                  </button>
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-button"
-                    onClick={() => demoSetPreviewLifecycle('ready')}
-                  >
-                    Скоро начнём
-                  </button>
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-button"
-                    onClick={() => demoSetPreviewLifecycle('completed')}
-                  >
-                    Вечеринка окончена
-                  </button>
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-button party-workspace-demo-panel-button--live"
-                    onClick={demoSetPreviewLive}
-                  >
-                    Эфир (live)
-                  </button>
-                </div>
-                <div className="party-workspace-demo-panel-track-row">
-                  <span className="party-workspace-demo-panel-track-label">Трек в эфире:</span>
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-stepper"
-                    onClick={() => handlePreviewTrackChange(boundedTrackNumber - 1)}
-                    disabled={!hasPreviewTracks}
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={Math.max(1, previewTrackCount)}
-                    value={boundedTrackNumber}
-                    className="party-workspace-demo-panel-track-input"
-                    onChange={(event) => handlePreviewTrackChange(Number(event.target.value))}
-                    disabled={!hasPreviewTracks}
-                  />
-                  <button
-                    type="button"
-                    className="party-workspace-demo-panel-stepper"
-                    onClick={() => handlePreviewTrackChange(boundedTrackNumber + 1)}
-                    disabled={!hasPreviewTracks}
-                  >
-                    +
-                  </button>
-                  <span className="party-workspace-demo-panel-track-total">
-                    / {previewTrackCount}
-                  </span>
-                </div>
-                {previewDesignOptions.length > 0 && (
-                  <PartyDesignSettingsBlock
-                    key={`preview-design-${previewThemeId}`}
-                    themeId={previewThemeId}
-                    customizationSettings={previewCustomizationSettings}
-                    onThemeIdChange={demoSetPreviewTheme}
-                    onCustomizationSettingsChange={demoSetPreviewCustomizationSettings}
-                    visibleThemeIds={previewDesignOptions
-                      .filter((item) => item.isAvailable)
-                      .map((item) => item.id)}
-                    lockedThemes={previewDesignOptions
-                      .filter((item) => !item.isAvailable)
-                      .map((item) => ({
-                        themeId: item.id,
-                        packageCode: 'preview-unavailable',
-                        packageName: 'Недоступно',
-                      }))}
-                    allowLockedSelection
-                    showApplyButton
-                    applyButtonLabel="Изменить дизайн"
-                  />
-                )}
-              </div>
-            </details>
+            <PartyPreviewScenarioControls
+              variant="panel"
+              previewTrackIds={previewTrackIds}
+              playbackContext={playbackContext}
+              previewThemeId={previewThemeId}
+              previewCustomizationSettings={previewCustomizationSettings}
+              previewDesignOptions={previewDesignOptions}
+            />
 
-            <details className="party-workspace-demo-panel-accordion">
-              <summary className="party-workspace-demo-panel-accordion-summary">
-                Разрыв соединения
-              </summary>
-              <div className="party-workspace-demo-panel-accordion-content">
-                <div className="party-workspace-demo-panel-buttons">
-                  {PREVIEW_CONNECTION_SCENARIOS.map(({ label, scenario }) => (
-                    <button
-                      key={scenario}
-                      type="button"
-                      className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
-                      onClick={() => demoSetPreviewConnectionBreak(scenario)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+            {showDemoReset && (
+              <div className="party-workspace-demo-panel-group">
+                <button
+                  type="button"
+                  className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
+                  onClick={demoResetToDefault}
+                >
+                  Сброс демо
+                </button>
               </div>
-            </details>
-
-            <div className="party-workspace-demo-panel-group">
-              <button
-                type="button"
-                className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
-                onClick={demoResetToDefault}
-              >
-                Сброс демо
-              </button>
-            </div>
+            )}
           </>
         )}
       </div>

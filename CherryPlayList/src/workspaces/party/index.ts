@@ -8,6 +8,10 @@ import { workspaceRegistry } from '@core/registry';
 
 import { PartyEditorViewWrapper } from './PartyEditorViewWrapper';
 import { PartyPreviewViewWrapper } from './PartyPreviewViewWrapper';
+import {
+  PartyWorkspaceRuntimeProvider,
+  usePartyWorkspaceRuntimeContext,
+} from './partyWorkspaceRuntimeContext';
 import { usePartyWorkspaceRuntime } from './usePartyWorkspace';
 
 registerWorkspaceType(PARTY_EDITOR_WORKSPACE_ID, 'party-editor');
@@ -35,7 +39,9 @@ export {
   PARTY_PREVIEW_WORKSPACE_ID,
   PartyEditorViewWrapper,
   PartyPreviewViewWrapper,
+  PartyWorkspaceRuntimeProvider,
   usePartyWorkspaceRuntime,
+  usePartyWorkspaceRuntimeContext,
 };
 
 export default PartyEditorModule;

@@ -21,15 +21,10 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
   onChange,
   defaultExpanded = true,
 }) => {
-  const summary = value.stripLeadingCharsEnabled
-    ? `Скрыто ${value.stripLeadingCharsCount} симв.`
-    : 'Не применяется';
-
   return (
     <PartyEditorAccordion
       title="Отображение треков"
       defaultExpanded={defaultExpanded}
-      summary={<span className="party-track-display-section__summary">{summary}</span>}
       className="party-track-display-section"
     >
       <p className="party-track-display-section__hint">

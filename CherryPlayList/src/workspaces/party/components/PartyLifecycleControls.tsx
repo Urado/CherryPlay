@@ -83,13 +83,11 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   if (isHeader) {
     return (
       <div
-        className="party-editor-shell-header-group party-editor-shell-header-group--transitions"
+        className="party-lifecycle-actions party-lifecycle-actions--header"
         role="group"
         aria-label="Подготовка вечеринки"
       >
-        <div className="party-lifecycle-actions party-lifecycle-actions--header">
-          {transitionButtons}
-        </div>
+        {transitionButtons}
       </div>
     );
   }

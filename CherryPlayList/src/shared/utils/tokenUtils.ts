@@ -11,6 +11,24 @@ export interface TokenPayload {
 }
 
 /**
+ * Constant-time string equality for sensitive values (e.g. bearer token cache keys).
+ */
+export function constantTimeStringEqual(a: string, b: string): boolean {
+  const lenA = a.length;
+  const lenB = b.length;
+  const maxLen = Math.max(lenA, lenB);
+
+  let mismatch = lenA ^ lenB;
+  for (let i = 0; i < maxLen; i += 1) {
+    const charA = i < lenA ? a.charCodeAt(i) : 0;
+    const charB = i < lenB ? b.charCodeAt(i) : 0;
+    mismatch |= charA ^ charB;
+  }
+
+  return mismatch === 0;
+}
+
+/**
  * Декодирует JWT токен и возвращает payload
  */
 export function decodeToken(token: string): TokenPayload | null {
