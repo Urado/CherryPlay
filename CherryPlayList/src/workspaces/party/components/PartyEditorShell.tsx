@@ -21,6 +21,7 @@ export interface PartyEditorShellProps {
   isBlocked: boolean;
   blockedReason: PartyEditorBlockedReason | null;
   blockedOverlayProps?: Omit<PartyEditorBlockedOverlayProps, 'reason'>;
+  headerActions?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -30,6 +31,7 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
   isBlocked,
   blockedReason,
   blockedOverlayProps,
+  headerActions,
   children,
 }) => {
   const headerTitle = phase
@@ -60,14 +62,17 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
       )}
 
       <header className="party-editor-shell-header">
-        <h2 className="party-editor-shell-title">{headerTitle}</h2>
-        {badgeLabel && badgeLifecycle && (
-          <span
-            className={`party-editor-shell-phase-badge party-editor-shell-phase-badge--${badgeLifecycle}`}
-          >
-            {badgeLabel}
-          </span>
-        )}
+        <div className="party-editor-shell-header-main">
+          <h2 className="party-editor-shell-title">{headerTitle}</h2>
+          {badgeLabel && badgeLifecycle && (
+            <span
+              className={`party-editor-shell-phase-badge party-editor-shell-phase-badge--${badgeLifecycle}`}
+            >
+              {badgeLabel}
+            </span>
+          )}
+        </div>
+        {headerActions && <div className="party-editor-shell-header-actions">{headerActions}</div>}
       </header>
 
       <div className="party-editor-shell-body">{children}</div>

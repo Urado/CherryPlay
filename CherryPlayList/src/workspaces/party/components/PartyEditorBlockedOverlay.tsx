@@ -14,6 +14,7 @@ export interface PartyEditorBlockedOverlayProps {
   isReconnecting?: boolean;
   lastManualCheckFailed?: boolean;
   onManualReconnect?: () => void;
+  onResetAndCreateNew?: () => void;
 }
 
 export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps> = ({
@@ -22,13 +23,14 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
   isReconnecting = false,
   lastManualCheckFailed = false,
   onManualReconnect,
+  onResetAndCreateNew,
 }) => {
   return (
     <div
       className="party-editor-shell-blocked-overlay"
       role={reason === 'checking' ? 'presentation' : 'dialog'}
       aria-modal={reason === 'checking' ? undefined : true}
-      aria-label={reason === 'checking' ? 'Загрузка...' : undefined}
+      aria-label={reason === 'checking' ? 'Идёт загрузка состояния вечеринки' : undefined}
     >
       <div className="party-editor-shell-blocked-overlay-content">
         {reason === 'auth' && (
@@ -48,7 +50,8 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
           <div
             className="party-editor-shell-blocked-spinner"
             role="status"
-            aria-label="Загрузка..."
+            aria-live="polite"
+            aria-label="Идёт загрузка состояния вечеринки"
           >
             <Spinner size="large" />
           </div>
@@ -61,6 +64,24 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
             lastCheckFailed={lastManualCheckFailed}
             onRetry={onManualReconnect ? () => void onManualReconnect() : undefined}
           />
+        )}
+
+        {reason === 'party-not-found' && (
+          <div className="party-editor-shell-party-not-found">
+            <h3 className="party-editor-shell-party-not-found-title">
+              Привязанная вечеринка удалена
+            </h3>
+            <p className="party-editor-shell-party-not-found-text">
+              На сервере эта вечеринка больше недоступна. Можно сбросить привязку и выбрать другую.
+            </p>
+            <button
+              type="button"
+              className="action-button party-editor-shell-party-not-found-button"
+              onClick={() => void onResetAndCreateNew?.()}
+            >
+              Сбросить привязку
+            </button>
+          </div>
         )}
       </div>
     </div>

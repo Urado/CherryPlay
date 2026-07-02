@@ -11,8 +11,7 @@ import {
 } from '@shared/services/partyService';
 
 export const RECONNECT_INTERVAL_MS = 60_000;
-export const ERROR_PARTY_NOT_FOUND = 'Вечеринка не найдена на сервере';
-export const ERROR_CONNECTION = 'Ошибка соединения с сервером';
+export { ERROR_PARTY_NOT_FOUND, ERROR_CONNECTION } from './partyWorkspaceConstants';
 export const THEME_ACCESS_FALLBACK_ERROR =
   'Не удалось проверить доступ к темам. Для безопасности доступны только базовая и текущая темы.';
 

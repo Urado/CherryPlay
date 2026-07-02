@@ -8,6 +8,7 @@ import {
   isPlaybackLiveActive,
   resolvePreviewViewerStatusId,
 } from '../../src/workspaces/party/partyPreviewLifecycle';
+import { ERROR_PARTY_NOT_FOUND } from '../../src/workspaces/party/partyWorkspaceConstants';
 
 describe('resolvePartyEditorPhase', () => {
   const baseInput = {
@@ -100,6 +101,19 @@ describe('resolvePartyEditorPhase', () => {
     });
     expect(result.isBlocked).toBe(true);
     expect(result.phase).toBeNull();
+  });
+
+  it('blocks with party-not-found while preserving phase for linked party', () => {
+    const result = resolvePartyEditorPhase({
+      ...baseInput,
+      linkedParty: { id: 'p1', shortCode: 'abc' },
+      partyLifecycleState: 'draft',
+      serverError: ERROR_PARTY_NOT_FOUND,
+    });
+    expect(result.isBlocked).toBe(true);
+    expect(result.blockedReason).toBe('party-not-found');
+    expect(result.phase).toBe('draft-linked');
+    expect(result.effectiveLifecycle).toBe('draft');
   });
 });
 

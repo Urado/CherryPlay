@@ -7,9 +7,10 @@
   padding: 6px 12px;
   text-align: center;
   font-size: 0.85rem;
-  background-color: var(--accent-muted, #fff3e0);
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  font-weight: 600;
+  background-color: rgba(0, 204, 136, 0.12);
+  color: var(--text-primary, #111111);
+  border-bottom: 1px solid rgba(0, 204, 136, 0.45);
 }
 
 .app {

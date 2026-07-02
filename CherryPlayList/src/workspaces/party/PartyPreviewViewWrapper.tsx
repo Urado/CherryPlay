@@ -36,5 +36,5 @@ export const PartyPreviewViewWrapper: React.FC<PartyPreviewViewWrapperProps> = (
     );
   }
 
-  return <PartyPreviewView {...props} />;
+  return <PartyPreviewView {...props} showDemoPanel={isDemoMode} />;
 };

@@ -3,20 +3,34 @@ import React from 'react';
 import { WorkspaceId } from '@core/types/workspace';
 
 import { PartyEditor } from './components/PartyEditor';
+import {
+  PartyEditorActions,
+  shouldShowPartyLifecycleControls,
+} from './components/PartyEditorActions';
 import { PartyEditorShell } from './components/PartyEditorShell';
+import { PartyLifecycleControls } from './components/PartyLifecycleControls';
 import { PartyTrackDisplaySection } from './components/PartyTrackDisplaySection';
-import { resolvePartyEditorPhase, shouldShowPartyTrackDisplaySection } from './partyEditorPhase';
+import {
+  applyDemoBlockedOverride,
+  resolvePartyEditorPhase,
+  shouldPreserveShellContentWhenBlocked,
+  shouldShowPartyTrackDisplaySection,
+} from './partyEditorPhase';
+import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
+import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import './PartyEditorView.css';
 import { usePartyWorkspaceRuntime } from './usePartyWorkspace';
 
 interface PartyEditorViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
+  showDemoPanel?: boolean;
 }
 
 export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   workspaceId: _workspaceId,
   zoneId: _zoneId,
+  showDemoPanel = false,
 }) => {
   const runtime = usePartyWorkspaceRuntime();
   const {
@@ -52,7 +66,6 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     partyLifecycleState,
     isTransitioningLifecycle,
     serverError,
-    themeAccess,
     isThemeAccessLoading,
     themeAccessErrorMessage,
     themeEntitlementModal,
@@ -75,26 +88,41 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     handleTimeZoneChange,
     handleCreateParty,
     handlePublish,
-    handleCopyUrl,
     handleRetry,
+    handleResetAndCreateNewParty,
     handleLifecycleTransition,
     openModal,
     lockedThemeInfos,
     visibleThemeIds,
   } = runtime;
 
+  const demoBlockedOverride = usePartyWorkspaceStore((state) =>
+    showDemoPanel ? state.demoBlockedOverride : null,
+  );
+
   const linkedParty = meta.linkedParty;
-  const phaseResult = resolvePartyEditorPhase({
+  const phaseInput = {
     isAuth,
     isClientOutdated,
     isCheckingParty,
     serverUnreachable,
     linkedParty,
     partyLifecycleState,
-  });
-  const { phase, isBlocked, blockedReason } = phaseResult;
-  const editorPhase = isBlocked ? null : (phase ?? 'draft-unlinked');
-  const showTrackDisplay = !isBlocked && shouldShowPartyTrackDisplaySection(phase);
+    serverError,
+  };
+  const basePhaseResult = resolvePartyEditorPhase(phaseInput);
+  const phaseResult = showDemoPanel
+    ? applyDemoBlockedOverride(basePhaseResult, phaseInput, demoBlockedOverride)
+    : basePhaseResult;
+  const phase = phaseResult.phase;
+  const isBlocked = phaseResult.isBlocked;
+  const blockedReason = phaseResult.blockedReason;
+  const preserveShellContent = shouldPreserveShellContentWhenBlocked(demoBlockedOverride);
+  const editorPhase = isBlocked && !preserveShellContent ? null : (phase ?? 'draft-unlinked');
+  const showTrackDisplay =
+    shouldShowPartyTrackDisplaySection(phase) && (!isBlocked || preserveShellContent);
+  const showLifecycle =
+    editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
 
   return (
     <div className="party-editor-view">
@@ -108,7 +136,35 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
           isReconnecting,
           lastManualCheckFailed,
           onManualReconnect: handleManualReconnect,
+          onResetAndCreateNew: handleResetAndCreateNewParty,
         }}
+        headerActions={
+          editorPhase ? (
+            <div className="party-editor-shell-header-toolbar">
+              {showLifecycle && (
+                <PartyLifecycleControls
+                  layout="header"
+                  partyLifecycleState={partyLifecycleState ?? 'draft'}
+                  isTransitioning={isTransitioningLifecycle}
+                  disabled={isCreating || isPublishing}
+                  onTransition={(target) => void handleLifecycleTransition(target)}
+                />
+              )}
+              <PartyEditorActions
+                compact
+                phase={editorPhase}
+                partyName={partyName}
+                linkedParty={linkedParty}
+                isAuthenticated={isAuth}
+                isCreating={isCreating}
+                isPublishing={isPublishing}
+                onCreateParty={handleCreateParty}
+                onPublish={handlePublish}
+                onOpenLinkParty={() => openModal('linkParty')}
+              />
+            </div>
+          ) : undefined
+        }
       >
         {showTrackDisplay && (
           <PartyTrackDisplaySection
@@ -151,26 +207,14 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
             onExternalLinkTextChange={setExternalLinkText}
             onDanceTagsChange={setDanceTags}
             onTimeZoneChange={handleTimeZoneChange}
-            onCreateParty={handleCreateParty}
-            onPublish={handlePublish}
-            isCreating={isCreating}
-            isPublishing={isPublishing}
-            isAuthenticated={isAuth}
             linkedParty={linkedParty}
             serverError={serverError}
             isCheckingParty={isCheckingParty}
-            onCopyUrl={handleCopyUrl}
             onRetry={handleRetry}
-            onOpenLinkParty={() => openModal('linkParty')}
             lockedThemes={lockedThemeInfos}
-            accessContactUrl={themeAccess?.contactUrl ?? ''}
             isThemeAccessLoading={isThemeAccessLoading}
             visibleThemeIds={visibleThemeIds}
             themeAccessErrorMessage={themeAccessErrorMessage}
-            partyLifecycleState={partyLifecycleState}
-            isTransitioningLifecycle={isTransitioningLifecycle}
-            onLifecycleTransition={(target) => void handleLifecycleTransition(target)}
-            hideLinkedPartyBlock={Boolean(linkedParty)}
             isBlocked={isBlocked}
           />
         )}
@@ -207,6 +251,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
           </div>
         </div>
       )}
+
+      {showDemoPanel && <PartyWorkspaceDemoPanel mode="editor" />}
     </div>
   );
 };

@@ -36,5 +36,5 @@ export const PartyEditorViewWrapper: React.FC<PartyEditorViewWrapperProps> = (pr
     );
   }
 
-  return <PartyEditorView {...props} />;
+  return <PartyEditorView {...props} showDemoPanel={isDemoMode} />;
 };

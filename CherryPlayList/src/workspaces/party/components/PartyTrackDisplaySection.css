@@ -1,21 +1,17 @@
 .party-track-display-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--border-color, #333);
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-secondary, #1a1a1a);
+  margin-bottom: 1rem;
+  padding: 0 16px;
 }
 
-.party-track-display-section__title {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary, #eee);
+.party-track-display-section__summary {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #999);
+  white-space: nowrap;
 }
 
 .party-track-display-section__hint {
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
+  margin: 0;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--text-secondary, #999);
 }

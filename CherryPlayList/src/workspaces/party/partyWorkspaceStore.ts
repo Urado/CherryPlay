@@ -1,7 +1,13 @@
-import { getDefaultCustomizationSettings, type PartyThemeId } from '@cherryplay/components';
+import {
+  getDefaultCustomizationSettings,
+  type PartyThemeId,
+  type PartyViewerStatusId,
+} from '@cherryplay/components';
 import { createWithEqualityFn } from 'zustand/traditional';
 
 import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
+
+import type { PartyEditorBlockedReason } from './partyEditorPhase';
 
 export interface ThemeEntitlementModalState {
   message: string;
@@ -41,6 +47,25 @@ export interface PartyWorkspaceState {
   isThemeAccessLoading: boolean;
   themeAccessErrorMessage: string | null;
   themeEntitlementModal: ThemeEntitlementModalState | null;
+  /**
+   * Demo/preview scenario fields live here (not a separate slice) because they share reset
+   * lifecycle with production party state and are consumed by editor + preview in one workspace.
+   */
+  demoBlockedOverride: PartyEditorBlockedReason | null;
+  /** Preview scenario: mock live playback for local simulation. */
+  demoPreviewLive: boolean;
+  /** Preview scenario: force viewer status in local preview simulation. */
+  demoPreviewViewerStatusOverride: PartyViewerStatusId | null;
+  /** Preview scenario: force lifecycle state in local preview simulation. */
+  previewLifecycleOverride: PartyLifecycleState | null;
+  /** Preview scenario: currently selected track number for mocked live playback (1-based). */
+  previewCurrentTrackNumber: number | null;
+  /** Preview scenario: local theme override for design simulations. */
+  previewThemeOverride: PartyThemeId | null;
+  /** Preview scenario: local customization override for selected preview theme. */
+  previewCustomizationSettingsOverride: Record<string, unknown> | null;
+  /** True when preview reflects actual runtime state (no local scenario overrides). */
+  isPreviewSynchronized: boolean;
 
   setPartyName: (value: string) => void;
   setPartyTitle: (value: string) => void;
@@ -74,7 +99,16 @@ export interface PartyWorkspaceState {
   setIsThemeAccessLoading: (value: boolean) => void;
   setThemeAccessErrorMessage: (value: string | null) => void;
   setThemeEntitlementModal: (value: ThemeEntitlementModalState | null) => void;
+  setDemoBlockedOverride: (value: PartyEditorBlockedReason | null) => void;
+  setDemoPreviewLive: (value: boolean) => void;
+  setDemoPreviewViewerStatusOverride: (value: PartyViewerStatusId | null) => void;
+  setPreviewLifecycleOverride: (value: PartyLifecycleState | null) => void;
+  setPreviewCurrentTrackNumber: (value: number | null) => void;
+  setPreviewThemeOverride: (value: PartyThemeId | null) => void;
+  setPreviewCustomizationSettingsOverride: (value: Record<string, unknown> | null) => void;
+  setIsPreviewSynchronized: (value: boolean) => void;
   resetPartyWorkspaceState: () => void;
+  resetPartyLinkState: () => void;
 }
 
 const defaultCustomizationSettings = getDefaultCustomizationSettings('cyberpunk') as Record<
@@ -115,6 +149,14 @@ const initialPartyWorkspaceState = {
   isThemeAccessLoading: false,
   themeAccessErrorMessage: null as string | null,
   themeEntitlementModal: null as ThemeEntitlementModalState | null,
+  demoBlockedOverride: null as PartyEditorBlockedReason | null,
+  demoPreviewLive: false,
+  demoPreviewViewerStatusOverride: null as PartyViewerStatusId | null,
+  previewLifecycleOverride: null as PartyLifecycleState | null,
+  previewCurrentTrackNumber: null as number | null,
+  previewThemeOverride: null as PartyThemeId | null,
+  previewCustomizationSettingsOverride: null as Record<string, unknown> | null,
+  isPreviewSynchronized: true,
 };
 
 export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>((set) => ({
@@ -153,14 +195,39 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setIsThemeAccessLoading: (isThemeAccessLoading) => set({ isThemeAccessLoading }),
   setThemeAccessErrorMessage: (themeAccessErrorMessage) => set({ themeAccessErrorMessage }),
   setThemeEntitlementModal: (themeEntitlementModal) => set({ themeEntitlementModal }),
+  setDemoBlockedOverride: (demoBlockedOverride) => set({ demoBlockedOverride }),
+  setDemoPreviewLive: (demoPreviewLive) => set({ demoPreviewLive }),
+  setDemoPreviewViewerStatusOverride: (demoPreviewViewerStatusOverride) =>
+    set({ demoPreviewViewerStatusOverride }),
+  setPreviewLifecycleOverride: (previewLifecycleOverride) => set({ previewLifecycleOverride }),
+  setPreviewCurrentTrackNumber: (previewCurrentTrackNumber) => set({ previewCurrentTrackNumber }),
+  setPreviewThemeOverride: (previewThemeOverride) => set({ previewThemeOverride }),
+  setPreviewCustomizationSettingsOverride: (previewCustomizationSettingsOverride) =>
+    set({ previewCustomizationSettingsOverride }),
+  setIsPreviewSynchronized: (isPreviewSynchronized) => set({ isPreviewSynchronized }),
   resetPartyWorkspaceState: () =>
     set({
       ...initialPartyWorkspaceState,
       customizationSettings: { ...defaultCustomizationSettings },
       danceTags: [],
     }),
+  resetPartyLinkState: () =>
+    set({
+      serverError: null,
+      partyVerified: false,
+      demoBlockedOverride: null,
+      partyLifecycleState: null,
+      serverUnreachable: false,
+      isReconnecting: false,
+      isCheckingParty: false,
+      lastManualCheckFailed: false,
+    }),
 }));
 
 export function resetPartyWorkspaceState(): void {
   usePartyWorkspaceStore.getState().resetPartyWorkspaceState();
+}
+
+export function resetPartyLinkState(): void {
+  usePartyWorkspaceStore.getState().resetPartyLinkState();
 }

@@ -15,7 +15,6 @@ import { getPlatform, getPlatformCapabilities, isPlatformInitialized } from '@sh
 import { authService } from '@shared/services/authService';
 import {
   partyService,
-  CreatePartyDto,
   InvalidPartyLifecycleTransitionError,
   ThemeNotEntitledError,
   type PartyLifecycleState,
@@ -35,20 +34,24 @@ import {
   countTotalTracks,
   canUseAimpLiveSnapshots,
   convertAimpPlaylistForApi,
-  convertPlaylistForApi,
   createAimpPlaybackStateDto,
   applyPartyTrackDisplayToComponentPlaylist,
   sanitizeExternalUrl,
 } from '@shared/utils';
 import { setAuthSessionToken } from '@shared/utils/authSession';
 
+import { buildCreatePartyDto, buildPlaylistForApi } from './partyWorkspaceApiBuilders';
 import {
   clearPartyWorkspaceLinkedPartyCheck,
   partyWorkspaceLinkedPartyCheck,
   partyWorkspaceOneShotGuards,
   partyWorkspaceReconnectRefs,
 } from './partyWorkspaceReconnectRefs';
-import { resetPartyWorkspaceState, usePartyWorkspaceStore } from './partyWorkspaceStore';
+import {
+  resetPartyLinkState,
+  resetPartyWorkspaceState,
+  usePartyWorkspaceStore,
+} from './partyWorkspaceStore';
 import {
   buildThemeNotEntitledMessage,
   ERROR_CONNECTION,
@@ -649,6 +652,17 @@ export function usePartyWorkspaceRuntime() {
     }
   }, [meta.linkedParty, checkPartyExists]);
 
+  const handleResetAndCreateNewParty = useCallback(() => {
+    clearPartyWorkspaceLinkedPartyCheck();
+    resetPartyLinkState();
+    setLinkedParty(null);
+    markAsDirty();
+    addNotification({
+      type: 'info',
+      message: 'Привязка сброшена. Можно создать новую вечеринку.',
+    });
+  }, [setLinkedParty, markAsDirty, addNotification]);
+
   const prevProjectContextKeyRef = useRef(projectContextKey);
   const prevLinkedPartyRef = useRef(meta.linkedParty);
 
@@ -734,7 +748,7 @@ export function usePartyWorkspaceRuntime() {
     clearPartyWorkspaceLinkedPartyCheck();
 
     if (prevLinkedParty) {
-      resetPartyWorkspaceState();
+      resetPartyLinkState();
       partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
       partyWorkspaceReconnectRefs.linkedParty = null;
       stopReconnectTimer();
@@ -864,36 +878,14 @@ export function usePartyWorkspaceRuntime() {
     store.setServerError(null);
     store.setPartyVerified(false);
     try {
-      const playlistForApi =
-        streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
-          : convertPlaylistForApi(items, partyTrackDisplay);
+      const playlistForApi = buildPlaylistForApi({
+        streamingSource,
+        aimpPlaylistSnapshot: aimpBridgeState.playlistSnapshot,
+        items,
+        partyTrackDisplay,
+      });
 
-      const tz = store.timeZone.trim() || getDefaultTimeZone();
-      const createData: CreatePartyDto = {
-        name: store.partyName,
-        title: store.partyTitle.trim() || undefined,
-        subtitle: store.partySubtitle.trim() || undefined,
-        partyThemeId: store.themeId,
-        customizationSettings: normalizeCustomizationSettings(store.customizationSettings),
-        playlistData: playlistForApi,
-        eventDateTime: store.eventDateTime
-          ? convertLocalDateTimeToUtc(store.eventDateTime, tz)
-          : undefined,
-        eventEndDateTime: store.eventEndDateTime
-          ? convertLocalDateTimeToUtc(store.eventEndDateTime, tz)
-          : undefined,
-        description: store.description.trim() || undefined,
-        place: store.place.trim() || undefined,
-        city: store.city.trim() || undefined,
-        schedule: store.schedule.trim() || undefined,
-        timeZone: store.timeZone.trim() || undefined,
-        isListedInCatalog: true,
-        shortDescription: store.shortDescription.trim() || undefined,
-        externalLinkUrl: store.externalLinkUrl.trim() || undefined,
-        externalLinkText: store.externalLinkText.trim() || undefined,
-        danceTags: store.danceTags.length > 0 ? store.danceTags : undefined,
-      };
+      const createData = buildCreatePartyDto(store, playlistForApi);
 
       const party = await partyService.createParty(createData);
       await loadThemeAccess(true);
@@ -959,10 +951,12 @@ export function usePartyWorkspaceRuntime() {
       store.setIsPublishing(true);
       store.setServerError(null);
       try {
-        const playlistForApi =
-          streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-            ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
-            : convertPlaylistForApi(items, partyTrackDisplay);
+        const playlistForApi = buildPlaylistForApi({
+          streamingSource,
+          aimpPlaylistSnapshot: aimpBridgeState.playlistSnapshot,
+          items,
+          partyTrackDisplay,
+        });
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
 
         const tz = store.timeZone.trim() || getDefaultTimeZone();
@@ -1024,35 +1018,13 @@ export function usePartyWorkspaceRuntime() {
     store.setServerError(null);
     store.setPartyVerified(false);
     try {
-      const playlistForApi =
-        streamingSource === 'aimp' && aimpBridgeState.playlistSnapshot
-          ? convertAimpPlaylistForApi(aimpBridgeState.playlistSnapshot, partyTrackDisplay)
-          : convertPlaylistForApi(items, partyTrackDisplay);
-      const tz = store.timeZone.trim() || getDefaultTimeZone();
-      const createData: CreatePartyDto = {
-        name: nameToUse,
-        title: store.partyTitle.trim() || undefined,
-        subtitle: store.partySubtitle.trim() || undefined,
-        partyThemeId: store.themeId,
-        customizationSettings: normalizeCustomizationSettings(store.customizationSettings),
-        playlistData: playlistForApi,
-        eventDateTime: store.eventDateTime
-          ? convertLocalDateTimeToUtc(store.eventDateTime, tz)
-          : undefined,
-        eventEndDateTime: store.eventEndDateTime
-          ? convertLocalDateTimeToUtc(store.eventEndDateTime, tz)
-          : undefined,
-        description: store.description.trim() || undefined,
-        place: store.place.trim() || undefined,
-        city: store.city.trim() || undefined,
-        schedule: store.schedule.trim() || undefined,
-        timeZone: store.timeZone.trim() || undefined,
-        isListedInCatalog: true,
-        shortDescription: store.shortDescription.trim() || undefined,
-        externalLinkUrl: store.externalLinkUrl.trim() || undefined,
-        externalLinkText: store.externalLinkText.trim() || undefined,
-        danceTags: store.danceTags.length > 0 ? store.danceTags : undefined,
-      };
+      const playlistForApi = buildPlaylistForApi({
+        streamingSource,
+        aimpPlaylistSnapshot: aimpBridgeState.playlistSnapshot,
+        items,
+        partyTrackDisplay,
+      });
+      const createData = buildCreatePartyDto(store, playlistForApi, { partyName: nameToUse });
 
       const party = await partyService.createParty(createData);
       await loadThemeAccess(true);
@@ -1205,6 +1177,7 @@ export function usePartyWorkspaceRuntime() {
     handlePublish,
     handleCopyUrl,
     handleRetry,
+    handleResetAndCreateNewParty,
     handleLifecycleTransition,
     openModal,
     lockedThemeInfos,

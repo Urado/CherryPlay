@@ -21,6 +21,7 @@ export {
   convertToComponentPlayerItems,
   calculateTotalDuration as calculatePartyTotalDuration,
   countTotalTracks,
+  collectComponentPlaylistTrackIds,
   convertToApiPlayerItem,
   convertToApiPlayerItems,
   calculatePlaylistMetadata,
