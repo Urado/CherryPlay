@@ -7,6 +7,8 @@ import { calculateMinSizePercent } from '@shared/utils';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 
+import { WorkspaceLayoutEditShell } from './WorkspaceLayoutEditShell';
+
 interface SplitContainerProps {
   zone: ContainerZone;
   depth?: number; // для ограничения вложенности (макс 6)
@@ -20,6 +22,7 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
   const [resizingIndex, setResizingIndex] = useState<number | null>(null);
 
   const { updateContainerSizes } = useLayoutStore();
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
 
   // Ограничение вложенности до 6 уровней
   const isMaxDepth = depth >= 6;
@@ -143,7 +146,7 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
       {zone.zones.map((childZone, index) => (
         <React.Fragment key={childZone.id}>
           <div
-            className="split-zone"
+            className={`split-zone${childZone.type === 'workspace' && isLayoutEditMode ? ' split-zone--layout-edit' : ''}`}
             style={{
               flex: `0 0 ${zone.sizes[index]}%`,
               display: 'flex',
@@ -155,6 +158,8 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
           >
             {childZone.type === 'container' ? (
               <SplitContainer zone={childZone} depth={depth + 1} />
+            ) : isLayoutEditMode ? (
+              <WorkspaceLayoutEditShell zone={childZone} />
             ) : (
               <WorkspaceRenderer zone={childZone} />
             )}
@@ -162,7 +167,7 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
           {index < zone.zones.length - 1 && (
             <button
               type="button"
-              className={`split-divider ${resizingIndex === index ? 'resizing' : ''}`}
+              className={`split-divider ${resizingIndex === index ? 'resizing' : ''}${isLayoutEditMode ? ' split-divider--layout-edit' : ''}`}
               onMouseDown={handleMouseDown(index)}
               aria-label={isHorizontal ? 'Resize horizontal split' : 'Resize vertical split'}
               style={{

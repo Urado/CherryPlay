@@ -15,6 +15,11 @@ import { isInputField, matchKeyBinding } from './shortcutUtils';
 type GetCustomBindings = () => CustomKeyBindings;
 
 /**
+ * Function type for checking whether global shortcuts should be suppressed.
+ */
+type IsShortcutsBlocked = () => boolean;
+
+/**
  * ShortcutManager - Centralized keyboard shortcut handling.
  *
  * Features:
@@ -31,6 +36,9 @@ class ShortcutManager {
   /** Function to get custom bindings from settings */
   private getCustomBindings: GetCustomBindings = () => ({});
 
+  /** Function to check whether shortcuts are blocked (e.g. layout edit mode) */
+  private isShortcutsBlocked: IsShortcutsBlocked = () => false;
+
   /** Whether the manager is initialized */
   private isInitialized = false;
 
@@ -46,14 +54,18 @@ class ShortcutManager {
    * Should be called once at app startup.
    *
    * @param getCustomBindings - Function to retrieve custom bindings from settings
+   * @param isShortcutsBlocked - Optional callback when shortcuts should be ignored
    */
-  init(getCustomBindings: GetCustomBindings): void {
+  init(getCustomBindings: GetCustomBindings, isShortcutsBlocked?: IsShortcutsBlocked): void {
     if (this.isInitialized) {
       console.warn('ShortcutManager is already initialized');
       return;
     }
 
     this.getCustomBindings = getCustomBindings;
+    if (isShortcutsBlocked) {
+      this.isShortcutsBlocked = isShortcutsBlocked;
+    }
     window.addEventListener('keydown', this.boundHandleKeyDown);
     this.isInitialized = true;
   }
@@ -69,6 +81,7 @@ class ShortcutManager {
 
     window.removeEventListener('keydown', this.boundHandleKeyDown);
     this.handlers.clear();
+    this.isShortcutsBlocked = () => false;
     this.isInitialized = false;
   }
 
@@ -129,6 +142,10 @@ class ShortcutManager {
    * Matches the event against all registered shortcuts and executes the handler.
    */
   private handleKeyDown(event: KeyboardEvent): void {
+    if (this.isShortcutsBlocked()) {
+      return;
+    }
+
     const inInputField = isInputField(event);
 
     // Try to find a matching shortcut

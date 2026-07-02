@@ -1,6 +1,35 @@
 import { getPlatform, isPlatformInitialized } from '../platform';
 
 let cachedServerUrl: string | null = null;
+let warnedEmptyElectronServerUrl = false;
+
+function isConfiguredServerUrl(value: string | null | undefined): value is string {
+  return value !== undefined && value !== null;
+}
+
+function warnEmptyElectronServerUrlOnce(): void {
+  if (warnedEmptyElectronServerUrl) {
+    return;
+  }
+  warnedEmptyElectronServerUrl = true;
+  console.warn(
+    '[serverConfig] Empty serverUrl from Electron config is only intended for web demo same-origin proxy. ' +
+      'Electron should set serverUrl in serverConfig.development.json or serverConfig.production.json.',
+  );
+}
+
+function cacheElectronServerUrl(data: string): string {
+  if (data === '') {
+    warnEmptyElectronServerUrlOnce();
+  }
+  cachedServerUrl = data;
+  return data;
+}
+
+function getEnvServerUrl(): string | undefined {
+  const value = import.meta.env.VITE_API_URL;
+  return isConfiguredServerUrl(value) ? value : undefined;
+}
 
 async function invokeConfig<T>(channel: string, payload?: object): Promise<T | null> {
   if (!isPlatformInitialized()) {
@@ -23,16 +52,16 @@ async function invokeConfig<T>(channel: string, payload?: object): Promise<T | n
 }
 
 export async function getServerUrl(): Promise<string> {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const envServerUrl = getEnvServerUrl();
+  if (envServerUrl !== undefined) {
+    return envServerUrl;
   }
 
   if (isPlatformInitialized()) {
     try {
       const data = await invokeConfig<string>('config:getServerUrl');
-      if (data) {
-        cachedServerUrl = data;
-        return data;
+      if (isConfiguredServerUrl(data)) {
+        return cacheElectronServerUrl(data);
       }
 
       cachedServerUrl = null;
@@ -56,8 +85,9 @@ export async function getServerUrl(): Promise<string> {
 }
 
 export function getServerUrlSync(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const envServerUrl = getEnvServerUrl();
+  if (envServerUrl !== undefined) {
+    return envServerUrl;
   }
 
   if (cachedServerUrl !== null) {
@@ -76,7 +106,7 @@ export async function setServerUrl(serverUrl: string): Promise<boolean> {
 
   try {
     const data = await invokeConfig<string>('config:setServerUrl', { serverUrl });
-    if (data) {
+    if (isConfiguredServerUrl(data)) {
       cachedServerUrl = serverUrl;
       return true;
     }
@@ -109,8 +139,8 @@ export async function initializeServerConfig(): Promise<void> {
 
   try {
     const data = await invokeConfig<string>('config:getServerUrl');
-    if (data) {
-      cachedServerUrl = data;
+    if (isConfiguredServerUrl(data)) {
+      cacheElectronServerUrl(data);
       const { clearApiConfigCache } = await import('./apiConfig');
       clearApiConfigCache();
     } else {

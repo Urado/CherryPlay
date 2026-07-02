@@ -55,7 +55,15 @@
 
 ### Инициализация
 
-В `App.tsx` вызывается `initializeShortcuts` с колбэком, возвращающим текущие биндинги из `settingsStore.keyBindings`.
+В `App.tsx` вызывается `initializeShortcuts` с колбэком, возвращающим текущие биндинги из `settingsStore.keyBindings`, и опциональным `isShortcutsBlocked` — глобальная блокировка всех шорткатов (в edit mode layout):
+
+```tsx
+initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
+  isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
+});
+```
+
+Пока `isShortcutsBlocked()` возвращает `true`, `ShortcutManager.handleKeyDown` не выполняет зарегистрированные handlers (ранний return до match). Выход из layout edit mode по **Esc** обрабатывается отдельным listener в `App.tsx`, не через менеджер.
 
 ### Глобальные шорткаты
 
@@ -80,6 +88,7 @@
 - **Input-aware** - шорткаты блокируются в input/textarea (кроме `allowInInput`)
 - **Типобезопасность** - строгие типы для `ShortcutId`
 - **Персистентность** - кастомные биндинги сохраняются в localStorage
+- **Режим редактирования layout** — при `layoutStore.isLayoutEditMode === true` `ShortcutManager.handleKeyDown` **не выполняет** ни один зарегистрированный шорткат (ранний return). Глобальные handlers в `AppHeader` отключаются через `useGlobalShortcuts(..., { enabled: !isLayoutEditMode })`. Выход из режима по **Esc** обрабатывается отдельным listener в `App.tsx` (`capture: true`), не через `ShortcutManager`. См. [layout-edit-mode.md](../../layout-edit-mode.md).
 
 ## Утилиты
 

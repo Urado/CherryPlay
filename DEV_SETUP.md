@@ -63,6 +63,15 @@ npm run dev
 - **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например: `{ "serverUrl": "http://localhost:5000" }`
 - **Через переменную окружения**: при сборке/запуске задать `VITE_API_URL=http://localhost:5000`
 
+### Веб-демо в браузере (`dev:web`)
+
+```bash
+cd CherryPlayList
+npm run dev:web
+```
+
+Откройте http://localhost:5173. По умолчанию REST и SignalR идут через **Vite proxy** на `http://localhost:5000` (CORS не нужен). Подробности: [CherryPlayList/docs/web-demo.md](CherryPlayList/docs/web-demo.md). При прямом `VITE_API_URL` бэкенд должен разрешать origin `:5173` (см. `appsettings.Development.json`, `docker-compose.debug.yml`).
+
 ## Переменные окружения (сводка)
 
 | Переменная     | Проект         | Описание                                                                                                                          |

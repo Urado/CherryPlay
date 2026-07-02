@@ -65,6 +65,8 @@ flowchart TB
 | `npm run dev:web` | Web demo (`demo`) |
 | `npm run dev:capacitor` | Capacitor stub (`capacitor`), без Electron |
 
+В **web demo** URL CherryPlayServer по умолчанию — **пустая строка** (`demoConfig.ts`): REST и SignalR идут на same-origin (`/api`, `/partyHub`) и проксируются Vite на `:5000`. См. [веб-демо — Vite proxy](../../web-demo.md#vite-dev-proxy-и-cherryplayserver). Переменная **`VITE_API_URL`** задаёт прямой base URL (без proxy, нужен CORS).
+
 ---
 
 ## Capability matrix

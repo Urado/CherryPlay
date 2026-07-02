@@ -205,7 +205,7 @@ CherryPlayList/
 Связь CherryPlayList с **CherryPlayServer** и **CherryPlayWeb** (авторизация, вечеринки, стриминг состояния) описана в разделе документации по интеграции и согласована с планом релиза v1:
 
 - **[Интеграция приложение — сервер — веб](../../docs/integration/README.md)** — обзор подсистем (Accounts & Auth, Party Management, Streaming), роли, ссылки на контракты и БД (общая документация в корне репозитория).
-- **[Оглавление документации](./docs/README.md)** — модули, интеграция, ссылки на корневые документы репозитория.
+- **[Оглавление документации](./docs/README.md)** — модули, интеграция, [веб-демо](./docs/web-demo.md) (Vite proxy, CORS), [режим редактирования layout](./docs/layout-edit-mode.md), ссылки на корневые документы репозитория.
 
 ### Хранение данных
 
@@ -227,7 +227,7 @@ CherryPlayList/
 
 - **`authStore`** — токен и организатор
 - **`settingsStore`** — настройки приложения (экспорт, пути, аудиоустройства, горячие клавиши, стриминг и т.д.)
-- **`layoutStore`** — дерево зон интерфейса
+- **`layoutStore`** — дерево зон интерфейса (persist только поле `layout`; флаг `isLayoutEditMode` — см. [layout-edit-mode.md](./docs/layout-edit-mode.md))
 - **`projectStore`** — основной плейлист-проект (треки, группы, сессия, мета, привязка к party в урезанном виде)
 - **`ensureProjectStore`** с `persist: true` — отдельные персистентные проекты по **`workspaceId`** (например коллекции), ключ `cherryplaylist-<workspaceId>`
 

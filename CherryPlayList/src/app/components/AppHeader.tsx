@@ -108,6 +108,8 @@ export const AppHeader: React.FC = () => {
   const { openModal, addNotification, focusFileInBrowser } = useUIStore();
   const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
   const layout = useLayoutStore((state) => state.layout);
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const toggleLayoutEditMode = useLayoutStore((state) => state.toggleLayoutEditMode);
   const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
@@ -125,15 +127,14 @@ export const AppHeader: React.FC = () => {
     addNotification({ type: 'info', message: getPlatformUnavailableMessage() });
   }, [addNotification]);
   const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
-  const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
-    persistedLayoutPreset ?? 'simple',
+  type LayoutSelectValue = LayoutPreset | 'custom';
+  const [selectedLayout, setSelectedLayout] = useState<LayoutSelectValue>(
+    persistedLayoutPreset ?? 'custom',
   );
 
   useEffect(() => {
-    if (persistedLayoutPreset && persistedLayoutPreset !== selectedLayout) {
-      setSelectedLayout(persistedLayoutPreset);
-    }
-  }, [persistedLayoutPreset, selectedLayout]);
+    setSelectedLayout(persistedLayoutPreset ?? 'custom');
+  }, [persistedLayoutPreset]);
 
   // В production не позволяем использовать complex layout
   useEffect(() => {
@@ -532,7 +533,13 @@ export const AppHeader: React.FC = () => {
     ],
   );
 
-  useGlobalShortcuts(globalShortcutHandlers);
+  useEffect(() => {
+    if (isLayoutEditMode) {
+      setProjectMenuOpen(false);
+    }
+  }, [isLayoutEditMode]);
+
+  useGlobalShortcuts(globalShortcutHandlers, { enabled: !isLayoutEditMode });
 
   const handleExport = () => {
     const allTracks = getAllTracksInOrder();
@@ -553,7 +560,16 @@ export const AppHeader: React.FC = () => {
   };
 
   const handleLayoutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const preset = e.target.value as LayoutPreset;
+    if (isLayoutEditMode) {
+      return;
+    }
+
+    const value = e.target.value as LayoutSelectValue;
+    if (value === 'custom') {
+      return;
+    }
+
+    const preset = value;
     const isDev = import.meta.env.DEV;
 
     // В production не позволяем выбирать complex
@@ -606,6 +622,7 @@ export const AppHeader: React.FC = () => {
                   aria-expanded={projectMenuOpen}
                   aria-controls={projectMenuPanelId}
                   aria-busy={isSaving}
+                  disabled={isLayoutEditMode}
                   title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
                 >
                   {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
@@ -721,6 +738,7 @@ export const AppHeader: React.FC = () => {
                 <button
                   className="header-button"
                   onClick={handleAccount}
+                  disabled={isLayoutEditMode}
                   title={
                     isAuthenticated
                       ? `Аккаунт: ${organizer?.name || 'Организатор'}`
@@ -749,7 +767,12 @@ export const AppHeader: React.FC = () => {
                   )}
                 </button>
               )}
-              <button className="header-button" onClick={handleSettings} title="Настройки">
+              <button
+                className="header-button"
+                onClick={handleSettings}
+                disabled={isLayoutEditMode}
+                title="Настройки"
+              >
                 <SettingsIcon style={{ fontSize: '32px' }} />
               </button>
             </div>
@@ -762,6 +785,7 @@ export const AppHeader: React.FC = () => {
               onChange={(e) => setName(e.target.value)}
               className="project-name-input"
               placeholder="Название проекта"
+              disabled={isLayoutEditMode}
             />
             {meta.isDirty && (
               <span className="dirty-indicator" title="Есть несохранённые изменения">
@@ -779,7 +803,13 @@ export const AppHeader: React.FC = () => {
               value={selectedLayout}
               onChange={handleLayoutChange}
               className="layout-select"
+              disabled={isLayoutEditMode}
             >
+              {selectedLayout === 'custom' && (
+                <option value="custom" disabled>
+                  Свой layout
+                </option>
+              )}
               <option value="simple">Простой (Playlist + Browser)</option>
               {import.meta.env.DEV && <option value="complex">Сложный (с тестовыми зонами)</option>}
               <option value="collections">С коллекциями (Playlist + Collections + Browser)</option>
@@ -792,10 +822,24 @@ export const AppHeader: React.FC = () => {
                 <option value="aimp-party">AIMP + Party</option>
               )}
             </select>
+            <button
+              type="button"
+              className={`app-header-layout-edit-btn${isLayoutEditMode ? ' app-header-layout-edit-btn--active' : ''}`}
+              onClick={toggleLayoutEditMode}
+              title={
+                isLayoutEditMode ? 'Выйти из режима редактирования (Esc)' : 'Редактировать layout'
+              }
+              aria-pressed={isLayoutEditMode}
+            >
+              {isLayoutEditMode ? 'Готово' : 'Редактировать'}
+            </button>
           </div>
         </div>
 
-        <DemoPlayer className="app-header-demo-player" onShowInBrowser={focusFileInBrowser} />
+        <DemoPlayer
+          className={`app-header-demo-player${isLayoutEditMode ? ' app-header-demo-player--blocked' : ''}`}
+          onShowInBrowser={focusFileInBrowser}
+        />
       </div>
 
       <SaveProjectAsModal

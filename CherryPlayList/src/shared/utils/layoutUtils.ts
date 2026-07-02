@@ -1,3 +1,5 @@
+import { MAX_LAYOUT_DEPTH, MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
+
 import { Zone, ContainerZone, ZoneId, SplitDirection } from '../../core/types/layout';
 
 /**
@@ -77,12 +79,42 @@ export function calculateMinSizePercent(containerSize: number): number {
 }
 
 /**
+ * Immutable replace of a tree node by ID (works for workspace, container, or split substitution).
+ */
+export function updateZoneInTree(root: Zone, zoneId: ZoneId, updated: Zone): Zone {
+  if (root.id === zoneId) {
+    return updated;
+  }
+
+  if (root.type === 'container') {
+    return {
+      ...root,
+      zones: root.zones.map((child) => updateZoneInTree(child, zoneId, updated)),
+    };
+  }
+
+  return root;
+}
+
+/** @see updateZoneInTree — call-site alias when substituting one node (e.g. workspace → split container). */
+export const replaceZoneInTree = updateZoneInTree;
+
+/** @see updateZoneInTree — call-site alias when the replacement is a known container. */
+export function updateContainerInTree(
+  root: Zone,
+  containerId: ZoneId,
+  updated: ContainerZone,
+): Zone {
+  return updateZoneInTree(root, containerId, updated);
+}
+
+/**
  * Проверка глубины вложенности
  * @param root - корневая зона
  * @param currentDepth - текущая глубина (для рекурсии)
  * @returns максимальная глубина
  */
-function getMaxDepth(root: Zone, currentDepth: number = 0): number {
+export function getMaxDepth(root: Zone, currentDepth: number = 0): number {
   if (root.type === 'workspace') {
     return currentDepth;
   }
@@ -108,9 +140,8 @@ export function validateLayout(
   containerWidth: number,
   containerHeight: number,
 ): boolean {
-  // Проверка глубины вложенности (максимум 6 уровней)
   const maxDepth = getMaxDepth(root);
-  if (maxDepth > 6) {
+  if (maxDepth > MAX_LAYOUT_DEPTH) {
     return false;
   }
 
@@ -129,8 +160,7 @@ export function validateLayout(
       return false;
     }
 
-    // Контейнер не должен иметь больше 10 зон
-    if (zone.zones.length > 10) {
+    if (zone.zones.length > MAX_ZONES_PER_CONTAINER) {
       return false;
     }
 

@@ -38,6 +38,10 @@ class WorkspaceRegistry implements IWorkspaceModuleRegistry {
     return this.modulesByType.get(type);
   }
 
+  getAllModulesByType(): IWorkspaceModule[] {
+    return Array.from(this.modulesByType.values());
+  }
+
   renderWorkspace(workspaceId: WorkspaceId, zoneId: string): React.ReactNode {
     // First try to get by ID (for specific workspaces like playlist)
     const module = this.modules.get(workspaceId);

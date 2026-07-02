@@ -81,6 +81,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
       - Cors__AllowedOrigins__0=http://localhost:3000
       - Cors__AllowedOrigins__1=http://web:80
+      - Cors__AllowedOrigins__2=http://localhost:5173
     ports:
       - "5000:8080"
       - "5678:5678" # Порт для VS Code debugger

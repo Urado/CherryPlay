@@ -52,6 +52,12 @@
 
 - Целиком объект **`layout`** (корневое дерево зон: контейнеры, workspace-зоны, размеры).
 
+**Не** сохраняется: **`isLayoutEditMode`** — флаг режима редактирования layout сбрасывается при каждом запуске (`partialize` в `layoutStore.ts` оставляет только `layout`). См. [layout-edit-mode.md](../../layout-edit-mode.md).
+
+**Electron:** после перезапуска приложения восстанавливается последнее сохранённое дерево `layout`.
+
+**Веб-демо** (`VITE_APP_MODE=demo`, `npm run dev:web`): при каждом старте `bootstrap.ts` вызывает `resetDemoPersistStorage()` и **удаляет** `cherryplaylist-layout` (и другие ключи AC12) **до** гидрации сторов. Layout из предыдущей перезагрузки или из Electron на том же origin **не** подтягивается. В рамках **одной** сессии страницы persist записывает `layout` как обычно; полная перезагрузка снова очищает ключ. См. [веб-демо](../../web-demo.md), [layout-edit-mode.md](../../layout-edit-mode.md).
+
 Версия persist в сторе используется для **migrate** (при смене версии может подставляться новый начальный layout — см. `layoutStore.ts`).
 
 ---
@@ -94,12 +100,16 @@
 
 Восстановление из IndexedDB **асинхронно**. Код, которому нужны уже подгруженные данные (например восстановление сессии), должен учитывать **hydration** `persist` (см. использование `onFinishHydration` / `hasHydrated` в компонентах player и в `useSessionRecovery`).
 
+В **веб-демо** перед гидрацией выполняется сброс ключей AC12 (`resetDemoPersistStorage` в `src/bootstrap.ts`) — см. [веб-демо](../../web-demo.md#что-работает-в-демо).
+
 ---
 
 ## См. также
 
 - [Архитектура хранения](./storage-architecture.md)
 - [Storage](./storage.md)
+- [Веб-демо](../../web-demo.md) — сброс persist (AC12) при bootstrap
+- [Режим редактирования layout](../../layout-edit-mode.md) — персистентность дерева Electron vs веб-демо
 - [Settings Store](../stores/settings-store.md)
 - [Project Store](../stores/project-store.md)
 - [Save / Load](./save-load.md) — файл проекта на диске

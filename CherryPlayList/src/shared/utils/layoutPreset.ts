@@ -1,13 +1,7 @@
-import type { Layout, Zone } from '../../core/types/layout';
+import type { Layout } from '../../core/types/layout';
 import type { LayoutPreset } from '../stores/layoutStore';
 
-function getLayoutZoneSignature(zone: Zone): string {
-  if (zone.type === 'workspace') {
-    return `workspace:${zone.workspaceType}`;
-  }
-
-  return `${zone.direction}(${zone.zones.map(getLayoutZoneSignature).join(',')})`;
-}
+import { getLayoutZoneSignature } from './layoutSignature';
 
 const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   simple: 'horizontal(workspace:playlist,workspace:fileBrowser)',

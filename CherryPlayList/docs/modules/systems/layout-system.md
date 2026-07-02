@@ -26,3 +26,20 @@
 - Автоматическая очистка контейнеров с 1 дочерним элементом
 - Layout presets: simple, collections, collections-vertical, complex
 - Сохранение layout между сессиями (localforage)
+- **Режим редактирования layout** — интерактивное добавление/удаление workspace в UI (см. [layout-edit-mode.md](../../layout-edit-mode.md))
+
+## Режим редактирования (кратко)
+
+- Переключатель **«Редактировать» / «Готово»** в шапке; **Esc** выходит из режима.
+- `isLayoutEditMode` в `layoutStore` **не** персистится (`partialize` сохраняет только `layout`).
+- Рендер зон: `LayoutWorkspaceArea` → `SplitContainer` / `WorkspaceLayoutEditShell` / `LayoutEmptyWorkspaceState`.
+- Добавление: `layoutWorkspaceOperations.ts` (дерево) + `workspaceLifecycle.ts` (`prepareWorkspaceInstance` для `collection` и `test*`).
+- Удаление: `workspaceLifecycle.ts` (`cleanupWorkspaceInstance`) для динамических типов; singleton stores остаются в памяти.
+
+Подробности, ограничения и чеклист проверки — в **[layout-edit-mode.md](../../layout-edit-mode.md)**.
+
+## Дополнительные компоненты (edit mode)
+
+- **LayoutWorkspaceArea** (`src/app/components/LayoutWorkspaceArea.tsx`) — корневой роутер области workspace
+- **WorkspaceLayoutEditShell** — оболочка зоны в edit mode (air-регионы, diagonals, удаление)
+- **LayoutEmptyWorkspaceState** — пустой layout, первая зона через picker

@@ -29,12 +29,13 @@ import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
 import { DemoModeBanner } from './components/DemoModeBanner';
 import { ExportModal } from './components/ExportModal';
+import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
 import { SettingsModal } from './components/SettingsModal';
-import { SplitContainer } from './components/SplitContainer';
 
 const App: React.FC = () => {
-  const { layout } = useLayoutStore();
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const setLayoutEditMode = useLayoutStore((state) => state.setLayoutEditMode);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
 
@@ -50,7 +51,9 @@ const App: React.FC = () => {
       console.warn('Failed to initialize server config:', error);
     });
 
-    initializeShortcuts(() => useSettingsStore.getState().keyBindings);
+    initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
+      isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
+    });
 
     useGlobalHistoryStore.getState().registerErrorHandler((message) => {
       useUIStore.getState().addNotification({
@@ -104,34 +107,33 @@ const App: React.FC = () => {
 
   useTrackItemSize();
 
-  if (layout.rootZone.type !== 'container') {
-    return (
-      <div className="app">
-        {isDemoMode && <DemoModeBanner />}
-        <AppHeader />
-        <div className="app-content">
-          <div className="empty-state">
-            <p>Error: Root zone must be a container</p>
-          </div>
-        </div>
-        {supportsAimpWorkspace && <AimpIntegrationController />}
-        <SettingsModal />
-        <ExportModal />
-        <LinkPartyModal />
-        <TrackSettingsModal />
-        <AccountModal />
-        <NotificationContainer />
-        <AppFooter />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!isLayoutEditMode) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        const { openLayoutEditPickerKey, setOpenLayoutEditPickerKey } = useLayoutStore.getState();
+        if (openLayoutEditPickerKey !== null) {
+          setOpenLayoutEditPickerKey(null);
+          return;
+        }
+        setLayoutEditMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [isLayoutEditMode, setLayoutEditMode]);
 
   return (
     <div className="app">
       {isDemoMode && <DemoModeBanner />}
       <AppHeader />
       <div className="app-content">
-        <SplitContainer zone={layout.rootZone} />
+        <LayoutWorkspaceArea />
       </div>
       {supportsAimpWorkspace && <AimpIntegrationController />}
       <SettingsModal />

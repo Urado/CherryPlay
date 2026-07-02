@@ -21,12 +21,16 @@ export const PARTY_PREVIEW_WORKSPACE_ID: WorkspaceId = 'party-preview-workspace'
 // ID для AIMP workspace
 export const AIMP_WORKSPACE_ID: WorkspaceId = 'aimp-workspace';
 
+// ID для file browser workspace
+export const DEFAULT_FILEBROWSER_WORKSPACE_ID: WorkspaceId = 'default-filebrowser-workspace';
+
 const workspaceTypeRegistry = new Map<WorkspaceId, WorkspaceType>();
 workspaceTypeRegistry.set(DEFAULT_PLAYLIST_WORKSPACE_ID, 'playlist');
 workspaceTypeRegistry.set(DEFAULT_PLAYER_WORKSPACE_ID, 'player');
 workspaceTypeRegistry.set(PARTY_EDITOR_WORKSPACE_ID, 'party-editor');
 workspaceTypeRegistry.set(PARTY_PREVIEW_WORKSPACE_ID, 'party-preview');
 workspaceTypeRegistry.set(AIMP_WORKSPACE_ID, 'aimp');
+workspaceTypeRegistry.set(DEFAULT_FILEBROWSER_WORKSPACE_ID, 'fileBrowser');
 
 /**
  * Генерирует новый UUID для workspace
