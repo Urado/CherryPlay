@@ -5,6 +5,7 @@ export const DEMO_PERSIST_STORAGE_KEYS = [
   'cherryplaylist-auth',
   'cherryplaylist-settings',
   'cherryplaylist-layout',
+  'cherryplaylist-workspaces',
   'cherryplaylist-project',
 ] as const;
 

@@ -2,14 +2,14 @@
 
 Интерактивное добавление и удаление workspace-зон в дереве layout без правки пресетов в коде. Режим доступен в **Electron** и **веб-демо**.
 
-**Персистентность дерева:**
+**Персистентность дерева и workspace:**
 
 | Среда | Поведение |
 |-------|-----------|
-| **Electron** (`npm run dev`) | Дерево layout пишется в Zustand persist (`cherryplaylist-layout`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения. |
-| **Веб-демо** (`npm run dev:web`) | При каждом старте bootstrap **очищает** `cherryplaylist-layout` ([AC12](./web-demo.md#что-работает-в-демо), `resetDemoPersistStorage`). Правки **не переживают** полную перезагрузку страницы; **внутри одной сессии** (без F5) persist работает как обычно. |
+| **Electron** (`npm run dev`) | Состояние workspace (`activeWorkspace`, `userWorkspaces`, живое `layout`) пишется в Zustand persist (`cherryplaylist-workspaces`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения. |
+| **Веб-демо** (`npm run dev:web`) | При каждом старте bootstrap **очищает** `cherryplaylist-workspaces` ([AC12](./web-demo.md#что-работает-в-демо), `resetDemoPersistStorage`). Правки **не переживают** полную перезагрузку страницы; **внутри одной сессии** (без F5) persist работает как обычно. |
 
-Флаг **`isLayoutEditMode`** между сессиями **не** сохраняется (ни в Electron, ни в веб-демо).
+Флаг **`isLayoutEditMode`** и **`baselineLayout`** между сессиями **не** сохраняются (ни в Electron, ни в веб-демо).
 
 См. также: [Layout System](./modules/systems/layout-system.md), [Веб-демо](./web-demo.md), [Test Zone](./modules/workspaces/test-zone.md), [UI Store](./modules/stores/ui-store.md), [Keyboard Shortcuts](./modules/hooks-utils/keyboard-shortcuts.md).
 
@@ -17,11 +17,85 @@
 
 ## Как включить и выйти
 
-1. В шапке нажмите **«Редактировать»** (`AppHeader.tsx`).
-2. Кнопка переключается на **«Готово»**; активный режим подсвечивается.
-3. Выйти: **«Готово»**, **Esc** или снова **«Редактировать»**. **Esc** (глобальный обработчик в `App.tsx`, `capture: true`): сначала закрывает открытый workspace-picker (`openLayoutEditPickerKey`), затем выходит из режима.
+1. В шапке нажмите **✎** (`WorkspaceMenu.tsx`, `requestToggleLayoutEditMode`).
+2. Кнопка подсвечивается в активном режиме (`app-header-workspace-edit-btn--active`).
+3. Выйти: снова **✎** или **Esc**. **Esc** (`App.tsx`, `capture: true`):
+   - если фокус в поле переименования pill — только отмена ввода имени;
+   - иначе закрывает открытый workspace-picker (`openLayoutEditPickerKey`);
+   - затем `requestExitEditMode()` → при dirty вызывается `autoCommitWorkspaceChanges()`, режим выключается **без модальных диалогов**.
 
-`isLayoutEditMode` хранится в `layoutStore`, в `partialize` persist **не** входит — после перезапуска приложения режим всегда выключен.
+`isLayoutEditMode` в `partialize` persist **не** входит — после перезапуска режим всегда выключен.
+
+**«Создать с нуля…»** в меню pill сразу создаёт пустой scratch-workspace **и включает** режим редактирования (`createScratchWorkspace` → `isLayoutEditMode: true`).
+
+---
+
+## Рабочие пространства в шапке
+
+Вместо селектора пресетов — **workspace pill** (имя + ▾) и отдельная кнопка **✎** (`WorkspaceMenu`).
+
+```
+[ Имя workspace  ▾ ]  [ ✎ ]
+```
+
+| Элемент | Поведение в edit mode |
+|---------|----------------------|
+| **Имя в pill** | Кликабельно для **user** и **scratch** — inline-переименование (фиксированная ширина pill, длинный текст прокручивается внутри поля) |
+| **▾ (меню)** | `disabled`; переключение workspace недоступно |
+| **✎** | Активна; выход из режима с auto-commit при dirty |
+
+Меню (только **вне** edit mode, по **▾**):
+
+| Секция | Содержимое |
+|--------|------------|
+| **Мои** | Пользовательские workspace; ⋯ → переименовать / удалить |
+| **Встроенные** | Built-in пресеты с RU-именами |
+| — | **Создать с нуля…** |
+
+Отдельных пунктов **Сохранить** / **Сбросить** в меню **нет** — сохранение автоматическое (см. ниже).
+
+Подробнее о модели — [Layout System](./modules/systems/layout-system.md).
+
+---
+
+## Автосохранение изменений layout
+
+Изменения дерева **не требуют ручного сохранения**. Блокирующих диалогов нет.
+
+| Событие | Поведение |
+|---------|-----------|
+| **Выход из edit mode** (✎, Esc) | `autoCommitWorkspaceChanges()` |
+| **Переключение workspace** (▾) | Сначала auto-commit, затем `activateWorkspace` |
+| **Создать с нуля…** при dirty | Сначала auto-commit, затем пустой scratch + edit mode |
+
+| Активный workspace | Auto-commit |
+|--------------------|-------------|
+| **user** | Обновляет снимок в `userWorkspaces` (`saveCurrentWorkspace`, без toast) |
+| **builtin** | `saveCurrentWorkspaceAsUnnamed()` → **«Без имени»** или **«Без имени 2»**, … (см. ниже) |
+| **scratch** | То же через `saveCurrentWorkspaceAsUnnamed` |
+
+Автоматический fallback built-in (AIMP / `complex` в production) использует `bypassDirtyGuard: true` (без auto-commit).
+
+### Именование
+
+Константы и функции — `src/core/types/workspacePreset.ts`:
+
+| Символ | Назначение |
+|--------|------------|
+| `UNNAMED_WORKSPACE_NAME` | `'Без имени'` — базовое имя для первого auto-save |
+| `allocateUnnamedWorkspaceName(names)` | Первый свободный auto-имя: «Без имени», затем «Без имени 2», «Без имени 3», … |
+| `isUnnamedWorkspaceName(name)` | `true` для «Без имени» и «Без имени N» (N ≥ 2) |
+
+**Правило нумерации:** пока в **Мои** нет записи с именем **«Без имени»**, новый auto-save получает именно его. Если **«Без имени»** уже занят — выдаётся следующий свободный суффикс (`Без имени 2`, `Без имени 3`, …). Если пользователь переименовал единственный «Без имени», следующий auto-save снова может быть **«Без имени»**.
+
+**Pill (шапка):**
+
+- Фиксированная ширина **148px**; длинное имя обрезается / прокручивается в поле ввода.
+- **Клик по имени** (user или scratch, в т.ч. в edit mode) → inline-переименование; Enter / blur — сохранить, Esc — отмена (в edit mode Esc в поле имени **не** выходит из layout edit).
+- Имена серии «Без имени» / «Без имени N» отображаются **курсивом**.
+- Для **scratch** ввод осмысленного имени вызывает `saveCurrentWorkspaceAs(name)` и переводит workspace в **user**.
+- Для **user** — `renameUserWorkspace`; ручные имена **уникальны** (дубликат — toast с ошибкой). Вручную задать имя из серии «Без имени N» через pill нельзя (отмена при commit).
+- **▾** → ⋯ у записи в **Мои**: переименовать / удалить (альтернатива pill).
 
 ---
 
@@ -51,15 +125,17 @@
 
 ### Что блокируется в шапке
 
-Пока режим включён, отключены (или игнорируются):
+Пока режим включён:
 
-- селектор **пресета layout**;
+- **▾** меню workspace (переключение пресетов / пользовательских workspace);
 - переименование проекта;
 - кнопки настроек, экспорта, аккаунта, demo player;
 - меню **Проект** (принудительно закрывается при входе в режим);
 - **глобальные горячие клавиши** (`useGlobalShortcuts` с `enabled: false`).
 
-Все зарегистрированные шорткаты в `ShortcutManager` также не срабатывают в edit mode (callback `isShortcutsBlocked`). **Esc** обрабатывается отдельным listener в `App.tsx`: сначала закрывает открытый picker, затем выходит из режима.
+**Не** блокируется: **имя в pill** (переименование), кнопка **✎**.
+
+Все зарегистрированные шорткаты в `ShortcutManager` также не срабатывают в edit mode (`isShortcutsBlocked`).
 
 ---
 
@@ -88,7 +164,7 @@
 
 ## Добавление и удаление: жизненный цикл workspace
 
-Логика дерева в `layoutWorkspaceOperations.ts` (чистые функции), жизненный цикл store — в `workspaceLifecycle.ts`; вызовы из `layoutStore` (`addAdjacentWorkspace`, `addInitialWorkspace`, `removeWorkspaceZone`).
+Логика дерева в `layoutWorkspaceOperations.ts`, жизненный цикл store — в `workspaceLifecycle.ts`; вызовы из `layoutStore` (`addAdjacentWorkspace`, `addInitialWorkspace`, `removeWorkspaceZone`).
 
 ### Регистрация модулей при старте
 
@@ -106,11 +182,9 @@
 
 ### Удаление зоны
 
-1. **`removeWorkspaceFromLayout`** (чистая функция в `layoutWorkspaceOperations.ts`) удаляет зону из дерева: размеры соседей перераспределяются, пустые контейнеры схлопываются (`cleanupContainers`). Если удалена **последняя** workspace-зона — layout становится **пустым** (`createEmptyLayout()`).
-2. **`layoutStore.removeWorkspaceZone`** применяет новое дерево через `set({ layout })`, затем вызывает **`cleanupWorkspaceInstance`** (`workspaceLifecycle.ts`) для динамических типов:
-   - **`collection`**: `uiStore.removeWorkspace`, `removeProjectStore`, `unregisterWorkspaceType`;
-   - **`test*`** : `unregisterWorkspaceType`.
-3. **Singleton store** (плейлист, file browser и т.д.) при удалении зоны из layout **остаётся в памяти** — убирается только привязка зоны в дереве.
+1. **`removeWorkspaceFromLayout`** удаляет зону из дерева: размеры соседей перераспределяются, пустые контейнеры схлопываются (`cleanupContainers`). Если удалена **последняя** workspace-зона — layout становится **пустым** (`createEmptyLayout()`).
+2. **`layoutStore.removeWorkspaceZone`** применяет новое дерево, затем **`cleanupWorkspaceInstance`** для динамических типов.
+3. **Singleton store** при удалении зоны из layout **остаётся в памяти** — убирается только привязка зоны в дереве.
 
 ### Ограничения при добавлении
 
@@ -122,12 +196,15 @@
 
 ---
 
-## Пресеты layout vs ручное редактирование
+## Пресеты vs ручное редактирование
 
-- **Пресеты** (селектор в шапке: simple, collections, …) по-прежнему задают начальное дерево программно в `layoutStore.ts`.
-- В **edit mode** смена пресета **заблокирована** — иначе можно потерять несохранённую в файл, но уже изменённую в persist конфигурацию зон.
-- Пустой layout и произвольная конфигурация после ручного редактирования **валидны**: `LayoutWorkspaceArea` больше не требует, чтобы корень был контейнером (одиночная workspace-зона или пустое состояние обрабатываются явно).
-- **Пустой layout вне edit mode**: placeholder с заголовком «Layout пуст» и подсказкой «Нажмите «Редактировать» в шапке, чтобы добавить workspace»; центральный **+** и picker — только в **режиме редактирования** (`LayoutEmptyWorkspaceState`).
+- **Встроенные пресеты** задают начальное дерево через `createLayoutByPreset`; переключение — через **▾** → **Встроенные**.
+- В **edit mode** смена workspace **заблокирована** (только ▾ disabled).
+- Правки дерева при выходе из edit mode или при переключении workspace **автоматически** сохраняются (см. § «Автосохранение»); built-in при этом форкается в **Мои** с именем по `allocateUnnamedWorkspaceName`, если layout изменился.
+- Пустой layout и произвольная конфигурация **валидны**: `LayoutWorkspaceArea` обрабатывает пустое состояние, одиночную зону и контейнеры.
+- **Пустой layout вне edit mode**: placeholder «Layout пуст»; центральный **+** — только в edit mode (`LayoutEmptyWorkspaceState`).
+
+Открытие/создание **проекта** (.cherry) **не** меняет активный workspace (настройки уровня приложения).
 
 ---
 
@@ -135,30 +212,28 @@
 
 | Путь | Роль |
 |------|------|
-| `src/shared/stores/layoutStore.ts` | `isLayoutEditMode`, persist только `layout`, actions add/remove |
-| `src/shared/utils/layoutWorkspaceOperations.ts` | Чистая логика add/remove дерева, singleton |
+| `src/shared/stores/layoutStore.ts` | Workspace state, persist, auto-commit, edit mode |
+| `src/app/components/WorkspaceMenu.tsx` | Pill, dropdown, inline rename, ✎ |
+| `src/app/hooks/useWorkspaceDirtyGuard.ts` | Auto-commit перед switch / exit / scratch |
+| `src/core/types/workspacePreset.ts` | Типы, `UNNAMED_WORKSPACE_NAME` |
+| `src/shared/utils/layoutWorkspaceOperations.ts` | Add/remove дерева, singleton |
 | `src/shared/utils/workspaceLifecycle.ts` | `prepareWorkspaceInstance` / `cleanupWorkspaceInstance` |
-| `src/core/constants/layoutConstraints.ts` | `MAX_LAYOUT_DEPTH`, `MAX_ZONES_PER_CONTAINER` |
-| `src/app/components/LayoutWorkspaceArea.tsx` | Маршрутизация: пустой / root workspace / `SplitContainer` |
-| `src/app/components/WorkspaceLayoutEditShell.tsx` | Edit-frame, diagonals, remove |
-| `src/app/components/WorkspaceLayoutEditAirControl.tsx` | + и picker (через `WorkspacePickerMenu`) |
-| `src/app/components/WorkspacePickerMenu.tsx` | Общий portal-picker (позиция, outside-click) |
-| `src/app/components/workspaceLayoutEditOptions.ts` | Опции picker из registry |
-| `src/core/constants/workspaceDisplayNames.ts` | Русские имена типов |
-| `src/styles/components/app.css`, `header.css` | Стили edit mode |
+| `src/app/components/LayoutWorkspaceArea.tsx` | Пустой / root workspace / `SplitContainer` |
+| `src/app/components/WorkspaceLayoutEditShell.tsx` | Edit-frame, air-регионы, удаление |
+| `src/styles/components/header.css` | Стили pill (фикс. ширина), edit mode |
 
 ---
 
 ## Как проверить
 
 1. `npm run dev` (Electron) или `npm run dev:web`.
-2. **«Редактировать»** — у каждой зоны видны air-области и ×; контент затемнён.
-3. **+** слева от плейлиста → выбрать «Коллекция» — появляется новая зона; toast «Добавлен workspace: …».
-4. Повторно открыть picker у singleton (например «Плейлист») — тип **отсутствует** в списке.
-5. **×** на зоне коллекции — зона исчезает; store коллекции очищается.
-6. Удалить все зоны — включить **«Редактировать»** → центральный **+**; добавить первый workspace.
-7. Перетащить divider — пропорции меняются.
-8. **Esc** — режим выключен, шапка снова активна.
-9. **Персистентность layout** (после шагов 3–7 с изменённым деревом):
-   - **Electron** — перезапустить приложение (`npm run dev`): дерево layout на месте, режим редактирования выключен.
-   - **Веб-демо** — обновить страницу (F5): дерево **сбрасывается** к начальному (ключ очищен при bootstrap); без перезагрузки правки остаются до закрытия вкладки.
+2. **✎** — у каждой зоны air-области и ×; контент затемнён.
+3. **+** у зоны → добавить workspace; singleton не дублируется в picker.
+4. **×** — зона удаляется; для collection очищается store.
+5. Удалить все зоны → **✎** → центральный **+** для первой зоны.
+6. Перетащить divider — пропорции меняются.
+7. Правка built-in → **✎** выход → запись в **Мои** («Без имени» или «Без имени 2», …); клик по имени → задать своё.
+8. **Создать с нуля…** → сразу edit mode, pill «Без имени».
+9. **▾** → переключение **Мои** / **Встроенные**; при dirty — тихий auto-commit перед switch.
+10. Два auto-save с built-in без переименования → в **Мои** «Без имени» и «Без имени 2».
+11. **Персистентность** (Electron): перезапуск — workspace и дерево на месте, edit mode выключен. **Веб-демо**: F5 сбрасывает `cherryplaylist-workspaces`.

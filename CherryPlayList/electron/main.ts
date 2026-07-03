@@ -13,6 +13,7 @@ import { registerExportHandlers } from './ipc/export.js';
 import { registerFileBrowserHandlers } from './ipc/fileBrowser.js';
 import { registerPlaylistHandlers } from './ipc/playlist.js';
 import { registerProjectHandlers } from './ipc/project.js';
+import { registerSettingsBundleHandlers } from './ipc/settingsBundle.js';
 import { registerSystemHandlers } from './ipc/system.js';
 import {
   registerCherryplayAudioProtocolHandler,
@@ -93,6 +94,7 @@ app.whenReady().then(() => {
   registerExportHandlers();
   registerProjectHandlers();
   registerPlaylistHandlers();
+  registerSettingsBundleHandlers();
   registerAuthHandlers(mainWindow);
 
   createWindow();

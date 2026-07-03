@@ -4,6 +4,14 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import { MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import { WorkspaceId } from '@core/types/workspace';
+import type {
+  ActiveWorkspace,
+  LayoutPreset,
+  UserWorkspace,
+  WorkspacePersistSlice,
+  WorkspaceRef,
+} from '@core/types/workspacePreset';
+import { allocateUnnamedWorkspaceName, DEFAULT_BUILTIN_PRESET } from '@core/types/workspacePreset';
 
 import {
   AIMP_WORKSPACE_ID,
@@ -36,6 +44,7 @@ import {
   addAdjacentWorkspaceToLayout,
   addInitialWorkspaceToLayout,
   collectWorkspaceZones,
+  createEmptyLayout,
   getAddWorkspaceErrorMessage,
   getRemoveWorkspaceErrorMessage,
   getWorkspaceAddedMessage,
@@ -409,17 +418,31 @@ function createComplexLayout(): Layout {
   };
 }
 
-/**
- * Типы предустановленных layout
- */
-export type LayoutPreset =
-  | 'simple'
-  | 'complex'
-  | 'collections'
-  | 'collections-vertical'
-  | 'player'
-  | 'party'
-  | 'aimp-party';
+export type { LayoutPreset } from '@core/types/workspacePreset';
+
+export const WORKSPACE_PERSIST_KEY = 'cherryplaylist-workspaces';
+export const LEGACY_LAYOUT_PERSIST_KEY = 'cherryplaylist-layout';
+
+function cloneLayout(layout: Layout): Layout {
+  return JSON.parse(JSON.stringify(layout)) as Layout;
+}
+
+/** Keeps active user workspace snapshot aligned with live layout (crash recovery / persist). */
+function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): WorkspacePersistSlice {
+  if (slice.activeWorkspace.kind !== 'user') {
+    return slice;
+  }
+
+  const activeId = slice.activeWorkspace.id;
+  const syncedLayout = cloneLayout(slice.layout);
+
+  return {
+    ...slice,
+    userWorkspaces: slice.userWorkspaces.map((workspace) =>
+      workspace.id === activeId ? { ...workspace, layout: syncedLayout } : workspace,
+    ),
+  };
+}
 
 /**
  * Создает layout для player workspace
@@ -690,6 +713,90 @@ export function migratePersistedLayoutState(
   return persistedState as { layout: Layout };
 }
 
+export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
+  const layout = createInitialLayout();
+  return {
+    activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+    userWorkspaces: [],
+    layout,
+  };
+}
+
+/** Removes legacy layout-only persist key (always on hydrate, not only on migrate). */
+export async function removeLegacyLayoutPersistKey(): Promise<void> {
+  await electronStorage.removeItem(LEGACY_LAYOUT_PERSIST_KEY);
+}
+
+/** Coerces scratch / invalid user refs to default built-in collections (AC10). */
+export function normalizeWorkspacePersistSlice(
+  slice: WorkspacePersistSlice,
+): WorkspacePersistSlice {
+  if (slice.activeWorkspace.kind === 'scratch') {
+    return {
+      activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+      userWorkspaces: slice.userWorkspaces,
+      layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+    };
+  }
+
+  if (slice.activeWorkspace.kind === 'user') {
+    const userWorkspace = slice.userWorkspaces.find(
+      (workspace) => workspace.id === slice.activeWorkspace.id,
+    );
+    if (!userWorkspace) {
+      return {
+        activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+        userWorkspaces: slice.userWorkspaces,
+        layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+      };
+    }
+  }
+
+  return slice;
+}
+
+/** Persist migration for workspace store (v1). */
+export function migratePersistedWorkspaceState(
+  persistedState: unknown,
+  version: number,
+): WorkspacePersistSlice {
+  if (!persistedState || version === 0) {
+    return createDefaultWorkspacePersistSlice();
+  }
+
+  const state = persistedState as Partial<WorkspacePersistSlice>;
+  const layout = migrateLegacyPartyLayout(state.layout ?? createInitialLayout());
+  const activeWorkspace = state.activeWorkspace ?? {
+    kind: 'builtin' as const,
+    preset: DEFAULT_BUILTIN_PRESET,
+  };
+  const userWorkspaces = Array.isArray(state.userWorkspaces) ? state.userWorkspaces : [];
+
+  return normalizeWorkspacePersistSlice({ activeWorkspace, userWorkspaces, layout });
+}
+
+export function computeIsWorkspaceDirty(layout: Layout, baselineLayout: Layout | null): boolean {
+  if (!baselineLayout) {
+    return false;
+  }
+
+  return (
+    getLayoutZoneSignature(layout.rootZone) !== getLayoutZoneSignature(baselineLayout.rootZone)
+  );
+}
+
+function prepareLayoutWorkspaceInstances(layout: Layout): void {
+  for (const zone of collectWorkspaceZones(layout.rootZone)) {
+    prepareWorkspaceInstance(zone);
+  }
+}
+
+function cleanupLayoutWorkspaceInstances(layout: Layout): void {
+  for (const zone of collectWorkspaceZones(layout.rootZone)) {
+    cleanupWorkspaceInstance(zone);
+  }
+}
+
 export const LAYOUT_EMPTY_PICKER_KEY = 'empty';
 
 export function getLayoutAirPickerKey(zoneId: ZoneId, side: LayoutEditAirSide): string {
@@ -698,6 +805,9 @@ export function getLayoutAirPickerKey(zoneId: ZoneId, side: LayoutEditAirSide): 
 
 interface LayoutState {
   layout: Layout;
+  activeWorkspace: ActiveWorkspace;
+  userWorkspaces: UserWorkspace[];
+  baselineLayout: Layout | null;
   isLayoutEditMode: boolean;
   openLayoutEditPickerKey: string | null;
 
@@ -717,6 +827,15 @@ interface LayoutState {
   setZoneDirection: (containerId: ZoneId, direction: SplitDirection) => void;
   replaceLayout: (newLayout: Layout) => void;
   setLayoutPreset: (preset: LayoutPreset) => void;
+  activateWorkspace: (ref: WorkspaceRef) => boolean;
+  saveCurrentWorkspace: (options?: { silent?: boolean }) => boolean;
+  saveCurrentWorkspaceAs: (name: string) => boolean;
+  saveCurrentWorkspaceAsUnnamed: () => boolean;
+  autoCommitWorkspaceChanges: () => boolean;
+  resetCurrentWorkspace: () => boolean;
+  createScratchWorkspace: () => boolean;
+  renameUserWorkspace: (id: string, name: string) => boolean;
+  deleteUserWorkspace: (id: string) => boolean;
   addAdjacentWorkspace: (
     targetZoneId: ZoneId,
     side: LayoutEditAirSide,
@@ -726,16 +845,22 @@ interface LayoutState {
   removeWorkspaceZone: (zoneId: ZoneId) => void;
 
   // Helpers
+  isWorkspaceDirty: () => boolean;
   findZone: (zoneId: ZoneId, root?: Zone) => Zone | null;
   findParent: (zoneId: ZoneId, root?: Zone, parent?: ContainerZone) => ContainerZone | null;
   cleanupEmptyContainers: () => void;
   validateLayout: () => boolean;
 }
 
+const initialLayout = createInitialLayout();
+
 export const useLayoutStore = createWithEqualityFn<LayoutState>()(
   persist(
     (set, get) => ({
-      layout: createInitialLayout(),
+      layout: initialLayout,
+      activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+      userWorkspaces: [],
+      baselineLayout: cloneLayout(initialLayout),
       isLayoutEditMode: false,
       openLayoutEditPickerKey: null,
 
@@ -934,13 +1059,268 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
       },
 
       setLayoutPreset: (preset) => {
+        get().activateWorkspace({ kind: 'builtin', preset });
+      },
+
+      activateWorkspace: (ref) => {
         const state = get();
-        for (const zone of collectWorkspaceZones(state.layout.rootZone)) {
-          cleanupWorkspaceInstance(zone);
+        if (state.isLayoutEditMode) {
+          return false;
         }
 
-        const newLayout = createLayoutByPreset(preset);
-        set({ layout: newLayout, openLayoutEditPickerKey: null });
+        let newLayout: Layout;
+        let activeWorkspace: ActiveWorkspace;
+
+        if (ref.kind === 'builtin') {
+          newLayout = createLayoutByPreset(ref.preset);
+          activeWorkspace = { kind: 'builtin', preset: ref.preset };
+        } else {
+          const userWorkspace = state.userWorkspaces.find((workspace) => workspace.id === ref.id);
+          if (!userWorkspace) {
+            return false;
+          }
+          newLayout = cloneLayout(userWorkspace.layout);
+          activeWorkspace = { kind: 'user', id: ref.id };
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+
+        if (ref.kind === 'user') {
+          prepareLayoutWorkspaceInstances(newLayout);
+        }
+
+        set({
+          layout: newLayout,
+          activeWorkspace,
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+        });
+        return true;
+      },
+
+      saveCurrentWorkspace: (options) => {
+        const state = get();
+        if (state.activeWorkspace.kind !== 'user') {
+          return false;
+        }
+
+        const workspaceId = state.activeWorkspace.id;
+        const now = new Date().toISOString();
+        const savedLayout = cloneLayout(state.layout);
+
+        set({
+          userWorkspaces: state.userWorkspaces.map((workspace) =>
+            workspace.id === workspaceId
+              ? { ...workspace, layout: savedLayout, updatedAt: now }
+              : workspace,
+          ),
+          baselineLayout: cloneLayout(state.layout),
+        });
+
+        if (!options?.silent) {
+          useUIStore.getState().addNotification({
+            type: 'success',
+            message: 'Рабочее пространство сохранено',
+          });
+        }
+        return true;
+      },
+
+      saveCurrentWorkspaceAsUnnamed: () => {
+        const state = get();
+        const now = new Date().toISOString();
+        const id = uuidv4();
+        const savedLayout = cloneLayout(state.layout);
+        const name = allocateUnnamedWorkspaceName(state.userWorkspaces.map((w) => w.name));
+        const newWorkspace: UserWorkspace = {
+          id,
+          name,
+          layout: savedLayout,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set({
+          userWorkspaces: [...state.userWorkspaces, newWorkspace],
+          activeWorkspace: { kind: 'user', id },
+          baselineLayout: cloneLayout(state.layout),
+        });
+        return true;
+      },
+
+      autoCommitWorkspaceChanges: () => {
+        const state = get();
+        if (!state.isWorkspaceDirty()) {
+          return true;
+        }
+
+        if (state.activeWorkspace.kind === 'user') {
+          return get().saveCurrentWorkspace({ silent: true });
+        }
+
+        if (state.activeWorkspace.kind === 'builtin' || state.activeWorkspace.kind === 'scratch') {
+          return get().saveCurrentWorkspaceAsUnnamed();
+        }
+
+        return true;
+      },
+
+      saveCurrentWorkspaceAs: (name) => {
+        const state = get();
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        if (state.userWorkspaces.some((workspace) => workspace.name === trimmedName)) {
+          useUIStore.getState().addNotification({
+            type: 'error',
+            message: 'Рабочее пространство с таким именем уже существует',
+          });
+          return false;
+        }
+
+        const now = new Date().toISOString();
+        const id = uuidv4();
+        const savedLayout = cloneLayout(state.layout);
+        const newWorkspace: UserWorkspace = {
+          id,
+          name: trimmedName,
+          layout: savedLayout,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set({
+          userWorkspaces: [...state.userWorkspaces, newWorkspace],
+          activeWorkspace: { kind: 'user', id },
+          baselineLayout: cloneLayout(state.layout),
+        });
+        return true;
+      },
+
+      resetCurrentWorkspace: () => {
+        const state = get();
+        let newLayout: Layout;
+        let isUserWorkspace = false;
+
+        switch (state.activeWorkspace.kind) {
+          case 'builtin':
+            newLayout = createLayoutByPreset(state.activeWorkspace.preset);
+            break;
+          case 'user': {
+            const userWorkspace = state.userWorkspaces.find(
+              (workspace) => workspace.id === state.activeWorkspace.id,
+            );
+            if (!userWorkspace) {
+              return false;
+            }
+            newLayout = cloneLayout(userWorkspace.layout);
+            isUserWorkspace = true;
+            break;
+          }
+          case 'scratch':
+            newLayout = createEmptyLayout();
+            break;
+          default:
+            return false;
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+
+        if (isUserWorkspace) {
+          prepareLayoutWorkspaceInstances(newLayout);
+        }
+
+        set({
+          layout: newLayout,
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+        });
+        return true;
+      },
+
+      createScratchWorkspace: () => {
+        const state = get();
+        if (state.isLayoutEditMode) {
+          return false;
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+        const newLayout = createEmptyLayout();
+
+        set({
+          layout: newLayout,
+          activeWorkspace: { kind: 'scratch' },
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+          isLayoutEditMode: true,
+        });
+        return true;
+      },
+
+      renameUserWorkspace: (id, name) => {
+        const state = get();
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        if (
+          state.userWorkspaces.some(
+            (workspace) => workspace.name === trimmedName && workspace.id !== id,
+          )
+        ) {
+          useUIStore.getState().addNotification({
+            type: 'error',
+            message: 'Рабочее пространство с таким именем уже существует',
+          });
+          return false;
+        }
+
+        const workspaceExists = state.userWorkspaces.some((workspace) => workspace.id === id);
+        if (!workspaceExists) {
+          return false;
+        }
+
+        set({
+          userWorkspaces: state.userWorkspaces.map((workspace) =>
+            workspace.id === id ? { ...workspace, name: trimmedName } : workspace,
+          ),
+        });
+        return true;
+      },
+
+      deleteUserWorkspace: (id) => {
+        const state = get();
+        const workspaceExists = state.userWorkspaces.some((workspace) => workspace.id === id);
+        if (!workspaceExists) {
+          return false;
+        }
+
+        const isActive = state.activeWorkspace.kind === 'user' && state.activeWorkspace.id === id;
+        const nextUserWorkspaces = state.userWorkspaces.filter((workspace) => workspace.id !== id);
+
+        if (isActive) {
+          cleanupLayoutWorkspaceInstances(state.layout);
+          const newLayout = createLayoutByPreset(DEFAULT_BUILTIN_PRESET);
+          set({
+            userWorkspaces: nextUserWorkspaces,
+            layout: newLayout,
+            activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+            baselineLayout: cloneLayout(newLayout),
+            openLayoutEditPickerKey: null,
+          });
+        } else {
+          set({ userWorkspaces: nextUserWorkspaces });
+        }
+
+        return true;
+      },
+
+      isWorkspaceDirty: () => {
+        const state = get();
+        return computeIsWorkspaceDirty(state.layout, state.baselineLayout);
       },
 
       addAdjacentWorkspace: (targetZoneId, side, workspaceType) => {
@@ -1043,14 +1423,43 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
       },
     }),
     {
-      name: 'cherryplaylist-layout',
-      version: 3,
+      name: WORKSPACE_PERSIST_KEY,
+      version: 1,
       storage: electronStorage,
-      partialize: (state) => ({
-        layout: state.layout,
-      }),
+      partialize: (state) => {
+        const persistSlice = normalizeWorkspacePersistSlice({
+          activeWorkspace: state.activeWorkspace,
+          userWorkspaces: state.userWorkspaces,
+          layout: state.layout,
+        });
+        return syncActiveUserWorkspaceLayoutInSlice(persistSlice);
+      },
       migrate: (persistedState: unknown, version: number) =>
-        migratePersistedLayoutState(persistedState, version),
+        migratePersistedWorkspaceState(persistedState, version),
+      onRehydrateStorage: () => async (state) => {
+        await removeLegacyLayoutPersistKey();
+
+        if (!state) {
+          return;
+        }
+
+        const normalized = syncActiveUserWorkspaceLayoutInSlice(
+          normalizeWorkspacePersistSlice({
+            activeWorkspace: state.activeWorkspace,
+            userWorkspaces: state.userWorkspaces,
+            layout: state.layout,
+          }),
+        );
+
+        useLayoutStore.setState({
+          activeWorkspace: normalized.activeWorkspace,
+          userWorkspaces: normalized.userWorkspaces,
+          layout: normalized.layout,
+          baselineLayout: cloneLayout(normalized.layout),
+          isLayoutEditMode: false,
+          openLayoutEditPickerKey: null,
+        });
+      },
     },
   ),
 );

@@ -6,17 +6,87 @@
 
 Гибкая система для создания сложных многооконных layout с вложенными контейнерами. Поддерживает горизонтальное и вертикальное разделение зон, изменение размеров через drag dividers.
 
+Состояние layout — часть **рабочих пространств** (workspace presets, Premiere-style): встроенные пресеты, пользовательские именованные снимки и эфемерный scratch «с нуля». См. [клиентское persist](./persisted-client-state.md).
+
 ## Основные компоненты
 
-- **layoutStore** (`src/shared/stores/layoutStore.ts`) - Store управления layout
-- **SplitContainer** (`src/app/components/SplitContainer.tsx`) - Рекурсивный компонент контейнера
-- **WorkspaceRenderer** (`src/app/WorkspaceRenderer.tsx`) - Рендерер workspace в зонах
+- **layoutStore** (`src/shared/stores/layoutStore.ts`) — store дерева layout и рабочих пространств
+- **WorkspaceMenu** (`src/app/components/WorkspaceMenu.tsx`) — pill + меню в шапке
+- **SplitContainer** (`src/app/components/SplitContainer.tsx`) — рекурсивный контейнер
+- **WorkspaceRenderer** (`src/app/WorkspaceRenderer.tsx`) — рендерер workspace в зонах
 
 ## Структура данных
 
-- `Zone` - Либо workspace zone, либо container zone
-- `WorkspaceZone` - Зона с workspace (id, workspaceId, workspaceType, size)
-- `ContainerZone` - Контейнер с вложенными зонами (direction, zones[], sizes[])
+- `Zone` — либо workspace zone, либо container zone
+- `WorkspaceZone` — зона с workspace (id, workspaceId, workspaceType, size)
+- `ContainerZone` — контейнер с вложенными зонами (direction, zones[], sizes[])
+
+Типы — `src/core/types/workspacePreset.ts`:
+
+| Тип | Описание |
+|-----|----------|
+| `ActiveWorkspace` | `{ kind: 'builtin'; preset }` \| `{ kind: 'user'; id }` \| `{ kind: 'scratch' }` |
+| `UserWorkspace` | `{ id, name, layout, createdAt?, updatedAt? }` — сохранённый снимок дерева |
+| `LayoutPreset` | Идентификатор встроенного пресета (`simple`, `collections`, …) |
+| `UNNAMED_WORKSPACE_NAME` | `'Без имени'` — базовое auto-имя |
+| `allocateUnnamedWorkspaceName` | Следующее свободное auto-имя в серии «Без имени» / «Без имени N» |
+| `isUnnamedWorkspaceName` | Проверка auto-имени (курсив в pill, ограничения при ручном rename) |
+
+**Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** персистятся как записи — при активации дерево строится через `createLayoutByPreset(preset)`.
+
+### Именование пользовательских workspace (auto-save)
+
+| Шаг | Имя в **Мои** |
+|-----|----------------|
+| 1-й auto-save (нет «Без имени») | **Без имени** |
+| 2-й при занятом «Без имени» | **Без имени 2** |
+| далее | **Без имени 3**, … |
+
+Реализация: `allocateUnnamedWorkspaceName()` в `workspacePreset.ts`, вызов из `saveCurrentWorkspaceAsUnnamed()` в `layoutStore`. После переименования единственного «Без имени» слот снова доступен.
+
+## Рабочие пространства
+
+### Встроенные (built-in)
+
+Каталог в коде (`layoutStore.ts`, `createLayoutByPreset`). Имена в UI — на русском (`WorkspaceMenu`, `PRESET_NAMES`).
+
+| `LayoutPreset` | Отображаемое имя | Доступность |
+|----------------|------------------|-------------|
+| `simple` | Простой | всегда |
+| `complex` | Сложный | только `import.meta.env.DEV` |
+| `collections` | С коллекциями | всегда; **по умолчанию** при первом запуске |
+| `collections-vertical` | Коллекции вертикально | всегда |
+| `player` | Плеер | всегда |
+| `party` | Вечеринка | если `enableStreaming` |
+| `aimp-party` | AIMP + Party | если AIMP виден (`getAimpPartyPresetState`) |
+
+Встроенные layout **нельзя перезаписать**. При auto-commit с dirty built-in/scratch вызывается `saveCurrentWorkspaceAsUnnamed()` (имя по `allocateUnnamedWorkspaceName`).
+
+### Пользовательские (Мои)
+
+- Создаются автоматически при правке built-in/scratch (часто с именем **«Без имени»**) или при явном именовании scratch в pill.
+- **Переименование:** клик по имени в pill (inline) или ⋯ → «Переименовать…» в меню.
+- **Удаление:** ⋯ → «Удалить…» (с подтверждением). При удалении активного — fallback на built-in `collections`.
+- Имена уникальны при ручном переименовании. Auto-save: первый — **«Без имени»**, далее **«Без имени 2»**, **«Без имени 3»**, …
+
+### Scratch («Создать с нуля…»)
+
+`activeWorkspace: { kind: 'scratch' }`, пустое дерево. В pill — **«Без имени»**. **Сразу включается edit mode.** В persist **не** попадает (`normalizeWorkspacePersistSlice` → `collections` при rehydrate). Сохранение — через auto-commit при выходе/переключении или через ввод имени в pill (`saveCurrentWorkspaceAs`).
+
+### Переключение и автосохранение
+
+| API | Поведение |
+|-----|-----------|
+| `activateWorkspace(ref)` | Смена workspace; cleanup/prepare lifecycle для зон |
+| `autoCommitWorkspaceChanges()` | При dirty: user → `saveCurrentWorkspace`; builtin/scratch → `saveCurrentWorkspaceAsUnnamed` |
+| `requestActivateWorkspace` | Auto-commit, затем switch (`useWorkspaceDirtyGuard`) |
+| `isWorkspaceDirty()` | `getLayoutZoneSignature(layout)` ≠ baseline (runtime) |
+
+Переключение через **▾** **заблокировано** в `isLayoutEditMode`. Вне edit mode при dirty — **тихий** auto-commit перед switch (без диалогов).
+
+### Коллекции и `workspaceId`
+
+Данные коллекций (`cherryplaylist-<workspaceId>`) привязаны к **`workspaceId` в дереве**, не к имени workspace. См. [persisted-client-state.md](./persisted-client-state.md).
 
 ## Функциональность
 
@@ -24,22 +94,40 @@
 - Процентное распределение размеров (сумма = 100%)
 - Минимальный размер зоны: 10px
 - Автоматическая очистка контейнеров с 1 дочерним элементом
-- Layout presets: simple, collections, collections-vertical, complex
-- Сохранение layout между сессиями (localforage)
-- **Режим редактирования layout** — интерактивное добавление/удаление workspace в UI (см. [layout-edit-mode.md](../../layout-edit-mode.md))
+- Persist `cherryplaylist-workspaces` — [persisted-client-state.md](./persisted-client-state.md)
+- **Режим редактирования** — [layout-edit-mode.md](../../layout-edit-mode.md)
+
+## UI в шапке
+
+```
+[ Имя (148px)  ▾ ]  [ ✎ ]
+```
+
+| Элемент | Назначение |
+|---------|------------|
+| **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом |
+| **▾** | Меню: **Мои** / **Встроенные** / **Создать с нуля…** (disabled в edit mode) |
+| **✎** | Вход/выход из edit mode; выход с auto-commit при dirty |
+
+Ручных пунктов **Сохранить** / **Сбросить** нет. Блокирующих диалогов при несохранённых изменениях нет.
 
 ## Режим редактирования (кратко)
 
-- Переключатель **«Редактировать» / «Готово»** в шапке; **Esc** выходит из режима.
-- `isLayoutEditMode` в `layoutStore` **не** персистится (`partialize` сохраняет только `layout`).
-- Рендер зон: `LayoutWorkspaceArea` → `SplitContainer` / `WorkspaceLayoutEditShell` / `LayoutEmptyWorkspaceState`.
-- Добавление: `layoutWorkspaceOperations.ts` (дерево) + `workspaceLifecycle.ts` (`prepareWorkspaceInstance` для `collection` и `test*`).
-- Удаление: `workspaceLifecycle.ts` (`cleanupWorkspaceInstance`) для динамических типов; singleton stores остаются в памяти.
+- **✎** или **Создать с нуля…**; **Esc** — выход с auto-commit.
+- `isLayoutEditMode` **не** персистится.
+- Рендер: `LayoutWorkspaceArea` → `SplitContainer` / `WorkspaceLayoutEditShell` / `LayoutEmptyWorkspaceState`.
 
-Подробности, ограничения и чеклист проверки — в **[layout-edit-mode.md](../../layout-edit-mode.md)**.
+Подробности — **[layout-edit-mode.md](../../layout-edit-mode.md)**.
 
 ## Дополнительные компоненты (edit mode)
 
-- **LayoutWorkspaceArea** (`src/app/components/LayoutWorkspaceArea.tsx`) — корневой роутер области workspace
-- **WorkspaceLayoutEditShell** — оболочка зоны в edit mode (air-регионы, diagonals, удаление)
+- **LayoutWorkspaceArea** — корневой роутер области workspace
+- **WorkspaceLayoutEditShell** — оболочка зоны (air-регионы, diagonals, удаление)
 - **LayoutEmptyWorkspaceState** — пустой layout, первая зона через picker
+
+## См. также
+
+- [Режим редактирования layout](../../layout-edit-mode.md)
+- [Клиентское persist](./persisted-client-state.md)
+- [Settings Store](../stores/settings-store.md) — экспорт bundle с `userWorkspaces`
+- `src/core/types/workspacePreset.ts` — `allocateUnnamedWorkspaceName`, `isUnnamedWorkspaceName`

@@ -244,6 +244,22 @@
   border-color: var(--accent-secondary);
 }
 
+.modal-button.danger {
+  background-color: var(--state-error);
+  color: var(--text-on-accent, #fff);
+  border-color: var(--state-error);
+}
+
+.modal-button.danger:hover {
+  background-color: color-mix(in srgb, var(--state-error) 85%, #000);
+  border-color: color-mix(in srgb, var(--state-error) 85%, #000);
+}
+
+.modal-button.danger:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 /* Link Party Modal */
 .link-party-modal-content {
   max-width: 480px;

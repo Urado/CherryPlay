@@ -100,7 +100,7 @@ cross-env VITE_APP_MODE=demo VITE_API_URL=http://localhost:5000 npm run dev:web
 - **Party** — workspace Party с фейковой привязанной вечеринкой `DEMODK`; стриминг включён по умолчанию (`enableStreaming: true`).
 - **Загрузка демо-проекта** — меню «Загрузить демо-проект» (`fetch` → `/demo/sample.cherry`) или `npm run dev:web:project`.
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех, уведомление _«Экспорт симулирован (демо)»_ (файлы на диск не пишутся).
-- **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-auth`, `cherryplaylist-settings`, `cherryplaylist-layout`, `cherryplaylist-project` из IndexedDB (тот же origin, что и Electron dev). Это не даёт подтянуть токен, пути и **дерево layout** из прошлой сессии. Внутри одной загрузки страницы layout по-прежнему пишется в persist, но **полная перезагрузка** (`dev:web`) снова очищает `cherryplaylist-layout`. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
+- **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-auth`, `cherryplaylist-settings`, `cherryplaylist-workspaces`, `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Внутри одной загрузки страницы workspace/layout пишется в persist; **полная перезагрузка** (`dev:web`) снова очищает `cherryplaylist-workspaces`. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
 
 ---
 
@@ -153,7 +153,7 @@ npm run dev
 5. Экспорт — успех с текстом про симуляцию.
 6. `npm run dev` — Electron как до введения веб-демо.
 7. (Опционально) CherryPlayServer на `:5000` + `npm run dev:web` без `VITE_API_URL` — в Network нет CORS-ошибок на `/partyHub/negotiate`; WebSocket `/partyHub` уходит через proxy.
-8. [Режим редактирования layout](./layout-edit-mode.md) — «Редактировать», добавление/удаление зон, Esc; после F5 дерево layout **не** сохраняется (сброс AC12).
+8. [Режим редактирования layout](./layout-edit-mode.md) — **✎**, pill (переключение **Мои** / **Встроенные**, inline-имя), auto-save; после F5 workspace **не** сохраняется (сброс AC12).
 
 ---
 

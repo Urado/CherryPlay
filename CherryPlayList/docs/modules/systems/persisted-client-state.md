@@ -14,7 +14,7 @@
 | ------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------- |
 | `cherryplaylist-auth`          | `useAuthStore` (`authStore.ts`)                                   | Сессия организатора                                 |
 | `cherryplaylist-settings`      | `useSettingsStore` (`settingsStore.ts`)                           | Пользовательские настройки приложения               |
-| `cherryplaylist-layout`        | `useLayoutStore` (`layoutStore.ts`)                               | Дерево layout (зоны, workspace, сплиты)             |
+| `cherryplaylist-workspaces`    | `useLayoutStore` (`layoutStore.ts`)                               | Рабочие пространства и дерево layout                |
 | `cherryplaylist-project`       | `useProjectStore` (`projectStore.ts`)                             | Основной плейлист-проект (главный workspace)        |
 | `cherryplaylist-<workspaceId>` | `ensureProjectStore` с `persist: true` (`projectStoreFactory.ts`) | Отдельные проекты по id workspace (коллекции и др.) |
 
@@ -48,17 +48,59 @@
 
 ---
 
-## 3. Layout (`cherryplaylist-layout`)
+## 3. Рабочие пространства и layout (`cherryplaylist-workspaces`)
 
-- Целиком объект **`layout`** (корневое дерево зон: контейнеры, workspace-зоны, размеры).
+Ключ **`cherryplaylist-workspaces`** (persist version **1**) в `layoutStore.ts`. В `partialize` попадает срез `WorkspacePersistSlice`:
 
-**Не** сохраняется: **`isLayoutEditMode`** — флаг режима редактирования layout сбрасывается при каждом запуске (`partialize` в `layoutStore.ts` оставляет только `layout`). См. [layout-edit-mode.md](../../layout-edit-mode.md).
+| Поле | Описание |
+|------|----------|
+| **`activeWorkspace`** | `{ kind: 'builtin', preset }` \| `{ kind: 'user', id }` — **не** `scratch` (нормализуется при persist/rehydrate) |
+| **`userWorkspaces`** | Массив `{ id, name, layout, createdAt?, updatedAt? }` — сохранённые пользовательские снимки дерева |
+| **`layout`** | Живое дерево зон текущего workspace (корень, контейнеры, workspace-зоны, размеры) |
 
-**Electron:** после перезапуска приложения восстанавливается последнее сохранённое дерево `layout`.
+**Не** сохраняется (runtime only): **`isLayoutEditMode`**, **`openLayoutEditPickerKey`**, **`baselineLayout`**, dirty-хелперы. См. [layout-edit-mode.md](../../layout-edit-mode.md), [Layout System](./layout-system.md).
 
-**Веб-демо** (`VITE_APP_MODE=demo`, `npm run dev:web`): при каждом старте `bootstrap.ts` вызывает `resetDemoPersistStorage()` и **удаляет** `cherryplaylist-layout` (и другие ключи AC12) **до** гидрации сторов. Layout из предыдущей перезагрузки или из Electron на том же origin **не** подтягивается. В рамках **одной** сессии страницы persist записывает `layout` как обычно; полная перезагрузка снова очищает ключ. См. [веб-демо](../../web-demo.md), [layout-edit-mode.md](../../layout-edit-mode.md).
+**По умолчанию** (свежая установка / пустой persist): `activeWorkspace: { kind: 'builtin', preset: 'collections' }`, `userWorkspaces: []`, layout от `createCollectionsLayout()`.
 
-Версия persist в сторе используется для **migrate** (при смене версии может подставляться новый начальный layout — см. `layoutStore.ts`).
+### Миграция с `cherryplaylist-layout`
+
+Старый ключ **`cherryplaylist-layout`** (только `layout`) **не мигрируется** в пользовательский preset. При гидрации `onRehydrateStorage` всегда вызывает `removeLegacyLayoutPersistKey()` — ключ удаляется из IndexedDB. Если есть только legacy-данные, приложение стартует с дефолтным built-in `collections` (как при первом запуске).
+
+### Автосохранение и runtime API (`layoutStore`)
+
+Изменения дерева layout **не привязаны к файлу проекта** (`.cherry`). Сохраняются на уровне приложения:
+
+| Метод | Когда |
+|-------|--------|
+| `autoCommitWorkspaceChanges()` | Перед switch / exit edit / «Создать с нуля…» при dirty |
+| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces` |
+| `saveCurrentWorkspaceAsUnnamed()` | Dirty **builtin** / **scratch** — новая запись в **Мои** |
+| `saveCurrentWorkspaceAs(name)` | Явное имя (pill для scratch, импорт и т.д.) |
+
+Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет.
+
+### Имена «Без имени»
+
+Auto-save использует `allocateUnnamedWorkspaceName()` (`workspacePreset.ts`):
+
+1. Если нет workspace с именем **«Без имени»** → **«Без имени»**
+2. Иначе → **«Без имени 2»**, **«Без имени 3»**, … (первый свободный номер)
+
+`isUnnamedWorkspaceName()` распознаёт всю серию для UI (курсив, inline-rename). Имена в `userWorkspaces` хранятся как обычные строки.
+
+### Коллекции vs имя workspace
+
+Данные коллекций лежат в **`cherryplaylist-<workspaceId>`** по **`workspaceId` из дерева layout**, а не по имени пользовательского workspace. Смена built-in/user workspace пересоздаёт дерево — старые ключи коллекций могут остаться в хранилище. См. [Layout System](./layout-system.md).
+
+**Electron:** после перезапуска восстанавливаются `activeWorkspace`, `userWorkspaces` и живое `layout`.
+
+**Веб-демо** (`VITE_APP_MODE=demo`, `npm run dev:web`): при каждом старте `bootstrap.ts` вызывает `resetDemoPersistStorage()` и **удаляет** `cherryplaylist-workspaces` (и другие ключи AC12) **до** гидрации сторов. В рамках **одной** сессии страницы persist работает как обычно; полная перезагрузка снова очищает ключ. См. [веб-демо](../../web-demo.md), [layout-edit-mode.md](../../layout-edit-mode.md).
+
+### Экспорт/импорт bundle
+
+Пользовательские workspace и настройки можно выгрузить в JSON (`cherryplaylist-settings-bundle.json`, `schemaVersion: 1`) из **Настройки → Резервная копия настроек**. В bundle входят поля `settingsStore` и `userWorkspaces` (снимки layout), опционально `activeWorkspace`. Живое дерево `layout` вне сохранённых user workspace **не** экспортируется отдельно.
+
+**Безопасность:** в bundle **нет** данных auth (`accessToken`, `organizer`, `refreshToken`) — экспортируются только поля `settingsStore`; валидатор `validateSettingsExportBundle` отклоняет файлы с auth-полями. См. [Settings Store](../stores/settings-store.md).
 
 ---
 
@@ -108,8 +150,9 @@
 
 - [Архитектура хранения](./storage-architecture.md)
 - [Storage](./storage.md)
+- [Layout System](./layout-system.md) — built-in vs user workspace, pill UI
 - [Веб-демо](../../web-demo.md) — сброс persist (AC12) при bootstrap
-- [Режим редактирования layout](../../layout-edit-mode.md) — персистентность дерева Electron vs веб-демо
-- [Settings Store](../stores/settings-store.md)
+- [Режим редактирования layout](../../layout-edit-mode.md) — edit mode, автосохранение workspace
+- [Settings Store](../stores/settings-store.md) — экспорт/импорт bundle
 - [Project Store](../stores/project-store.md)
 - [Save / Load](./save-load.md) — файл проекта на диске

@@ -9,7 +9,7 @@
 - **[TECHNICAL.md](../TECHNICAL.md)** — техническая документация: стек, архитектура, структура проекта, IPC, хранение данных, интеграция с сервером и вебом.
 - **[README.md](../README.md)** — описание проекта, основные функции, установка и запуск.
 - **[web-demo.md](web-demo.md)** — веб-демо в браузере (`dev:web`, `dev:web:project`), Vite proxy, ограничения режима.
-- **[layout-edit-mode.md](layout-edit-mode.md)** — режим редактирования layout: добавление/удаление workspace, жизненный цикл зон.
+- **[layout-edit-mode.md](layout-edit-mode.md)** — рабочие пространства (Premiere-style): pill + ✎, автосохранение layout, inline-переименование, нумерация «Без имени», добавление/удаление зон.
 - **[android-capacitor-brief.md](android-capacitor-brief.md)** — план Android/Capacitor (этапы 0–6).
 
 ---

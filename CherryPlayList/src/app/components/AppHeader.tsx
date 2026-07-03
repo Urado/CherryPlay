@@ -19,17 +19,15 @@ import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
-  LayoutPreset,
-  useAimpStore,
   useAuthStore,
   useLayoutStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { getAimpPartyPresetState, getLayoutPresetFromLayout } from '@shared/utils';
 
 import { SaveProjectAsModal } from './SaveProjectAsModal';
+import { WorkspaceMenu } from './WorkspaceMenu';
 
 function caughtErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -106,63 +104,15 @@ export const AppHeader: React.FC = () => {
   } = useProjectStore();
 
   const { openModal, addNotification, focusFileInBrowser } = useUIStore();
-  const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
-  const layout = useLayoutStore((state) => state.layout);
+  const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
-  const toggleLayoutEditMode = useLayoutStore((state) => state.toggleLayoutEditMode);
-  const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
-  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
-  const aimpPartyPresetState = getAimpPartyPresetState({
-    sourceSelection: streamingSource,
-    environment: aimpBridgeState.environment,
-    enableStreaming,
-  });
-  const isAimpPresetVisible = aimpPartyPresetState.visible;
-  const { supportsAimpWorkspace, supportsProjectPersistence, usesFixtureFileBrowser } =
-    usePlatformCapabilities();
+  const { supportsProjectPersistence, usesFixtureFileBrowser } = usePlatformCapabilities();
 
   const notifyDemoBlocked = useCallback(() => {
     addNotification({ type: 'info', message: getPlatformUnavailableMessage() });
   }, [addNotification]);
-  const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
-  type LayoutSelectValue = LayoutPreset | 'custom';
-  const [selectedLayout, setSelectedLayout] = useState<LayoutSelectValue>(
-    persistedLayoutPreset ?? 'custom',
-  );
-
-  useEffect(() => {
-    setSelectedLayout(persistedLayoutPreset ?? 'custom');
-  }, [persistedLayoutPreset]);
-
-  // В production не позволяем использовать complex layout
-  useEffect(() => {
-    const isDev = import.meta.env.DEV;
-    if (!isDev && selectedLayout === 'complex') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout('simple');
-        setLayoutPreset('simple');
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedLayout, setLayoutPreset]);
-
-  useEffect(() => {
-    if (!isAimpPresetVisible && persistedLayoutPreset === 'aimp-party') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout(aimpPartyPresetState.fallbackPreset);
-        setLayoutPreset(aimpPartyPresetState.fallbackPreset);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [
-    aimpPartyPresetState.fallbackPreset,
-    isAimpPresetVisible,
-    persistedLayoutPreset,
-    setLayoutPreset,
-  ]);
-
   const closeProjectMenu = useCallback(() => setProjectMenuOpen(false), []);
 
   const openSaveAsModal = useCallback(() => {
@@ -559,51 +509,6 @@ export const AppHeader: React.FC = () => {
     openModal('account');
   };
 
-  const handleLayoutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (isLayoutEditMode) {
-      return;
-    }
-
-    const value = e.target.value as LayoutSelectValue;
-    if (value === 'custom') {
-      return;
-    }
-
-    const preset = value;
-    const isDev = import.meta.env.DEV;
-
-    // В production не позволяем выбирать complex
-    if (preset === 'complex' && !isDev) {
-      return;
-    }
-
-    if (
-      preset === 'simple' ||
-      preset === 'complex' ||
-      preset === 'collections' ||
-      preset === 'collections-vertical' ||
-      preset === 'player' ||
-      (preset === 'party' && enableStreaming) ||
-      (preset === 'aimp-party' && isAimpPresetVisible)
-    ) {
-      setSelectedLayout(preset);
-      setLayoutPreset(preset);
-      const presetNames: Record<LayoutPreset, string> = {
-        simple: 'Простой',
-        complex: 'Сложный',
-        collections: 'С коллекциями',
-        'collections-vertical': 'Коллекции вертикально',
-        player: 'Плеер',
-        party: 'Вечеринка',
-        'aimp-party': 'AIMP + Party',
-      };
-      addNotification({
-        type: 'info',
-        message: `Layout изменён: ${presetNames[preset]}`,
-      });
-    }
-  };
-
   return (
     <div className="app-header">
       <div className="app-header-toolbar">
@@ -794,46 +699,7 @@ export const AppHeader: React.FC = () => {
             )}
           </div>
 
-          <div className="app-header-layout">
-            <label htmlFor="layout-select" className="app-header-layout__label">
-              Layout:
-            </label>
-            <select
-              id="layout-select"
-              value={selectedLayout}
-              onChange={handleLayoutChange}
-              className="layout-select"
-              disabled={isLayoutEditMode}
-            >
-              {selectedLayout === 'custom' && (
-                <option value="custom" disabled>
-                  Свой layout
-                </option>
-              )}
-              <option value="simple">Простой (Playlist + Browser)</option>
-              {import.meta.env.DEV && <option value="complex">Сложный (с тестовыми зонами)</option>}
-              <option value="collections">С коллекциями (Playlist + Collections + Browser)</option>
-              <option value="collections-vertical">
-                Коллекции вертикально (Playlist + Collections + Browser)
-              </option>
-              <option value="player">Плеер (Player + Browser)</option>
-              {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
-              {isAimpPresetVisible && supportsAimpWorkspace && (
-                <option value="aimp-party">AIMP + Party</option>
-              )}
-            </select>
-            <button
-              type="button"
-              className={`app-header-layout-edit-btn${isLayoutEditMode ? ' app-header-layout-edit-btn--active' : ''}`}
-              onClick={toggleLayoutEditMode}
-              title={
-                isLayoutEditMode ? 'Выйти из режима редактирования (Esc)' : 'Редактировать layout'
-              }
-              aria-pressed={isLayoutEditMode}
-            >
-              {isLayoutEditMode ? 'Готово' : 'Редактировать'}
-            </button>
-          </div>
+          <WorkspaceMenu />
         </div>
 
         <DemoPlayer

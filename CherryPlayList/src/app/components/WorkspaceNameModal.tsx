@@ -1,0 +1,137 @@
+import CloseIcon from '@mui/icons-material/Close';
+import React, { useId, useState } from 'react';
+
+export type WorkspaceNameModalMode = 'save-as' | 'rename';
+
+export interface WorkspaceNameModalProps {
+  open: boolean;
+  mode: WorkspaceNameModalMode;
+  initialName: string;
+  existingNames: readonly string[];
+  excludeName?: string;
+  onClose: () => void;
+  onConfirm: (name: string) => void;
+}
+
+export const WorkspaceNameModal: React.FC<WorkspaceNameModalProps> = ({
+  open,
+  mode,
+  initialName,
+  existingNames,
+  excludeName,
+  onClose,
+  onConfirm,
+}) => {
+  const [name, setName] = useState(initialName);
+  const [error, setError] = useState<string | null>(null);
+  const titleId = useId();
+  const errorId = useId();
+
+  if (!open) {
+    return null;
+  }
+
+  const title = mode === 'save-as' ? 'Сохранить рабочее пространство как…' : 'Переименовать';
+
+  const validate = (value: string): string | null => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return 'Введите название';
+    }
+    const isDuplicate =
+      existingNames.some((existing) => existing === trimmed) && trimmed !== excludeName;
+    if (isDuplicate) {
+      return 'Рабочее пространство с таким именем уже существует';
+    }
+    return null;
+  };
+
+  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
+  const handleSubmit = () => {
+    const validationError = validate(name);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    onConfirm(name.trim());
+  };
+
+  return (
+    <div
+      className="modal-overlay"
+      onClick={handleOverlayClick}
+      onKeyDown={handleOverlayKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Закрыть диалог"
+    >
+      <div
+        className="modal-content workspace-name-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby={titleId}
+      >
+        <div className="modal-header">
+          <h2 className="modal-title" id={titleId}>
+            {title}
+          </h2>
+          <button className="modal-close" type="button" onClick={onClose} aria-label="Закрыть">
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div className="modal-body">
+          <label className="workspace-name-modal__field">
+            <span className="workspace-name-modal__field-label">Название</span>
+            <input
+              type="text"
+              className="workspace-name-modal__text-input"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) {
+                  setError(validate(e.target.value));
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              placeholder="Введите название"
+              aria-invalid={error !== null}
+              aria-describedby={error ? errorId : undefined}
+            />
+            {error ? (
+              <span className="workspace-name-modal__error" id={errorId} role="alert">
+                {error}
+              </span>
+            ) : null}
+          </label>
+        </div>
+
+        <div className="modal-footer">
+          <button className="modal-button secondary" type="button" onClick={onClose}>
+            Отмена
+          </button>
+          <button className="modal-button primary" type="button" onClick={handleSubmit}>
+            {mode === 'save-as' ? 'Сохранить' : 'Переименовать'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

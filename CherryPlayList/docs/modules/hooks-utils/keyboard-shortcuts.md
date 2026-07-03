@@ -88,7 +88,7 @@ initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
 - **Input-aware** - шорткаты блокируются в input/textarea (кроме `allowInInput`)
 - **Типобезопасность** - строгие типы для `ShortcutId`
 - **Персистентность** - кастомные биндинги сохраняются в localStorage
-- **Режим редактирования layout** — при `layoutStore.isLayoutEditMode === true` `ShortcutManager.handleKeyDown` **не выполняет** ни один зарегистрированный шорткат (ранний return). Глобальные handlers в `AppHeader` отключаются через `useGlobalShortcuts(..., { enabled: !isLayoutEditMode })`. Выход из режима по **Esc** обрабатывается отдельным listener в `App.tsx` (`capture: true`), не через `ShortcutManager`. См. [layout-edit-mode.md](../../layout-edit-mode.md).
+- **Режим редактирования layout** — при `layoutStore.isLayoutEditMode === true` `ShortcutManager.handleKeyDown` **не выполняет** зарегистрированные шорткаты. Глобальные handlers в `AppHeader` отключаются через `useGlobalShortcuts(..., { enabled: !isLayoutEditMode })`. **Esc** в `App.tsx` (`capture: true`): при фокусе в поле имени pill — отмена rename; иначе закрытие picker и `requestExitEditMode()` (auto-commit). См. [layout-edit-mode.md](../../layout-edit-mode.md).
 
 ## Утилиты
 

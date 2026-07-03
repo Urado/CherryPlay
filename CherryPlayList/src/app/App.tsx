@@ -32,10 +32,10 @@ import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
 import { SettingsModal } from './components/SettingsModal';
+import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
 
 const App: React.FC = () => {
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
-  const setLayoutEditMode = useLayoutStore((state) => state.setLayoutEditMode);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
 
@@ -114,19 +114,27 @@ const App: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          active.classList.contains('workspace-pill__rename-input')
+        ) {
+          return;
+        }
+
         event.preventDefault();
         const { openLayoutEditPickerKey, setOpenLayoutEditPickerKey } = useLayoutStore.getState();
         if (openLayoutEditPickerKey !== null) {
           setOpenLayoutEditPickerKey(null);
           return;
         }
-        setLayoutEditMode(false);
+        requestExitEditMode();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [isLayoutEditMode, setLayoutEditMode]);
+  }, [isLayoutEditMode]);
 
   return (
     <div className="app">

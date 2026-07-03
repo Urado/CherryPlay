@@ -49,6 +49,8 @@ const VALID_INVOKE_CHANNELS = [
   'config:getConfig',
   'auth:openExternal',
   'auth:registerCallback',
+  'settings:saveBundle',
+  'settings:loadBundle',
 ] as const;
 
 const VALID_ON_CHANNELS = ['project:save-progress'] as const;
