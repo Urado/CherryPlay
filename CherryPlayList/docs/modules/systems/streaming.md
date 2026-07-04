@@ -25,16 +25,16 @@ Streaming System связывает:
 
 ## Границы подсистем (decoupled architecture)
 
-| Подсистема | Владеет | Не владеет |
-| ---------- | ------- | ---------- |
-| **Site Streamer** (`src/shared/streaming/`) | SignalR connect/disconnect/reconnect, hub invokes, position ticks (~1 с), full-state publish, live playlist sync | Party create/update/lifecycle, формы Party UI |
-| **Party metadata** (`partyService`, `usePartyServerActions`, `LinkPartyModal`) | `linkedParty`, create/update party, explicit publish, lifecycle, theme | SignalR transport, position ticks во время сессии |
-| **Party Player** (`playerAudioStore`, `usePlayerSession`) | Локальная сессия, очередь, воспроизведение | Прямые вызовы `signalRService` из workspace |
-| **AIMP integration** (`AimpIntegrationController`, `aimpStore`) | AIMP bridge, IPC, маппинг snapshot → DTO | Параллельный connect/publish/teardown вне orchestrator |
+| Подсистема                                                                     | Владеет                                                                                                          | Не владеет                                             |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Site Streamer** (`src/shared/streaming/`)                                    | SignalR connect/disconnect/reconnect, hub invokes, position ticks (~1 с), full-state publish, live playlist sync | Party create/update/lifecycle, формы Party UI          |
+| **Party metadata** (`partyService`, `usePartyServerActions`, `LinkPartyModal`) | `linkedParty`, create/update party, explicit publish, lifecycle, theme                                           | SignalR transport, position ticks во время сессии      |
+| **Party Player** (`playerAudioStore`, `usePlayerSession`)                      | Локальная сессия, очередь, воспроизведение                                                                       | Прямые вызовы `signalRService` из workspace            |
+| **AIMP integration** (`AimpIntegrationController`, `aimpStore`)                | AIMP bridge, IPC, маппинг snapshot → DTO                                                                         | Параллельный connect/publish/teardown вне orchestrator |
 
 Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: подключают хуки orchestrator и отображают UI, но не владеют SignalR lifecycle.
 
-> **UX follow-up:** видимые строки, gates, preset «Вечеринка», шапка «Онлайн» — **не менялись** в этой фазе. Целевая модель UI и checklist — [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
+> **UX (2026-07):** пользовательские строки приведены к термину **«Онлайн»**; preset **«Онлайн-вечеринка»**, шапка **«Проигрывание не запущено»**, индикатор **«Нет связи»**. Карта переименований и оставшийся checklist — [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md) §8.
 
 ## Основные компоненты (клиент CherryPlayList)
 
@@ -49,7 +49,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
   - `teardown()` / `switchSource()` при смене источника или отключении сети;
   - `syncAimpFrozenState()` — snapshot до старта live-stream (AIMP).
 
-- **`useStreamingOrchestrator`** — React-хук для **CherryPlay Player**:
+- **`useStreamingOrchestrator`** — React-хук для источника **CherryPlay** (`streamingSource === 'cherryPlayPlayer'`):
   - активен при `enableStreaming`, `streamingSource === 'cherryPlayPlayer'`, `linkedParty`;
   - используется в `PlayerViewContainer` (только `connectionState` + `reconnect` для UI);
   - **не** вызывает `signalRService.connect` напрямую.
@@ -142,14 +142,14 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 ## Связь с модулями Player, AIMP и Party
 
 - **Party workspace** — Party metadata: create/bind, theme, lifecycle, explicit publish. См. [Party](../workspaces/party.md).
-- **Player workspace** — локальная сессия; streaming через `useStreamingOrchestrator`. См. [Player](../workspaces/player.md).
-- **AIMP workspace** — мониторинг AIMP + «Старт стриминга»; streaming через `useAimpStreamingOrchestrator`. См. [AIMP](../workspaces/aimp.md).
+- **Player workspace** — локальная session; синхронизация через `useStreamingOrchestrator`. См. [Player](../workspaces/player.md).
+- **AIMP** (встроен в зону Проигрывание или legacy workspace) — **«Включить онлайн»**; `useAimpStreamingOrchestrator`. См. [AIMP](../workspaces/aimp.md).
 
 ## Когда использовать Streaming System
 
-Streaming нужен, когда зрители должны в реальном времени видеть текущий трек, прогресс, отключённые/проигранные треки. Локальная работа плеера возможна без Streaming — система активируется при `linkedParty`, `enableStreaming` и выбранном источнике.
+Синхронизация нужна, когда зрители должны видеть текущий трек, прогресс, отключённые/проигранные треки на странице вечеринки. Локальное проигрывание возможно без неё — подсистема активируется при `linkedParty`, **Онлайн** (`enableStreaming`) и выбранном источнике состояния.
 
-## Отключение стриминга
+## Отключение онлайна (enableStreaming)
 
 Настройка `enableStreaming` в Settings Store. При отключении:
 

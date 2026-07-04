@@ -150,13 +150,12 @@
 | Тип | Примечание |
 |-----|------------|
 | `playlist` | один на layout |
-| `fileBrowser` | один на layout |
 | `player` | один на layout |
 | `aimp` | один на layout |
 | `party-editor` | один на layout |
 | `party-preview` | один на layout |
 
-Типы **`collection`** и **`test1`…`test8`** можно добавлять **несколько раз** (новый `workspaceId` на каждую зону).
+Типы **`fileBrowser`**, **`collection`** и **`test1`…`test8`** можно добавлять **несколько раз** (новый `workspaceId` на каждую зону через `generateWorkspaceId()`). Встроенные пресеты явно задают `DEFAULT_FILEBROWSER_WORKSPACE_ID` для единственной fileBrowser-зоны; при загрузке сохранённого layout дубликаты default id переназначаются (`migrateDuplicateFileBrowserWorkspaceIds`).
 
 Сортировка picker — по русскому отображаемому имени.
 
@@ -175,16 +174,17 @@
 1. В дерево layout вставляется новая `WorkspaceZone` (новый `zoneId`, `workspaceId` по типу).
 2. Для **динамических** типов `layoutStore` вызывает **`prepareWorkspaceInstance`** (`workspaceLifecycle.ts`):
    - **`collection`**: `ensureProjectStore`, запись в `uiStore.workspaces`, `registerWorkspaceType`;
+   - **`fileBrowser`**: `registerWorkspaceType` (path map не создаётся до первой навигации);
    - **`test*`** : `registerWorkspaceType`.
-3. **Singleton-типы** (`playlist`, `fileBrowser`, …) используют **фиксированные** `workspaceId` из `@core/constants/workspace`; отдельный prepare не нужен — store/модуль уже существуют с запуска приложения.
+3. **Singleton-типы** (`playlist`, `player`, …) используют **фиксированные** `workspaceId` из `@core/constants/workspace`; отдельный prepare не нужен — store/модуль уже существуют с запуска приложения.
 
 При ошибке добавления показывается toast (сообщения из `getAddWorkspaceErrorMessage`).
 
 ### Удаление зоны
 
 1. **`removeWorkspaceFromLayout`** удаляет зону из дерева: размеры соседей перераспределяются, пустые контейнеры схлопываются (`cleanupContainers`). Если удалена **последняя** workspace-зона — layout становится **пустым** (`createEmptyLayout()`).
-2. **`layoutStore.removeWorkspaceZone`** применяет новое дерево, затем **`cleanupWorkspaceInstance`** для динамических типов.
-3. **Singleton store** при удалении зоны из layout **остаётся в памяти** — убирается только привязка зоны в дереве.
+2. **`layoutStore.removeWorkspaceZone`** применяет новое дерево, затем **`cleanupWorkspaceInstance`** для динамических типов (`collection`, `fileBrowser`, `test*`).
+3. **Singleton store** (`playlist`, `player`, …) при удалении зоны из layout **остаётся в памяти** — убирается только привязка зоны в дереве.
 
 ### Ограничения при добавлении
 
@@ -228,8 +228,8 @@
 
 1. `npm run dev` (Electron) или `npm run dev:web`.
 2. **✎** — у каждой зоны air-области и ×; контент затемнён.
-3. **+** у зоны → добавить workspace; singleton не дублируется в picker.
-4. **×** — зона удаляется; для collection очищается store.
+3. **+** у зоны → добавить workspace; singleton (`playlist`, `player`, …) не дублируется в picker; **`fileBrowser`** можно добавить повторно.
+4. **×** — зона удаляется; для collection очищается store; для fileBrowser — запись path в settings.
 5. Удалить все зоны → **✎** → центральный **+** для первой зоны.
 6. Перетащить divider — пропорции меняются.
 7. Правка built-in → **✎** выход → запись в **Мои** («Без имени» или «Без имени 2», …); клик по имени → задать своё.

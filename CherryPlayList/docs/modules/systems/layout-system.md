@@ -23,24 +23,24 @@
 
 Типы — `src/core/types/workspacePreset.ts`:
 
-| Тип | Описание |
-|-----|----------|
-| `ActiveWorkspace` | `{ kind: 'builtin'; preset }` \| `{ kind: 'user'; id }` \| `{ kind: 'scratch' }` |
-| `UserWorkspace` | `{ id, name, layout, createdAt?, updatedAt? }` — сохранённый снимок дерева |
-| `LayoutPreset` | Идентификатор встроенного пресета (`simple`, `collections`, …) |
-| `UNNAMED_WORKSPACE_NAME` | `'Без имени'` — базовое auto-имя |
-| `allocateUnnamedWorkspaceName` | Следующее свободное auto-имя в серии «Без имени» / «Без имени N» |
-| `isUnnamedWorkspaceName` | Проверка auto-имени (курсив в pill, ограничения при ручном rename) |
+| Тип                            | Описание                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `ActiveWorkspace`              | `{ kind: 'builtin'; preset }` \| `{ kind: 'user'; id }` \| `{ kind: 'scratch' }` |
+| `UserWorkspace`                | `{ id, name, layout, createdAt?, updatedAt? }` — сохранённый снимок дерева       |
+| `LayoutPreset`                 | Идентификатор встроенного пресета (`simple`, `collections`, …)                   |
+| `UNNAMED_WORKSPACE_NAME`       | `'Без имени'` — базовое auto-имя                                                 |
+| `allocateUnnamedWorkspaceName` | Следующее свободное auto-имя в серии «Без имени» / «Без имени N»                 |
+| `isUnnamedWorkspaceName`       | Проверка auto-имени (курсив в pill, ограничения при ручном rename)               |
 
 **Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** персистятся как записи — при активации дерево строится через `createLayoutByPreset(preset)`.
 
 ### Именование пользовательских workspace (auto-save)
 
-| Шаг | Имя в **Мои** |
-|-----|----------------|
-| 1-й auto-save (нет «Без имени») | **Без имени** |
-| 2-й при занятом «Без имени» | **Без имени 2** |
-| далее | **Без имени 3**, … |
+| Шаг                             | Имя в **Мои**      |
+| ------------------------------- | ------------------ |
+| 1-й auto-save (нет «Без имени») | **Без имени**      |
+| 2-й при занятом «Без имени»     | **Без имени 2**    |
+| далее                           | **Без имени 3**, … |
 
 Реализация: `allocateUnnamedWorkspaceName()` в `workspacePreset.ts`, вызов из `saveCurrentWorkspaceAsUnnamed()` в `layoutStore`. После переименования единственного «Без имени» слот снова доступен.
 
@@ -48,17 +48,17 @@
 
 ### Встроенные (built-in)
 
-Каталог в коде (`layoutStore.ts`, `createLayoutByPreset`). Имена в UI — на русском (`WorkspaceMenu`, `PRESET_NAMES`).
+Каталог в коде (`layoutStore.ts`, `createLayoutByPreset`). Имена в UI — на русском (`LAYOUT_PRESET_DISPLAY_NAMES_RU` в `src/core/constants/layoutPresetDisplayNames.ts`, меню `WorkspaceMenu`).
 
-| `LayoutPreset` | Отображаемое имя | Доступность |
-|----------------|------------------|-------------|
-| `simple` | Простой | всегда |
-| `complex` | Сложный | только `import.meta.env.DEV` |
-| `collections` | С коллекциями | всегда; **по умолчанию** при первом запуске |
-| `collections-vertical` | Коллекции вертикально | всегда |
-| `player` | Плеер | всегда |
-| `party` | Вечеринка | если `enableStreaming` |
-| `aimp-party` | AIMP + Party | если AIMP виден (`getAimpPartyPresetState`) |
+| `LayoutPreset`         | Отображаемое имя      | Доступность                                                      |
+| ---------------------- | --------------------- | ---------------------------------------------------------------- |
+| `simple`               | Плейлист + источники  | всегда                                                           |
+| `complex`              | Сложный               | только `import.meta.env.DEV`                                     |
+| `collections`          | Сборка плейлиста      | всегда; **по умолчанию** при первом запуске                      |
+| `collections-vertical` | Коллекции вертикально | всегда                                                           |
+| `player`               | Проигрывание          | всегда                                                           |
+| `party`                | Онлайн-вечеринка      | если `enableStreaming` (в UI — **Онлайн** включён)               |
+| `aimp-party`           | AIMP + Party          | **legacy:** не показывается в меню; persist мигрирует на `party` |
 
 Встроенные layout **нельзя перезаписать**. При auto-commit с dirty built-in/scratch вызывается `saveCurrentWorkspaceAsUnnamed()` (имя по `allocateUnnamedWorkspaceName`).
 
@@ -75,12 +75,12 @@
 
 ### Переключение и автосохранение
 
-| API | Поведение |
-|-----|-----------|
-| `activateWorkspace(ref)` | Смена workspace; cleanup/prepare lifecycle для зон |
+| API                            | Поведение                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `activateWorkspace(ref)`       | Смена workspace; cleanup/prepare lifecycle для зон                                          |
 | `autoCommitWorkspaceChanges()` | При dirty: user → `saveCurrentWorkspace`; builtin/scratch → `saveCurrentWorkspaceAsUnnamed` |
-| `requestActivateWorkspace` | Auto-commit, затем switch (`useWorkspaceDirtyGuard`) |
-| `isWorkspaceDirty()` | `getLayoutZoneSignature(layout)` ≠ baseline (runtime) |
+| `requestActivateWorkspace`     | Auto-commit, затем switch (`useWorkspaceDirtyGuard`)                                        |
+| `isWorkspaceDirty()`           | `getLayoutZoneSignature(layout)` ≠ baseline (runtime)                                       |
 
 Переключение через **▾** **заблокировано** в `isLayoutEditMode`. Вне edit mode при dirty — **тихий** auto-commit перед switch (без диалогов).
 
@@ -103,11 +103,11 @@
 [ Имя (148px)  ▾ ]  [ ✎ ]
 ```
 
-| Элемент | Назначение |
-|---------|------------|
+| Элемент | Назначение                                                                                                                |
+| ------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом |
-| **▾** | Меню: **Мои** / **Встроенные** / **Создать с нуля…** (disabled в edit mode) |
-| **✎** | Вход/выход из edit mode; выход с auto-commit при dirty |
+| **▾**   | Меню: **Мои** / **Встроенные** / **Создать с нуля…** (disabled в edit mode)                                               |
+| **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                    |
 
 Ручных пунктов **Сохранить** / **Сбросить** нет. Блокирующих диалогов при несохранённых изменениях нет.
 

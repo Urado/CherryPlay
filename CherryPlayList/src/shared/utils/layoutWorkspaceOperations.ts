@@ -31,13 +31,7 @@ import {
 
 export type LayoutEditAirSide = 'top' | 'right' | 'bottom' | 'left';
 
-const SINGLETON_WORKSPACE_TYPES = new Set([
-  'playlist',
-  'fileBrowser',
-  'player',
-  'party-editor',
-  'party-preview',
-]);
+const SINGLETON_WORKSPACE_TYPES = new Set(['playlist', 'player', 'party-editor', 'party-preview']);
 
 const PLAYBACK_WORKSPACE_TYPES = new Set(['player', 'aimp']);
 
@@ -153,12 +147,49 @@ export function migrateAimpZonesToPlayerInLayout(layout: Layout): Layout {
   };
 }
 
+function migrateDuplicateFileBrowserZone(zone: Zone, seenDefaultId: { value: boolean }): Zone {
+  if (zone.type === 'workspace' && zone.workspaceType === 'fileBrowser') {
+    if (zone.workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID) {
+      if (!seenDefaultId.value) {
+        seenDefaultId.value = true;
+        return zone;
+      }
+
+      return {
+        ...zone,
+        workspaceId: generateWorkspaceId(),
+      };
+    }
+
+    return zone;
+  }
+
+  if (zone.type === 'container') {
+    return {
+      ...zone,
+      zones: zone.zones.map((child) => migrateDuplicateFileBrowserZone(child, seenDefaultId)),
+    };
+  }
+
+  return zone;
+}
+
+/** Assigns new workspace ids to duplicate default fileBrowser zones (keeps first default id). */
+export function migrateDuplicateFileBrowserWorkspaceIds(layout: Layout): Layout {
+  const seenDefaultId = { value: false };
+
+  return {
+    ...layout,
+    rootZone: migrateDuplicateFileBrowserZone(layout.rootZone, seenDefaultId) as Layout['rootZone'],
+  };
+}
+
 export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
   switch (workspaceType) {
     case 'playlist':
       return DEFAULT_PLAYLIST_WORKSPACE_ID;
     case 'fileBrowser':
-      return DEFAULT_FILEBROWSER_WORKSPACE_ID;
+      return generateWorkspaceId();
     case 'player':
       return DEFAULT_PLAYER_WORKSPACE_ID;
     case 'aimp':

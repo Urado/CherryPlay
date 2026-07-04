@@ -18,7 +18,7 @@
 
 После `dev:web` / `dev:web:project` откройте в браузере URL dev-сервера (по умолчанию [http://localhost:5173](http://localhost:5173), порт задан в `vite.config.mjs`).
 
-В шапке отображается баннер: _«Режим веб-демо — без Electron и без трансляции»_.
+В шапке отображается баннер: _«Режим веб-демо — без Electron и без связи с сервером»_.
 
 ---
 
@@ -98,7 +98,7 @@ cross-env VITE_APP_MODE=demo VITE_API_URL=http://localhost:5000 npm run dev:web
 - **Обозреватель файлов** — фикстурное дерево (синтетические пути, без бинарников `.mp3` в репозитории); навигация, хлебные крошки, поиск по фикстурам.
 - **Плейлист** — DnD из обозревателя, переупорядочивание, **undo/redo**.
 - **Коллекции (Collection)** — список треков, DnD, группы, undo/redo (как плейлист); экспорт JSON и копирование треков в папку — **«Не доступно в демо»**.
-- **Party** — workspace Party с фейковой привязанной вечеринкой `DEMODK`; стриминг включён по умолчанию (`enableStreaming: true`).
+- **Party** — workspace Party с demo-подключением к вечеринке `DEMODK`; **Онлайн** включён по умолчанию (`enableStreaming: true`).
 - **Загрузка демо-проекта** — меню «Загрузить демо-проект» (`fetch` → `/demo/sample.cherry`) или `npm run dev:web:project`.
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех, уведомление _«Экспорт симулирован (демо)»_ (файлы на диск не пишутся).
 - **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-auth`, `cherryplaylist-settings`, `cherryplaylist-workspaces`, `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Внутри одной загрузки страницы workspace/layout пишется в persist; **полная перезагрузка** (`dev:web`) снова очищает `cherryplaylist-workspaces`. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
@@ -113,17 +113,17 @@ cross-env VITE_APP_MODE=demo VITE_API_URL=http://localhost:5000 npm run dev:web
 
 (константа `DEMO_UNAVAILABLE_MESSAGE` в `src/shared/platform/demoUnavailable.ts`).
 
-| Область                    | Поведение в веб-демо                                                                                                                                                                                                                                                 |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Electron / preload**     | Нет `window.api`; весь IPC идёт через `WebDemoPlatform`                                                                                                                                                                                                              |
-| **Сохранение проекта**     | `project:save`, `project:savePortableAs` и пункты Save в меню — **«Не доступно в демо»** (нет записи проекта в localStorage и нет обхода через скачивание)                                                                                                           |
-| **Реальное аудио**         | `audio:getDuration`, `audio:getFileSource`; превью/демо-плеер — **«Не доступно в демо»**, без воспроизведения файлов с диска                                                                                                                                         |
-| **Коллекции (Collection)** | UI коллекции работает; **экспорт в JSON**, **копирование треков в папку**, **импорт JSON** — **«Не доступно в демо»** (`collectionPersistenceService`)                                                                                                               |
-| **AIMP**                   | Workspace AIMP — заглушка; `AimpIntegrationController` не монтируется; пресет layout с AIMP скрыт                                                                                                                                                                    |
-| **Party**                  | UI на фикстурах `demoPartyFixture` (вечеринка `DEMODK`); **реальный auth в демо отключён** (`supportsRealAuth`). При запущенном CherryPlayServer и пустом `VITE_API_URL` HTTP/SignalR к `:5000` доступны **через Vite proxy** (стриминг при `enableStreaming: true`) |
-| **Аккаунт**                | Фейковый организатор «Demo Organizer»; login/OAuth без запросов к API (даже если proxy к серверу поднят)                                                                                                                                                             |
-| **Трансляция**             | `enableStreaming: true` по умолчанию в демо (можно выключить в настройках)                                                                                                                                                                                           |
-| **Production web build**   | Нет скрипта `build:web-demo`; только `dev:web` / `dev:web:project`                                                                                                                                                                                                   |
+| Область                    | Поведение в веб-демо                                                                                                                                                                                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Electron / preload**     | Нет `window.api`; весь IPC идёт через `WebDemoPlatform`                                                                                                                                                                                                                  |
+| **Сохранение проекта**     | `project:save`, `project:savePortableAs` и пункты Save в меню — **«Не доступно в демо»** (нет записи проекта в localStorage и нет обхода через скачивание)                                                                                                               |
+| **Реальное аудио**         | `audio:getDuration`, `audio:getFileSource`; превью/демо-плеер — **«Не доступно в демо»**, без воспроизведения файлов с диска                                                                                                                                             |
+| **Коллекции (Collection)** | UI коллекции работает; **экспорт в JSON**, **копирование треков в папку**, **импорт JSON** — **«Не доступно в демо»** (`collectionPersistenceService`)                                                                                                                   |
+| **AIMP**                   | Workspace AIMP — заглушка; `AimpIntegrationController` не монтируется; пресет layout с AIMP скрыт                                                                                                                                                                        |
+| **Party**                  | UI на фикстурах `demoPartyFixture` (вечеринка `DEMODK`); **реальный auth в демо отключён** (`supportsRealAuth`). При запущенном CherryPlayServer и пустом `VITE_API_URL` HTTP/SignalR к `:5000` доступны **через Vite proxy** (при **Онлайн** / `enableStreaming: true`) |
+| **Аккаунт**                | Фейковый организатор «Demo Organizer»; login/OAuth без запросов к API (даже если proxy к серверу поднят)                                                                                                                                                                 |
+| **Трансляция**             | `enableStreaming: true` по умолчанию в демо (можно выключить в настройках)                                                                                                                                                                                               |
+| **Production web build**   | Нет скрипта `build:web-demo`; только `dev:web` / `dev:web:project`                                                                                                                                                                                                       |
 
 Вне scope (не обещаются в этом режиме): File System Access API, Android WebView, production web build, CherryPlayWeb как отдельный продукт, переименование `electronStorage`, mp3 в репозитории.
 

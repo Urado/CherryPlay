@@ -2,6 +2,7 @@ import { registerWorkspaceType, unregisterWorkspaceType } from '@core/constants/
 import { WorkspaceZone } from '@core/types/layout';
 
 import { ensureProjectStore, removeProjectStore } from '../stores/projectStoreFactory';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
 
 const COLLECTION_NAME_PREFIX = 'Коллекция ';
@@ -68,6 +69,11 @@ export function prepareWorkspaceInstance(zone: WorkspaceZone): void {
     return;
   }
 
+  if (workspaceType === 'fileBrowser') {
+    registerWorkspaceType(workspaceId, workspaceType);
+    return;
+  }
+
   if (workspaceType.startsWith('test')) {
     registerWorkspaceType(workspaceId, workspaceType);
   }
@@ -78,6 +84,12 @@ export function cleanupWorkspaceInstance(zone: WorkspaceZone): void {
     const uiStore = useUIStore.getState();
     uiStore.removeWorkspace(zone.workspaceId);
     removeProjectStore(zone.workspaceId);
+    unregisterWorkspaceType(zone.workspaceId);
+    return;
+  }
+
+  if (zone.workspaceType === 'fileBrowser') {
+    useSettingsStore.getState().removeFileBrowserPathForWorkspace(zone.workspaceId);
     unregisterWorkspaceType(zone.workspaceId);
     return;
   }

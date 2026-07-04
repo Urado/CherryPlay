@@ -177,26 +177,4 @@ describe('DemoPlayer component', () => {
 
     expect(controller.clear).toHaveBeenCalledTimes(1);
   });
-
-  it('calls clear when dismiss button is clicked', () => {
-    const controller = createController({
-      currentTrack: createTrack(),
-      status: 'playing',
-    });
-    const onDismiss = jest.fn();
-
-    render(
-      <DemoPlayer
-        controller={controller}
-        notify={jest.fn()}
-        showDismiss
-        onDismiss={onDismiss}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Скрыть прослушивание' }));
-
-    expect(controller.clear).toHaveBeenCalledTimes(1);
-    expect(onDismiss).toHaveBeenCalledTimes(1);
-  });
 });

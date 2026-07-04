@@ -30,6 +30,7 @@ import {
   SplitDirection,
 } from '../../core/types/layout';
 import { electronStorage } from '../storage/electronStorage';
+import { registerActiveLayoutGetter } from '../utils/layoutFocusBridge';
 import { getLayoutZoneSignature } from '../utils/layoutSignature';
 import {
   findZoneById,
@@ -48,6 +49,7 @@ import {
   getRemoveWorkspaceErrorMessage,
   getWorkspaceAddedMessage,
   migrateAimpZonesToPlayerInLayout,
+  migrateDuplicateFileBrowserWorkspaceIds,
   isLayoutEmpty,
   removeWorkspaceFromLayout,
 } from '../utils/layoutWorkspaceOperations';
@@ -721,10 +723,14 @@ export function normalizeWorkspacePersistSlice(
       ? { kind: 'builtin' as const, preset: 'party' as const }
       : slice.activeWorkspace;
 
-  const layout = migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout));
+  const layout = migrateDuplicateFileBrowserWorkspaceIds(
+    migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout)),
+  );
   const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
     ...workspace,
-    layout: migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(workspace.layout)),
+    layout: migrateDuplicateFileBrowserWorkspaceIds(
+      migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(workspace.layout)),
+    ),
   }));
 
   return {
@@ -1442,3 +1448,5 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
     },
   ),
 );
+
+registerActiveLayoutGetter(() => useLayoutStore.getState().layout);

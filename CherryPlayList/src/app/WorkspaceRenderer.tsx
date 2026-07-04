@@ -38,7 +38,7 @@ const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) 
     return (
       <>
         <h2 className="panel-title">Источники</h2>
-        <SourcesPanel />
+        <SourcesPanel workspaceId={zone.workspaceId} />
       </>
     );
   }

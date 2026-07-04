@@ -65,7 +65,10 @@ export function registerWorkspaceType(workspaceId: WorkspaceId, type: WorkspaceT
 }
 
 export function unregisterWorkspaceType(workspaceId: WorkspaceId): void {
-  if (workspaceId === DEFAULT_PLAYLIST_WORKSPACE_ID) {
+  if (
+    workspaceId === DEFAULT_PLAYLIST_WORKSPACE_ID ||
+    workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID
+  ) {
     return;
   }
   workspaceTypeRegistry.delete(workspaceId);

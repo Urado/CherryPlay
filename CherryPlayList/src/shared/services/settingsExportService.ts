@@ -1,4 +1,6 @@
+import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
 import type { Layout } from '@core/types/layout';
+import type { WorkspaceId } from '@core/types/workspace';
 import type { ActiveWorkspace, UserWorkspace } from '@core/types/workspacePreset';
 import { APP_VERSION } from '@shared/config/appVersion';
 import { getPlatformCapabilities } from '@shared/platform/platformCapabilities';
@@ -6,7 +8,7 @@ import { getPlatformCapabilities } from '@shared/platform/platformCapabilities';
 import type { AimpSourceSelection } from '../contracts/aimp';
 import type { CustomKeyBindings } from '../shortcuts/shortcutTypes';
 import { useLayoutStore } from '../stores/layoutStore';
-import { useSettingsStore } from '../stores/settingsStore';
+import { migrateFileBrowserPathsOnRehydrate, useSettingsStore } from '../stores/settingsStore';
 
 import { ipcService } from './ipcService';
 
@@ -26,6 +28,7 @@ export interface SettingsExportPersistedState {
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
   fileBrowserPath: string;
+  fileBrowserPathsByWorkspaceId?: Record<WorkspaceId, string>;
   trackItemSizePreset: 'small' | 'medium' | 'large';
   hourDividerInterval: number;
   showHourDividers: boolean;
@@ -53,14 +56,36 @@ export interface SettingsImportResult {
   workspacesUpdated: number;
 }
 
+function coerceFileBrowserPathsByWorkspaceId(
+  value: unknown,
+): Record<WorkspaceId, string> | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const result: Record<WorkspaceId, string> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof key === 'string' && typeof entry === 'string') {
+      result[key] = entry;
+    }
+  }
+
+  return result;
+}
+
 export function pickSettingsExportFields(
   state: ReturnType<typeof useSettingsStore.getState>,
 ): SettingsExportPersistedState {
+  const defaultFileBrowserPath = state.getFileBrowserPathForWorkspace(
+    DEFAULT_FILEBROWSER_WORKSPACE_ID,
+  );
+
   return {
     exportPath: state.exportPath,
     exportStrategy: state.exportStrategy,
     lastOpenedPlaylist: state.lastOpenedPlaylist,
-    fileBrowserPath: state.fileBrowserPath,
+    fileBrowserPath: defaultFileBrowserPath,
+    fileBrowserPathsByWorkspaceId: { ...state.fileBrowserPathsByWorkspaceId },
     trackItemSizePreset: state.trackItemSizePreset,
     hourDividerInterval: state.hourDividerInterval,
     showHourDividers: state.showHourDividers,
@@ -153,7 +178,9 @@ function isSettingsExportPersistedState(value: unknown): value is SettingsExport
     typeof settings.keyBindings === 'object' &&
     settings.keyBindings !== null &&
     typeof settings.enableStreaming === 'boolean' &&
-    (settings.streamingSource === 'cherryPlayPlayer' || settings.streamingSource === 'aimp')
+    (settings.streamingSource === 'cherryPlayPlayer' || settings.streamingSource === 'aimp') &&
+    (settings.fileBrowserPathsByWorkspaceId === undefined ||
+      coerceFileBrowserPathsByWorkspaceId(settings.fileBrowserPathsByWorkspaceId) !== undefined)
   );
 }
 
@@ -292,9 +319,28 @@ function prepareLayoutStateForSettingsImport(): void {
   state.setLayoutEditMode(false);
 }
 
+function normalizeImportedSettings(
+  settings: SettingsExportPersistedState,
+): SettingsExportPersistedState & {
+  fileBrowserPathsByWorkspaceId: Record<WorkspaceId, string>;
+} {
+  const coercedMap = coerceFileBrowserPathsByWorkspaceId(settings.fileBrowserPathsByWorkspaceId);
+  const migrated = migrateFileBrowserPathsOnRehydrate({
+    fileBrowserPath: settings.fileBrowserPath,
+    fileBrowserPathsByWorkspaceId: coercedMap ?? {},
+  });
+
+  return {
+    ...settings,
+    fileBrowserPath: migrated.fileBrowserPath,
+    fileBrowserPathsByWorkspaceId: migrated.fileBrowserPathsByWorkspaceId,
+  };
+}
+
 export function applySettingsImport(bundle: SettingsExportBundle): SettingsImportResult {
-  const settingsFieldCount = Object.keys(bundle.settings).length;
-  useSettingsStore.setState(bundle.settings);
+  const normalizedSettings = normalizeImportedSettings(bundle.settings);
+  const settingsFieldCount = Object.keys(normalizedSettings).length;
+  useSettingsStore.setState(normalizedSettings);
 
   prepareLayoutStateForSettingsImport();
 

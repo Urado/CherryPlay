@@ -8,7 +8,21 @@
 
 ## Где используется
 
-Браузер файлов отображается **только** в панели источников (SourcesPanel). При добавлении зоны с типом `fileBrowser` в layout приложение рендерит именно SourcesPanel (см. `WorkspaceRenderer`), внутри которой показывается компонент **FileBrowser**. Отдельного workspace-модуля в `workspaces/fileBrowser` нет — он был удалён как неиспользуемый.
+Браузер файлов отображается в панели источников (**SourcesPanel**). При добавлении зоны с типом `fileBrowser` в layout `WorkspaceRenderer` рендерит `SourcesPanel` с `workspaceId={zone.workspaceId}`, внутри — **FileBrowser**. Отдельного workspace-модуля в `workspaces/fileBrowser` нет — он был удалён как неиспользуемый.
+
+**Несколько панелей в одном layout:** тип `fileBrowser` **не singleton** — в edit mode можно добавить вторую и последующие зоны (как `collection`). Каждая зона получает **уникальный** `workspaceId` (`generateWorkspaceId()` при добавлении через picker). Встроенные пресеты по-прежнему задают одну зону с фиксированным `DEFAULT_FILEBROWSER_WORKSPACE_ID` (`default-filebrowser-workspace`).
+
+## Multi-instance (MVP)
+
+| Аспект | Поведение |
+|--------|-----------|
+| **Props** | `FileBrowser({ workspaceId })`, `SourcesPanel({ workspaceId })` |
+| **Текущая папка** | `settingsStore.fileBrowserPathsByWorkspaceId[workspaceId]` — см. [Settings Store](../stores/settings-store.md) |
+| **История «Назад»** | Локальный state в каждом `FileBrowser` (не persist) |
+| **Focus «Показать в браузере»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md) |
+| **Удаление зоны** | `cleanupWorkspaceInstance` удаляет запись пути из map |
+
+**Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Источники 1/2»), path в узле layout tree.
 
 ## Основные компоненты
 
@@ -27,8 +41,17 @@
 
 ## Инициализация и сохранение пути
 
-- При первом открытии браузера используется сохранённый путь (fileBrowserPath из настроек); если его нет — папка «Музыка» пользователя; при недоступности — домашняя папка.
-- Текущая папка сохраняется в настройках при каждой навигации и восстанавливается при переключении воркспейсов и между сессиями приложения.
+Путь **привязан к `workspaceId` зоны**, не к layout или `zoneId`:
+
+1. `getFileBrowserPathForWorkspace(workspaceId)` — если в map есть значение, используется оно; для `DEFAULT_FILEBROWSER_WORKSPACE_ID` допускается fallback на legacy `fileBrowserPath`.
+2. Если сохранённого пути нет:
+   - **Electron** — папка «Музыка» (`ipcService.getSystemPath('music')`), при ошибке — домашняя папка;
+   - **веб-демо** (`usesFixtureFileBrowser`) — корень фикстуры `DEMO_MUSIC_ROOT`.
+3. При каждой навигации — `setFileBrowserPathForWorkspace(workspaceId, currentPath)`.
+
+После перезагрузки каждая панель восстанавливает **свой** последний path. Навигация в панели A **не меняет** текущую папку в панели B.
+
+**Миграция:** при rehydrate `settingsStore` legacy `fileBrowserPath` копируется в `fileBrowserPathsByWorkspaceId[DEFAULT_FILEBROWSER_WORKSPACE_ID]`, если map пуст или в нём нет ключа default id. См. [Settings Store](../stores/settings-store.md), [клиентское persist](../systems/persisted-client-state.md).
 
 ## Хлебные крошки
 
@@ -64,9 +87,26 @@
 - Ctrl+Click (Cmd+Click) — переключение выделения элемента (добавить/снять из выделения).
 - Shift+Click — выделение диапазона от последнего выделенного до кликнутого элемента.
 
+## «Показать в браузере» (scoped focus)
+
+Запрос идёт через `uiStore.focusFileInBrowser(path, targetWorkspaceId?)`. `uiStore` разрешает цель через `resolveFileBrowserFocusTarget`:
+
+1. Явный `targetWorkspaceId`, если такая `fileBrowser`-зона есть в текущем layout;
+2. иначе зона с `DEFAULT_FILEBROWSER_WORKSPACE_ID`;
+3. иначе **первая** `fileBrowser`-зона в порядке обхода `collectWorkspaceZones`.
+
+Только `FileBrowser` с matching `workspaceId` обрабатывает `fileBrowserFocusRequest` и вызывает `acknowledgeFileBrowserFocus`. Типичный вызов без target — из `AppHeader` / demo player.
+
 ## IPC операции
 
 - `fileBrowser:listDirectory` - Список содержимого папки
 - `fileBrowser:findAudioFilesRecursive` - Рекурсивный поиск аудиофайлов
 - `fileBrowser:statFile` - Статистика файла/папки
 - `audio:getDuration` - Длительность аудиофайла в секундах (для отображения в строке трека)
+
+## См. также
+
+- [Settings Store](../stores/settings-store.md) — `fileBrowserPathsByWorkspaceId`
+- [UI Store](../stores/ui-store.md) — focus request
+- [Режим редактирования layout](../../layout-edit-mode.md) — добавление нескольких зон `fileBrowser`
+- [Веб-демо](../../web-demo.md) — несколько fixture-панелей

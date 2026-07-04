@@ -7,6 +7,8 @@ import {
   registerWorkspaceType,
   unregisterWorkspaceType,
 } from '../../core/constants/workspace';
+import { getActiveLayoutSnapshotForFocus } from '../utils/layoutFocusBridge';
+import { resolveFileBrowserFocusTarget } from '../utils/resolveFileBrowserFocusTarget';
 
 // Map для хранения таймеров уведомлений (notificationId -> timeoutId)
 // Это позволяет очищать таймеры при ручном удалении уведомлений
@@ -55,7 +57,11 @@ interface UIState {
   modal: ModalType;
   trackSettingsContext: TrackSettingsModalContext;
   notifications: Notification[];
-  fileBrowserFocusRequest: { path: string; timestamp: number } | null;
+  fileBrowserFocusRequest: {
+    path: string;
+    targetWorkspaceId: WorkspaceId;
+    timestamp: number;
+  } | null;
 
   // Workspace management (базовая структура для будущего расширения)
   workspaces: WorkspaceInfo[];
@@ -78,7 +84,7 @@ interface UIState {
   setWorkspaceZoneId: (workspaceId: WorkspaceId, zoneId: string) => void;
 
   // File browser helpers
-  focusFileInBrowser: (path: string) => void;
+  focusFileInBrowser: (path: string, targetWorkspaceId?: WorkspaceId) => void;
   acknowledgeFileBrowserFocus: () => void;
 }
 
@@ -186,13 +192,28 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
     }));
   },
 
-  focusFileInBrowser: (path) => {
+  focusFileInBrowser: (path, targetWorkspaceId) => {
     if (!path) {
+      return;
+    }
+    const layout = getActiveLayoutSnapshotForFocus();
+    if (!layout) {
+      return;
+    }
+    const resolvedTarget = resolveFileBrowserFocusTarget(layout, {
+      path,
+      targetWorkspaceId,
+    });
+    if (!resolvedTarget) {
       return;
     }
     set({
       activeSource: 'fileBrowser',
-      fileBrowserFocusRequest: { path, timestamp: Date.now() },
+      fileBrowserFocusRequest: {
+        path,
+        targetWorkspaceId: resolvedTarget,
+        timestamp: Date.now(),
+      },
     });
   },
 

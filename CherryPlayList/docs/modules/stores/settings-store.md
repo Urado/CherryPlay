@@ -16,10 +16,26 @@ Store для хранения настроек приложения.
 - **UI**: Размеры строк треков (small, medium, large), отсечки по времени (интервал, показывать/скрыть)
 - **Аудио**: Выбор устройств для player и demo player
 - **Проекты**: Путь последнего открытого плейлиста
-- **Файловый браузер**: Текущая папка (fileBrowserPath) — одна на всё приложение, сохраняется при переключении воркспейсов и между сессиями
-- **Стриминг**: Включение/выключение модуля стриминга (enableStreaming)
+- **Файловый браузер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
+- **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`.
+- **Синхронизация с сайтом:** `streamingSource` — **«Источник состояния для гостей»** (CherryPlay или AIMP); на сайт уходит **состояние** воспроизведения, не аудиопоток.
+- **Аудио:** «Куда играет CherryPlay», «Куда играет прослушивание файлов» (предпрослушивание в шапке).
 
 > **Важно:** Настройки уровня проекта (например, `portableMode`) хранятся в `ProjectSettings` внутри `.cherry` файла и управляются через `projectStore.setPortableMode`. Они **не** являются частью `settingsStore`.
+
+## File browser paths (multi-instance)
+
+| API                                                 | Назначение                                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `getFileBrowserPathForWorkspace(workspaceId)`       | Path для зоны; fallback `fileBrowserPath` только для `DEFAULT_FILEBROWSER_WORKSPACE_ID` |
+| `setFileBrowserPathForWorkspace(workspaceId, path)` | Сохранить path; для default id также пишет `fileBrowserPath`                            |
+| `removeFileBrowserPathForWorkspace(workspaceId)`    | Удалить запись (вызывается из `cleanupWorkspaceInstance` при удалении зоны)             |
+
+**Миграция on rehydrate** (`migrateFileBrowserPathsOnRehydrate`): если в persist есть legacy `fileBrowserPath` и map пуст или без ключа `DEFAULT_FILEBROWSER_WORKSPACE_ID` — значение копируется в map под default id. Отдельный bump версии persist не требуется.
+
+**Deprecated:** `setFileBrowserPath(path)` — делегирует в `setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path)`.
+
+См. [File Browser](../workspaces/file-browser.md), [клиентское persist](../systems/persisted-client-state.md).
 
 ## Размеры строк треков
 
@@ -54,13 +70,13 @@ interface SettingsExportBundle {
 }
 ```
 
-**Экспорт** включает все partialize-поля `settingsStore` и **сохранённые** `userWorkspaces` (снимки layout). Живое дерево `layout` попадает в bundle только если оно уже записано в user workspace (в т.ч. через **auto-commit** при выходе из edit mode или переключении workspace).
+**Экспорт** включает все partialize-поля `settingsStore` (в т.ч. `fileBrowserPathsByWorkspaceId`); для совместимости v1 дублируется path default-зоны в `fileBrowserPath` (`pickSettingsExportFields`). Также экспортируются **сохранённые** `userWorkspaces` (снимки layout). Живое дерево `layout` попадает в bundle только если оно уже записано в user workspace (в т.ч. через **auto-commit** при выходе из edit mode или переключении workspace).
 
 **Импорт:**
 
 1. Парсинг JSON, проверка `schemaVersion === 1` и `validateSettingsExportBundle`.
 2. Подтверждение в `SettingsImportConfirmDialog`.
-3. `settings` — перезапись полей в `useSettingsStore`.
+3. `settings` — перезапись полей в `useSettingsStore`; `normalizeImportedSettings` мигрирует legacy `fileBrowserPath` → map под `DEFAULT_FILEBROWSER_WORKSPACE_ID`.
 4. `userWorkspaces` — merge по `id` (входящий выигрывает; при коллизии имён — суффикс `(2)`, `(3)`, …; это не то же самое, что серия «Без имени N» при auto-save в приложении).
 5. `activeWorkspace` применяется, если валиден и не edit mode; `scratch` игнорируется.
 

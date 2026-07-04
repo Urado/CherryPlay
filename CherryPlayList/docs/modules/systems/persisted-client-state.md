@@ -38,11 +38,11 @@
 Группы данных:
 
 - **Экспорт:** `exportPath`, `exportStrategy` (`copyWithNumberPrefix` | `aimpPlaylist`)
-- **Файлы и плейлист:** `lastOpenedPlaylist`, `fileBrowserPath`
+- **Файлы и плейлист:** `lastOpenedPlaylist`, `fileBrowserPathsByWorkspaceId` (`Record<WorkspaceId, string>`), legacy `fileBrowserPath` (зеркало path для `DEFAULT_FILEBROWSER_WORKSPACE_ID`; при rehydrate мигрируется в map — см. `migrateFileBrowserPathsOnRehydrate` в `settingsStore.ts`)
 - **Отображение списка:** `trackItemSizePreset`, `hourDividerInterval`, `showHourDividers`
 - **Аудио:** `playerAudioDeviceId`, `demoPlayerAudioDeviceId`
 - **Клавиши:** `keyBindings` (пользовательские привязки)
-- **Стриминг:** `enableStreaming`, `streamingSource`
+- **Стриминг / Онлайн:** `enableStreaming`, `streamingSource` (в UI — **Онлайн**, **Источник состояния для гостей**)
 
 Поле **`_hasHydrated`** и сеттеры в persist **не** входят.
 
@@ -52,11 +52,11 @@
 
 Ключ **`cherryplaylist-workspaces`** (persist version **1**) в `layoutStore.ts`. В `partialize` попадает срез `WorkspacePersistSlice`:
 
-| Поле | Описание |
-|------|----------|
+| Поле                  | Описание                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **`activeWorkspace`** | `{ kind: 'builtin', preset }` \| `{ kind: 'user', id }` — **не** `scratch` (нормализуется при persist/rehydrate) |
-| **`userWorkspaces`** | Массив `{ id, name, layout, createdAt?, updatedAt? }` — сохранённые пользовательские снимки дерева |
-| **`layout`** | Живое дерево зон текущего workspace (корень, контейнеры, workspace-зоны, размеры) |
+| **`userWorkspaces`**  | Массив `{ id, name, layout, createdAt?, updatedAt? }` — сохранённые пользовательские снимки дерева               |
+| **`layout`**          | Живое дерево зон текущего workspace (корень, контейнеры, workspace-зоны, размеры)                                |
 
 **Не** сохраняется (runtime only): **`isLayoutEditMode`**, **`openLayoutEditPickerKey`**, **`baselineLayout`**, dirty-хелперы. См. [layout-edit-mode.md](../../layout-edit-mode.md), [Layout System](./layout-system.md).
 
@@ -70,12 +70,12 @@
 
 Изменения дерева layout **не привязаны к файлу проекта** (`.cherry`). Сохраняются на уровне приложения:
 
-| Метод | Когда |
-|-------|--------|
-| `autoCommitWorkspaceChanges()` | Перед switch / exit edit / «Создать с нуля…» при dirty |
-| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces` |
-| `saveCurrentWorkspaceAsUnnamed()` | Dirty **builtin** / **scratch** — новая запись в **Мои** |
-| `saveCurrentWorkspaceAs(name)` | Явное имя (pill для scratch, импорт и т.д.) |
+| Метод                              | Когда                                                    |
+| ---------------------------------- | -------------------------------------------------------- |
+| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…» при dirty   |
+| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`      |
+| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **builtin** / **scratch** — новая запись в **Мои** |
+| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)              |
 
 Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет.
 

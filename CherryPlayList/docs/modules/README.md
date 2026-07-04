@@ -21,10 +21,10 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 - [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
 - [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
-- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов
+- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (несколько панелей per layout, path по `workspaceId`)
 - [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
 - [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
-- [AIMP](./workspaces/aimp.md) - Панель AIMP: мониторинг плейлиста/воспроизведения и стриминг на сайт (Windows x64, источник AIMP)
+- [AIMP](./workspaces/aimp.md) - AIMP: мониторинг и синхронизация **состояния** с сайтом (Windows x64)
 - [Test Zone](./workspaces/test-zone.md) - Тестовый модуль для проверки layout и реестра workspace
 
 ### Systems (модули)
