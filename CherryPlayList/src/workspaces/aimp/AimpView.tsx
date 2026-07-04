@@ -1,3 +1,4 @@
+import ListIcon from '@mui/icons-material/List';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
@@ -14,10 +15,13 @@ import {
   getAimpEffectiveProgressMs,
   isAimpDegraded,
 } from '@shared/utils';
+import { PlaybackSourceSwitcher } from '@workspaces/player/components/PlaybackSourceSwitcher';
 
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
+  /** Rendered inside unified Player workspace (no duplicate panel title). */
+  embedded?: boolean;
 }
 
 interface AimpPlaylistRowProps {
@@ -86,7 +90,7 @@ function useProgressClock(isActive: boolean): number {
   return nowMs;
 }
 
-export const AimpView: React.FC<AimpViewProps> = () => {
+export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
   const bridgeState = useAimpStore((state) => state.bridgeState);
   const publishingBridgeReady = useAimpStore((state) => state.publishingBridgeReady);
   const publishingPath = useAimpStore((state) => state.publishingPath);
@@ -122,10 +126,10 @@ export const AimpView: React.FC<AimpViewProps> = () => {
 
     const messages: string[] = [];
     if (!enableStreaming) {
-      messages.push('Сначала включите стриминг в общих настройках.');
+      messages.push('Сначала включите онлайн в настройках.');
     }
-    if (streamingSource !== 'aimp') {
-      messages.push('Выберите AIMP как источник стриминга.');
+    if (!embedded && streamingSource !== 'aimp') {
+      messages.push('Выберите AIMP как источник в зоне плеера.');
     }
     if (!availability.available) {
       availability.gatingReasons.forEach((reason) => messages.push(reason.message));
@@ -171,6 +175,7 @@ export const AimpView: React.FC<AimpViewProps> = () => {
     publishingPath.error,
     publishingPath.status,
     streamingSource,
+    embedded,
   ]);
 
   const handleToggleLiveStream = async () => {
@@ -200,14 +205,16 @@ export const AimpView: React.FC<AimpViewProps> = () => {
       addNotification({
         type: 'success',
         message: bridgeState.liveStreamStarted
-          ? 'AIMP стриминг для Party остановлен'
-          : 'AIMP стриминг для Party запущен',
+          ? 'Онлайн через AIMP остановлен'
+          : 'Онлайн через AIMP запущен',
       });
     } catch (error) {
       addNotification({
         type: 'error',
         message:
-          error instanceof Error ? error.message : 'Не удалось изменить состояние AIMP стриминга',
+          error instanceof Error
+            ? error.message
+            : 'Не удалось изменить состояние онлайна через AIMP',
         duration: 5000,
       });
     } finally {
@@ -220,25 +227,44 @@ export const AimpView: React.FC<AimpViewProps> = () => {
       ? 'Остановка...'
       : 'Подготовка...'
     : bridgeState.liveStreamStarted
-      ? 'Остановить стриминг'
-      : 'Начать стриминг';
+      ? 'Выключить онлайн'
+      : 'Включить онлайн';
 
   return (
     <div
+      className={embedded ? 'aimp-view aimp-view--embedded' : 'aimp-view'}
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto auto minmax(0, 1fr) auto',
+        gridTemplateRows: embedded
+          ? 'auto auto minmax(0, 1fr) auto'
+          : 'auto auto minmax(0, 1fr) auto',
         gap: 12,
         height: '100%',
         minHeight: 0,
       }}
     >
-      <div>
-        <h2 className="panel-title">AIMP</h2>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
-          Read-only bridge workspace for external playback state.
+      {embedded ? (
+        <div className="playlist-header-section">
+          <div className="playlist-stats-header">
+            <div className="playlist-stats-header__info">
+              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>
+                {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
+                  ? 'Плейлист пуст'
+                  : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
+              </span>
+              <PlaybackSourceSwitcher inline />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div>
+          <h2 className="panel-title">AIMP</h2>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
+            Мониторинг AIMP и онлайн для гостей.
+          </div>
+        </div>
+      )}
 
       <div
         style={{

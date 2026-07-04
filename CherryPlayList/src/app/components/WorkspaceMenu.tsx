@@ -13,8 +13,7 @@ import { LAYOUT_PRESET_DISPLAY_NAMES_RU } from '@core/constants/layoutPresetDisp
 import type { ActiveWorkspace, LayoutPreset } from '@core/types/workspacePreset';
 import { isUnnamedWorkspaceName, UNNAMED_WORKSPACE_NAME } from '@core/types/workspacePreset';
 import { usePlatformCapabilities } from '@shared/platform';
-import { useAimpStore, useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
-import { getAimpPartyPresetState } from '@shared/utils';
+import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
 
 import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
 import { WorkspaceNameModal } from './WorkspaceNameModal';
@@ -26,7 +25,6 @@ const ALL_BUILTIN_PRESETS: LayoutPreset[] = [
   'collections-vertical',
   'player',
   'party',
-  'aimp-party',
 ];
 
 function getActiveWorkspaceLabel(
@@ -76,18 +74,10 @@ export const WorkspaceMenu: React.FC = () => {
   const saveCurrentWorkspaceAs = useLayoutStore((state) => state.saveCurrentWorkspaceAs);
   const deleteUserWorkspace = useLayoutStore((state) => state.deleteUserWorkspace);
 
-  const { enableStreaming, streamingSource } = useSettingsStore();
-  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
+  const { enableStreaming, streamingSource, setStreamingSource } = useSettingsStore();
   const addNotification = useUIStore((state) => state.addNotification);
   const { supportsAimpWorkspace } = usePlatformCapabilities();
   const { requestActivateWorkspace } = useWorkspaceActivation();
-
-  const aimpPartyPresetState = getAimpPartyPresetState({
-    sourceSelection: streamingSource,
-    environment: aimpBridgeState.environment,
-    enableStreaming,
-  });
-  const isAimpPresetVisible = aimpPartyPresetState.visible;
 
   const pillLabel = getActiveWorkspaceLabel(activeWorkspace, userWorkspaces);
   const canRenameOnPill = activeWorkspace.kind === 'user' || activeWorkspace.kind === 'scratch';
@@ -107,12 +97,9 @@ export const WorkspaceMenu: React.FC = () => {
       if (preset === 'party') {
         return enableStreaming;
       }
-      if (preset === 'aimp-party') {
-        return isAimpPresetVisible && supportsAimpWorkspace;
-      }
       return true;
     });
-  }, [enableStreaming, isAimpPresetVisible, supportsAimpWorkspace]);
+  }, [enableStreaming]);
 
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
@@ -303,20 +290,18 @@ export const WorkspaceMenu: React.FC = () => {
       return;
     }
 
-    if (!isAimpPresetVisible && activeWorkspace.preset === 'aimp-party') {
-      requestActivateWorkspace(
-        {
-          kind: 'builtin',
-          preset: aimpPartyPresetState.fallbackPreset,
-        },
-        { bypassDirtyGuard: true },
-      );
+    if (activeWorkspace.preset === 'aimp-party') {
+      requestActivateWorkspace({ kind: 'builtin', preset: 'party' }, { bypassDirtyGuard: true });
+      if (supportsAimpWorkspace && streamingSource !== 'aimp') {
+        setStreamingSource('aimp');
+      }
     }
   }, [
     activeWorkspace,
-    aimpPartyPresetState.fallbackPreset,
-    isAimpPresetVisible,
     requestActivateWorkspace,
+    setStreamingSource,
+    streamingSource,
+    supportsAimpWorkspace,
   ]);
 
   const focusMenuItemAt = useCallback((index: number) => {
@@ -604,11 +589,9 @@ export const WorkspaceMenu: React.FC = () => {
           cancelInlineRename();
           requestToggleLayoutEditMode();
         }}
-        title={
-          isLayoutEditMode ? 'Выйти из режима редактирования (Esc)' : 'Редактировать раскладку'
-        }
+        title={isLayoutEditMode ? 'Выйти из режима редактирования (Esc)' : 'Настроить окна'}
         aria-pressed={isLayoutEditMode}
-        aria-label={isLayoutEditMode ? 'Готово' : 'Редактировать раскладку'}
+        aria-label={isLayoutEditMode ? 'Готово' : 'Настроить окна'}
       >
         <EditOutlinedIcon fontSize="small" aria-hidden />
       </button>

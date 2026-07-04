@@ -375,7 +375,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
     markAsDirty();
     addNotification({
       type: 'info',
-      message: 'Привязка сброшена. Можно создать новую вечеринку.',
+      message: 'Связь с вечеринкой удалена. Можно создать новую.',
     });
   }, [setLinkedParty, markAsDirty, addNotification]);
 

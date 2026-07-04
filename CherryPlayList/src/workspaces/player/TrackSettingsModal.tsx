@@ -155,7 +155,7 @@ export const TrackSettingsModal: React.FC = () => {
   };
 
   const getTitle = () => {
-    if (isGlobal) return 'Глобальные настройки';
+    if (isGlobal) return 'Настройки по умолчанию';
     if (groupId) return 'Настройки группы';
     return 'Настройки трека';
   };
@@ -195,22 +195,22 @@ export const TrackSettingsModal: React.FC = () => {
               <option value="default">
                 По умолчанию (
                 {defaultActionAfterTrack === 'next'
-                  ? 'Сплошное воспроизведение'
+                  ? 'Без паузы'
                   : defaultActionAfterTrack === 'pauseAndNext'
-                    ? 'Пауза между треками'
-                    : 'Пауза после трека'}
+                    ? 'Интервал между треками'
+                    : 'Остановка после трека'}
                 )
               </option>
-              <option value="pause">Пауза после трека</option>
-              <option value="next">Сплошное воспроизведение</option>
-              <option value="pauseAndNext">Пауза между треками</option>
+              <option value="pause">Остановка после трека</option>
+              <option value="next">Без паузы</option>
+              <option value="pauseAndNext">Интервал между треками</option>
             </select>
           </div>
 
           {showPauseInput && (
             <div className="settings-group">
               <label className="settings-label" htmlFor="track-settings-pause">
-                Пауза между треками (секунды)
+                Интервал между треками (секунды)
               </label>
               <input
                 type="number"
@@ -234,8 +234,12 @@ export const TrackSettingsModal: React.FC = () => {
 
           {isGlobal && (
             <div className="settings-group">
-              <label className="settings-label" htmlFor="track-settings-planned-end-time">
-                Плановое время окончания
+              <label
+                className="settings-label"
+                htmlFor="track-settings-planned-end-time"
+                title="Красная отметка на таймлайне плейлиста"
+              >
+                Плановое окончание
               </label>
               <div className="settings-planned-end-row">
                 <input

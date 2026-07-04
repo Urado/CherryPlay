@@ -2,7 +2,7 @@ import type { Layout } from '../../src/core/types/layout';
 import { getLayoutPresetFromLayout } from '../../src/shared/utils/layoutPreset';
 
 describe('getLayoutPresetFromLayout', () => {
-  test('detects the persisted AIMP + Party preset from the layout tree', () => {
+  test('legacy AIMP zone layouts no longer match a built-in preset signature', () => {
     const layout: Layout = {
       version: 1,
       rootZone: {
@@ -36,7 +36,7 @@ describe('getLayoutPresetFromLayout', () => {
       },
     };
 
-    expect(getLayoutPresetFromLayout(layout)).toBe('aimp-party');
+    expect(getLayoutPresetFromLayout(layout)).toBeNull();
   });
 
   test('detects the persisted party preset from the layout tree', () => {

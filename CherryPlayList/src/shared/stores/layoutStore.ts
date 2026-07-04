@@ -14,7 +14,6 @@ import type {
 import { allocateUnnamedWorkspaceName, DEFAULT_BUILTIN_PRESET } from '@core/types/workspacePreset';
 
 import {
-  AIMP_WORKSPACE_ID,
   DEFAULT_FILEBROWSER_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
@@ -48,6 +47,7 @@ import {
   getAddWorkspaceErrorMessage,
   getRemoveWorkspaceErrorMessage,
   getWorkspaceAddedMessage,
+  migrateAimpZonesToPlayerInLayout,
   isLayoutEmpty,
   removeWorkspaceFromLayout,
 } from '../utils/layoutWorkspaceOperations';
@@ -532,43 +532,7 @@ function createPartyLayout(): Layout {
 }
 
 function createAimpPartyLayout(): Layout {
-  const aimpZoneId = uuidv4();
-  const partyEditorZoneId = uuidv4();
-  const partyPreviewZoneId = uuidv4();
-  const rootContainerId = uuidv4();
-
-  return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: aimpZoneId,
-          type: 'workspace',
-          workspaceId: AIMP_WORKSPACE_ID,
-          workspaceType: 'aimp',
-          size: 50,
-        },
-        {
-          id: partyEditorZoneId,
-          type: 'workspace',
-          workspaceId: PARTY_EDITOR_WORKSPACE_ID,
-          workspaceType: 'party-editor',
-          size: 25,
-        },
-        {
-          id: partyPreviewZoneId,
-          type: 'workspace',
-          workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
-          workspaceType: 'party-preview',
-          size: 25,
-        },
-      ],
-      sizes: [50, 25, 25],
-    },
-    version: 1,
-  };
+  return createPartyLayout();
 }
 
 /**
@@ -672,25 +636,25 @@ export function migrateLegacyPartyLayout(layout: Layout): Layout {
   const signature = getLayoutZoneSignature(layout.rootZone);
 
   if (signature === LEGACY_PARTY_LAYOUT_SIGNATURE) {
-    return createPartyLayout();
+    return migrateAimpZonesToPlayerInLayout(createPartyLayout());
   }
 
   if (signature === LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE) {
-    return createAimpPartyLayout();
+    return migrateAimpZonesToPlayerInLayout(createPartyLayout());
   }
 
   if (!layoutContainsLegacyParty(layout.rootZone)) {
-    return layout;
+    return migrateAimpZonesToPlayerInLayout(layout);
   }
 
   if (layout.rootZone.type === 'container') {
-    return {
+    return migrateAimpZonesToPlayerInLayout({
       ...layout,
       rootZone: splitLegacyPartyZonesInContainer(layout.rootZone),
-    };
+    });
   }
 
-  return createPartyLayout();
+  return migrateAimpZonesToPlayerInLayout(createPartyLayout());
 }
 
 /**
@@ -752,7 +716,22 @@ export function normalizeWorkspacePersistSlice(
     }
   }
 
-  return slice;
+  const activeWorkspace =
+    slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'aimp-party'
+      ? { kind: 'builtin' as const, preset: 'party' as const }
+      : slice.activeWorkspace;
+
+  const layout = migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout));
+  const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
+    ...workspace,
+    layout: migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(workspace.layout)),
+  }));
+
+  return {
+    activeWorkspace,
+    userWorkspaces,
+    layout,
+  };
 }
 
 /** Persist migration for workspace store (v1). */

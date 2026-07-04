@@ -122,9 +122,39 @@
 .playlist-stats-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-secondary);
+  line-height: 1.25;
   color: var(--text-secondary);
-  gap: 4px;
+}
+
+.playlist-stats-header__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.playlist-stats-header__icon {
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.playlist-stats-header__sep {
+  opacity: 0.5;
+  line-height: 1;
+  user-select: none;
+}
+
+.playlist-stats-header__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .playlist-actions {

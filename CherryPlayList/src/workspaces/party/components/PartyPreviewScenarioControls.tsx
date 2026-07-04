@@ -46,9 +46,9 @@ interface PartyPreviewScenarioControlsProps {
 }
 
 const LIFECYCLE_PRESETS: { label: string; lifecycle: PartyLifecycleState }[] = [
-  { label: 'Черновик', lifecycle: 'draft' },
-  { label: 'Скоро начнём', lifecycle: 'ready' },
-  { label: 'Завершена', lifecycle: 'completed' },
+  { label: 'Не на сайте', lifecycle: 'draft' },
+  { label: 'Опубликована', lifecycle: 'ready' },
+  { label: 'Архив', lifecycle: 'completed' },
 ];
 
 const CONNECTION_SCENARIOS: { label: string; scenario: PreviewConnectionScenario }[] = [
@@ -269,7 +269,7 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
         className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
         onClick={resetPreviewScenario}
       >
-        Сброс сценария
+        Снова как на сайте
       </button>
     </div>
   );

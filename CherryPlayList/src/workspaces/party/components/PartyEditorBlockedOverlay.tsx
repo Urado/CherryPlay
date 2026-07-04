@@ -69,17 +69,17 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
         {reason === 'party-not-found' && (
           <div className="party-editor-shell-party-not-found">
             <h3 className="party-editor-shell-party-not-found-title">
-              Привязанная вечеринка удалена
+              Подключённая вечеринка удалена
             </h3>
             <p className="party-editor-shell-party-not-found-text">
-              На сервере эта вечеринка больше недоступна. Можно сбросить привязку и выбрать другую.
+              На сервере эта вечеринка больше недоступна. Можно отключиться и выбрать другую.
             </p>
             <button
               type="button"
               className="action-button party-editor-shell-party-not-found-button"
               onClick={() => void onResetAndCreateNew?.()}
             >
-              Сбросить привязку
+              Отключить от вечеринки
             </button>
           </div>
         )}

@@ -28,9 +28,9 @@ import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWo
 import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
 
 const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string> = {
-  draft: 'Вечеринка переведена в черновик',
-  ready: 'Вечеринка опубликована и готова к мероприятию',
-  completed: 'Вечеринка завершена',
+  draft: 'Вечеринка снята с сайта',
+  ready: 'Вечеринка на сайте, готова к гостям',
+  completed: 'Вечеринка в архиве',
 };
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();

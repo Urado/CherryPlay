@@ -141,7 +141,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать в браузере' });
+    const showButton = screen.getByRole('button', { name: 'Показать файл в проводнике' });
     fireEvent.click(showButton);
 
     expect(onShow).toHaveBeenCalledWith(track.path);
@@ -156,7 +156,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать в браузере' });
+    const showButton = screen.getByRole('button', { name: 'Показать файл в проводнике' });
     fireEvent.click(showButton);
 
     expect(onShow).not.toHaveBeenCalled();
@@ -176,5 +176,27 @@ describe('DemoPlayer component', () => {
     unmount();
 
     expect(controller.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls clear when dismiss button is clicked', () => {
+    const controller = createController({
+      currentTrack: createTrack(),
+      status: 'playing',
+    });
+    const onDismiss = jest.fn();
+
+    render(
+      <DemoPlayer
+        controller={controller}
+        notify={jest.fn()}
+        showDismiss
+        onDismiss={onDismiss}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Скрыть прослушивание' }));
+
+    expect(controller.clear).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });

@@ -28,11 +28,11 @@
 
 В `vite.config.mjs` настроен proxy dev-сервера Vite → `http://localhost:5000`:
 
-| Путь на `:5173` | Назначение |
-|-----------------|------------|
-| `/api` | REST API CherryPlayServer |
-| `/auth` | OAuth / auth endpoints |
-| `/partyHub` | SignalR hub (`ws: true` для WebSocket) |
+| Путь на `:5173` | Назначение                             |
+| --------------- | -------------------------------------- |
+| `/api`          | REST API CherryPlayServer              |
+| `/auth`         | OAuth / auth endpoints                 |
+| `/partyHub`     | SignalR hub (`ws: true` для WebSocket) |
 
 **По умолчанию** `demoConfig.ts` задаёт `demoServerUrl` как **пустую строку** — клиент строит относительные URL (`/api`, `/partyHub`). Запросы идут на origin Vite и проксируются на бэкенд; **отдельный CORS для `:5173` не нужен**.
 
@@ -54,11 +54,12 @@
 
 Веб-демо — это `AppMode: 'demo'` и `WebDemoPlatform`, не отдельная ветка проверок в UI. Ограничения задаёт **[capability-матрица](./modules/platform/README.md)** (`derivePlatformCapabilities('demo')`):
 
-| Флаг | В demo |
-|------|--------|
-| `usesFixtureFileBrowser` | ✓ — фикстурное дерево вместо ФС |
-| `simulatesExport` | ✓ — экспорт без записи на диск |
-| `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAimpWorkspace`, `supportsRealAuth` | ✗ |
+| Флаг                                                                                                                                      | В demo                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `usesFixtureFileBrowser`                                                                                                                  | ✓ — фикстурное дерево вместо ФС                                         |
+| `simulatesExport`                                                                                                                         | ✓ — экспорт без записи на диск                                          |
+| `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAudioDeviceSelection`, `supportsRealAuth` | ✗                                                                       |
+| `supportsAimpWorkspace`                                                                                                                   | ✓ — симулированный bridge (`WebDemoPlatform.aimp`, фикстурный плейлист) |
 
 Для gating в коде используйте `getPlatformCapabilities()` или guards (`guardNativeFileOperation`, `guardPlaybackUnavailable`, `isDemoAuthMode`), **не** `getAppMode() === 'demo'`. Косметика демо (баннер, title) может читать `getAppMode()`.
 
@@ -70,10 +71,10 @@
 
 Скрипты задают флаги через `cross-env`; при ручном запуске Vite используйте те же имена.
 
-| Переменная               | Значение в скриптах            | Смысл                                                                                     |
-| ------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------- |
-| `VITE_APP_MODE`          | `demo`                         | Единственный переключатель демо-режима; включает bootstrap с `WebDemoPlatform`            |
-| `VITE_LOAD_DEMO_PROJECT` | `1` только в `dev:web:project` | После монтирования UI вызывается та же загрузка, что и пункт меню «Загрузить демо-проект» |
+| Переменная               | Значение в скриптах            | Смысл                                                                                                                                                                                                               |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_MODE`          | `demo`                         | Единственный переключатель демо-режима; включает bootstrap с `WebDemoPlatform`                                                                                                                                      |
+| `VITE_LOAD_DEMO_PROJECT` | `1` только в `dev:web:project` | После монтирования UI вызывается та же загрузка, что и пункт меню «Загрузить демо-проект»                                                                                                                           |
 | `VITE_API_URL`           | опционально                    | Базовый URL CherryPlayServer. По умолчанию **пусто** — same-origin через [Vite proxy](#vite-dev-proxy-и-cherryplayserver) (`/api`, `/partyHub`). При непустом значении proxy не используется, нужен CORS на бэкенде |
 
 Запуск по умолчанию (через Vite proxy, CORS не нужен):
@@ -112,17 +113,17 @@ cross-env VITE_APP_MODE=demo VITE_API_URL=http://localhost:5000 npm run dev:web
 
 (константа `DEMO_UNAVAILABLE_MESSAGE` в `src/shared/platform/demoUnavailable.ts`).
 
-| Область                    | Поведение в веб-демо                                                                                                                                       |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Electron / preload**     | Нет `window.api`; весь IPC идёт через `WebDemoPlatform`                                                                                                    |
-| **Сохранение проекта**     | `project:save`, `project:savePortableAs` и пункты Save в меню — **«Не доступно в демо»** (нет записи проекта в localStorage и нет обхода через скачивание) |
-| **Реальное аудио**         | `audio:getDuration`, `audio:getFileSource`; превью/демо-плеер — **«Не доступно в демо»**, без воспроизведения файлов с диска                               |
-| **Коллекции (Collection)** | UI коллекции работает; **экспорт в JSON**, **копирование треков в папку**, **импорт JSON** — **«Не доступно в демо»** (`collectionPersistenceService`)     |
-| **AIMP**                   | Workspace AIMP — заглушка; `AimpIntegrationController` не монтируется; пресет layout с AIMP скрыт                                                          |
+| Область                    | Поведение в веб-демо                                                                                                                                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Electron / preload**     | Нет `window.api`; весь IPC идёт через `WebDemoPlatform`                                                                                                                                                                                                              |
+| **Сохранение проекта**     | `project:save`, `project:savePortableAs` и пункты Save в меню — **«Не доступно в демо»** (нет записи проекта в localStorage и нет обхода через скачивание)                                                                                                           |
+| **Реальное аудио**         | `audio:getDuration`, `audio:getFileSource`; превью/демо-плеер — **«Не доступно в демо»**, без воспроизведения файлов с диска                                                                                                                                         |
+| **Коллекции (Collection)** | UI коллекции работает; **экспорт в JSON**, **копирование треков в папку**, **импорт JSON** — **«Не доступно в демо»** (`collectionPersistenceService`)                                                                                                               |
+| **AIMP**                   | Workspace AIMP — заглушка; `AimpIntegrationController` не монтируется; пресет layout с AIMP скрыт                                                                                                                                                                    |
 | **Party**                  | UI на фикстурах `demoPartyFixture` (вечеринка `DEMODK`); **реальный auth в демо отключён** (`supportsRealAuth`). При запущенном CherryPlayServer и пустом `VITE_API_URL` HTTP/SignalR к `:5000` доступны **через Vite proxy** (стриминг при `enableStreaming: true`) |
-| **Аккаунт**                | Фейковый организатор «Demo Organizer»; login/OAuth без запросов к API (даже если proxy к серверу поднят)                                                      |
-| **Трансляция**             | `enableStreaming: true` по умолчанию в демо (можно выключить в настройках)                                                                                 |
-| **Production web build**   | Нет скрипта `build:web-demo`; только `dev:web` / `dev:web:project`                                                                                         |
+| **Аккаунт**                | Фейковый организатор «Demo Organizer»; login/OAuth без запросов к API (даже если proxy к серверу поднят)                                                                                                                                                             |
+| **Трансляция**             | `enableStreaming: true` по умолчанию в демо (можно выключить в настройках)                                                                                                                                                                                           |
+| **Production web build**   | Нет скрипта `build:web-demo`; только `dev:web` / `dev:web:project`                                                                                                                                                                                                   |
 
 Вне scope (не обещаются в этом режиме): File System Access API, Android WebView, production web build, CherryPlayWeb как отдельный продукт, переименование `electronStorage`, mp3 в репозитории.
 

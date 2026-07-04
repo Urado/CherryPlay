@@ -9,7 +9,7 @@ import type { AppMode } from './types';
  * | supportsLocalFilePlayback | ✓ | ✗ | ✗ |
  * | supportsNativeFileSystem | ✓ | ✗ | ✗ |
  * | supportsProjectPersistence | ✓ | ✗ | ✗ |
- * | supportsAimpWorkspace | ✓ | ✗ | ✗ |
+ * | supportsAimpWorkspace | ✓ | ✓ (simulated) | ✗ |
  * | supportsAudioDeviceSelection | ✓ | ✗ | ✗ |
  * | supportsRealAuth | ✓ | ✗ | ✗ |
  * | simulatesExport | ✗ | ✓ | ✗ |
@@ -49,7 +49,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsLocalFilePlayback: false,
         supportsNativeFileSystem: false,
         supportsProjectPersistence: false,
-        supportsAimpWorkspace: false,
+        supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: false,
         supportsRealAuth: false,
         simulatesExport: true,

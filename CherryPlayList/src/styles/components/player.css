@@ -2,6 +2,51 @@
  * Player Workspace Styles
  */
 
+.playback-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.playback-source-switch {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--text-secondary);
+  opacity: 0.55;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
+}
+
+.playback-source-switch--inline {
+  display: inline-flex;
+  align-items: center;
+  font-size: inherit;
+  line-height: inherit;
+  height: 1.25em;
+}
+
+.playback-source-switch:hover:not(:disabled) {
+  opacity: 1;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.playback-source-switch:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Действия в шапке плеера */
 .player-header-actions {
   display: flex;

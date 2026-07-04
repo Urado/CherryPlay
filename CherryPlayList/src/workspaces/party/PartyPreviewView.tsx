@@ -105,7 +105,7 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
             effectiveCustomizationSettings as CustomizationSettings<PartyThemeId>
           }
           playbackState={effectivePlaybackState}
-          partyName={partyTitle.trim() || partyName || 'Превью вечеринки'}
+          partyName={partyTitle.trim() || partyName || 'Как видят гости'}
           subtitle={partySubtitle.trim() || undefined}
           previewLifecycleState={previewLifecycleState}
           previewViewerStatusOverride={previewViewerStatusOverride}

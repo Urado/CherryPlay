@@ -35,7 +35,7 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   themeId,
   customizationSettings = {},
   playbackState = null,
-  partyName = 'Превью вечеринки',
+  partyName = 'Как видят гости',
   subtitle,
   partyId = 'preview',
   previewLifecycleState = null,

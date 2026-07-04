@@ -36,7 +36,7 @@ export const CherryPlayStreamingController: React.FC<CherryPlayStreamingControll
     useProjectStore.getState().setLinkedParty(null);
     addNotification({
       type: 'warning',
-      message: 'Привязанная вечеринка не найдена на сервере. Привязка удалена.',
+      message: 'Подключённая вечеринка не найдена на сервере. Связь удалена.',
       duration: 5000,
     });
   }, [addNotification]);

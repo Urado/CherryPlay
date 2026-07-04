@@ -1,4 +1,3 @@
-import * as signalR from '@microsoft/signalr';
 import React from 'react';
 
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -26,8 +25,6 @@ interface DragAndDropState {
 }
 
 interface PlayerViewProps {
-  name: string;
-  onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
   projectedEndTime: number | null;
@@ -79,8 +76,6 @@ interface PlayerViewProps {
   startTrackPlayback: (track: Track) => Promise<void>;
   pausePlayback: () => void;
   onNext?: () => void;
-  connectionState: signalR.HubConnectionState | null;
-  onReconnectClick?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
 }
@@ -90,8 +85,6 @@ interface PlayerViewProps {
  * Отображает UI плеера, вся логика находится в PlayerViewContainer
  */
 export const PlayerView: React.FC<PlayerViewProps> = ({
-  name,
-  onNameChange,
   allTracksCount,
   totalDuration,
   projectedEndTime,
@@ -140,16 +133,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   startTrackPlayback,
   pausePlayback,
   onNext,
-  connectionState,
-  onReconnectClick,
   serverTrackIds = null,
   jumpToTrack,
 }) => {
   return (
     <div className="playlist-view player-view">
       <PlayerHeader
-        name={name}
-        onNameChange={onNameChange}
         allTracksCount={allTracksCount}
         totalDuration={totalDuration}
         projectedEndTime={projectedEndTime}
@@ -166,8 +155,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onResetSession={onResetSession}
         onOpenGlobalSettings={onOpenGlobalSettings}
         onExportTracksToText={onExportTracksToText}
-        connectionState={connectionState}
-        onReconnectClick={onReconnectClick}
       />
 
       <PlayerTracksList
@@ -207,7 +194,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         jumpToTrack={jumpToTrack}
       />
 
-      <PlayerControls onNext={onNext} />
+      {!isPreparationMode ? <PlayerControls onNext={onNext} /> : null}
     </div>
   );
 };

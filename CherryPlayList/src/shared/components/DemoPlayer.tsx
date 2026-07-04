@@ -1,3 +1,4 @@
+import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -59,6 +60,8 @@ interface DemoPlayerProps {
   onShowInBrowser?: (path: string) => void;
   controller?: DemoPlayerController;
   notify?: (payload: NotificationPayload) => void;
+  showDismiss?: boolean;
+  onDismiss?: () => void;
 }
 
 const isSafeTrackPath = (path: string | null | undefined): boolean => {
@@ -87,6 +90,8 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
   onShowInBrowser,
   controller,
   notify,
+  showDismiss = false,
+  onDismiss,
 }) => {
   const storeNotification = useUIStore((state) => state.addNotification);
   const addNotification = notify ?? storeNotification;
@@ -181,6 +186,11 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
     }
   }, [error, addNotification]);
 
+  const handleDismiss = useCallback(() => {
+    clear();
+    onDismiss?.();
+  }, [clear, onDismiss]);
+
   const containerClassName = useMemo(
     () =>
       [
@@ -204,7 +214,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           disabled={isDisabled}
           title={
             storeIsDisabled
-              ? 'Демо-плеер заблокирован (используется то же устройство, что и плеер)'
+              ? 'Прослушивание файла недоступно (то же устройство, что у плеера)'
               : isPlaying
                 ? 'Пауза'
                 : 'Воспроизвести'
@@ -228,8 +238,19 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           disabled={!currentTrack || !onShowInBrowser}
         >
           <OpenInNewIcon fontSize="small" />
-          <span>Показать в браузере</span>
+          <span>Показать файл в проводнике</span>
         </button>
+        {showDismiss ? (
+          <button
+            type="button"
+            className="demo-player__dismiss-button"
+            onClick={handleDismiss}
+            title="Скрыть"
+            aria-label="Скрыть прослушивание"
+          >
+            <CloseIcon fontSize="small" />
+          </button>
+        ) : null}
       </div>
 
       <div className="demo-player__controls-row">

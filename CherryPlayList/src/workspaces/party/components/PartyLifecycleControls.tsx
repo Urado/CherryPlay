@@ -33,13 +33,9 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
           className="party-editor-button party-editor-button-primary party-lifecycle-action"
           disabled={isDisabled}
           onClick={() => onTransition('ready')}
-          title="Перевести вечеринку в статус «Готова к мероприятию»"
+          title="Страница вечеринки станет доступна гостям (статус «Опубликована»)"
         >
-          {isTransitioning
-            ? 'Обновление...'
-            : isHeader
-              ? 'Подготовить'
-              : 'Подготовить к мероприятию'}
+          {isTransitioning ? 'Обновление...' : isHeader ? 'Открыть' : 'Открыть для гостей'}
         </button>
       )}
 
@@ -50,9 +46,9 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
             className="party-editor-button party-editor-button-secondary party-lifecycle-action"
             disabled={isDisabled}
             onClick={() => onTransition('draft')}
-            title="Сделать черновиком"
+            title="Снять страницу с сайта (статус «Не на сайте»)"
           >
-            {isTransitioning ? 'Обновление...' : isHeader ? 'В черновик' : 'Сделать черновиком'}
+            {isTransitioning ? 'Обновление...' : isHeader ? 'Снять' : 'Снять с сайта'}
           </button>
           <button
             type="button"
@@ -72,7 +68,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
           className="party-editor-button party-editor-button-secondary party-lifecycle-action"
           disabled={isDisabled}
           onClick={() => onTransition('ready')}
-          title="Вернуть вечеринку в состояние «Готова»"
+          title="Вернуть вечеринку на сайт (статус «Опубликована»)"
         >
           {isTransitioning ? 'Обновление...' : 'Вернуть'}
         </button>

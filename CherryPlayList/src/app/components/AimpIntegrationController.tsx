@@ -54,7 +54,7 @@ export const AimpIntegrationController: React.FC = () => {
             type: 'warning',
             message:
               availability.gatingReasons[0]?.message ??
-              'AIMP источник недоступен. Возвращаемся к CherryPlay Player.',
+              'AIMP недоступен. Возвращаемся к CherryPlay.',
             duration: 6000,
           });
         }

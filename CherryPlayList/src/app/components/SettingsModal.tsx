@@ -352,12 +352,46 @@ export const SettingsModal: React.FC = () => {
               className="settings-section-title"
               style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
             >
-              Источник стриминга
+              Онлайн
+            </div>
+
+            <div className="settings-group">
+              <div className="settings-checkbox-group">
+                <input
+                  type="checkbox"
+                  className="settings-checkbox"
+                  checked={localEnableStreaming}
+                  onChange={(e) => setLocalEnableStreaming(e.target.checked)}
+                  id="settings-enable-streaming"
+                />
+                <label className="settings-checkbox-label" htmlFor="settings-enable-streaming">
+                  Онлайн
+                </label>
+              </div>
+              <div
+                className="settings-description"
+                style={{
+                  marginTop: 4,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary, #9e9e9e)',
+                }}
+              >
+                {localEnableStreaming
+                  ? 'Связь с сервером и страницей для гостей.'
+                  : 'Работа без сети — запросы к серверу не выполняются.'}
+              </div>
+            </div>
+
+            <div
+              className="settings-section-title"
+              style={{ marginTop: 12, marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+            >
+              Синхронизация с сайтом
             </div>
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="settings-streaming-source">
-                Источник состояния воспроизведения
+                Источник состояния для гостей
               </label>
               <select
                 className="settings-select"
@@ -366,8 +400,9 @@ export const SettingsModal: React.FC = () => {
                   setLocalStreamingSource(e.target.value as 'cherryPlayPlayer' | 'aimp')
                 }
                 id="settings-streaming-source"
+                disabled={!localEnableStreaming}
               >
-                <option value="cherryPlayPlayer">CherryPlay Player</option>
+                <option value="cherryPlayPlayer">CherryPlay</option>
                 <option value="aimp" disabled={!canSelectAimpSource}>
                   AIMP
                 </option>
@@ -419,7 +454,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="player-audio-device">
-                Аудиоустройство для плеера
+                Куда играет CherryPlay
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -458,7 +493,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="demo-player-audio-device">
-                Аудиоустройство для демо-плеера
+                Куда играет прослушивание файлов
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -493,21 +528,6 @@ export const SettingsModal: React.FC = () => {
                   {getPlatformUnavailableMessage()}
                 </div>
               )}
-            </div>
-
-            <div className="settings-group">
-              <div className="settings-checkbox-group">
-                <input
-                  type="checkbox"
-                  className="settings-checkbox"
-                  checked={localEnableStreaming}
-                  onChange={(e) => setLocalEnableStreaming(e.target.checked)}
-                  id="settings-enable-streaming"
-                />
-                <label className="settings-checkbox-label" htmlFor="settings-enable-streaming">
-                  Включить стриминг
-                </label>
-              </div>
             </div>
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />

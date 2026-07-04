@@ -11,13 +11,24 @@ export interface WorkspacePickerOption {
   name: string;
 }
 
+function isWorkspaceTypeUsedInLayout(type: string, usedTypes: Set<string>): boolean {
+  if (type === 'player' || type === 'aimp') {
+    return usedTypes.has('player') || usedTypes.has('aimp');
+  }
+
+  return usedTypes.has(type);
+}
+
 export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOption[] {
   const usedTypes = layout ? collectWorkspaceTypes(layout.rootZone) : new Set<string>();
 
-  const options = workspaceRegistry.getAllModulesByType().map((module) => ({
-    type: module.type,
-    name: getWorkspaceDisplayNameRu(module.type, module.name),
-  }));
+  const options = workspaceRegistry
+    .getAllModulesByType()
+    .filter((module) => module.type !== 'aimp')
+    .map((module) => ({
+      type: module.type,
+      name: getWorkspaceDisplayNameRu(module.type, module.name),
+    }));
 
   if (!options.some((option) => option.type === 'fileBrowser')) {
     options.push({
@@ -27,6 +38,10 @@ export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOptio
   }
 
   return options
-    .filter((option) => !isSingletonWorkspaceType(option.type) || !usedTypes.has(option.type))
+    .filter(
+      (option) =>
+        !isSingletonWorkspaceType(option.type) ||
+        !isWorkspaceTypeUsedInLayout(option.type, usedTypes),
+    )
     .sort((left, right) => left.name.localeCompare(right.name, 'ru'));
 }

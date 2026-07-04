@@ -76,7 +76,7 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
                   onClose();
                 }}
               >
-                Перейти к этому треку
+                Играть с этого места
               </button>
             </li>
           ) : (

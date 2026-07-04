@@ -136,7 +136,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 title={
                   canRemoveSelected
                     ? `Delete Selected (${selectedCount})`
-                    : 'Нельзя удалить проигранные или текущий трек в режиме сессии'
+                    : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                 }
               >
                 <DeleteSweepIcon style={{ fontSize: '20px' }} />

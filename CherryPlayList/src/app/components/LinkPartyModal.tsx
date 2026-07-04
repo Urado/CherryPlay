@@ -112,7 +112,7 @@ export const LinkPartyModal: React.FC = () => {
     >
       <div className="modal-content link-party-modal-content">
         <div className="modal-header">
-          <h2 className="modal-title">Привязать к вечеринке</h2>
+          <h2 className="modal-title">Подключить к вечеринке</h2>
           <button type="button" className="modal-close" onClick={handleCancel} aria-label="Закрыть">
             <CloseIcon />
           </button>
@@ -168,10 +168,10 @@ export const LinkPartyModal: React.FC = () => {
                           className="modal-button primary link-party-modal-link-btn"
                           onClick={() => handleLink(party)}
                           disabled={linkingId !== null}
-                          aria-label={`Привязать к вечеринке ${party.name}`}
+                          aria-label={`Подключить к вечеринке ${party.name}`}
                         >
                           <LinkIcon fontSize="small" />
-                          {linkingId === party.id ? 'Привязка...' : 'Привязать'}
+                          {linkingId === party.id ? 'Подключение...' : 'Подключить'}
                         </button>
                       </li>
                     ))}

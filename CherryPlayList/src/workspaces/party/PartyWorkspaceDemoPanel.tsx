@@ -222,28 +222,28 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   className="party-workspace-demo-panel-button"
                   onClick={demoSetUnlinkedDraft}
                 >
-                  Создание (без привязки)
+                  Создание (без подключения)
                 </button>
                 <button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('draft')}
                 >
-                  Черновик (привязана)
+                  Не на сайте (подключена)
                 </button>
                 <button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('ready')}
                 >
-                  Готова к мероприятию
+                  Опубликована
                 </button>
                 <button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('completed')}
                 >
-                  Завершена
+                  Архив
                 </button>
               </div>
             </div>

@@ -3,6 +3,7 @@ import React, { memo } from 'react';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
+import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
 
 import { SourcesPanel } from '../components/SourcesPanel';
 
@@ -16,16 +17,20 @@ interface WorkspaceRendererProps {
  */
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
   const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
-  if (zone.workspaceType === 'aimp' && !supportsAimpWorkspace) {
-    const message =
-      mode === 'demo'
-        ? DEMO_UNAVAILABLE_MESSAGE
-        : 'AIMP workspace is not available on this platform.';
-    return (
-      <div className="empty-state">
-        <p>{message}</p>
-      </div>
-    );
+  if (zone.workspaceType === 'aimp') {
+    if (!supportsAimpWorkspace) {
+      const message =
+        mode === 'demo'
+          ? DEMO_UNAVAILABLE_MESSAGE
+          : 'AIMP workspace is not available on this platform.';
+      return (
+        <div className="empty-state">
+          <p>{message}</p>
+        </div>
+      );
+    }
+
+    return <LegacyAimpWorkspaceAdapter zoneId={zone.id} />;
   }
 
   // Special case for fileBrowser - it uses SourcesPanel

@@ -4,6 +4,8 @@ export { NotificationContainer } from './NotificationContainer';
 export { OnlineUnavailablePanel } from './OnlineUnavailablePanel';
 export type { OnlineUnavailableReason } from './OnlineUnavailablePanel';
 export { Spinner } from './Spinner';
+export { StreamingConnectionIndicator } from './StreamingConnectionIndicator';
+export type { StreamingConnectionIndicatorProps } from './StreamingConnectionIndicator';
 
 // ListRow - Compound Components for list items
 export {

@@ -1,11 +1,11 @@
 import type { LayoutPreset } from '@core/types/workspacePreset';
 
 export const LAYOUT_PRESET_DISPLAY_NAMES_RU: Record<LayoutPreset, string> = {
-  simple: 'Простой',
+  simple: 'Плейлист + источники',
   complex: 'Сложный',
-  collections: 'С коллекциями',
+  collections: 'Сборка плейлиста',
   'collections-vertical': 'Коллекции вертикально',
-  player: 'Плеер',
-  party: 'Вечеринка',
+  player: 'Проигрывание',
+  party: 'Онлайн-вечеринка',
   'aimp-party': 'AIMP + Party',
 };

@@ -64,7 +64,7 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
         <div className="party-editor-shell-linked-banner">
           <span className="party-editor-shell-linked-banner-icon">🔗</span>
           <span className="party-editor-shell-linked-banner-text">
-            Привязано к вечеринке: <strong>/{linkedParty.shortCode}</strong>
+            Подключено к вечеринке: <strong>/{linkedParty.shortCode}</strong>
           </span>
           {linkedParty.url && (
             <>

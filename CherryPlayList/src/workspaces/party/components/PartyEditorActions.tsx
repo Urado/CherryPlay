@@ -83,13 +83,13 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           onClick={onPublish}
           disabled={isCreating || isPublishing}
           type="button"
-          title="Отправить плейлист и настройки вечеринки на сервер"
+          title="Обновить плейлист и настройки, которые видят гости"
         >
           {isPublishing || isCreating
-            ? 'Публикация...'
+            ? 'Обновление...'
             : compact
-              ? 'Обновить данные'
-              : 'Опубликовать изменения'}
+              ? 'Обновить на сайте'
+              : 'Обновить для гостей'}
         </button>
       )}
       {showCreate && onCreateParty && (
@@ -98,9 +98,9 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           onClick={onCreateParty}
           disabled={!isAuthenticated || isCreating || !partyName.trim()}
           type="button"
-          title={!isAuthenticated ? 'Требуется авторизация' : 'Создать вечеринку'}
+          title={!isAuthenticated ? 'Требуется авторизация' : 'Создать запись вечеринки на сервере'}
         >
-          {isCreating ? 'Создание...' : compact ? 'Создать' : 'Создать вечеринку'}
+          {isCreating ? 'Создание...' : compact ? 'Новая' : 'Новая вечеринка на сервере'}
         </button>
       )}
       {showLinkParty && onOpenLinkParty && (
@@ -108,9 +108,9 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           className="party-editor-button party-editor-button-secondary"
           onClick={onOpenLinkParty}
           type="button"
-          title="Привязать текущий плейлист к вечеринке, созданной на сервере"
+          title="Подключить текущий плейлист к вечеринке, уже созданной на сервере"
         >
-          {compact ? 'Привязать' : 'Привязать к вечеринке'}
+          {compact ? 'Подключить' : 'Подключить к существующей'}
         </button>
       )}
     </div>

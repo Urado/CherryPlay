@@ -26,6 +26,7 @@ import {
   useUIStore,
 } from '@shared/stores';
 
+import { HeaderPlaybackPill } from './HeaderPlaybackPill';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { WorkspaceMenu } from './WorkspaceMenu';
 
@@ -610,14 +611,14 @@ export const AppHeader: React.FC = () => {
                             aria-label="Сохранение…"
                             role="status"
                           />
-                          Сохранить
+                          Сохранить проект
                         </span>
                       ) : (
-                        'Сохранить'
+                        'Сохранить проект'
                       )}
                     </button>
                     {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
-                        no filePath (only «Сохранить») vs with filePath (+ «Сохранить как…») and
+                        no filePath (only «Сохранить проект») vs with filePath (+ «Сохранить копию…») and
                         `globalShortcutHandlers` when a renderer test harness exists. */}
                     {meta.filePath ? (
                       <button
@@ -630,7 +631,7 @@ export const AppHeader: React.FC = () => {
                           openSaveAsModal();
                         }}
                       >
-                        Сохранить как…
+                        Сохранить копию…
                       </button>
                     ) : null}
                   </div>
@@ -701,6 +702,8 @@ export const AppHeader: React.FC = () => {
 
           <WorkspaceMenu />
         </div>
+
+        <HeaderPlaybackPill disabled={isLayoutEditMode} />
 
         <DemoPlayer
           className={`app-header-demo-player${isLayoutEditMode ? ' app-header-demo-player--blocked' : ''}`}

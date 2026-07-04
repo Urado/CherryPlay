@@ -552,6 +552,202 @@
   }
 }
 
+.playback-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 280px;
+  min-width: 220px;
+  max-width: 480px;
+  min-height: 32px;
+  padding: 4px 10px 4px 4px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.playback-pill--blocked {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.playback-pill--prep {
+  padding: 4px 6px 4px 12px;
+  gap: 10px;
+}
+
+.playback-pill__toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.playback-pill__toggle:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.playback-pill__toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.playback-pill__track {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.playback-pill__track-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-pill__track-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+.playback-pill__track-error {
+  font-size: 11px;
+  color: var(--state-error, #ff6b6b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-pill__volume {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 88px;
+  max-width: 120px;
+  color: var(--text-secondary);
+}
+
+.playback-pill__volume-slider {
+  flex: 1 1 auto;
+  min-width: 48px;
+  accent-color: var(--accent-primary);
+}
+
+.playback-pill__prep-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  align-self: center;
+  min-height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-pill__online {
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: center;
+}
+
+.streaming-connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: help;
+  border: 1px solid transparent;
+}
+
+.streaming-connection-indicator--compact {
+  padding: 2px 6px;
+}
+
+.streaming-connection-indicator--connected {
+  background-color: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.35);
+}
+
+.streaming-connection-indicator--connecting {
+  background-color: rgba(255, 193, 7, 0.12);
+  border-color: rgba(255, 193, 7, 0.35);
+}
+
+.streaming-connection-indicator--disconnected {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: var(--ui-border);
+}
+
+.streaming-connection-indicator--clickable {
+  cursor: pointer;
+}
+
+.streaming-connection-indicator--clickable:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.streaming-connection-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.streaming-connection-indicator__dot--connected {
+  background-color: #4caf50;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);
+}
+
+.streaming-connection-indicator__dot--connecting {
+  background-color: #ffc107;
+  animation: streaming-connection-pulse 1.2s ease-in-out infinite;
+}
+
+.streaming-connection-indicator__dot--disconnected {
+  background-color: #9e9e9e;
+}
+
+.streaming-connection-indicator__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@keyframes streaming-connection-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
 .app-header-demo-player {
   flex: 1 1 auto;
   min-width: 200px;
@@ -707,6 +903,12 @@
 
   .app-header-left {
     width: 100%;
+  }
+
+  .playback-pill {
+    min-width: 100%;
+    max-width: none;
+    flex: 1 1 100%;
   }
 
   .app-header-demo-player {

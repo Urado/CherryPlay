@@ -803,7 +803,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 1.2;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .party-editor-success {
@@ -1004,12 +1004,8 @@
 }
 
 @container party-editor (max-width: 760px) {
-  .party-editor-actions--header {
-    width: 100%;
-  }
-
   .party-editor-shell-header-toolbar .party-editor-button,
   .party-editor-shell-header-toolbar .party-lifecycle-action {
-    flex: 1 1 140px;
+    flex: 0 0 auto;
   }
 }

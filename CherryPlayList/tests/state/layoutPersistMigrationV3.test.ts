@@ -76,12 +76,12 @@ describe('layout persist migration v3', () => {
     expect(getWorkspaceTypes(root)).toEqual(['player', 'party-editor', 'party-preview']);
   });
 
-  test('migrates legacy aimp-party preset to editor + preview workspaces', () => {
+  test('migrates legacy aimp-party preset to unified player + party workspaces', () => {
     const migrated = migrateLegacyPartyLayout(createLegacyAimpPartyLayout());
 
-    expect(getLayoutPresetFromLayout(migrated)).toBe('aimp-party');
+    expect(getLayoutPresetFromLayout(migrated)).toBe('party');
     const root = migrated.rootZone as ContainerZone;
-    expect(getWorkspaceTypes(root)).toEqual(['aimp', 'party-editor', 'party-preview']);
+    expect(getWorkspaceTypes(root)).toEqual(['player', 'party-editor', 'party-preview']);
   });
 
   test('migratePersistedLayoutState upgrades persisted state below v3', () => {

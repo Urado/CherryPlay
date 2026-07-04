@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { MAX_LAYOUT_DEPTH, MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import {
-  AIMP_WORKSPACE_ID,
   DEFAULT_FILEBROWSER_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
@@ -36,10 +35,15 @@ const SINGLETON_WORKSPACE_TYPES = new Set([
   'playlist',
   'fileBrowser',
   'player',
-  'aimp',
   'party-editor',
   'party-preview',
 ]);
+
+const PLAYBACK_WORKSPACE_TYPES = new Set(['player', 'aimp']);
+
+function isPlaybackWorkspaceType(workspaceType: string): boolean {
+  return PLAYBACK_WORKSPACE_TYPES.has(workspaceType);
+}
 
 function getSplitDirection(side: LayoutEditAirSide): SplitDirection {
   return side === 'top' || side === 'bottom' ? 'vertical' : 'horizontal';
@@ -115,7 +119,38 @@ export function collectWorkspaceZones(root: Zone): WorkspaceZone[] {
 }
 
 export function isSingletonWorkspaceType(workspaceType: string): boolean {
-  return SINGLETON_WORKSPACE_TYPES.has(workspaceType);
+  return SINGLETON_WORKSPACE_TYPES.has(workspaceType) || isPlaybackWorkspaceType(workspaceType);
+}
+
+function layoutHasPlaybackWorkspace(types: Set<string>): boolean {
+  return types.has('player') || types.has('aimp');
+}
+
+function migrateAimpZoneToPlayer(zone: Zone): Zone {
+  if (zone.type === 'workspace' && zone.workspaceType === 'aimp') {
+    return {
+      ...zone,
+      workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
+      workspaceType: 'player',
+    };
+  }
+
+  if (zone.type === 'container') {
+    return {
+      ...zone,
+      zones: zone.zones.map(migrateAimpZoneToPlayer),
+    };
+  }
+
+  return zone;
+}
+
+/** Merges legacy standalone AIMP zones into unified Player workspace zones. */
+export function migrateAimpZonesToPlayerInLayout(layout: Layout): Layout {
+  return {
+    ...layout,
+    rootZone: migrateAimpZoneToPlayer(layout.rootZone) as Layout['rootZone'],
+  };
 }
 
 export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
@@ -127,7 +162,7 @@ export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
     case 'player':
       return DEFAULT_PLAYER_WORKSPACE_ID;
     case 'aimp':
-      return AIMP_WORKSPACE_ID;
+      return DEFAULT_PLAYER_WORKSPACE_ID;
     case 'party-editor':
       return PARTY_EDITOR_WORKSPACE_ID;
     case 'party-preview':
@@ -138,11 +173,13 @@ export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
 }
 
 export function createWorkspaceZone(workspaceType: string): WorkspaceZone {
+  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+
   return {
     id: uuidv4(),
     type: 'workspace',
-    workspaceId: resolveWorkspaceIdForType(workspaceType),
-    workspaceType,
+    workspaceId: resolveWorkspaceIdForType(normalizedType),
+    workspaceType: normalizedType,
     size: 50,
   };
 }
@@ -181,14 +218,19 @@ export function addAdjacentWorkspaceToLayout(
     return { ok: false, reason: 'not_found' };
   }
 
-  if (
-    isSingletonWorkspaceType(workspaceType) &&
-    collectWorkspaceTypes(layout.rootZone).has(workspaceType)
-  ) {
-    return { ok: false, reason: 'duplicate_singleton' };
+  if (isSingletonWorkspaceType(workspaceType)) {
+    const types = collectWorkspaceTypes(layout.rootZone);
+    if (isPlaybackWorkspaceType(workspaceType)) {
+      if (layoutHasPlaybackWorkspace(types)) {
+        return { ok: false, reason: 'duplicate_singleton' };
+      }
+    } else if (types.has(workspaceType)) {
+      return { ok: false, reason: 'duplicate_singleton' };
+    }
   }
 
-  const newZone = createWorkspaceZone(workspaceType);
+  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const newZone = createWorkspaceZone(normalizedType);
   const splitDirection = getSplitDirection(side);
   const parent = findParentZone(layout.rootZone, targetZoneId);
 

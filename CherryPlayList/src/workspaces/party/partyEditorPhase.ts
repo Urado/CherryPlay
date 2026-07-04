@@ -51,9 +51,9 @@ export const PARTY_EDITOR_PHASE_BADGE_LABELS: Partial<
 };
 
 export const PARTY_EDITOR_LIFECYCLE_BADGE_LABELS: Record<PartyLifecycleState, string> = {
-  draft: 'Черновик',
-  ready: 'Готова',
-  completed: 'Завершена',
+  draft: 'Не на сайте',
+  ready: 'Опубликована',
+  completed: 'Архив',
 };
 
 /** When demo override is set, blocked UI overlays the last resolved phase without mutating auth/server state. */
