@@ -27,6 +27,7 @@ import { AccountModal } from './components/AccountModal';
 import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
+import { CherryPlayStreamingController } from './components/CherryPlayStreamingController';
 import { DemoModeBanner } from './components/DemoModeBanner';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
@@ -137,21 +138,23 @@ const App: React.FC = () => {
   }, [isLayoutEditMode]);
 
   return (
-    <div className="app">
-      {isDemoMode && <DemoModeBanner />}
-      <AppHeader />
-      <div className="app-content">
-        <LayoutWorkspaceArea />
+    <CherryPlayStreamingController>
+      <div className="app">
+        {isDemoMode && <DemoModeBanner />}
+        <AppHeader />
+        <div className="app-content">
+          <LayoutWorkspaceArea />
+        </div>
+        {supportsAimpWorkspace && <AimpIntegrationController />}
+        <SettingsModal />
+        <ExportModal />
+        <LinkPartyModal />
+        <TrackSettingsModal />
+        <AccountModal />
+        <NotificationContainer />
+        <AppFooter />
       </div>
-      {supportsAimpWorkspace && <AimpIntegrationController />}
-      <SettingsModal />
-      <ExportModal />
-      <LinkPartyModal />
-      <TrackSettingsModal />
-      <AccountModal />
-      <NotificationContainer />
-      <AppFooter />
-    </div>
+    </CherryPlayStreamingController>
   );
 };
 

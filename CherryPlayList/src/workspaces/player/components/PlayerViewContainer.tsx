@@ -1,15 +1,16 @@
-import * as signalR from '@microsoft/signalr';
-import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 
+import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useWorkspaceDragAndDrop, useTrackDuration, useDragDropExecutor } from '@shared/hooks';
-import { fileService, ipcService, signalRService } from '@shared/services';
+import { fileService, ipcService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
+import { streamingOrchestrator } from '@shared/streaming';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import { createTrackWithId } from '@shared/utils/trackFactory';
@@ -155,14 +156,10 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   });
 
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
-  const [connectionState, setConnectionState] = useState<signalR.HubConnectionState | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const connectToSignalRRef = useRef<(() => Promise<void>) | null>(null);
-  const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
 
-  const handleReconnectClick = useCallback(() => {
-    connectToSignalRRef.current?.();
-  }, []);
+  const { connectionState, reconnect: handleReconnectClick } = useCherryPlayStreamingConnection();
+
+  const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
 
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
@@ -263,8 +260,7 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
   const handleResetSession = useCallback(async () => {
     if (enableStreaming && linkedParty) {
       try {
-        signalRService.stopPositionUpdates();
-        await signalRService.resetPlaybackState(linkedParty.id);
+        await streamingOrchestrator.resetServerPlaybackState();
       } catch (error) {
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
         addNotification({
@@ -276,8 +272,8 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
       }
     }
     handleResetSessionFromHook();
-    if (enableStreaming && linkedParty && signalRService.isServiceConnected()) {
-      signalRService.sendFullStateUpdate(linkedParty.id);
+    if (enableStreaming && linkedParty) {
+      streamingOrchestrator.publishFullState();
     }
   }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
@@ -462,148 +458,8 @@ const PlayerViewContainerContent: React.FC<PlayerViewContainerProps> = ({
     }
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
-  useEffect(() => {
-    logger.info('[PlayerViewContainer] Streaming effect:', {
-      enableStreaming,
-      hasLinkedParty: !!linkedParty,
-      partyId: linkedParty?.id,
-    });
-
-    if (!enableStreaming) {
-      logger.info('[PlayerViewContainer] SignalR skipped: streaming disabled');
-      if (signalRService.isServiceConnected()) {
-        signalRService.disconnect().catch((err) => logger.error('SignalR disconnect error', err));
-      }
-      setConnectionState(null);
-      return;
-    }
-
-    if (!linkedParty) {
-      logger.info(
-        '[PlayerViewContainer] SignalR skipped: no party linked (create/link a party first)',
-      );
-      if (signalRService.isServiceConnected()) {
-        signalRService.disconnect().catch((err) => logger.error('SignalR disconnect error', err));
-      }
-      setConnectionState(null);
-      return;
-    }
-
-    const connectToSignalR = async () => {
-      if (!linkedParty || !enableStreaming) {
-        return;
-      }
-
-      connectToSignalRRef.current = connectToSignalR;
-
-      try {
-        const exists = await partyService.checkPartyExists(linkedParty.id);
-        if (!exists) {
-          logger.warn(
-            '[PlayerViewContainer] Party does not exist on server, skipping SignalR connection',
-          );
-          useProjectStore.getState().setLinkedParty(null);
-          addNotification({
-            type: 'warning',
-            message: 'Привязанная вечеринка не найдена на сервере. Привязка удалена.',
-            duration: 5000,
-          });
-          setConnectionState(signalR.HubConnectionState.Disconnected);
-          return;
-        }
-      } catch (error) {
-        logger.error('[PlayerViewContainer] Failed to check party existence:', error);
-        setConnectionState(signalR.HubConnectionState.Disconnected);
-        return;
-      }
-
-      if (signalRService.isServiceConnected()) {
-        setConnectionState(signalR.HubConnectionState.Connected);
-        signalRService.startStoreSubscriptions(linkedParty.id);
-        if (mode === 'session') {
-          signalRService.startPositionUpdates(linkedParty.id);
-        }
-        return;
-      }
-
-      try {
-        logger.info('[PlayerViewContainer] Connecting to SignalR for party', linkedParty.id);
-        setConnectionState(signalR.HubConnectionState.Connecting);
-        await signalRService.connect();
-        await signalRService.joinPartyAsOrganizer(linkedParty.id);
-        signalRService.startStoreSubscriptions(linkedParty.id);
-
-        if (mode === 'session') {
-          signalRService.startPositionUpdates(linkedParty.id);
-          await signalRService.startSession(linkedParty.id);
-        }
-
-        signalRService.sendFullStateUpdate(linkedParty.id);
-        setConnectionState(signalR.HubConnectionState.Connected);
-      } catch (error) {
-        logger.error('[PlayerViewContainer] Failed to connect to SignalR:', error);
-        setConnectionState(signalR.HubConnectionState.Disconnected);
-
-        if (linkedParty && reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
-        if (linkedParty && enableStreaming) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connectToSignalR();
-          }, 10000);
-        }
-      }
-    };
-
-    connectToSignalR();
-
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [linkedParty, mode, enableStreaming, addNotification]);
-
-  useEffect(() => {
-    if (!enableStreaming || !linkedParty || !signalRService.isServiceConnected()) {
-      return;
-    }
-
-    if (mode === 'session') {
-      signalRService.startPositionUpdates(linkedParty.id);
-      signalRService
-        .startSession(linkedParty.id)
-        .catch((err) => logger.error('[PlayerViewContainer] Failed to start SignalR session', err));
-    } else {
-      signalRService.stopPositionUpdates();
-    }
-  }, [mode, linkedParty, enableStreaming]);
-
-  useEffect(() => {
-    if (!enableStreaming) {
-      setConnectionState(null);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const state = signalRService.getConnectionState();
-      setConnectionState(state);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [enableStreaming]);
-
-  useEffect(() => {
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Regenerate the party URL after hydration completes.
-  // electronStorage (IndexedDB via localforage) is async — linkedParty may be null
-  // at first render, so we wait for onFinishHydration before reading the store.
+  // Party metadata reads only (getPartyUrl, getPartyState) — no REST playlist PUT here.
+  // Live playlist sync during session: Site Streamer `partyPlaylistSync` via orchestrator.
   useEffect(() => {
     const regenerateUrl = () => {
       const { linkedParty: party } = useProjectStore.getState().meta;

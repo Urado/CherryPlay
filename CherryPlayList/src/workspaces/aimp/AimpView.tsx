@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { WorkspaceId } from '@core/types/workspace';
 import { EmptyState, ItemList, ListRowCompound } from '@shared/components';
 import { type AimpPlaylistTrackDto } from '@shared/contracts/aimp';
-import { signalRService } from '@shared/services';
 import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import {
   canAdvanceAimpPlayback,
@@ -14,7 +13,6 @@ import {
   getAimpCurrentTrack,
   getAimpEffectiveProgressMs,
   isAimpDegraded,
-  startAimpOrganizerSession,
 } from '@shared/utils';
 
 interface AimpViewProps {
@@ -186,24 +184,17 @@ export const AimpView: React.FC<AimpViewProps> = () => {
       if (bridgeState.liveStreamStarted) {
         await setLiveStreamStarted(false);
       } else {
-        await startAimpOrganizerSession({
-          bridgeState,
-          publishingBridgeReady,
-          actions: {
-            startSession: async () => {
-              await signalRService.startSession(linkedPartyId);
-            },
-            setLiveStreamStarted: async (liveStreamStarted) => {
-              await setLiveStreamStarted(liveStreamStarted);
-            },
-            endSession: async () => {
-              await signalRService.endSession(linkedPartyId);
-            },
-            resetPlaybackState: async () => {
-              await signalRService.resetPlaybackState(linkedPartyId);
-            },
-          },
-        });
+        if (!publishingBridgeReady) {
+          throw new Error('AIMP publishing path is not ready yet.');
+        }
+
+        if (!canStartAimpLiveStream(bridgeState)) {
+          throw new Error(
+            'AIMP snapshots and plugin connection are not ready for live streaming yet.',
+          );
+        }
+
+        await setLiveStreamStarted(true);
       }
 
       addNotification({

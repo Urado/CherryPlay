@@ -16,7 +16,7 @@ Workspace для мониторинга состояния AIMP и трансл�
 ## Основные компоненты
 
 - **AimpView** (`src/workspaces/aimp/AimpView.tsx`) — основной UI workspace.
-- **AimpIntegrationController** (`src/app/components/AimpIntegrationController.tsx`) — синхронизация источника с Electron, подключение AIMP-пути к SignalR и публикация состояния.
+- **AimpIntegrationController** (`src/app/components/AimpIntegrationController.tsx`) — bootstrap AIMP bridge, синхронизация `streamingSource` с Electron; SignalR lifecycle через **`useAimpStreamingOrchestrator`** (не прямые вызовы `signalRService`).
 - **aimpStore** (`src/shared/stores/aimpStore.ts`) — состояние моста AIMP (от Electron).
 - **aimpService** (`src/shared/services/aimpService.ts`) — вызовы IPC к main process (getState, setSourceSelection, setLiveStreamStarted, onStateChanged).
 - **aimpStreamingAdapter** / **aimpOrganizerSession** — приведение AIMP snapshot к контракту организатора и публикация в Hub.
@@ -41,14 +41,15 @@ Workspace для мониторинга состояния AIMP и трансл�
 
 - **Выбор источника** задаётся в настройках (Стриминг → источник: AIMP или CherryPlay Player). При источнике AIMP встроенный Player для стриминга не используется.
 - **Ключ публикации плейлиста:** `getAimpPlaylistPublishKey(playlistSnapshot)` — `playlistId:revision`; полное состояние плейлиста отправляется при изменении ревизии.
-- **Ключ публикации воспроизведения:** `getAimpPlaybackPublishKey(state)` — намеренно **не включает** `positionMs` и `revision`, чтобы не слать `UpdateFullState` на каждое обновление позиции. Полное состояние воспроизведения публикуется при смене трека, статуса или плейлиста. **Позиция** передаётся отдельно вызовом **`UpdatePlaybackPosition` раз в 1 с** (интервал задаётся в подписке SignalR при источнике AIMP).
+- **Ключ публикации воспроизведения:** `getAimpPlaybackPublishKey(state)` — намеренно **не включает** `positionMs` и `revision`, чтобы не слать `UpdateFullState` на каждое обновление позиции. Полное состояние воспроизведения публикуется при смене трека, статуса или плейлиста. **Позиция** передаётся отдельно вызовом **`UpdatePlaybackPosition` раз в 1 с** (position tick в `streamingOrchestrator`, когда `AimpBroadcastSource.shouldSendPositionTicks()`).
 - **Party preview:** в workspace Party превью плейлиста при источнике AIMP строится из состояния AIMP (`aimpStore`): список треков и текущий трек берутся из `playlistSnapshot` и `getAimpCurrentTrack(bridgeState)` (см. [AIMP Streaming (корень)](../../../../docs/integration/aimp-streaming.md)).
 - **Разрешение currentTrackKey для отображения:** в UI «текущий трек» определяется через `getAimpCurrentTrack(bridgeState)`: ключ = `playbackSnapshot.currentTrackKey ?? playlistSnapshot.activeTrackKey`; по этому ключу ищется трек в `playlistSnapshot.tracks`; имя/исполнитель подставляются из найденного трека (без плейлиста имя текущего трека вывести нельзя).
 
 ## Связь со Streaming и Player
 
 - При **источнике AIMP** встроенный Player **полностью отключён** для стриминга: его сессия сбрасывается, трансляция идёт только из AIMP.
-- Публикация на сервер/сайт идёт через тот же SignalR/REST контракт, что и для встроенного плеера; данные из AIMP приводятся к тому же формату (адаптер в `aimpStreamingAdapter` / `aimpOrganizerSession`).
+- Публикация на сервер/сайт идёт через **`streamingOrchestrator`** + **`AimpBroadcastSource`** — тот же SignalR/REST контракт, что и для встроенного плеера; маппинг snapshot — `aimpStreamingAdapter`.
+- **Frozen-state publish** (до «Старт стриминга») — `streamingOrchestrator.syncAimpFrozenState`, orchestrator-owned.
 - При обрыве плагина или pipe поведение для зрителей такое же, как при обрыве организатора: freeze, затем через 1 мин скрытие «сейчас играет» (см. [Streaming](../systems/streaming.md) и [Streaming (интеграция)](../../../../docs/integration/streaming.md)).
 - Переключение источника обратно на **CherryPlay Player** возвращает обычный сценарий: стриминг снова от встроенного плеера, AIMP больше не используется.
 

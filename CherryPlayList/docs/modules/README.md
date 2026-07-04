@@ -35,7 +35,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [Storage](./systems/storage.md) — обзор клиентского persist; подробнее: [архитектура](./systems/storage-architecture.md), [что храним](./systems/persisted-client-state.md)
 - [Demo Player](./systems/demo-player.md) - Глобальная система предпрослушивания треков без очереди
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
-- [Streaming](./systems/streaming.md) - Система трансляции состояния плейлиста для вечеринок
+- [Streaming](./systems/streaming.md) - Site Streamer: orchestrator, SignalR, live playlist sync (`src/shared/streaming/`). UX decouple — [online-mode-ux-synthesis.md](../online-mode-ux-synthesis.md)
 - [Save / Load](./systems/save-load.md) - Система сохранения и загрузки проектов (.cherry формат, портативный режим)
 
 ## Supporting infrastructure (не модули в строгом смысле)

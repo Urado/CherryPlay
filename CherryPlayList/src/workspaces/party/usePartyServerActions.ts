@@ -1,3 +1,11 @@
+/**
+ * Party metadata subsystem — explicit server actions (create, publish, lifecycle, bind).
+ *
+ * REST writes here: `createParty`, `updateParty`, `updatePartyPlaylist` (explicit Publish),
+ * `transitionPartyLifecycle`. Live playlist PUT during broadcast is owned by Site Streamer
+ * (`partyPlaylistSync` via orchestrator), not Player workspace effects.
+ */
+
 import { useCallback } from 'react';
 
 import {

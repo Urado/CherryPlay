@@ -87,7 +87,7 @@ Workspace для автоматического последовательног
 - Восстановление происходит однократно: `useRef`-флаг предотвращает повторную загрузку при перемонтировании компонента (например, при смене layout) или двойном срабатывании эффекта в React Strict Mode.
 - Диалог не отображается; автовоспроизведение не запускается — пользователь нажимает Play вручную.
 - Если аудиофайл недоступен, `playerAudioStore.error` устанавливается автоматически, кнопка Play отображает красную иконку ошибки (`ErrorOutlineIcon`); кнопка Next остаётся функциональной.
-- Если вечеринка привязана и SignalR подключается, `sendFullStateUpdate` вызывается в штатном порядке (существующее поведение `PlayerViewContainer`).
+- Если вечеринка привязана и Site Streamer подключён, full-state publish идёт через `streamingOrchestrator` (существующее поведение после восстановления сессии).
 
 ### Отсечки таймлайна в списке треков
 
@@ -152,11 +152,12 @@ onTrackActions?: (itemId: string, anchorRect: DOMRect) => void;
 ### Интеграция со Streaming System
 
 Player может опционально транслировать состояние сессии зрителям вечеринки через  
-[Streaming System](../systems/streaming.md):
+[Streaming System](../systems/streaming.md) (Site Streamer):
 
-- при наличии привязанной вечеринки в `projectStore.meta.linkedParty` и активного подключения к SignalR:
-  - `PlayerViewContainer` подключается к серверу через `signalRService`;
-  - при старте сессии вызываются методы `startSession`, `startPositionUpdates` и `sendFullStateUpdate`;
-  - `signalRService` подписывается на изменения `projectStore` и `playerAudioStore` и отправляет дельта‑обновления на сервер.
+- при `enableStreaming`, привязанной вечеринке (`meta.linkedParty`) и `streamingSource === 'cherryPlayPlayer'`:
+  - `PlayerViewContainer` вызывает **`useStreamingOrchestrator`** — только `connectionState` и `reconnect` для UI;
+  - connect, `StartSession`/`EndSession`, position ticks и full-state publish — **`streamingOrchestrator`** + **`CherryPlayPlayerBroadcastSource`**;
+  - live sync плейлиста на сервер — **`partyPlaylistSync`** (REST PUT), не effects в Player UI.
+- `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую.
 
-Таким образом, локальная сессия Player служит источником правды для Streaming System, но может работать и автономно, без сервера.
+Локальная сессия Player (`playerAudioStore`, `usePlayerSession`) — источник правды для broadcast source; сессия работает автономно без сервера.

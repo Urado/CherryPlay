@@ -23,6 +23,20 @@ export type {
   TransitionPartyLifecycleDto,
 } from './partyService';
 export { ThemeNotEntitledError, InvalidPartyLifecycleTransitionError } from './partyService';
+export {
+  AimpBroadcastSource,
+  CherryPlayPlayerBroadcastSource,
+  StreamingOrchestrator,
+  streamingOrchestrator,
+  isStreamingNetworkEnabled,
+} from '../streaming';
+export type {
+  PlaybackBroadcastSource,
+  PlaybackBroadcastSourceId,
+  PlaylistForApiPayload,
+  StreamingOrchestratorConfig,
+  StreamingNetworkPolicySettings,
+} from '../streaming';
 export { signalRService } from './signalRService';
 export type {
   PlaybackStateDto,

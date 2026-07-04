@@ -60,6 +60,7 @@ export const LinkPartyModal: React.FC = () => {
       markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
+        // Party metadata: explicit bind-time playlist upload (not live session sync).
         const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
         addNotification({
