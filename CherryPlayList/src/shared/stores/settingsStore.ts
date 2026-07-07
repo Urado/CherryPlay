@@ -13,6 +13,11 @@ interface FileBrowserPathPersistSlice {
   fileBrowserPathsByWorkspaceId: Record<WorkspaceId, string>;
 }
 
+export interface DemoPlayerFloatingPosition {
+  x: number;
+  y: number;
+}
+
 interface SettingsState extends FileBrowserPathPersistSlice {
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
@@ -24,6 +29,9 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   showHourDividers: boolean;
   playerAudioDeviceId: string | null;
   demoPlayerAudioDeviceId: string | null;
+  demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;
+  demoPlayerFloatingOpen: boolean;
+  playerInAppHeader: boolean;
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
   streamingSource: AimpSourceSelection;
@@ -43,6 +51,9 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setShowHourDividers: (show: boolean) => void;
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
   setDemoPlayerAudioDeviceId: (deviceId: string | null) => void;
+  setDemoPlayerFloatingPosition: (position: DemoPlayerFloatingPosition | null) => void;
+  setDemoPlayerFloatingOpen: (open: boolean) => void;
+  setPlayerInAppHeader: (enabled: boolean) => void;
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
@@ -86,6 +97,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       showHourDividers: true,
       playerAudioDeviceId: null,
       demoPlayerAudioDeviceId: null,
+      demoPlayerFloatingPosition: null,
+      demoPlayerFloatingOpen: true,
+      playerInAppHeader: false,
       keyBindings: {},
       enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
@@ -149,6 +163,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setShowHourDividers: (show) => set({ showHourDividers: show }),
       setPlayerAudioDeviceId: (deviceId) => set({ playerAudioDeviceId: deviceId }),
       setDemoPlayerAudioDeviceId: (deviceId) => set({ demoPlayerAudioDeviceId: deviceId }),
+      setDemoPlayerFloatingPosition: (position) => set({ demoPlayerFloatingPosition: position }),
+      setDemoPlayerFloatingOpen: (open) => set({ demoPlayerFloatingOpen: open }),
+      setPlayerInAppHeader: (enabled) => set({ playerInAppHeader: enabled }),
       setKeyBinding: (id, binding) =>
         set((state) => ({
           keyBindings: { ...state.keyBindings, [id]: binding },
@@ -171,6 +188,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         showHourDividers: state.showHourDividers,
         playerAudioDeviceId: state.playerAudioDeviceId,
         demoPlayerAudioDeviceId: state.demoPlayerAudioDeviceId,
+        demoPlayerFloatingPosition: state.demoPlayerFloatingPosition,
+        demoPlayerFloatingOpen: state.demoPlayerFloatingOpen,
+        playerInAppHeader: state.playerInAppHeader,
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
         streamingSource: state.streamingSource,

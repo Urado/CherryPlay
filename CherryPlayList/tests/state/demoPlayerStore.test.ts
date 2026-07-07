@@ -38,10 +38,12 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
   return { useSettingsStore };
 });
 
+const mockAddNotification = jest.fn();
+
 jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: {
     getState: () => ({
-      addNotification: jest.fn(),
+      addNotification: mockAddNotification,
     }),
   },
 }));
@@ -179,6 +181,7 @@ beforeAll(async () => {
 beforeEach(() => {
   mockedGetAudioFileUrl.mockClear();
   mockedGetAudioFileUrl.mockResolvedValue({ url: 'cherryplay-audio:///mock' });
+  mockAddNotification.mockClear();
 
   const existingAudio = MockAudio.lastInstance();
   if (existingAudio) {
@@ -351,5 +354,37 @@ describe('demoPlayerStore', () => {
     expect(state.status).toBe('error');
     expect(state.error).toBe('blocked');
     expect(audio?.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it('deduplicates error toast notifications for the same message', async () => {
+    const track = createTrack();
+    const store = useDemoPlayerStore.getState();
+    await store.loadTrack(track, 'workspace-1');
+
+    mockAddNotification.mockClear();
+    store.handleError('same error');
+    store.handleError('same error');
+
+    expect(mockAddNotification).toHaveBeenCalledTimes(1);
+    expect(mockAddNotification).toHaveBeenCalledWith({ type: 'error', message: 'same error' });
+  });
+
+  it('resets error toast dedup on clear and allows the same message again', async () => {
+    const track = createTrack();
+    const store = useDemoPlayerStore.getState();
+    await store.loadTrack(track, 'workspace-1');
+
+    store.handleError('repeatable error');
+    mockAddNotification.mockClear();
+
+    store.clear();
+    store.setActiveTrack(track, 'workspace-1');
+    store.handleError('repeatable error');
+
+    expect(mockAddNotification).toHaveBeenCalledTimes(1);
+    expect(mockAddNotification).toHaveBeenCalledWith({
+      type: 'error',
+      message: 'repeatable error',
+    });
   });
 });

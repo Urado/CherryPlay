@@ -78,6 +78,7 @@ interface PlayerViewProps {
   onNext?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
+  variant?: 'full' | 'header';
 }
 
 /**
@@ -135,9 +136,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   onNext,
   serverTrackIds = null,
   jumpToTrack,
+  variant = 'full',
 }) => {
+  const isHeaderVariant = variant === 'header';
+
   return (
-    <div className="playlist-view player-view">
+    <div className={`playlist-view player-view${isHeaderVariant ? ' player-view--header' : ''}`}>
       <PlayerHeader
         allTracksCount={allTracksCount}
         totalDuration={totalDuration}
@@ -157,42 +161,44 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onExportTracksToText={onExportTracksToText}
       />
 
-      <PlayerTracksList
-        displayItems={displayItems}
-        zoneId={zoneId}
-        selectedItemIds={selectedItemIds}
-        activeTrackId={activeTrackId}
-        activePlayerTrackId={activePlayerTrackId}
-        playerStatus={playerStatus}
-        isPreparationMode={isPreparationMode}
-        mode={mode}
-        showHourDividers={showHourDividers}
-        plannedEndTime={plannedEndTime}
-        plannedEndDividerPosition={plannedEndDividerPosition}
-        calculateDividerMarkers={calculateDividerMarkers}
-        playerDrag={playerDrag}
-        getAllTracksInOrder={getAllTracksInOrder}
-        isTrackPlayed={isTrackPlayed}
-        isGroupDisabled={isGroupDisabled}
-        isTrackOrGroupDisabled={isTrackOrGroupDisabled}
-        getEffectiveTrackSettings={getEffectiveTrackSettings}
-        formatDividerLabel={formatDividerLabel}
-        formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
-        queueEndDividerPosition={queueEndDividerPosition}
-        formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
-        showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
-        toggleItemSelection={toggleItemSelection}
-        selectRange={selectRange}
-        removeItem={removeItem}
-        setGroupName={setGroupName}
-        handleToggleDisabled={handleToggleDisabled}
-        handleUngroupGroup={handleUngroupGroup}
-        handleOpenTrackSettings={handleOpenTrackSettings}
-        startTrackPlayback={startTrackPlayback}
-        pausePlayback={pausePlayback}
-        serverTrackIds={serverTrackIds}
-        jumpToTrack={jumpToTrack}
-      />
+      {!isHeaderVariant ? (
+        <PlayerTracksList
+          displayItems={displayItems}
+          zoneId={zoneId}
+          selectedItemIds={selectedItemIds}
+          activeTrackId={activeTrackId}
+          activePlayerTrackId={activePlayerTrackId}
+          playerStatus={playerStatus}
+          isPreparationMode={isPreparationMode}
+          mode={mode}
+          showHourDividers={showHourDividers}
+          plannedEndTime={plannedEndTime}
+          plannedEndDividerPosition={plannedEndDividerPosition}
+          calculateDividerMarkers={calculateDividerMarkers}
+          playerDrag={playerDrag}
+          getAllTracksInOrder={getAllTracksInOrder}
+          isTrackPlayed={isTrackPlayed}
+          isGroupDisabled={isGroupDisabled}
+          isTrackOrGroupDisabled={isTrackOrGroupDisabled}
+          getEffectiveTrackSettings={getEffectiveTrackSettings}
+          formatDividerLabel={formatDividerLabel}
+          formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+          queueEndDividerPosition={queueEndDividerPosition}
+          formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+          showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+          toggleItemSelection={toggleItemSelection}
+          selectRange={selectRange}
+          removeItem={removeItem}
+          setGroupName={setGroupName}
+          handleToggleDisabled={handleToggleDisabled}
+          handleUngroupGroup={handleUngroupGroup}
+          handleOpenTrackSettings={handleOpenTrackSettings}
+          startTrackPlayback={startTrackPlayback}
+          pausePlayback={pausePlayback}
+          serverTrackIds={serverTrackIds}
+          jumpToTrack={jumpToTrack}
+        />
+      ) : null}
 
       {!isPreparationMode ? <PlayerControls onNext={onNext} /> : null}
     </div>

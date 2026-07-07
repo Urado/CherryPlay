@@ -2,6 +2,7 @@ import '@workspaces/playlist';
 import '@workspaces/collection';
 import '@workspaces/testZone';
 import '@workspaces/player';
+import '@workspaces/demoPlayer';
 import '@workspaces/party';
 import '@workspaces/aimp';
 import React from 'react';

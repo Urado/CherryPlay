@@ -3,6 +3,7 @@ import React, { memo } from 'react';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
+import { useSettingsStore } from '@shared/stores';
 import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
 
 import { SourcesPanel } from '../components/SourcesPanel';
@@ -16,7 +17,19 @@ interface WorkspaceRendererProps {
  * Использует реестр модулей для динамического рендеринга
  */
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
+  const playerInAppHeader = useSettingsStore((state) => state.playerInAppHeader);
   const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
+
+  if (playerInAppHeader && (zone.workspaceType === 'player' || zone.workspaceType === 'aimp')) {
+    return (
+      <div className="workspace-player-in-header-hint">
+        <p>
+          Плеер отображается в шапке. Отключите опцию в настройках, чтобы вернуть панель в layout.
+        </p>
+      </div>
+    );
+  }
+
   if (zone.workspaceType === 'aimp') {
     if (!supportsAimpWorkspace) {
       const message =

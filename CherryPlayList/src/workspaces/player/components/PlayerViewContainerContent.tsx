@@ -32,11 +32,13 @@ import {
 export interface PlayerViewContainerContentProps {
   workspaceId: WorkspaceId;
   zoneId: string;
+  variant?: 'full' | 'header';
 }
 
 export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProps> = ({
   workspaceId: _workspaceId,
   zoneId,
+  variant = 'full',
 }) => {
   const {
     name,
@@ -542,6 +544,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       onNext={handleNext}
       serverTrackIds={serverTrackIds}
       jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
+      variant={variant}
     />
   );
 };

@@ -10,6 +10,8 @@ import { isProjectTrack } from '@core/types/project';
 import { StreamingConnectionIndicator } from '@shared/components';
 import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
+import { PARTY_EDITOR_LIFECYCLE_BADGE_LABELS } from '@workspaces/party/partyEditorPhase';
+import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 
 interface HeaderPlaybackPillProps {
   disabled?: boolean;
@@ -21,6 +23,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const sessionCurrentTrackId = useProjectStore((state) => state.sessionState.currentTrackId);
+  const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
 
   const { connectionState, reconnect } = useCherryPlayStreamingConnection();
 
@@ -55,9 +58,18 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
     return 'Нет активного трека';
   }, [currentTrack?.name, resolveTrackById, sessionCurrentTrackId]);
 
+  const partyStatusLabel = useMemo(() => {
+    if (!linkedParty) {
+      return 'Вечеринка не привязана';
+    }
+    if (partyLifecycleState) {
+      return PARTY_EDITOR_LIFECYCLE_BADGE_LABELS[partyLifecycleState];
+    }
+    return `Вечеринка ${linkedParty.shortCode}`;
+  }, [linkedParty, partyLifecycleState]);
+
   const isSessionMode = sessionMode === 'session';
-  const isVisible =
-    streamingSource === 'cherryPlayPlayer' && enableStreaming && linkedParty !== null;
+  const isVisible = enableStreaming && streamingSource === 'cherryPlayPlayer';
 
   const isPlaying = status === 'playing';
   const canToggle = currentTrack !== null && !disabled;
@@ -93,7 +105,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
 
   const onlineIndicator = (
     <StreamingConnectionIndicator
-      connectionState={connectionState}
+      connectionState={linkedParty ? connectionState : null}
       onReconnect={reconnect}
       className="playback-pill__online"
       compact
@@ -110,8 +122,12 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
         .filter(Boolean)
         .join(' ')}
       role="group"
-      aria-label="Воспроизведение и онлайн"
+      aria-label="Вечеринка и проигрывание"
     >
+      <span className="playback-pill__party-status" title={partyStatusLabel}>
+        {partyStatusLabel}
+      </span>
+
       {isSessionMode ? (
         <>
           <button

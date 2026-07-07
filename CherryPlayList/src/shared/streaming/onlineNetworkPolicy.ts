@@ -1,3 +1,5 @@
+import { getAppMode } from '../platform/appMode';
+
 export interface StreamingNetworkPolicySettings {
   readonly enableStreaming: boolean;
 }
@@ -19,6 +21,9 @@ export interface OnlineNetworkPolicy {
 export function isStreamingNetworkEnabled(
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
 ): boolean {
+  if (getAppMode() === 'demo') {
+    return false;
+  }
   return settings.enableStreaming;
 }
 

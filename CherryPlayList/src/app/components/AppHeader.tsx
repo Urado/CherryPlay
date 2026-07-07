@@ -11,7 +11,6 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
-import { DemoPlayer } from '@shared/components';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
@@ -27,6 +26,7 @@ import {
 } from '@shared/stores';
 
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
+import { HeaderPlayerHost } from './HeaderPlayerHost';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { WorkspaceMenu } from './WorkspaceMenu';
 
@@ -104,7 +104,7 @@ export const AppHeader: React.FC = () => {
     getAllTracksInOrder,
   } = useProjectStore();
 
-  const { openModal, addNotification, focusFileInBrowser } = useUIStore();
+  const { openModal, addNotification } = useUIStore();
   const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
@@ -532,7 +532,10 @@ export const AppHeader: React.FC = () => {
                   title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
                 >
                   {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <MoreVertIcon style={{ fontSize: 28 }} aria-hidden />
+                  <MoreVertIcon
+                    className="header-button__icon header-button__icon--compact"
+                    aria-hidden
+                  />
                 </button>
                 {projectMenuOpen && (
                   <div
@@ -642,7 +645,7 @@ export const AppHeader: React.FC = () => {
             <div className="action-group">
               {enableStreaming && (
                 <button
-                  className="header-button"
+                  className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
                   onClick={handleAccount}
                   disabled={isLayoutEditMode}
                   title={
@@ -650,27 +653,9 @@ export const AppHeader: React.FC = () => {
                       ? `Аккаунт: ${organizer?.name || 'Организатор'}`
                       : 'Войти в аккаунт'
                   }
-                  style={{
-                    position: 'relative',
-                    color: isAuthenticated ? '#9e9e9e' : undefined,
-                  }}
                 >
-                  <AccountCircleIcon style={{ fontSize: '32px' }} />
-                  {isAuthenticated && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: '#4caf50',
-                        borderRadius: '50%',
-                        border: '1px solid white',
-                      }}
-                      title="Авторизован"
-                    />
-                  )}
+                  <AccountCircleIcon className="header-button__icon" aria-hidden />
+                  {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
                 </button>
               )}
               <button
@@ -679,7 +664,7 @@ export const AppHeader: React.FC = () => {
                 disabled={isLayoutEditMode}
                 title="Настройки"
               >
-                <SettingsIcon style={{ fontSize: '32px' }} />
+                <SettingsIcon className="header-button__icon" aria-hidden />
               </button>
             </div>
           </div>
@@ -702,13 +687,11 @@ export const AppHeader: React.FC = () => {
 
           <WorkspaceMenu />
         </div>
+      </div>
 
+      <div className="app-header-status-row">
         <HeaderPlaybackPill disabled={isLayoutEditMode} />
-
-        <DemoPlayer
-          className={`app-header-demo-player${isLayoutEditMode ? ' app-header-demo-player--blocked' : ''}`}
-          onShowInBrowser={focusFileInBrowser}
-        />
+        <HeaderPlayerHost />
       </div>
 
       <SaveProjectAsModal

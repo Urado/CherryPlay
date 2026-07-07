@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
@@ -29,6 +29,7 @@ import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
 import { CherryPlayStreamingController } from './components/CherryPlayStreamingController';
 import { DemoModeBanner } from './components/DemoModeBanner';
+import { DemoPlayerShell } from './components/DemoPlayerShell';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
+  const appContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -142,8 +144,13 @@ const App: React.FC = () => {
       <div className="app">
         {isDemoMode && <DemoModeBanner />}
         <AppHeader />
-        <div className="app-content">
-          <LayoutWorkspaceArea />
+        <div ref={appContentRef} className="app-content">
+          <div className="app-content-main">
+            <LayoutWorkspaceArea />
+          </div>
+          <div className="demo-player-shell-host">
+            <DemoPlayerShell contentContainerRef={appContentRef} />
+          </div>
         </div>
         {supportsAimpWorkspace && <AimpIntegrationController />}
         <SettingsModal />

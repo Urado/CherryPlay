@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { MAX_LAYOUT_DEPTH, MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import {
+  DEFAULT_DEMO_PLAYER_WORKSPACE_ID,
   DEFAULT_FILEBROWSER_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
@@ -31,7 +32,13 @@ import {
 
 export type LayoutEditAirSide = 'top' | 'right' | 'bottom' | 'left';
 
-const SINGLETON_WORKSPACE_TYPES = new Set(['playlist', 'player', 'party-editor', 'party-preview']);
+const SINGLETON_WORKSPACE_TYPES = new Set([
+  'playlist',
+  'player',
+  'demo-player',
+  'party-editor',
+  'party-preview',
+]);
 
 const PLAYBACK_WORKSPACE_TYPES = new Set(['player', 'aimp']);
 
@@ -192,6 +199,8 @@ export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
       return generateWorkspaceId();
     case 'player':
       return DEFAULT_PLAYER_WORKSPACE_ID;
+    case 'demo-player':
+      return DEFAULT_DEMO_PLAYER_WORKSPACE_ID;
     case 'aimp':
       return DEFAULT_PLAYER_WORKSPACE_ID;
     case 'party-editor':

@@ -13,6 +13,7 @@ export const DEFAULT_PLAYLIST_WORKSPACE_ID: WorkspaceId = 'default-playlist-work
 
 // ID для player workspace
 export const DEFAULT_PLAYER_WORKSPACE_ID: WorkspaceId = 'default-player-workspace';
+export const DEFAULT_DEMO_PLAYER_WORKSPACE_ID: WorkspaceId = 'default-demo-player-workspace';
 
 // ID для party editor и preview workspaces
 export const PARTY_EDITOR_WORKSPACE_ID: WorkspaceId = 'party-editor-workspace';
@@ -27,6 +28,7 @@ export const DEFAULT_FILEBROWSER_WORKSPACE_ID: WorkspaceId = 'default-filebrowse
 const workspaceTypeRegistry = new Map<WorkspaceId, WorkspaceType>();
 workspaceTypeRegistry.set(DEFAULT_PLAYLIST_WORKSPACE_ID, 'playlist');
 workspaceTypeRegistry.set(DEFAULT_PLAYER_WORKSPACE_ID, 'player');
+workspaceTypeRegistry.set(DEFAULT_DEMO_PLAYER_WORKSPACE_ID, 'demo-player');
 workspaceTypeRegistry.set(PARTY_EDITOR_WORKSPACE_ID, 'party-editor');
 workspaceTypeRegistry.set(PARTY_PREVIEW_WORKSPACE_ID, 'party-preview');
 workspaceTypeRegistry.set(AIMP_WORKSPACE_ID, 'aimp');

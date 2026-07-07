@@ -4,7 +4,7 @@
   "description": "Desktop application for creating and managing music playlists",
   "main": "dist-electron/electron/main.mjs",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation concurrently -k \"vite\" \"wait-on http://localhost:5173 && npm run compile:electron && electron .\"",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation concurrently -k \"vite\" \"wait-on http-get://localhost:5173/src/index.tsx && npm run compile:electron && electron .\"",
     "dev:web": "cross-env VITE_APP_MODE=demo vite",
     "dev:web:project": "cross-env VITE_APP_MODE=demo VITE_LOAD_DEMO_PROJECT=1 vite",
     "dev:capacitor": "cross-env VITE_APP_MODE=capacitor vite",

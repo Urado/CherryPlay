@@ -9,3 +9,6 @@ export {
   requestToggleLayoutEditMode,
 } from './useWorkspaceDirtyGuard';
 export type { RequestActivateWorkspaceOptions } from './useWorkspaceDirtyGuard';
+export { useDemoPlayerFloatingVisibility } from './useDemoPlayerFloatingVisibility';
+export { useDemoPlayerFloatingBounds } from './useDemoPlayerFloatingBounds';
+export { useDemoPlayerFloatingDrag } from './useDemoPlayerFloatingDrag';

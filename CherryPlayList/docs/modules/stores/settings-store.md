@@ -14,12 +14,11 @@ Store для хранения настроек приложения.
 
 - **Экспорт**: Путь для экспорта, стратегия экспорта (copyWithNumberPrefix, aimpPlaylist)
 - **UI**: Размеры строк треков (small, medium, large), отсечки по времени (интервал, показывать/скрыть)
-- **Аудио**: Выбор устройств для player и demo player
+- **Аудио**: Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); опция `playerInAppHeader` для отображения основного плеера в шапке — см. [Demo Player](../systems/demo-player.md#размещение)
 - **Проекты**: Путь последнего открытого плейлиста
 - **Файловый браузер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
 - **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`.
 - **Синхронизация с сайтом:** `streamingSource` — **«Источник состояния для гостей»** (CherryPlay или AIMP); на сайт уходит **состояние** воспроизведения, не аудиопоток.
-- **Аудио:** «Куда играет CherryPlay», «Куда играет прослушивание файлов» (предпрослушивание в шапке).
 
 > **Важно:** Настройки уровня проекта (например, `portableMode`) хранятся в `ProjectSettings` внутри `.cherry` файла и управляются через `projectStore.setPortableMode`. Они **не** являются частью `settingsStore`.
 
@@ -70,7 +69,7 @@ interface SettingsExportBundle {
 }
 ```
 
-**Экспорт** включает все partialize-поля `settingsStore` (в т.ч. `fileBrowserPathsByWorkspaceId`); для совместимости v1 дублируется path default-зоны в `fileBrowserPath` (`pickSettingsExportFields`). Также экспортируются **сохранённые** `userWorkspaces` (снимки layout). Живое дерево `layout` попадает в bundle только если оно уже записано в user workspace (в т.ч. через **auto-commit** при выходе из edit mode или переключении workspace).
+**Экспорт** включает все partialize-поля `settingsStore` (в т.ч. `fileBrowserPathsByWorkspaceId`, `demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); для совместимости v1 дублируется path default-зоны в `fileBrowserPath` (`pickSettingsExportFields`). Также экспортируются **сохранённые** `userWorkspaces` (снимки layout). Живое дерево `layout` попадает в bundle только если оно уже записано в user workspace (в т.ч. через **auto-commit** при выходе из edit mode или переключении workspace).
 
 **Импорт:**
 

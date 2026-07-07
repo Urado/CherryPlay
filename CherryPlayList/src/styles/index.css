@@ -18,6 +18,8 @@
 /* 5. Component styles */
 @import url('./components/app.css');
 @import url('./components/header.css');
+@import url('./components/demo-player-panel.css');
+@import url('./components/demo-player-workspace.css');
 @import url('./components/footer.css');
 @import url('./components/playlist.css');
 @import url('./components/fileBrowser.css');

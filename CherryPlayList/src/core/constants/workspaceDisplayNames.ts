@@ -3,6 +3,7 @@ const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   collection: 'Коллекция',
   fileBrowser: 'Источники',
   player: 'Проигрывание',
+  'demo-player': 'Демо-плеер',
   aimp: 'AIMP',
   'party-editor': 'Настройка вечеринки',
   'party-preview': 'Как видят гости',

@@ -33,7 +33,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
 - [Layout System](./systems/layout-system.md) - Рабочие пространства и layout (pill в шапке, built-in / **Мои**, auto-save, [режим редактирования](../../layout-edit-mode.md))
 - [Storage](./systems/storage.md) — обзор клиентского persist; подробнее: [архитектура](./systems/storage-architecture.md), [что храним](./systems/persisted-client-state.md)
-- [Demo Player](./systems/demo-player.md) - Глобальная система предпрослушивания треков без очереди
+- [Demo Player](./systems/demo-player.md) - Система предпрослушивания (floating-панель и workspace `demo-player`; основной плеер опционально в шапке)
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
 - [Streaming](./systems/streaming.md) - Site Streamer: orchestrator, SignalR, live playlist sync (`src/shared/streaming/`). UX decouple — [online-mode-ux-synthesis.md](../online-mode-ux-synthesis.md)
 - [Save / Load](./systems/save-load.md) - Система сохранения и загрузки проектов (.cherry формат, портативный режим)

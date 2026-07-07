@@ -40,6 +40,8 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     setPlayerAudioDeviceId,
     setDemoPlayerAudioDeviceId,
+    playerInAppHeader,
+    setPlayerInAppHeader,
     enableStreaming,
     setEnableStreaming,
     streamingSource,
@@ -66,6 +68,7 @@ export const SettingsModal: React.FC = () => {
   const [localDemoPlayerDeviceId, setLocalDemoPlayerDeviceId] = useState<string | null>(
     demoPlayerAudioDeviceId,
   );
+  const [localPlayerInAppHeader, setLocalPlayerInAppHeader] = useState(playerInAppHeader);
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
   const [localStreamingSource, setLocalStreamingSource] = useState(streamingSource);
 
@@ -101,6 +104,7 @@ export const SettingsModal: React.FC = () => {
         setLocalShowHourDividers(showHourDividers);
         setLocalPlayerDeviceId(playerAudioDeviceId);
         setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
+        setLocalPlayerInAppHeader(playerInAppHeader);
         if (hasHydrated) {
           setLocalEnableStreaming(enableStreaming);
           setLocalStreamingSource(streamingSource);
@@ -117,6 +121,7 @@ export const SettingsModal: React.FC = () => {
     showHourDividers,
     playerAudioDeviceId,
     demoPlayerAudioDeviceId,
+    playerInAppHeader,
     enableStreaming,
     streamingSource,
   ]);
@@ -128,6 +133,7 @@ export const SettingsModal: React.FC = () => {
     setLocalShowHourDividers(state.showHourDividers);
     setLocalPlayerDeviceId(state.playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(state.demoPlayerAudioDeviceId);
+    setLocalPlayerInAppHeader(state.playerInAppHeader);
     setLocalEnableStreaming(state.enableStreaming);
     setLocalStreamingSource(state.streamingSource);
   }, []);
@@ -263,6 +269,7 @@ export const SettingsModal: React.FC = () => {
 
     setPlayerAudioDeviceId(localPlayerDeviceId);
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
+    setPlayerInAppHeader(localPlayerInAppHeader);
     setEnableStreaming(localEnableStreaming);
     setStreamingSource(localStreamingSource);
 
@@ -276,6 +283,7 @@ export const SettingsModal: React.FC = () => {
     setLocalShowHourDividers(showHourDividers);
     setLocalPlayerDeviceId(playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
+    setLocalPlayerInAppHeader(playerInAppHeader);
     setLocalEnableStreaming(enableStreaming);
     setLocalStreamingSource(streamingSource);
     closeModal();
@@ -528,6 +536,31 @@ export const SettingsModal: React.FC = () => {
                   {getPlatformUnavailableMessage()}
                 </div>
               )}
+            </div>
+
+            <div className="settings-group">
+              <div className="settings-checkbox-group">
+                <input
+                  type="checkbox"
+                  className="settings-checkbox"
+                  checked={localPlayerInAppHeader}
+                  onChange={(e) => setLocalPlayerInAppHeader(e.target.checked)}
+                  id="settings-player-in-header"
+                />
+                <label className="settings-checkbox-label" htmlFor="settings-player-in-header">
+                  Показывать плеер в шапке
+                </label>
+              </div>
+              <div
+                className="settings-description"
+                style={{
+                  marginTop: 4,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary, #9e9e9e)',
+                }}
+              >
+                Компактная панель проигрывания в шапке вместо зоны «Проигрывание» в layout.
+              </div>
             </div>
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
