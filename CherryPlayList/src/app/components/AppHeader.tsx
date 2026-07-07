@@ -30,6 +30,12 @@ import { HeaderPlayerHost } from './HeaderPlayerHost';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { WorkspaceMenu } from './WorkspaceMenu';
 
+const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
+
+function layoutEditControlTitle(defaultTitle: string, isLayoutEditMode: boolean): string {
+  return isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : defaultTitle;
+}
+
 function caughtErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
@@ -529,7 +535,10 @@ export const AppHeader: React.FC = () => {
                   aria-controls={projectMenuPanelId}
                   aria-busy={isSaving}
                   disabled={isLayoutEditMode}
-                  title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
+                  title={layoutEditControlTitle(
+                    'Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
+                    isLayoutEditMode,
+                  )}
                 >
                   {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
                   <MoreVertIcon
@@ -648,11 +657,12 @@ export const AppHeader: React.FC = () => {
                   className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
                   onClick={handleAccount}
                   disabled={isLayoutEditMode}
-                  title={
+                  title={layoutEditControlTitle(
                     isAuthenticated
                       ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт'
-                  }
+                      : 'Войти в аккаунт',
+                    isLayoutEditMode,
+                  )}
                 >
                   <AccountCircleIcon className="header-button__icon" aria-hidden />
                   {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
@@ -662,7 +672,7 @@ export const AppHeader: React.FC = () => {
                 className="header-button"
                 onClick={handleSettings}
                 disabled={isLayoutEditMode}
-                title="Настройки"
+                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
               >
                 <SettingsIcon className="header-button__icon" aria-hidden />
               </button>
@@ -677,6 +687,7 @@ export const AppHeader: React.FC = () => {
               className="project-name-input"
               placeholder="Название проекта"
               disabled={isLayoutEditMode}
+              title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
             />
             {meta.isDirty && (
               <span className="dirty-indicator" title="Есть несохранённые изменения">

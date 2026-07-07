@@ -1,10 +1,15 @@
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { WorkspaceZone } from '@core/types/layout';
+import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
+import { WorkspaceZone, Zone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutAirPickerKey } from '@shared/stores/layoutStore';
 import type { LayoutEditAirSide } from '@shared/utils/layoutWorkspaceOperations';
+import {
+  countWorkspaceLeaves,
+  isSingletonWorkspaceType,
+} from '@shared/utils/layoutWorkspaceOperations';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 
@@ -26,7 +31,7 @@ const AIR_SIDES: LayoutEditAirSide[] = ['top', 'right', 'bottom', 'left'];
 function readShellDimensions(node: HTMLDivElement): ShellDimensions {
   const { width, height } = node.getBoundingClientRect();
   const airSizeRaw = getComputedStyle(node).getPropertyValue('--layout-edit-air-size').trim();
-  const airSize = Number.parseFloat(airSizeRaw) || 48;
+  const airSize = Number.parseFloat(airSizeRaw) || 24;
 
   return { width, height, airSize };
 }
@@ -44,6 +49,22 @@ function buildCornerDiagonals({ width, height, airSize }: ShellDimensions) {
   ];
 }
 
+function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): string | null {
+  const displayName = getWorkspaceDisplayNameRu(zone.workspaceType);
+  const isLastZone = countWorkspaceLeaves(rootZone) <= 1;
+  const isSingleton = isSingletonWorkspaceType(zone.workspaceType);
+
+  if (isLastZone) {
+    return `Удалить последний workspace «${displayName}»? Layout станет пустым.`;
+  }
+
+  if (isSingleton) {
+    return `Удалить единственный workspace «${displayName}» этого типа?`;
+  }
+
+  return null;
+}
+
 /**
  * Edit-mode frame around a workspace: four "air" regions (top/right/bottom/left)
  * separated by diagonals from workspace corners, plus a dimmed content area.
@@ -58,9 +79,13 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
   const [dimensions, setDimensions] = useState<ShellDimensions>({
     width: 0,
     height: 0,
-    airSize: 48,
+    airSize: 24,
   });
 
+  const workspaceLabel = useMemo(
+    () => getWorkspaceDisplayNameRu(zone.workspaceType),
+    [zone.workspaceType],
+  );
   const workspaceOptions = useMemo(() => getWorkspacePickerOptions(layout), [layout]);
 
   const handleSelectWorkspace = useCallback(
@@ -71,8 +96,13 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
   );
 
   const handleRemoveWorkspace = useCallback(() => {
+    const confirmMessage = getRemoveWorkspaceConfirmMessage(zone, layout.rootZone);
+    if (confirmMessage && !window.confirm(confirmMessage)) {
+      return;
+    }
+
     removeWorkspaceZone(zone.id);
-  }, [removeWorkspaceZone, zone.id]);
+  }, [layout.rootZone, removeWorkspaceZone, zone]);
 
   useLayoutEffect(() => {
     const node = shellRef.current;
@@ -95,7 +125,11 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
   const cornerDiagonals = buildCornerDiagonals(dimensions);
 
   return (
-    <div ref={shellRef} className="workspace-layout-edit-shell">
+    <div
+      ref={shellRef}
+      className="workspace-layout-edit-shell"
+      aria-label={`Редактирование: ${workspaceLabel}`}
+    >
       {AIR_SIDES.map((side) => (
         <div key={side} className={`workspace-layout-edit-air workspace-layout-edit-air--${side}`}>
           <WorkspaceLayoutEditAirControl
@@ -132,6 +166,8 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
         </svg>
       )}
 
+      <div className="workspace-layout-edit-content-frame" aria-hidden="true" />
+
       <button
         type="button"
         className="workspace-layout-edit-close"
@@ -142,7 +178,7 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
         <CloseIcon fontSize="small" aria-hidden />
       </button>
 
-      <div className="workspace-layout-edit-content" aria-hidden="true">
+      <div className="workspace-layout-edit-content" inert>
         <WorkspaceRenderer zone={zone} />
         <div className="workspace-layout-edit-overlay" aria-hidden="true" />
       </div>

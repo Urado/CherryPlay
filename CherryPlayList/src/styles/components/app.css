@@ -13,6 +13,20 @@
   border-bottom: 1px solid rgba(0, 204, 136, 0.45);
 }
 
+/* Edit-mode hint shown inline next to the header edit (✎/✓) button. */
+.app-header-workspace-edit-hint {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--layout-edit-accent);
+  background-color: color-mix(in srgb, var(--layout-edit-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--layout-edit-accent) 45%, transparent);
+}
+
 .app {
   display: flex;
   flex-direction: column;
@@ -69,23 +83,50 @@
   flex-shrink: 0;
   user-select: none;
   position: relative;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-divider--horizontal {
+  width: 6px;
+  height: 100%;
   min-width: 6px;
+  cursor: col-resize;
+}
+
+.split-divider--vertical {
+  width: 100%;
+  height: 6px;
   min-height: 6px;
+  cursor: row-resize;
+}
+
+.split-divider__handle {
+  color: var(--text-secondary);
+  font-size: 16px;
+  opacity: 0.6;
+  transform: rotate(90deg);
+}
+
+.split-divider--vertical .split-divider__handle {
+  transform: none;
 }
 
 .split-divider:hover {
   background-color: #1a1a1a;
 }
 
-.split-divider:hover svg {
+.split-divider:hover svg,
+.split-divider:hover .split-divider__handle {
   opacity: 1;
 }
 
-.split-divider.resizing {
-  background-color: #000000;
-}
-
-.split-divider.resizing svg {
+.split-divider.resizing svg,
+.split-divider.resizing .split-divider__handle {
   opacity: 1;
   color: var(--accent-primary);
 }
@@ -115,8 +156,6 @@
 }
 
 .workspace-layout-edit-shell {
-  --layout-edit-air-size: 48px;
-
   position: relative;
   width: 100%;
   height: 100%;
@@ -125,11 +164,12 @@
 }
 
 .workspace-layout-edit-shell .workspace-layout-edit-close {
-  opacity: 0.55;
+  opacity: 0.92;
   transition:
     opacity 0.15s ease,
     background-color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .workspace-layout-edit-shell:hover .workspace-layout-edit-close,
@@ -141,14 +181,14 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background-color: rgba(0, 204, 136, 0.08);
+  background-color: var(--layout-edit-surface);
   pointer-events: auto;
-  cursor: default;
+  cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .workspace-layout-edit-air:hover {
-  background-color: rgba(0, 180, 124, 0.22);
+  background-color: var(--layout-edit-surface-hover);
 }
 
 .workspace-layout-edit-air--top {
@@ -196,10 +236,19 @@
 }
 
 .workspace-layout-edit-dividers__line {
-  stroke: rgba(0, 204, 136, 0.45);
+  stroke: var(--layout-edit-stroke-color);
   stroke-width: 1;
   stroke-dasharray: 4 4;
   vector-effect: non-scaling-stroke;
+}
+
+.workspace-layout-edit-content-frame {
+  position: absolute;
+  inset: var(--layout-edit-air-size);
+  z-index: 2;
+  box-sizing: border-box;
+  border: 1px dashed var(--layout-edit-stroke-color);
+  pointer-events: none;
 }
 
 .workspace-layout-edit-air-control {
@@ -208,32 +257,68 @@
   pointer-events: auto;
 }
 
-.workspace-layout-edit-air-control--top {
+.workspace-layout-edit-air-control--zone {
+  inset: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+.workspace-layout-edit-air-control--zone:focus-visible {
+  outline: 2px solid var(--accent-primary, #00cc88);
+  outline-offset: -2px;
+}
+
+.workspace-layout-edit-add-icon {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-primary, #00cc88);
+  pointer-events: none;
+}
+
+/* The "+" glyphs sit at the mid-point of each side, which is exactly where the
+   perpendicular divider's drag handle lives. Offset the glyphs in a pinwheel so
+   they never collide with the handle. The whole side stays clickable (only the
+   icon moves, not the button hit area). */
+.workspace-layout-edit-air-control--icon-workspace-side.workspace-layout-edit-air-control--top
+  .workspace-layout-edit-add-icon {
   top: calc(var(--layout-edit-air-size) * 0.5);
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(calc(-50% - 28px), -50%);
 }
 
-.workspace-layout-edit-air-control--bottom {
+.workspace-layout-edit-air-control--icon-workspace-side.workspace-layout-edit-air-control--bottom
+  .workspace-layout-edit-add-icon {
   bottom: calc(var(--layout-edit-air-size) * 0.5);
   left: 50%;
-  transform: translate(-50%, 50%);
+  transform: translate(calc(-50% + 28px), 50%);
 }
 
-.workspace-layout-edit-air-control--left {
+.workspace-layout-edit-air-control--icon-workspace-side.workspace-layout-edit-air-control--left
+  .workspace-layout-edit-add-icon {
   left: calc(var(--layout-edit-air-size) * 0.5);
   top: 50%;
+  transform: translate(-50%, calc(-50% + 28px));
+}
+
+.workspace-layout-edit-air-control--icon-workspace-side.workspace-layout-edit-air-control--right
+  .workspace-layout-edit-add-icon {
+  right: calc(var(--layout-edit-air-size) * 0.5);
+  top: 50%;
+  transform: translate(50%, calc(-50% - 28px));
+}
+
+.workspace-layout-edit-air-control--icon-band-center .workspace-layout-edit-add-icon {
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
 }
 
-.workspace-layout-edit-air-control--right {
-  right: calc(var(--layout-edit-air-size) * 0.5);
-  top: 50%;
-  transform: translate(50%, -50%);
-}
-
-.workspace-layout-edit-add-btn,
-.workspace-layout-edit-close {
+.workspace-layout-edit-add-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -252,16 +337,59 @@
     box-shadow 0.15s ease;
 }
 
-.workspace-layout-edit-add-btn:focus-visible,
-.workspace-layout-edit-close:focus-visible {
+.workspace-layout-edit-close {
+  position: absolute;
+  top: calc(var(--layout-edit-air-size) + 6px);
+  left: calc(var(--layout-edit-air-size) + 6px);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--layout-edit-accent) 72%, transparent);
+  border-radius: 4px;
+  background-color: rgba(8, 10, 12, 0.92);
+  color: var(--layout-edit-accent);
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.workspace-layout-edit-close svg {
+  font-size: 14px;
+  color: var(--layout-edit-accent);
+}
+
+.workspace-layout-edit-add-btn:focus-visible {
   outline: 2px solid var(--accent-primary, #00cc88);
   outline-offset: 2px;
 }
 
-.workspace-layout-edit-add-btn:hover,
-.workspace-layout-edit-close:hover {
+.workspace-layout-edit-close:focus-visible {
+  outline: 2px solid var(--layout-edit-accent);
+  outline-offset: 2px;
+}
+
+.workspace-layout-edit-add-btn:hover {
   background-color: rgba(0, 204, 136, 0.16);
   border-color: var(--accent-primary, #00cc88);
+}
+
+.workspace-layout-edit-close:hover {
+  background-color: rgba(0, 0, 0, 0.96);
+  border-color: color-mix(in srgb, var(--layout-edit-accent) 85%, white);
+  color: color-mix(in srgb, var(--layout-edit-accent) 85%, white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+.workspace-layout-edit-close:hover svg {
+  color: color-mix(in srgb, var(--layout-edit-accent) 85%, white);
 }
 
 .workspace-layout-edit-picker {
@@ -309,13 +437,6 @@
   text-align: center;
 }
 
-.workspace-layout-edit-close {
-  position: absolute;
-  top: calc(var(--layout-edit-air-size) - 16px);
-  left: calc(var(--layout-edit-air-size) - 16px);
-  z-index: 4;
-}
-
 .workspace-layout-edit-content {
   position: absolute;
   inset: var(--layout-edit-air-size);
@@ -325,8 +446,6 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  outline: 2px dashed var(--accent-primary, #00cc88);
-  outline-offset: -2px;
 }
 
 .workspace-layout-edit-overlay {
@@ -335,16 +454,64 @@
   z-index: 10;
   background-color: color-mix(in srgb, var(--bg-primary, #121212) 25%, transparent);
   pointer-events: auto;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .split-divider--layout-edit {
   z-index: 5;
-  background-color: rgba(0, 204, 136, 0.2);
 }
 
-.split-divider--layout-edit:hover {
-  background-color: rgba(0, 204, 136, 0.35);
+.workspace-layout-edit-container-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.workspace-layout-edit-container-shell--horizontal {
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-layout-edit-container-shell--vertical {
+  display: flex;
+  flex-direction: row;
+}
+
+.workspace-layout-edit-container-shell__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-layout-edit-container-shell--vertical .workspace-layout-edit-container-shell__content {
+  flex-direction: row;
+}
+
+.workspace-layout-edit-container-air {
+  position: relative;
+  flex: 0 0 var(--layout-edit-air-size);
+  box-sizing: border-box;
+  background-color: var(--layout-edit-surface);
+  border: 1px dashed var(--layout-edit-stroke-color);
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.workspace-layout-edit-container-air:hover {
+  background-color: var(--layout-edit-surface-hover);
+}
+
+.workspace-layout-edit-container-air--top,
+.workspace-layout-edit-container-air--bottom {
+  width: 100%;
+}
+
+.workspace-layout-edit-container-air--left,
+.workspace-layout-edit-container-air--right {
+  height: 100%;
 }
 
 .split-divider--disabled {

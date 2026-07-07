@@ -225,7 +225,7 @@ export function createWorkspaceZone(workspaceType: string): WorkspaceZone {
 }
 
 function buildSplitContainer(
-  existingZone: WorkspaceZone,
+  existingZone: Zone,
   newZone: WorkspaceZone,
   side: LayoutEditAirSide,
 ): ContainerZone {
@@ -244,33 +244,34 @@ export type AddAdjacentWorkspaceResult =
   | { ok: true; layout: Layout; preparedZone: WorkspaceZone }
   | {
       ok: false;
-      reason: 'not_found' | 'depth_exceeded' | 'container_full' | 'duplicate_singleton';
+      reason:
+        | 'not_found'
+        | 'depth_exceeded'
+        | 'container_full'
+        | 'duplicate_singleton'
+        | 'invalid_side'
+        | 'single_zone';
     };
 
-export function addAdjacentWorkspaceToLayout(
+/** Air sides that span an entire split container (perpendicular to its direction). */
+export function getContainerSpanSides(direction: SplitDirection): LayoutEditAirSide[] {
+  return direction === 'horizontal' ? ['top', 'bottom'] : ['left', 'right'];
+}
+
+export function isSpanSideForContainer(
+  direction: SplitDirection,
+  side: LayoutEditAirSide,
+): boolean {
+  return getContainerSpanSides(direction).includes(side);
+}
+
+function insertAdjacentZoneInLayout(
   layout: Layout,
   targetZoneId: ZoneId,
+  targetZone: Zone,
+  newZone: WorkspaceZone,
   side: LayoutEditAirSide,
-  workspaceType: string,
 ): AddAdjacentWorkspaceResult {
-  const targetZone = findZoneById(layout.rootZone, targetZoneId);
-  if (!targetZone || targetZone.type !== 'workspace') {
-    return { ok: false, reason: 'not_found' };
-  }
-
-  if (isSingletonWorkspaceType(workspaceType)) {
-    const types = collectWorkspaceTypes(layout.rootZone);
-    if (isPlaybackWorkspaceType(workspaceType)) {
-      if (layoutHasPlaybackWorkspace(types)) {
-        return { ok: false, reason: 'duplicate_singleton' };
-      }
-    } else if (types.has(workspaceType)) {
-      return { ok: false, reason: 'duplicate_singleton' };
-    }
-  }
-
-  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
-  const newZone = createWorkspaceZone(normalizedType);
   const splitDirection = getSplitDirection(side);
   const parent = findParentZone(layout.rootZone, targetZoneId);
 
@@ -339,6 +340,78 @@ export function addAdjacentWorkspaceToLayout(
   };
 }
 
+function validateSingletonWorkspaceType(
+  layout: Layout,
+  workspaceType: string,
+): AddAdjacentWorkspaceResult | null {
+  if (!isSingletonWorkspaceType(workspaceType)) {
+    return null;
+  }
+
+  const types = collectWorkspaceTypes(layout.rootZone);
+  if (isPlaybackWorkspaceType(workspaceType)) {
+    if (layoutHasPlaybackWorkspace(types)) {
+      return { ok: false, reason: 'duplicate_singleton' };
+    }
+  } else if (types.has(workspaceType)) {
+    return { ok: false, reason: 'duplicate_singleton' };
+  }
+
+  return null;
+}
+
+export function addAdjacentWorkspaceToLayout(
+  layout: Layout,
+  targetZoneId: ZoneId,
+  side: LayoutEditAirSide,
+  workspaceType: string,
+): AddAdjacentWorkspaceResult {
+  const targetZone = findZoneById(layout.rootZone, targetZoneId);
+  if (!targetZone || targetZone.type !== 'workspace') {
+    return { ok: false, reason: 'not_found' };
+  }
+
+  const singletonError = validateSingletonWorkspaceType(layout, workspaceType);
+  if (singletonError) {
+    return singletonError;
+  }
+
+  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const newZone = createWorkspaceZone(normalizedType);
+
+  return insertAdjacentZoneInLayout(layout, targetZoneId, targetZone, newZone, side);
+}
+
+export function addAdjacentWorkspaceToContainerLayout(
+  layout: Layout,
+  containerId: ZoneId,
+  side: LayoutEditAirSide,
+  workspaceType: string,
+): AddAdjacentWorkspaceResult {
+  const container = findZoneById(layout.rootZone, containerId);
+  if (!container || container.type !== 'container') {
+    return { ok: false, reason: 'not_found' };
+  }
+
+  if (container.zones.length < 2) {
+    return { ok: false, reason: 'single_zone' };
+  }
+
+  if (!isSpanSideForContainer(container.direction, side)) {
+    return { ok: false, reason: 'invalid_side' };
+  }
+
+  const singletonError = validateSingletonWorkspaceType(layout, workspaceType);
+  if (singletonError) {
+    return singletonError;
+  }
+
+  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const newZone = createWorkspaceZone(normalizedType);
+
+  return insertAdjacentZoneInLayout(layout, containerId, container, newZone, side);
+}
+
 export type RemoveWorkspaceResult =
   | { ok: true; layout: Layout; removedZone: WorkspaceZone }
   | { ok: false; reason: 'not_found' };
@@ -404,6 +477,10 @@ export function getAddWorkspaceErrorMessage(
       return 'Достигнута максимальная вложенность layout';
     case 'not_found':
       return 'Workspace не найден';
+    case 'invalid_side':
+      return 'Нельзя добавить workspace с этой стороны контейнера';
+    case 'single_zone':
+      return 'Нужно минимум две зоны в ряду';
     default:
       return 'Не удалось добавить workspace';
   }

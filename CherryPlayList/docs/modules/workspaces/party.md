@@ -177,7 +177,7 @@ Production-события **не** очищают preview scenario и editor dem
 
 ## Layout presets и миграция
 
-Пресеты в [`layoutStore.ts`](../../../src/shared/stores/layoutStore.ts); сигнатуры — [`layoutPreset.ts`](../../../src/shared/utils/layoutPreset.ts):
+Фабрики пресетов — [`layoutPresetFactories.ts`](../../../src/shared/utils/layoutPresetFactories.ts) (`createPartyLayout`, `createLayoutByPreset` и др.); сигнатуры сопоставления — [`layoutPreset.ts`](../../../src/shared/utils/layoutPreset.ts) (`getLayoutPresetFromLayout`):
 
 | Пресет       | Структура (корень)                                | Доли по умолчанию |
 | ------------ | ------------------------------------------------- | ----------------- |

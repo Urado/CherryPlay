@@ -228,3 +228,16 @@ export function cleanupContainers(root: Zone): Zone {
     zones: cleanedZones,
   };
 }
+
+/** Syncs workspace zone `size` fields with parent container `sizes` array. */
+export function syncContainerChildSizes(container: ContainerZone): ContainerZone {
+  return {
+    ...container,
+    zones: container.zones.map((zone, index) => {
+      if (zone.type === 'workspace') {
+        return { ...zone, size: container.sizes[index] };
+      }
+      return syncContainerChildSizes(zone);
+    }),
+  };
+}

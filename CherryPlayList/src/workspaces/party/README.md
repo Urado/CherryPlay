@@ -55,7 +55,7 @@ party/
 
 ## Layout
 
-Пресеты `party` и `aimp-party` — три колонки: player или aimp (50%), editor (25%), preview (25%). См. `layoutStore.ts`, `layoutPreset.ts`.
+Пресеты `party` и `aimp-party` — три колонки: player или aimp (50%), editor (25%), preview (25%). См. `layoutPresetFactories.ts` (фабрики), `layoutPreset.ts` (сигнатуры).
 
 Persist layout **v3**: legacy-зона `party` / `party-workspace` автоматически раскладывается в editor + preview (`migrateLegacyPartyLayout`).
 

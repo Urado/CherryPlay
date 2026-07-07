@@ -18,6 +18,8 @@ import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
 import { WorkspaceNameModal } from './WorkspaceNameModal';
 
+const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
+
 const ALL_BUILTIN_PRESETS: LayoutPreset[] = [
   'simple',
   'complex',
@@ -453,7 +455,7 @@ export const WorkspaceMenu: React.FC = () => {
             aria-expanded={showMenuPanel}
             aria-controls={panelId}
             aria-label="Выбрать рабочее пространство"
-            title="Выбрать рабочее пространство"
+            title={isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : 'Выбрать рабочее пространство'}
             onClick={() => {
               if (!isLayoutEditMode) {
                 setMenuOpen((open) => !open);
@@ -593,8 +595,18 @@ export const WorkspaceMenu: React.FC = () => {
         aria-pressed={isLayoutEditMode}
         aria-label={isLayoutEditMode ? 'Готово' : 'Настроить окна'}
       >
-        <EditOutlinedIcon fontSize="small" aria-hidden />
+        {isLayoutEditMode ? (
+          <CheckIcon fontSize="small" aria-hidden />
+        ) : (
+          <EditOutlinedIcon fontSize="small" aria-hidden />
+        )}
       </button>
+
+      {isLayoutEditMode ? (
+        <span className="app-header-workspace-edit-hint" role="status">
+          Редактирование окон — Esc для выхода
+        </span>
+      ) : null}
 
       <WorkspaceNameModal
         key={nameModalKey}

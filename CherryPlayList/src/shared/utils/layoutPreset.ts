@@ -1,7 +1,8 @@
-import type { Layout } from '../../core/types/layout';
-import type { LayoutPreset } from '../stores/layoutStore';
+import type { LayoutPreset } from '@core/types/workspacePreset';
 
-import { getLayoutZoneSignature } from './layoutSignature';
+import type { Layout } from '../../core/types/layout';
+
+import { getLayoutStructureSignature } from './layoutSignature';
 
 const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   simple: 'horizontal(workspace:playlist,workspace:fileBrowser)',
@@ -16,7 +17,7 @@ const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
 };
 
 export function getLayoutPresetFromLayout(layout: Layout): LayoutPreset | null {
-  const signature = getLayoutZoneSignature(layout.rootZone);
+  const signature = getLayoutStructureSignature(layout.rootZone);
 
   for (const [preset, expectedSignature] of Object.entries(LAYOUT_PRESET_SIGNATURES) as Array<
     [LayoutPreset, string]

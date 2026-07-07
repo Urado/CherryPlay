@@ -13,7 +13,16 @@ interface WorkspaceLayoutEditAirControlProps {
   onToggle: () => void;
   onClose: () => void;
   onSelectWorkspace: (workspaceType: string) => void;
+  /** Center icon in a full-width band (container shell); default places icon like the old add button. */
+  iconPlacement?: 'workspace-side' | 'band-center';
 }
+
+const AIR_SIDE_ARIA_LABELS: Record<LayoutEditAirSide, string> = {
+  top: 'Добавить workspace сверху',
+  right: 'Добавить workspace справа',
+  bottom: 'Добавить workspace снизу',
+  left: 'Добавить workspace слева',
+};
 
 export const WorkspaceLayoutEditAirControl: React.FC<WorkspaceLayoutEditAirControlProps> = ({
   side,
@@ -22,18 +31,34 @@ export const WorkspaceLayoutEditAirControl: React.FC<WorkspaceLayoutEditAirContr
   onToggle,
   onClose,
   onSelectWorkspace,
+  iconPlacement = 'workspace-side',
 }) => {
-  const controlRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const controlRef = useRef<HTMLButtonElement>(null);
+  const iconRef = useRef<HTMLSpanElement>(null);
   const { listId, pickerPosition, syncPickerPosition } = useWorkspacePickerMenu({
-    anchorRef: buttonRef,
+    anchorRef: iconRef,
     controlRef,
     isOpen,
     onClose,
     placement: { kind: 'air-side', side },
   });
 
-  const handleToggleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleZoneClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    if (!isOpen) {
+      syncPickerPosition();
+    }
+
+    onToggle();
+  };
+
+  const handleZoneKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
+
+    event.preventDefault();
     event.stopPropagation();
 
     if (!isOpen) {
@@ -44,22 +69,21 @@ export const WorkspaceLayoutEditAirControl: React.FC<WorkspaceLayoutEditAirContr
   };
 
   return (
-    <div
+    <button
       ref={controlRef}
-      className={`workspace-layout-edit-air-control workspace-layout-edit-air-control--${side}`}
+      type="button"
+      className={`workspace-layout-edit-air-control workspace-layout-edit-air-control--${side} workspace-layout-edit-air-control--zone workspace-layout-edit-air-control--icon-${iconPlacement}`}
+      onClick={handleZoneClick}
+      onKeyDown={handleZoneKeyDown}
+      aria-expanded={isOpen}
+      aria-haspopup="menu"
+      aria-controls={isOpen ? listId : undefined}
+      aria-label={AIR_SIDE_ARIA_LABELS[side]}
+      title={AIR_SIDE_ARIA_LABELS[side]}
     >
-      <button
-        ref={buttonRef}
-        type="button"
-        className="workspace-layout-edit-add-btn"
-        onClick={handleToggleClick}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        aria-controls={isOpen ? listId : undefined}
-        title="Добавить workspace"
-      >
-        <AddIcon fontSize="small" aria-hidden />
-      </button>
+      <span ref={iconRef} className="workspace-layout-edit-add-icon" aria-hidden>
+        <AddIcon fontSize="small" />
+      </span>
 
       <WorkspacePickerMenu
         listId={listId}
@@ -69,6 +93,6 @@ export const WorkspaceLayoutEditAirControl: React.FC<WorkspaceLayoutEditAirContr
         options={options}
         onSelect={onSelectWorkspace}
       />
-    </div>
+    </button>
   );
 };

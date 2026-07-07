@@ -32,7 +32,7 @@
 | `allocateUnnamedWorkspaceName` | Следующее свободное auto-имя в серии «Без имени» / «Без имени N»                 |
 | `isUnnamedWorkspaceName`       | Проверка auto-имени (курсив в pill, ограничения при ручном rename)               |
 
-**Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** персистятся как записи — при активации дерево строится через `createLayoutByPreset(preset)`.
+**Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** персистятся как записи — при активации дерево строится через `createLayoutByPreset(preset)` (`layoutPresetFactories.ts`).
 
 ### Именование пользовательских workspace (auto-save)
 
@@ -48,7 +48,7 @@
 
 ### Встроенные (built-in)
 
-Каталог в коде (`layoutStore.ts`, `createLayoutByPreset`). Имена в UI — на русском (`LAYOUT_PRESET_DISPLAY_NAMES_RU` в `src/core/constants/layoutPresetDisplayNames.ts`, меню `WorkspaceMenu`).
+Фабрики пресетов — `layoutPresetFactories.ts` (`createLayoutByPreset`, `createSimpleLayout`, `createCollectionsLayout`, `createPartyLayout` и др.); сигнатуры сопоставления — `layoutPreset.ts` (`getLayoutPresetFromLayout`). Имена в UI — на русском (`LAYOUT_PRESET_DISPLAY_NAMES_RU` в `src/core/constants/layoutPresetDisplayNames.ts`, меню `WorkspaceMenu`).
 
 | `LayoutPreset`         | Отображаемое имя      | Доступность                                                      |
 | ---------------------- | --------------------- | ---------------------------------------------------------------- |
@@ -100,7 +100,7 @@
 ## UI в шапке
 
 ```
-[ Имя (148px)  ▾ ]  [ ✎ ]
+[ Имя (210px)  ▾ ]  [ ✎ ]
 ```
 
 | Элемент | Назначение                                                                                                                |
@@ -109,20 +109,38 @@
 | **▾**   | Меню: **Мои** / **Встроенные** / **Создать с нуля…** (disabled в edit mode)                                               |
 | **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                    |
 
-Ручных пунктов **Сохранить** / **Сбросить** нет. Блокирующих диалогов при несохранённых изменениях нет.
+Ручных пунктов **Сохранить** / **Сбросить** нет. При переключении workspace и auto-commit блокирующих диалогов нет.
 
 ## Режим редактирования (кратко)
 
 - **✎** или **Создать с нуля…**; **Esc** — выход с auto-commit.
 - `isLayoutEditMode` **не** персистится.
-- Рендер: `LayoutWorkspaceArea` → `SplitContainer` / `WorkspaceLayoutEditShell` / `LayoutEmptyWorkspaceState`.
+- **`LayoutEditModeBanner`** — полоса над шапкой («Редактирование окон — Esc для выхода») при активном режиме (`App.tsx`).
+- Рендер: `LayoutWorkspaceArea` (см. дерево решений ниже) → `SplitContainer` (+ `WorkspaceLayoutEditContainerShell` при 2+ зонах) / `WorkspaceLayoutEditShell` / `LayoutEmptyWorkspaceState`.
+
+### `LayoutWorkspaceArea`: дерево рендера
+
+```
+isLayoutEmpty(layout)?
+├─ да + isLayoutEditMode → LayoutEmptyWorkspaceState (центральный +, picker key 'empty')
+├─ да + !isLayoutEditMode → placeholder «Layout пуст» (без +)
+└─ нет
+   ├─ rootZone.type === 'workspace' → layout-workspace-root
+   │  ├─ edit mode → WorkspaceLayoutEditShell
+   │  └─ обычный → WorkspaceRenderer
+   └─ rootZone.type === 'container' → SplitContainer (рекурсия)
+```
 
 Подробности — **[layout-edit-mode.md](../../layout-edit-mode.md)**.
 
 ## Дополнительные компоненты (edit mode)
 
+- **LayoutEditModeBanner** — индикатор активного edit mode над шапкой
 - **LayoutWorkspaceArea** — корневой роутер области workspace
-- **WorkspaceLayoutEditShell** — оболочка зоны (air-регионы, diagonals, удаление)
+- **WorkspaceLayoutEditShell** — оболочка одной workspace-зоны (air-регионы, content-frame, diagonals, удаление)
+- **WorkspaceLayoutEditContainerShell** — span-полосы контейнера (flex-полосы **24px**; вся полоса кликабельна для добавления над/под или слева/справа от всего ряда)
+- **WorkspaceLayoutEditAirControl** — кнопка air-зоны workspace (вся сторона кликабельна) или span-полоса контейнера (`iconPlacement="band-center"`); picker
+- **Удаление зоны (×):** при удалении последней workspace-зоны или единственного singleton-типа — `window.confirm` с текстом из `getRemoveWorkspaceConfirmMessage` (`WorkspaceLayoutEditShell.tsx`)
 - **LayoutEmptyWorkspaceState** — пустой layout, первая зона через picker
 
 ## См. также

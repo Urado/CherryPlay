@@ -1321,6 +1321,13 @@ All colors are defined in a centralized theme configuration for easy modificatio
 
 ## 9.2 Window and Layout
 
+> **⚠️ Legacy / partially outdated.** This section reflects early layout design. For **current** workspace and edit-mode behavior, use:
+>
+> - [CherryPlayList/docs/layout-edit-mode.md](docs/layout-edit-mode.md) — workspace **pill** + **✎** edit mode, auto-save, zone picker, air regions
+> - [CherryPlayList/docs/modules/systems/layout-system.md](docs/modules/systems/layout-system.md) — built-in presets, persist key, `LayoutWorkspaceArea` render paths
+>
+> Below: retained historical detail; API names, UI controls, persist key, and constraints may differ from the implementation.
+
 ### 9.2.1 Window Configuration
 
 - **Default size:** Standard desktop size (e.g., `1200x800px` or `1400x900px`)
@@ -1385,9 +1392,9 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Persistence:**
 
-- Layout structure is persisted via Zustand `persist` and `electronStorage` (localforage, typically IndexedDB), not raw `window.localStorage`
-- Layout is restored on application startup
-- Version field allows for future migration of layout structure
+- Workspace and layout tree persist via Zustand `persist` → **`cherryplaylist-workspaces`** (`electronStorage` / localforage, typically IndexedDB)
+- `isLayoutEditMode` and `baselineLayout` are **not** persisted
+- Layout is restored on application startup; built-in presets are not stored as user rows — see [layout-system.md](docs/modules/systems/layout-system.md)
 
 #### 9.2.4.3 Component Structure
 
@@ -1407,29 +1414,24 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
   - `'fileBrowser'` → `FileBrowser` wrapped in `SourcesPanel`
   - Future types can be added dynamically
 
-**LayoutStore:**
+**LayoutStore** (`src/shared/stores/layoutStore.ts`):
 
-- Zustand store with persist middleware
-- Manages layout state tree
-- Provides methods for:
-  - `updateZoneSize(zoneId, newSize)` - Update single zone size
-  - `updateContainerSizes(containerId, sizes[])` - Update all sizes in container
-  - `addZone(parentId, workspaceId, workspaceType, direction?)` - Add new zone
-  - `removeZone(zoneId)` - Remove zone (triggers auto-cleanup)
-  - `setZoneDirection(containerId, direction)` - Change split direction
-  - `findZone(zoneId)` - Find zone by ID (recursive)
-  - `findParent(zoneId)` - Find parent container
-  - `cleanupEmptyContainers()` - Remove containers with 1 child
-  - `validateLayout()` - Validate layout constraints
+- Zustand store with `persist` middleware; storage key **`cherryplaylist-workspaces`** (see [persisted-client-state.md](docs/modules/systems/persisted-client-state.md))
+- Manages workspace state: `layout` tree, `activeWorkspace`, `userWorkspaces`, `isLayoutEditMode` (runtime only)
+- Zone tree operations: `addAdjacentWorkspace`, `addAdjacentWorkspaceToContainer`, `addInitialWorkspace`, `removeWorkspaceZone`, `updateZoneSize`, `updateContainerSizes`
+- Workspace lifecycle: `activateWorkspace`, `autoCommitWorkspaceChanges`, `saveCurrentWorkspaceAsUnnamed`
+- Legacy helpers may still exist (`addZone`, `removeZone`, `setLayoutPreset`) — prefer docs above for edit mode
+
+**UI (current):** workspace **pill** (name + ▾) and separate **✎** button in `WorkspaceMenu` — not a preset dropdown. Built-in presets are chosen from the pill menu → **Встроенные**.
 
 #### 9.2.4.4 Visual Design
 
 **Divider:**
 
-- **Width/Height:** 2px (thin line)
-- **Color:** `var(--ui-border)` (default), `var(--accent-primary)` (hover/resizing)
+- **Visible bar:** `min-width` / `min-height` **6px** (`split-divider` in `app.css`); background `#000000`, hover `#1a1a1a`
+- **Hit area:** invisible `::before` padding **4px** around the bar for easier dragging
+- **Edit mode:** class `split-divider--layout-edit` — accent tint (`rgba(0, 204, 136, …)`), `z-index: 5`
 - **Cursor:** `col-resize` (horizontal split), `row-resize` (vertical split)
-- **Transition:** Background color transition on hover (0.2s)
 
 **Container:**
 
@@ -1453,9 +1455,8 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Maximum Constraints:**
 
-- **10 zones per container:** Adding more zones is prevented (UI feedback: disabled button)
-- **6 nesting levels:** Deeper nesting shows warning or is prevented
-- **15 total zones:** Performance optimization threshold (memoization recommended)
+- **10 zones per container:** Adding more zones is prevented (toast warning in edit mode)
+- **6 nesting levels:** Deeper nesting is rejected when adding zones (`MAX_LAYOUT_DEPTH`)
 
 **Resize Constraints:**
 
@@ -1515,18 +1516,29 @@ The application supports multiple layout presets:
    - Allows simultaneous viewing of collections and file browser
 
 4. **Complex Layout** (`'complex'`):
-   - Includes test zones for development
+   - Includes test zones for development (DEV-only in menu)
+
+5. **Player Layout** (`'player'`):
+   - Focused playback workspace preset
+
+6. **Party Layout** (`'party'`):
+   - Online party: `party-editor` + `party-preview` zones (requires `enableStreaming`)
+
+7. **AIMP + Party** (`'aimp-party'`) — **legacy:** migrated to `'party'` on load; not shown in pill menu
 
 **Layout Presets:**
 
-Layout presets are defined in `layoutStore.ts` and can be selected via the header dropdown. The default layout is `'collections'`.
+Layout presets are defined in `layoutStore.ts` (`createLayoutByPreset`). Selection: workspace pill **▾** → **Встроенные**. Default on first run: **`collections`**. Interactive editing: **✎** — see [layout-edit-mode.md](docs/layout-edit-mode.md).
 
 Available presets:
 
-- `'simple'`: Playlist (50%) + FileBrowser (50%)
-- `'collections'`: Playlist (50%) + [Collections (horizontal, 50%) + FileBrowser (50%)]
-- `'collections-vertical'`: Playlist (33%) + Collections (vertical, 33%) + FileBrowser (34%)
-- `'complex'`: Test layout with multiple nested zones (development only)
+- `'simple'`: Playlist + FileBrowser
+- `'collections'`: Playlist + nested collections + FileBrowser (**default**)
+- `'collections-vertical'`: Playlist + vertical collections + FileBrowser
+- `'complex'`: Test layout with multiple nested zones (**development only**)
+- `'player'`: Playback-focused layout
+- `'party'`: Party editor + preview (when streaming enabled)
+- `'aimp-party'`: **legacy** — auto-migrates to `'party'`
 
 **Layout Migration:**
 

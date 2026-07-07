@@ -24,7 +24,7 @@ export const LayoutWorkspaceArea: React.FC = () => {
         <div className="layout-empty-workspace-state__placeholder-copy">
           <p className="layout-empty-workspace-state__placeholder-text">Layout пуст</p>
           <p className="layout-empty-workspace-state__placeholder-hint">
-            Нажмите «Редактировать» в шапке, чтобы добавить workspace
+            Нажмите «Настроить окна» ✎ в шапке, чтобы добавить workspace
           </p>
         </div>
       </div>

@@ -56,7 +56,7 @@ Demo Player рендерится в двух UI-контекстах внутр�
 ### Неизменное поведение
 
 - **Сессия и конфликт устройств** — политика `playbackDeviceConflictSync` и `setDisabled` в `demoPlayerStore` без изменений; для floating UI применяются те же `demo-player--blocked` состояния и предупреждения (см. [Функциональность](#функциональность)).
-- **Режим редактирования layout** — управление floating-панелью и drag отключены; визуально приглушено (`demo-player-panel--layout-blocked`). На контейнер плеера ставится `inert`, в `DemoPlayer` передаётся `interactionBlocked` (все контролы disabled). Это не влияет на опциональный основной плеер в шапке (`playerInAppHeader`) ([layout-edit-mode](../../layout-edit-mode.md)).
+- **Режим редактирования layout** — управление floating-панелью и drag отключены; визуально приглушено (`demo-player-panel--layout-blocked`). На контейнер плеера ставится `inert`, в `DemoPlayer` передаётся `interactionBlocked` (все контролы disabled). **Также блокируются** опциональный основной плеер в шапке (`HeaderPlayerHost`, `playerInAppHeader`) и **HeaderPlaybackPill** — см. [layout-edit-mode](../../layout-edit-mode.md) §«Что блокируется в шапке».
 - **Интеграция workspace** — `usePlaybackPreview`, кнопки Play в Playlist / Collections / File Browser / Player (preparation) без изменений.
 
 ## Функциональность
