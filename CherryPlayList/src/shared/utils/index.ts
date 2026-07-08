@@ -94,6 +94,20 @@ export {
   teardownAimpOrganizerSession,
   type AimpOrganizerSessionActions,
 } from './aimpOrganizerSession';
+export {
+  DEFAULT_WORKSPACE_MIN_SIZE,
+  computeMinLayoutSize,
+  computeMinWindowSize,
+  getAllRegisteredWorkspaceTypesWithMins,
+  getMinSizePercentsForContainer,
+  getWorkspaceMinSize,
+  normalizeWorkspaceType,
+} from './layoutWorkspaceMins';
+export type {
+  WindowChromeInsets,
+  WorkspaceMinSize,
+  WorkspaceTypeWithMins,
+} from './layoutWorkspaceMins';
 export { getLayoutPresetFromLayout } from './layoutPreset';
 export { getAimpPartyPresetState } from './aimpPresetVisibility';
 export { sanitizeExternalUrl } from './urlSafety';

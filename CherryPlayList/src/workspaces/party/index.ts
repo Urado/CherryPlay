@@ -22,6 +22,8 @@ const PartyEditorModule: IWorkspaceModule = {
   type: 'party-editor',
   name: 'Party Editor',
   component: PartyEditorViewWrapper,
+  minWidth: 400,
+  minHeight: 300,
 };
 
 const PartyPreviewModule: IWorkspaceModule = {
@@ -29,6 +31,8 @@ const PartyPreviewModule: IWorkspaceModule = {
   type: 'party-preview',
   name: 'Party Preview',
   component: PartyPreviewViewWrapper,
+  minWidth: 320,
+  minHeight: 240,
 };
 
 workspaceRegistry.register(PartyEditorModule);

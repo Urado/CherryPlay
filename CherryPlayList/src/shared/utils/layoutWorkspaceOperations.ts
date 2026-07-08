@@ -29,8 +29,18 @@ import {
   replaceZoneInTree,
   updateContainerInTree,
 } from './layoutUtils';
+import type { LayoutViewportSize } from './layoutViewportBridge';
+import {
+  computeMinLayoutSize,
+  explainMinLayoutSize,
+  normalizeWorkspaceType,
+} from './layoutWorkspaceMins';
+import { logger } from './logger';
 
 export type LayoutEditAirSide = 'top' | 'right' | 'bottom' | 'left';
+
+/** Tolerance (px) so float rounding does not spuriously reject a feasible add. */
+const MIN_SIZE_FEASIBILITY_EPSILON = 0.5;
 
 const SINGLETON_WORKSPACE_TYPES = new Set([
   'playlist',
@@ -81,19 +91,29 @@ export function createEmptyLayout(): Layout {
   };
 }
 
-export function addInitialWorkspaceToLayout(workspaceType: string): {
-  layout: Layout;
-  preparedZone: WorkspaceZone;
-} {
-  const zone = createWorkspaceZone(workspaceType);
+export type AddInitialWorkspaceResult =
+  | { ok: true; layout: Layout; preparedZone: WorkspaceZone }
+  | {
+      ok: false;
+      reason: 'min_size_violation';
+      minSizeDiagnostics?: AddAdjacentMinSizeDiagnostics;
+    };
 
-  return {
+export function addInitialWorkspaceToLayout(
+  workspaceType: string,
+  currentLayoutViewport?: LayoutViewportSize | null,
+): AddInitialWorkspaceResult {
+  const zone = createWorkspaceZone(workspaceType);
+  const result: AddInitialWorkspaceResult = {
+    ok: true,
     layout: {
       version: 1,
       rootZone: zone,
     },
     preparedZone: zone,
   };
+
+  return enforceMinSizeFeasibility(result, currentLayoutViewport);
 }
 
 export function collectWorkspaceTypes(root: Zone): Set<string> {
@@ -213,7 +233,7 @@ export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
 }
 
 export function createWorkspaceZone(workspaceType: string): WorkspaceZone {
-  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const normalizedType = normalizeWorkspaceType(workspaceType);
 
   return {
     id: uuidv4(),
@@ -240,6 +260,14 @@ function buildSplitContainer(
   };
 }
 
+/** Diagnostics attached to a `min_size_violation` for detailed console logging. */
+export interface AddAdjacentMinSizeDiagnostics {
+  /** Proposed tree that failed to fit; `null` when the viewport was unknown. */
+  proposedRoot: Zone | null;
+  /** Live layout viewport at the time of the check; `null` when unknown. */
+  viewport: LayoutViewportSize | null;
+}
+
 export type AddAdjacentWorkspaceResult =
   | { ok: true; layout: Layout; preparedZone: WorkspaceZone }
   | {
@@ -250,8 +278,167 @@ export type AddAdjacentWorkspaceResult =
         | 'container_full'
         | 'duplicate_singleton'
         | 'invalid_side'
-        | 'single_zone';
+        | 'single_zone'
+        | 'min_size_violation';
+      minSizeDiagnostics?: AddAdjacentMinSizeDiagnostics;
     };
+
+/**
+ * Rejects a successful add-adjacent result when the resulting (proposed) tree
+ * cannot satisfy every workspace min at the current layout viewport size.
+ * Uses a conservative 50/50 split simulation encoded in `result.layout`.
+ *
+ * Viewport argument semantics:
+ * - `undefined` (argument omitted): the caller opts out of the feasibility check
+ *   (e.g. pure tree-shape unit tests). The check is skipped.
+ * - `null`: the viewport is genuinely unknown at the call site. We cannot prove
+ *   the add fits, so we conservatively reject with `min_size_violation` rather
+ *   than silently allowing a potentially unusable layout. Real callers (the
+ *   layout store) pass the live viewport, or `null` when it cannot be measured.
+ */
+type MinSizeFeasibilityResult = AddAdjacentWorkspaceResult | AddInitialWorkspaceResult;
+
+function enforceMinSizeFeasibility<T extends MinSizeFeasibilityResult>(
+  result: T,
+  currentLayoutViewport?: LayoutViewportSize | null,
+): T {
+  if (!result.ok) {
+    return result;
+  }
+
+  if (currentLayoutViewport === undefined) {
+    return result;
+  }
+
+  if (currentLayoutViewport === null) {
+    return {
+      ok: false,
+      reason: 'min_size_violation',
+      minSizeDiagnostics: { proposedRoot: null, viewport: null },
+    } as T;
+  }
+
+  const proposedMins = computeMinLayoutSize(result.layout.rootZone);
+  const fitsWidth =
+    proposedMins.minWidth <= currentLayoutViewport.width + MIN_SIZE_FEASIBILITY_EPSILON;
+  const fitsHeight =
+    proposedMins.minHeight <= currentLayoutViewport.height + MIN_SIZE_FEASIBILITY_EPSILON;
+
+  if (!fitsWidth || !fitsHeight) {
+    return {
+      ok: false,
+      reason: 'min_size_violation',
+      minSizeDiagnostics: {
+        proposedRoot: result.layout.rootZone,
+        viewport: currentLayoutViewport,
+      },
+    } as T;
+  }
+
+  return result;
+}
+
+/**
+ * Logs a detailed recursive breakdown of a rejected add-adjacent operation.
+ * Only call this for an actual user-triggered add (not availability probing),
+ * so the console is not spammed on every render.
+ */
+export function logAddAdjacentMinSizeViolation(
+  result: AddAdjacentWorkspaceResult | AddInitialWorkspaceResult,
+): void {
+  if (result.ok || result.reason !== 'min_size_violation') {
+    return;
+  }
+
+  const diagnostics = result.minSizeDiagnostics ?? { proposedRoot: null, viewport: null };
+  logMinSizeViolation(diagnostics.proposedRoot, diagnostics.viewport);
+}
+
+/**
+ * Whether at least one of the given workspace types can be added adjacent to the
+ * target workspace zone on the given side. Used to decide whether the air "+"
+ * control should be shown. Never logs (availability probing runs every render).
+ */
+export function canAddAdjacentWorkspace(
+  layout: Layout,
+  targetZoneId: ZoneId,
+  side: LayoutEditAirSide,
+  workspaceTypes: string[],
+  currentLayoutViewport?: LayoutViewportSize | null,
+): boolean {
+  return workspaceTypes.some(
+    (workspaceType) =>
+      addAdjacentWorkspaceToLayout(layout, targetZoneId, side, workspaceType, currentLayoutViewport)
+        .ok,
+  );
+}
+
+/**
+ * Whether at least one of the given workspace types can be added on a container
+ * span side. Mirrors `canAddAdjacentWorkspace` for container air bands.
+ */
+export function canAddAdjacentWorkspaceToContainer(
+  layout: Layout,
+  containerId: ZoneId,
+  side: LayoutEditAirSide,
+  workspaceTypes: string[],
+  currentLayoutViewport?: LayoutViewportSize | null,
+): boolean {
+  return workspaceTypes.some(
+    (workspaceType) =>
+      addAdjacentWorkspaceToContainerLayout(
+        layout,
+        containerId,
+        side,
+        workspaceType,
+        currentLayoutViewport,
+      ).ok,
+  );
+}
+
+/**
+ * Whether the first workspace in an empty layout can fit the current viewport.
+ */
+export function canAddInitialWorkspace(
+  workspaceType: string,
+  currentLayoutViewport?: LayoutViewportSize | null,
+): boolean {
+  return addInitialWorkspaceToLayout(workspaceType, currentLayoutViewport).ok;
+}
+
+/**
+ * Logs a detailed recursive breakdown of the min-size calculation (both axes)
+ * when an add-adjacent operation is rejected because it does not fit.
+ */
+function logMinSizeViolation(proposedRoot: Zone | null, viewport: LayoutViewportSize | null): void {
+  if (!proposedRoot || !viewport) {
+    logger.warn(
+      '[layout mins] Нельзя добавить workspace: размер области layout неизвестен (viewport=null), ' +
+        'проверка минимальных размеров невозможна — операция отклонена.',
+    );
+    return;
+  }
+
+  const { size, lines } = explainMinLayoutSize(proposedRoot);
+  const fitsWidth = size.minWidth <= viewport.width + MIN_SIZE_FEASIBILITY_EPSILON;
+  const fitsHeight = size.minHeight <= viewport.height + MIN_SIZE_FEASIBILITY_EPSILON;
+
+  const report = [
+    '[layout mins] Нельзя добавить workspace — не хватает места при текущем размере окна.',
+    `Текущая область layout: ${Math.round(viewport.width)}px × ${Math.round(viewport.height)}px (ширина × высота).`,
+    'Требуемый минимум для предполагаемого дерева (рекурсивный расчёт):',
+    ...lines,
+    `Итог: требуется minWidth=${Math.round(size.minWidth)}px, minHeight=${Math.round(size.minHeight)}px.`,
+    `По горизонтали: ${Math.round(size.minWidth)}px ≤ ${Math.round(viewport.width)}px → ${
+      fitsWidth ? 'помещается' : 'НЕ ПОМЕЩАЕТСЯ'
+    }.`,
+    `По вертикали: ${Math.round(size.minHeight)}px ≤ ${Math.round(viewport.height)}px → ${
+      fitsHeight ? 'помещается' : 'НЕ ПОМЕЩАЕТСЯ'
+    }.`,
+  ].join('\n');
+
+  logger.warn(report);
+}
 
 /** Air sides that span an entire split container (perpendicular to its direction). */
 export function getContainerSpanSides(direction: SplitDirection): LayoutEditAirSide[] {
@@ -365,6 +552,7 @@ export function addAdjacentWorkspaceToLayout(
   targetZoneId: ZoneId,
   side: LayoutEditAirSide,
   workspaceType: string,
+  currentLayoutViewport?: LayoutViewportSize | null,
 ): AddAdjacentWorkspaceResult {
   const targetZone = findZoneById(layout.rootZone, targetZoneId);
   if (!targetZone || targetZone.type !== 'workspace') {
@@ -376,10 +564,11 @@ export function addAdjacentWorkspaceToLayout(
     return singletonError;
   }
 
-  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const normalizedType = normalizeWorkspaceType(workspaceType);
   const newZone = createWorkspaceZone(normalizedType);
 
-  return insertAdjacentZoneInLayout(layout, targetZoneId, targetZone, newZone, side);
+  const result = insertAdjacentZoneInLayout(layout, targetZoneId, targetZone, newZone, side);
+  return enforceMinSizeFeasibility(result, currentLayoutViewport);
 }
 
 export function addAdjacentWorkspaceToContainerLayout(
@@ -387,6 +576,7 @@ export function addAdjacentWorkspaceToContainerLayout(
   containerId: ZoneId,
   side: LayoutEditAirSide,
   workspaceType: string,
+  currentLayoutViewport?: LayoutViewportSize | null,
 ): AddAdjacentWorkspaceResult {
   const container = findZoneById(layout.rootZone, containerId);
   if (!container || container.type !== 'container') {
@@ -406,10 +596,11 @@ export function addAdjacentWorkspaceToContainerLayout(
     return singletonError;
   }
 
-  const normalizedType = workspaceType === 'aimp' ? 'player' : workspaceType;
+  const normalizedType = normalizeWorkspaceType(workspaceType);
   const newZone = createWorkspaceZone(normalizedType);
 
-  return insertAdjacentZoneInLayout(layout, containerId, container, newZone, side);
+  const result = insertAdjacentZoneInLayout(layout, containerId, container, newZone, side);
+  return enforceMinSizeFeasibility(result, currentLayoutViewport);
 }
 
 export type RemoveWorkspaceResult =
@@ -481,6 +672,8 @@ export function getAddWorkspaceErrorMessage(
       return 'Нельзя добавить workspace с этой стороны контейнера';
     case 'single_zone':
       return 'Нужно минимум две зоны в ряду';
+    case 'min_size_violation':
+      return 'Недостаточно места. Увеличьте окно или измените пропорции разделителями.';
     default:
       return 'Не удалось добавить workspace';
   }

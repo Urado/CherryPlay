@@ -11,6 +11,8 @@ const DemoPlayerModule: IWorkspaceModule = {
   type: 'demo-player',
   name: 'Demo Player',
   component: DemoPlayerWorkspaceView,
+  minWidth: 280,
+  minHeight: 100,
 };
 
 workspaceRegistry.register(DemoPlayerModule);

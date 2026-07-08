@@ -520,67 +520,43 @@ export const AppHeader: React.FC = () => {
     <div className="app-header">
       <div className="app-header-toolbar">
         <div className="app-header-left">
-          <div className="app-header-actions">
-            <div className="action-group">
-              <div className="project-menu" ref={projectMenuRef}>
-                <button
-                  ref={projectMenuTriggerRef}
-                  type="button"
-                  id={projectMenuTriggerId}
-                  className="project-menu__trigger header-button"
-                  onClick={() => setProjectMenuOpen((o) => !o)}
-                  onKeyDown={onProjectMenuTriggerKeyDown}
-                  aria-haspopup="menu"
-                  aria-expanded={projectMenuOpen}
-                  aria-controls={projectMenuPanelId}
-                  aria-busy={isSaving}
-                  disabled={isLayoutEditMode}
-                  title={layoutEditControlTitle(
-                    'Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
-                    isLayoutEditMode,
-                  )}
-                >
-                  {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <MoreVertIcon
-                    className="header-button__icon header-button__icon--compact"
-                    aria-hidden
-                  />
-                </button>
-                {projectMenuOpen && (
-                  <div
-                    ref={projectMenuPanelRef}
-                    id={projectMenuPanelId}
-                    className="project-menu__panel"
-                    role="menu"
-                    tabIndex={-1}
-                    aria-labelledby={projectMenuTriggerId}
-                    onKeyDown={onProjectMenuKeyDown}
+          <div className="app-header-top-row">
+            <div className="app-header-actions">
+              <div className="action-group">
+                <div className="project-menu" ref={projectMenuRef}>
+                  <button
+                    ref={projectMenuTriggerRef}
+                    type="button"
+                    id={projectMenuTriggerId}
+                    className="project-menu__trigger header-button"
+                    onClick={() => setProjectMenuOpen((o) => !o)}
+                    onKeyDown={onProjectMenuTriggerKeyDown}
+                    aria-haspopup="menu"
+                    aria-expanded={projectMenuOpen}
+                    aria-controls={projectMenuPanelId}
+                    aria-busy={isSaving}
+                    disabled={isLayoutEditMode}
+                    title={layoutEditControlTitle(
+                      'Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
+                      isLayoutEditMode,
+                    )}
                   >
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleNew();
-                      }}
+                    {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
+                    <MoreVertIcon
+                      className="header-button__icon header-button__icon--compact"
+                      aria-hidden
+                    />
+                  </button>
+                  {projectMenuOpen && (
+                    <div
+                      ref={projectMenuPanelRef}
+                      id={projectMenuPanelId}
+                      className="project-menu__panel"
+                      role="menu"
+                      tabIndex={-1}
+                      aria-labelledby={projectMenuTriggerId}
+                      onKeyDown={onProjectMenuKeyDown}
                     >
-                      Новый проект
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleLoad();
-                      }}
-                    >
-                      Открыть проект…
-                    </button>
-                    {usesFixtureFileBrowser && (
                       <button
                         type="button"
                         className="project-menu__item"
@@ -588,94 +564,125 @@ export const AppHeader: React.FC = () => {
                         disabled={isSaving}
                         onClick={() => {
                           closeProjectMenu();
-                          void handleLoadDemoProject();
+                          handleNew();
                         }}
                       >
-                        Загрузить демо-проект
+                        Новый проект
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleExport();
-                      }}
-                    >
-                      Экспорт
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleSave();
-                      }}
-                    >
-                      {isSaving ? (
-                        <span className="project-menu__item-with-loader">
-                          <span
-                            className="project-menu__save-spinner"
-                            aria-label="Сохранение…"
-                            role="status"
-                          />
-                          Сохранить проект
-                        </span>
-                      ) : (
-                        'Сохранить проект'
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          void handleLoad();
+                        }}
+                      >
+                        Открыть проект…
+                      </button>
+                      {usesFixtureFileBrowser && (
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleLoadDemoProject();
+                          }}
+                        >
+                          Загрузить демо-проект
+                        </button>
                       )}
-                    </button>
-                    {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          handleExport();
+                        }}
+                      >
+                        Экспорт
+                      </button>
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          void handleSave();
+                        }}
+                      >
+                        {isSaving ? (
+                          <span className="project-menu__item-with-loader">
+                            <span
+                              className="project-menu__save-spinner"
+                              aria-label="Сохранение…"
+                              role="status"
+                            />
+                            Сохранить проект
+                          </span>
+                        ) : (
+                          'Сохранить проект'
+                        )}
+                      </button>
+                      {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
                         no filePath (only «Сохранить проект») vs with filePath (+ «Сохранить копию…») and
                         `globalShortcutHandlers` when a renderer test harness exists. */}
-                    {meta.filePath ? (
-                      <button
-                        type="button"
-                        className="project-menu__item"
-                        role="menuitem"
-                        disabled={isSaving}
-                        onClick={() => {
-                          closeProjectMenu();
-                          openSaveAsModal();
-                        }}
-                      >
-                        Сохранить копию…
-                      </button>
-                    ) : null}
-                  </div>
+                      {meta.filePath ? (
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            openSaveAsModal();
+                          }}
+                        >
+                          Сохранить копию…
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="action-group">
+                {enableStreaming && (
+                  <button
+                    className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
+                    onClick={handleAccount}
+                    disabled={isLayoutEditMode}
+                    title={layoutEditControlTitle(
+                      isAuthenticated
+                        ? `Аккаунт: ${organizer?.name || 'Организатор'}`
+                        : 'Войти в аккаунт',
+                      isLayoutEditMode,
+                    )}
+                  >
+                    <AccountCircleIcon className="header-button__icon" aria-hidden />
+                    {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
+                  </button>
                 )}
+                <button
+                  className="header-button"
+                  onClick={handleSettings}
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
+                >
+                  <SettingsIcon className="header-button__icon" aria-hidden />
+                </button>
               </div>
             </div>
 
-            <div className="action-group">
-              {enableStreaming && (
-                <button
-                  className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
-                  onClick={handleAccount}
-                  disabled={isLayoutEditMode}
-                  title={layoutEditControlTitle(
-                    isAuthenticated
-                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт',
-                    isLayoutEditMode,
-                  )}
-                >
-                  <AccountCircleIcon className="header-button__icon" aria-hidden />
-                  {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
-                </button>
-              )}
-              <button
-                className="header-button"
-                onClick={handleSettings}
-                disabled={isLayoutEditMode}
-                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
-              >
-                <SettingsIcon className="header-button__icon" aria-hidden />
-              </button>
+            <div className="app-header-status-row">
+              <HeaderPlaybackPill disabled={isLayoutEditMode} />
+              <HeaderPlayerHost />
             </div>
           </div>
 
@@ -698,11 +705,6 @@ export const AppHeader: React.FC = () => {
 
           <WorkspaceMenu />
         </div>
-      </div>
-
-      <div className="app-header-status-row">
-        <HeaderPlaybackPill disabled={isLayoutEditMode} />
-        <HeaderPlayerHost />
       </div>
 
       <SaveProjectAsModal

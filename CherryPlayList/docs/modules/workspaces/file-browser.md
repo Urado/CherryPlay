@@ -8,7 +8,15 @@
 
 ## Где используется
 
-Браузер файлов отображается в панели источников (**SourcesPanel**). При добавлении зоны с типом `fileBrowser` в layout `WorkspaceRenderer` рендерит `SourcesPanel` с `workspaceId={zone.workspaceId}`, внутри — **FileBrowser**. Отдельного workspace-модуля в `workspaces/fileBrowser` нет — он был удалён как неиспользуемый.
+Зона `fileBrowser` в layout — полноценный **`IWorkspaceModule`** в `workspaceRegistry`:
+
+| | |
+| --- | --- |
+| **Модуль** | `src/workspaces/fileBrowser/index.ts` — `type: 'fileBrowser'`, компонент `FileBrowserWorkspaceView` (`SourcesPanel` + заголовок панели) |
+| **Регистрация** | Side-effect импорт `@workspaces/fileBrowser` в `src/entry.tsx` (как у `playlist`, `collection`, …) |
+| **Рендер** | `WorkspaceRenderer` по `workspaceType` из реестра (без отдельной ветки `if (fileBrowser)`) |
+
+**Минимальные размеры зоны** (placeholder, см. [Layout System — минимальные размеры](../systems/layout-system.md)): **`minWidth` 240**, **`minHeight` 200** — на контракте модуля; enforcement через split clamp и add-adjacent check, не через CSS.
 
 **Несколько панелей в одном layout:** тип `fileBrowser` **не singleton** — в edit mode можно добавить вторую и последующие зоны (как `collection`). Каждая зона получает **уникальный** `workspaceId` (`generateWorkspaceId()` при добавлении через picker). Встроенные пресеты по-прежнему задают одну зону с фиксированным `DEFAULT_FILEBROWSER_WORKSPACE_ID` (`default-filebrowser-workspace`).
 
@@ -26,6 +34,7 @@
 
 ## Основные компоненты
 
+- **FileBrowserWorkspaceView** (`src/workspaces/fileBrowser/FileBrowserWorkspaceView.tsx`) — оболочка workspace-модуля: `SourcesPanel` с `workspaceId` зоны.
 - **FileBrowser** (`src/components/FileBrowser.tsx`) — компонент браузера файлов; рендерится в панели источников (SourcesPanel).
 - **FileBrowserItemRow** (`src/components/FileBrowserItemRow.tsx`) — строка элемента списка на базе ListRowCompound. Для аудиофайлов: сначала кнопка Play (демо-плеер), затем имя и мета; для папок и не-аудио файлов: иконка (папка/файл), затем имя и мета. Расположение совпадает с плейлистом, коллекциями и плеером (кнопка проигрывания в начале строки).
 
@@ -106,6 +115,7 @@
 
 ## См. также
 
+- [Layout System](../systems/layout-system.md) — per-type mins, min window, JS-only enforcement
 - [Settings Store](../stores/settings-store.md) — `fileBrowserPathsByWorkspaceId`
 - [UI Store](../stores/ui-store.md) — focus request
 - [Режим редактирования layout](../../layout-edit-mode.md) — добавление нескольких зон `fileBrowser`

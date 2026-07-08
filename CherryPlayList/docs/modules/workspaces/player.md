@@ -163,3 +163,8 @@ Player может опционально транслировать состоя
 - `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую.
 
 Локальная сессия Player (`playerAudioStore`, `usePlayerSession`) — источник правды для broadcast source; сессия работает автономно без сервера.
+
+## См. также
+
+- [Режим редактирования layout](../../layout-edit-mode.md) — зона `player` (singleton в picker; legacy `aimp` → `player`)
+- [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон) — `player`: **320×120** px (`src/workspaces/player/index.ts`)

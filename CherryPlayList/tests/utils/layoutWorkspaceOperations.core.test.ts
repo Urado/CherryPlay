@@ -54,8 +54,14 @@ describe('layoutWorkspaceOperations core helpers', () => {
 
   describe('addInitialWorkspaceToLayout', () => {
     it('creates a single workspace root', () => {
-      const { layout, preparedZone } = addInitialWorkspaceToLayout('playlist');
+      const result = addInitialWorkspaceToLayout('playlist');
 
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+
+      const { layout, preparedZone } = result;
       expect(layout.rootZone.type).toBe('workspace');
       expect(preparedZone.workspaceType).toBe('playlist');
       expect(countWorkspaceLeaves(layout.rootZone)).toBe(1);
@@ -76,7 +82,14 @@ describe('layoutWorkspaceOperations core helpers', () => {
     });
 
     it('returns empty layout when removing the last workspace', () => {
-      const singleLayout = addInitialWorkspaceToLayout('playlist').layout;
+      const initialResult = addInitialWorkspaceToLayout('playlist');
+
+      expect(initialResult.ok).toBe(true);
+      if (!initialResult.ok) {
+        return;
+      }
+
+      const singleLayout = initialResult.layout;
       const zoneId = singleLayout.rootZone.id;
       const result = removeWorkspaceFromLayout(singleLayout, zoneId);
 

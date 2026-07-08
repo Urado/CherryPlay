@@ -41,6 +41,7 @@ import {
   updateZoneInTree,
   syncContainerChildSizes,
 } from '../utils/layoutUtils';
+import { getCurrentLayoutViewport } from '../utils/layoutViewportBridge';
 import type { LayoutEditAirSide } from '../utils/layoutWorkspaceOperations';
 import {
   addAdjacentWorkspaceToLayout,
@@ -49,6 +50,7 @@ import {
   collectWorkspaceZones,
   createEmptyLayout,
   getAddWorkspaceErrorMessage,
+  logAddAdjacentMinSizeViolation,
   getRemoveWorkspaceErrorMessage,
   getWorkspaceAddedMessage,
   migrateAimpZonesToPlayerInLayout,
@@ -845,9 +847,11 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           targetZoneId,
           side,
           workspaceType,
+          getCurrentLayoutViewport(),
         );
 
         if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
           useUIStore.getState().addNotification({
             type: 'warning',
             message: getAddWorkspaceErrorMessage(result.reason),
@@ -870,9 +874,11 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           containerId,
           side,
           workspaceType,
+          getCurrentLayoutViewport(),
         );
 
         if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
           useUIStore.getState().addNotification({
             type: 'warning',
             message: getAddWorkspaceErrorMessage(result.reason),
@@ -894,9 +900,19 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        const { layout, preparedZone } = addInitialWorkspaceToLayout(workspaceType);
-        prepareWorkspaceInstance(preparedZone);
-        set({ layout });
+        const result = addInitialWorkspaceToLayout(workspaceType, getCurrentLayoutViewport());
+
+        if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: getAddWorkspaceErrorMessage(result.reason),
+          });
+          return;
+        }
+
+        prepareWorkspaceInstance(result.preparedZone);
+        set({ layout: result.layout });
         useUIStore.getState().addNotification({
           type: 'success',
           message: getWorkspaceAddedMessage(workspaceType),

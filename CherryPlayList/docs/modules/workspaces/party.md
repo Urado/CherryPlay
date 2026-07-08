@@ -209,4 +209,4 @@ Production-события **не** очищают preview scenario и editor dem
 ## См. также
 
 - Исходники и краткий README модуля: [`src/workspaces/party/README.md`](../../../src/workspaces/party/README.md)
-- Layout system: [`layout-system.md`](../systems/layout-system.md)
+- Layout system: [`layout-system.md`](../systems/layout-system.md) — минимальные размеры зон: `party-editor` **400×300**, `party-preview` **320×240** px (`src/workspaces/party/index.ts`)

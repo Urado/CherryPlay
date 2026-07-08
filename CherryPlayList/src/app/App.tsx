@@ -34,6 +34,7 @@ import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
 import { SettingsModal } from './components/SettingsModal';
+import { useWindowMinSize } from './hooks';
 import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
 
 const App: React.FC = () => {
@@ -41,6 +42,9 @@ const App: React.FC = () => {
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
   const appContentRef = useRef<HTMLDivElement>(null);
+  const layoutHostRef = useRef<HTMLDivElement>(null);
+
+  useWindowMinSize(layoutHostRef);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -145,7 +149,7 @@ const App: React.FC = () => {
         {isDemoMode && <DemoModeBanner />}
         <AppHeader />
         <div ref={appContentRef} className="app-content">
-          <div className="app-content-main">
+          <div ref={layoutHostRef} className="app-content-main">
             <LayoutWorkspaceArea />
           </div>
           <div className="demo-player-shell-host">

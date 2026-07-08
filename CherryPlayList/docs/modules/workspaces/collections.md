@@ -29,3 +29,4 @@
 ## См. также
 
 - [Режим редактирования layout](../../layout-edit-mode.md) — добавление нескольких зон `collection`
+- [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон) — `collection`: **200×150** px (`src/workspaces/collection/index.ts`)

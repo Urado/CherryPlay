@@ -1,6 +1,26 @@
-import { ipcMain, app, shell } from 'electron';
+import { ipcMain, app, shell, BrowserWindow } from 'electron';
 
+import {
+  APP_MIN_WINDOW_WIDTH,
+  APP_MIN_WINDOW_HEIGHT,
+} from '../../src/shared/contracts/windowMins.js';
 import { validatePath } from '../utils/fsHelpers.js';
+
+/**
+ * Re-exported app-level window-min floor (single source: shared contracts).
+ * Applied when the layout is empty or renderer-computed mins fall below it,
+ * so the app always keeps a usable minimum footprint.
+ */
+export { APP_MIN_WINDOW_WIDTH, APP_MIN_WINDOW_HEIGHT };
+
+/**
+ * Normalize a renderer-provided minimum dimension to a safe integer floored at
+ * the given app-level minimum. Non-finite / negative values collapse to the floor.
+ */
+function normalizeMinDimension(value: unknown, floor: number): number {
+  const numeric = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : 0;
+  return Math.max(floor, numeric);
+}
 
 /**
  * Get system path (documents, music, downloads, etc.)
@@ -69,6 +89,36 @@ export function registerSystemHandlers(): void {
       };
     }
   });
+
+  ipcMain.handle(
+    'system:setMinimumWindowSize',
+    async (event, payload: { minWidth: number; minHeight: number }) => {
+      try {
+        const window = BrowserWindow.fromWebContents(event.sender);
+        if (!window) {
+          return {
+            success: false,
+            error: 'No window associated with setMinimumWindowSize request',
+          };
+        }
+
+        const minWidth = normalizeMinDimension(payload?.minWidth, APP_MIN_WINDOW_WIDTH);
+        const minHeight = normalizeMinDimension(payload?.minHeight, APP_MIN_WINDOW_HEIGHT);
+
+        window.setMinimumSize(minWidth, minHeight);
+
+        return {
+          success: true,
+          data: { minWidth, minHeight },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: (error as Error).message,
+        };
+      }
+    },
+  );
 
   ipcMain.handle('system:openPath', async (event, payload: { path: string }) => {
     try {

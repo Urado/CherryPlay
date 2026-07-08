@@ -32,7 +32,7 @@
 
 Помимо подсветки **✎** (`app-header-workspace-edit-btn--active`):
 
-- **`LayoutEditModeBanner`** (`App.tsx`) — полоса над `AppHeader` с текстом **«Редактирование окон — Esc для выхода»** (`role="status"`, класс `layout-edit-mode-banner` в `app.css`). Стили те же, что у edit mode (`--layout-edit-surface`, `--layout-edit-stroke-color`).
+- **Inline-подсказка** в шапке (`WorkspaceMenu.tsx`): рядом с кнопкой **✎** / **✓** появляется `<span class="app-header-workspace-edit-hint" role="status">` с текстом **«Редактирование окон — Esc для выхода»** (стили — `header.css`).
 - Air-области у зон, затемнение workspace, активные dividers — см. § «Поведение UI в режиме редактирования».
 
 ---
@@ -165,6 +165,10 @@
 
 В edit mode **разделители split-контейнеров активны** (`SplitContainer.tsx`): можно перетаскивать dividers и менять пропорции зон. В обычном режиме resize по-прежнему работает так же; в edit mode dividers получают класс `split-divider--layout-edit` (только `z-index` для наложения над air-зонами — цвет остаётся как в обычном режиме).
 
+**Минимальные размеры при drag:** тот же путь, что вне edit mode — `getMinSizePercentsForContainer()` + жёсткий clamp по per-type mins соседних зон (см. [Layout System — минимальные размеры](./modules/systems/layout-system.md)). CSS `minWidth`/`minHeight` на зонах **не** используются.
+
+**Невалидный сохранённый layout** (зона уже меньше min): загрузка без авто-fix; первый drag divider применяет clamp и не позволяет **усугубить** нарушение на перетаскиваемой границе.
+
 ### Что блокируется в шапке
 
 Пока режим включён:
@@ -186,9 +190,8 @@
 
 Список строится в `workspaceLayoutEditOptions.ts`:
 
-1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), имена на русском через `workspaceDisplayNames.ts`.
-2. **`fileBrowser`** добавляется явно, если его нет в реестре (специальный случай в `WorkspaceRenderer`).
-3. **Singleton-типы**, уже присутствующие в layout, **скрываются** из picker. Тип **`aimp`** в picker **не показывается** (legacy, исключён в `workspaceLayoutEditOptions.ts`).
+1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts`.
+2. **Singleton-типы**, уже присутствующие в layout, **скрываются** из picker. Тип **`aimp`** в picker **не показывается** (legacy, исключён в `workspaceLayoutEditOptions.ts`).
 
 | Тип             | Примечание                                 |
 | --------------- | ------------------------------------------ |
@@ -226,7 +229,32 @@
 При добавлении зоны (`addAdjacentWorkspace`, `addAdjacentWorkspaceToContainer`, `addInitialWorkspace`):
 
 - **Успех** — toast `success`: «Добавлен workspace: …» (`getWorkspaceAddedMessage`, RU-имя из `workspaceDisplayNames`).
-- **Ошибка** — toast `warning` с текстом из `getAddWorkspaceErrorMessage` (дубликат singleton, лимит глубины/зон и т.д.).
+- **Ошибка** — toast `warning` с текстом из `getAddWorkspaceErrorMessage` (дубликат singleton, лимит глубины/зон, недостаток места по mins и т.д.).
+
+### Проверка минимальных размеров при добавлении
+
+Проверка **min-feasibility** применяется ко **всем** путям добавления зоны: **`addAdjacentWorkspace`**, **`addAdjacentWorkspaceToContainer`** и **`addInitialWorkspace`** (первая зона на пустом layout, центральный **+**).
+
+После проверок глубины, singleton и заполненности контейнера `layoutWorkspaceOperations.ts` симулирует итоговое дерево (для adjacent — **50/50 split**, как при реальном insert) и вызывает **`enforceMinSizeFeasibility`**:
+
+1. Текущий **layout viewport** берётся из `layoutViewportBridge` (регистрирует `useWindowMinSize` по размеру хоста layout).
+2. `computeMinLayoutSize(proposedTree)` сравнивается с viewport (ширина и высота).
+3. Если mins **не помещаются** → `{ ok: false, reason: 'min_size_violation' }` → toast: **«Недостаточно места. Увеличьте окно или измените пропорции разделителями.»**.
+
+Консервативная политика: при **неизвестном** viewport (`null`) добавление **отклоняется** с `min_size_violation`, а не допускается «вслепую». Чистые unit-тесты дерева могут опустить viewport (`undefined`) и пропустить эту проверку.
+
+**Probing vs действие пользователя** при `viewport === null`:
+
+| Контекст | Поведение |
+| -------- | --------- |
+| **Availability probing** (`canAddAdjacentWorkspace` — показ air **+** на каждом рендере) | Тихий отказ (`ok: false`); **без** toast и **без** console log |
+| **User-triggered add** (клик по air/полосе/центральному **+**, выбор типа в picker) | Отказ + toast + **console log** (`logAddAdjacentMinSizeViolation` / `logMinSizeViolation`) |
+
+Минимум считается по **min-content** модели (`computeMinLayoutSize`): вдоль оси split — **сумма** минимумов детей, поперёк — **максимум**; доли (`sizes`) на минимум не влияют. Подробности и пример — § «Модель расчёта минимума» в [Layout System](./modules/systems/layout-system.md).
+
+При отказе по действию пользователя (`min_size_violation`) в консоль пишется подробный **рекурсивный расчёт по горизонтали и вертикали** (`explainMinLayoutSize` / `logAddAdjacentMinSizeViolation`) — видно, какая ось не помещается и вклад каждой зоны.
+
+Увеличьте окно или перераспределите зоны divider'ом, затем повторите добавление.
 
 ### Удаление зоны
 
@@ -240,13 +268,14 @@
 
 ### Ограничения при добавлении
 
-| Ограничение                      | Значение                       | Сообщение пользователю                                        |
-| -------------------------------- | ------------------------------ | ------------------------------------------------------------- |
-| Максимальная вложенность         | 6 (`MAX_LAYOUT_DEPTH`)         | «Достигнута максимальная вложенность layout»                  |
-| Зон в одном контейнере           | 10 (`MAX_ZONES_PER_CONTAINER`) | «В контейнере уже максимум зон»                               |
-| Дубликат singleton               | —                              | «Этот workspace уже есть в layout»                            |
-| Неверная сторона для span-полосы | —                              | «Нельзя добавить workspace с этой стороны контейнера»         |
-| Контейнер с одной зоной          | —                              | «Нужно минимум две зоны в ряду» (span-полосы не показываются) |
+| Ограничение                      | Значение                       | Сообщение пользователю                                            |
+| -------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
+| Максимальная вложенность         | 6 (`MAX_LAYOUT_DEPTH`)         | «Достигнута максимальная вложенность layout»                      |
+| Зон в одном контейнере           | 10 (`MAX_ZONES_PER_CONTAINER`) | «В контейнере уже максимум зон»                                   |
+| Дубликат singleton               | —                              | «Этот workspace уже есть в layout»                                |
+| Неверная сторона для span-полосы | —                              | «Нельзя добавить workspace с этой стороны контейнера»             |
+| Контейнер с одной зоной          | —                              | «Нужно минимум две зоны в ряду» (span-полосы не показываются)     |
+| Недостаточно места по mins       | `min_size_violation`           | «Недостаточно места. Увеличьте окно или измените пропорции разделителями.» |
 
 ---
 
@@ -271,33 +300,35 @@
 
 ## Связанные файлы
 
-| Путь                                                       | Роль                                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------------------- |
-| `src/shared/stores/layoutStore.ts`                         | Workspace state, persist, auto-commit, edit mode                      |
-| `src/app/components/LayoutEditModeBanner.tsx`              | Полоса «Редактирование окон — Esc для выхода» над шапкой              |
-| `src/app/components/WorkspaceMenu.tsx`                     | Pill, dropdown, inline rename, ✎                                      |
-| `src/app/App.tsx`                                          | Рендер `LayoutEditModeBanner` при `isLayoutEditMode`                  |
-| `src/app/hooks/useWorkspaceDirtyGuard.ts`                  | Auto-commit перед switch / exit / scratch                             |
-| `src/core/types/workspacePreset.ts`                        | Типы, `UNNAMED_WORKSPACE_NAME`                                        |
-| `src/shared/utils/layoutWorkspaceOperations.ts`            | Add/remove дерева, singleton, `addAdjacentWorkspaceToContainerLayout` |
-| `src/shared/utils/workspaceLifecycle.ts`                   | `prepareWorkspaceInstance` / `cleanupWorkspaceInstance`               |
-| `src/app/components/LayoutWorkspaceArea.tsx`               | Пустой / root workspace / `SplitContainer`                            |
-| `src/app/components/LayoutEmptyWorkspaceState.tsx`         | Пустой layout в edit mode, picker с ключом `'empty'`                  |
-| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`)                       |
-| `src/app/components/WorkspacePickerMenu.tsx`               | Portal-меню выбора типа workspace                                     |
-| `src/app/components/SplitContainer.tsx`                    | Рекурсивный split; container-shell при 2+ зонах в edit mode           |
-| `src/app/components/WorkspaceLayoutEditShell.tsx`          | Edit-frame workspace, air-регионы, content-frame, удаление            |
-| `src/app/components/WorkspaceLayoutEditContainerShell.tsx` | Flex span-полосы контейнера (24px, клик по всей полосе)               |
-| `src/app/components/WorkspaceLayoutEditAirControl.tsx`     | Кнопка air-зоны / центральный **+** на полосе, picker                 |
-| `src/styles/components/app.css`                            | Стили edit mode (air-size, рамки, container-air, ×)                   |
-| `src/styles/components/header.css`                         | Стили pill (фикс. ширина), edit mode                                  |
+| Путь                                                       | Роль                                                                                     |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `src/shared/stores/layoutStore.ts`                         | Workspace state, persist, auto-commit, edit mode                                         |
+| `src/app/components/WorkspaceMenu.tsx`                     | Pill, dropdown, inline rename, ✎, inline edit hint (`app-header-workspace-edit-hint`)    |
+| `src/app/App.tsx`                                          | Esc-обработка edit mode, `useWindowMinSize`                                              |
+| `src/app/hooks/useWorkspaceDirtyGuard.ts`                  | Auto-commit перед switch / exit / scratch                                                |
+| `src/core/types/workspacePreset.ts`                        | Типы, `UNNAMED_WORKSPACE_NAME`                                                           |
+| `src/shared/utils/layoutWorkspaceOperations.ts`            | Add/remove дерева, singleton, `enforceMinSizeFeasibility`, `getAddWorkspaceErrorMessage` |
+| `src/shared/utils/layoutWorkspaceMins.ts`                  | `computeMinLayoutSize`, per-type mins lookup                                             |
+| `src/shared/utils/layoutViewportBridge.ts`                 | Live layout viewport для add-adjacent check                                              |
+| `src/app/hooks/useWindowMinSize.ts`                        | Electron: динамический min окна + регистрация viewport                                   |
+| `src/shared/utils/workspaceLifecycle.ts`                   | `prepareWorkspaceInstance` / `cleanupWorkspaceInstance`                                  |
+| `src/app/components/LayoutWorkspaceArea.tsx`               | Пустой / root workspace / `SplitContainer`                                               |
+| `src/app/components/LayoutEmptyWorkspaceState.tsx`         | Пустой layout в edit mode, picker с ключом `'empty'`                                     |
+| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`)                                          |
+| `src/app/components/WorkspacePickerMenu.tsx`               | Portal-меню выбора типа workspace                                                        |
+| `src/app/components/SplitContainer.tsx`                    | Рекурсивный split; container-shell при 2+ зонах в edit mode                              |
+| `src/app/components/WorkspaceLayoutEditShell.tsx`          | Edit-frame workspace, air-регионы, content-frame, удаление                               |
+| `src/app/components/WorkspaceLayoutEditContainerShell.tsx` | Flex span-полосы контейнера (24px, клик по всей полосе)                                  |
+| `src/app/components/WorkspaceLayoutEditAirControl.tsx`     | Кнопка air-зоны / центральный **+** на полосе, picker                                    |
+| `src/styles/components/app.css`                            | Стили edit mode (air-size, рамки, container-air, ×)                                      |
+| `src/styles/components/header.css`                         | Стили pill (фикс. ширина), edit mode                                                     |
 
 ---
 
 ## Как проверить
 
 1. `npm run dev` (Electron) или `npm run dev:web`.
-2. **✎** — баннер «Редактирование окон — Esc для выхода» над шапкой; у каждой зоны air-области (клик по зоне → picker) и ×; контент затемнён; рамка видна со всех сторон.
+2. **✎** — inline-подсказка «Редактирование окон — Esc для выхода» рядом с **✎** в шапке; у каждой зоны air-области (клик по зоне → picker) и ×; контент затемнён; рамка видна со всех сторон.
 3. У горизонтального ряда из 2+ зон — span-полосы **сверху/снизу**; у вертикального столбца — **слева/справа**; клик **в любой точке** полосы открывает picker и добавляет workspace на весь ряд (полоса занимает **24px**, клики не проходят к air-зонам workspace).
 4. Клик по air-зоне одной workspace → добавить рядом с ней; **Enter** / **Space** на air-зоне — тот же picker; singleton (`playlist`, `player`, `demo-player`, …) не дублируется в picker; **`fileBrowser`** можно добавить повторно; успех/ошибка — toast.
 5. **×** — зона удаляется; для collection очищается store; для fileBrowser — запись path в settings.
@@ -308,3 +339,4 @@
 10. **▾** → переключение **Мои** / **Встроенные**; при dirty — тихий auto-commit перед switch.
 11. Два auto-save с built-in без переименования → в **Мои** «Без имени» и «Без имени 2».
 12. **Персистентность** (Electron): перезапуск — workspace и дерево на месте, edit mode выключен. **Веб-демо**: F5 сбрасывает `cherryplaylist-workspaces`.
+13. **Минимальные размеры:** при узком окне добавление зоны с большим min может дать toast «Недостаточно места. Увеличьте окно или измените пропорции разделителями.»; divider не сжимает зону ниже per-type min (см. [Layout System](./modules/systems/layout-system.md)).

@@ -43,6 +43,7 @@ const VALID_INVOKE_CHANNELS = [
   'system:getPath',
   'system:openPath',
   'system:openExternal',
+  'system:setMinimumWindowSize',
   'config:getConfigPath',
   'config:getServerUrl',
   'config:setServerUrl',

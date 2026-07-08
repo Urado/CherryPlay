@@ -6,8 +6,6 @@ import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platf
 import { useSettingsStore } from '@shared/stores';
 import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
 
-import { SourcesPanel } from '../components/SourcesPanel';
-
 interface WorkspaceRendererProps {
   zone: WorkspaceZone;
 }
@@ -44,16 +42,6 @@ const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) 
     }
 
     return <LegacyAimpWorkspaceAdapter zoneId={zone.id} />;
-  }
-
-  // Special case for fileBrowser - it uses SourcesPanel
-  if (zone.workspaceType === 'fileBrowser') {
-    return (
-      <>
-        <h2 className="panel-title">Источники</h2>
-        <SourcesPanel workspaceId={zone.workspaceId} />
-      </>
-    );
   }
 
   // Try to get module by ID first (for specific workspaces like playlist)

@@ -5,8 +5,10 @@ import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames
 import { WorkspaceZone, Zone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutAirPickerKey } from '@shared/stores/layoutStore';
+import { getCurrentLayoutViewport } from '@shared/utils/layoutViewportBridge';
 import type { LayoutEditAirSide } from '@shared/utils/layoutWorkspaceOperations';
 import {
+  canAddAdjacentWorkspace,
   countWorkspaceLeaves,
   isSingletonWorkspaceType,
 } from '@shared/utils/layoutWorkspaceOperations';
@@ -14,7 +16,7 @@ import {
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 
 import { WorkspaceLayoutEditAirControl } from './WorkspaceLayoutEditAirControl';
-import { getWorkspacePickerOptions } from './workspaceLayoutEditOptions';
+import { AIR_DISABLED_HINT, getWorkspacePickerOptions } from './workspaceLayoutEditOptions';
 
 interface WorkspaceLayoutEditShellProps {
   zone: WorkspaceZone;
@@ -88,6 +90,23 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
   );
   const workspaceOptions = useMemo(() => getWorkspacePickerOptions(layout), [layout]);
 
+  const availableSides = useMemo(() => {
+    const resizeToken = dimensions.width * dimensions.height;
+    void resizeToken;
+    const viewport = getCurrentLayoutViewport();
+    const workspaceTypes = workspaceOptions.map((option) => option.type);
+
+    return AIR_SIDES.reduce<Record<LayoutEditAirSide, boolean>>(
+      (acc, side) => {
+        acc[side] = canAddAdjacentWorkspace(layout, zone.id, side, workspaceTypes, viewport);
+        return acc;
+      },
+      { top: false, right: false, bottom: false, left: false },
+    );
+    // `dimensions` is included so availability recomputes on shell resize, when the
+    // live layout viewport (read from the bridge) may cross a workspace min threshold.
+  }, [layout, zone.id, workspaceOptions, dimensions.width, dimensions.height]);
+
   const handleSelectWorkspace = useCallback(
     (side: LayoutEditAirSide, workspaceType: string) => {
       addAdjacentWorkspace(zone.id, side, workspaceType);
@@ -130,21 +149,41 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
       className="workspace-layout-edit-shell"
       aria-label={`Редактирование: ${workspaceLabel}`}
     >
-      {AIR_SIDES.map((side) => (
-        <div key={side} className={`workspace-layout-edit-air workspace-layout-edit-air--${side}`}>
-          <WorkspaceLayoutEditAirControl
-            side={side}
-            options={workspaceOptions}
-            isOpen={openLayoutEditPickerKey === getLayoutAirPickerKey(zone.id, side)}
-            onToggle={() => {
-              const pickerKey = getLayoutAirPickerKey(zone.id, side);
-              setOpenLayoutEditPickerKey(openLayoutEditPickerKey === pickerKey ? null : pickerKey);
-            }}
-            onClose={() => setOpenLayoutEditPickerKey(null)}
-            onSelectWorkspace={(workspaceType) => handleSelectWorkspace(side, workspaceType)}
-          />
-        </div>
-      ))}
+      {AIR_SIDES.map((side) => {
+        const canAdd = availableSides[side];
+
+        return (
+          <div
+            key={side}
+            className={`workspace-layout-edit-air workspace-layout-edit-air--${side}${canAdd ? '' : ' workspace-layout-edit-air--disabled'}`}
+          >
+            {canAdd ? (
+              <WorkspaceLayoutEditAirControl
+                side={side}
+                options={workspaceOptions}
+                isOpen={openLayoutEditPickerKey === getLayoutAirPickerKey(zone.id, side)}
+                onToggle={() => {
+                  const pickerKey = getLayoutAirPickerKey(zone.id, side);
+                  setOpenLayoutEditPickerKey(
+                    openLayoutEditPickerKey === pickerKey ? null : pickerKey,
+                  );
+                }}
+                onClose={() => setOpenLayoutEditPickerKey(null)}
+                onSelectWorkspace={(workspaceType) => handleSelectWorkspace(side, workspaceType)}
+              />
+            ) : (
+              <button
+                type="button"
+                className="workspace-layout-edit-air-control workspace-layout-edit-air-control--zone"
+                disabled
+                aria-disabled="true"
+                aria-label={AIR_DISABLED_HINT}
+                title={AIR_DISABLED_HINT}
+              />
+            )}
+          </div>
+        );
+      })}
 
       {cornerDiagonals.length > 0 && (
         <svg
@@ -171,8 +210,8 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
       <button
         type="button"
         className="workspace-layout-edit-close"
-        title="Удалить workspace"
-        aria-label="Удалить workspace"
+        title={`Удалить «${workspaceLabel}»`}
+        aria-label={`Удалить «${workspaceLabel}»`}
         onClick={handleRemoveWorkspace}
       >
         <CloseIcon fontSize="small" aria-hidden />

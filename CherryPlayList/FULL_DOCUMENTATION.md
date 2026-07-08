@@ -127,8 +127,8 @@ User initiates playlist export. UI calls executeExport in ExportService, which s
     │   │   ├── components/
     │   │   ├── services/
     │   │   ├── stores/           # Zustand stores
-    │   │   ├── hooks/
-    │   │   └── utils/
+    │   │   ├── hooks/            # includes useWindowMinSize.ts (layout viewport + Electron min window)
+    │   │   └── utils/            # layoutWorkspaceMins.ts, layoutViewportBridge.ts, layoutWorkspaceOperations.ts, …
     │   ├── workspaces/           # Workspace modules (isolated)
     │   │   ├── playlist/
     │   │   ├── collection/
@@ -1370,7 +1370,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Zone Management:**
 
-- **Minimum zone size:** 10 pixels (enforced during resize)
+- **Minimum zone size:** per `workspaceType` on `IWorkspaceModule` (`minWidth` / `minHeight`); enforced during resize via `getMinSizePercentsForContainer()` — see [layout-system.md](docs/modules/systems/layout-system.md) § «Минимальные размеры зон» and `layoutWorkspaceMins.ts`
 - **Maximum zones per container:** 10 zones
 - **Maximum nesting depth:** 6 levels (prevents infinite recursion)
 - **Auto-cleanup:** If a container has only 1 child, the container is removed and replaced by its child
@@ -1380,7 +1380,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 - Users can drag dividers to adjust zone sizes
 - When resizing, adjacent zones adjust proportionally
-- Minimum size (10px) is enforced - resize stops when minimum is reached
+- Minimum per-workspace-type sizes are enforced (JS clamp in `SplitContainer`, not CSS on zones) — resize stops when either adjacent sibling would violate its `minWidth`/`minHeight`; see [layout-system.md](docs/modules/systems/layout-system.md)
 - Sizes are recalculated to maintain 100% total
 - Layout preserves percentage ratios when window is resized
 
@@ -1402,17 +1402,15 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 - Recursive component that renders container zones
 - Handles mouse events for divider dragging
-- Validates minimum sizes during resize
+- Enforces per-workspace-type minimum sizes during resize (JS clamp via `getMinSizePercentsForContainer` — no CSS min on zones); see [layout-system.md](docs/modules/systems/layout-system.md) § «Минимальные размеры зон»
 - Tracks resizing state for visual feedback
 - Limits nesting depth to 6 levels
 
 **WorkspaceRenderer Component:**
 
-- Renders workspace zones based on `workspaceType`
-- Maps workspace types to React components:
-  - `'playlist'` → `PlaylistView`
-  - `'fileBrowser'` → `FileBrowser` wrapped in `SourcesPanel`
-  - Future types can be added dynamically
+- Renders workspace zones based on `workspaceType` via **`workspaceRegistry`** (`IWorkspaceModule.component`)
+- Example mappings: `'playlist'` → `PlaylistView`, `'fileBrowser'` → `FileBrowserWorkspaceView` (`SourcesPanel` + `FileBrowser`)
+- Future types register in `src/workspaces/*/index.ts` and bootstrap import in `entry.tsx`
 
 **LayoutStore** (`src/shared/stores/layoutStore.ts`):
 
@@ -1422,6 +1420,13 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 - Workspace lifecycle: `activateWorkspace`, `autoCommitWorkspaceChanges`, `saveCurrentWorkspaceAsUnnamed`
 - Legacy helpers may still exist (`addZone`, `removeZone`, `setLayoutPreset`) — prefer docs above for edit mode
 
+**Layout min-size utilities:**
+
+- `src/shared/utils/layoutWorkspaceMins.ts` — `computeMinLayoutSize`, `getMinSizePercentsForContainer`, `getWorkspaceMinSize`, `computeMinWindowSize`
+- `src/shared/utils/layoutViewportBridge.ts` — live layout viewport for add-feasibility checks
+- `src/shared/utils/layoutWorkspaceOperations.ts` — add/remove tree ops, `enforceMinSizeFeasibility`
+- `src/app/hooks/useWindowMinSize.ts` — measures layout viewport, registers bridge, sets Electron min window via IPC (`electron/ipc/system.ts`)
+
 **UI (current):** workspace **pill** (name + ▾) and separate **✎** button in `WorkspaceMenu` — not a preset dropdown. Built-in presets are chosen from the pill menu → **Встроенные**.
 
 #### 9.2.4.4 Visual Design
@@ -1430,7 +1435,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 - **Visible bar:** `min-width` / `min-height` **6px** (`split-divider` in `app.css`); background `#000000`, hover `#1a1a1a`
 - **Hit area:** invisible `::before` padding **4px** around the bar for easier dragging
-- **Edit mode:** class `split-divider--layout-edit` — accent tint (`rgba(0, 204, 136, …)`), `z-index: 5`
+- **Edit mode:** class `split-divider--layout-edit` — только `z-index: 5` (наложение над air-зонами); цвет divider как в обычном режиме
 - **Cursor:** `col-resize` (horizontal split), `row-resize` (vertical split)
 
 **Container:**
@@ -1441,7 +1446,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Zone:**
 
-- **Minimum size:** 10px (enforced via CSS `min-width`/`min-height`)
+- **Minimum size:** per `workspaceType` on `IWorkspaceModule` (final allocated pixels; enforced in JS during divider drag)
 - **Flex basis:** Percentage-based (`flex: 0 0 ${size}%`)
 - **Overflow:** Hidden
 
@@ -1460,9 +1465,10 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Resize Constraints:**
 
-- Minimum 10px per zone is enforced
-- When dragging would violate minimum, resize stops at boundary
+- Per-type minimum sizes are enforced via `getMinSizePercentsForContainer` (hard clamp on both neighbors)
+- When dragging would violate a minimum, the divider position does not update
 - Adjacent zones adjust proportionally to maintain 100% total
+- Electron: minimum window size tracks layout via `useWindowMinSize` + `computeMinWindowSize`
 
 **Window Resize:**
 

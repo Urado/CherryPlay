@@ -37,3 +37,4 @@
 ## См. также
 
 - [Режим редактирования layout](../../layout-edit-mode.md) — зона `playlist` (singleton в picker)
+- [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон) — `playlist`: **280×200** px (`src/workspaces/playlist/index.ts`)

@@ -11,6 +11,9 @@ export interface WorkspacePickerOption {
   name: string;
 }
 
+/** Shared hint shown on a disabled add-workspace control when no add fits the viewport. */
+export const AIR_DISABLED_HINT = 'Недостаточно места — увеличьте окно или измените пропорции';
+
 function isWorkspaceTypeUsedInLayout(type: string, usedTypes: Set<string>): boolean {
   if (type === 'player' || type === 'aimp') {
     return usedTypes.has('player') || usedTypes.has('aimp');
@@ -29,13 +32,6 @@ export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOptio
       type: module.type,
       name: getWorkspaceDisplayNameRu(module.type, module.name),
     }));
-
-  if (!options.some((option) => option.type === 'fileBrowser')) {
-    options.push({
-      type: 'fileBrowser',
-      name: getWorkspaceDisplayNameRu('fileBrowser'),
-    });
-  }
 
   return options
     .filter(
