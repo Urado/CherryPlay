@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
+import { useModalKeyboard } from '@shared/hooks';
 import { useUIStore } from '@shared/stores';
 
 import { AccountView } from './AccountView';
@@ -7,22 +8,10 @@ import { AccountView } from './AccountView';
 export const AccountModal: React.FC = () => {
   const { modal, closeModal } = useUIStore();
 
-  useEffect(() => {
-    if (modal !== 'account') {
-      return;
-    }
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [modal, closeModal]);
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'account',
+    onCancel: closeModal,
+  });
 
   if (modal !== 'account') {
     return null;
@@ -43,29 +32,16 @@ export const AccountModal: React.FC = () => {
         justifyContent: 'center',
         zIndex: 1000,
       }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          closeModal();
+        }
+      }}
+      onKeyDown={handleOverlayKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label="Закрыть окно аккаунта"
     >
-      <button
-        type="button"
-        onClick={closeModal}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
-            closeModal();
-          }
-        }}
-        aria-label="Close modal"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          background: 'transparent',
-          cursor: 'pointer',
-        }}
-      />
       <div
         className="modal-content account-modal-content"
         role="dialog"

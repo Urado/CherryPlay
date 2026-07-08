@@ -57,7 +57,7 @@
 | `collections`          | Сборка плейлиста      | всегда; **по умолчанию** при первом запуске                      |
 | `collections-vertical` | Коллекции вертикально | всегда                                                           |
 | `player`               | Проигрывание          | всегда                                                           |
-| `party`                | Онлайн-вечеринка      | если `enableStreaming` (в UI — **Онлайн** включён)               |
+| `party`                | Онлайн-вечеринка      | **всегда** (`partyDiscoverabilityEnabled`; офлайн — in-zone stub) |
 | `aimp-party`           | AIMP + Party          | **legacy:** не показывается в меню; persist мигрирует на `party` |
 
 Встроенные layout **нельзя перезаписать**. При auto-commit с dirty built-in/scratch вызывается `saveCurrentWorkspaceAsUnnamed()` (имя по `allocateUnnamedWorkspaceName`).

@@ -17,7 +17,7 @@ Store для хранения настроек приложения.
 - **Аудио**: Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); опция `playerInAppHeader` для отображения основного плеера в шапке — см. [Demo Player](../systems/demo-player.md#размещение)
 - **Проекты**: Путь последнего открытого плейлиста
 - **Файловый браузер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
-- **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`.
+- **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`. Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит этот флаг, но в demo mode политика принудительно держит `networkEnabled=false`; отдельной настройки в UI нет. Party preset/зоны **не** скрываются — см. [Party](../workspaces/party.md).
 - **Синхронизация с сайтом:** `streamingSource` — **«Источник состояния для гостей»** (CherryPlay или AIMP); на сайт уходит **состояние** воспроизведения, не аудиопоток.
 
 > **Важно:** Настройки уровня проекта (например, `portableMode`) хранятся в `ProjectSettings` внутри `.cherry` файла и управляются через `projectStore.setPortableMode`. Они **не** являются частью `settingsStore`.

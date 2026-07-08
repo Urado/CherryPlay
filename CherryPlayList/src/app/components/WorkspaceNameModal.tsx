@@ -1,5 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useId, useState } from 'react';
+import React, { useId, useState, useCallback } from 'react';
+
+import { useModalKeyboard } from '@shared/hooks';
 
 export type WorkspaceNameModalMode = 'save-as' | 'rename';
 
@@ -27,45 +29,47 @@ export const WorkspaceNameModal: React.FC<WorkspaceNameModalProps> = ({
   const titleId = useId();
   const errorId = useId();
 
-  if (!open) {
-    return null;
-  }
+  const validate = useCallback(
+    (value: string): string | null => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return 'Введите название';
+      }
+      const isDuplicate =
+        existingNames.some((existing) => existing === trimmed) && trimmed !== excludeName;
+      if (isDuplicate) {
+        return 'Рабочее пространство с таким именем уже существует';
+      }
+      return null;
+    },
+    [existingNames, excludeName],
+  );
 
-  const title = mode === 'save-as' ? 'Сохранить рабочее пространство как…' : 'Переименовать';
-
-  const validate = (value: string): string | null => {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return 'Введите название';
-    }
-    const isDuplicate =
-      existingNames.some((existing) => existing === trimmed) && trimmed !== excludeName;
-    if (isDuplicate) {
-      return 'Рабочее пространство с таким именем уже существует';
-    }
-    return null;
-  };
-
-  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    }
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const validationError = validate(name);
     if (validationError) {
       setError(validationError);
       return;
     }
     onConfirm(name.trim());
+  }, [name, onConfirm, validate]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: open,
+    onCancel: onClose,
+    onPrimary: handleSubmit,
+  });
+
+  if (!open) {
+    return null;
+  }
+
+  const title = mode === 'save-as' ? 'Сохранить рабочее пространство как…' : 'Переименовать';
+
+  const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
   };
 
   return (
@@ -103,12 +107,6 @@ export const WorkspaceNameModal: React.FC<WorkspaceNameModalProps> = ({
                 setName(e.target.value);
                 if (error) {
                   setError(validate(e.target.value));
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSubmit();
                 }
               }}
               placeholder="Введите название"

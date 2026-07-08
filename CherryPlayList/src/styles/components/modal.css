@@ -368,6 +368,207 @@
   cursor: not-allowed;
 }
 
+/* My Parties panel */
+.my-parties-panel-content {
+  max-width: 560px;
+}
+
+.my-parties-panel-auth-stub {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+}
+
+.my-parties-panel-auth-stub-text {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.my-parties-panel-offline-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 6px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+}
+
+.my-parties-panel-offline-stub-title {
+  font-size: var(--font-size-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.my-parties-panel-offline-stub-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.my-parties-panel-loading,
+.my-parties-panel-empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.my-parties-panel-error {
+  padding: var(--spacing-md);
+  background-color: var(--bg-error, rgba(211, 47, 47, 0.1));
+  color: var(--text-error, #c62828);
+  border-radius: 4px;
+  font-size: var(--font-size-body);
+}
+
+.my-parties-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.my-parties-panel-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+
+.my-parties-panel-item--linked {
+  border-color: var(--accent-primary);
+}
+
+.my-parties-panel-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.my-parties-panel-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.my-parties-panel-item-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-parties-panel-item-code,
+.my-parties-panel-item-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.my-parties-panel-item-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.my-parties-panel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.3;
+  border: 1px solid var(--ui-border);
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+}
+
+.my-parties-panel-badge--lifecycle {
+  color: var(--text-primary);
+}
+
+.my-parties-panel-badge--catalog.my-parties-panel-badge--listed {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.my-parties-panel-badge--linked {
+  border-color: var(--state-success, #4caf50);
+  color: var(--state-success, #4caf50);
+}
+
+.my-parties-panel-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.my-parties-panel-catalog-toggle-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.my-parties-panel-catalog-toggle-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.my-parties-panel-catalog-toggle-btn--listed {
+  background-color: rgba(0, 204, 136, 0.18);
+  border-color: rgba(0, 204, 136, 0.35);
+  color: var(--accent-primary, #00a870);
+}
+
+.my-parties-panel-catalog-toggle-btn--listed:hover:not(:disabled) {
+  background-color: rgba(0, 204, 136, 0.24);
+}
+
+.my-parties-panel-catalog-toggle-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.my-parties-panel-bind-btn,
+.my-parties-panel-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.my-parties-panel-delete-btn {
+  padding: 6px 8px;
+}
+
+.my-parties-panel-delete-overlay {
+  z-index: 1001;
+}
+
 /* Account / Login modal — в стиле приложения (тёмная подложка) */
 .account-modal-content {
   background-color: var(--bg-secondary);
@@ -405,7 +606,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .account-modal-close:hover {

@@ -27,6 +27,7 @@ type PartyMetadataStoreSlice = Pick<
   | 'externalLinkUrl'
   | 'externalLinkText'
   | 'danceTags'
+  | 'isListedInCatalog'
 >;
 
 type PartyUpdateMetadataStoreSlice = PartyMetadataStoreSlice &
@@ -97,7 +98,7 @@ export function buildCreatePartyDto(
     eventEndDateTime: store.eventEndDateTime
       ? convertLocalDateTimeToUtc(store.eventEndDateTime, tz)
       : undefined,
-    isListedInCatalog: true,
+    isListedInCatalog: store.isListedInCatalog,
     shortDescription: store.shortDescription.trim() || undefined,
     externalLinkUrl: store.externalLinkUrl.trim() || undefined,
     externalLinkText: store.externalLinkText.trim() || undefined,
@@ -116,5 +117,6 @@ export function buildUpdatePartyDto(store: PartyUpdateMetadataStoreSlice): Updat
     externalLinkUrl: store.externalLinkUrl.trim(),
     externalLinkText: store.externalLinkText.trim(),
     danceTags: store.danceTags,
+    isListedInCatalog: store.isListedInCatalog,
   };
 }

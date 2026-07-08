@@ -113,7 +113,8 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           className="player-controls__button player-controls__button--stop"
           onClick={handleStop}
           disabled={isDisabled}
-          title="Остановить"
+          title="Начать заново"
+          aria-label="Начать заново"
         >
           <StopIcon fontSize="medium" />
         </button>

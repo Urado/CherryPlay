@@ -7,7 +7,6 @@
   overflow-x: hidden;
 }
 
-.party-editor > .party-editor-ready-publish-hint,
 .party-editor > .party-editor-checking,
 .party-editor > .party-editor-error {
   margin: 16px;

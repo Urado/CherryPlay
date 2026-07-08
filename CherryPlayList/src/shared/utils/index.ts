@@ -109,5 +109,5 @@ export type {
   WorkspaceTypeWithMins,
 } from './layoutWorkspaceMins';
 export { getLayoutPresetFromLayout } from './layoutPreset';
-export { getAimpPartyPresetState } from './aimpPresetVisibility';
+export { getAimpPartyPresetState, isPartyLayoutPresetDiscoverable } from './aimpPresetVisibility';
 export { sanitizeExternalUrl } from './urlSafety';

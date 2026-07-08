@@ -40,3 +40,4 @@ export {
   type OnlineNetworkPolicy,
   type StreamingNetworkPolicySettings,
 } from './onlineNetworkPolicy';
+export { useOnlineNetworkPolicy } from './useOnlineNetworkPolicy';

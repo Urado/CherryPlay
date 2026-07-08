@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { APP_VERSION } from '@shared/config';
+import { useModalKeyboard } from '@shared/hooks';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import {
   applySettingsImport,
@@ -258,11 +259,7 @@ export const SettingsModal: React.FC = () => {
     setImportConfirmOpen(false);
   }, []);
 
-  if (modal !== 'settings') {
-    return null;
-  }
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     setTrackItemSizePreset(localTrackItemSizePreset);
     setHourDividerInterval(localHourDividerInterval);
     setShowHourDividers(localShowHourDividers);
@@ -275,9 +272,28 @@ export const SettingsModal: React.FC = () => {
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
-  };
+  }, [
+    addNotification,
+    closeModal,
+    localDemoPlayerDeviceId,
+    localEnableStreaming,
+    localHourDividerInterval,
+    localPlayerDeviceId,
+    localPlayerInAppHeader,
+    localShowHourDividers,
+    localStreamingSource,
+    localTrackItemSizePreset,
+    setDemoPlayerAudioDeviceId,
+    setEnableStreaming,
+    setHourDividerInterval,
+    setPlayerAudioDeviceId,
+    setPlayerInAppHeader,
+    setShowHourDividers,
+    setStreamingSource,
+    setTrackItemSizePreset,
+  ]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setLocalTrackItemSizePreset(trackItemSizePreset);
     setLocalHourDividerInterval(hourDividerInterval);
     setLocalShowHourDividers(showHourDividers);
@@ -287,17 +303,30 @@ export const SettingsModal: React.FC = () => {
     setLocalEnableStreaming(enableStreaming);
     setLocalStreamingSource(streamingSource);
     closeModal();
-  };
+  }, [
+    closeModal,
+    demoPlayerAudioDeviceId,
+    enableStreaming,
+    hourDividerInterval,
+    playerAudioDeviceId,
+    playerInAppHeader,
+    showHourDividers,
+    streamingSource,
+    trackItemSizePreset,
+  ]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'settings' && !importConfirmOpen,
+    onCancel: handleCancel,
+    onPrimary: handleSave,
+  });
+
+  if (modal !== 'settings') {
+    return null;
+  }
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
       handleCancel();
     }
   };

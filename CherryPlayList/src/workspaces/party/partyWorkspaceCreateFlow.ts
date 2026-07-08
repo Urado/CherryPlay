@@ -64,6 +64,7 @@ export async function finalizePartyCreation(
   deps.setLinkedParty({ id: party.id, shortCode: party.shortCode, url });
   store.setPartyVerified(true);
   store.setPartyLifecycleState(party.partyLifecycleState);
+  store.setIsListedInCatalog(party.isListedInCatalog ?? createData.isListedInCatalog ?? false);
   deps.markAsDirty();
   deps.addNotification({ type: 'success', message: successMessage });
 }

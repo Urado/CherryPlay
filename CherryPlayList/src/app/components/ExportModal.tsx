@@ -1,7 +1,8 @@
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+import { useModalKeyboard } from '@shared/hooks';
 import { getPlatformCapabilities } from '@shared/platform';
 import { exportService, ipcService } from '@shared/services';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
@@ -13,7 +14,6 @@ export const ExportModal: React.FC = () => {
   const [localExportPath, setLocalExportPath] = useState(exportPath);
   const [localExportStrategy, setLocalExportStrategy] = useState(exportStrategy);
 
-  // Синхронизируем локальные значения при открытии модального окна
   const prevModalRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -21,7 +21,6 @@ export const ExportModal: React.FC = () => {
     const isNowOpen = modal === 'export';
 
     if (isNowOpen && wasClosed) {
-      // Модальное окно только что открылось - синхронизируем значения
       const timeoutId = setTimeout(() => {
         setLocalExportPath(exportPath);
         setLocalExportStrategy(exportStrategy);
@@ -33,11 +32,7 @@ export const ExportModal: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modal]);
 
-  if (modal !== 'export') {
-    return null;
-  }
-
-  const handleBrowse = async () => {
+  const handleBrowse = useCallback(async () => {
     try {
       const path = await ipcService.showFolderDialog({
         title: 'Выберите папку для экспорта',
@@ -53,11 +48,9 @@ export const ExportModal: React.FC = () => {
         message: `Ошибка выбора папки: ${(error as Error).message}`,
       });
     }
-  };
+  }, [addNotification, localExportPath]);
 
-  const handleExport = async () => {
-    // Получаем актуальный список треков в порядке плейлиста на момент экспорта
-    // (важно для нумерации 01, 02, ... и согласованности с отображением)
+  const handleExport = useCallback(async () => {
     const tracksToExport = getAllTracksInOrder();
     if (tracksToExport.length === 0) {
       addNotification({ type: 'warning', message: 'Плейлист пуст' });
@@ -70,11 +63,9 @@ export const ExportModal: React.FC = () => {
     }
 
     try {
-      // Сохраняем настройки
       setExportPath(localExportPath);
       setExportStrategy(localExportStrategy);
 
-      // Выполняем экспорт
       if (localExportStrategy === 'aimpPlaylist') {
         await exportService.exportAIMPPlaylist(tracksToExport, localExportPath, name);
       } else {
@@ -91,23 +82,37 @@ export const ExportModal: React.FC = () => {
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка экспорта: ${(error as Error).message}` });
     }
-  };
+  }, [
+    addNotification,
+    closeModal,
+    getAllTracksInOrder,
+    localExportPath,
+    localExportStrategy,
+    name,
+    setExportPath,
+    setExportStrategy,
+  ]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setLocalExportPath(exportPath);
     setLocalExportStrategy(exportStrategy);
     closeModal();
-  };
+  }, [closeModal, exportPath, exportStrategy]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'export',
+    onCancel: handleCancel,
+    onPrimary: () => {
+      void handleExport();
+    },
+  });
+
+  if (modal !== 'export') {
+    return null;
+  }
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
       handleCancel();
     }
   };
@@ -143,7 +148,7 @@ export const ExportModal: React.FC = () => {
                 placeholder="Выберите папку..."
                 id="export-path"
               />
-              <button className="settings-browse-button" onClick={handleBrowse}>
+              <button className="settings-browse-button" onClick={() => void handleBrowse()}>
                 <FolderOpenIcon />
               </button>
             </div>
@@ -171,7 +176,7 @@ export const ExportModal: React.FC = () => {
           <button className="modal-button secondary" onClick={handleCancel}>
             Отмена
           </button>
-          <button className="modal-button primary" onClick={handleExport}>
+          <button className="modal-button primary" onClick={() => void handleExport()}>
             Экспортировать
           </button>
         </div>

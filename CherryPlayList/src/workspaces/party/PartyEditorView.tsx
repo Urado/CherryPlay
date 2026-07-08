@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { useOnlineNetworkPolicy } from '@shared/streaming';
 
+import { PartyCatalogVisibilityControl } from './components/PartyCatalogVisibilityControl';
+import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { PartyEditor } from './components/PartyEditor';
 import {
   PartyEditorActions,
@@ -33,6 +36,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   showDemoPanel = false,
 }) => {
   const runtime = usePartyWorkspaceRuntimeContext();
+  const { networkEnabled } = useOnlineNetworkPolicy();
   const {
     isAuth,
     isClientOutdated,
@@ -61,6 +65,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     externalLinkUrl,
     externalLinkText,
     danceTags,
+    isListedInCatalog,
+    isTogglingCatalogVisibility,
     isCreating,
     isPublishing,
     partyLifecycleState,
@@ -89,6 +95,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     handleCreateParty,
     handlePublish,
     handleCopyUrl,
+    handleCatalogVisibilityChange,
     handleRetry,
     handleResetAndCreateNewParty,
     handleLifecycleTransition,
@@ -106,7 +113,6 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     isAuth,
     isClientOutdated,
     isCheckingParty,
-    serverUnreachable,
     linkedParty,
     partyLifecycleState,
     serverError,
@@ -124,6 +130,32 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     shouldShowPartyTrackDisplaySection(phase) && (!isBlocked || preserveShellContent);
   const showLifecycle =
     editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
+
+  const networkActionsDisabled = !networkEnabled || serverUnreachable;
+
+  const connectivityBanner = useMemo(() => {
+    if (!networkEnabled) {
+      return <PartyConnectivityBanner kind="offline" />;
+    }
+    if (serverUnreachable && !isBlocked) {
+      return (
+        <PartyConnectivityBanner
+          kind="unreachable"
+          isReconnecting={isReconnecting}
+          lastManualCheckFailed={lastManualCheckFailed}
+          onManualReconnect={handleManualReconnect}
+        />
+      );
+    }
+    return null;
+  }, [
+    networkEnabled,
+    serverUnreachable,
+    isBlocked,
+    isReconnecting,
+    lastManualCheckFailed,
+    handleManualReconnect,
+  ]);
 
   const editorFields = useMemo(
     () => ({
@@ -237,6 +269,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
         isBlocked={isBlocked}
         blockedReason={blockedReason}
         hidePhaseBadge={showLifecycle}
+        connectivityBanner={connectivityBanner}
         blockedOverlayProps={{
           clientRequiredVersion,
           isReconnecting,
@@ -247,12 +280,22 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
         headerActions={
           editorPhase ? (
             <div className="party-editor-shell-header-toolbar">
+              {editorPhase !== 'completed' && (
+                <PartyCatalogVisibilityControl
+                  layout="header"
+                  isListedInCatalog={isListedInCatalog}
+                  disabled={networkActionsDisabled}
+                  isUpdating={isTogglingCatalogVisibility}
+                  networkOffline={!networkEnabled}
+                  onChange={(listed) => void handleCatalogVisibilityChange(listed)}
+                />
+              )}
               {showLifecycle && (
                 <PartyLifecycleControls
                   layout="header"
                   partyLifecycleState={partyLifecycleState ?? 'draft'}
                   isTransitioning={isTransitioningLifecycle}
-                  disabled={isCreating || isPublishing}
+                  disabled={isCreating || isPublishing || networkActionsDisabled}
                   onTransition={(target) => void handleLifecycleTransition(target)}
                 />
               )}
@@ -264,6 +307,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
                 isAuthenticated={isAuth}
                 isCreating={isCreating}
                 isPublishing={isPublishing}
+                networkDisabled={networkActionsDisabled}
+                networkOffline={!networkEnabled}
                 onCreateParty={handleCreateParty}
                 onPublish={handlePublish}
                 onOpenLinkParty={() => openModal('linkParty')}

@@ -1,6 +1,8 @@
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useId } from 'react';
 
+import { useModalKeyboard } from '@shared/hooks';
+
 export interface WorkspaceDeleteConfirmDialogProps {
   open: boolean;
   workspaceName: string;
@@ -17,19 +19,18 @@ export const WorkspaceDeleteConfirmDialog: React.FC<WorkspaceDeleteConfirmDialog
   const titleId = useId();
   const descriptionId = useId();
 
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: open,
+    onCancel: onClose,
+    onPrimary: onConfirm,
+  });
+
   if (!open) {
     return null;
   }
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
       onClose();
     }
   };

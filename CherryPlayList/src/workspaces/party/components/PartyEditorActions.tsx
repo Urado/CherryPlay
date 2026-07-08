@@ -11,6 +11,10 @@ export interface PartyEditorActionsProps {
   isAuthenticated: boolean;
   isCreating: boolean;
   isPublishing: boolean;
+  /** When false, network-only actions (create, publish, link) are disabled. */
+  networkDisabled?: boolean;
+  /** When true, `networkDisabled` is due to «Онлайн» being off (not server reachability). */
+  networkOffline?: boolean;
   onCreateParty?: () => void;
   onPublish?: () => void;
   onOpenLinkParty?: () => void;
@@ -43,11 +47,13 @@ export function shouldShowPartyLifecycleControls(
 
 export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
   phase,
-  partyName,
+  partyName: _partyName,
   linkedParty: _linkedParty,
   isAuthenticated,
   isCreating,
   isPublishing,
+  networkDisabled = false,
+  networkOffline = false,
   onCreateParty,
   onPublish,
   onOpenLinkParty,
@@ -67,6 +73,12 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
     return null;
   }
 
+  const actionDisabled = isCreating || isPublishing || networkDisabled;
+
+  const networkDisabledTitle = networkOffline
+    ? 'Включите «Онлайн» в настройках'
+    : 'Недоступно без подключения к серверу';
+
   const actions = (
     <div
       className="party-editor-actions party-editor-actions--header"
@@ -81,9 +93,13 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
               : 'party-editor-button-primary'
           }`}
           onClick={onPublish}
-          disabled={isCreating || isPublishing}
+          disabled={actionDisabled}
           type="button"
-          title="Обновить плейлист и настройки, которые видят гости"
+          title={
+            networkDisabled
+              ? networkDisabledTitle
+              : 'Обновить плейлист и настройки, которые видят гости'
+          }
         >
           {isPublishing || isCreating
             ? 'Обновление...'
@@ -96,19 +112,30 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
         <button
           className="party-editor-button party-editor-button-secondary"
           onClick={onCreateParty}
-          disabled={!isAuthenticated || isCreating || !partyName.trim()}
+          disabled={!isAuthenticated || actionDisabled}
           type="button"
-          title={!isAuthenticated ? 'Требуется авторизация' : 'Создать запись вечеринки на сервере'}
+          title={
+            networkDisabled
+              ? networkDisabledTitle
+              : !isAuthenticated
+                ? 'Требуется авторизация'
+                : 'Создать запись вечеринки на сервере'
+          }
         >
-          {isCreating ? 'Создание...' : compact ? 'Новая' : 'Новая вечеринка на сервере'}
+          {isCreating ? 'Создание...' : compact ? 'Создать' : 'Новая вечеринка на сервере'}
         </button>
       )}
       {showLinkParty && onOpenLinkParty && (
         <button
           className="party-editor-button party-editor-button-secondary"
           onClick={onOpenLinkParty}
+          disabled={networkDisabled}
           type="button"
-          title="Подключить текущий плейлист к вечеринке, уже созданной на сервере"
+          title={
+            networkDisabled
+              ? networkDisabledTitle
+              : 'Подключить текущий плейлист к вечеринке, уже созданной на сервере'
+          }
         >
           {compact ? 'Подключить' : 'Подключить к существующей'}
         </button>

@@ -95,6 +95,7 @@ export interface PartyDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  isListedInCatalog?: boolean;
 }
 
 export interface UpdatePartyDto {

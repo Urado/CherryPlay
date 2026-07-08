@@ -21,7 +21,6 @@ export interface ResolvePartyEditorPhaseInput {
   isAuth: boolean;
   isClientOutdated: boolean;
   isCheckingParty: boolean;
-  serverUnreachable: boolean;
   linkedParty?: PartyEditorLinkedParty | null;
   partyLifecycleState?: PartyLifecycleState | null;
   serverError?: string | null;
@@ -71,7 +70,6 @@ export function applyDemoBlockedOverride(
     isAuth: true,
     isClientOutdated: false,
     isCheckingParty: false,
-    serverUnreachable: false,
   });
 
   return {
@@ -99,14 +97,6 @@ export function resolvePartyEditorPhase(
   }
   if (input.isCheckingParty) {
     return { phase: null, blockedReason: 'checking', isBlocked: true, effectiveLifecycle: null };
-  }
-  if (input.serverUnreachable) {
-    return {
-      phase: null,
-      blockedReason: 'unreachable',
-      isBlocked: true,
-      effectiveLifecycle: null,
-    };
   }
 
   const linked = input.linkedParty != null;

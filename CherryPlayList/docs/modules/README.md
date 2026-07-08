@@ -64,4 +64,4 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 ### Hooks & Utils
 
-- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Hook для клавиатурных сокращений
+- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Глобальные шорткаты и контракт клавиатуры модалок (`useModalKeyboard`)

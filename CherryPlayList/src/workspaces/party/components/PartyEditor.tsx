@@ -149,13 +149,6 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </>
       )}
 
-      {!isReadOnly && phase === 'ready' && (
-        <p className="party-editor-ready-publish-hint">
-          1. Отправьте плейлист на сайт → 2. Запустите проигрывание в зоне плеера. Гости увидят
-          актуальную программу, когда вечеринка в эфире.
-        </p>
-      )}
-
       {!isBlocked && isCheckingParty && (
         <div className="party-editor-checking" aria-busy="true" aria-live="polite">
           <div className="party-editor-checking-message">

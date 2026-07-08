@@ -2,6 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { ActionAfterTrack } from '@core/types/project';
+import { useModalKeyboard } from '@shared/hooks';
 import { useProjectStore, useUIStore } from '@shared/stores';
 
 export const TrackSettingsModal: React.FC = () => {
@@ -104,11 +105,7 @@ export const TrackSettingsModal: React.FC = () => {
     plannedEndTime,
   ]);
 
-  if (modal !== 'trackSettings') {
-    return null;
-  }
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (isGlobal) {
       setDefaultActionAfterTrack(
         localActionAfterTrack === 'default' ? defaultActionAfterTrack : localActionAfterTrack,
@@ -129,7 +126,37 @@ export const TrackSettingsModal: React.FC = () => {
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
-  };
+  }, [
+    addNotification,
+    closeModal,
+    defaultActionAfterTrack,
+    defaultPauseBetweenTracks,
+    effectivePause,
+    groupId,
+    isGlobal,
+    localActionAfterTrack,
+    localPlannedEndTime,
+    setDefaultActionAfterTrack,
+    setDefaultPauseBetweenTracks,
+    setGroupSettings,
+    setPlannedEndTime,
+    setTrackSettings,
+    trackId,
+  ]);
+
+  const handleCancel = useCallback(() => {
+    closeModal();
+  }, [closeModal]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'trackSettings',
+    onCancel: handleCancel,
+    onPrimary: handleSave,
+  });
+
+  if (modal !== 'trackSettings') {
+    return null;
+  }
 
   const handlePauseInputFocus = () => {
     if (localPauseBetweenTracks === defaultPauseBetweenTracks) {
@@ -137,19 +164,8 @@ export const TrackSettingsModal: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    closeModal();
-  };
-
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
       handleCancel();
     }
   };

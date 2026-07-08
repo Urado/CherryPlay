@@ -105,6 +105,11 @@
   min-width: 0;
 }
 
+.party-editor-shell-header-toolbar > .party-catalog-visibility--header {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
 .party-editor-shell-header-groups {
   display: flex;
   align-items: center;
@@ -251,15 +256,18 @@
   cursor: default;
 }
 
-.party-editor-ready-publish-hint {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-primary);
-  background: rgba(0, 204, 136, 0.1);
-  border: 1px solid rgba(0, 204, 136, 0.25);
+.party-editor-shell-info-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary, #888888);
+  cursor: help;
+}
+
+.party-editor-shell-info-hint__icon {
+  display: block;
+  font-size: 18px !important;
 }
 
 .party-editor-shell-header a:focus-visible,

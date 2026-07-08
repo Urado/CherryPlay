@@ -13,7 +13,7 @@
 
 Тип `party` и ID `party-workspace` **удалены**; сохранённые layout с legacy-зоной мигрируют автоматически (см. [Layout presets и миграция](#layout-presets-и-миграция)).
 
-Оба workspace оборачиваются в `*ViewWrapper` с проверкой `enableStreaming` из `settingsStore` (при `false` — тот же disabled UX, что и раньше у монолитного Party).
+Оба workspace монтируются через `*ViewWrapper` → `PartyStreamingGate` (только `PartyWorkspaceRuntimeProvider`). **Видимость зон не зависит** от настройки **«Онлайн»** (`enableStreaming`). При выключенном онлайне или недоступном сервере внутри зоны показываются **контекстные баннеры**, а не скрытие workspace. См. [Онлайн-режим и Party](../../online-mode-ux-synthesis.md).
 
 ## Party subsystem (общее состояние)
 
@@ -21,7 +21,7 @@
 
 | Файл                                                                                             | Роль                                                                                                                                                                                                                            |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`partyWorkspaceStore.ts`](../../../src/workspaces/party/partyWorkspaceStore.ts)                 | **Production only:** поля формы, `serverUnreachable`, `themeAccess`, lifecycle-флаги, ошибки сервера и т.п. Без полей preview-сценария и demo-overlay.                                                                          |
+| [`partyWorkspaceStore.ts`](../../../src/workspaces/party/partyWorkspaceStore.ts)                 | **Production only:** поля формы, `serverUnreachable`, `themeAccess`, lifecycle-флаги, `isListedInCatalog`, ошибки сервера и т.п. Без полей preview-сценария и demo-overlay.                                                                          |
 | [`partyPreviewScenarioStore.ts`](../../../src/workspaces/party/partyPreviewScenarioStore.ts)     | **Preview scenario:** локальная симуляция detached-превью (`isSynchronized`, overrides lifecycle/mock live/track/theme/connection break). По умолчанию `isSynchronized: true`.                                                  |
 | [`partyPreviewScenarioActions.ts`](../../../src/workspaces/party/partyPreviewScenarioActions.ts) | Продуктовые мутации сценария: `syncPreviewWithProduction()`, `detachPreview()`, `setPreviewLifecycleOverride`, `setPreviewMockLive`, `resetPreviewScenario()` и др. **Не** защищены `guardDemoMode()` — доступны в main player. |
 | [`partyPreviewEffectiveState.ts`](../../../src/workspaces/party/partyPreviewEffectiveState.ts)   | Чистая функция `resolvePartyPreviewEffectiveState()` + хук `usePartyPreviewEffectiveState()` — merge production runtime и scenario для рендера `PartyPreview`.                                                                  |
@@ -117,8 +117,8 @@ Production-события **не** очищают preview scenario и editor dem
 
 ## View-компоненты
 
-- **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — баннер **«Подключено к вечеринке»**, toolbar: lifecycle (**«Открыть»**, **«Снять с сайта»**), publish **«Обновить на сайте»** / **«Обновить для гостей»**, **«Новая вечеринка на сервере»**, **«Подключить»**; badges **Не на сайте / Опубликована / Архив**; **без** `PartyPreview`.
-- **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — заголовок (sync/warning badges), [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) через `usePartyPreviewEffectiveState()`, всегда [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"`; **без** баннера, track-display и формы.
+- **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — баннер **«Подключено к вечеринке»**, toolbar по **фазе**: lifecycle (**«Открыть»**, **«Снять с сайта»**), publish **«Обновить на сайте»**, **«Создать»**, **«Подключить»**; badges **Не на сайте / Опубликована / Архив**; контроль каталога **«В каталоге»** / **«По ссылке»**; **без** `PartyPreview`.
+- **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — баннеры connectivity (офлайн / unreachable), заголовок (sync/warning badges), [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) через `usePartyPreviewEffectiveState()`, всегда [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"`; **без** track-display и формы.
 
 Стили: `PartyEditorView.css`, `PartyPreviewView.css`; disabled-обёртка — `PartyViewWrapper.css`.
 
@@ -148,6 +148,67 @@ Production-события **не** очищают preview scenario и editor dem
 
 В `PartyEditor`: начало (`eventDateTime`), опциональный конец (`eventEndDateTime`), таймзона; синхронизация через `UpdatePartyDto` и публичные DTO для CherryPlayWeb (см. [CONTRACTS.md](../../../../CONTRACTS.md) §6.4).
 
+## Онлайн, discoverability и внутренняя политика сети
+
+Две **независимые** оси (см. [`onlineNetworkPolicy.ts`](../../../src/shared/streaming/onlineNetworkPolicy.ts)):
+
+| Ось | Код | Поведение |
+| --- | --- | --- |
+| **Сеть** | `networkEnabled` | SignalR, REST к вечеринкам, загрузка списка. Зеркалит **«Онлайн»** (`enableStreaming`) и demo mode. **Внутренний флаг** — в Settings и Party UI **нет** отдельной метки `networkEnabled`. |
+| **Discoverability Party** | `partyDiscoverabilityEnabled` | Пресет **«Онлайн-вечеринка»**, типы зон `party-editor` / `party-preview`, shell редактора. **Всегда `true`** — офлайн не скрывает Party. |
+
+Пользовательский privacy/offline — только настройка **«Онлайн»** / **«Работа без сети»** (`enableStreaming`). Она блокирует сетевые действия, но **не** фазу редактора и **не** наличие зон в layout.
+
+### Контекстные баннеры (не gate)
+
+[`PartyConnectivityBanner`](../../../src/workspaces/party/components/PartyConnectivityBanner.tsx):
+
+| Условие | Баннер |
+| ------- | ------ |
+| `networkEnabled === false` | **«Онлайн-функции отключены»** — локальное редактирование проекта доступно |
+| `serverUnreachable` (при включённом онлайне) | **«Не удалось подключиться к серверу»** + «Проверить сейчас» |
+
+Баннеры встраиваются в shell Editor/Preview; **не** заменяют весь Editor на `OnlineUnavailablePanel`. Фаза (`draft-unlinked` vs linked) и набор кнопок выводятся из `linkedParty` + `partyLifecycleState`, **не** из `networkEnabled`. Сетевые кнопки при офлайне/недоступности сервера — disabled с подсказкой.
+
+## Фаза редактора и действия по фазе
+
+Фаза — [`partyEditorPhase.ts`](../../../src/workspaces/party/partyEditorPhase.ts) (`resolvePartyEditorPhase`):
+
+| Фаза | Условие | Действия в toolbar (`PartyEditorActions`) |
+| ---- | ------- | ----------------------------------------- |
+| `draft-unlinked` | Нет `meta.linkedParty` | **«Создать»**, **«Подключить»** |
+| `draft-linked` / `ready` | Есть `linkedParty` | **«Обновить на сайте»** (+ lifecycle в `PartyLifecycleControls`) |
+| `completed` | lifecycle `completed` | Только lifecycle; publish/create/link скрыты |
+
+Lifecycle (**«Открыть»**, **«Снять с сайте»** и т.д.) показывается при любой привязанной фазе, кроме `draft-unlinked`.
+
+## Видимость в каталоге (`isListedInCatalog`)
+
+Отдельно от lifecycle и publish. UI: [`PartyCatalogVisibilityControl`](../../../src/workspaces/party/components/PartyCatalogVisibilityControl.tsx) — переключатель **«По ссылке»** / **«В каталоге»** (поле API `isListedInCatalog`).
+
+- Состояние в `partyWorkspaceStore.isListedInCatalog`; гидратация при load/connect; persist через `buildUpdatePartyDto` / create builders (`partyWorkspaceApiBuilders.ts`).
+- Подсказка в контроле: *«Отдельно от статуса публикации на сайте»*.
+- При `networkEnabled === false` — контроль **виден**, disabled; значение из локального/project cache.
+- При фазе `completed` контроль каталога скрыт (как и publish/create/link действия).
+- Создание вечеринки по умолчанию — **«По ссылке»** (`isListedInCatalog: false`), см. [CONTRACTS.md](../../../../CONTRACTS.md).
+
+Термины: [GLOSSARY.md](../../../../GLOSSARY.md) (**unlisted** / **catalog**, таблица UI).
+
+## «Мои вечеринки»
+
+Кнопка **«Мои вечеринки»** в [`AppHeader`](../../../src/app/components/AppHeader.tsx) → модалка [`MyPartiesPanel`](../../../src/app/components/MyPartiesPanel.tsx) (`modal === 'myParties'`).
+
+MVP-действия (список `GET /api/parties`):
+
+| Действие | Поведение |
+| -------- | --------- |
+| **Привязать** | `linkedParty` в проекте + sync полей в `partyWorkspaceStore` |
+| **Удалить** | `DELETE` party; при удалении привязанной — сброс link в проекте |
+| **Каталог** | Toggle **«По ссылке»** / **«В каталоге»** (`PUT isListedInCatalog`); sync в store при совпадении `linkedParty.id` |
+| Статусы в строке | lifecycle badge + каталог + **«Привязана»** |
+
+Без авторизации — stub с кнопкой **«Войти»** (существующий account flow). Панель **открывается** при выключенном онлайне; загрузка и сетевые действия disabled со stub **«Онлайн-функции отключены»**.
+
 ## Обработка потери соединения
 
 При привязанной вечеринке (`linkedParty`) `usePartyWorkspaceRuntime()` проверяет доступность сервера при запуске (и по таймеру).
@@ -158,13 +219,15 @@ Production-события **не** очищают preview scenario и editor dem
 
 ### Поведение при недоступном сервере
 
-- **PartyEditor** заменяется на `OnlineUnavailablePanel` («Не удалось подключиться к серверу»).
+- **PartyEditor** — баннер `PartyConnectivityBanner` (`unreachable`) **внутри** shell; форма и фазовые действия остаются видимыми (сетевые кнопки disabled).
 - Интервал **60 с** (`RECONNECT_INTERVAL_MS` в `partyWorkspaceUtils`) и кнопка «Проверить сейчас» — через общий reconnect в `partyWorkspaceReconnectRefs` (не дублируется при двух зонах).
-- **PartyPreview** экран переподключения **не** показывает; при восстановлении сервера preview подхватывает актуальные данные из runtime.
+- **PartyPreview** — тот же баннер при `serverUnreachable`; при восстановлении сервера preview подхватывает актуальные данные из runtime.
+
+Полноэкранный `OnlineUnavailablePanel` в Editor **не** используется для обычной потери связи (остаётся для blocked-фаз: auth, outdated client и т.п.).
 
 ### Восстановление
 
-При успешной проверке: перезагрузка URL/метаданных, останов таймера, штатный UI Editor.
+При успешной проверке: перезагрузка URL/метаданных, останов таймера, снятие баннера unreachable.
 
 ### Состояния в party subsystem store
 
@@ -189,7 +252,7 @@ Production-события **не** очищают preview scenario и editor dem
 1. Старые двухколоночные сигнатуры `horizontal(..., party)` → свежий трёхколоночный preset.
 2. Произвольные layout с зоной `workspaceType: 'party'` или `workspaceId: 'party-workspace'` → замена зоны на пару editor + preview (размер legacy-зоны делится пополам) или fallback на preset `party`.
 
-Пресет **«Онлайн-вечеринка»** в меню workspace доступен только при **Онлайн** (`enableStreaming === true`). При выключении — заглушка **«Онлайн отключён»** в зонах Party (`PartyStreamingGate`).
+Пресет **«Онлайн-вечеринка»** (`party`) **всегда** в меню workspace (`WorkspaceMenu` → `partyDiscoverabilityEnabled`). При выключенном **Онлайн** зоны Party остаются в layout; внутри — баннер **«Онлайн-функции отключены»**, не скрытие preset/зон.
 
 ## Зависимости
 
@@ -208,5 +271,6 @@ Production-события **не** очищают preview scenario и editor dem
 
 ## См. также
 
+- [Онлайн-режим и Party](../../online-mode-ux-synthesis.md) — продуктовые решения, checklist UX
 - Исходники и краткий README модуля: [`src/workspaces/party/README.md`](../../../src/workspaces/party/README.md)
 - Layout system: [`layout-system.md`](../systems/layout-system.md) — минимальные размеры зон: `party-editor` **400×300**, `party-preview` **320×240** px (`src/workspaces/party/index.ts`)

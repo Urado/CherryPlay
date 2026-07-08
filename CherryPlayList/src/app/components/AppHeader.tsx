@@ -1,4 +1,5 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import GroupsIcon from '@mui/icons-material/Groups';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -516,6 +517,10 @@ export const AppHeader: React.FC = () => {
     openModal('account');
   };
 
+  const handleMyParties = () => {
+    openModal('myParties');
+  };
+
   return (
     <div className="app-header">
       <div className="app-header-toolbar">
@@ -653,6 +658,16 @@ export const AppHeader: React.FC = () => {
               </div>
 
               <div className="action-group">
+                <button
+                  type="button"
+                  className="header-button"
+                  onClick={handleMyParties}
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Мои вечеринки', isLayoutEditMode)}
+                  aria-label="Мои вечеринки"
+                >
+                  <GroupsIcon className="header-button__icon" aria-hidden />
+                </button>
                 {enableStreaming && (
                   <button
                     className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}

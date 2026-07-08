@@ -68,8 +68,9 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
   - **не** заменяет initial publish и explicit Publish из Party workspace.
 
 - **`onlineNetworkPolicy`** — внутренние helpers (`isStreamingNetworkEnabled`, `isPartyDiscoverabilityEnabled`, `getOnlineNetworkPolicy`):
-  - сегодня оба флага зеркалят `enableStreaming`;
-  - UI gates (`PartyStreamingGate`, `WorkspaceMenu`, `PlayerHeader`) пока читают `enableStreaming` напрямую — split зарезервирован для UX-фазы.
+  - `networkEnabled` — зеркалит **«Онлайн»** (`enableStreaming`) и demo mode; блокирует SignalR и REST; **не** user-facing label.
+  - `partyDiscoverabilityEnabled` — **всегда `true`**; пресет Party и зоны editor/preview не скрываются при офлайне.
+  - Хук `useOnlineNetworkPolicy()` — snapshot для Party, orchestrator, **«Мои вечеринки»**.
 
 ### Transport и Party metadata
 
@@ -151,12 +152,14 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 ## Отключение онлайна (enableStreaming)
 
-Настройка `enableStreaming` в Settings Store. При отключении:
+Настройка `enableStreaming` в Settings Store (UI: **«Онлайн»** / **«Работа без сети»**). При отключении:
 
 - orchestrator не стартует; нет SignalR connect и hub invokes;
 - нет position timer;
-- индикаторы соединения скрыты (как сегодня);
-- Party gates и preset visibility **не менялись** в этой фазе (см. UX synthesis).
+- индикаторы соединения в Player скрыты;
+- Party **остаётся видимой** в layout и меню preset; внутри зон — баннер **«Онлайн-функции отключены»**; сетевые действия disabled.
+
+См. [Party](../workspaces/party.md), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
 
 ## Связанные документы
 

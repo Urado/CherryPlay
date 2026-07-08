@@ -1,3 +1,5 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
@@ -6,16 +8,20 @@ import React, { useCallback, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
+import { getPlaybackPillReadinessHints } from '@app/components/playbackPillReadiness';
+import { LAYOUT_PRESET_DISPLAY_NAMES_RU } from '@core/constants/layoutPresetDisplayNames';
 import { isProjectTrack } from '@core/types/project';
 import { StreamingConnectionIndicator } from '@shared/components';
+import { signalRService } from '@shared/services';
 import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
-import { PARTY_EDITOR_LIFECYCLE_BADGE_LABELS } from '@workspaces/party/partyEditorPhase';
 import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 
 interface HeaderPlaybackPillProps {
   disabled?: boolean;
 }
+
+const PREP_SETUP_HINT = `Для настройки вечеринки переключитесь на рабочее пространство «${LAYOUT_PRESET_DISPLAY_NAMES_RU.party}» или откройте зону «Настройка вечеринки».`;
 
 export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled = false }) => {
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
@@ -45,6 +51,8 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
 
   const resolveTrackById = useProjectStore((state) => state.findItemById);
 
+  const isSessionMode = sessionMode === 'session';
+
   const trackLabel = useMemo(() => {
     if (currentTrack?.name) {
       return currentTrack.name;
@@ -55,20 +63,22 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
         return item.name;
       }
     }
-    return 'Нет активного трека';
+    return '—';
   }, [currentTrack?.name, resolveTrackById, sessionCurrentTrackId]);
 
-  const partyStatusLabel = useMemo(() => {
-    if (!linkedParty) {
-      return 'Вечеринка не привязана';
-    }
-    if (partyLifecycleState) {
-      return PARTY_EDITOR_LIFECYCLE_BADGE_LABELS[partyLifecycleState];
-    }
-    return `Вечеринка ${linkedParty.shortCode}`;
-  }, [linkedParty, partyLifecycleState]);
+  const readinessHints = useMemo(() => {
+    return getPlaybackPillReadinessHints({
+      linkedParty,
+      partyLifecycleState,
+      isSessionMode,
+      connectionState: linkedParty ? connectionState : null,
+      connectionErrorReason: signalRService.getConnectionErrorReason(),
+      playerError: error,
+    });
+  }, [linkedParty, partyLifecycleState, isSessionMode, connectionState, error]);
 
-  const isSessionMode = sessionMode === 'session';
+  const readinessTooltip = readinessHints.join('\n\n');
+
   const isVisible = enableStreaming && streamingSource === 'cherryPlayPlayer';
 
   const isPlaying = status === 'playing';
@@ -112,6 +122,18 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
     />
   );
 
+  const readinessHintIcon =
+    readinessHints.length > 0 ? (
+      <span
+        className="playback-pill__hint playback-pill__hint--active"
+        title={readinessTooltip}
+        role="img"
+        aria-label={readinessTooltip}
+      >
+        <LightbulbOutlinedIcon className="playback-pill__hint-icon" aria-hidden />
+      </span>
+    ) : null;
+
   return (
     <div
       className={[
@@ -124,10 +146,6 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
       role="group"
       aria-label="Вечеринка и проигрывание"
     >
-      <span className="playback-pill__party-status" title={partyStatusLabel}>
-        {partyStatusLabel}
-      </span>
-
       {isSessionMode ? (
         <>
           <button
@@ -150,7 +168,6 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
                 {formatPlayerTime(position)} / {formatPlayerTime(resolvedDuration)}
               </span>
             ) : null}
-            {error ? <span className="playback-pill__track-error">{error}</span> : null}
           </div>
 
           <div className="playback-pill__volume">
@@ -170,11 +187,23 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
             <VolumeUpIcon fontSize="small" aria-hidden />
           </div>
 
+          {readinessHintIcon}
           {onlineIndicator}
         </>
       ) : (
         <>
-          <span className="playback-pill__prep-label">Проигрывание не запущено</span>
+          <div className="playback-pill__prep-row">
+            <span className="playback-pill__prep-label">Проигрывание не запущено</span>
+            <span
+              className="playback-pill__hint"
+              title={PREP_SETUP_HINT}
+              role="img"
+              aria-label={PREP_SETUP_HINT}
+            >
+              <InfoOutlinedIcon className="playback-pill__hint-icon" aria-hidden />
+            </span>
+          </div>
+          {readinessHintIcon}
           {onlineIndicator}
         </>
       )}

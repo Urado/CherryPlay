@@ -13,11 +13,11 @@
 
 Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-**Party Editor:** баннер привязки, `PartyTrackDisplaySection`, `PartyEditor`, auth, недоступность сервера, entitlement.
+**Party Editor:** баннер привязки, `PartyTrackDisplaySection`, контроль каталога **«В каталоге»** / **«По ссылке»**, `PartyEditor`, auth, connectivity-баннеры, entitlement.
 
-**Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"` (grip, badge «Сценарии», `PartyPreviewScenarioControls` `variant="panel"`). В заголовке — только sync/warning badges. `showDemoPanel` (demo mode) влияет только на кнопку «Сброс демо» в панели (см. модульную документацию).
+**Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 
-Оба wrapper проверяют `enableStreaming`; при `false` — disabled-сообщение (`PartyViewWrapper.css`).
+Оба wrapper → `PartyStreamingGate` (runtime provider only). **Нет** gate по `enableStreaming`; офлайн — `PartyConnectivityBanner` внутри view.
 
 ## Party subsystem (три store)
 

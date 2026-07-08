@@ -1,3 +1,4 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import React from 'react';
 
 import {
@@ -15,6 +16,9 @@ import {
 } from './PartyEditorBlockedOverlay';
 import './PartyEditorShell.css';
 
+const PARTY_READY_PUBLISH_HINT =
+  '1. Отправьте плейлист на сайт → 2. Запустите проигрывание в зоне плеера. Гости увидят актуальную программу, когда вечеринка в эфире.';
+
 export interface PartyEditorShellProps {
   phase: PartyEditorPhase | null;
   linkedParty?: PartyEditorLinkedParty | null;
@@ -24,6 +28,7 @@ export interface PartyEditorShellProps {
   blockedOverlayProps?: Omit<PartyEditorBlockedOverlayProps, 'reason'>;
   headerActions?: React.ReactNode;
   hidePhaseBadge?: boolean;
+  connectivityBanner?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -36,6 +41,7 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
   blockedOverlayProps,
   headerActions,
   hidePhaseBadge = false,
+  connectivityBanner,
   children,
 }) => {
   const headerTitle = phase
@@ -49,6 +55,16 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
       <header className="party-editor-shell-header">
         <div className="party-editor-shell-header-main">
           <h2 className="party-editor-shell-title">{headerTitle}</h2>
+          {phase === 'ready' && (
+            <span
+              className="party-editor-shell-info-hint"
+              title={PARTY_READY_PUBLISH_HINT}
+              role="img"
+              aria-label={PARTY_READY_PUBLISH_HINT}
+            >
+              <InfoOutlinedIcon className="party-editor-shell-info-hint__icon" aria-hidden />
+            </span>
+          )}
           {badgeLabel && badgeLifecycle && !hidePhaseBadge && (
             <span
               className={`party-editor-shell-phase-badge party-editor-shell-phase-badge--${badgeLifecycle}`}
@@ -89,6 +105,8 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
           )}
         </div>
       )}
+
+      {connectivityBanner}
 
       <div className="party-editor-shell-body">{children}</div>
 

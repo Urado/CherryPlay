@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { useProjectStore, useUIStore } from '@shared/stores';
+import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { usePartyPlaylistState } from './usePartyPlaylistState';
@@ -9,6 +10,7 @@ import { usePartyWorkspaceEffects } from './usePartyWorkspaceEffects';
 
 export function usePartyWorkspaceRuntime() {
   const { isAuth, isClientOutdated, clientRequiredVersion } = usePartyWorkspaceAuthState();
+  const { networkEnabled } = useOnlineNetworkPolicy();
 
   const meta = useProjectStore((state) => state.meta);
   const setPartyTrackDisplaySettings = useProjectStore(
@@ -32,6 +34,8 @@ export function usePartyWorkspaceRuntime() {
     externalLinkUrl,
     externalLinkText,
     danceTags,
+    isListedInCatalog,
+    isTogglingCatalogVisibility,
     isCreating,
     isPublishing,
     partyLifecycleState,
@@ -57,6 +61,7 @@ export function usePartyWorkspaceRuntime() {
     setExternalLinkUrl,
     setExternalLinkText,
     setDanceTags,
+    setIsListedInCatalog,
     setThemeEntitlementModal,
   } = usePartyWorkspaceStore((state) => ({
     partyName: state.partyName,
@@ -75,6 +80,8 @@ export function usePartyWorkspaceRuntime() {
     externalLinkUrl: state.externalLinkUrl,
     externalLinkText: state.externalLinkText,
     danceTags: state.danceTags,
+    isListedInCatalog: state.isListedInCatalog,
+    isTogglingCatalogVisibility: state.isTogglingCatalogVisibility,
     isCreating: state.isCreating,
     isPublishing: state.isPublishing,
     partyLifecycleState: state.partyLifecycleState,
@@ -100,6 +107,7 @@ export function usePartyWorkspaceRuntime() {
     setExternalLinkUrl: state.setExternalLinkUrl,
     setExternalLinkText: state.setExternalLinkText,
     setDanceTags: state.setDanceTags,
+    setIsListedInCatalog: state.setIsListedInCatalog,
     setThemeEntitlementModal: state.setThemeEntitlementModal,
   }));
 
@@ -108,7 +116,7 @@ export function usePartyWorkspaceRuntime() {
   }));
 
   const playlistState = usePartyPlaylistState();
-  const effects = usePartyWorkspaceEffects(isAuth);
+  const effects = usePartyWorkspaceEffects(isAuth, networkEnabled);
 
   const playlistBuildParams = useMemo(
     () => ({
@@ -130,8 +138,14 @@ export function usePartyWorkspaceRuntime() {
       loadThemeAccess: effects.loadThemeAccess,
       checkPartyExists: effects.checkPartyExists,
       startReconnectTimer: effects.startReconnectTimer,
+      isNetworkEnabled: () => networkEnabled,
     }),
-    [effects.loadThemeAccess, effects.checkPartyExists, effects.startReconnectTimer],
+    [
+      effects.loadThemeAccess,
+      effects.checkPartyExists,
+      effects.startReconnectTimer,
+      networkEnabled,
+    ],
   );
 
   const serverActions = usePartyServerActions(isAuth, playlistBuildParams, serverEffects);
@@ -165,6 +179,8 @@ export function usePartyWorkspaceRuntime() {
       externalLinkUrl,
       externalLinkText,
       danceTags,
+      isListedInCatalog,
+      isTogglingCatalogVisibility,
       isCreating,
       isPublishing,
       partyLifecycleState,
@@ -186,6 +202,7 @@ export function usePartyWorkspaceRuntime() {
       setExternalLinkUrl,
       setExternalLinkText,
       setDanceTags,
+      setIsListedInCatalog,
       setThemeEntitlementModal,
       handleThemeChange: effects.handleThemeChange,
       handleCustomizationSettingsChange: effects.handleCustomizationSettingsChange,
@@ -194,6 +211,7 @@ export function usePartyWorkspaceRuntime() {
       handleCreateParty: serverActions.handleCreateParty,
       handlePublish: serverActions.handlePublish,
       handleCopyUrl: serverActions.handleCopyUrl,
+      handleCatalogVisibilityChange: serverActions.handleCatalogVisibilityChange,
       handleRetry: effects.handleRetry,
       handleResetAndCreateNewParty: effects.handleResetAndCreateNewParty,
       handleLifecycleTransition: serverActions.handleLifecycleTransition,
@@ -231,6 +249,8 @@ export function usePartyWorkspaceRuntime() {
       externalLinkUrl,
       externalLinkText,
       danceTags,
+      isListedInCatalog,
+      isTogglingCatalogVisibility,
       isCreating,
       isPublishing,
       partyLifecycleState,
@@ -252,6 +272,7 @@ export function usePartyWorkspaceRuntime() {
       setExternalLinkUrl,
       setExternalLinkText,
       setDanceTags,
+      setIsListedInCatalog,
       setThemeEntitlementModal,
       effects.handleThemeChange,
       effects.handleCustomizationSettingsChange,
@@ -260,6 +281,7 @@ export function usePartyWorkspaceRuntime() {
       serverActions.handleCreateParty,
       serverActions.handlePublish,
       serverActions.handleCopyUrl,
+      serverActions.handleCatalogVisibilityChange,
       effects.handleRetry,
       effects.handleResetAndCreateNewParty,
       serverActions.handleLifecycleTransition,

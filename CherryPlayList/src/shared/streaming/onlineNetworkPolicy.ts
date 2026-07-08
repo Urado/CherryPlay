@@ -5,18 +5,18 @@ export interface StreamingNetworkPolicySettings {
 }
 
 export interface OnlineNetworkPolicy {
-  /** SignalR connect, hub invokes, position ticks. */
+  /** SignalR connect, hub invokes, position ticks, Party REST actions. */
   readonly networkEnabled: boolean;
   /**
-   * Party workspace preset, gates, header indicator visibility.
-   * Today mirrors `enableStreaming`; UI gates still read settings directly until UX phase.
+   * Party workspace preset, zones, and editor shell visibility.
+   * Always true — offline/privacy mode shows in-zone stubs instead of hiding Party.
    */
   readonly partyDiscoverabilityEnabled: boolean;
 }
 
 /**
  * Whether SignalR network activity (connect, hub invokes, position ticks) is allowed.
- * Today equivalent to `enableStreaming`; reserved for a future split from party discoverability.
+ * Reflects user «Онлайн» toggle and demo mode. Internal only — not a Settings label.
  */
 export function isStreamingNetworkEnabled(
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
@@ -28,17 +28,16 @@ export function isStreamingNetworkEnabled(
 }
 
 /**
- * Whether party-related UI should be discoverable (workspace preset, gates, header pill).
- * Today equivalent to `enableStreaming`. Do not wire to UI gates in this phase —
- * `PartyStreamingGate`, `WorkspaceMenu`, and `PlayerHeader` keep reading `enableStreaming`.
+ * Whether party-related UI should be discoverable (workspace preset, zones, editor shell).
+ * Independent of `enableStreaming` — Party stays visible when «Онлайн» is off.
  */
 export function isPartyDiscoverabilityEnabled(
-  settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
+  _settings?: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
 ): boolean {
-  return settings.enableStreaming;
+  return true;
 }
 
-/** Snapshot for orchestrator hooks and future aggregated online-status. */
+/** Snapshot for orchestrator hooks and aggregated online-status. */
 export function getOnlineNetworkPolicy(
   settings: StreamingNetworkPolicySettings,
 ): OnlineNetworkPolicy {

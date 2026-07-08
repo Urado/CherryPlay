@@ -14,7 +14,14 @@ import { resolveFileBrowserFocusTarget } from '../utils/resolveFileBrowserFocusT
 // Это позволяет очищать таймеры при ручном удалении уведомлений
 const notificationTimers = new Map<string, NodeJS.Timeout>();
 
-export type ModalType = 'settings' | 'export' | 'trackSettings' | 'account' | 'linkParty' | null;
+export type ModalType =
+  | 'settings'
+  | 'export'
+  | 'trackSettings'
+  | 'account'
+  | 'linkParty'
+  | 'myParties'
+  | null;
 
 // Контекст для модального окна настроек трека
 export interface TrackSettingsModalContext {

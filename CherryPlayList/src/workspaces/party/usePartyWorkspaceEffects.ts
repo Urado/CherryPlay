@@ -38,7 +38,7 @@ import {
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
-export function usePartyWorkspaceEffects(isAuth: boolean) {
+export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolean) {
   const meta = useProjectStore((state) => state.meta);
   const projectContextKey = useProjectStore(
     (state) => `${state.meta.filePath ?? ''}\0${state.name}`,
@@ -135,6 +135,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
   const loadThemeAccess = useCallback(
     async (forceRefresh = false) => {
       const store = getPartyStore();
+      if (!networkEnabled) {
+        store.setThemeAccess(null);
+        store.setThemeAccessErrorMessage(null);
+        return;
+      }
       if (!isAuth) {
         store.setThemeAccess(null);
         store.setThemeAccessErrorMessage(null);
@@ -154,7 +159,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         store.setIsThemeAccessLoading(false);
       }
     },
-    [isAuth],
+    [isAuth, networkEnabled],
   );
 
   const handleCustomizationSettingsChange = useCallback(
@@ -190,6 +195,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
 
   const loadPartyMetadata = useCallback(
     async (partyId: string) => {
+      if (!networkEnabled) {
+        return;
+      }
       const store = getPartyStore();
       try {
         const party = await partyService.getParty(partyId);
@@ -239,15 +247,19 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         store.setDanceTags(party.danceTags ? [...new Set(party.danceTags)] : []);
         store.setEventEndDateTimeTouched(false);
         store.setPartyLifecycleState(party.partyLifecycleState);
+        store.setIsListedInCatalog(party.isListedInCatalog ?? false);
       } catch (error) {
         console.error('Failed to load party metadata:', error);
       }
     },
-    [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
+    [networkEnabled, setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
   const restoreAfterReconnect = useCallback(
     async (linkedParty: { id: string; shortCode: string }) => {
+      if (!networkEnabled) {
+        return;
+      }
       const store = getPartyStore();
       try {
         const exists = await partyService.checkPartyExists(linkedParty.id);
@@ -262,6 +274,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         setLinkedParty({ ...linkedParty, url });
 
         if (isAuth) {
+          await loadThemeAccess(true);
           await loadPartyMetadata(linkedParty.id);
         }
       } catch (error) {
@@ -270,11 +283,14 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         store.setPartyVerified(false);
       }
     },
-    [isAuth, loadPartyMetadata, setLinkedParty],
+    [isAuth, loadPartyMetadata, networkEnabled, setLinkedParty],
   );
 
   const startReconnectTimer = useCallback(
     (linkedParty: { id: string; shortCode: string } | null) => {
+      if (!networkEnabled) {
+        return;
+      }
       partyWorkspaceReconnectRefs.linkedParty = linkedParty;
       if (partyWorkspaceReconnectRefs.intervalId !== null) {
         return;
@@ -296,6 +312,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
               if (activeLinkedParty) {
                 await restoreAfterReconnect(activeLinkedParty);
               } else {
+                if (isAuth) {
+                  await loadThemeAccess(true);
+                }
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setServerError(null);
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setPartyVerified(false);
               }
@@ -308,31 +327,40 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         })();
       }, RECONNECT_INTERVAL_MS);
     },
-    [stopReconnectTimer, restoreAfterReconnect],
+    [networkEnabled, stopReconnectTimer, restoreAfterReconnect, isAuth, loadThemeAccess],
   );
 
-  const checkPartyExists = useCallback(async (partyId: string): Promise<boolean> => {
-    const store = getPartyStore();
-    try {
-      store.setIsCheckingParty(true);
-      store.setServerError(null);
-      const exists = await partyService.checkPartyExists(partyId);
-      store.setPartyVerified(exists);
-      if (!exists) {
-        store.setServerError(ERROR_PARTY_NOT_FOUND);
+  const checkPartyExists = useCallback(
+    async (partyId: string): Promise<boolean> => {
+      const store = getPartyStore();
+      if (!networkEnabled) {
+        return false;
       }
-      return exists;
-    } catch (error) {
-      console.error('Failed to check party existence:', error);
-      store.setServerError(ERROR_CONNECTION);
-      store.setPartyVerified(false);
-      return false;
-    } finally {
-      store.setIsCheckingParty(false);
-    }
-  }, []);
+      try {
+        store.setIsCheckingParty(true);
+        store.setServerError(null);
+        const exists = await partyService.checkPartyExists(partyId);
+        store.setPartyVerified(exists);
+        if (!exists) {
+          store.setServerError(ERROR_PARTY_NOT_FOUND);
+        }
+        return exists;
+      } catch (error) {
+        console.error('Failed to check party existence:', error);
+        store.setServerError(ERROR_CONNECTION);
+        store.setPartyVerified(false);
+        return false;
+      } finally {
+        store.setIsCheckingParty(false);
+      }
+    },
+    [networkEnabled],
+  );
 
   const handleManualReconnect = useCallback(async () => {
+    if (!networkEnabled) {
+      return;
+    }
     const store = getPartyStore();
     const linkedParty = meta.linkedParty;
     store.setIsReconnecting(true);
@@ -345,6 +373,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
         if (linkedParty) {
           await restoreAfterReconnect(linkedParty);
         } else {
+          if (isAuth) {
+            await loadThemeAccess(true);
+          }
           store.setServerError(null);
           store.setPartyVerified(false);
         }
@@ -356,7 +387,14 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
     } finally {
       store.setIsReconnecting(false);
     }
-  }, [meta.linkedParty, stopReconnectTimer, restoreAfterReconnect]);
+  }, [
+    meta.linkedParty,
+    networkEnabled,
+    stopReconnectTimer,
+    restoreAfterReconnect,
+    isAuth,
+    loadThemeAccess,
+  ]);
 
   const handleRetry = useCallback(async () => {
     const store = getPartyStore();
@@ -421,6 +459,20 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
   }, [projectContextKey, stopReconnectTimer]);
 
   useEffect(() => {
+    if (networkEnabled) {
+      return;
+    }
+
+    const store = getPartyStore();
+    clearPartyWorkspaceLinkedPartyCheck();
+    stopReconnectTimer();
+    partyWorkspaceReconnectRefs.cancelled = true;
+    store.setIsReconnecting(false);
+    store.setIsCheckingParty(false);
+    store.setServerUnreachable(false);
+  }, [networkEnabled, stopReconnectTimer]);
+
+  useEffect(() => {
     const store = getPartyStore();
     const prevLinkedParty = prevLinkedPartyRef.current;
     prevLinkedPartyRef.current = meta.linkedParty;
@@ -428,6 +480,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
     if (meta.linkedParty) {
       const linkedParty = meta.linkedParty;
       partyWorkspaceReconnectRefs.linkedParty = linkedParty;
+
+      if (!networkEnabled) {
+        return;
+      }
 
       const existing = partyWorkspaceLinkedPartyCheck.inFlight;
       if (existing?.partyId === linkedParty.id) {
@@ -494,9 +550,12 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
       stopReconnectTimer();
       partyWorkspaceReconnectRefs.cancelled = true;
     }
-  }, [meta.linkedParty, startReconnectTimer, stopReconnectTimer]);
+  }, [meta.linkedParty, networkEnabled, startReconnectTimer, stopReconnectTimer]);
 
   useEffect(() => {
+    if (!networkEnabled) {
+      return;
+    }
     if (meta.linkedParty && isAuth) {
       const partyId = meta.linkedParty.id;
       if (partyWorkspaceOneShotGuards.loadedPartyMetadataId === partyId) {
@@ -507,16 +566,19 @@ export function usePartyWorkspaceEffects(isAuth: boolean) {
     } else if (!meta.linkedParty) {
       partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
     }
-  }, [meta.linkedParty, isAuth, loadPartyMetadata]);
+  }, [meta.linkedParty, isAuth, loadPartyMetadata, networkEnabled]);
 
   useEffect(() => {
+    if (!networkEnabled) {
+      return;
+    }
     const guardKey = isAuth ? 'auth' : 'guest';
     if (partyWorkspaceOneShotGuards.themeAccessGuardKey === guardKey) {
       return;
     }
     partyWorkspaceOneShotGuards.themeAccessGuardKey = guardKey;
     void loadThemeAccess();
-  }, [isAuth, loadThemeAccess]);
+  }, [isAuth, loadThemeAccess, networkEnabled]);
 
   useEffect(() => {
     const wasFirstMount = partyWorkspaceReconnectRefs.effectsMountCount === 0;

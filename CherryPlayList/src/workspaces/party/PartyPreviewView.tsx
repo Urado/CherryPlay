@@ -2,7 +2,9 @@ import { partyThemes, type CustomizationSettings, type PartyThemeId } from '@che
 import React, { useMemo } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { useOnlineNetworkPolicy } from '@shared/streaming';
 
+import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { PartyPreview } from './PartyPreview';
 import { usePartyPreviewEffectiveState } from './partyPreviewEffectiveState';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
@@ -21,6 +23,7 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
   showDemoPanel = false,
 }) => {
   const runtime = usePartyWorkspaceRuntimeContext();
+  const { networkEnabled } = useOnlineNetworkPolicy();
   const {
     partyName,
     partyTitle,
@@ -32,6 +35,10 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
     visibleThemeIds,
     meta,
     previewPlaylistData,
+    serverUnreachable,
+    isReconnecting,
+    lastManualCheckFailed,
+    handleManualReconnect,
   } = runtime;
 
   const {
@@ -80,6 +87,15 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
 
   return (
     <div className="party-preview-view">
+      {!networkEnabled && <PartyConnectivityBanner kind="offline" />}
+      {networkEnabled && serverUnreachable && (
+        <PartyConnectivityBanner
+          kind="unreachable"
+          isReconnecting={isReconnecting}
+          lastManualCheckFailed={lastManualCheckFailed}
+          onManualReconnect={handleManualReconnect}
+        />
+      )}
       <div className="party-preview-view-header">
         <h2>Превью (как будет выглядеть в браузере)</h2>
         <span

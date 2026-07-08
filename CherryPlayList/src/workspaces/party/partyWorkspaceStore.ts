@@ -27,6 +27,9 @@ export interface PartyWorkspaceState {
   externalLinkUrl: string;
   externalLinkText: string;
   danceTags: string[];
+  /** Catalog discoverability: true = «В каталоге», false = «По ссылке». */
+  isListedInCatalog: boolean;
+  isTogglingCatalogVisibility: boolean;
   isCreating: boolean;
   isPublishing: boolean;
   partyLifecycleState: PartyLifecycleState | null;
@@ -60,6 +63,8 @@ export interface PartyWorkspaceState {
   setExternalLinkUrl: (value: string) => void;
   setExternalLinkText: (value: string) => void;
   setDanceTags: (value: string[]) => void;
+  setIsListedInCatalog: (value: boolean) => void;
+  setIsTogglingCatalogVisibility: (value: boolean) => void;
   setIsCreating: (value: boolean) => void;
   setIsPublishing: (value: boolean) => void;
   setPartyLifecycleState: (value: PartyLifecycleState | null) => void;
@@ -102,6 +107,8 @@ const initialPartyWorkspaceState = {
   externalLinkUrl: '',
   externalLinkText: '',
   danceTags: [] as string[],
+  isListedInCatalog: false,
+  isTogglingCatalogVisibility: false,
   isCreating: false,
   isPublishing: false,
   partyLifecycleState: null as PartyLifecycleState | null,
@@ -140,6 +147,9 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setExternalLinkUrl: (externalLinkUrl) => set({ externalLinkUrl }),
   setExternalLinkText: (externalLinkText) => set({ externalLinkText }),
   setDanceTags: (danceTags) => set({ danceTags }),
+  setIsListedInCatalog: (isListedInCatalog) => set({ isListedInCatalog }),
+  setIsTogglingCatalogVisibility: (isTogglingCatalogVisibility) =>
+    set({ isTogglingCatalogVisibility }),
   setIsCreating: (isCreating) => set({ isCreating }),
   setIsPublishing: (isPublishing) => set({ isPublishing }),
   setPartyLifecycleState: (partyLifecycleState) => set({ partyLifecycleState }),
@@ -165,6 +175,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
       serverError: null,
       partyVerified: false,
       partyLifecycleState: null,
+      isListedInCatalog: false,
       serverUnreachable: false,
       isReconnecting: false,
       isCheckingParty: false,

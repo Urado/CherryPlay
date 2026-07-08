@@ -14,6 +14,8 @@ import type { ActiveWorkspace, LayoutPreset } from '@core/types/workspacePreset'
 import { isUnnamedWorkspaceName, UNNAMED_WORKSPACE_NAME } from '@core/types/workspacePreset';
 import { usePlatformCapabilities } from '@shared/platform';
 import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { useOnlineNetworkPolicy } from '@shared/streaming';
+import { isPartyLayoutPresetDiscoverable } from '@shared/utils/aimpPresetVisibility';
 
 import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
 import { WorkspaceNameModal } from './WorkspaceNameModal';
@@ -76,7 +78,8 @@ export const WorkspaceMenu: React.FC = () => {
   const saveCurrentWorkspaceAs = useLayoutStore((state) => state.saveCurrentWorkspaceAs);
   const deleteUserWorkspace = useLayoutStore((state) => state.deleteUserWorkspace);
 
-  const { enableStreaming, streamingSource, setStreamingSource } = useSettingsStore();
+  const { streamingSource, setStreamingSource } = useSettingsStore();
+  const { partyDiscoverabilityEnabled } = useOnlineNetworkPolicy();
   const addNotification = useUIStore((state) => state.addNotification);
   const { supportsAimpWorkspace } = usePlatformCapabilities();
   const { requestActivateWorkspace } = useWorkspaceActivation();
@@ -97,11 +100,11 @@ export const WorkspaceMenu: React.FC = () => {
         return isDev;
       }
       if (preset === 'party') {
-        return enableStreaming;
+        return isPartyLayoutPresetDiscoverable(partyDiscoverabilityEnabled);
       }
       return true;
     });
-  }, [enableStreaming]);
+  }, [partyDiscoverabilityEnabled]);
 
   const closeMenu = useCallback(() => {
     setMenuOpen(false);

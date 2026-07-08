@@ -58,13 +58,16 @@
 
 ### 2.3. Где сейчас «спрятан» онлайн
 
-| Место                                                  | Поведение                                                                               |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| **Settings** → «Включить стриминг» (`enableStreaming`) | Глобальный флаг; default `true` в store, но UX воспринимается как «скрытая галочка»     |
-| **WorkspaceMenu**                                      | Пресет **«Вечеринка»** (`party`) **скрыт**, если `enableStreaming === false`            |
-| **PartyStreamingGate**                                 | Party Editor / Preview показывают заглушку «Стриминг отключён → включите в настройках»  |
-| **PlayerHeader**                                       | Кнопка **«Начать сессию»** / «Сбросить»; индикатор SignalR только при `enableStreaming` |
-| **Settings** → «Источник стриминга»                    | `cherryPlayPlayer` \| `aimp`; при AIMP встроенный Player workspace disabled             |
+| Место                                                  | Поведение (после desktop feedback follow-up, 2026-07)                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| **Settings** → **«Онлайн»** (`enableStreaming`)      | Глобальный privacy/offline; блокирует SignalR и REST, **не** скрывает Party                 |
+| **WorkspaceMenu**                                      | Пресет **«Онлайн-вечеринка»** (`party`) **всегда** в списке (`partyDiscoverabilityEnabled`) |
+| **Party zones**                                        | Всегда в layout; при офлайне — баннер **«Онлайн-функции отключены»** внутри зоны           |
+| **AppHeader**                                          | Кнопка **«Мои вечеринки»**; индикатор SignalR в Player при `enableStreaming`               |
+| **PlayerHeader**                                       | **«Начать проигрывание»** / **«Остановить проигрывание»**; Stop в controls — **«Начать заново»** |
+| **Settings** → **«Источник состояния для гостей»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
+
+Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит `enableStreaming` + demo mode; **не** показывается пользователю. См. [party.md](./modules/workspaces/party.md).
 
 ### 2.4. Layout и кастомизация workspace (важный контекст)
 
@@ -75,14 +78,14 @@
 
 **Вывод:** идея «переключить пользователя на preset Party» **конфликтует** с моделью кастомных workspace — пользователь может уже собрать свой layout.
 
-### 2.5. Визуальные / сценарные проблемы (as-is)
+### 2.5. Визуальные / сценарные проблемы
 
-1. **`enableStreaming` управляет и сетью, и discoverability Party** — одна настройка на две разные задачи.
-2. **«Начать сессию»** звучит как локальное действие, но при наличии party + streaming запускает и SignalR — пользователь не видит связи с «онлайном».
-3. **Два «плеера» в одном layout** (Player + что-то ещё) или **Player vs AIMP** — непонятно, какой источник «на сайт».
+1. ~~**`enableStreaming` управляет и сетью, и discoverability Party**~~ — **исправлено:** split `networkEnabled` / `partyDiscoverabilityEnabled` ([`onlineNetworkPolicy.ts`](../src/shared/streaming/onlineNetworkPolicy.ts)).
+2. **«Начать сессию»** звучит как локальное действие, но при наличии party + streaming запускает и SignalR — пользователь не видит связи с «онлайном». _(Частично: переименовано в «Начать проигрывание»; агрегированный статус в шапке — backlog.)_
+3. **Два «плеера» в одном layout** (Player + что-то ещё) или **Player vs AIMP** — непонятно, какой источник «на сайт». _(Частично: переключатель в зоне Проигрывание.)_
 4. **Party и Player разнесены по зонам** — чтобы управлять вечеринкой и видеть эфир, нужно иметь нужный layout; в другом layout **нет глобального статуса** «идёт проигрывание / идёт онлайн».
-5. **Нет единого места в шапке**, где видно: вечеринка, готовность, соединение, факт проигрывания.
-6. **Термин «стриминг»** в настройках — технический; для пользователя ближе **«Онлайн»**.
+5. **Нет единого места в шапке**, где видно: вечеринка, готовность, соединение, факт проигрывания. _(Частично: **«Мои вечеринки»**; status pill — backlog.)_
+6. ~~**Термин «стриминг»** в настройках~~ — **исправлено:** **«Онлайн»** в UI.
 
 ---
 
@@ -95,7 +98,7 @@
 | Сборка плейлиста         | не обязательна | опционально               | Playlist, коллекции, file browser — **основной фокус**       |
 | Локальное проигрывание   | не нужна       | не нужна                  | Сессия плеера без трансляции — **допустимо, не главный CTA** |
 | Онлайн (страница гостей) | нужна          | нужна                     | Party + источник воспроизведения + трансляция                |
-| Privacy / офлайн         | **выключена**  | **видна**, но с заглушкой | «Онлайн отключён» — не прячем концепт Party                  |
+| Privacy / офлайн         | **выключена**  | **видна**, но с заглушкой | «Онлайн-функции отключены» — не прячем концепт Party          |
 
 ### 3.2. Терминология (UI)
 
@@ -196,9 +199,10 @@ UI может агрегировать это в один статус («Не �
 
 ### 5.5. Технический рефакторинг
 
-- Переименование / семантика `enableStreaming` → privacy/offline online mode.
-- Снятие gate с `WorkspaceMenu` и `PartyStreamingGate` (заменить на context-aware заглушки внутри Party).
-- Единый **online status** hook/store для шапки, Player, Party (сейчас размазано: settings, PlayerViewContainer, party runtime).
+- ~~Снятие gate с `WorkspaceMenu` и `PartyStreamingGate`~~ — **сделано** (in-zone stubs, `partyDiscoverabilityEnabled` always true).
+- ~~Split `networkEnabled` vs `enableStreaming` в коде~~ — **сделано** (`onlineNetworkPolicy`); пользователь видит только **«Онлайн»**.
+- ~~Контроль каталога **«В каталоге»** / **«По ссылке»**~~ — **сделано** в Party Editor и **«Мои вечеринки»**.
+- Единый **online status** hook/store для шапки, Player, Party (сейчас размазано: settings, PlayerViewContainer, party runtime) — backlog (status pill §5.1).
 
 ### 5.6. Модерация / бан пользователей
 
@@ -218,7 +222,7 @@ UI может агрегировать это в один статус («Не �
          │                                    │
          │ layout (кастомный или preset)       │ всегда виден
          ▼                                    ▼
-   Playlist / Collections              Privacy OFF → «Онлайн отключён»
+  Playlist / Collections              Privacy OFF → «Онлайн-функции отключены»
    Player или AIMP (источник)          No party → «Вечerинка не настроена»
    Party Editor / Preview (опц.)       In session + connected → «В онлайне»
 ```
@@ -235,11 +239,14 @@ UI может агрегировать это в один статус («Не �
 
 | Область          | Файлы / доки                                                                       |
 | ---------------- | ---------------------------------------------------------------------------------- |
-| Gate Party       | `PartyStreamingGate.tsx`, `PartyWorkspaceViewWrapper.tsx`                          |
-| Скрытие preset   | `WorkspaceMenu.tsx` (`visibleBuiltinPresets`)                                      |
+| Online policy    | `onlineNetworkPolicy.ts`, `useOnlineNetworkPolicy.ts`                              |
+| Party connectivity | `PartyConnectivityBanner.tsx`, `PartyEditorView.tsx`, `PartyPreviewView.tsx`     |
+| Preset visibility | `WorkspaceMenu.tsx`, `aimpPresetVisibility.ts`                                    |
+| Catalog listing  | `PartyCatalogVisibilityControl.tsx`, `partyWorkspaceStore.ts`, `MyPartiesPanel.tsx` |
 | Настройки        | `SettingsModal.tsx`, `settingsStore.ts` (`enableStreaming`, `streamingSource`)     |
-| Сессия + SignalR | `PlayerHeader.tsx`, `usePlayerSession.ts`, `PlayerViewContainer.tsx`               |
+| Сессия + SignalR | `PlayerHeader.tsx`, `PlayerControls.tsx`, `usePlayerSession.ts`                    |
 | Party actions    | `PartyEditorActions.tsx`, `PartyLifecycleControls.tsx`, `usePartyServerActions.ts` |
+| Modals keyboard  | `useModalKeyboard.ts`, `modalKeyboard.ts` — см. [Keyboard Shortcuts](./modules/hooks-utils/keyboard-shortcuts.md#модальные-окна) |
 | Layout           | `layoutStore.ts`, `layout-edit-mode.md`, `workspaceLayoutEditOptions.ts`           |
 | Streaming system | `docs/modules/systems/streaming.md`, `signalRService.ts`                           |
 
@@ -247,14 +254,17 @@ UI может агрегировать это в один статус («Не �
 
 ## 8. Краткий checklist для дизайна / реализации
 
-- [ ] Отвязать **видимость Party** от `enableStreaming`
-- [ ] Переформулировать **privacy/offline** отдельно от «показать онлайн UI»
-- [ ] Добавить в **шапку** статус онлайна + подменю (без смены layout)
+- [x] Отвязать **видимость Party** от `enableStreaming` (2026-07)
+- [x] Переформулировать **privacy/offline** отдельно от discoverability Party (`networkEnabled` internal, `partyDiscoverabilityEnabled` always on)
+- [ ] Добавить в **шапку** статус онлайна + подменю (без смены layout) — backlog; **«Мои вечеринки»** добавлено
 - [ ] Агрегировать **checklist готовности** (party, publish, link, source, session, connection)
 - [x] Переименовать **«Начать сессию»** → **«Начать проигрывание»** / **«Остановить проигрывание»**
+- [x] Stop в player controls → **«Начать заново»** (label/a11y; поведение без изменений)
 - [x] Унифицировать термин **«Онлайн»** в UI (copy-only, 2026-07)
-- [x] Продумать **Player/AIMP** как один блок источника (переключатель в зоне Проигрывание)
-- [ ] Заглушки Party: offline, no auth (есть), no party, server down
+- [x] **Player/AIMP** как один блок источника (переключатель в зоне Проигрывание)
+- [x] Заглушки Party: offline (`PartyConnectivityBanner`), no auth (есть), server down (in-zone banner, не full replace)
+- [x] Контроль каталога **«В каталоге»** / **«По ссылке»** в Editor и **«Мои вечеринки»**
+- [x] Единый контракт клавиатуры модалок (`useModalKeyboard`)
 - [ ] Учесть **кастомные workspace** — не завязать UX на preset switch
 - [ ] Backlog: локальный плеер под Playlist (`pasha_todo`)
 - [ ] Backlog: модерация пользователей (`pasha_todo`)
@@ -267,3 +277,4 @@ UI может агрегировать это в один статус («Не �
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-07-04 | Первичный синтез после ревью кода и диалога с Павлом                                                                                                      |
 | 2026-07-04 | **Copy rename (UI):** «Онлайн», «Начать проигрывание», Party actions, layout presets, lifecycle badges — см. [GLOSSARY.md](../../GLOSSARY.md) § UI vs код |
+| 2026-07-08 | **Desktop feedback follow-up:** Party always visible; `networkEnabled`/`partyDiscoverabilityEnabled` split; catalog control; «Мои вечеринки»; modal keyboard contract; Stop → «Начать заново». См. [party.md](./modules/workspaces/party.md) |

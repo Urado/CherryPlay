@@ -35,10 +35,22 @@ const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string>
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
+function resolvePartyNameForServer(
+  store: ReturnType<typeof getPartyStore>,
+  projectName: string,
+): string {
+  const nameToUse = store.partyName.trim() || projectName.trim() || 'Вечеринка';
+  if (!store.partyName.trim()) {
+    store.setPartyName(nameToUse);
+  }
+  return nameToUse;
+}
+
 type PartyServerEffects = {
   loadThemeAccess: (forceRefresh?: boolean) => Promise<void>;
   checkPartyExists: (partyId: string) => Promise<boolean>;
   startReconnectTimer: (linkedParty: { id: string; shortCode: string } | null) => void;
+  isNetworkEnabled: () => boolean;
 };
 
 export function usePartyServerActions(
@@ -83,6 +95,35 @@ export function usePartyServerActions(
     [addNotification, effects],
   );
 
+  const handleCatalogVisibilityChange = useCallback(
+    async (listed: boolean) => {
+      const store = getPartyStore();
+      const previous = store.isListedInCatalog;
+      store.setIsListedInCatalog(listed);
+
+      const linkedParty = meta.linkedParty;
+      if (!linkedParty || !isAuth) {
+        return;
+      }
+
+      store.setIsTogglingCatalogVisibility(true);
+      try {
+        await partyService.updateParty(linkedParty.id, { isListedInCatalog: listed });
+      } catch (error) {
+        console.error('Failed to update catalog visibility:', error);
+        store.setIsListedInCatalog(previous);
+        addNotification({
+          type: 'error',
+          message:
+            error instanceof Error ? error.message : 'Не удалось изменить видимость в каталоге',
+        });
+      } finally {
+        store.setIsTogglingCatalogVisibility(false);
+      }
+    },
+    [meta.linkedParty, isAuth, addNotification],
+  );
+
   const handleLifecycleTransition = useCallback(
     async (targetState: PartyLifecycleState) => {
       const linkedParty = meta.linkedParty;
@@ -125,6 +166,20 @@ export function usePartyServerActions(
 
   const handleCreateParty = useCallback(async () => {
     const store = getPartyStore();
+    if (!effects.isNetworkEnabled()) {
+      addNotification({
+        type: 'warning',
+        message: 'Создание недоступно: включите «Онлайн» в настройках',
+      });
+      return;
+    }
+    if (store.serverUnreachable) {
+      addNotification({
+        type: 'warning',
+        message: 'Создание недоступно: сервер сейчас не отвечает',
+      });
+      return;
+    }
     if (!isAuth) {
       addNotification({
         type: 'warning',
@@ -134,19 +189,15 @@ export function usePartyServerActions(
       openModal('account');
       return;
     }
-    if (!store.partyName.trim()) {
-      addNotification({
-        type: 'warning',
-        message: 'Введите название вечеринки',
-      });
-      return;
-    }
+    const nameToUse = resolvePartyNameForServer(store, projectName);
 
     store.setIsCreating(true);
     store.setServerError(null);
     store.setPartyVerified(false);
     try {
-      const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi());
+      const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi(), {
+        partyName: nameToUse,
+      });
       await finalizePartyCreation(store, createData, 'Вечеринка успешно создана', {
         loadThemeAccess: effects.loadThemeAccess,
         checkPartyExists: effects.checkPartyExists,
@@ -177,6 +228,7 @@ export function usePartyServerActions(
     openModal,
     buildCurrentPlaylistForApi,
     effects,
+    projectName,
     setLinkedParty,
     markAsDirty,
     handleThemeNotEntitled,
@@ -184,6 +236,20 @@ export function usePartyServerActions(
 
   const handlePublish = useCallback(async () => {
     const store = getPartyStore();
+    if (!effects.isNetworkEnabled()) {
+      addNotification({
+        type: 'warning',
+        message: 'Публикация недоступна: включите «Онлайн» в настройках',
+      });
+      return;
+    }
+    if (store.serverUnreachable) {
+      addNotification({
+        type: 'warning',
+        message: 'Публикация недоступна: сервер сейчас не отвечает',
+      });
+      return;
+    }
     if (!isAuth) {
       addNotification({
         type: 'warning',
@@ -221,10 +287,7 @@ export function usePartyServerActions(
       return;
     }
 
-    const nameToUse = store.partyName.trim() || projectName.trim() || 'Вечеринка';
-    if (!store.partyName.trim()) {
-      store.setPartyName(nameToUse);
-    }
+    const nameToUse = resolvePartyNameForServer(store, projectName);
 
     store.setIsCreating(true);
     store.setServerError(null);
@@ -298,6 +361,7 @@ export function usePartyServerActions(
     handleCreateParty,
     handlePublish,
     handleCopyUrl,
+    handleCatalogVisibilityChange,
     handleLifecycleTransition,
   };
 }

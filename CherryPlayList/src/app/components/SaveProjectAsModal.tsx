@@ -1,7 +1,9 @@
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import React, { useId, useState } from 'react';
+import React, { useId, useState, useCallback } from 'react';
+
+import { useModalKeyboard } from '@shared/hooks';
 
 export interface SaveProjectAsModalProps {
   open: boolean;
@@ -37,19 +39,27 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
   const infoButtonId = useId();
   const infoPanelId = useId();
 
+  const handleConfirm = useCallback(() => {
+    void onConfirm({
+      portable,
+      projectName: projectName.trim(),
+      targetDirectory: targetDirectory.trim(),
+    });
+  }, [onConfirm, portable, projectName, targetDirectory]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: open && !isSaving,
+    onCancel: onClose,
+    onPrimary: handleConfirm,
+    primaryDisabled: isSaving,
+  });
+
   if (!open) {
     return null;
   }
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget && !isSaving) {
-      onClose();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape' && !isSaving) {
-      event.preventDefault();
       onClose();
     }
   };
@@ -186,13 +196,7 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
             className="modal-button primary"
             type="button"
             disabled={isSaving}
-            onClick={() => {
-              void onConfirm({
-                portable,
-                projectName: projectName.trim(),
-                targetDirectory: targetDirectory.trim(),
-              });
-            }}
+            onClick={handleConfirm}
           >
             {isSaving ? 'Сохранение…' : 'Сохранить'}
           </button>
