@@ -37,6 +37,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
 }) => {
   const runtime = usePartyWorkspaceRuntimeContext();
   const { networkEnabled } = useOnlineNetworkPolicy();
+  const isNetworkEnabledForEditor = showDemoPanel ? true : networkEnabled;
   const {
     isAuth,
     isClientOutdated,
@@ -131,10 +132,10 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   const showLifecycle =
     editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
 
-  const networkActionsDisabled = !networkEnabled || serverUnreachable;
+  const networkActionsDisabled = !isNetworkEnabledForEditor || serverUnreachable;
 
   const connectivityBanner = useMemo(() => {
-    if (!networkEnabled) {
+    if (!isNetworkEnabledForEditor) {
       return <PartyConnectivityBanner kind="offline" />;
     }
     if (serverUnreachable && !isBlocked) {
@@ -149,7 +150,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     }
     return null;
   }, [
-    networkEnabled,
+    isNetworkEnabledForEditor,
     serverUnreachable,
     isBlocked,
     isReconnecting,
@@ -286,7 +287,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
                   isListedInCatalog={isListedInCatalog}
                   disabled={networkActionsDisabled}
                   isUpdating={isTogglingCatalogVisibility}
-                  networkOffline={!networkEnabled}
+                  networkOffline={!isNetworkEnabledForEditor}
                   onChange={(listed) => void handleCatalogVisibilityChange(listed)}
                 />
               )}
@@ -308,7 +309,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
                 isCreating={isCreating}
                 isPublishing={isPublishing}
                 networkDisabled={networkActionsDisabled}
-                networkOffline={!networkEnabled}
+                networkOffline={!isNetworkEnabledForEditor}
                 onCreateParty={handleCreateParty}
                 onPublish={handlePublish}
                 onOpenLinkParty={() => openModal('linkParty')}

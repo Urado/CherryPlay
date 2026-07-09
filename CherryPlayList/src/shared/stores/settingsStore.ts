@@ -18,6 +18,11 @@ export interface DemoPlayerFloatingPosition {
   y: number;
 }
 
+export interface DemoPlayerFloatingSize {
+  width: number;
+  height: number;
+}
+
 interface SettingsState extends FileBrowserPathPersistSlice {
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
@@ -30,6 +35,7 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   playerAudioDeviceId: string | null;
   demoPlayerAudioDeviceId: string | null;
   demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;
+  demoPlayerFloatingSize: DemoPlayerFloatingSize | null;
   demoPlayerFloatingOpen: boolean;
   playerInAppHeader: boolean;
   keyBindings: CustomKeyBindings;
@@ -52,6 +58,7 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
   setDemoPlayerAudioDeviceId: (deviceId: string | null) => void;
   setDemoPlayerFloatingPosition: (position: DemoPlayerFloatingPosition | null) => void;
+  setDemoPlayerFloatingSize: (size: DemoPlayerFloatingSize | null) => void;
   setDemoPlayerFloatingOpen: (open: boolean) => void;
   setPlayerInAppHeader: (enabled: boolean) => void;
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
@@ -98,6 +105,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       playerAudioDeviceId: null,
       demoPlayerAudioDeviceId: null,
       demoPlayerFloatingPosition: null,
+      demoPlayerFloatingSize: null,
       demoPlayerFloatingOpen: true,
       playerInAppHeader: false,
       keyBindings: {},
@@ -164,6 +172,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setPlayerAudioDeviceId: (deviceId) => set({ playerAudioDeviceId: deviceId }),
       setDemoPlayerAudioDeviceId: (deviceId) => set({ demoPlayerAudioDeviceId: deviceId }),
       setDemoPlayerFloatingPosition: (position) => set({ demoPlayerFloatingPosition: position }),
+      setDemoPlayerFloatingSize: (size) => set({ demoPlayerFloatingSize: size }),
       setDemoPlayerFloatingOpen: (open) => set({ demoPlayerFloatingOpen: open }),
       setPlayerInAppHeader: (enabled) => set({ playerInAppHeader: enabled }),
       setKeyBinding: (id, binding) =>
@@ -189,6 +198,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         playerAudioDeviceId: state.playerAudioDeviceId,
         demoPlayerAudioDeviceId: state.demoPlayerAudioDeviceId,
         demoPlayerFloatingPosition: state.demoPlayerFloatingPosition,
+        demoPlayerFloatingSize: state.demoPlayerFloatingSize,
         demoPlayerFloatingOpen: state.demoPlayerFloatingOpen,
         playerInAppHeader: state.playerInAppHeader,
         keyBindings: state.keyBindings,

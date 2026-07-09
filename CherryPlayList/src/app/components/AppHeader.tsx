@@ -696,29 +696,36 @@ export const AppHeader: React.FC = () => {
             </div>
 
             <div className="app-header-status-row">
-              <HeaderPlaybackPill disabled={isLayoutEditMode} />
               <HeaderPlayerHost />
             </div>
           </div>
 
-          <div className="app-header-project-name">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="project-name-input"
-              placeholder="Название проекта"
-              disabled={isLayoutEditMode}
-              title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
-            />
-            {meta.isDirty && (
-              <span className="dirty-indicator" title="Есть несохранённые изменения">
-                *
-              </span>
-            )}
-          </div>
+          <div className="app-header-project-row">
+            <div className="app-header-project-main">
+              <div className="app-header-project-name">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="project-name-input"
+                  placeholder="Название проекта"
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
+                />
+                {meta.isDirty && (
+                  <span className="dirty-indicator" title="Есть несохранённые изменения">
+                    *
+                  </span>
+                )}
+              </div>
 
-          <WorkspaceMenu />
+              <div className="app-header-playback-pill-row">
+                <HeaderPlaybackPill disabled={isLayoutEditMode} />
+              </div>
+            </div>
+
+            <WorkspaceMenu />
+          </div>
         </div>
       </div>
 

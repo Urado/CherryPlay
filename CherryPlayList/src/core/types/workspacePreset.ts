@@ -34,7 +34,7 @@ export interface WorkspacePersistSlice {
   layout: Layout;
 }
 
-export const DEFAULT_BUILTIN_PRESET: LayoutPreset = 'collections';
+export const DEFAULT_BUILTIN_PRESET: LayoutPreset = 'collections-vertical';
 
 /** Display name for auto-created user workspaces until the user renames them. */
 export const UNNAMED_WORKSPACE_NAME = 'Без имени';

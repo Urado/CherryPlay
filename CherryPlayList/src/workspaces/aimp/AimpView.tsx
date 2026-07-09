@@ -1,3 +1,4 @@
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ListIcon from '@mui/icons-material/List';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -118,6 +119,13 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     publishingBridgeReady &&
     canStartAimpLiveStream(bridgeState);
   const degraded = isAimpDegraded(bridgeState);
+  const connectionLabel =
+    STATUS_LABELS[bridgeState.connection.phase] ?? bridgeState.connection.phase;
+  const publishPathLabel = PUBLISHING_STATUS_LABELS[publishingPath.status] ?? publishingPath.status;
+  const pluginVersionLabel = bridgeState.pluginMetadata?.pluginVersion
+    ? `Plugin v${bridgeState.pluginMetadata.pluginVersion}`
+    : 'Plugin version unavailable';
+  const playlistNameLabel = bridgeState.playlistSnapshot?.playlistName ?? 'No snapshot yet';
 
   const startActionMessages = useMemo(() => {
     if (bridgeState.liveStreamStarted) {
@@ -245,7 +253,15 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     >
       {embedded ? (
         <div className="playlist-header-section">
-          <div className="playlist-stats-header">
+          <div
+            className="playlist-stats-header"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+            }}
+          >
             <div className="playlist-stats-header__info">
               <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
               <span>
@@ -255,69 +271,137 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
               </span>
               <PlaybackSourceSwitcher inline />
             </div>
+            <details style={{ position: 'relative', flexShrink: 0 }}>
+              <summary
+                style={{
+                  listStyle: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 999,
+                  width: 28,
+                  height: 28,
+                  border: '1px solid rgba(255, 255, 255, 0.16)',
+                  color: 'var(--text-secondary)',
+                }}
+                title="Диагностика AIMP bridge"
+                aria-label="Показать диагностику AIMP bridge"
+              >
+                <InfoOutlinedIcon style={{ fontSize: 17 }} />
+              </summary>
+              <div
+                className="app-card"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 6px)',
+                  zIndex: 10,
+                  width: 'min(320px, calc(100vw - 24px))',
+                  padding: 10,
+                  borderRadius: 10,
+                  display: 'grid',
+                  gap: 4,
+                  fontSize: '0.8rem',
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Protocol: {bridgeState.protocolVersion}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
+                {publishingPath.error && (
+                  <div style={{ color: 'var(--color-danger, #ff8a80)' }}>
+                    {publishingPath.error}
+                  </div>
+                )}
+              </div>
+            </details>
           </div>
         </div>
       ) : (
-        <div>
-          <h2 className="panel-title">AIMP</h2>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
-            Мониторинг AIMP и онлайн для гостей.
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 8,
+          }}
+        >
+          <div>
+            <h2 className="panel-title">AIMP</h2>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
+              Мониторинг AIMP и онлайн для гостей.
+            </div>
           </div>
-        </div>
-      )}
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 8,
-        }}
-      >
-        <div className="app-card" style={{ padding: 12, borderRadius: 10 }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Connection</div>
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: 4 }}>
-            {STATUS_LABELS[bridgeState.connection.phase] ?? bridgeState.connection.phase}
-          </div>
-          <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            App listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Plugin connected: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Publish path: {PUBLISHING_STATUS_LABELS[publishingPath.status] ?? publishingPath.status}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Live stream started: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
-          </div>
-          {publishingPath.error && (
-            <div
+          <details style={{ position: 'relative', flexShrink: 0 }}>
+            <summary
               style={{
-                marginTop: 8,
-                fontSize: '0.85rem',
-                color: 'var(--color-danger, #ff8a80)',
+                listStyle: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 999,
+                width: 28,
+                height: 28,
+                border: '1px solid rgba(255, 255, 255, 0.16)',
+                color: 'var(--text-secondary)',
+              }}
+              title="Диагностика AIMP bridge"
+              aria-label="Показать диагностику AIMP bridge"
+            >
+              <InfoOutlinedIcon style={{ fontSize: 17 }} />
+            </summary>
+            <div
+              className="app-card"
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                zIndex: 10,
+                width: 'min(320px, calc(100vw - 24px))',
+                padding: 10,
+                borderRadius: 10,
+                display: 'grid',
+                gap: 4,
+                fontSize: '0.8rem',
               }}
             >
-              {publishingPath.error}
+              <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Protocol: {bridgeState.protocolVersion}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
+              {publishingPath.error && (
+                <div style={{ color: 'var(--color-danger, #ff8a80)' }}>{publishingPath.error}</div>
+              )}
             </div>
-          )}
+          </details>
         </div>
-
-        <div className="app-card" style={{ padding: 12, borderRadius: 10 }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Bridge metadata</div>
-          <div style={{ marginTop: 4, fontSize: '0.95rem', fontWeight: 600 }}>
-            {bridgeState.pluginMetadata?.pluginVersion
-              ? `Plugin v${bridgeState.pluginMetadata.pluginVersion}`
-              : 'Plugin version unavailable'}
-          </div>
-          <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Protocol: {bridgeState.protocolVersion}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Playlist: {bridgeState.playlistSnapshot?.playlistName ?? 'No snapshot yet'}
-          </div>
-        </div>
-      </div>
+      )}
 
       <div style={{ minHeight: 0, display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)' }}>
         <div

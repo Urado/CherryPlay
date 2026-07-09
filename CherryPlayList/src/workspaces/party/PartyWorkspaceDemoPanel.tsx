@@ -24,6 +24,7 @@ const PANEL_HEIGHT_PERCENT: Record<PartyWorkspaceDemoPanelMode, number> = {
 };
 
 const PANEL_MIN_HEIGHT_PX = 100;
+const PANEL_COLLAPSE_THRESHOLD_PX = PANEL_MIN_HEIGHT_PX;
 const PANEL_MAX_HEIGHT_RATIO = 0.7;
 const PANEL_DRAG_CLICK_THRESHOLD_PX = 4;
 
@@ -115,6 +116,10 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
     });
   }, [getDefaultHeight]);
 
+  const collapsePanel = useCallback(() => {
+    setIsCollapsed(true);
+  }, []);
+
   const handleCollapsedGripClick = () => {
     toggleCollapsed();
   };
@@ -133,6 +138,12 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
     };
   };
 
+  const releaseGripPointerCapture = (target: HTMLButtonElement, pointerId: number) => {
+    if (target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
+  };
+
   const handleExpandedGripPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
     const dragState = dragStateRef.current;
     if (!dragState) {
@@ -145,16 +156,23 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
     }
 
     dragState.moved = true;
-    setPanelHeightPx(clampPanelHeight(dragState.startHeight + deltaY));
+    const rawHeight = dragState.startHeight + deltaY;
+
+    if (rawHeight < PANEL_COLLAPSE_THRESHOLD_PX) {
+      collapsePanel();
+      dragStateRef.current = null;
+      releaseGripPointerCapture(event.currentTarget, event.pointerId);
+      return;
+    }
+
+    setPanelHeightPx(clampPanelHeight(rawHeight));
   };
 
   const finishExpandedGripPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
     const dragState = dragStateRef.current;
     dragStateRef.current = null;
 
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
+    releaseGripPointerCapture(event.currentTarget, event.pointerId);
 
     if (dragState && !dragState.moved) {
       toggleCollapsed();

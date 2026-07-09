@@ -4,7 +4,7 @@ import {
   sortPartiesByEventDateDesc,
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import LinkIcon from '@mui/icons-material/Link';
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
@@ -169,7 +169,7 @@ export const LinkPartyModal: React.FC = () => {
                           disabled={linkingId !== null}
                           aria-label={`Подключить к вечеринке ${party.name}`}
                         >
-                          <LinkIcon fontSize="small" />
+                          <LinkOutlinedIcon fontSize="small" />
                           {linkingId === party.id ? 'Подключение...' : 'Подключить'}
                         </button>
                       </li>

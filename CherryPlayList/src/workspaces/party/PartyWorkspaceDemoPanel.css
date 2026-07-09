@@ -210,6 +210,10 @@
   background: var(--bg-primary, #fff);
 }
 
+.party-preview-scenario-controls-connection-accordion {
+  margin-top: 8px;
+}
+
 .party-workspace-demo-panel-accordion-summary {
   list-style: none;
   cursor: pointer;

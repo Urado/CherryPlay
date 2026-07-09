@@ -12,8 +12,7 @@ import {
   parseSettingsBundleJson,
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
-import { useAimpStore, useSettingsStore, useUIStore, useProjectStore } from '@shared/stores';
-import { getAimpAvailability } from '@shared/utils';
+import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
 const DIVIDER_INTERVALS = [
@@ -45,14 +44,8 @@ export const SettingsModal: React.FC = () => {
     setPlayerInAppHeader,
     enableStreaming,
     setEnableStreaming,
-    streamingSource,
-    setStreamingSource,
   } = useSettingsStore();
-  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
-  const aimpAvailability = getAimpAvailability(aimpBridgeState);
-  const { supportsAimpWorkspace, supportsAudioDeviceSelection, supportsNativeFileSystem } =
-    usePlatformCapabilities();
-  const canSelectAimpSource = supportsAimpWorkspace && aimpAvailability.available;
+  const { supportsAudioDeviceSelection, supportsNativeFileSystem } = usePlatformCapabilities();
 
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [pendingImportBundle, setPendingImportBundle] = useState<SettingsExportBundle | null>(null);
@@ -71,7 +64,6 @@ export const SettingsModal: React.FC = () => {
   );
   const [localPlayerInAppHeader, setLocalPlayerInAppHeader] = useState(playerInAppHeader);
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
-  const [localStreamingSource, setLocalStreamingSource] = useState(streamingSource);
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -108,7 +100,6 @@ export const SettingsModal: React.FC = () => {
         setLocalPlayerInAppHeader(playerInAppHeader);
         if (hasHydrated) {
           setLocalEnableStreaming(enableStreaming);
-          setLocalStreamingSource(streamingSource);
         }
       }, 0);
       return () => clearTimeout(timeoutId);
@@ -124,7 +115,6 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     playerInAppHeader,
     enableStreaming,
-    streamingSource,
   ]);
 
   const syncLocalStateFromStore = useCallback(() => {
@@ -136,7 +126,6 @@ export const SettingsModal: React.FC = () => {
     setLocalDemoPlayerDeviceId(state.demoPlayerAudioDeviceId);
     setLocalPlayerInAppHeader(state.playerInAppHeader);
     setLocalEnableStreaming(state.enableStreaming);
-    setLocalStreamingSource(state.streamingSource);
   }, []);
 
   const formatImportSummary = useCallback((result: ReturnType<typeof applySettingsImport>) => {
@@ -268,7 +257,6 @@ export const SettingsModal: React.FC = () => {
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
     setPlayerInAppHeader(localPlayerInAppHeader);
     setEnableStreaming(localEnableStreaming);
-    setStreamingSource(localStreamingSource);
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
@@ -281,7 +269,6 @@ export const SettingsModal: React.FC = () => {
     localPlayerDeviceId,
     localPlayerInAppHeader,
     localShowHourDividers,
-    localStreamingSource,
     localTrackItemSizePreset,
     setDemoPlayerAudioDeviceId,
     setEnableStreaming,
@@ -289,7 +276,6 @@ export const SettingsModal: React.FC = () => {
     setPlayerAudioDeviceId,
     setPlayerInAppHeader,
     setShowHourDividers,
-    setStreamingSource,
     setTrackItemSizePreset,
   ]);
 
@@ -301,7 +287,6 @@ export const SettingsModal: React.FC = () => {
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
     setLocalPlayerInAppHeader(playerInAppHeader);
     setLocalEnableStreaming(enableStreaming);
-    setLocalStreamingSource(streamingSource);
     closeModal();
   }, [
     closeModal,
@@ -311,7 +296,6 @@ export const SettingsModal: React.FC = () => {
     playerAudioDeviceId,
     playerInAppHeader,
     showHourDividers,
-    streamingSource,
     trackItemSizePreset,
   ]);
 
@@ -418,57 +402,6 @@ export const SettingsModal: React.FC = () => {
                   : 'Работа без сети — запросы к серверу не выполняются.'}
               </div>
             </div>
-
-            <div
-              className="settings-section-title"
-              style={{ marginTop: 12, marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
-            >
-              Синхронизация с сайтом
-            </div>
-
-            <div className="settings-group">
-              <label className="settings-label" htmlFor="settings-streaming-source">
-                Источник состояния для гостей
-              </label>
-              <select
-                className="settings-select"
-                value={localStreamingSource}
-                onChange={(e) =>
-                  setLocalStreamingSource(e.target.value as 'cherryPlayPlayer' | 'aimp')
-                }
-                id="settings-streaming-source"
-                disabled={!localEnableStreaming}
-              >
-                <option value="cherryPlayPlayer">CherryPlay</option>
-                <option value="aimp" disabled={!canSelectAimpSource}>
-                  AIMP
-                </option>
-              </select>
-            </div>
-
-            {!canSelectAimpSource && (
-              <div
-                className="settings-description"
-                style={{
-                  marginTop: 4,
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary, #9e9e9e)',
-                  display: 'grid',
-                  gap: 4,
-                }}
-              >
-                {!supportsAimpWorkspace ? (
-                  <div>{getPlatformUnavailableMessage()}</div>
-                ) : (
-                  <>
-                    <div>AIMP режим сейчас недоступен:</div>
-                    {aimpAvailability.gatingReasons.map((reason) => (
-                      <div key={reason.code}>- {reason.message}</div>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="settings-hour-divider">

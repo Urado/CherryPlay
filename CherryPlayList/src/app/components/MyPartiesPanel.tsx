@@ -5,11 +5,12 @@ import {
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import LinkIcon from '@mui/icons-material/Link';
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
+import { getAppMode } from '@shared/platform';
 import { partyService, type PartyDto } from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming/useOnlineNetworkPolicy';
@@ -28,6 +29,7 @@ function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
 
 export const MyPartiesPanel: React.FC = () => {
   const { modal, closeModal, openModal, addNotification } = useUIStore();
+  const isDemoMode = getAppMode() === 'demo';
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
@@ -46,7 +48,7 @@ export const MyPartiesPanel: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<PartyDto | null>(null);
 
   const loadParties = useCallback(async () => {
-    if (!isAuthenticated || !networkEnabled) {
+    if (!isAuthenticated || (!networkEnabled && !isDemoMode)) {
       return;
     }
     setLoading(true);
@@ -59,7 +61,7 @@ export const MyPartiesPanel: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, networkEnabled]);
+  }, [isAuthenticated, isDemoMode, networkEnabled]);
 
   useEffect(() => {
     if (modal === 'myParties') {
@@ -78,7 +80,7 @@ export const MyPartiesPanel: React.FC = () => {
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget || !networkEnabled) {
+    if (!deleteTarget || (!networkEnabled && !isDemoMode)) {
       return;
     }
 
@@ -108,7 +110,15 @@ export const MyPartiesPanel: React.FC = () => {
     } finally {
       setDeletingId(null);
     }
-  }, [addNotification, deleteTarget, linkedParty?.id, markAsDirty, networkEnabled, setLinkedParty]);
+  }, [
+    addNotification,
+    deleteTarget,
+    isDemoMode,
+    linkedParty?.id,
+    markAsDirty,
+    networkEnabled,
+    setLinkedParty,
+  ]);
 
   const { handleOverlayKeyDown } = useModalKeyboard({
     enabled: modal === 'myParties' && !deleteTarget,
@@ -139,7 +149,7 @@ export const MyPartiesPanel: React.FC = () => {
   };
 
   const handleBind = async (party: PartyDto) => {
-    if (!networkEnabled) {
+    if (!networkEnabled && !isDemoMode) {
       return;
     }
     setBindingId(party.id);
@@ -164,7 +174,7 @@ export const MyPartiesPanel: React.FC = () => {
   };
 
   const handleToggleListed = async (party: PartyDto, listed: boolean) => {
-    if (!networkEnabled) {
+    if (!networkEnabled && !isDemoMode) {
       return;
     }
     const previous = party.isListedInCatalog ?? false;
@@ -201,7 +211,8 @@ export const MyPartiesPanel: React.FC = () => {
     }
   };
 
-  const networkActionsDisabled = !networkEnabled;
+  const networkActionsDisabled = !networkEnabled && !isDemoMode;
+  const showOfflineStub = networkActionsDisabled && !isDemoMode;
   const networkDisabledTitle = 'Включите «Онлайн» в настройках';
 
   return (
@@ -241,7 +252,7 @@ export const MyPartiesPanel: React.FC = () => {
               </div>
             ) : (
               <>
-                {networkActionsDisabled && (
+                {showOfflineStub && (
                   <div className="my-parties-panel-offline-stub" role="status" aria-live="polite">
                     <span className="my-parties-panel-offline-stub-title">
                       Онлайн-функции отключены
@@ -344,7 +355,7 @@ export const MyPartiesPanel: React.FC = () => {
                               }
                               aria-label={`Привязать к проекту: ${party.name}`}
                             >
-                              <LinkIcon fontSize="small" />
+                              <LinkOutlinedIcon fontSize="small" />
                               {bindingId === party.id ? 'Привязка...' : 'Привязать'}
                             </button>
 

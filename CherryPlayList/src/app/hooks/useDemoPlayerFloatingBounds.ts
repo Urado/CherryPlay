@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
 import {
+  clampFloatingSize,
   clampFloatingPosition,
   DEFAULT_EDGE_OFFSET_PX,
   FALLBACK_PANEL_HEIGHT_PX,
@@ -9,22 +10,32 @@ import {
   PANEL_BOUNDS_PADDING_PX,
   type FloatingMetrics,
 } from '@app/hooks/demoPlayerFloatingPositioning';
-import type { DemoPlayerFloatingPosition } from '@shared/stores/settingsStore';
+import type {
+  DemoPlayerFloatingPosition,
+  DemoPlayerFloatingSize,
+} from '@shared/stores/settingsStore';
 
 interface UseDemoPlayerFloatingBoundsParams {
   contentContainerRef: RefObject<HTMLElement | null>;
   demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;
+  demoPlayerFloatingSize: DemoPlayerFloatingSize | null;
   setDemoPlayerFloatingPosition: (position: DemoPlayerFloatingPosition) => void;
+  setDemoPlayerFloatingSize: (size: DemoPlayerFloatingSize) => void;
 }
 
 export interface DemoPlayerFloatingBoundsApi {
   panelRef: RefObject<HTMLDivElement | null>;
   measurePanelAndContainer: () => FloatingMetrics | null;
   commitFloatingPosition: (position: DemoPlayerFloatingPosition) => void;
+  commitFloatingSize: (size: DemoPlayerFloatingSize) => void;
 }
 
 function positionsEqual(a: DemoPlayerFloatingPosition, b: DemoPlayerFloatingPosition): boolean {
   return a.x === b.x && a.y === b.y;
+}
+
+function sizesEqual(a: DemoPlayerFloatingSize, b: DemoPlayerFloatingSize): boolean {
+  return a.width === b.width && a.height === b.height;
 }
 
 function getDefaultFloatingPosition(metrics: FloatingMetrics): DemoPlayerFloatingPosition {
@@ -39,16 +50,24 @@ function getDefaultFloatingPosition(metrics: FloatingMetrics): DemoPlayerFloatin
 export function useDemoPlayerFloatingBounds({
   contentContainerRef,
   demoPlayerFloatingPosition,
+  demoPlayerFloatingSize,
   setDemoPlayerFloatingPosition,
+  setDemoPlayerFloatingSize,
 }: UseDemoPlayerFloatingBoundsParams): DemoPlayerFloatingBoundsApi {
   const panelRef = useRef<HTMLDivElement>(null);
   const pendingFloatingPositionRef = useRef<DemoPlayerFloatingPosition | null>(null);
+  const pendingFloatingSizeRef = useRef<DemoPlayerFloatingSize | null>(null);
   const storedPositionRef = useRef(demoPlayerFloatingPosition);
+  const storedSizeRef = useRef(demoPlayerFloatingSize);
   const [resizeTick, setResizeTick] = useState(0);
 
   useEffect(() => {
     storedPositionRef.current = demoPlayerFloatingPosition;
   }, [demoPlayerFloatingPosition]);
+
+  useEffect(() => {
+    storedSizeRef.current = demoPlayerFloatingSize;
+  }, [demoPlayerFloatingSize]);
 
   const measurePanelAndContainer = useCallback((): FloatingMetrics | null => {
     const panel = panelRef.current;
@@ -80,7 +99,12 @@ export function useDemoPlayerFloatingBounds({
       }
 
       pendingFloatingPositionRef.current = null;
-      const clamped = clampFloatingPosition(position.x, position.y, metrics);
+      const clamped = clampFloatingPosition(
+        position.x,
+        position.y,
+        metrics,
+        storedSizeRef.current ?? undefined,
+      );
       const current = storedPositionRef.current;
       if (current && positionsEqual(current, clamped)) {
         return;
@@ -88,6 +112,46 @@ export function useDemoPlayerFloatingBounds({
       setDemoPlayerFloatingPosition(clamped);
     },
     [measurePanelAndContainer, setDemoPlayerFloatingPosition],
+  );
+
+  const commitFloatingSize = useCallback(
+    (size: DemoPlayerFloatingSize) => {
+      const metrics = measurePanelAndContainer();
+      if (!metrics) {
+        pendingFloatingSizeRef.current = size;
+        return;
+      }
+
+      pendingFloatingSizeRef.current = null;
+      const clampedSize = clampFloatingSize(
+        size.width,
+        size.height,
+        metrics.containerWidth,
+        metrics.containerHeight,
+      );
+
+      const currentSize = storedSizeRef.current;
+      if (!currentSize || !sizesEqual(currentSize, clampedSize)) {
+        setDemoPlayerFloatingSize(clampedSize);
+      }
+
+      const sourcePosition = pendingFloatingPositionRef.current ?? storedPositionRef.current;
+      if (!sourcePosition) {
+        return;
+      }
+
+      const clampedPosition = clampFloatingPosition(
+        sourcePosition.x,
+        sourcePosition.y,
+        metrics,
+        clampedSize,
+      );
+      const currentPosition = storedPositionRef.current;
+      if (!currentPosition || !positionsEqual(currentPosition, clampedPosition)) {
+        setDemoPlayerFloatingPosition(clampedPosition);
+      }
+    },
+    [measurePanelAndContainer, setDemoPlayerFloatingPosition, setDemoPlayerFloatingSize],
   );
 
   useEffect(() => {
@@ -123,8 +187,30 @@ export function useDemoPlayerFloatingBounds({
       return;
     }
 
+    const sourceSize = pendingFloatingSizeRef.current ?? storedSizeRef.current;
+    if (sourceSize) {
+      const clampedSize = clampFloatingSize(
+        sourceSize.width,
+        sourceSize.height,
+        metrics.containerWidth,
+        metrics.containerHeight,
+      );
+      const hadPendingSize = pendingFloatingSizeRef.current !== null;
+      pendingFloatingSizeRef.current = null;
+      const currentSize = storedSizeRef.current;
+      if (!currentSize || hadPendingSize || !sizesEqual(currentSize, clampedSize)) {
+        setDemoPlayerFloatingSize(clampedSize);
+      }
+    }
+
     if (demoPlayerFloatingPosition === null) {
-      setDemoPlayerFloatingPosition(getDefaultFloatingPosition(metrics));
+      const clampedPosition = clampFloatingPosition(
+        getDefaultFloatingPosition(metrics).x,
+        getDefaultFloatingPosition(metrics).y,
+        metrics,
+        storedSizeRef.current ?? undefined,
+      );
+      setDemoPlayerFloatingPosition(clampedPosition);
       return;
     }
 
@@ -133,7 +219,12 @@ export function useDemoPlayerFloatingBounds({
       return;
     }
 
-    const clamped = clampFloatingPosition(source.x, source.y, metrics);
+    const clamped = clampFloatingPosition(
+      source.x,
+      source.y,
+      metrics,
+      storedSizeRef.current ?? undefined,
+    );
 
     const hadPending = pendingFloatingPositionRef.current !== null;
     pendingFloatingPositionRef.current = null;
@@ -151,11 +242,13 @@ export function useDemoPlayerFloatingBounds({
     measurePanelAndContainer,
     resizeTick,
     setDemoPlayerFloatingPosition,
+    setDemoPlayerFloatingSize,
   ]);
 
   return {
     panelRef,
     measurePanelAndContainer,
     commitFloatingPosition,
+    commitFloatingSize,
   };
 }

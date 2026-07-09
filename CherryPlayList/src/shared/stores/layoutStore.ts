@@ -241,7 +241,9 @@ export function normalizeWorkspacePersistSlice(
   const activeWorkspace =
     slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'aimp-party'
       ? { kind: 'builtin' as const, preset: 'party' as const }
-      : slice.activeWorkspace;
+      : slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'collections'
+        ? { kind: 'builtin' as const, preset: 'collections-vertical' as const }
+        : slice.activeWorkspace;
 
   const layout = migrateDuplicateFileBrowserWorkspaceIds(
     migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout)),

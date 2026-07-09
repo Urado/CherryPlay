@@ -26,10 +26,24 @@ interface DragState {
 
 export interface DemoPlayerFloatingDragApi {
   dragPosition: DemoPlayerFloatingPosition | null;
-  handleGripPointerDown: (event: PointerEvent<HTMLButtonElement>) => void;
-  handleGripPointerMove: (event: PointerEvent<HTMLButtonElement>) => void;
-  finishGripPointer: (event: PointerEvent<HTMLButtonElement>) => void;
-  handleGripKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
+  handleGripPointerDown: (event: PointerEvent<HTMLElement>) => void;
+  handleGripPointerMove: (event: PointerEvent<HTMLElement>) => void;
+  finishGripPointer: (event: PointerEvent<HTMLElement>) => void;
+  handleGripKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+}
+
+function shouldIgnoreDragStart(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  if (target.closest('.demo-player-panel__grip')) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest('button, input, select, textarea, [role="button"], [data-no-drag="true"]'),
+  );
 }
 
 function getKeyboardDelta(key: string, step: number): DemoPlayerFloatingPosition | null {
@@ -57,8 +71,11 @@ export function useDemoPlayerFloatingDrag({
   const [dragState, setDragState] = useState<DragState | null>(null);
 
   const handleGripPointerDown = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
       if (isLayoutBlocked || event.button !== 0) {
+        return;
+      }
+      if (shouldIgnoreDragStart(event.target)) {
         return;
       }
 
@@ -80,7 +97,7 @@ export function useDemoPlayerFloatingDrag({
   );
 
   const handleGripPointerMove = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
       if (!dragState) {
         return;
       }
@@ -102,7 +119,7 @@ export function useDemoPlayerFloatingDrag({
   );
 
   const finishGripPointer = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
+    (event: PointerEvent<HTMLElement>) => {
       const activeDragState = dragState;
       setDragState(null);
 
@@ -137,7 +154,7 @@ export function useDemoPlayerFloatingDrag({
   );
 
   const handleGripKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>) => {
+    (event: KeyboardEvent<HTMLElement>) => {
       if (isLayoutBlocked) {
         return;
       }

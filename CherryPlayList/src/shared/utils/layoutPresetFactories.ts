@@ -452,5 +452,5 @@ export function createLayoutByPreset(preset: LayoutPreset): Layout {
 
 /** Создает начальный layout (по умолчанию с коллекциями) */
 export function createInitialLayout(): Layout {
-  return createCollectionsLayout();
+  return createCollectionsVerticalLayout();
 }

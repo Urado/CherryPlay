@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   useDemoPlayerFloatingBounds,
   useDemoPlayerFloatingDrag,
+  useDemoPlayerFloatingResize,
   useDemoPlayerFloatingVisibility,
 } from '@app/hooks';
 import { DemoPlayer } from '@shared/components';
@@ -19,10 +20,12 @@ export interface DemoPlayerShellProps {
 
 export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContainerRef }) => {
   const demoPlayerFloatingPosition = useSettingsStore((state) => state.demoPlayerFloatingPosition);
+  const demoPlayerFloatingSize = useSettingsStore((state) => state.demoPlayerFloatingSize);
   const demoPlayerFloatingOpen = useSettingsStore((state) => state.demoPlayerFloatingOpen);
   const setDemoPlayerFloatingPosition = useSettingsStore(
     (state) => state.setDemoPlayerFloatingPosition,
   );
+  const setDemoPlayerFloatingSize = useSettingsStore((state) => state.setDemoPlayerFloatingSize);
   const setDemoPlayerFloatingOpen = useSettingsStore((state) => state.setDemoPlayerFloatingOpen);
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const layout = useLayoutStore((state) => state.layout);
@@ -45,11 +48,13 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
     setDemoPlayerFloatingOpen,
   });
 
-  const { panelRef, measurePanelAndContainer, commitFloatingPosition } =
+  const { panelRef, measurePanelAndContainer, commitFloatingPosition, commitFloatingSize } =
     useDemoPlayerFloatingBounds({
       contentContainerRef,
       demoPlayerFloatingPosition,
+      demoPlayerFloatingSize,
       setDemoPlayerFloatingPosition,
+      setDemoPlayerFloatingSize,
     });
 
   const {
@@ -65,6 +70,14 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
     commitFloatingPosition,
   });
 
+  const { resizeSize, handleResizePointerDown, handleResizePointerMove, finishResizePointer } =
+    useDemoPlayerFloatingResize({
+      isLayoutBlocked,
+      floatingSize: demoPlayerFloatingSize,
+      measurePanelAndContainer,
+      commitFloatingSize,
+    });
+
   useEffect(() => {
     return () => {
       clearDemoPlayer();
@@ -72,6 +85,7 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
   }, [clearDemoPlayer]);
 
   const resolvedFloatingPosition = dragPosition ?? demoPlayerFloatingPosition;
+  const resolvedFloatingSize = resizeSize ?? demoPlayerFloatingSize;
 
   const shellClassName = useMemo(
     () =>
@@ -104,21 +118,25 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
       left: resolvedFloatingPosition.x,
       top: resolvedFloatingPosition.y,
       visibility: 'visible',
+      width: resolvedFloatingSize?.width,
+      height: resolvedFloatingSize?.height,
     };
-  }, [isFloatingVisible, resolvedFloatingPosition]);
+  }, [isFloatingVisible, resolvedFloatingPosition, resolvedFloatingSize]);
 
   return (
     <div ref={panelRef} className={shellClassName} data-placement="floating" style={panelStyle}>
-      <div className="demo-player-panel__header">
+      <div
+        className="demo-player-panel__header"
+        onPointerDown={handleGripPointerDown}
+        onPointerMove={handleGripPointerMove}
+        onPointerUp={finishGripPointer}
+        onPointerCancel={finishGripPointer}
+      >
         <button
           type="button"
           className="demo-player-panel__grip"
           aria-label="Перетащить панель прослушивания"
           title="Перетащить панель (стрелки; Shift+стрелки — большой шаг)"
-          onPointerDown={handleGripPointerDown}
-          onPointerMove={handleGripPointerMove}
-          onPointerUp={finishGripPointer}
-          onPointerCancel={finishGripPointer}
           onKeyDown={handleGripKeyDown}
           disabled={isLayoutBlocked}
         >
@@ -143,6 +161,33 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
           interactionBlocked={isLayoutBlocked}
         />
       </div>
+      <div
+        className="demo-player-panel__resize-handle demo-player-panel__resize-handle--east"
+        data-resize-axis="east"
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={finishResizePointer}
+        onPointerCancel={finishResizePointer}
+        aria-hidden
+      />
+      <div
+        className="demo-player-panel__resize-handle demo-player-panel__resize-handle--south"
+        data-resize-axis="south"
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={finishResizePointer}
+        onPointerCancel={finishResizePointer}
+        aria-hidden
+      />
+      <div
+        className="demo-player-panel__resize-handle demo-player-panel__resize-handle--southeast"
+        data-resize-axis="southeast"
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={finishResizePointer}
+        onPointerCancel={finishResizePointer}
+        aria-hidden
+      />
     </div>
   );
 };

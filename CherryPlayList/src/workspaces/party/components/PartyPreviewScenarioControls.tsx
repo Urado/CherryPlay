@@ -201,7 +201,7 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
 
   const connectionBlock =
     variant === 'panel' ? (
-      <details className="party-workspace-demo-panel-accordion">
+      <details className="party-workspace-demo-panel-accordion party-preview-scenario-controls-connection-accordion">
         <summary className="party-workspace-demo-panel-accordion-summary">
           Разрыв соединения
         </summary>

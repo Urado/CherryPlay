@@ -1,6 +1,6 @@
 import { AuthForm } from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
@@ -20,6 +20,8 @@ export const AccountView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isOrganizerCardExpanded, setIsOrganizerCardExpanded] = useState(true);
+  const organizerCardContentId = useId();
   const addNotification = useUIStore((state) => state.addNotification);
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
@@ -153,11 +155,11 @@ export const AccountView: React.FC = () => {
   };
 
   const isDemoMode = getAppMode() === 'demo';
+  const organizer = organizerInfo ?? getDemoOrganizerDto();
 
   if (!isDemoMode && isClientOutdated) {
     return (
       <div className="account-view">
-        <h1>Аккаунт</h1>
         <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
       </div>
     );
@@ -165,10 +167,8 @@ export const AccountView: React.FC = () => {
 
   return (
     <div className="account-view">
-      <h1>Аккаунт</h1>
-
       {isDemoMode && (
-        <p className="account-view-demo-hint" style={{ opacity: 0.85, marginBottom: '1rem' }}>
+        <p className="account-view-demo-hint">
           Веб-демо: фейковый организатор, без запросов к CherryPlayServer.
         </p>
       )}
@@ -179,58 +179,90 @@ export const AccountView: React.FC = () => {
 
       {isAuthenticated() && (organizerInfo || isDemoMode) ? (
         <div className="account-info">
-          <div className="account-view-success">
-            ✓ Вы авторизованы как организатор
-            {isDemoMode ? ' (демо)' : ''}
+          <div className="account-view-success" role="status" aria-live="polite">
+            <span className="account-view-success-mark" aria-hidden="true">
+              ✓
+            </span>
+            <span className="account-view-success-text">
+              Вы авторизованы как организатор
+              {isDemoMode ? ' (демо)' : ''}
+            </span>
           </div>
-          <h2>Информация об организаторе</h2>
-          <div style={{ marginBottom: '20px' }}>
-            <p>
-              <strong>Name:</strong> {(organizerInfo ?? getDemoOrganizerDto()).name}
-            </p>
-            <p>
-              <strong>ID:</strong> {(organizerInfo ?? getDemoOrganizerDto()).id}
-            </p>
-            {(organizerInfo ?? getDemoOrganizerDto()).logoUrl && (
-              <p>
-                <strong>Logo:</strong>{' '}
-                <img
-                  src={(organizerInfo ?? getDemoOrganizerDto()).logoUrl!}
-                  alt={(organizerInfo ?? getDemoOrganizerDto()).name}
-                  style={{ maxWidth: '100px', maxHeight: '100px' }}
-                />
-              </p>
-            )}
-            {(organizerInfo ?? getDemoOrganizerDto()).links &&
-              Object.keys((organizerInfo ?? getDemoOrganizerDto()).links!).length > 0 && (
-                <div>
-                  <strong>Links:</strong>
-                  <ul>
-                    {Object.entries((organizerInfo ?? getDemoOrganizerDto()).links!).map(
-                      ([key, value]) => (
-                        <li key={key}>
-                          <a href={value} target="_blank" rel="noopener noreferrer">
-                            {key}
-                          </a>
-                        </li>
-                      ),
-                    )}
-                  </ul>
+
+          <section className="account-view-card" aria-label="Информация об организаторе">
+            <h2 className="account-view-card-title">
+              <button
+                type="button"
+                className="account-view-card-toggle"
+                aria-expanded={isOrganizerCardExpanded}
+                aria-controls={organizerCardContentId}
+                onClick={() => setIsOrganizerCardExpanded((prev) => !prev)}
+              >
+                <span>Информация об организаторе</span>
+                <span
+                  className={`account-view-card-chevron${
+                    isOrganizerCardExpanded ? ' account-view-card-chevron--expanded' : ''
+                  }`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
+              </button>
+            </h2>
+
+            <div
+              id={organizerCardContentId}
+              className={`account-view-card-body${
+                isOrganizerCardExpanded ? ' account-view-card-body--expanded' : ''
+              }`}
+              aria-hidden={!isOrganizerCardExpanded}
+            >
+              <div className="account-view-organizer-details">
+                <div className="account-view-field">
+                  <span className="account-view-field-label">Имя</span>
+                  <span className="account-view-field-value">{organizer.name}</span>
                 </div>
-              )}
-            <p>
-              <strong>Created:</strong>{' '}
-              {new Date((organizerInfo ?? getDemoOrganizerDto()).createdAt).toLocaleDateString()}
-            </p>
+
+                <div className="account-view-field">
+                  <span className="account-view-field-label">ID</span>
+                  <span className="account-view-field-value account-view-field-value--mono">
+                    {organizer.id}
+                  </span>
+                </div>
+
+                {organizer.logoUrl && (
+                  <div className="account-view-field">
+                    <span className="account-view-field-label">Логотип</span>
+                    <div className="account-view-logo-wrap">
+                      <img
+                        src={organizer.logoUrl}
+                        alt={organizer.name}
+                        className="account-view-logo"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="account-view-field">
+                  <span className="account-view-field-label">Создан</span>
+                  <span className="account-view-field-value">
+                    {new Date(organizer.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="account-view-actions">
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loading}
+              className="account-view-logout-btn modal-button danger"
+            >
+              Выйти
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loading}
-            className="account-view-logout-btn"
-          >
-            Выйти
-          </button>
         </div>
       ) : (
         <AuthForm

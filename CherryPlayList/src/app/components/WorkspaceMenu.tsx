@@ -25,7 +25,6 @@ const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме ред�
 const ALL_BUILTIN_PRESETS: LayoutPreset[] = [
   'simple',
   'complex',
-  'collections',
   'collections-vertical',
   'player',
   'party',
@@ -604,12 +603,6 @@ export const WorkspaceMenu: React.FC = () => {
           <EditOutlinedIcon fontSize="small" aria-hidden />
         )}
       </button>
-
-      {isLayoutEditMode ? (
-        <span className="app-header-workspace-edit-hint" role="status">
-          Редактирование окон — Esc для выхода
-        </span>
-      ) : null}
 
       <WorkspaceNameModal
         key={nameModalKey}

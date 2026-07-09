@@ -556,9 +556,17 @@
 .my-parties-panel-delete-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 3px;
+  padding: 4px 10px;
   font-size: 12px;
+}
+
+.my-parties-panel-bind-btn {
+  line-height: 1.2;
+}
+
+.my-parties-panel-bind-btn .MuiSvgIcon-root {
+  font-size: 16px;
 }
 
 .my-parties-panel-delete-btn {
@@ -571,6 +579,12 @@
 
 /* Account / Login modal — в стиле приложения (тёмная подложка) */
 .account-modal-content {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
@@ -618,13 +632,34 @@
 
 .account-modal-body {
   padding: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
   overflow-y: auto;
+  flex: 1;
 }
 
 .account-view {
-  max-width: 600px;
-  margin: 0 auto;
   color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.account-view-demo-hint {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  opacity: 0.85;
+  font-size: var(--font-size-secondary);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.account-view-organizer-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 /* Форма входа по центру (не слева) */
@@ -640,70 +675,177 @@
   max-width: 420px;
 }
 
-.account-view h1,
 .account-view h2 {
-  color: var(--text-primary);
-  margin: 0 0 var(--spacing-md);
+  margin: 0;
 }
 
 .account-view .account-info {
   color: var(--text-primary);
-}
-
-.account-view .account-info > div:not(.account-view-success) {
-  margin-bottom: var(--spacing-md);
-}
-
-.account-view .account-info p,
-.account-view .account-info strong {
-  color: var(--text-primary);
-}
-
-.account-view .account-info a {
-  color: var(--accent-primary);
-}
-
-.account-view .account-info a:hover {
-  text-decoration: underline;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .account-view-error {
   padding: var(--spacing-sm) var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  margin: 0;
   background-color: var(--state-error-bg, rgba(211, 47, 47, 0.15));
   color: var(--state-error, #e57373);
-  border-radius: 4px;
-  border: 1px solid var(--state-error);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--state-error) 65%, transparent);
   font-size: var(--font-size-body);
 }
 
 .account-view-loading {
-  margin-bottom: var(--spacing-md);
+  margin: 0;
+  padding: var(--spacing-xs) 0;
   color: var(--text-secondary);
+  font-size: var(--font-size-secondary);
 }
 
 .account-view-success {
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  background-color: rgba(76, 175, 80, 0.15);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin: 0;
+  background-color: color-mix(in srgb, var(--state-success) 16%, transparent);
   color: var(--state-success, #81c784);
-  border-radius: 4px;
-  border: 1px solid rgba(76, 175, 80, 0.5);
-  font-size: 14px;
-}
-
-.account-view-logout-btn {
-  padding: 10px 20px;
-  background-color: var(--state-error);
-  color: var(--text-on-accent, #fff);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--state-success) 45%, transparent);
   font-size: var(--font-size-body);
 }
 
+.account-view-success-mark {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.account-view-success-text {
+  color: inherit;
+}
+
+.account-view-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+.account-view-card-title {
+  margin: 0;
+}
+
+.account-view-card-toggle {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.account-view-card-toggle:hover {
+  color: var(--text-primary);
+  background-color: color-mix(in srgb, var(--bg-hover) 72%, transparent);
+}
+
+.account-view-card-toggle:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.account-view-card-chevron {
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: transform 0.22s ease;
+  transform: rotate(-90deg);
+}
+
+.account-view-card-chevron--expanded {
+  transform: rotate(0deg);
+}
+
+.account-view-card-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s ease;
+}
+
+.account-view-card-body--expanded {
+  grid-template-rows: 1fr;
+}
+
+.account-view-organizer-details {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.account-view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-view-field-label {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.account-view-field-value {
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  word-break: break-word;
+}
+
+.account-view-field-value--mono {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: var(--font-size-secondary);
+}
+
+.account-view-logo-wrap {
+  margin-top: var(--spacing-xs);
+}
+
+.account-view-logo {
+  display: block;
+  max-width: 96px;
+  max-height: 96px;
+  border-radius: 6px;
+  border: 1px solid var(--ui-border);
+  background-color: var(--bg-secondary);
+}
+
+.account-view-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.account-view-logout-btn {
+  min-width: 112px;
+  font-weight: 500;
+}
+
 .account-view-logout-btn:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .account-view-logout-btn:disabled {
