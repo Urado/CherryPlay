@@ -52,22 +52,10 @@
 }
 
 .party-list-refresh-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
-.party-list-refresh-btn:hover {
-  background: var(--bg-hover);
+.cp-button.party-list-refresh-btn:hover:not(:disabled) {
   transform: rotate(180deg);
 }
 
@@ -218,15 +206,25 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 8px 0;
   transition: color 0.3s ease;
 }
 
-.party-list-filters-toggle:hover {
+.cp-button.party-list-filters-toggle {
+  border: none;
+  background: transparent;
+  min-height: auto;
+  padding: 8px 0;
+}
+
+.party-list-filters-toggle:hover,
+.cp-button.party-list-filters-toggle:hover:not(:disabled) {
   color: rgba(0, 255, 0, 0.8);
+  border-color: transparent;
+  background: transparent;
 }
 
 .party-list-filters-toggle-icon {
@@ -245,7 +243,7 @@
   transition: all 0.3s ease;
 }
 
-.party-list-filters-clear:hover {
+.cp-button.party-list-filters-clear:hover:not(:disabled) {
   background: var(--bg-hover);
   border-color: rgba(255, 0, 0, 0.5);
 }
@@ -318,19 +316,22 @@
 }
 
 .party-list-empty-clear {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 14px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
   margin-top: 16px;
-  transition: all 0.3s ease;
 }
 
-.party-list-empty-clear:hover {
+.cp-button.party-list-empty-clear {
+  margin-top: 16px;
+}
+
+.party-list-empty-clear:hover,
+.cp-button.party-list-empty-clear:hover:not(:disabled) {
   background: var(--bg-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-button.party-list-refresh-btn:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* Адаптивность */

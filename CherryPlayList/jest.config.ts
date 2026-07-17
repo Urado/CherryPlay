@@ -7,6 +7,7 @@ const config: Config = {
   roots: ['<rootDir>/tests'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.ts',
     '^music-metadata$': '<rootDir>/tests/__mocks__/music-metadata.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',

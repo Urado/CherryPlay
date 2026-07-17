@@ -1,3 +1,4 @@
+import { IconButton } from '@cherryplay/components';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CheckIcon from '@mui/icons-material/Check';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -581,8 +582,7 @@ export const WorkspaceMenu: React.FC = () => {
         ) : null}
       </div>
 
-      <button
-        type="button"
+      <IconButton
         className={`app-header-workspace-edit-btn${isLayoutEditMode ? ' app-header-workspace-edit-btn--active' : ''}`}
         onClick={() => {
           if (isLayoutEditMode) {
@@ -596,13 +596,16 @@ export const WorkspaceMenu: React.FC = () => {
         title={isLayoutEditMode ? 'Выйти из режима редактирования (Esc)' : 'Настроить окна'}
         aria-pressed={isLayoutEditMode}
         aria-label={isLayoutEditMode ? 'Готово' : 'Настроить окна'}
-      >
-        {isLayoutEditMode ? (
-          <CheckIcon fontSize="small" aria-hidden />
-        ) : (
-          <EditOutlinedIcon fontSize="small" aria-hidden />
-        )}
-      </button>
+        icon={
+          isLayoutEditMode ? (
+            <CheckIcon fontSize="small" aria-hidden />
+          ) : (
+            <EditOutlinedIcon fontSize="small" aria-hidden />
+          )
+        }
+        variant="ghost"
+        size="sm"
+      ></IconButton>
 
       <WorkspaceNameModal
         key={nameModalKey}

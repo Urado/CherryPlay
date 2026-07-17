@@ -41,7 +41,7 @@ describe('getAimpPartyPresetState', () => {
 
     expect(result).toEqual({
       visible: true,
-      fallbackPreset: 'player',
+      fallbackPreset: 'party',
       blockingReasons: [],
     });
   });
@@ -65,7 +65,7 @@ describe('getAimpPartyPresetState', () => {
     });
 
     expect(result.visible).toBe(false);
-    expect(result.fallbackPreset).toBe('player');
+    expect(result.fallbackPreset).toBe('party');
     expect(result.blockingReasons).toEqual([
       {
         code: 'unsupportedPlatform',

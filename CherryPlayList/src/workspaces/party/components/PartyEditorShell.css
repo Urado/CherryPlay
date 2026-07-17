@@ -249,7 +249,7 @@
 
 .party-editor--read-only .party-editor-input,
 .party-editor--read-only .party-editor-dropdown-button,
-.party-editor--read-only .party-editor-tag-button,
+.party-editor--read-only .cp-button.party-editor-tag-button,
 .party-editor--read-only textarea {
   opacity: 0.85;
   pointer-events: none;
@@ -257,17 +257,7 @@
 }
 
 .party-editor-shell-info-hint {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  color: var(--text-secondary, #888888);
-  cursor: help;
-}
-
-.party-editor-shell-info-hint__icon {
-  display: block;
-  font-size: 18px !important;
 }
 
 .party-editor-shell-header a:focus-visible,

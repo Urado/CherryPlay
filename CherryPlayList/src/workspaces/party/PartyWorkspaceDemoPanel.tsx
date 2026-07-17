@@ -1,4 +1,4 @@
-import { type PartyThemeId } from '@cherryplay/components';
+import { Button, type PartyThemeId } from '@cherryplay/components';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -235,34 +235,42 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
             <div className="party-workspace-demo-panel-group">
               <span className="party-workspace-demo-panel-group-label">Фазы редактора</span>
               <div className="party-workspace-demo-panel-buttons">
-                <button
+                <Button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={demoSetUnlinkedDraft}
+                  variant="secondary"
+                  size="sm"
                 >
                   Создание (без подключения)
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('draft')}
+                  variant="secondary"
+                  size="sm"
                 >
                   Не на сайте (подключена)
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('ready')}
+                  variant="secondary"
+                  size="sm"
                 >
                   Опубликована
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   className="party-workspace-demo-panel-button"
                   onClick={() => demoSetLinkedLifecycle('completed')}
+                  variant="secondary"
+                  size="sm"
                 >
                   Архив
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -270,36 +278,42 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
               <span className="party-workspace-demo-panel-group-label">Блокирующие оверлеи</span>
               <div className="party-workspace-demo-panel-buttons">
                 {BLOCKED_SCENARIOS.map(({ label, reason, onClick }) => (
-                  <button
+                  <Button
                     key={reason}
                     type="button"
                     className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
                     onClick={onClick ?? (() => demoSetBlockedOverride(reason))}
+                    variant="secondary"
+                    size="sm"
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
             <div className="party-workspace-demo-panel-group">
-              <button
+              <Button
                 type="button"
                 className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
                 onClick={syncPreviewWithProduction}
+                variant="secondary"
+                size="sm"
               >
                 Синхронизировать превью с эфиром
-              </button>
+              </Button>
             </div>
 
             <div className="party-workspace-demo-panel-group">
-              <button
+              <Button
                 type="button"
                 className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
                 onClick={demoResetToDefault}
+                variant="secondary"
+                size="sm"
               >
                 Сброс демо
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -317,13 +331,15 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
 
             {showDemoReset && (
               <div className="party-workspace-demo-panel-group">
-                <button
+                <Button
                   type="button"
                   className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
                   onClick={demoResetToDefault}
+                  variant="secondary"
+                  size="sm"
                 >
                   Сброс демо
-                </button>
+                </Button>
               </div>
             )}
           </>

@@ -4,6 +4,8 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * Props for Checkbox component
  */
@@ -26,19 +28,22 @@ export const Checkbox: React.FC<CheckboxProps> = ({ onToggle }) => {
   };
 
   return (
-    <button
-      type="button"
+    <ActionButton
       className={`${baseClassName}-checkbox ${isSelected ? 'checked' : ''}`}
       onClick={handleClick}
       aria-pressed={isSelected}
       aria-label={isSelected ? 'Deselect item' : 'Select item'}
-    >
-      {isSelected ? (
-        <CheckBoxIcon className="checkbox-icon" />
-      ) : (
-        <CheckBoxOutlineBlankIcon className="checkbox-icon" />
-      )}
-    </button>
+      icon={
+        isSelected ? (
+          <CheckBoxIcon className="checkbox-icon" />
+        ) : (
+          <CheckBoxOutlineBlankIcon className="checkbox-icon" />
+        )
+      }
+      variant="ghost"
+      size="sm"
+      borderless
+    />
   );
 };
 

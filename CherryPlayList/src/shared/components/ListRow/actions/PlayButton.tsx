@@ -1,5 +1,4 @@
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { PlaybackControlButton } from '@cherryplay/components';
 import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
@@ -29,14 +28,17 @@ export const PlayButton: React.FC<PlayButtonProps> = ({
   disabled = false,
   disabledTitle,
 }) => {
-  const { baseClassName, isActive, isPlaying } = useListRowContext();
+  const { baseClassName, isActive, isPlaying, isLocked } = useListRowContext();
 
-  const handleClick = (e: React.MouseEvent) => {
+  const playing = isActive && isPlaying;
+  const isButtonDisabled = disabled || isLocked;
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (disabled) {
+    if (isButtonDisabled) {
       return;
     }
-    if (isActive && isPlaying && onPause) {
+    if (playing && onPause) {
       onPause();
     } else if (onPlay) {
       onPlay();
@@ -44,16 +46,15 @@ export const PlayButton: React.FC<PlayButtonProps> = ({
   };
 
   return (
-    <button
-      type="button"
-      className={`${baseClassName}-play ${isActive ? 'active' : ''}`}
+    <PlaybackControlButton
+      control={playing ? 'pause' : 'play'}
+      size="sm"
       onClick={handleClick}
-      disabled={disabled}
+      className={`${baseClassName}-play ${isActive ? 'active' : ''}`}
+      disabled={isButtonDisabled}
       title={disabled ? disabledTitle : undefined}
-      aria-label={isActive && isPlaying ? 'Pause' : 'Play'}
-    >
-      {isActive && isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-    </button>
+      aria-label={playing ? 'Pause' : 'Play'}
+    />
   );
 };
 

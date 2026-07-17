@@ -48,7 +48,7 @@ describe('workspaceStore', () => {
         preset: DEFAULT_BUILTIN_PRESET,
       });
       expect(state.userWorkspaces).toEqual([]);
-      expect(getLayoutPresetFromLayout(state.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(state.layout)).toBe(DEFAULT_BUILTIN_PRESET);
       expect(state.isWorkspaceDirty()).toBe(false);
     });
   });
@@ -66,7 +66,7 @@ describe('workspaceStore', () => {
         kind: 'builtin',
         preset: DEFAULT_BUILTIN_PRESET,
       });
-      expect(getLayoutPresetFromLayout(normalized.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(normalized.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
 
     it('falls back to default built-in when user workspace id is missing', () => {
@@ -80,7 +80,7 @@ describe('workspaceStore', () => {
         kind: 'builtin',
         preset: DEFAULT_BUILTIN_PRESET,
       });
-      expect(getLayoutPresetFromLayout(normalized.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(normalized.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
   });
 
@@ -93,7 +93,7 @@ describe('workspaceStore', () => {
         preset: DEFAULT_BUILTIN_PRESET,
       });
       expect(migrated.userWorkspaces).toEqual([]);
-      expect(getLayoutPresetFromLayout(migrated.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(migrated.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
 
     it('preserves valid persisted workspace slice', () => {
@@ -102,7 +102,7 @@ describe('workspaceStore', () => {
 
       expect(migrated.activeWorkspace).toEqual(saved.activeWorkspace);
       expect(migrated.userWorkspaces).toEqual(saved.userWorkspaces);
-      expect(getLayoutPresetFromLayout(migrated.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(migrated.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
 
     it('coerces scratch in migrated state', () => {
@@ -364,7 +364,7 @@ describe('workspaceStore', () => {
         kind: 'builtin',
         preset: DEFAULT_BUILTIN_PRESET,
       });
-      expect(getLayoutPresetFromLayout(state.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(state.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
 
     it('blocks activateWorkspace while layout edit mode is active', () => {
@@ -385,7 +385,9 @@ describe('workspaceStore', () => {
       });
 
       expect(useLayoutStore.getState().activeWorkspace.preset).toBe(DEFAULT_BUILTIN_PRESET);
-      expect(getLayoutPresetFromLayout(useLayoutStore.getState().layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(useLayoutStore.getState().layout)).toBe(
+        DEFAULT_BUILTIN_PRESET,
+      );
     });
 
     it('createScratchWorkspace activates scratch with empty layout', () => {
@@ -486,7 +488,7 @@ describe('workspaceStore', () => {
         kind: 'builtin',
         preset: DEFAULT_BUILTIN_PRESET,
       });
-      expect(getLayoutPresetFromLayout(state.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(state.layout)).toBe(DEFAULT_BUILTIN_PRESET);
 
       const legacyValue = await electronStorage.getItem(LEGACY_LAYOUT_PERSIST_KEY);
       expect(legacyValue).toBeNull();
@@ -535,7 +537,7 @@ describe('workspaceStore', () => {
         kind: 'builtin',
         preset: DEFAULT_BUILTIN_PRESET,
       });
-      expect(getLayoutPresetFromLayout(state.layout)).toBe('collections');
+      expect(getLayoutPresetFromLayout(state.layout)).toBe(DEFAULT_BUILTIN_PRESET);
     });
   });
 

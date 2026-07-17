@@ -72,6 +72,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     isPublishing,
     partyLifecycleState,
     isTransitioningLifecycle,
+    pendingLifecycleTransition,
     serverError,
     isThemeAccessLoading,
     themeAccessErrorMessage,
@@ -296,6 +297,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
                   layout="header"
                   partyLifecycleState={partyLifecycleState ?? 'draft'}
                   isTransitioning={isTransitioningLifecycle}
+                  pendingTransition={pendingLifecycleTransition}
                   disabled={isCreating || isPublishing || networkActionsDisabled}
                   onTransition={(target) => void handleLifecycleTransition(target)}
                 />

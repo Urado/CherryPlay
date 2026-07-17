@@ -1,0 +1,31 @@
+.party-editor-fields-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.party-editor-fields-group + .party-editor-fields-group {
+  padding-top: 1rem;
+  border-top: 1px solid var(--ui-border);
+}
+
+.party-editor-fields-group__title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #999);
+}
+
+.party-editor-fields-group__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.party-editor-fields-group__fields .party-editor-section {
+  gap: 8px;
+}

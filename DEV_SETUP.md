@@ -46,6 +46,14 @@ npm run dev
 - По умолчанию подключается к серверу на `http://localhost:5000` (см. раздел «Переменные окружения» ниже)
 - Переменные окружения (VITE\_\*) читаются из **корня репозитория** (файлы `.env`, `.env.development`, `.env.production`). Создайте в корне `.env.development` из `.env.example` при необходимости (см. [ENV.md](ENV.md)).
 
+**CSS примитивов:** в `src/main.tsx` импортируется `@cherryplay/components/styles/primitives.css` (палитра shell + стили `Button`/`Disclosure`/`Icon`). Без этого импорта shared UI в кабинете и на party-страницах не стилизуется. Подробнее — [CherryPlayComponents/README.md](CherryPlayComponents/README.md#подключение-css).
+
+**Быстрая проверка / troubleshooting (`cp-button` выглядит "без стилей"):**
+
+1. Убедитесь, что в `CherryPlayWeb/src/main.tsx` есть импорт `@cherryplay/components/styles/primitives.css` (до `./index.css`).
+2. Перезапустите `npm run dev` в `CherryPlayWeb` после изменения импортов.
+3. Если проблема осталась: откройте любой элемент с классом `cp-button` в DevTools и проверьте наличие CSS-переменных палитры (`--cp-*` / shell tokens) в computed styles.
+
 ## 3. CherryPlayList (Electron)
 
 ```bash
@@ -56,6 +64,15 @@ npm run dev
 
 - Запускается Vite (http://localhost:5173) и Electron
 - URL сервера задаётся в настройках приложения или через `serverConfig.development.json` / `serverConfig.production.json` (ключ `serverUrl`), либо через переменную окружения `VITE_API_URL` при сборке
+
+**CSS примитивов:** в `src/styles/index.css` импортируется `@cherryplay/components/styles/primitives.css` (до локальных стилей). Этот файл уже включает shell palette tokens и стили `Button`/`Disclosure`/`Icon`. Без него модалки, заголовок и party editor не получат shared-токены и классы `cp-button` / `cp-disclosure`. Подробнее — [CherryPlayComponents/README.md](CherryPlayComponents/README.md#подключение-css).
+
+**Быстрая проверка / troubleshooting (`cp-button` выглядит "без стилей"):**
+
+1. Убедитесь, что в `CherryPlayList/src/styles/index.css` есть импорт `@cherryplay/components/styles/primitives.css`.
+2. Проверьте, что этот импорт идёт до локальных файлов со стилями CherryPlayList.
+3. Перезапустите `npm run dev` в `CherryPlayList` после изменения импортов.
+4. Если проблема осталась: откройте любой элемент с классом `cp-button` в DevTools и проверьте наличие CSS-переменных палитры (`--cp-*` / shell tokens) в computed styles.
 
 ### Настройка URL сервера в CherryPlayList
 
@@ -88,6 +105,7 @@ npm run dev:web
 ## Документация
 
 - [ENV.md](ENV.md) — справочник переменных окружения (корневой .env.example, dev/prod, маппинг бэкенда)
+- [CherryPlayComponents/README.md](CherryPlayComponents/README.md) — PartyDisplay, PartyTheme, UI-примитивы и CSS import contract
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы и архитектура
 - [CONTRACTS.md](CONTRACTS.md) — REST API и SignalR контракты
 - [docs/integration/README.md](docs/integration/README.md) — подсистемы интеграции приложение–сервер–веб

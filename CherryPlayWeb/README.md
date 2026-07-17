@@ -38,6 +38,25 @@ npm run dev
 
 По умолчанию приложение подключается к серверу на `http://localhost:5000`. Можно изменить через переменную окружения **`VITE_API_URL`** в файле `.env` или `.env.development` в **корне репозитория** (Vite читает env из корня). Полный список переменных — в корневом [ENV.md](../ENV.md).
 
+## CSS contract для `@cherryplay/components`
+
+**Порядок импорта** в `src/main.tsx` (важен для каскада):
+
+1. `@cherryplay/components/styles/primitives.css` — shell palette и стили примитивов
+2. `./index.css` — локальные переопределения (`--accent-primary: #00ff88` и др.)
+
+Пример:
+
+```ts
+import '@cherryplay/components/styles/primitives.css';
+import './index.css';
+```
+
+- `primitives.css` подключает базовые токены и классы примитивов (`cp-button`, `cp-button--icon-only`, `cp-disclosure`, `cp-icon`) и shell palette из пакета компонентов.
+- **Дефолтные кнопки shell:** `Button` / `ButtonLink` / `IconButton` из пакета уже стилизованы (пакетный primary `#667eea`; в Web переопределён на `#00ff88` через `index.css`). Варианты `primary`/`secondary`/`danger`/`ghost`. Кастомный CSS на каждую кнопку не нужен. Контент `PartyDisplay` в PartyTheme на этот контракт **не распространяется** — см. [CherryPlayComponents/README.md](../CherryPlayComponents/README.md#default-shell-buttons).
+- Локальные стили приложения должны переопределять примитивы только **после** импорта `primitives.css`.
+- Если импорт убрать, shared-кнопки и иконки рендерятся без ожидаемого внешнего вида и без корректных токенов палитры.
+
 ## Продакшен через Docker и Nginx
 
 В продакшене веб-приложение собирается и упаковывается в Docker-образ `CherryPlayWeb`, который использует Nginx для раздачи статики и проксирования запросов:

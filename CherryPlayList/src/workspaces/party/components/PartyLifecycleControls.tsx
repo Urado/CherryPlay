@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import type { PartyLifecycleState } from '@shared/services/partyService';
@@ -9,15 +10,25 @@ import './PartyLifecycleControls.css';
 export interface PartyLifecycleControlsProps {
   partyLifecycleState: PartyLifecycleState;
   isTransitioning?: boolean;
+  pendingTransition?: PartyLifecycleState | null;
   disabled?: boolean;
   onTransition: (targetState: PartyLifecycleState) => void;
   /** Compact horizontal layout for shell header. */
   layout?: 'default' | 'header';
 }
 
+function isLoadingForTarget(
+  target: PartyLifecycleState,
+  isTransitioning: boolean,
+  pendingTransition?: PartyLifecycleState | null,
+): boolean {
+  return isTransitioning && pendingTransition === target;
+}
+
 export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   partyLifecycleState,
   isTransitioning = false,
+  pendingTransition = null,
   disabled = false,
   onTransition,
   layout = 'default',
@@ -28,50 +39,62 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   const transitionButtons = (
     <>
       {partyLifecycleState === 'draft' && (
-        <button
+        <Button
           type="button"
-          className="party-editor-button party-editor-button-primary party-lifecycle-action"
+          className="party-lifecycle-action"
           disabled={isDisabled}
+          loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
           onClick={() => onTransition('ready')}
           title="Страница вечеринки станет доступна гостям (статус «Опубликована»)"
+          variant="primary"
+          size="sm"
         >
-          {isTransitioning ? 'Обновление...' : isHeader ? 'Открыть' : 'Открыть для гостей'}
-        </button>
+          {isHeader ? 'Открыть' : 'Открыть для гостей'}
+        </Button>
       )}
 
       {partyLifecycleState === 'ready' && (
         <>
-          <button
+          <Button
             type="button"
-            className="party-editor-button party-editor-button-secondary party-lifecycle-action"
+            className="party-lifecycle-action"
             disabled={isDisabled}
+            loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
             onClick={() => onTransition('draft')}
             title="Снять страницу с сайта (статус «Не на сайте»)"
+            variant="secondary"
+            size="sm"
           >
-            {isTransitioning ? 'Обновление...' : isHeader ? 'Снять' : 'Снять с сайта'}
-          </button>
-          <button
+            {isHeader ? 'Снять' : 'Снять с сайта'}
+          </Button>
+          <Button
             type="button"
-            className="party-editor-button party-editor-button-secondary party-lifecycle-action party-lifecycle-action--complete"
+            className="party-lifecycle-action party-lifecycle-action--complete"
             disabled={isDisabled}
+            loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
             onClick={() => onTransition('completed')}
             title="Завершить вечеринку"
+            variant="secondary"
+            size="sm"
           >
-            {isTransitioning ? 'Обновление...' : 'Завершить'}
-          </button>
+            Завершить
+          </Button>
         </>
       )}
 
       {partyLifecycleState === 'completed' && (
-        <button
+        <Button
           type="button"
-          className="party-editor-button party-editor-button-secondary party-lifecycle-action"
+          className="party-lifecycle-action"
           disabled={isDisabled}
+          loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
           onClick={() => onTransition('ready')}
           title="Вернуть вечеринку на сайт (статус «Опубликована»)"
+          variant="secondary"
+          size="sm"
         >
-          {isTransitioning ? 'Обновление...' : 'Вернуть'}
-        </button>
+          Вернуть
+        </Button>
       )}
     </>
   );

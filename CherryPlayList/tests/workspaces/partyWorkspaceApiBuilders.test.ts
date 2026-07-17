@@ -34,6 +34,7 @@ function buildStoreSlice(overrides: Record<string, unknown> = {}) {
     externalLinkUrl: 'https://example.com',
     externalLinkText: 'Link',
     danceTags: ['salsa'],
+    isListedInCatalog: true,
     ...overrides,
   };
 }

@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useId } from 'react';
 
@@ -53,9 +54,15 @@ export const SettingsImportConfirmDialog: React.FC<SettingsImportConfirmDialogPr
           <h2 className="modal-title" id={titleId}>
             Импорт настроек
           </h2>
-          <button className="modal-close" type="button" onClick={onClose} aria-label="Закрыть">
-            <CloseIcon />
-          </button>
+          <IconButton
+            className="modal-close"
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -65,12 +72,24 @@ export const SettingsImportConfirmDialog: React.FC<SettingsImportConfirmDialogPr
         </div>
 
         <div className="modal-footer">
-          <button className="modal-button secondary" type="button" onClick={onClose}>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={onClose}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
-          <button className="modal-button primary" type="button" onClick={onConfirm}>
+          </Button>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={onConfirm}
+            variant="primary"
+            size="sm"
+          >
             Импортировать
-          </button>
+          </Button>
         </div>
       </div>
     </div>

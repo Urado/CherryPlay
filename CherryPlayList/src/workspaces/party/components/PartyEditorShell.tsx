@@ -1,4 +1,4 @@
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Button, InfoIcon } from '@cherryplay/components';
 import React from 'react';
 
 import {
@@ -56,14 +56,7 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
         <div className="party-editor-shell-header-main">
           <h2 className="party-editor-shell-title">{headerTitle}</h2>
           {phase === 'ready' && (
-            <span
-              className="party-editor-shell-info-hint"
-              title={PARTY_READY_PUBLISH_HINT}
-              role="img"
-              aria-label={PARTY_READY_PUBLISH_HINT}
-            >
-              <InfoOutlinedIcon className="party-editor-shell-info-hint__icon" aria-hidden />
-            </span>
+            <InfoIcon className="party-editor-shell-info-hint" title={PARTY_READY_PUBLISH_HINT} />
           )}
           {badgeLabel && badgeLifecycle && !hidePhaseBadge && (
             <span
@@ -93,13 +86,15 @@ export const PartyEditorShell: React.FC<PartyEditorShellProps> = ({
                 Открыть в браузере
               </a>
               {onCopyUrl && (
-                <button
+                <Button
                   type="button"
                   className="party-editor-shell-linked-banner-copy"
                   onClick={onCopyUrl}
+                  variant="ghost"
+                  size="sm"
                 >
                   Скопировать URL
-                </button>
+                </Button>
               )}
             </>
           )}

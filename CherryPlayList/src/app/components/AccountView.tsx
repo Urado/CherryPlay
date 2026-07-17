@@ -1,6 +1,6 @@
-import { AuthForm } from '@cherryplay/components';
+import { Disclosure, AuthForm, Button } from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
@@ -21,7 +21,6 @@ export const AccountView: React.FC = () => {
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOrganizerCardExpanded, setIsOrganizerCardExpanded] = useState(true);
-  const organizerCardContentId = useId();
   const addNotification = useUIStore((state) => state.addNotification);
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
@@ -190,32 +189,11 @@ export const AccountView: React.FC = () => {
           </div>
 
           <section className="account-view-card" aria-label="Информация об организаторе">
-            <h2 className="account-view-card-title">
-              <button
-                type="button"
-                className="account-view-card-toggle"
-                aria-expanded={isOrganizerCardExpanded}
-                aria-controls={organizerCardContentId}
-                onClick={() => setIsOrganizerCardExpanded((prev) => !prev)}
-              >
-                <span>Информация об организаторе</span>
-                <span
-                  className={`account-view-card-chevron${
-                    isOrganizerCardExpanded ? ' account-view-card-chevron--expanded' : ''
-                  }`}
-                  aria-hidden="true"
-                >
-                  ▾
-                </span>
-              </button>
-            </h2>
-
-            <div
-              id={organizerCardContentId}
-              className={`account-view-card-body${
-                isOrganizerCardExpanded ? ' account-view-card-body--expanded' : ''
-              }`}
-              aria-hidden={!isOrganizerCardExpanded}
+            <Disclosure
+              title="Информация об организаторе"
+              className="account-view-card-disclosure"
+              expanded={isOrganizerCardExpanded}
+              onExpandedChange={setIsOrganizerCardExpanded}
             >
               <div className="account-view-organizer-details">
                 <div className="account-view-field">
@@ -250,18 +228,20 @@ export const AccountView: React.FC = () => {
                   </span>
                 </div>
               </div>
-            </div>
+            </Disclosure>
           </section>
 
           <div className="account-view-actions">
-            <button
+            <Button
               type="button"
               onClick={handleLogout}
-              disabled={loading}
-              className="account-view-logout-btn modal-button danger"
+              loading={loading}
+              className="account-view-logout-btn modal-button"
+              variant="danger"
+              size="sm"
             >
               Выйти
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

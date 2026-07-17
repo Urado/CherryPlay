@@ -34,6 +34,7 @@ export interface PartyWorkspaceState {
   isPublishing: boolean;
   partyLifecycleState: PartyLifecycleState | null;
   isTransitioningLifecycle: boolean;
+  pendingLifecycleTransition: PartyLifecycleState | null;
   isCheckingParty: boolean;
   serverError: string | null;
   partyVerified: boolean;
@@ -69,6 +70,7 @@ export interface PartyWorkspaceState {
   setIsPublishing: (value: boolean) => void;
   setPartyLifecycleState: (value: PartyLifecycleState | null) => void;
   setIsTransitioningLifecycle: (value: boolean) => void;
+  setPendingLifecycleTransition: (value: PartyLifecycleState | null) => void;
   setIsCheckingParty: (value: boolean) => void;
   setServerError: (value: string | null) => void;
   setPartyVerified: (value: boolean) => void;
@@ -113,6 +115,7 @@ const initialPartyWorkspaceState = {
   isPublishing: false,
   partyLifecycleState: null as PartyLifecycleState | null,
   isTransitioningLifecycle: false,
+  pendingLifecycleTransition: null as PartyLifecycleState | null,
   isCheckingParty: false,
   serverError: null as string | null,
   partyVerified: false,
@@ -154,6 +157,8 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setIsPublishing: (isPublishing) => set({ isPublishing }),
   setPartyLifecycleState: (partyLifecycleState) => set({ partyLifecycleState }),
   setIsTransitioningLifecycle: (isTransitioningLifecycle) => set({ isTransitioningLifecycle }),
+  setPendingLifecycleTransition: (pendingLifecycleTransition) =>
+    set({ pendingLifecycleTransition }),
   setIsCheckingParty: (isCheckingParty) => set({ isCheckingParty }),
   setServerError: (serverError) => set({ serverError }),
   setPartyVerified: (partyVerified) => set({ partyVerified }),

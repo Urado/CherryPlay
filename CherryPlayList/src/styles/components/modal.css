@@ -41,22 +41,15 @@
 }
 
 .modal-close {
-  background: transparent;
-  border: none;
   color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
+  flex-shrink: 0;
 }
 
-.modal-close:hover {
-  background-color: var(--bg-hover);
+.modal-close.cp-button {
+  border: none;
+}
+
+.modal-close:hover:not(:disabled) {
   color: var(--text-primary);
 }
 
@@ -212,52 +205,7 @@
 }
 
 .modal-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: 4px;
-  font-size: var(--font-size-body);
-  cursor: pointer;
-  border: 1px solid var(--ui-border);
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.modal-button.secondary {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.modal-button.secondary:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--accent-primary);
-}
-
-.modal-button.primary {
-  background-color: var(--accent-primary);
-  color: var(--text-primary);
-  border-color: var(--accent-primary);
-}
-
-.modal-button.primary:hover {
-  background-color: var(--accent-secondary);
-  border-color: var(--accent-secondary);
-}
-
-.modal-button.danger {
-  background-color: var(--state-error);
-  color: var(--text-on-accent, #fff);
-  border-color: var(--state-error);
-}
-
-.modal-button.danger:hover {
-  background-color: color-mix(in srgb, var(--state-error) 85%, #000);
-  border-color: color-mix(in srgb, var(--state-error) 85%, #000);
-}
-
-.modal-button.danger:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
+  flex-shrink: 0;
 }
 
 /* Link Party Modal */
@@ -518,23 +466,8 @@
 }
 
 .my-parties-panel-catalog-toggle-btn {
-  padding: 4px 10px;
-  border: 1px solid var(--ui-border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.my-parties-panel-catalog-toggle-btn:hover:not(:disabled) {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
 }
 
 .my-parties-panel-catalog-toggle-btn--listed {
@@ -547,30 +480,29 @@
   background-color: rgba(0, 204, 136, 0.24);
 }
 
-.my-parties-panel-catalog-toggle-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
 .my-parties-panel-bind-btn,
 .my-parties-panel-delete-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 4px 10px;
   font-size: 12px;
+}
+
+.my-parties-panel-delete-btn.cp-button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.my-parties-panel-delete-btn.cp-button:hover:not(:disabled) {
+  color: var(--state-error, #d32f2f);
+  background: rgba(220, 53, 69, 0.15);
+  border-color: transparent;
 }
 
 .my-parties-panel-bind-btn {
   line-height: 1.2;
 }
 
-.my-parties-panel-bind-btn .MuiSvgIcon-root {
+.my-parties-panel-bind-btn .cp-button__icon {
   font-size: 16px;
-}
-
-.my-parties-panel-delete-btn {
-  padding: 6px 8px;
 }
 
 .my-parties-panel-delete-overlay {
@@ -607,26 +539,15 @@
 }
 
 .account-modal-close {
-  background: transparent;
-  border: none;
   color: var(--text-secondary);
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 4px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
+  flex-shrink: 0;
 }
 
-.account-modal-close:hover {
-  background-color: var(--bg-hover);
+.account-modal-close.cp-button {
+  border: none;
+}
+
+.account-modal-close:hover:not(:disabled) {
   color: var(--text-primary);
 }
 
@@ -660,6 +581,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  min-height: 0;
 }
 
 /* Форма входа по центру (не слева) */
@@ -735,65 +657,24 @@
   border-radius: 8px;
 }
 
-.account-view-card-title {
-  margin: 0;
-}
-
-.account-view-card-toggle {
-  width: 100%;
+.account-view-card-disclosure.cp-disclosure {
   margin: 0;
   padding: 0;
   border: none;
   background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  color: var(--text-primary);
+}
+
+.account-view-card-disclosure .cp-disclosure__title {
   font-size: var(--font-size-body);
   font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 6px;
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
 }
 
-.account-view-card-toggle:hover {
+.account-view-card-disclosure .cp-disclosure__toggle:hover .cp-disclosure__title {
   color: var(--text-primary);
-  background-color: color-mix(in srgb, var(--bg-hover) 72%, transparent);
 }
 
-.account-view-card-toggle:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-}
-
-.account-view-card-chevron {
-  font-size: 13px;
-  color: var(--text-secondary);
-  transition: transform 0.22s ease;
-  transform: rotate(-90deg);
-}
-
-.account-view-card-chevron--expanded {
-  transform: rotate(0deg);
-}
-
-.account-view-card-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.24s ease;
-}
-
-.account-view-card-body--expanded {
-  grid-template-rows: 1fr;
-}
-
-.account-view-organizer-details {
-  min-height: 0;
-  overflow: hidden;
+.account-view-card-disclosure .cp-disclosure__panel {
+  margin-top: var(--spacing-md);
 }
 
 .account-view-field {

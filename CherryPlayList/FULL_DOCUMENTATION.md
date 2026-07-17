@@ -1235,6 +1235,25 @@ Plugin exports an object with methods `init(api)` and `destroy()`. API includes 
 
 ## 9.1 Design System Overview
 
+### 9.1.0 UI Layers and Migration Contract
+
+- **Primitives** (`@cherryplay/components`): base visual building blocks (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`) with classes `cp-*` and shared tokens. **Default shell buttons** ship with built-in styling (primary accent `#667eea`, variants `primary`/`secondary`/`danger`/`ghost`, sizes `sm`/`md`) after `primitives.css` import — no per-button CSS required. Canonical API and props: [CherryPlayComponents/README.md — UI-примитивы (shell)](../CherryPlayComponents/README.md#ui-примитивы-shell).
+- **Package-level wrappers**: `FormButton` in `@cherryplay/components` (legacy auth); maps `outline` → `ghost`.
+- **Domain components**: feature-specific components (playlist rows, modals, headers, workspace views) built on primitives/wrappers.
+- **PartyTheme isolation**: party content inside `PartyDisplay` uses isolated themes (`data-theme`); it does **not** inherit `cp-button` or shell primitive contracts. Shell and PartyTheme are separate visual layers.
+
+**Usage rules (current):**
+
+- Use primitives directly in new UI and in refactors where API parity is straightforward.
+- Keep `FormButton` only as a **legacy/backward-compat wrapper** where old props/behavior are still required.
+- Migration intent: reduce wrapper usage over time and keep new code on primitives first.
+
+**CSS contract:**
+
+- `src/styles/index.css` must import `@cherryplay/components/styles/primitives.css` before local CherryPlayList styles.
+- `primitives.css` already includes shell palette tokens and is sufficient for correct `cp-button` + `cp-button--icon-only` appearance.
+- CherryPlayList overrides shell accent on `:root` via `--accent-primary: #4a9eff` in `src/styles/variables.css` (picked up by `--cp-accent-primary`).
+
 ### 9.1.1 Theme System
 
 The application uses a **dark theme** by default with a modular theme system that allows for easy theme switching and future theme additions.

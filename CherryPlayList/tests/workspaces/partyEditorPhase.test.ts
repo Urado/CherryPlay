@@ -15,7 +15,6 @@ describe('resolvePartyEditorPhase', () => {
     isAuth: true,
     isClientOutdated: false,
     isCheckingParty: false,
-    serverUnreachable: false,
     linkedParty: null,
     partyLifecycleState: null,
   };
@@ -39,10 +38,10 @@ describe('resolvePartyEditorPhase', () => {
     expect(result.blockedReason).toBe('checking');
   });
 
-  it('blocks when server is unreachable', () => {
-    const result = resolvePartyEditorPhase({ ...baseInput, serverUnreachable: true });
-    expect(result.isBlocked).toBe(true);
-    expect(result.blockedReason).toBe('unreachable');
+  it('does not block editor phase when server is unreachable (handled in editor UI)', () => {
+    const result = resolvePartyEditorPhase({ ...baseInput, serverUnreachable: true } as never);
+    expect(result.isBlocked).toBe(false);
+    expect(result.phase).toBe('draft-unlinked');
   });
 
   it('returns draft-unlinked when no linked party', () => {

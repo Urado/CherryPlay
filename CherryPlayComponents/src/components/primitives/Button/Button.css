@@ -1,0 +1,270 @@
+.cp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cp-button-gap);
+  min-height: var(--cp-button-height-md);
+  padding: 0 var(--cp-button-padding-x-md);
+  border: 1px solid transparent;
+  border-radius: var(--cp-button-radius);
+  font-size: var(--cp-button-font-size-md);
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.cp-button--sm {
+  min-height: var(--cp-button-height-sm);
+  padding: 0 var(--cp-button-padding-x-sm);
+  font-size: var(--cp-button-font-size-sm);
+}
+
+.cp-button--full-width {
+  width: 100%;
+}
+
+.cp-button--icon-only {
+  width: var(--cp-button-icon-only-size-md);
+  min-width: var(--cp-button-icon-only-size-md);
+  padding: 0;
+}
+
+.cp-button--icon-only.cp-button--sm {
+  width: var(--cp-button-icon-only-size-sm);
+  min-width: var(--cp-button-icon-only-size-sm);
+}
+
+.cp-button--icon-only .cp-button__icon {
+  margin: 0;
+}
+
+.cp-button__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-button__icon--loading {
+  animation: cp-button-spin 0.8s linear infinite;
+}
+
+.cp-button__label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.cp-button--primary {
+  background: var(--cp-accent-primary);
+  border-color: var(--cp-accent-primary);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button--primary:hover:not(:disabled) {
+  background: var(--cp-accent-primary-hover);
+  border-color: var(--cp-accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.cp-button:hover {
+  text-decoration: none;
+}
+
+.cp-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.cp-button--secondary {
+  background: var(--bg-tertiary);
+  border-color: var(--cp-ui-border);
+  color: var(--text-primary);
+}
+
+.cp-button--secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--cp-accent-primary);
+}
+
+.cp-button--danger {
+  background: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button--danger:hover:not(:disabled) {
+  background: var(--cp-accent-danger-hover);
+  border-color: var(--cp-accent-danger-hover);
+}
+
+.cp-button--danger:focus-visible {
+  outline: 2px solid var(--cp-accent-danger);
+  outline-offset: 2px;
+}
+
+.cp-button--ghost {
+  background: transparent;
+  border-color: var(--cp-ui-border);
+  color: var(--text-primary);
+}
+
+.cp-button--ghost:hover:not(:disabled) {
+  border-color: var(--cp-accent-primary);
+  color: var(--cp-accent-primary);
+}
+
+/* Opt out of resting/hover border chrome; keep 1px box so layout does not shift. */
+.cp-button--borderless {
+  border-color: transparent;
+}
+
+.cp-button--borderless:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+/* Resting tone for icon + border (orthogonal to filled variant="danger"). */
+.cp-button--tone-danger {
+  color: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+}
+
+.cp-button--ghost.cp-button--tone-danger {
+  background: transparent;
+  color: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+}
+
+.cp-button--tone-danger:not(.cp-button--no-hover):hover:not(:disabled) {
+  color: var(--cp-accent-danger-hover);
+  border-color: var(--cp-accent-danger-hover);
+}
+
+.cp-button--tone-danger:focus-visible {
+  outline-color: var(--cp-accent-danger);
+}
+
+/* Keep hover chrome identical to resting (no bg wash / accent jump / lift). */
+.cp-button--no-hover:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.cp-button--primary.cp-button--no-hover:hover:not(:disabled) {
+  background: var(--cp-accent-primary);
+  border-color: var(--cp-accent-primary);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button--secondary.cp-button--no-hover:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--cp-ui-border);
+  color: var(--text-primary);
+}
+
+.cp-button--danger.cp-button--no-hover:hover:not(:disabled) {
+  background: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button--ghost.cp-button--no-hover:hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--cp-ui-border);
+  color: var(--text-primary);
+}
+
+.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover:not(.cp-button--fill-hover):hover:not(:disabled) {
+  background: transparent;
+  border-color: var(--cp-accent-danger);
+  color: var(--cp-accent-danger);
+}
+
+.cp-button--secondary.cp-button--tone-danger.cp-button--no-hover:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--cp-accent-danger);
+  color: var(--cp-accent-danger);
+}
+
+.cp-button--borderless.cp-button--no-hover:hover:not(:disabled) {
+  border-color: transparent;
+}
+
+.cp-button--borderless.cp-button--tone-danger {
+  border-color: transparent;
+}
+
+.cp-button--borderless.cp-button--tone-danger:not(.cp-button--no-hover):hover:not(:disabled) {
+  border-color: transparent;
+}
+
+/* Background fill modes (orthogonal to hoverable border/color chrome). */
+.cp-button--fill-hover.cp-button--tone-danger:hover:not(:disabled),
+.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover.cp-button--fill-hover:hover:not(:disabled) {
+  background: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+  color: var(--text-primary, var(--text-on-accent, #fff));
+}
+
+.cp-button--fill-always.cp-button--tone-danger {
+  background: var(--cp-accent-danger);
+  border-color: var(--cp-accent-danger);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button--fill-always.cp-button--tone-danger:hover:not(:disabled) {
+  background: var(--cp-accent-danger-hover);
+  border-color: var(--cp-accent-danger-hover);
+  color: var(--text-on-accent, #fff);
+}
+
+.cp-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.cp-button--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.cp-button--loading {
+  cursor: wait;
+}
+
+.cp-button:focus-visible {
+  outline: 2px solid var(--cp-accent-primary);
+  outline-offset: 2px;
+}
+
+@keyframes cp-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-button {
+    transition: none;
+  }
+
+  .cp-button--primary:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .cp-button__icon--loading {
+    animation: none;
+  }
+}

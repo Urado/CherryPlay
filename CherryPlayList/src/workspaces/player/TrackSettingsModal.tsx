@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -190,9 +191,15 @@ export const TrackSettingsModal: React.FC = () => {
       <div className="modal-content">
         <div className="modal-header">
           <h2 className="modal-title">{getTitle()}</h2>
-          <button className="modal-close" onClick={handleCancel}>
-            <CloseIcon />
-          </button>
+          <IconButton
+            className="modal-close"
+            type="button"
+            onClick={handleCancel}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -265,28 +272,30 @@ export const TrackSettingsModal: React.FC = () => {
                   onChange={(e) => setLocalPlannedEndTime(e.target.value)}
                   id="track-settings-planned-end-time"
                 />
-                <button
+                <Button
                   type="button"
-                  className="modal-button secondary settings-planned-end-clear"
+                  className="modal-button settings-planned-end-clear"
                   onClick={() => {
                     setLocalPlannedEndTime('');
                     setPlannedEndTime(null);
                   }}
+                  variant="secondary"
+                  size="sm"
                 >
                   Очистить
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </div>
 
         <div className="modal-footer">
-          <button className="modal-button secondary" onClick={handleCancel}>
+          <Button className="modal-button" onClick={handleCancel} variant="secondary" size="sm">
             Отмена
-          </button>
-          <button className="modal-button primary" onClick={handleSave}>
+          </Button>
+          <Button className="modal-button" onClick={handleSave} variant="primary" size="sm">
             Сохранить
-          </button>
+          </Button>
         </div>
       </div>
     </div>

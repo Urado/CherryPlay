@@ -17,11 +17,13 @@
   --text-secondary: #b0b0b0;
   --text-tertiary: rgba(255, 255, 255, 0.5);
   --text-disabled: #666;
+  --text-on-accent: #fff;
 
   /* Border Colors */
   --border-color: rgba(255, 255, 255, 0.1);
 
   /* State Colors (нейтральные) */
+  --state-error: #d32f2f;
   --state-error-bg: rgba(255, 255, 255, 0.08);
   --state-error-text: rgba(255, 255, 255, 0.9);
   --state-success: #4caf50;
@@ -37,4 +39,34 @@
 
   /* Shadow */
   --shadow: rgba(0, 0, 0, 0.3);
+
+  /* Primitive — accent (shell; apps may override --accent-primary) */
+  --cp-accent-primary: var(--accent-primary, #667eea);
+  --cp-accent-primary-hover: var(--accent-primary-hover, #5568d3);
+  --cp-accent-secondary: var(--accent-secondary, #6495ed);
+  --cp-accent-danger: var(--state-error, #d32f2f);
+  --cp-accent-danger-hover: color-mix(in srgb, var(--cp-accent-danger) 85%, #000);
+  --cp-ui-border: var(--ui-border, rgba(255, 255, 255, 0.15));
+
+  /* Primitive — button */
+  --cp-button-height-sm: 32px;
+  --cp-button-height-md: 40px;
+  --cp-button-padding-x-sm: 12px;
+  --cp-button-padding-x-md: 16px;
+  --cp-button-font-size-sm: 14px;
+  --cp-button-font-size-md: 16px;
+  --cp-button-radius: var(--radius-md);
+  --cp-button-gap: 8px;
+  --cp-button-icon-only-size-sm: 32px;
+  --cp-button-icon-only-size-md: 40px;
+
+  /* Primitive — icon */
+  --cp-icon-size-sm: 16px;
+  --cp-icon-size-md: 20px;
+  --cp-icon-size-lg: 24px;
+
+  /* Primitive — playback transport */
+  --cp-playback-control-size-sm: 30px;
+  --cp-playback-control-size-md: 36px;
+  --cp-playback-control-size-md-emphasis: 40px;
 }

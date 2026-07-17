@@ -3,12 +3,14 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * Props for SettingsButton component
  */
 export interface SettingsButtonProps {
   /** Called when settings is clicked */
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   /** Title/tooltip */
   title?: string;
   /** Optional indicator content (e.g., emoji for action type) */
@@ -27,22 +29,19 @@ export const SettingsButton: React.FC<SettingsButtonProps> = ({
 }) => {
   const { baseClassName } = useListRowContext();
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClick?.();
-  };
-
   return (
-    <button
-      type="button"
-      className={`${baseClassName}-settings`}
-      onClick={handleClick}
-      title={title}
-      aria-label={title}
-    >
-      <SettingsIcon style={{ fontSize: '18px' }} />
-      {indicator && <span className="player-settings-indicator">{indicator}</span>}
-    </button>
+    <span className={`${baseClassName}-settings-wrap`}>
+      <ActionButton
+        onClick={(e) => onClick?.(e)}
+        className={`${baseClassName}-settings`}
+        title={title}
+        aria-label={title}
+        icon={<SettingsIcon style={{ fontSize: '18px' }} />}
+        variant="ghost"
+        size="sm"
+      />
+      {indicator ? <span className="player-settings-indicator">{indicator}</span> : null}
+    </span>
   );
 };
 

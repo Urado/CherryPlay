@@ -165,6 +165,16 @@
 | **CherryPlayWeb**    | Веб-приложение (React) для зрителей: просмотр плейлиста и состояния вечеринки в реальном времени.                                             |
 | **partyHub**         | SignalR Hub на сервере; URL: `{baseUrl}/partyHub`.                                                                                            |
 
+### UI: shell vs PartyTheme
+
+| Термин | Описание |
+| ------ | -------- |
+| **shell UI** | Оболочка приложения вне контента вечеринки: модалки, кабинет, заголовок, редактор. Использует примитивы `@cherryplay/components` и CSS `primitives.css`. |
+| **UI primitive** (`Button`, `ButtonLink`, `Icon`, `IconButton`, …) | Shared React-компонент оболочки с классами `cp-button`, `cp-icon`, `cp-disclosure` и токенами `--cp-button-*` / `--cp-icon-size-*` из `shell-palette.css`. |
+| **дефолтные кнопки shell** | Готовые стили `Button` / `ButtonLink` / `IconButton` из пакета: пакетный primary `#667eea`, danger через `--cp-accent-danger` (`var(--state-error, #d32f2f)`), размеры sm/md — **без** кастомного CSS на каждую кнопку. CherryPlayWeb переопределяет `--accent-primary` в `index.css` (`#00ff88`), CherryPlayList — в `variables.css` (`#4a9eff`). |
+| **PartyTheme** | Изолированный визуальный слой контента вечеринки (`PartyDisplay`, `data-theme`). **Не обязан** наследовать `cp-button` или shell-токены; контракт примитивов на темы не распространяется. См. [THEMES.md](THEMES.md), [CherryPlayComponents/README.md](CherryPlayComponents/README.md#default-shell-buttons). |
+| **FormButton** | Legacy-обёртка над `Button` в `@cherryplay/components` (auth-формы); `outline` → `ghost`. Новый shell UI — через `Button` напрямую. |
+
 ### Обозреватель файлов (CherryPlayList, панель источников)
 
 | Термин                            | Описание                                                                                                                                                                                                                                                                             |

@@ -1,4 +1,4 @@
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Icon } from '@cherryplay/components';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -87,7 +87,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
   const showTimeline = resolvedDuration > 0 && currentTrack !== null;
 
   const handleToggle = useCallback(async () => {
-    if (!canToggle) {
+    if (!isSessionMode || !canToggle) {
       return;
     }
 
@@ -100,7 +100,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
         // store handles error state
       }
     }
-  }, [canToggle, isPlaying, pause, play]);
+  }, [canToggle, isPlaying, isSessionMode, pause, play]);
 
   const handleVolumeChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,30 +109,19 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
     [setVolume],
   );
 
+  // Keep layout slot when hidden (e.g. AIMP streaming source) so the header does not jump.
   if (!isVisible) {
-    return null;
+    return <div className="playback-pill playback-pill--slot-reserved" aria-hidden="true" />;
   }
 
-  const onlineIndicator = (
-    <StreamingConnectionIndicator
-      connectionState={linkedParty ? connectionState : null}
-      onReconnect={reconnect}
-      className="playback-pill__online"
-      compact
-    />
-  );
-
-  const readinessHintIcon =
-    readinessHints.length > 0 ? (
-      <span
-        className="playback-pill__hint playback-pill__hint--active"
-        title={readinessTooltip}
-        role="img"
-        aria-label={readinessTooltip}
-      >
-        <LightbulbOutlinedIcon className="playback-pill__hint-icon" aria-hidden />
-      </span>
-    ) : null;
+  const hasReadinessHint = readinessHints.length > 0;
+  const showPrepInfoHint = !isSessionMode && !hasReadinessHint;
+  const hintTooltip = hasReadinessHint
+    ? readinessTooltip
+    : showPrepInfoHint
+      ? PREP_SETUP_HINT
+      : undefined;
+  const hintActive = hasReadinessHint || showPrepInfoHint;
 
   return (
     <div
@@ -146,67 +135,129 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
       role="group"
       aria-label="Вечеринка и проигрывание"
     >
-      {isSessionMode ? (
-        <>
-          <button
-            type="button"
-            className="playback-pill__toggle"
-            onClick={() => {
-              void handleToggle();
-            }}
-            disabled={!canToggle}
-            title={error ? error : isPlaying ? 'Пауза' : canToggle ? 'Воспроизвести' : 'Нет трека'}
-            aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}
+      <button
+        type="button"
+        className={['playback-pill__toggle', !isSessionMode ? 'playback-pill__slot--inert' : '']
+          .filter(Boolean)
+          .join(' ')}
+        onClick={() => {
+          void handleToggle();
+        }}
+        disabled={!isSessionMode || !canToggle}
+        tabIndex={isSessionMode ? undefined : -1}
+        aria-hidden={!isSessionMode}
+        title={
+          !isSessionMode
+            ? undefined
+            : error
+              ? error
+              : isPlaying
+                ? 'Пауза'
+                : canToggle
+                  ? 'Воспроизвести'
+                  : 'Нет трека'
+        }
+        aria-label={isSessionMode ? (isPlaying ? 'Пауза' : 'Воспроизвести') : undefined}
+      >
+        <span className="playback-pill__icon-box" aria-hidden>
+          {isPlaying ? <PauseIcon fontSize="inherit" /> : <PlayArrowIcon fontSize="inherit" />}
+        </span>
+      </button>
+
+      <div className="playback-pill__main">
+        <div
+          className={[
+            'playback-pill__prep-row',
+            isSessionMode ? 'playback-pill__layer--hidden' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-hidden={isSessionMode}
+        >
+          <span className="playback-pill__prep-label">Проигрывание не запущено</span>
+        </div>
+
+        <div
+          className={['playback-pill__track', !isSessionMode ? 'playback-pill__layer--hidden' : '']
+            .filter(Boolean)
+            .join(' ')}
+          title={isSessionMode ? trackLabel : undefined}
+          aria-hidden={!isSessionMode}
+        >
+          <span className="playback-pill__track-name">{trackLabel}</span>
+          <span
+            className={[
+              'playback-pill__track-time',
+              showTimeline ? '' : 'playback-pill__track-time--placeholder',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-hidden={!showTimeline}
           >
-            {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-          </button>
+            {showTimeline
+              ? `${formatPlayerTime(position)} / ${formatPlayerTime(resolvedDuration)}`
+              : '\u00a0'}
+          </span>
+        </div>
+      </div>
 
-          <div className="playback-pill__track" title={trackLabel}>
-            <span className="playback-pill__track-name">{trackLabel}</span>
-            {showTimeline ? (
-              <span className="playback-pill__track-time">
-                {formatPlayerTime(position)} / {formatPlayerTime(resolvedDuration)}
-              </span>
-            ) : null}
-          </div>
+      <div
+        className={['playback-pill__volume', !isSessionMode ? 'playback-pill__slot--inert' : '']
+          .filter(Boolean)
+          .join(' ')}
+        aria-hidden={!isSessionMode}
+      >
+        <span className="playback-pill__icon-box playback-pill__icon-box--sm" aria-hidden>
+          <VolumeDownIcon fontSize="inherit" />
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={volume}
+          onChange={handleVolumeChange}
+          className="playback-pill__volume-slider"
+          disabled={disabled || !isSessionMode}
+          tabIndex={isSessionMode ? undefined : -1}
+          title={`Громкость: ${Math.round(volume * 100)}%`}
+          aria-label="Громкость"
+        />
+        <span className="playback-pill__icon-box playback-pill__icon-box--sm" aria-hidden>
+          <VolumeUpIcon fontSize="inherit" />
+        </span>
+      </div>
 
-          <div className="playback-pill__volume">
-            <VolumeDownIcon fontSize="small" aria-hidden />
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={handleVolumeChange}
-              className="playback-pill__volume-slider"
-              disabled={disabled}
-              title={`Громкость: ${Math.round(volume * 100)}%`}
-              aria-label="Громкость"
-            />
-            <VolumeUpIcon fontSize="small" aria-hidden />
-          </div>
+      <span
+        className={[
+          'playback-pill__hint',
+          hasReadinessHint ? 'playback-pill__hint--active' : '',
+          !hintActive ? 'playback-pill__hint--empty' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        title={hintTooltip}
+        role={hintActive ? 'img' : undefined}
+        aria-label={hintTooltip}
+        aria-hidden={hintActive ? undefined : true}
+      >
+        {hasReadinessHint ? (
+          <Icon shape="circle" className="playback-pill__hint-glyph" aria-hidden>
+            <LightbulbOutlinedIcon fontSize="inherit" />
+          </Icon>
+        ) : showPrepInfoHint ? (
+          <Icon shape="circle" className="playback-pill__hint-glyph" aria-hidden>
+            i
+          </Icon>
+        ) : null}
+      </span>
 
-          {readinessHintIcon}
-          {onlineIndicator}
-        </>
-      ) : (
-        <>
-          <div className="playback-pill__prep-row">
-            <span className="playback-pill__prep-label">Проигрывание не запущено</span>
-            <span
-              className="playback-pill__hint"
-              title={PREP_SETUP_HINT}
-              role="img"
-              aria-label={PREP_SETUP_HINT}
-            >
-              <InfoOutlinedIcon className="playback-pill__hint-icon" aria-hidden />
-            </span>
-          </div>
-          {readinessHintIcon}
-          {onlineIndicator}
-        </>
-      )}
+      <StreamingConnectionIndicator
+        connectionState={linkedParty ? connectionState : null}
+        onReconnect={reconnect}
+        className="playback-pill__online"
+        compact
+      />
     </div>
   );
 };

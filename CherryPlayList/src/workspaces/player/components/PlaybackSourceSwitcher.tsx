@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React, { useCallback, useMemo } from 'react';
 
 import { usePlatformCapabilities } from '@shared/platform';
@@ -6,20 +7,28 @@ import { getAimpAvailability } from '@shared/utils';
 
 type PlaybackSource = 'cherryPlayPlayer' | 'aimp';
 
+const SOURCE_LABELS: Record<PlaybackSource, string> = {
+  cherryPlayPlayer: 'CherryPlay',
+  aimp: 'AIMP',
+};
+
 const ALTERNATE_SOURCE: Record<PlaybackSource, { id: PlaybackSource; label: string }> = {
-  cherryPlayPlayer: { id: 'aimp', label: 'AIMP' },
-  aimp: { id: 'cherryPlayPlayer', label: 'CherryPlay' },
+  cherryPlayPlayer: { id: 'aimp', label: SOURCE_LABELS.aimp },
+  aimp: { id: 'cherryPlayPlayer', label: SOURCE_LABELS.cherryPlayPlayer },
 };
 
 interface PlaybackSourceSwitcherProps {
   disabled?: boolean;
-  /** Renders as a muted inline link after stats text (no extra row). */
-  inline?: boolean;
+  /**
+   * `inline` — muted link after stats text (legacy inline placement).
+   * `topRow` — slim dedicated strip above stats (Player + AIMP embedded headers).
+   */
+  layout?: 'inline' | 'topRow';
 }
 
 export const PlaybackSourceSwitcher: React.FC<PlaybackSourceSwitcherProps> = ({
   disabled = false,
-  inline = false,
+  layout,
 }) => {
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const setStreamingSource = useSettingsStore((state) => state.setStreamingSource);
@@ -30,6 +39,8 @@ export const PlaybackSourceSwitcher: React.FC<PlaybackSourceSwitcherProps> = ({
   const canSelectAimp = supportsAimpWorkspace && aimpAvailability.available;
 
   const alternate = useMemo(() => ALTERNATE_SOURCE[streamingSource], [streamingSource]);
+  const currentLabel = SOURCE_LABELS[streamingSource];
+  const switchTooltip = `Нажмите, чтобы переключить на ${alternate.label}`;
 
   const handleSwitch = useCallback(() => {
     if (disabled) {
@@ -49,20 +60,35 @@ export const PlaybackSourceSwitcher: React.FC<PlaybackSourceSwitcherProps> = ({
     return null;
   }
 
+  const layoutClass =
+    layout === 'inline'
+      ? ' playback-source-switch--inline'
+      : layout === 'topRow'
+        ? ' playback-source-switch--top-row'
+        : '';
+
+  const buttonLabel = layout === 'topRow' ? `Источник: ${currentLabel}` : alternate.label;
+  const ariaLabel =
+    layout === 'topRow'
+      ? `Источник: ${currentLabel}. ${switchTooltip}`
+      : `Источник воспроизведения: ${switchTooltip}`;
+
   const button = (
-    <button
+    <Button
       type="button"
-      className={`playback-source-switch${inline ? ' playback-source-switch--inline' : ''}`}
+      className={`playback-source-switch${layoutClass}`}
       disabled={disabled}
-      title={`Переключить на ${alternate.label}`}
-      aria-label={`Источник воспроизведения: переключить на ${alternate.label}`}
+      title={switchTooltip}
+      aria-label={ariaLabel}
       onClick={handleSwitch}
+      variant="ghost"
+      size="sm"
     >
-      {alternate.label}
-    </button>
+      {buttonLabel}
+    </Button>
   );
 
-  if (inline) {
+  if (layout === 'inline') {
     return (
       <span className="playlist-stats-header__switch">
         <span className="playlist-stats-header__sep" aria-hidden>

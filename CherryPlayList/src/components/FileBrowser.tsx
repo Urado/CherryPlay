@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -515,26 +516,28 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
     <div className="file-browser">
       <div className="file-browser-header">
         <div className="file-browser-nav">
-          <button
+          <IconButton
             className="nav-button"
             onClick={handleBack}
             disabled={!canGoBack || loading}
             title="Назад (по истории навигации)"
             type="button"
             aria-label="Назад по истории навигации"
-          >
-            <ArrowBackIcon />
-          </button>
-          <button
+            icon={<ArrowBackIcon />}
+            variant="ghost"
+            size="md"
+          ></IconButton>
+          <IconButton
             className="nav-button"
             onClick={handleUp}
             disabled={!canGoUp || loading}
             title="К родительской папке"
             type="button"
             aria-label="К родительской папке"
-          >
-            <ArrowUpwardIcon />
-          </button>
+            icon={<ArrowUpwardIcon />}
+            variant="ghost"
+            size="md"
+          ></IconButton>
           <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
             <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
               {overflowIndex > 0 && (
@@ -602,39 +605,44 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
           </div>
           <div className="file-browser-toolbar-actions">
             {hasSelectedPaths ? (
-              <button
+              <IconButton
                 type="button"
                 className="nav-button"
                 onClick={deselectAllVisible}
                 disabled={loading}
                 title="Снять выделение"
                 aria-label="Снять выделение"
-              >
-                <ClearIcon />
-              </button>
+                icon={<ClearIcon />}
+                variant="ghost"
+                size="md"
+              ></IconButton>
             ) : (
               filteredItems.length > 0 && (
-                <button
+                <IconButton
                   type="button"
                   className="nav-button"
                   onClick={selectAllVisible}
                   disabled={loading}
                   title="Выбрать всё"
                   aria-label="Выбрать всё"
-                >
-                  <SelectAllIcon />
-                </button>
+                  icon={<SelectAllIcon />}
+                  variant="ghost"
+                  size="md"
+                ></IconButton>
               )
             )}
-            <button
+            <Button
               type="button"
               className="file-browser-choose-folder"
               onClick={handleChooseFolder}
               disabled={loading}
               title="Выбрать папку"
+              startIcon={<FolderIcon />}
+              variant="secondary"
+              size="sm"
             >
-              <FolderIcon /> Папка
-            </button>
+              Папка
+            </Button>
           </div>
         </div>
         <input

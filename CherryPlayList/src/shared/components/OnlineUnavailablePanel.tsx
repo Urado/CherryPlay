@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import './OnlineUnavailablePanel.css';
@@ -43,14 +44,16 @@ export const OnlineUnavailablePanel: React.FC<OnlineUnavailablePanelProps> = ({
       <p className="online-unavailable-panel-title">Не удалось подключиться к серверу</p>
       {isReconnecting && <p className="online-unavailable-panel-hint">Проверка соединения...</p>}
       {onRetry && (
-        <button
+        <Button
           className="action-button online-unavailable-panel-retry"
           onClick={onRetry}
           disabled={isReconnecting}
           type="button"
+          variant="primary"
+          size="md"
         >
           {isReconnecting ? 'Проверка...' : 'Проверить сейчас'}
-        </button>
+        </Button>
       )}
       {lastCheckFailed && !isReconnecting && (
         <p className="online-unavailable-panel-hint">Сервер недоступен</p>

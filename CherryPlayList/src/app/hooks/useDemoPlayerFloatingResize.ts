@@ -3,20 +3,15 @@ import type { PointerEvent } from 'react';
 
 import {
   clampFloatingSize,
-  FALLBACK_PANEL_HEIGHT_PX,
   FALLBACK_PANEL_WIDTH_PX,
+  FLOATING_PANEL_FIXED_HEIGHT_PX,
   type FloatingMetrics,
 } from '@app/hooks/demoPlayerFloatingPositioning';
 import type { DemoPlayerFloatingSize } from '@shared/stores/settingsStore';
 
-type ResizeAxis = 'east' | 'south' | 'southeast';
-
 interface ResizeState {
-  axis: ResizeAxis;
   startX: number;
-  startY: number;
   originWidth: number;
-  originHeight: number;
 }
 
 interface UseDemoPlayerFloatingResizeParams {
@@ -31,13 +26,6 @@ export interface DemoPlayerFloatingResizeApi {
   handleResizePointerDown: (event: PointerEvent<HTMLDivElement>) => void;
   handleResizePointerMove: (event: PointerEvent<HTMLDivElement>) => void;
   finishResizePointer: (event: PointerEvent<HTMLDivElement>) => void;
-}
-
-function resolveAxis(value: string | null): ResizeAxis {
-  if (value === 'east' || value === 'south') {
-    return value;
-  }
-  return 'southeast';
 }
 
 export function useDemoPlayerFloatingResize({
@@ -55,19 +43,14 @@ export function useDemoPlayerFloatingResize({
         return;
       }
 
-      const axis = resolveAxis(event.currentTarget.dataset.resizeAxis ?? null);
       const metrics = measurePanelAndContainer();
       const originWidth = floatingSize?.width ?? metrics?.panelWidth ?? FALLBACK_PANEL_WIDTH_PX;
-      const originHeight = floatingSize?.height ?? metrics?.panelHeight ?? FALLBACK_PANEL_HEIGHT_PX;
 
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       setResizeState({
-        axis,
         startX: event.clientX,
-        startY: event.clientY,
         originWidth,
-        originHeight,
       });
     },
     [floatingSize, isLayoutBlocked, measurePanelAndContainer],
@@ -85,14 +68,10 @@ export function useDemoPlayerFloatingResize({
       }
 
       const deltaX = event.clientX - resizeState.startX;
-      const deltaY = event.clientY - resizeState.startY;
-      const nextWidth =
-        resizeState.axis === 'south' ? resizeState.originWidth : resizeState.originWidth + deltaX;
-      const nextHeight =
-        resizeState.axis === 'east' ? resizeState.originHeight : resizeState.originHeight + deltaY;
+      const nextWidth = resizeState.originWidth + deltaX;
       const clampedSize = clampFloatingSize(
         nextWidth,
-        nextHeight,
+        FLOATING_PANEL_FIXED_HEIGHT_PX,
         metrics.containerWidth,
         metrics.containerHeight,
       );
@@ -118,27 +97,24 @@ export function useDemoPlayerFloatingResize({
 
       const metrics = measurePanelAndContainer();
       const deltaX = event.clientX - activeResizeState.startX;
-      const deltaY = event.clientY - activeResizeState.startY;
-      const rawWidth =
-        activeResizeState.axis === 'south'
-          ? activeResizeState.originWidth
-          : activeResizeState.originWidth + deltaX;
-      const rawHeight =
-        activeResizeState.axis === 'east'
-          ? activeResizeState.originHeight
-          : activeResizeState.originHeight + deltaY;
+      const rawWidth = activeResizeState.originWidth + deltaX;
 
       if (!metrics) {
         commitFloatingSize({
           width: Math.max(1, rawWidth),
-          height: Math.max(1, rawHeight),
+          height: FLOATING_PANEL_FIXED_HEIGHT_PX,
         });
         return;
       }
 
       commitFloatingSize(
         previewSize ??
-          clampFloatingSize(rawWidth, rawHeight, metrics.containerWidth, metrics.containerHeight),
+          clampFloatingSize(
+            rawWidth,
+            FLOATING_PANEL_FIXED_HEIGHT_PX,
+            metrics.containerWidth,
+            metrics.containerHeight,
+          ),
       );
     },
     [commitFloatingSize, measurePanelAndContainer, resizeSize, resizeState],

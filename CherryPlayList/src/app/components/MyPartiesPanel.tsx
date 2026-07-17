@@ -1,6 +1,8 @@
 import {
+  Button,
   formatDateInTimeZone,
   getDefaultTimeZone,
+  IconButton,
   sortPartiesByEventDateDesc,
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
@@ -228,14 +230,14 @@ export const MyPartiesPanel: React.FC = () => {
         <div className="modal-content my-parties-panel-content">
           <div className="modal-header">
             <h2 className="modal-title">Мои вечеринки</h2>
-            <button
-              type="button"
+            <IconButton
               className="modal-close"
               onClick={handleCancel}
               aria-label="Закрыть"
-            >
-              <CloseIcon />
-            </button>
+              icon={<CloseIcon />}
+              variant="ghost"
+              size="md"
+            ></IconButton>
           </div>
 
           <div className="modal-body">
@@ -246,9 +248,15 @@ export const MyPartiesPanel: React.FC = () => {
                 <p className="my-parties-panel-auth-stub-text">
                   Для управления вечеринками необходимо войти в аккаунт.
                 </p>
-                <button type="button" className="modal-button primary" onClick={handleOpenAccount}>
+                <Button
+                  type="button"
+                  className="modal-button"
+                  onClick={handleOpenAccount}
+                  variant="primary"
+                  size="sm"
+                >
                   Войти
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -323,10 +331,11 @@ export const MyPartiesPanel: React.FC = () => {
                           </div>
 
                           <div className="my-parties-panel-item-actions">
-                            <button
+                            <Button
                               type="button"
                               className={`my-parties-panel-catalog-toggle-btn${isListed ? ' my-parties-panel-catalog-toggle-btn--listed' : ''}`}
                               disabled={networkActionsDisabled || isRowBusy}
+                              loading={togglingId === party.id}
                               aria-pressed={isListed}
                               aria-label={`Каталог: ${isListed ? 'В каталоге' : 'По ссылке'}`}
                               title={
@@ -337,15 +346,18 @@ export const MyPartiesPanel: React.FC = () => {
                                     : 'По ссылке. Нажмите, чтобы добавить в каталог.'
                               }
                               onClick={() => void handleToggleListed(party, !isListed)}
+                              variant="secondary"
+                              size="sm"
                             >
                               {isListed ? 'В каталоге' : 'По ссылке'}
-                            </button>
+                            </Button>
 
-                            <button
+                            <Button
                               type="button"
-                              className="modal-button primary my-parties-panel-bind-btn"
+                              className="modal-button my-parties-panel-bind-btn"
                               onClick={() => void handleBind(party)}
                               disabled={networkActionsDisabled || isRowBusy || isLinked}
+                              loading={bindingId === party.id}
                               title={
                                 networkActionsDisabled
                                   ? networkDisabledTitle
@@ -354,21 +366,24 @@ export const MyPartiesPanel: React.FC = () => {
                                     : `Привязать к проекту: ${party.name}`
                               }
                               aria-label={`Привязать к проекту: ${party.name}`}
+                              variant="primary"
+                              size="sm"
+                              startIcon={<LinkOutlinedIcon fontSize="small" />}
                             >
-                              <LinkOutlinedIcon fontSize="small" />
-                              {bindingId === party.id ? 'Привязка...' : 'Привязать'}
-                            </button>
+                              Привязать
+                            </Button>
 
-                            <button
+                            <IconButton
                               type="button"
-                              className="modal-button danger my-parties-panel-delete-btn"
+                              className="modal-button my-parties-panel-delete-btn"
                               onClick={() => setDeleteTarget(party)}
                               disabled={networkActionsDisabled || isRowBusy}
                               title={networkActionsDisabled ? networkDisabledTitle : 'Удалить'}
                               aria-label={`Удалить вечеринку ${party.name}`}
-                            >
-                              <DeleteOutlineIcon fontSize="small" />
-                            </button>
+                              variant="ghost"
+                              size="sm"
+                              icon={<DeleteOutlineIcon fontSize="small" />}
+                            />
                           </div>
                         </li>
                       );
@@ -380,9 +395,15 @@ export const MyPartiesPanel: React.FC = () => {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="modal-button secondary" onClick={handleCancel}>
+            <Button
+              type="button"
+              className="modal-button"
+              onClick={handleCancel}
+              variant="secondary"
+              size="sm"
+            >
               Закрыть
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -411,14 +432,15 @@ export const MyPartiesPanel: React.FC = () => {
               <h2 className="modal-title" id="my-parties-delete-title">
                 Удалить вечеринку?
               </h2>
-              <button
+              <IconButton
                 className="modal-close"
                 type="button"
                 onClick={handleDeleteDismiss}
                 aria-label="Закрыть"
-              >
-                <CloseIcon />
-              </button>
+                icon={<CloseIcon />}
+                variant="ghost"
+                size="md"
+              ></IconButton>
             </div>
 
             <div className="modal-body">
@@ -429,22 +451,28 @@ export const MyPartiesPanel: React.FC = () => {
             </div>
 
             <div className="modal-footer">
-              <button
-                className="modal-button secondary"
+              <Button
+                className="modal-button"
                 type="button"
                 onClick={handleDeleteDismiss}
                 disabled={deletingId !== null}
+                variant="secondary"
+                size="sm"
               >
                 Отмена
-              </button>
-              <button
-                className="modal-button danger"
+              </Button>
+              <Button
+                className="modal-button"
                 type="button"
                 onClick={() => void handleDeleteConfirm()}
                 disabled={deletingId !== null}
+                loading={deletingId !== null}
+                loadingLabel="Удаление..."
+                variant="danger"
+                size="sm"
               >
-                {deletingId !== null ? 'Удаление...' : 'Удалить'}
-              </button>
+                Удалить
+              </Button>
             </div>
           </div>
         </div>

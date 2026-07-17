@@ -23,10 +23,12 @@
 
 .demo-player-panel--floating {
   z-index: 200;
-  max-width: 400px;
-  width: min(100%, 400px);
-  min-width: 280px;
-  min-height: 112px;
+  max-width: 480px;
+  width: min(100%, 480px);
+  min-width: 400px;
+  height: 120px;
+  min-height: 120px;
+  max-height: 120px;
   border-radius: 8px;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
   background: var(--surface-elevated, var(--bg-secondary, #1e1e1e));
@@ -68,79 +70,70 @@
   text-overflow: ellipsis;
 }
 
-.demo-player-panel__grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.demo-player-panel__grip.cp-button,
+.demo-player-panel__close.cp-button {
   flex-shrink: 0;
   color: var(--text-secondary);
   touch-action: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.demo-player-panel__grip.cp-button {
   cursor: grab;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 4px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
 }
 
-.demo-player-panel__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  min-width: 32px;
-  min-height: 32px;
-  padding: 4px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    color 0.2s,
-    opacity 0.2s;
-}
-
-.demo-player-panel__close:hover:not(:disabled) {
+.demo-player-panel__close.cp-button:hover:not(:disabled) {
   background: var(--surface-muted, rgba(255, 255, 255, 0.06));
   color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
 }
 
-.demo-player-panel__close:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.demo-player-panel__grip:active:not(:disabled) {
+.demo-player-panel__grip.cp-button:active:not(:disabled) {
   cursor: grabbing;
 }
 
-.demo-player-panel__grip:disabled {
+.demo-player-panel__grip.cp-button:disabled,
+.demo-player-panel__close.cp-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.demo-player-panel__grip:focus-visible,
-.demo-player-panel__close:focus-visible {
-  outline: 2px solid var(--interactive-primary, #4f8cff);
-  outline-offset: 1px;
-}
-
 .demo-player-panel__player {
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .demo-player-panel--floating .demo-player-panel__player {
-  padding: 6px;
+  padding: 8px 12px 10px;
+  padding-right: 16px;
   overflow: hidden;
 }
 
 .demo-player-panel--floating .demo-player {
+  flex: 1 1 auto;
   background: transparent;
   border: none;
+  padding: 0;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-player-panel--floating .demo-player__info-row {
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-player-panel--floating .demo-player__volume-slider {
+  width: 88px;
+  min-width: 72px;
+  max-width: 96px;
 }
 
 .demo-player-panel__resize-handle {
@@ -150,39 +143,11 @@
 }
 
 .demo-player-panel__resize-handle--east {
-  top: 36px;
+  top: 0;
   right: 0;
-  bottom: 10px;
+  bottom: 0;
   width: 8px;
   cursor: ew-resize;
-}
-
-.demo-player-panel__resize-handle--south {
-  right: 10px;
-  bottom: 0;
-  left: 0;
-  height: 8px;
-  cursor: ns-resize;
-}
-
-.demo-player-panel__resize-handle--southeast {
-  right: 0;
-  bottom: 0;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
-  background:
-    linear-gradient(
-      135deg,
-      transparent 35%,
-      color-mix(in srgb, var(--text-secondary, #aaa) 70%, transparent) 35%,
-      color-mix(in srgb, var(--text-secondary, #aaa) 70%, transparent) 45%,
-      transparent 45%,
-      transparent 55%,
-      color-mix(in srgb, var(--text-secondary, #aaa) 70%, transparent) 55%,
-      color-mix(in srgb, var(--text-secondary, #aaa) 70%, transparent) 65%,
-      transparent 65%
-    );
 }
 
 .demo-player-panel--layout-blocked .demo-player-panel__resize-handle {
@@ -190,17 +155,12 @@
 }
 
 @media (max-width: 720px) {
-  .demo-player-panel--floating .demo-player {
-    padding: 4px 6px;
+  .demo-player-panel--floating {
+    min-width: min(100%, 400px);
   }
 
-  .demo-player-panel--floating .demo-player__controls-row {
-    flex-wrap: wrap;
-    row-gap: 4px;
-  }
-
-  .demo-player-panel--floating .demo-player__timeline {
-    min-width: 96px;
+  .demo-player-panel--floating .demo-player__time {
+    min-width: 2.25em;
   }
 }
 

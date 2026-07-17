@@ -1,3 +1,4 @@
+import { Button, IconButton, InfoIcon } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -328,9 +329,15 @@ export const SettingsModal: React.FC = () => {
         <div className="modal-content">
           <div className="modal-header">
             <h2 className="modal-title">Настройки</h2>
-            <button className="modal-close" onClick={handleCancel}>
-              <CloseIcon />
-            </button>
+            <IconButton
+              className="modal-close"
+              type="button"
+              onClick={handleCancel}
+              aria-label="Закрыть"
+              icon={<CloseIcon />}
+              variant="ghost"
+              size="md"
+            />
           </div>
 
           <div className="modal-body">
@@ -564,20 +571,10 @@ export const SettingsModal: React.FC = () => {
                 </label>
               </div>
 
-              <span
+              <InfoIcon
                 className="settings-info-icon"
                 title="При сохранении треки копируются в папку tracks/ рядом с файлом проекта. Позволяет перенести проект на другой компьютер."
-                style={{
-                  cursor: 'help',
-                  fontSize: 14,
-                  color: 'var(--text-secondary, #9e9e9e)',
-                  padding: '2px 6px',
-                  borderRadius: 999,
-                  border: '1px solid var(--border-subtle, rgba(255,255,255,0.12))',
-                }}
-              >
-                i
-              </span>
+              />
             </div>
 
             {!projectMeta.filePath && (
@@ -607,22 +604,26 @@ export const SettingsModal: React.FC = () => {
               className="settings-group"
               style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
             >
-              <button
+              <Button
                 type="button"
-                className="modal-button secondary"
+                className="modal-button"
                 onClick={() => void handleExportSettings()}
                 disabled={exportInProgress}
+                variant="secondary"
+                size="sm"
               >
                 Экспорт…
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="modal-button secondary"
+                className="modal-button"
                 onClick={() => void handleImportSettings()}
                 disabled={importInProgress}
+                variant="secondary"
+                size="sm"
               >
                 Импорт…
-              </button>
+              </Button>
               <input
                 ref={importFileInputRef}
                 type="file"
@@ -650,12 +651,24 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           <div className="modal-footer">
-            <button className="modal-button secondary" onClick={handleCancel}>
+            <Button
+              className="modal-button"
+              type="button"
+              onClick={handleCancel}
+              variant="secondary"
+              size="sm"
+            >
               Отмена
-            </button>
-            <button className="modal-button primary" onClick={handleSave}>
+            </Button>
+            <Button
+              className="modal-button"
+              type="button"
+              onClick={handleSave}
+              variant="primary"
+              size="sm"
+            >
               Сохранить
-            </button>
+            </Button>
           </div>
         </div>
       </div>

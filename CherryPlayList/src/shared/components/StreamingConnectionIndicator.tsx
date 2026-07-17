@@ -45,7 +45,7 @@ export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicator
 
   const statusLabel = isConnected ? 'Онлайн' : isConnecting ? 'Подключение…' : 'Нет связи';
 
-  const rootClassName = [
+  const shellClassName = [
     'streaming-connection-indicator',
     isConnected
       ? 'streaming-connection-indicator--connected'
@@ -59,38 +59,73 @@ export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicator
     .filter(Boolean)
     .join(' ');
 
+  const tooltip = getConnectionTooltip();
+
+  const statusDot = (
+    <span
+      className={`streaming-connection-indicator__dot ${
+        isConnected
+          ? 'streaming-connection-indicator__dot--connected'
+          : isConnecting
+            ? 'streaming-connection-indicator__dot--connecting'
+            : 'streaming-connection-indicator__dot--disconnected'
+      }`}
+      aria-hidden
+    />
+  );
+
+  // Compact: fixed 28×28 shell; hit target is always the same box (button or status).
+  if (compact) {
+    return (
+      <span className={shellClassName}>
+        {canReconnect ? (
+          <button
+            type="button"
+            className="streaming-connection-indicator__hit"
+            title={tooltip}
+            onClick={onReconnect}
+            aria-label={tooltip}
+          >
+            {statusDot}
+          </button>
+        ) : (
+          <span
+            className="streaming-connection-indicator__hit"
+            role="status"
+            title={tooltip}
+            aria-label={tooltip}
+          >
+            {statusDot}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  const content = (
+    <>
+      {statusDot}
+      <span className="streaming-connection-indicator__label">{statusLabel}</span>
+    </>
+  );
+
+  if (canReconnect) {
+    return (
+      <button
+        type="button"
+        className={shellClassName}
+        title={tooltip}
+        onClick={onReconnect}
+        aria-label={tooltip}
+      >
+        {content}
+      </button>
+    );
+  }
+
   return (
-    <div
-      className={rootClassName}
-      title={getConnectionTooltip()}
-      role={canReconnect ? 'button' : undefined}
-      tabIndex={canReconnect ? 0 : undefined}
-      onClick={canReconnect ? onReconnect : undefined}
-      onKeyDown={
-        canReconnect
-          ? (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onReconnect?.();
-              }
-            }
-          : undefined
-      }
-      aria-label={getConnectionTooltip()}
-    >
-      <span
-        className={`streaming-connection-indicator__dot ${
-          isConnected
-            ? 'streaming-connection-indicator__dot--connected'
-            : isConnecting
-              ? 'streaming-connection-indicator__dot--connecting'
-              : 'streaming-connection-indicator__dot--disconnected'
-        }`}
-        aria-hidden
-      />
-      {!compact ? (
-        <span className="streaming-connection-indicator__label">{statusLabel}</span>
-      ) : null}
-    </div>
+    <span className={shellClassName} role="status" title={tooltip} aria-label={tooltip}>
+      {content}
+    </span>
   );
 };

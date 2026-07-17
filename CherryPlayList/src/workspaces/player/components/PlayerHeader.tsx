@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
@@ -54,6 +55,9 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
 
   return (
     <div className="playlist-header-section">
+      <div className="playlist-header-source-row">
+        <PlaybackSourceSwitcher layout="topRow" />
+      </div>
       <div className="playlist-stats-header">
         <div className="playlist-stats-header__info">
           <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
@@ -79,30 +83,33 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
               )}
             </>
           )}
-          <PlaybackSourceSwitcher inline />
         </div>
 
         {showSelectionActions ? (
           <div className="playlist-header-actions">
             {hasSelectedItems ? (
               <>
-                <button
+                <IconButton
                   onClick={onDeselectAll}
                   className="playlist-header-action-icon"
                   title="Deselect All"
-                >
-                  <ClearIcon style={{ fontSize: '20px' }} />
-                </button>
+                  aria-label="Deselect All"
+                  icon={<ClearIcon style={{ fontSize: '20px' }} />}
+                  variant="ghost"
+                  size="sm"
+                ></IconButton>
                 {canCreateGroup && (
-                  <button
+                  <IconButton
                     onClick={onCreateGroup}
                     className="playlist-header-action-icon"
                     title="Создать группу"
-                  >
-                    <GroupAddIcon style={{ fontSize: '20px' }} />
-                  </button>
+                    aria-label="Создать группу"
+                    icon={<GroupAddIcon style={{ fontSize: '20px' }} />}
+                    variant="ghost"
+                    size="sm"
+                  ></IconButton>
                 )}
-                <button
+                <IconButton
                   onClick={onRemoveSelectedItems}
                   className="playlist-header-action-icon delete-button"
                   disabled={!canRemoveSelectedItems}
@@ -111,18 +118,22 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                       ? `Delete Selected (${selectedItemsCount})`
                       : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                   }
-                >
-                  <DeleteSweepIcon style={{ fontSize: '20px' }} />
-                </button>
+                  aria-label="Удалить выбранные"
+                  icon={<DeleteSweepIcon style={{ fontSize: '20px' }} />}
+                  variant="ghost"
+                  size="sm"
+                ></IconButton>
               </>
             ) : (
-              <button
+              <IconButton
                 onClick={onSelectAll}
                 className="playlist-header-action-icon"
                 title="Select All"
-              >
-                <SelectAllIcon style={{ fontSize: '20px' }} />
-              </button>
+                aria-label="Select All"
+                icon={<SelectAllIcon style={{ fontSize: '20px' }} />}
+                variant="ghost"
+                size="sm"
+              ></IconButton>
             )}
           </div>
         ) : null}
@@ -131,40 +142,50 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
       <div className="player-header-actions">
         <div className="player-session-controls">
           {isPreparationMode ? (
-            <button
+            <Button
               onClick={onStartSession}
               disabled={allTracksCount === 0}
               className="player-session-button player-session-button--start"
               title={allTracksCount === 0 ? 'Добавьте треки в плейлист' : undefined}
+              type="button"
+              variant="primary"
+              size="sm"
             >
               Начать проигрывание
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={onResetSession}
               className="player-session-button player-session-button--reset"
+              type="button"
+              variant="secondary"
+              size="sm"
             >
               Остановить проигрывание
-            </button>
+            </Button>
           )}
         </div>
 
-        <button
+        <IconButton
           onClick={onOpenGlobalSettings}
           className="player-settings-icon"
           title="Настройки проигрывания"
-        >
-          <SettingsIcon style={{ fontSize: '20px' }} />
-        </button>
+          aria-label="Настройки проигрывания"
+          icon={<SettingsIcon style={{ fontSize: '20px' }} />}
+          variant="ghost"
+          size="sm"
+        ></IconButton>
 
-        <button
+        <IconButton
           onClick={onExportTracksToText}
           className="player-settings-icon"
           title="Список треков в файл…"
           disabled={allTracksCount === 0}
-        >
-          <TextSnippetIcon style={{ fontSize: '20px' }} />
-        </button>
+          aria-label="Список треков в файл"
+          icon={<TextSnippetIcon style={{ fontSize: '20px' }} />}
+          variant="ghost"
+          size="sm"
+        ></IconButton>
       </div>
     </div>
   );

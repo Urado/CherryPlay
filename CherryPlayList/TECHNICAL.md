@@ -153,6 +153,10 @@ CherryPlayList/
 
 Настроены в `tsconfig.json` и `vite.config.mjs`.
 
+### UI-примитивы и CSS-контракт
+
+Оболочка CherryPlayList (модалки, заголовок, строки списка) использует shell-примитивы из `@cherryplay/components` (`Button`, `IconButton`, `Disclosure` и др.). Подробности API — [CherryPlayComponents/README.md](../CherryPlayComponents/README.md#ui-примитивы-shell); контракт слоёв и импорт CSS — [FULL_DOCUMENTATION.md §9.1.0](./FULL_DOCUMENTATION.md#910-ui-layers-and-migration-contract).
+
 ### Компоненты приложения
 
 1. **Обозреватель файлов** - просмотр и выбор треков из локальной библиотеки

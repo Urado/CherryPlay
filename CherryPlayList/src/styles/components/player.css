@@ -35,6 +35,13 @@
   height: 1.25em;
 }
 
+.playback-source-switch--top-row {
+  display: inline-flex;
+  align-items: center;
+  min-height: 0;
+  padding-block: 0;
+}
+
 .playback-source-switch:hover:not(:disabled) {
   opacity: 1;
   color: var(--text-primary);
@@ -47,7 +54,7 @@
   cursor: not-allowed;
 }
 
-/* Действия в шапке плеера */
+/* Player header actions */
 .player-header-actions {
   display: flex;
   align-items: center;
@@ -56,7 +63,7 @@
   flex-shrink: 0;
 }
 
-/* Кнопка начала сессии */
+/* Session start controls */
 .player-session-controls {
   display: flex;
   align-items: center;
@@ -64,6 +71,8 @@
 }
 
 .player-session-button {
+  /* Shared width so start/stop labels do not jump layout (longer RU: «Остановить проигрывание»). */
+  min-width: 15em;
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
@@ -102,7 +111,7 @@
   opacity: 0.7;
 }
 
-/* Иконка настроек */
+/* Settings icon button */
 .player-settings-icon {
   background: transparent;
   border: 1px solid var(--ui-border);
@@ -125,35 +134,46 @@
   border-color: var(--accent-primary);
 }
 
-/* Кнопка настроек в строке трека */
-.playlist-item-settings {
+/* Track row settings / more-actions — bordered ghost icon-only.
+   Rest: transparent bg + subtle ui-border. Hover: soft fill + accent border.
+   Opt out of chrome via Button/IconButton borderless. */
+.playlist-item-settings,
+.cp-button.playlist-item-settings,
+.playlist-item-more,
+.cp-button.playlist-item-more {
   background: transparent;
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--ui-border, var(--cp-ui-border));
   color: var(--text-secondary);
-  border-radius: 4px;
-  padding: 4px 6px;
   cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
   min-width: 32px;
+  width: 32px;
   height: 32px;
   position: relative;
   flex-shrink: 0;
+  border-radius: var(--cp-button-radius, 8px);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 
-.playlist-item-settings:hover {
+.playlist-item-settings:hover,
+.cp-button.playlist-item-settings:hover:not(:disabled),
+.playlist-item-more:hover,
+.cp-button.playlist-item-more:hover:not(:disabled) {
   background-color: var(--bg-hover);
   color: var(--text-primary);
   border-color: var(--accent-primary);
 }
 
-/* Applies to both the gear settings button and the ⋮ actions button (playlist-item-actions) */
-.playlist-item-settings:disabled {
+.playlist-item-settings:disabled,
+.cp-button.playlist-item-settings:disabled,
+.playlist-item-more:disabled,
+.cp-button.playlist-item-more:disabled {
   border-color: transparent;
   color: var(--text-disabled, rgba(255, 255, 255, 0.18));
   background: transparent;
@@ -176,6 +196,15 @@
   justify-content: center;
   line-height: 1;
   font-weight: bold;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.list-row-settings-wrap,
+.playlist-item-settings-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
 .track-settings-dropdown {
@@ -291,7 +320,7 @@
   color: var(--text-secondary);
 }
 
-/* Track actions dropdown (⋮ menu) */
+/* Track actions dropdown (ellipsis menu) */
 .track-actions-dropdown {
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
@@ -353,7 +382,7 @@
   font-size: var(--font-size-body);
 }
 
-/* Панель управления плеером */
+/* Player controls panel */
 .player-controls {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
@@ -370,34 +399,6 @@
   align-items: center;
   gap: var(--spacing-sm);
   justify-content: space-between;
-}
-
-.player-controls__button {
-  background: var(--bg-secondary);
-  border: 1px solid var(--ui-border);
-  color: var(--text-primary);
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.player-controls__button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.player-controls__button:not(:disabled):hover {
-  background-color: var(--bg-hover);
-}
-
-.player-controls__button--play {
-  width: 40px;
-  height: 40px;
 }
 
 .player-controls__volume {
@@ -467,7 +468,7 @@
   text-align: right;
 }
 
-/* Состояния треков */
+/* Track states */
 .playlist-item--played {
   opacity: 0.5;
   color: var(--text-secondary);
@@ -486,32 +487,36 @@
   border-left-color: var(--accent-primary);
 }
 
-/* Кнопка отключения трека */
-.playlist-item-disable {
+/* Track disable button — bordered ghost icon-only (match settings/more) */
+.playlist-item-disable,
+.cp-button.playlist-item-disable {
   background: transparent;
-  border: 1px solid var(--ui-border);
+  border: 1px solid var(--ui-border, var(--cp-ui-border));
   color: var(--text-secondary);
-  border-radius: 4px;
-  padding: 4px 6px;
+  border-radius: var(--cp-button-radius, 8px);
+  padding: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition:
     background-color 0.2s ease,
+    border-color 0.2s ease,
     color 0.2s ease;
   min-width: 32px;
+  width: 32px;
   height: 32px;
   flex-shrink: 0;
 }
 
-.playlist-item-disable:hover {
+.playlist-item-disable:hover,
+.cp-button.playlist-item-disable:hover:not(:disabled) {
   background-color: var(--bg-hover);
   color: var(--text-primary);
   border-color: var(--accent-primary);
 }
 
-/* Индикатор соединения SignalR */
+/* SignalR connection indicator */
 .player-connection-indicator {
   display: inline-flex;
   align-items: center;
@@ -584,13 +589,13 @@
   border-color: var(--state-error, #f44336);
 }
 
-/* Заблокированные треки (проигранные или текущие в режиме сессии) */
+/* Locked tracks (played or current during session mode) */
 .playlist-item[draggable='false'] {
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-/* Стили для групп и вложенности */
+/* Group and nesting styles */
 .playlist-item--group {
   background-color: var(--bg-secondary, rgba(100, 149, 237, 0.05));
   font-weight: 500;
@@ -600,7 +605,7 @@
   background-color: var(--bg-hover);
 }
 
-/* Вложенные элементы - вертикальная полоска слева */
+/* Nested items: left vertical stripe */
 .playlist-item--level-1,
 .playlist-item--level-2,
 .playlist-item--level-3,
@@ -611,22 +616,22 @@
   position: relative;
 }
 
-/* Дополнительная полоска для более глубокой вложенности */
-/* Используем rgba для цвета границы, чтобы не влиять на opacity всего элемента */
+/* Extra stripe for deeper nesting */
+/* Use rgba on border color to avoid changing full item opacity */
 .playlist-item--level-2 {
-  border-left-color: rgba(74, 158, 255, 0.6); /* --accent-primary с opacity 0.6 */
+  border-left-color: rgba(74, 158, 255, 0.6); /* --accent-primary with opacity 0.6 */
 }
 
 .playlist-item--level-3 {
-  border-left-color: rgba(74, 158, 255, 0.4); /* --accent-primary с opacity 0.4 */
+  border-left-color: rgba(74, 158, 255, 0.4); /* --accent-primary with opacity 0.4 */
 }
 
 .playlist-item--level-4,
 .playlist-item--level-5 {
-  border-left-color: rgba(74, 158, 255, 0.3); /* --accent-primary с opacity 0.3 */
+  border-left-color: rgba(74, 158, 255, 0.3); /* --accent-primary with opacity 0.3 */
 }
 
-/* Иконка группы */
+/* Group icon */
 .playlist-item-group-icon {
   display: flex;
   align-items: center;
@@ -636,8 +641,9 @@
   height: 32px;
 }
 
-/* Кнопка расформирования группы */
-.playlist-item-ungroup {
+/* Ungroup button */
+.playlist-item-ungroup,
+.cp-button.playlist-item-ungroup {
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -654,17 +660,19 @@
     color 0.2s;
 }
 
-.playlist-item-ungroup:hover:not(:disabled) {
+.playlist-item-ungroup:hover:not(:disabled),
+.cp-button.playlist-item-ungroup:hover:not(:disabled) {
   background-color: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.playlist-item-ungroup:disabled {
+.playlist-item-ungroup:disabled,
+.cp-button.playlist-item-ungroup:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Контейнер для prefix-icon (иконка группы) - должен занимать столько же места, сколько кнопка Play */
+/* Prefix icon container (same slot size as Play button) */
 .playlist-item-prefix-icon {
   display: flex;
   align-items: center;
@@ -674,7 +682,7 @@
   height: 32px;
 }
 
-/* Кнопка expand для группы */
+/* Expand button for group */
 .group-header-expand-button {
   background: transparent;
   border: none;

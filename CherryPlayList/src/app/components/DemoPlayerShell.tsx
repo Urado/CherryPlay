@@ -1,3 +1,4 @@
+import { IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -8,6 +9,10 @@ import {
   useDemoPlayerFloatingResize,
   useDemoPlayerFloatingVisibility,
 } from '@app/hooks';
+import {
+  FALLBACK_PANEL_WIDTH_PX,
+  FLOATING_PANEL_FIXED_HEIGHT_PX,
+} from '@app/hooks/demoPlayerFloatingPositioning';
 import { DemoPlayer } from '@shared/components';
 import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDemoPlayerStore } from '@shared/stores/demoPlayerStore';
@@ -118,8 +123,8 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
       left: resolvedFloatingPosition.x,
       top: resolvedFloatingPosition.y,
       visibility: 'visible',
-      width: resolvedFloatingSize?.width,
-      height: resolvedFloatingSize?.height,
+      width: resolvedFloatingSize?.width ?? FALLBACK_PANEL_WIDTH_PX,
+      height: FLOATING_PANEL_FIXED_HEIGHT_PX,
     };
   }, [isFloatingVisible, resolvedFloatingPosition, resolvedFloatingSize]);
 
@@ -132,27 +137,31 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
         onPointerUp={finishGripPointer}
         onPointerCancel={finishGripPointer}
       >
-        <button
+        <IconButton
           type="button"
           className="demo-player-panel__grip"
           aria-label="Перетащить панель прослушивания"
           title="Перетащить панель (стрелки; Shift+стрелки — большой шаг)"
           onKeyDown={handleGripKeyDown}
           disabled={isLayoutBlocked}
-        >
-          <DragHandleIcon fontSize="small" aria-hidden />
-        </button>
+          variant="ghost"
+          size="sm"
+          borderless
+          icon={<DragHandleIcon fontSize="small" aria-hidden />}
+        />
         <span className="demo-player-panel__title">Прослушивание</span>
-        <button
+        <IconButton
           type="button"
           className="demo-player-panel__close"
           aria-label="Закрыть окно прослушивания"
           title="Закрыть панель и остановить прослушивание"
           onClick={handleCloseFloatingPanel}
           disabled={isLayoutBlocked}
-        >
-          <CloseIcon fontSize="small" aria-hidden />
-        </button>
+          variant="ghost"
+          size="sm"
+          borderless
+          icon={<CloseIcon fontSize="small" aria-hidden />}
+        />
       </div>
       <div className="demo-player-panel__player" inert={isLayoutBlocked || undefined}>
         <DemoPlayer
@@ -164,24 +173,6 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
       <div
         className="demo-player-panel__resize-handle demo-player-panel__resize-handle--east"
         data-resize-axis="east"
-        onPointerDown={handleResizePointerDown}
-        onPointerMove={handleResizePointerMove}
-        onPointerUp={finishResizePointer}
-        onPointerCancel={finishResizePointer}
-        aria-hidden
-      />
-      <div
-        className="demo-player-panel__resize-handle demo-player-panel__resize-handle--south"
-        data-resize-axis="south"
-        onPointerDown={handleResizePointerDown}
-        onPointerMove={handleResizePointerMove}
-        onPointerUp={finishResizePointer}
-        onPointerCancel={finishResizePointer}
-        aria-hidden
-      />
-      <div
-        className="demo-player-panel__resize-handle demo-player-panel__resize-handle--southeast"
-        data-resize-axis="southeast"
         onPointerDown={handleResizePointerDown}
         onPointerMove={handleResizePointerMove}
         onPointerUp={finishResizePointer}

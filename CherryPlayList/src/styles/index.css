@@ -3,8 +3,8 @@
  * Imports all style modules in correct order
  */
 
-/* 1. Shell Palette from CherryPlayComponents (must be first) */
-@import '@cherryplay/components/styles/shell-palette.css';
+/* 1. Shared primitives + shell palette tokens */
+@import '@cherryplay/components/styles/primitives.css';
 
 /* 2. CSS Variables (local overrides if needed) */
 @import url('./variables.css');

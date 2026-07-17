@@ -283,7 +283,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setPartyVerified(false);
       }
     },
-    [isAuth, loadPartyMetadata, networkEnabled, setLinkedParty],
+    [isAuth, loadPartyMetadata, loadThemeAccess, networkEnabled, setLinkedParty],
   );
 
   const startReconnectTimer = useCallback(

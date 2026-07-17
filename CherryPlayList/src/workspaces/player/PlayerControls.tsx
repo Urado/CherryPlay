@@ -1,8 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import StopIcon from '@mui/icons-material/Stop';
+import { PlaybackControlButton } from '@cherryplay/components';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import React, { useCallback } from 'react';
@@ -90,43 +86,31 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   return (
     <div className="player-controls">
       <div className="player-controls__buttons">
-        <button
-          type="button"
-          className={`player-controls__button player-controls__button--play${hasError ? ' player-controls__button--error' : ''}`}
+        <PlaybackControlButton
+          control={hasError ? 'error' : isPlaying ? 'pause' : 'play'}
+          size="md"
           onClick={handleToggle}
           disabled={isDisabled}
           title={
             hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
           }
-          style={hasError ? { color: 'var(--color-error, #f44336)' } : undefined}
-        >
-          {hasError ? (
-            <ErrorOutlineIcon fontSize="medium" />
-          ) : isPlaying ? (
-            <PauseIcon fontSize="medium" />
-          ) : (
-            <PlayArrowIcon fontSize="medium" />
-          )}
-        </button>
-        <button
-          type="button"
-          className="player-controls__button player-controls__button--stop"
+        />
+        <PlaybackControlButton
+          control="stop"
+          size="md"
           onClick={handleStop}
           disabled={isDisabled}
           title="Начать заново"
           aria-label="Начать заново"
-        >
-          <StopIcon fontSize="medium" />
-        </button>
-        <button
-          type="button"
-          className="player-controls__button player-controls__button--next"
+        />
+        <PlaybackControlButton
+          control="next"
+          size="md"
           onClick={handleNext}
           disabled={isNextDisabled}
           title="Следующий"
-        >
-          <SkipNextIcon fontSize="medium" />
-        </button>
+          aria-label="Следующий"
+        />
         <div className="player-controls__volume">
           <VolumeDownIcon fontSize="small" />
           <input

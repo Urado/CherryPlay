@@ -1,4 +1,4 @@
-import { getPartyTheme, partyThemes, type PartyThemeId } from '@cherryplay/components';
+import { Button, getPartyTheme, partyThemes, type PartyThemeId } from '@cherryplay/components';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -262,16 +262,18 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
         {dropdownMenu && createPortal(dropdownMenu, document.body)}
       </div>
       {showApplyButton && (
-        <button
+        <Button
           type="button"
           className={applyButtonClassName}
           onClick={() => {
             setHasPendingThemeOverride(false);
             onThemeIdChange(pendingThemeId);
           }}
+          variant="primary"
+          size="md"
         >
           {applyButtonLabel}
-        </button>
+        </Button>
       )}
       {isThemeAccessLoading && (
         <div className="party-editor-theme-access-hint">Проверяем доступные темы...</div>

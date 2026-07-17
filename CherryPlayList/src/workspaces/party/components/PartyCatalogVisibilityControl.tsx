@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import './PartyCatalogVisibilityControl.css';
@@ -40,7 +41,7 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
     : 'Недоступно без подключения к серверу';
 
   const toggleButton = (
-    <button
+    <Button
       type="button"
       className={`party-catalog-visibility-toggle${isListedInCatalog ? ' party-catalog-visibility-toggle--listed' : ''}${isHeader ? ' party-catalog-visibility-toggle--header' : ''}${isDisabled ? ' party-catalog-visibility-toggle--disabled' : ''}`}
       disabled={isDisabled}
@@ -49,9 +50,11 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
       aria-busy={isUpdating}
       title={isDisabled ? disabledTitle : getCatalogToggleHint(isListedInCatalog)}
       onClick={() => onChange(!isListedInCatalog)}
+      variant="secondary"
+      size="sm"
     >
       {isUpdating ? '…' : label}
-    </button>
+    </Button>
   );
 
   if (isHeader) {

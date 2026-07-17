@@ -1,4 +1,5 @@
 import { type PartyThemeId, type PlaybackState } from '@cherryplay/components';
+import { Button, Disclosure } from '@cherryplay/components';
 import React, { useMemo } from 'react';
 
 import type { PartyLifecycleState } from '@shared/services/partyService';
@@ -144,22 +145,26 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
       )}
       <div className="party-workspace-demo-panel-buttons">
         {LIFECYCLE_PRESETS.map(({ label, lifecycle }) => (
-          <button
+          <Button
             key={lifecycle}
             type="button"
             className={buttonClassName(activeLifecycle === lifecycle)}
             onClick={() => setPreviewLifecycleOverride(lifecycle)}
+            variant="secondary"
+            size="sm"
           >
             {label}
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           type="button"
           className={buttonClassName(activeMockLive, 'live')}
           onClick={setPreviewMockLive}
+          variant="secondary"
+          size="sm"
         >
           Эфир (live)
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -201,38 +206,42 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
 
   const connectionBlock =
     variant === 'panel' ? (
-      <details className="party-workspace-demo-panel-accordion party-preview-scenario-controls-connection-accordion">
-        <summary className="party-workspace-demo-panel-accordion-summary">
-          Разрыв соединения
-        </summary>
+      <Disclosure
+        title="Разрыв соединения"
+        className="party-workspace-demo-panel-accordion party-preview-scenario-controls-connection-accordion"
+      >
         <div className="party-workspace-demo-panel-accordion-content">
           <div className="party-workspace-demo-panel-buttons">
             {CONNECTION_SCENARIOS.map(({ label, scenario }) => (
-              <button
+              <Button
                 key={scenario}
                 type="button"
                 className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
                 onClick={() => setPreviewConnectionBreak(scenario)}
+                variant="secondary"
+                size="sm"
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
-      </details>
+      </Disclosure>
     ) : (
       <div className="party-preview-scenario-controls-group">
         <span className="party-workspace-demo-panel-group-label">Разрыв соединения</span>
         <div className="party-workspace-demo-panel-buttons">
           {CONNECTION_SCENARIOS.map(({ label, scenario }) => (
-            <button
+            <Button
               key={scenario}
               type="button"
               className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
               onClick={() => setPreviewConnectionBreak(scenario)}
+              variant="secondary"
+              size="sm"
             >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -264,13 +273,15 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
 
   const resetBlock = (
     <div className="party-workspace-demo-panel-group">
-      <button
+      <Button
         type="button"
         className="party-workspace-demo-panel-button party-workspace-demo-panel-button--reset"
         onClick={resetPreviewScenario}
+        variant="secondary"
+        size="sm"
       >
         Снова как на сайте
-      </button>
+      </Button>
     </div>
   );
 

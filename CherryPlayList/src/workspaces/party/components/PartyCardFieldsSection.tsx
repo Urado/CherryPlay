@@ -1,4 +1,9 @@
-import { getPopularTimeZones, getDefaultTimeZone } from '@cherryplay/components';
+import {
+  Button,
+  getPopularTimeZones,
+  getDefaultTimeZone,
+  IconButton,
+} from '@cherryplay/components';
 import React, { useEffect, useRef, useState } from 'react';
 
 import {
@@ -71,9 +76,11 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
       <label className="party-editor-label">Танцевальные теги (макс. {maxTags})</label>
       <div className="party-editor-tags-predefined">
         {predefinedOptions.map((option) => (
-          <button
+          <Button
             key={option}
             type="button"
+            variant="ghost"
+            size="sm"
             className={`party-editor-tag-button ${tags.includes(option) ? 'party-editor-tag-button--selected' : ''}`}
             onClick={() => {
               if (tags.includes(option)) {
@@ -85,11 +92,13 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
             disabled={readOnly || (!tags.includes(option) && tags.length >= maxTags)}
           >
             {option}
-          </button>
+          </Button>
         ))}
         {!readOnly && !showCustomInput ? (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             className="party-editor-tag-button"
             onClick={() => {
               if (collapseTimeoutRef.current) {
@@ -102,7 +111,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
             aria-label="Ввести другой танец"
           >
             Другой танец
-          </button>
+          </Button>
         ) : !readOnly ? (
           <div
             ref={customBlockRef}
@@ -124,9 +133,11 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               disabled={tags.length >= maxTags}
               aria-label="Поле для ввода другого танца"
             />
-            <button
+            <Button
               type="button"
-              className="party-editor-button party-editor-button-secondary party-editor-tag-add"
+              variant="ghost"
+              size="sm"
+              className="party-editor-tag-add"
               onClick={() => {
                 addTag(customInput);
                 setCustomInput('');
@@ -139,7 +150,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               disabled={tags.length >= maxTags || !customInput.trim()}
             >
               Добавить
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -149,14 +160,15 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
             <span key={`${tag}-${index}`} className="party-editor-tag-chip">
               {tag}
               {!readOnly && (
-                <button
+                <IconButton
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   className="party-editor-tag-remove"
                   onClick={() => removeTag(index)}
                   aria-label={`Удалить тег ${tag}`}
-                >
-                  ×
-                </button>
+                  icon="×"
+                />
               )}
             </span>
           ))}

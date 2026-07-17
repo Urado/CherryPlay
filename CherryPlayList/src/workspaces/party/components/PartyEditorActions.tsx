@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import type { PartyEditorPhase } from '../partyEditorPhase';
@@ -86,33 +87,29 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
       aria-live="polite"
     >
       {showPublish && onPublish && (
-        <button
-          className={`party-editor-button ${
-            compact && phase === 'draft-linked'
-              ? 'party-editor-button-secondary'
-              : 'party-editor-button-primary'
-          }`}
+        <Button
           onClick={onPublish}
           disabled={actionDisabled}
+          loading={isPublishing || isCreating}
+          loadingLabel="Обновление..."
           type="button"
           title={
             networkDisabled
               ? networkDisabledTitle
               : 'Обновить плейлист и настройки, которые видят гости'
           }
+          variant={compact && phase === 'draft-linked' ? 'secondary' : 'primary'}
+          size="sm"
         >
-          {isPublishing || isCreating
-            ? 'Обновление...'
-            : compact
-              ? 'Обновить на сайте'
-              : 'Обновить для гостей'}
-        </button>
+          {compact ? 'Обновить на сайте' : 'Обновить для гостей'}
+        </Button>
       )}
       {showCreate && onCreateParty && (
-        <button
-          className="party-editor-button party-editor-button-secondary"
+        <Button
           onClick={onCreateParty}
           disabled={!isAuthenticated || actionDisabled}
+          loading={isCreating}
+          loadingLabel="Создание..."
           type="button"
           title={
             networkDisabled
@@ -121,13 +118,14 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
                 ? 'Требуется авторизация'
                 : 'Создать запись вечеринки на сервере'
           }
+          variant="secondary"
+          size="sm"
         >
-          {isCreating ? 'Создание...' : compact ? 'Создать' : 'Новая вечеринка на сервере'}
-        </button>
+          {compact ? 'Создать' : 'Новая вечеринка на сервере'}
+        </Button>
       )}
       {showLinkParty && onOpenLinkParty && (
-        <button
-          className="party-editor-button party-editor-button-secondary"
+        <Button
           onClick={onOpenLinkParty}
           disabled={networkDisabled}
           type="button"
@@ -136,9 +134,11 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
               ? networkDisabledTitle
               : 'Подключить текущий плейлист к вечеринке, уже созданной на сервере'
           }
+          variant="secondary"
+          size="sm"
         >
           {compact ? 'Подключить' : 'Подключить к существующей'}
-        </button>
+        </Button>
       )}
     </div>
   );

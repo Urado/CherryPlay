@@ -1,6 +1,6 @@
+import { Button, Icon, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import React, { useId, useState, useCallback } from 'react';
 
 import { useModalKeyboard } from '@shared/hooks';
@@ -90,15 +90,16 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
           <h2 className="modal-title" id={titleId}>
             Сохранить проект как…
           </h2>
-          <button
+          <IconButton
             className="modal-close"
             type="button"
             onClick={onClose}
             disabled={isSaving}
             aria-label="Закрыть"
-          >
-            <CloseIcon />
-          </button>
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -125,7 +126,7 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
                 disabled={isSaving}
                 placeholder="Выберите или введите путь к папке"
               />
-              <button
+              <IconButton
                 type="button"
                 className="save-project-as-modal__browse"
                 onClick={() => {
@@ -133,9 +134,11 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
                 }}
                 disabled={isSaving}
                 title="Выбрать папку"
-              >
-                <FolderOpenIcon style={{ fontSize: 20 }} />
-              </button>
+                aria-label="Выбрать папку"
+                variant="secondary"
+                size="sm"
+                icon={<FolderOpenIcon style={{ fontSize: 20 }} />}
+              />
             </div>
           </label>
 
@@ -157,7 +160,9 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
               aria-controls={infoPanelId}
               title="Что это значит"
             >
-              <InfoOutlinedIcon className="save-project-as-modal__info-icon" aria-hidden />
+              <Icon size="md" shape="circle" aria-hidden>
+                i
+              </Icon>
               <span className="visually-hidden">Справка о переносимом проекте</span>
             </button>
           </label>
@@ -184,22 +189,26 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
         </div>
 
         <div className="modal-footer">
-          <button
-            className="modal-button secondary"
+          <Button
+            className="modal-button"
             type="button"
             onClick={onClose}
             disabled={isSaving}
+            variant="secondary"
+            size="sm"
           >
             Отмена
-          </button>
-          <button
-            className="modal-button primary"
+          </Button>
+          <Button
+            className="modal-button"
             type="button"
-            disabled={isSaving}
+            loading={isSaving}
             onClick={handleConfirm}
+            variant="primary"
+            size="sm"
           >
-            {isSaving ? 'Сохранение…' : 'Сохранить'}
-          </button>
+            Сохранить
+          </Button>
         </div>
       </div>
     </div>

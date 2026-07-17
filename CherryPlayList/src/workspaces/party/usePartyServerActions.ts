@@ -136,6 +136,7 @@ export function usePartyServerActions(
       }
 
       const store = getPartyStore();
+      store.setPendingLifecycleTransition(targetState);
       store.setIsTransitioningLifecycle(true);
       try {
         const party = await partyService.transitionPartyLifecycle(linkedParty.id, targetState);
@@ -159,6 +160,7 @@ export function usePartyServerActions(
         });
       } finally {
         store.setIsTransitioningLifecycle(false);
+        store.setPendingLifecycleTransition(null);
       }
     },
     [meta.linkedParty, isAuth, addNotification],

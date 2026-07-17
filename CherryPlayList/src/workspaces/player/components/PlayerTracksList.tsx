@@ -1,4 +1,3 @@
-import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
@@ -11,6 +10,7 @@ import {
   EmptyState,
   HourDividerAfterTrackRow,
   HourDividerListBottom,
+  SettingsButton,
 } from '@shared/components';
 import { useSelectionWithModifiers } from '@shared/hooks';
 import { useProjectStore } from '@shared/stores';
@@ -162,11 +162,20 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
       settingsActionAfterTrack = trackSettings.actionAfterTrack || null;
     }
 
+    const indicator =
+      hasCustomSettings && settingsActionAfterTrack
+        ? settingsActionAfterTrack === 'pause'
+          ? '⏸'
+          : settingsActionAfterTrack === 'pauseAndNext'
+            ? '⏸⏭'
+            : '⏭'
+        : undefined;
+
     return (
-      <button
-        className="playlist-item-settings"
+      <SettingsButton
+        title={isGroup ? 'Настройки группы' : 'Настройки трека'}
+        indicator={indicator}
         onClick={(e) => {
-          e.stopPropagation();
           if (isGroup) {
             handleOpenTrackSettings(item.id);
           } else {
@@ -174,19 +183,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             setTrackSettingsDropdown({ trackId: item.id, anchorRect: rect });
           }
         }}
-        title={isGroup ? 'Настройки группы' : 'Настройки трека'}
-      >
-        <SettingsIcon style={{ fontSize: '18px' }} />
-        {hasCustomSettings && settingsActionAfterTrack && (
-          <span className="player-settings-indicator">
-            {settingsActionAfterTrack === 'pause'
-              ? '⏸'
-              : settingsActionAfterTrack === 'pauseAndNext'
-                ? '⏸⏭'
-                : '⏭'}
-          </span>
-        )}
-      </button>
+      />
     );
   };
 

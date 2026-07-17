@@ -3,6 +3,8 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * Props for DeleteButton component
  */
@@ -17,25 +19,21 @@ export interface DeleteButtonProps {
  * Hidden when the row is locked.
  */
 export const DeleteButton: React.FC<DeleteButtonProps> = ({ onClick }) => {
-  const { baseClassName, isLocked } = useListRowContext();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isLocked && onClick) {
-      onClick();
-    }
-  };
+  const { baseClassName } = useListRowContext();
 
   return (
-    <button
-      type="button"
+    <ActionButton
+      onClick={() => onClick?.()}
       className={`${baseClassName}-delete`}
-      onClick={handleClick}
       aria-label="Delete item"
-      style={{ visibility: isLocked ? 'hidden' : 'visible' }}
-    >
-      <DeleteIcon />
-    </button>
+      hideWhenLocked
+      icon={<DeleteIcon />}
+      variant="ghost"
+      size="sm"
+      tone="danger"
+      hoverable={false}
+      filled="hover"
+    />
   );
 };
 

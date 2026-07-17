@@ -1,5 +1,8 @@
-/* Палитра оболочки из CherryPlayComponents */
-@import '@cherryplay/components/styles/shell-palette.css';
+:root {
+  --accent-primary: #00ff88;
+  --accent-primary-hover: #00cc6a;
+  --accent-primary-light: rgba(0, 255, 136, 0.15);
+}
 
 * {
   margin: 0;

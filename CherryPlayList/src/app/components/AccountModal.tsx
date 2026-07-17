@@ -1,3 +1,5 @@
+import { IconButton } from '@cherryplay/components';
+import CloseIcon from '@mui/icons-material/Close';
 import React from 'react';
 
 import { useModalKeyboard } from '@shared/hooks';
@@ -33,14 +35,15 @@ export const AccountModal: React.FC = () => {
       <div className="modal-content account-modal-content" role="dialog" aria-modal="true">
         <div className="account-modal-header">
           <h2 className="account-modal-title">Аккаунт</h2>
-          <button
+          <IconButton
             type="button"
             onClick={closeModal}
-            className="account-modal-close"
+            className="account-modal-close modal-close"
             aria-label="Закрыть"
-          >
-            ×
-          </button>
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
         <div className="account-modal-body">
           <AccountView />

@@ -1,6 +1,5 @@
+import { PlaybackControlButton } from '@cherryplay/components';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -210,10 +209,12 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
       </div>
 
       <div className="demo-player__controls-row">
-        <button
-          type="button"
-          className="demo-player__icon-button"
-          onClick={handleToggle}
+        <PlaybackControlButton
+          control={isPlaying ? 'pause' : 'play'}
+          size="sm"
+          onClick={() => {
+            void handleToggle();
+          }}
           disabled={isDisabled}
           title={
             storeIsDisabled
@@ -223,9 +224,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
                 : 'Воспроизвести'
           }
           aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}
-        >
-          {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-        </button>
+        />
         <span className="demo-player__time">{formatPlayerTime(timeline.displayPosition)}</span>
         <input
           type="range"
@@ -247,7 +246,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           {formatPlayerTime(resolvedDuration)}
         </span>
         <div className="demo-player__volume">
-          <VolumeDownIcon fontSize="small" />
+          <VolumeDownIcon fontSize="small" className="demo-player__volume-icon" aria-hidden />
           <input
             type="range"
             min={0}
@@ -262,7 +261,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
             aria-valuemax={1}
             aria-valuenow={volume}
           />
-          <VolumeUpIcon fontSize="small" />
+          <VolumeUpIcon fontSize="small" className="demo-player__volume-icon" aria-hidden />
         </div>
         <button
           type="button"

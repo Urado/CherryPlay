@@ -1,5 +1,14 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
+
+jest.mock('@cherryplay/components', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    Button: (props: React.ButtonHTMLAttributes<HTMLButtonElement>) =>
+      React.createElement('button', { type: 'button', ...props }, props.children),
+  };
+});
 
 import { PartyWorkspaceDemoPanel } from '../../src/workspaces/party/PartyWorkspaceDemoPanel';
 

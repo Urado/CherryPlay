@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useId, useState, useCallback } from 'react';
 
@@ -91,9 +92,15 @@ export const WorkspaceNameModal: React.FC<WorkspaceNameModalProps> = ({
           <h2 className="modal-title" id={titleId}>
             {title}
           </h2>
-          <button className="modal-close" type="button" onClick={onClose} aria-label="Закрыть">
-            <CloseIcon />
-          </button>
+          <IconButton
+            className="modal-close"
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -122,12 +129,24 @@ export const WorkspaceNameModal: React.FC<WorkspaceNameModalProps> = ({
         </div>
 
         <div className="modal-footer">
-          <button className="modal-button secondary" type="button" onClick={onClose}>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={onClose}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
-          <button className="modal-button primary" type="button" onClick={handleSubmit}>
+          </Button>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={handleSubmit}
+            variant="primary"
+            size="sm"
+          >
             {mode === 'save-as' ? 'Сохранить' : 'Переименовать'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

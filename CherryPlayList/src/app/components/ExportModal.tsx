@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -129,9 +130,15 @@ export const ExportModal: React.FC = () => {
       <div className="modal-content">
         <div className="modal-header">
           <h2 className="modal-title">Экспорт плейлиста</h2>
-          <button className="modal-close" onClick={handleCancel}>
-            <CloseIcon />
-          </button>
+          <IconButton
+            className="modal-close"
+            type="button"
+            onClick={handleCancel}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -173,12 +180,24 @@ export const ExportModal: React.FC = () => {
         </div>
 
         <div className="modal-footer">
-          <button className="modal-button secondary" onClick={handleCancel}>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={handleCancel}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
-          <button className="modal-button primary" onClick={() => void handleExport()}>
+          </Button>
+          <Button
+            className="modal-button"
+            type="button"
+            onClick={() => void handleExport()}
+            variant="primary"
+            size="sm"
+          >
             Экспортировать
-          </button>
+          </Button>
         </div>
       </div>
     </div>

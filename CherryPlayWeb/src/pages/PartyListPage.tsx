@@ -1,4 +1,6 @@
 import {
+  Button,
+  IconButton,
   formatDateInTimeZone,
   getDefaultTimeZone,
   getPopularTimeZones,
@@ -253,32 +255,54 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   Вход
                 </Link>
               ))}
-            <button
+            <IconButton
               className="party-list-refresh-btn"
+              variant="secondary"
+              size="md"
+              icon={
+                <svg
+                  viewBox="0 0 16 16"
+                  width="16"
+                  height="16"
+                  focusable="false"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M8 2.5a5.5 5.5 0 0 1 4.83 2.87V3.5a.75.75 0 0 1 1.5 0V7a.75.75 0 0 1-.75.75H10a.75.75 0 0 1 0-1.5h2A4 4 0 1 0 12 10a.75.75 0 0 1 1.5 0 5.5 5.5 0 1 1-5.5-7.5Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              }
               onClick={loadParties}
               title="Обновить список"
-            >
-              ↻
-            </button>
+              aria-label="Обновить список"
+            />
           </div>
         </div>
 
         {/* Блок фильтров */}
         <div className="party-list-filters">
           <div className="party-list-filters-header">
-            <button
+            <Button
               className="party-list-filters-toggle"
+              variant="ghost"
+              size="sm"
               onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
             >
               <span>Фильтры</span>
               <span className="party-list-filters-toggle-icon">
                 {isFiltersExpanded ? '▲' : '▼'}
               </span>
-            </button>
+            </Button>
             {hasActiveFilters && (
-              <button className="party-list-filters-clear" onClick={clearFilters}>
+              <Button
+                className="party-list-filters-clear"
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+              >
                 Сбросить
-              </button>
+              </Button>
             )}
           </div>
 
@@ -366,9 +390,14 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           <div className="party-list-empty">
             <p>Нет вечеринок, соответствующих фильтрам</p>
             {hasActiveFilters && (
-              <button className="party-list-empty-clear" onClick={clearFilters}>
+              <Button
+                className="party-list-empty-clear"
+                variant="secondary"
+                size="sm"
+                onClick={clearFilters}
+              >
                 Сбросить фильтры
-              </button>
+              </Button>
             )}
           </div>
         ) : (

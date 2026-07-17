@@ -1,4 +1,4 @@
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Button, Icon } from '@cherryplay/components';
 import ListIcon from '@mui/icons-material/List';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -253,15 +253,10 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     >
       {embedded ? (
         <div className="playlist-header-section">
-          <div
-            className="playlist-stats-header"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-            }}
-          >
+          <div className="playlist-header-source-row">
+            <PlaybackSourceSwitcher layout="topRow" />
+          </div>
+          <div className="playlist-stats-header">
             <div className="playlist-stats-header__info">
               <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
               <span>
@@ -269,7 +264,6 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
                   ? 'Плейлист пуст'
                   : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
               </span>
-              <PlaybackSourceSwitcher inline />
             </div>
             <details style={{ position: 'relative', flexShrink: 0 }}>
               <summary
@@ -279,16 +273,14 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 999,
-                  width: 28,
-                  height: 28,
-                  border: '1px solid rgba(255, 255, 255, 0.16)',
                   color: 'var(--text-secondary)',
                 }}
                 title="Диагностика AIMP bridge"
                 aria-label="Показать диагностику AIMP bridge"
               >
-                <InfoOutlinedIcon style={{ fontSize: 17 }} />
+                <Icon size="md" shape="circle" aria-hidden>
+                  i
+                </Icon>
               </summary>
               <div
                 className="app-card"
@@ -353,16 +345,14 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: 999,
-                width: 28,
-                height: 28,
-                border: '1px solid rgba(255, 255, 255, 0.16)',
                 color: 'var(--text-secondary)',
               }}
               title="Диагностика AIMP bridge"
               aria-label="Показать диагностику AIMP bridge"
             >
-              <InfoOutlinedIcon style={{ fontSize: 17 }} />
+              <Icon size="md" shape="circle" aria-hidden>
+                i
+              </Icon>
             </summary>
             <div
               className="app-card"
@@ -404,45 +394,30 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
       )}
 
       <div style={{ minHeight: 0, display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            marginBottom: 8,
-          }}
-        >
-          <div style={{ fontWeight: 600 }}>
+        <div className="aimp-view__playlist-toolbar">
+          <div className="aimp-view__playlist-toolbar-title">
             Playlist{' '}
             {bridgeState.playlistSnapshot ? `(${bridgeState.playlistSnapshot.trackCount})` : ''}
           </div>
-          <button
+          <Button
             type="button"
-            className="modal-button primary"
+            className="modal-button"
             onClick={handleToggleLiveStream}
             disabled={
               isSubmittingLiveStream || (!bridgeState.liveStreamStarted && !canStartLiveStreamNow)
             }
+            variant="primary"
+            size="sm"
           >
             {liveStreamButtonLabel}
-          </button>
+          </Button>
         </div>
 
         {(degraded || startActionMessages.length > 0) && (
           <div
-            style={{
-              marginBottom: 8,
-              padding: 10,
-              borderRadius: 8,
-              background: degraded ? 'rgba(255, 152, 0, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-              border: degraded
-                ? '1px solid rgba(255, 152, 0, 0.35)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'grid',
-              gap: 4,
-              fontSize: '0.85rem',
-            }}
+            className={`aimp-view__playlist-banner ${
+              degraded ? 'aimp-view__playlist-banner--degraded' : 'aimp-view__playlist-banner--info'
+            }`}
           >
             {degraded && bridgeState.connection.disconnectReason?.message && (
               <div>{bridgeState.connection.disconnectReason.message}</div>

@@ -25,6 +25,7 @@ function createMockStore() {
   return {
     setPartyVerified: jest.fn(),
     setPartyLifecycleState: jest.fn(),
+    setIsListedInCatalog: jest.fn(),
     setServerUnreachable: jest.fn(),
     setServerError: jest.fn(),
   };
@@ -80,6 +81,7 @@ describe('finalizePartyCreation', () => {
     });
     expect(store.setPartyVerified).toHaveBeenCalledWith(true);
     expect(store.setPartyLifecycleState).toHaveBeenCalledWith('draft');
+    expect(store.setIsListedInCatalog).toHaveBeenCalledWith(false);
     expect(deps.markAsDirty).toHaveBeenCalled();
     expect(deps.addNotification).toHaveBeenCalledWith({
       type: 'success',
