@@ -1,9 +1,16 @@
 import { Button, IconButton, InfoIcon } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { APP_VERSION } from '@shared/config';
+import {
+  LOUDNESS_QUIET_GAP_PRESETS,
+  MAX_LOUDNESS_QUIET_GAP_RANGE_LU,
+  MIN_LOUDNESS_QUIET_GAP_RANGE_LU,
+  resolveQuietGapRangePercent,
+} from '@shared/contracts/loudness';
 import { useModalKeyboard } from '@shared/hooks';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import {
@@ -13,7 +20,8 @@ import {
   parseSettingsBundleJson,
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
-import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
 const DIVIDER_INTERVALS = [
@@ -23,6 +31,33 @@ const DIVIDER_INTERVALS = [
   { value: 7200, label: '2 часа' },
   { value: 10800, label: '3 часа' },
 ];
+
+const LOUDNESS_QUIET_GAP_LABEL = 'Терпимость к провалам громкости';
+
+const HINT_LOUDNESS_QUIET_GAP = [
+  'Порог в LU: насколько глубокий провал относительно целевой громкости приложение терпит, прежде чем включить полную компрессию тихих участков.',
+  'Меньше LU (ближе к 5) — компрессия включается раньше и сильнее: тихие места подтягиваются, контраст с громкими частями меньше.',
+  'Больше LU (ближе к 30) — терпим более глубокие провалы: компрессия мягче, больше динамики. Не «сила подъёма», а «насколько глубокий провал ещё допустим».',
+  'Пресеты на шкале — быстрые точки; между ними можно выбрать любое значение.',
+].join(' ');
+
+type SettingsFieldInfoIconProps = {
+  hint: string;
+  label: string;
+};
+
+function SettingsFieldInfoIcon({ hint, label }: SettingsFieldInfoIconProps) {
+  return (
+    <button
+      type="button"
+      className="settings-field-info"
+      title={hint}
+      aria-label={`${label}: ${hint}`}
+    >
+      <InfoOutlinedIcon className="settings-field-info__icon" aria-hidden />
+    </button>
+  );
+}
 
 export const SettingsModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
@@ -45,8 +80,26 @@ export const SettingsModal: React.FC = () => {
     setPlayerInAppHeader,
     enableStreaming,
     setEnableStreaming,
+    streamingSource,
+    setStreamingSource,
+    loudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    loudnessCompressionEnabled,
+    loudnessQuietGapRangeLu,
+    setLoudnessNormalizationEnabled,
+    setLoudnessTargetLufs,
+    setLoudnessCompressionEnabled,
+    setLoudnessQuietGapRangeLu,
   } = useSettingsStore();
-  const { supportsAudioDeviceSelection, supportsNativeFileSystem } = usePlatformCapabilities();
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
+  const aimpAvailability = getAimpAvailability(aimpBridgeState);
+  const {
+    supportsAimpWorkspace,
+    supportsAudioDeviceSelection,
+    supportsLoudnessAnalysis,
+    supportsNativeFileSystem,
+  } = usePlatformCapabilities();
+  const canSelectAimpSource = supportsAimpWorkspace && aimpAvailability.available;
 
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [pendingImportBundle, setPendingImportBundle] = useState<SettingsExportBundle | null>(null);
@@ -65,6 +118,18 @@ export const SettingsModal: React.FC = () => {
   );
   const [localPlayerInAppHeader, setLocalPlayerInAppHeader] = useState(playerInAppHeader);
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
+  const [localStreamingSource, setLocalStreamingSource] = useState(streamingSource);
+  const [localLoudnessNormalizationEnabled, setLocalLoudnessNormalizationEnabled] = useState(
+    loudnessNormalizationEnabled,
+  );
+  const [localLoudnessTargetLufs, setLocalLoudnessTargetLufs] = useState(
+    String(loudnessTargetLufs),
+  );
+  const [localLoudnessCompressionEnabled, setLocalLoudnessCompressionEnabled] = useState(
+    loudnessCompressionEnabled,
+  );
+  const [localLoudnessQuietGapRangeLu, setLocalLoudnessQuietGapRangeLu] =
+    useState(loudnessQuietGapRangeLu);
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -101,7 +166,12 @@ export const SettingsModal: React.FC = () => {
         setLocalPlayerInAppHeader(playerInAppHeader);
         if (hasHydrated) {
           setLocalEnableStreaming(enableStreaming);
+          setLocalStreamingSource(streamingSource);
         }
+        setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+        setLocalLoudnessTargetLufs(String(loudnessTargetLufs));
+        setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
+        setLocalLoudnessQuietGapRangeLu(loudnessQuietGapRangeLu);
       }, 0);
       return () => clearTimeout(timeoutId);
     }
@@ -116,6 +186,11 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     playerInAppHeader,
     enableStreaming,
+    streamingSource,
+    loudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    loudnessCompressionEnabled,
+    loudnessQuietGapRangeLu,
   ]);
 
   const syncLocalStateFromStore = useCallback(() => {
@@ -127,6 +202,11 @@ export const SettingsModal: React.FC = () => {
     setLocalDemoPlayerDeviceId(state.demoPlayerAudioDeviceId);
     setLocalPlayerInAppHeader(state.playerInAppHeader);
     setLocalEnableStreaming(state.enableStreaming);
+    setLocalStreamingSource(state.streamingSource);
+    setLocalLoudnessNormalizationEnabled(state.loudnessNormalizationEnabled);
+    setLocalLoudnessTargetLufs(String(state.loudnessTargetLufs));
+    setLocalLoudnessCompressionEnabled(state.loudnessCompressionEnabled);
+    setLocalLoudnessQuietGapRangeLu(state.loudnessQuietGapRangeLu);
   }, []);
 
   const formatImportSummary = useCallback((result: ReturnType<typeof applySettingsImport>) => {
@@ -258,6 +338,12 @@ export const SettingsModal: React.FC = () => {
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
     setPlayerInAppHeader(localPlayerInAppHeader);
     setEnableStreaming(localEnableStreaming);
+    setStreamingSource(localStreamingSource);
+    setLoudnessNormalizationEnabled(localLoudnessNormalizationEnabled);
+    const parsedTargetLufs = Number(localLoudnessTargetLufs);
+    setLoudnessTargetLufs(Number.isFinite(parsedTargetLufs) ? parsedTargetLufs : -18);
+    setLoudnessCompressionEnabled(localLoudnessCompressionEnabled);
+    setLoudnessQuietGapRangeLu(localLoudnessQuietGapRangeLu);
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
@@ -269,14 +355,24 @@ export const SettingsModal: React.FC = () => {
     localHourDividerInterval,
     localPlayerDeviceId,
     localPlayerInAppHeader,
+    localLoudnessCompressionEnabled,
+    localLoudnessNormalizationEnabled,
+    localLoudnessQuietGapRangeLu,
+    localLoudnessTargetLufs,
     localShowHourDividers,
+    localStreamingSource,
     localTrackItemSizePreset,
     setDemoPlayerAudioDeviceId,
     setEnableStreaming,
     setHourDividerInterval,
     setPlayerAudioDeviceId,
     setPlayerInAppHeader,
+    setLoudnessCompressionEnabled,
+    setLoudnessNormalizationEnabled,
+    setLoudnessQuietGapRangeLu,
+    setLoudnessTargetLufs,
     setShowHourDividers,
+    setStreamingSource,
     setTrackItemSizePreset,
   ]);
 
@@ -288,15 +384,25 @@ export const SettingsModal: React.FC = () => {
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
     setLocalPlayerInAppHeader(playerInAppHeader);
     setLocalEnableStreaming(enableStreaming);
+    setLocalStreamingSource(streamingSource);
+    setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+    setLocalLoudnessTargetLufs(String(loudnessTargetLufs));
+    setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
+    setLocalLoudnessQuietGapRangeLu(loudnessQuietGapRangeLu);
     closeModal();
   }, [
     closeModal,
     demoPlayerAudioDeviceId,
     enableStreaming,
     hourDividerInterval,
+    loudnessCompressionEnabled,
+    loudnessNormalizationEnabled,
+    loudnessQuietGapRangeLu,
+    loudnessTargetLufs,
     playerAudioDeviceId,
     playerInAppHeader,
     showHourDividers,
+    streamingSource,
     trackItemSizePreset,
   ]);
 
@@ -309,6 +415,11 @@ export const SettingsModal: React.FC = () => {
   if (modal !== 'settings') {
     return null;
   }
+
+  const loudnessQuietGapDisabled =
+    !localLoudnessNormalizationEnabled ||
+    !localLoudnessCompressionEnabled ||
+    !supportsLoudnessAnalysis;
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -408,6 +519,48 @@ export const SettingsModal: React.FC = () => {
                   ? 'Связь с сервером и страницей для гостей.'
                   : 'Работа без сети — запросы к серверу не выполняются.'}
               </div>
+            </div>
+
+            <div className="settings-group">
+              <label className="settings-label" htmlFor="settings-streaming-source">
+                Источник состояния воспроизведения
+              </label>
+              <select
+                className="settings-select"
+                value={localStreamingSource}
+                onChange={(event) =>
+                  setLocalStreamingSource(event.target.value as 'cherryPlayPlayer' | 'aimp')
+                }
+                id="settings-streaming-source"
+              >
+                <option value="cherryPlayPlayer">CherryPlay Player</option>
+                <option value="aimp" disabled={!canSelectAimpSource}>
+                  AIMP
+                </option>
+              </select>
+              {!canSelectAimpSource && (
+                <div
+                  className="settings-description"
+                  style={{
+                    marginTop: 4,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary, #9e9e9e)',
+                    display: 'grid',
+                    gap: 4,
+                  }}
+                >
+                  {!supportsAimpWorkspace ? (
+                    <div>{getPlatformUnavailableMessage()}</div>
+                  ) : (
+                    <>
+                      <div>AIMP режим сейчас недоступен:</div>
+                      {aimpAvailability.gatingReasons.map((reason) => (
+                        <div key={reason.code}>- {reason.message}</div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="settings-group">
@@ -648,6 +801,150 @@ export const SettingsModal: React.FC = () => {
             )}
 
             <div className="settings-version">Версия {APP_VERSION}</div>
+
+            <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
+
+            <div
+              className="settings-section-title"
+              style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+            >
+              Нормализация громкости
+            </div>
+
+            <div className="settings-group">
+              <div className="settings-checkbox-group">
+                <input
+                  type="checkbox"
+                  className="settings-checkbox"
+                  checked={localLoudnessNormalizationEnabled}
+                  onChange={(e) => setLocalLoudnessNormalizationEnabled(e.target.checked)}
+                  id="settings-loudness-enabled"
+                  disabled={!supportsLoudnessAnalysis}
+                />
+                <label
+                  className="settings-checkbox-label"
+                  htmlFor="settings-loudness-enabled"
+                  style={!supportsLoudnessAnalysis ? { opacity: 0.5 } : undefined}
+                >
+                  Включить нормализацию громкости
+                </label>
+              </div>
+            </div>
+
+            {!supportsLoudnessAnalysis && (
+              <div
+                className="settings-description"
+                style={{
+                  marginTop: 4,
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary, #9e9e9e)',
+                }}
+              >
+                {getPlatformUnavailableMessage()}
+              </div>
+            )}
+
+            <div className="settings-group">
+              <label className="settings-label" htmlFor="settings-loudness-target">
+                Целевая громкость (LUFS)
+              </label>
+              <input
+                type="number"
+                className="settings-select"
+                id="settings-loudness-target"
+                value={localLoudnessTargetLufs}
+                onChange={(e) => setLocalLoudnessTargetLufs(e.target.value)}
+                disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+                step={0.5}
+                max={0}
+              />
+            </div>
+
+            <div className="settings-group">
+              <div className="settings-checkbox-group">
+                <input
+                  type="checkbox"
+                  className="settings-checkbox"
+                  checked={localLoudnessCompressionEnabled}
+                  onChange={(e) => setLocalLoudnessCompressionEnabled(e.target.checked)}
+                  id="settings-loudness-compression"
+                  disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+                />
+                <label
+                  className="settings-checkbox-label"
+                  htmlFor="settings-loudness-compression"
+                  style={
+                    !localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis
+                      ? { opacity: 0.5 }
+                      : undefined
+                  }
+                >
+                  Адаптивная компрессия (LRA и тихие участки, до gain)
+                </label>
+              </div>
+            </div>
+
+            <div className="settings-group">
+              <div className="settings-quiet-gap">
+                <div className="settings-quiet-gap__header">
+                  <div className="settings-label-with-info">
+                    <label htmlFor="settings-loudness-quiet-gap">{LOUDNESS_QUIET_GAP_LABEL}</label>
+                    <SettingsFieldInfoIcon
+                      label={LOUDNESS_QUIET_GAP_LABEL}
+                      hint={HINT_LOUDNESS_QUIET_GAP}
+                    />
+                  </div>
+                  <span className="settings-quiet-gap__value">
+                    {localLoudnessQuietGapRangeLu} LU
+                  </span>
+                </div>
+                <input
+                  id="settings-loudness-quiet-gap"
+                  type="range"
+                  className="settings-quiet-gap__slider"
+                  min={MIN_LOUDNESS_QUIET_GAP_RANGE_LU}
+                  max={MAX_LOUDNESS_QUIET_GAP_RANGE_LU}
+                  step={1}
+                  value={localLoudnessQuietGapRangeLu}
+                  disabled={loudnessQuietGapDisabled}
+                  onChange={(event) => setLocalLoudnessQuietGapRangeLu(Number(event.target.value))}
+                />
+                <div className="settings-quiet-gap__scale" aria-hidden>
+                  <span className="settings-quiet-gap__scale-end">
+                    <span className="settings-quiet-gap__scale-value">
+                      {MIN_LOUDNESS_QUIET_GAP_RANGE_LU} LU
+                    </span>
+                    <span className="settings-quiet-gap__scale-hint">сильнее компрессия</span>
+                  </span>
+                  <span className="settings-quiet-gap__scale-end settings-quiet-gap__scale-end--right">
+                    <span className="settings-quiet-gap__scale-value">
+                      {MAX_LOUDNESS_QUIET_GAP_RANGE_LU} LU
+                    </span>
+                    <span className="settings-quiet-gap__scale-hint">больше динамики</span>
+                  </span>
+                </div>
+                <div className="settings-quiet-gap__presets">
+                  {LOUDNESS_QUIET_GAP_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`settings-quiet-gap__preset${
+                        localLoudnessQuietGapRangeLu === preset.value
+                          ? ' settings-quiet-gap__preset--active'
+                          : ''
+                      }`}
+                      style={{ left: `${resolveQuietGapRangePercent(preset.value)}%` }}
+                      disabled={loudnessQuietGapDisabled}
+                      onClick={() => setLocalLoudnessQuietGapRangeLu(preset.value)}
+                    >
+                      <span className="settings-quiet-gap__preset-tick" />
+                      <span className="settings-quiet-gap__preset-label">{preset.label}</span>
+                      <span className="settings-quiet-gap__preset-value">{preset.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="modal-footer">

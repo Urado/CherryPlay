@@ -1,6 +1,6 @@
 import { Track } from '@core/types/track';
 
-import { applyDefaultPlaybackEffects } from '../audio/playback/applyDefaultPlaybackEffects';
+import { applyPlaybackEffects } from '../audio/playback/applyPlaybackEffects';
 import { applyPlaybackOutputDeviceWithFallback } from '../audio/playback/applyPlaybackOutputDeviceWithFallback';
 import { bindPlaybackEngineToStore } from '../audio/playback/bindPlaybackEngineToStore';
 import { clampPlaybackValue } from '../audio/playback/clampPlaybackValue';
@@ -112,7 +112,7 @@ export async function loadTrackCore(options: LoadTrackCoreOptions): Promise<void
 
     await options.engine.load({ kind: 'filePath', path: activeTrack.path });
     await options.applyDevice(options.getDeviceId(), 'track load');
-    applyDefaultPlaybackEffects(options.engine);
+    applyPlaybackEffects(options.engine, activeTrack, useSettingsStore.getState());
     options.markTrackFound(activeTrack.id);
 
     const snapshot = options.engine.getSnapshot();

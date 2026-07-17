@@ -13,6 +13,7 @@ import {
   HourDividerAfterTrackRow,
   HourDividerListBottom,
 } from '@shared/components';
+import { TrackLoudnessRowControls } from '@shared/components/loudness/TrackLoudnessRowControls';
 import {
   useWorkspaceDragAndDrop,
   useTrackDuration,
@@ -385,6 +386,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
                 onPause={pausePlayback}
                 onRenameGroup={setGroupName}
                 onUngroupGroup={ungroupGroup}
+                loudnessControls={track ? <TrackLoudnessRowControls track={track} /> : undefined}
               />
               <HourDividerAfterTrackRow
                 hasPlannedEndDivider={hasPlannedEndDivider}

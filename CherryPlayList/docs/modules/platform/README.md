@@ -80,6 +80,7 @@ flowchart TB
 | `supportsProjectPersistence`   |    ✓     |       ✗       |        ✗         |
 | `supportsAimpWorkspace`        |    ✓     | ✓ (simulated) |        ✗         |
 | `supportsAudioDeviceSelection` |    ✓     |       ✗       |        ✗         |
+| `supportsLoudnessAnalysis`     |    ✓     |       ✗       |        ✗         |
 | `supportsRealAuth`             |    ✓     |       ✗       |        ✗         |
 | `simulatesExport`              |    ✗     |       ✓       |        ✗         |
 | `usesFixtureFileBrowser`       |    ✗     |       ✓       |        ✗         |

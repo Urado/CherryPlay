@@ -9,6 +9,10 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
   const deviceState = {
     playerAudioDeviceId: null as string | null,
     demoPlayerAudioDeviceId: null as string | null,
+    loudnessNormalizationEnabled: true,
+    loudnessTargetLufs: -18,
+    loudnessCompressionEnabled: false,
+    loudnessQuietGapRangeLu: 15,
   };
 
   const useSettingsStore = Object.assign(
@@ -28,8 +32,8 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
           deviceState.demoPlayerAudioDeviceId = id;
         },
       }),
-      subscribe: (listener: (state: typeof deviceState) => void) => {
-        listener(deviceState);
+      subscribe: (listener: (state: typeof deviceState, prevState: typeof deviceState) => void) => {
+        listener(deviceState, deviceState);
         return () => undefined;
       },
     },
@@ -54,6 +58,23 @@ jest.mock('../../src/shared/stores/projectStoreFactory', () => ({
     }),
   }),
 }));
+
+jest.mock('../../src/shared/stores/projectStore', () => {
+  const projectState = {
+    markTrackAsMissing: jest.fn(),
+    findItemById: jest.fn(() => undefined),
+  };
+
+  const useProjectStore = Object.assign(() => projectState, {
+    getState: () => projectState,
+    subscribe: (listener: (state: typeof projectState, prevState: typeof projectState) => void) => {
+      listener(projectState, projectState);
+      return () => undefined;
+    },
+  });
+
+  return { useProjectStore };
+});
 
 jest.mock('../../src/shared/stores/demoPlayerStore', () => ({
   useDemoPlayerStore: {
@@ -105,6 +126,16 @@ class MockMediaElementSource {
   disconnect = jest.fn();
 }
 
+class MockDynamicsCompressorNode {
+  threshold = { value: 0 };
+  ratio = { value: 1 };
+  knee = { value: 0 };
+  attack = { value: 0 };
+  release = { value: 0 };
+  connect = jest.fn();
+  disconnect = jest.fn();
+}
+
 class MockAudioContext {
   static instances: MockAudioContext[] = [];
 
@@ -113,6 +144,7 @@ class MockAudioContext {
 
   createGain = jest.fn(() => new MockGainNode());
   createBiquadFilter = jest.fn(() => new MockBiquadFilterNode());
+  createDynamicsCompressor = jest.fn(() => new MockDynamicsCompressorNode());
   createMediaElementSource = jest.fn(() => new MockMediaElementSource());
   resume = jest.fn().mockResolvedValue(undefined);
   close = jest.fn().mockResolvedValue(undefined);

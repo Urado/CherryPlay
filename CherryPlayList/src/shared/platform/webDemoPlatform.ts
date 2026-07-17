@@ -95,6 +95,8 @@ export class WebDemoPlatform implements PlatformAPI {
 
       case 'audio:getDuration':
       case 'audio:getFileUrl':
+      case 'audio:analyzeLoudness':
+      case 'audio:statAudioFile':
         return Promise.resolve(demoUnavailableResponse());
 
       case 'project:save':

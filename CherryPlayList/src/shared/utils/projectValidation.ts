@@ -12,6 +12,7 @@ import {
   SavedProjectItem,
   SavedProjectTrack,
 } from '@core/types/project';
+import { LOUDNESS_ALGORITHM_VERSION, type TrackLoudnessStatus } from '@core/types/track';
 
 /**
  * Результат валидации проекта
@@ -99,10 +100,73 @@ function isValidActionAfterTrack(value: unknown): boolean {
   return value === 'next' || value === 'pauseAndNext' || value === 'pause';
 }
 
+const VALID_LOUDNESS_STATUSES: TrackLoudnessStatus[] = ['ok', 'pending', 'error'];
+
+function validateTrackLoudness(
+  loudness: unknown,
+  trackId: string,
+  errors: string[],
+  warnings: string[],
+): boolean {
+  if (loudness === undefined) {
+    return true;
+  }
+
+  if (!isObject(loudness)) {
+    errors.push(`Track ${trackId} has invalid loudness`);
+    return false;
+  }
+
+  if (
+    !isString(loudness.status) ||
+    !VALID_LOUDNESS_STATUSES.includes(loudness.status as TrackLoudnessStatus)
+  ) {
+    errors.push(`Track ${trackId} has invalid loudness status`);
+    return false;
+  }
+
+  const numericFields = [
+    'integratedLufs',
+    'lraLowLufs',
+    'lraLu',
+    'truePeakDb',
+    'trackGainDb',
+    'manualGainDb',
+    'manualCompressionStrength',
+    'fileMtime',
+  ] as const;
+  for (const field of numericFields) {
+    if (loudness[field] !== undefined && !isNumber(loudness[field])) {
+      errors.push(`Track ${trackId} loudness.${field} must be a number`);
+      return false;
+    }
+  }
+
+  if (loudness.errorMessage !== undefined && !isString(loudness.errorMessage)) {
+    errors.push(`Track ${trackId} loudness.errorMessage must be a string`);
+    return false;
+  }
+
+  if (
+    loudness.algorithmVersion !== undefined &&
+    loudness.algorithmVersion !== LOUDNESS_ALGORITHM_VERSION
+  ) {
+    warnings.push(
+      `Track ${trackId} loudness.algorithmVersion mismatch; loudness will be rescanned on load`,
+    );
+  }
+
+  return true;
+}
+
 /**
  * Валидирует SavedProjectTrack
  */
-function validateSavedTrack(item: unknown, errors: string[]): item is SavedProjectTrack {
+function validateSavedTrack(
+  item: unknown,
+  errors: string[],
+  warnings: string[],
+): item is SavedProjectTrack {
   if (!isObject(item)) {
     errors.push('Track item is not an object');
     return false;
@@ -130,6 +194,10 @@ function validateSavedTrack(item: unknown, errors: string[]): item is SavedProje
 
   if (item.duration !== undefined && !isNumber(item.duration)) {
     errors.push(`Track ${item.id} has invalid duration`);
+    return false;
+  }
+
+  if (!validateTrackLoudness(item.loudness, item.id, errors, warnings)) {
     return false;
   }
 
@@ -178,14 +246,18 @@ function validateSavedGroup(item: unknown, errors: string[]): item is SavedProje
 /**
  * Валидирует SavedProjectItem
  */
-function validateSavedItem(item: unknown, errors: string[]): item is SavedProjectItem {
+function validateSavedItem(
+  item: unknown,
+  errors: string[],
+  warnings: string[],
+): item is SavedProjectItem {
   if (!isObject(item)) {
     errors.push('Item is not an object');
     return false;
   }
 
   if (item.type === 'track') {
-    return validateSavedTrack(item, errors);
+    return validateSavedTrack(item, errors, warnings);
   } else if (item.type === 'group') {
     return validateSavedGroup(item, errors);
   } else {
@@ -392,7 +464,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
   } else {
     for (let i = 0; i < data.items.length; i++) {
       const item = data.items[i];
-      if (validateSavedItem(item, errors)) {
+      if (validateSavedItem(item, errors, warnings)) {
         items.push(item);
       } else {
         warnings.push(`Skipping invalid item at index ${i}`);

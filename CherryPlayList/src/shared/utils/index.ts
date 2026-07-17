@@ -111,3 +111,10 @@ export type {
 export { getLayoutPresetFromLayout } from './layoutPreset';
 export { getAimpPartyPresetState, isPartyLayoutPresetDiscoverable } from './aimpPresetVisibility';
 export { sanitizeExternalUrl } from './urlSafety';
+export {
+  ANCHOR_PANEL_GAP_PX,
+  ANCHOR_PANEL_Z_INDEX,
+  buildAnchorPanelStyle,
+  resolveAnchorPanelCenterY,
+  resolveAnchorPanelLeft,
+} from './anchorPanelLayout';

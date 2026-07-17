@@ -5,6 +5,14 @@ import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
 import type { WorkspaceId } from '@core/types/workspace';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
+import {
+  clampLoudnessQuietGapRangeLu,
+  DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
+  DEFAULT_LOUDNESS_TARGET_LUFS,
+  LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU,
+  type LoudnessListeningEnvironment,
+  type LoudnessSettings,
+} from '../contracts/loudness';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
 import { electronStorage } from '../storage/electronStorage';
 
@@ -22,6 +30,8 @@ export interface DemoPlayerFloatingSize {
   width: number;
   height: number;
 }
+
+export type { LoudnessSettings };
 
 interface SettingsState extends FileBrowserPathPersistSlice {
   _hasHydrated: boolean;
@@ -44,6 +54,10 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   getFileBrowserPathForWorkspace: (workspaceId: WorkspaceId) => string;
   setFileBrowserPathForWorkspace: (workspaceId: WorkspaceId, path: string) => void;
   removeFileBrowserPathForWorkspace: (workspaceId: WorkspaceId) => void;
+  loudnessNormalizationEnabled: boolean;
+  loudnessTargetLufs: number;
+  loudnessCompressionEnabled: boolean;
+  loudnessQuietGapRangeLu: number;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
@@ -65,6 +79,10 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
   setStreamingSource: (source: AimpSourceSelection) => void;
+  setLoudnessNormalizationEnabled: (enabled: boolean) => void;
+  setLoudnessTargetLufs: (targetLufs: number) => void;
+  setLoudnessCompressionEnabled: (enabled: boolean) => void;
+  setLoudnessQuietGapRangeLu: (quietGapRangeLu: number) => void;
 }
 
 export function migrateFileBrowserPathsOnRehydrate(
@@ -111,6 +129,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       keyBindings: {},
       enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
+      loudnessNormalizationEnabled: true,
+      loudnessTargetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
+      loudnessCompressionEnabled: false,
+      loudnessQuietGapRangeLu: DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
 
       getFileBrowserPathForWorkspace: (workspaceId) => {
         const state = get();
@@ -182,10 +204,35 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
       setStreamingSource: (source) => set({ streamingSource: source }),
+      setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
+      setLoudnessTargetLufs: (targetLufs) => set({ loudnessTargetLufs: targetLufs }),
+      setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
+      setLoudnessQuietGapRangeLu: (quietGapRangeLu) =>
+        set({ loudnessQuietGapRangeLu: clampLoudnessQuietGapRangeLu(quietGapRangeLu) }),
     }),
     {
       name: 'cherryplaylist-settings',
       storage: electronStorage,
+      version: 1,
+      migrate: (persistedState) => {
+        const state = { ...(persistedState as object) } as Record<string, unknown>;
+        if (typeof state.loudnessQuietGapRangeLu !== 'number') {
+          const environment = state.loudnessListeningEnvironment;
+          if (
+            typeof environment === 'string' &&
+            environment in LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU
+          ) {
+            state.loudnessQuietGapRangeLu =
+              LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU[
+                environment as LoudnessListeningEnvironment
+              ];
+          } else {
+            state.loudnessQuietGapRangeLu = DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU;
+          }
+          delete state.loudnessListeningEnvironment;
+        }
+        return state as unknown as SettingsState;
+      },
       partialize: (state) => ({
         exportPath: state.exportPath,
         exportStrategy: state.exportStrategy,
@@ -204,6 +251,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
         streamingSource: state.streamingSource,
+        loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
+        loudnessTargetLufs: state.loudnessTargetLufs,
+        loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+        loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
       }),
       onRehydrateStorage: () => (state, _err) => {
         if (state) {

@@ -1,6 +1,7 @@
 import { Button, IconButton } from '@cherryplay/components';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import ListIcon from '@mui/icons-material/List';
 import SelectAllIcon from '@mui/icons-material/SelectAll';
@@ -31,6 +32,9 @@ interface PlayerHeaderProps {
   onResetSession: () => void;
   onOpenGlobalSettings: () => void;
   onExportTracksToText: () => void;
+  onCalculateLoudness?: () => void;
+  showLoudnessBatchButton?: boolean;
+  isLoudnessBatchScanning?: boolean;
 }
 
 export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
@@ -50,6 +54,9 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   onResetSession,
   onOpenGlobalSettings,
   onExportTracksToText,
+  onCalculateLoudness,
+  showLoudnessBatchButton = false,
+  isLoudnessBatchScanning = false,
 }) => {
   const showSelectionActions = hasSelectedItems || (!hasSelectedItems && allTracksCount > 0);
 
@@ -141,10 +148,22 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
 
       <div className="player-header-actions">
         <div className="player-session-controls">
+          {isPreparationMode && showLoudnessBatchButton && onCalculateLoudness && (
+            <button
+              type="button"
+              onClick={onCalculateLoudness}
+              disabled={allTracksCount === 0 || isLoudnessBatchScanning}
+              className="player-session-button player-session-button--loudness"
+              title="Рассчитать нормализацию громкости для всех треков"
+            >
+              <GraphicEqIcon style={{ fontSize: '18px', marginRight: '6px' }} />
+              Рассчитать нормализацию
+            </button>
+          )}
           {isPreparationMode ? (
             <Button
               onClick={onStartSession}
-              disabled={allTracksCount === 0}
+              disabled={allTracksCount === 0 || isLoudnessBatchScanning}
               className="player-session-button player-session-button--start"
               title={allTracksCount === 0 ? 'Добавьте треки в плейлист' : undefined}
               type="button"

@@ -7,7 +7,8 @@ export type {
   Zone,
   Layout,
 } from './layout';
-export type { Track } from './track';
+export type { Track, TrackLoudness, TrackLoudnessStatus } from './track';
+export { LOUDNESS_ALGORITHM_VERSION } from '../../shared/contracts/loudness';
 export type { WorkspaceId, WorkspaceType } from './workspace';
 export type {
   ActionAfterTrack,

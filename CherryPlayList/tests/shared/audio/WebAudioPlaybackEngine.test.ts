@@ -26,6 +26,16 @@ class MockBiquadFilterNode {
   disconnect = jest.fn();
 }
 
+class MockDynamicsCompressorNode {
+  threshold = { value: 0 };
+  ratio = { value: 1 };
+  knee = { value: 0 };
+  attack = { value: 0 };
+  release = { value: 0 };
+  connect = jest.fn();
+  disconnect = jest.fn();
+}
+
 class MockMediaElementSource {
   connect = jest.fn();
   disconnect = jest.fn();
@@ -37,6 +47,7 @@ class MockAudioContext {
 
   createGain = jest.fn(() => new MockGainNode());
   createBiquadFilter = jest.fn(() => new MockBiquadFilterNode());
+  createDynamicsCompressor = jest.fn(() => new MockDynamicsCompressorNode());
   createMediaElementSource = jest.fn(() => new MockMediaElementSource());
   resume = jest.fn().mockResolvedValue(undefined);
   close = jest.fn().mockResolvedValue(undefined);

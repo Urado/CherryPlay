@@ -21,6 +21,8 @@ export type InvokeChannel =
   | 'fileBrowser:findAudioFilesRecursive'
   | 'audio:getDuration'
   | 'audio:getFileUrl'
+  | 'audio:analyzeLoudness'
+  | 'audio:statAudioFile'
   | 'export:execute'
   | 'export:copyFile'
   | 'export:aimp'
@@ -54,6 +56,17 @@ export interface MinimumWindowSize {
   minWidth: number;
   minHeight: number;
 }
+
+export type {
+  LoudnessAnalyzeError,
+  LoudnessAnalyzeOk,
+  LoudnessAnalyzeResult,
+} from '../contracts/loudness';
+
+export type AudioFileStat = {
+  mtimeMs: number;
+  size: number;
+};
 
 export interface PlatformAimpApi {
   getState: () => Promise<IPCResponse<AimpBridgeState>>;

@@ -7,6 +7,10 @@ alwaysApply: true
 
 When working on CherryPlay, use the project's **Markdown documentation** as the source of truth for architecture, contracts, setup, and features. Documentation is **cross-linked**: many files reference others; follow those links to get full context.
 
+## Documentation map
+
+**Start here to see what documentation exists:** [DOCUMENTATION_MAP.yaml](DOCUMENTATION_MAP.yaml) in the repository root — a categorized map of all `.md` files (project docs vs Cursor IDE config, entry points, hubs per subsystem).
+
 ## When to Read Docs
 
 - **Architecture, API, or contracts** — start from [CONTRACTS.md](CONTRACTS.md), [CherryPlayServer/README.md](CherryPlayServer/README.md), [docs/integration/README.md](docs/integration/README.md).
@@ -25,7 +29,8 @@ When working on CherryPlay, use the project's **Markdown documentation** as the 
 
 ## Summary
 
-1. Prefer project `.md` docs over guessing when answering questions about setup, API, or behavior.
-2. Treat linked docs as part of the same documentation graph; follow links to get complete information.
-3. Use the paths above as entry points; from there, follow in-doc links as needed.
-4. If docs and code appear inconsistent, report the mismatch explicitly and avoid inventing behavior.
+1. Open **[DOCUMENTATION_MAP.yaml](DOCUMENTATION_MAP.yaml)** first to see the full catalog of docs and entry points.
+2. Prefer project `.md` docs over guessing when answering questions about setup, API, or behavior.
+3. Treat linked docs as part of the same documentation graph; follow links to get complete information.
+4. Use the paths above as entry points; from there, follow in-doc links as needed.
+5. If docs and code appear inconsistent, report the mismatch explicitly and avoid inventing behavior.
