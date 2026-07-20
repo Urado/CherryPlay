@@ -60,8 +60,8 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--ui-border);
   background: var(--bg-secondary, #f5f5f5);
   flex-shrink: 0;
@@ -70,7 +70,7 @@
 .party-editor-shell-header-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
   width: 100%;
 }
@@ -80,10 +80,10 @@
   align-items: center;
   width: 100%;
   min-width: 0;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-start;
-  padding-top: 8px;
+  padding-top: 4px;
   border-top: 1px solid var(--ui-border);
 }
 
@@ -91,7 +91,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-start;
   width: 100%;
   min-width: 0;
@@ -114,7 +114,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -158,19 +158,34 @@
 
 .party-editor-shell-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--text-primary, #000000);
 }
 
 .party-editor-shell-phase-badge {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   flex-shrink: 0;
+}
+
+.party-editor-shell-header-toolbar .cp-button,
+.party-editor-shell-header-toolbar .party-lifecycle-actions--header .party-lifecycle-action,
+.party-editor-shell-header-toolbar .party-catalog-visibility-toggle--header {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.party-editor-shell-header-toolbar .party-lifecycle-actions--header,
+.party-editor-shell-header-toolbar .party-editor-actions--header {
+  gap: 6px;
 }
 
 .party-editor-shell-phase-badge--draft {
@@ -269,11 +284,11 @@
 @container party-editor (max-width: 980px) {
   .party-editor-shell-header-main {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 
   .party-editor-shell-title {
-    font-size: 16px;
+    font-size: 13px;
   }
 
   .party-editor-shell-header-group {
@@ -284,16 +299,16 @@
 
 @container party-editor (max-width: 760px) {
   .party-editor-shell-header {
-    padding: 10px;
+    padding: 6px 8px;
   }
 
   .party-editor-shell-header-actions,
   .party-editor-shell-header-toolbar {
-    gap: 6px;
+    gap: 4px;
   }
 
   .party-editor-shell-phase-badge {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 

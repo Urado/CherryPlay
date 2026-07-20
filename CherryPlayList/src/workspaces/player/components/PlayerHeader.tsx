@@ -101,7 +101,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   className="playlist-header-action-icon"
                   title="Deselect All"
                   aria-label="Deselect All"
-                  icon={<ClearIcon style={{ fontSize: '20px' }} />}
+                  icon={<ClearIcon style={{ fontSize: '16px' }} />}
                   variant="ghost"
                   size="sm"
                 ></IconButton>
@@ -111,7 +111,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                     className="playlist-header-action-icon"
                     title="Создать группу"
                     aria-label="Создать группу"
-                    icon={<GroupAddIcon style={{ fontSize: '20px' }} />}
+                    icon={<GroupAddIcon style={{ fontSize: '16px' }} />}
                     variant="ghost"
                     size="sm"
                   ></IconButton>
@@ -126,7 +126,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                       : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                   }
                   aria-label="Удалить выбранные"
-                  icon={<DeleteSweepIcon style={{ fontSize: '20px' }} />}
+                  icon={<DeleteSweepIcon style={{ fontSize: '16px' }} />}
                   variant="ghost"
                   size="sm"
                 ></IconButton>
@@ -137,7 +137,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 className="playlist-header-action-icon"
                 title="Select All"
                 aria-label="Select All"
-                icon={<SelectAllIcon style={{ fontSize: '20px' }} />}
+                icon={<SelectAllIcon style={{ fontSize: '16px' }} />}
                 variant="ghost"
                 size="sm"
               ></IconButton>
@@ -190,7 +190,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           className="player-settings-icon"
           title="Настройки проигрывания"
           aria-label="Настройки проигрывания"
-          icon={<SettingsIcon style={{ fontSize: '20px' }} />}
+          icon={<SettingsIcon style={{ fontSize: '16px' }} />}
           variant="ghost"
           size="sm"
         ></IconButton>
@@ -201,7 +201,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
           title="Список треков в файл…"
           disabled={allTracksCount === 0}
           aria-label="Список треков в файл"
-          icon={<TextSnippetIcon style={{ fontSize: '20px' }} />}
+          icon={<TextSnippetIcon style={{ fontSize: '16px' }} />}
           variant="ghost"
           size="sm"
         ></IconButton>

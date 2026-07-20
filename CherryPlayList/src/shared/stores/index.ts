@@ -25,7 +25,13 @@ export {
   toBuiltinWorkspaceId,
 } from '@core/types/workspacePreset';
 export { useAimpStore } from './aimpStore';
-export { useSettingsStore } from './settingsStore';
+export {
+  useSettingsStore,
+  clampTrackItemSizePreset,
+  DEFAULT_TRACK_ITEM_SIZE_PRESET,
+  TRACK_ITEM_SIZE_PRESET_VALUES,
+  type TrackItemSizePreset,
+} from './settingsStore';
 export { useUIStore } from './uiStore';
 export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext } from './uiStore';
 export { usePlayerAudioStore } from './playerAudioStore';

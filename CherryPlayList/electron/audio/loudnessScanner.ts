@@ -174,19 +174,36 @@ export function computeTrackGainDb(
   return Math.min(lufsGainDb, headroomCapDb);
 }
 
+/**
+ * True for paths inside the Electron asar archive root.
+ * Does not match `app.asar.unpacked` (char after `app.asar` is `.`, not a separator).
+ *
+ * Packaged Electron's `fs.existsSync` reports asar paths as present, but native
+ * binaries cannot be spawned from inside the archive — those candidates must be skipped.
+ */
+export function isInsideElectronAsar(filePath: string): boolean {
+  return /(?:^|[\\/])app\.asar(?:[\\/]|$)/i.test(filePath);
+}
+
+function toAsarUnpackedPath(filePath: string): string {
+  return filePath.replace(/([\\/])app\.asar([\\/])/i, '$1app.asar.unpacked$2');
+}
+
 function getFfmpegCandidatePaths(): string[] {
   const candidates: string[] = [];
 
-  if (typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0) {
-    candidates.push(ffmpegStaticPath);
-    if (app.isPackaged) {
-      candidates.push(ffmpegStaticPath.replace('app.asar', 'app.asar.unpacked'));
-    }
-  }
-
   if (app.isPackaged) {
     const executableName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+    // Prefer extraResources copy — real filesystem path, not asar-virtual.
     candidates.push(path.join(process.resourcesPath, 'ffmpeg-static', executableName));
+  }
+
+  if (typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0) {
+    if (app.isPackaged && isInsideElectronAsar(ffmpegStaticPath)) {
+      candidates.push(toAsarUnpackedPath(ffmpegStaticPath));
+    } else if (!isInsideElectronAsar(ffmpegStaticPath)) {
+      candidates.push(ffmpegStaticPath);
+    }
   }
 
   return [...new Set(candidates)];
@@ -194,6 +211,7 @@ function getFfmpegCandidatePaths(): string[] {
 
 /**
  * Resolve bundled ffmpeg binary path (dev, asar-unpacked, or extraResources).
+ * Never returns a path inside `app.asar` when packaged (spawn would fail with ENOENT).
  */
 export function resolveFfmpegPath(): string | null {
   return getFfmpegCandidatePaths().find((candidatePath) => fs.existsSync(candidatePath)) ?? null;

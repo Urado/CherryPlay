@@ -10,10 +10,10 @@
 
 .party-preview-view-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 16px;
+  gap: 6px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--ui-border);
   background: var(--bg-secondary, #f5f5f5);
   flex-shrink: 0;
@@ -21,8 +21,9 @@
 
 .party-preview-view-header h2 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
   color: var(--text-primary, #000000);
   min-width: 0;
 }
@@ -30,10 +31,10 @@
 .party-preview-view-sync-badge {
   margin-left: auto;
   display: inline-block;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
   max-width: 100%;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -58,12 +59,13 @@
 
 @container party-preview (max-width: 760px) {
   .party-preview-view-header {
-    padding: 12px;
-    gap: 8px;
+    padding: 6px 8px;
+    gap: 4px;
   }
 
   .party-preview-view-header h2 {
     width: 100%;
+    font-size: 12px;
   }
 
   .party-preview-view-sync-badge {

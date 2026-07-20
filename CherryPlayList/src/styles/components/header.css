@@ -5,16 +5,16 @@
 .app-header {
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--ui-border);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-shrink: 0;
 }
 
 .app-header-toolbar {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   align-items: center;
   flex-wrap: wrap;
@@ -23,7 +23,7 @@
 .app-header-top-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   flex-wrap: wrap;
 }
@@ -31,7 +31,7 @@
 .app-header-status-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex: 1 1 320px;
   min-width: 0;
 }
@@ -42,7 +42,7 @@
   flex: 1 1 280px;
   min-width: 0;
   /* Match .playback-pill height so an empty/reserved slot does not collapse the project row. */
-  min-height: 42px;
+  min-height: 32px;
 }
 
 .app-header-playback-pill-row .playback-pill {
@@ -53,7 +53,7 @@
 .app-header-left {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -69,7 +69,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   min-width: 0;
 }
@@ -88,9 +88,10 @@
   border: none;
   border-bottom: 1px solid transparent;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 4px 8px;
+  line-height: 1.25;
+  padding: 2px 6px;
   min-width: 150px;
   max-width: 300px;
   transition:
@@ -115,8 +116,9 @@
 
 .dirty-indicator {
   color: var(--accent-primary);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
+  line-height: 1;
 }
 
 .app-header-workspace {
@@ -139,12 +141,12 @@
   width: 210px;
   max-width: 210px;
   flex-shrink: 0;
-  min-height: 32px;
+  min-height: 30px;
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--ui-border);
-  border-radius: 16px;
-  font-size: 14px;
+  border-radius: 14px;
+  font-size: 13px;
   overflow: hidden;
   transition:
     background-color 0.15s ease,
@@ -159,7 +161,7 @@
   flex: 1 1 0;
   min-width: 0;
   width: 0;
-  padding: 4px 4px 4px 12px;
+  padding: 2px 4px 2px 10px;
   border: none;
   background: transparent;
   color: inherit;
@@ -194,12 +196,12 @@
   min-width: 0;
   width: 0;
   margin: 2px 0 2px 8px;
-  padding: 2px 6px;
+  padding: 1px 6px;
   border: 1px solid var(--accent-primary);
   border-radius: 8px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
@@ -211,7 +213,8 @@
   align-items: center;
   justify-content: center;
   width: 28px;
-  padding: 4px 0;
+  min-height: 28px;
+  padding: 2px 0;
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -234,7 +237,7 @@
 
 .workspace-pill__chevron {
   flex-shrink: 0;
-  font-size: 20px !important;
+  font-size: 18px !important;
   color: inherit;
 }
 
@@ -392,13 +395,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -467,13 +470,13 @@
 .app-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .action-group {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   align-items: center;
 }
 
@@ -482,7 +485,10 @@
   border: none;
   color: var(--text-primary);
   cursor: pointer;
-  padding: var(--spacing-sm);
+  box-sizing: border-box;
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--spacing-xs);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -517,15 +523,15 @@
 }
 
 .header-button__icon {
-  font-size: 32px;
+  font-size: 24px;
 }
 
 .header-button__icon--compact {
-  font-size: 28px;
+  font-size: 22px;
 }
 
 .header-button--text {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
@@ -533,10 +539,10 @@
 
 .header-auth-dot {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 8px;
-  height: 8px;
+  top: 1px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
   background-color: var(--state-success, #4caf50);
   border-radius: 50%;
   border: 1px solid var(--surface-primary, #fff);
@@ -550,9 +556,9 @@
 .project-menu__trigger {
   position: relative;
   flex-direction: row;
-  padding: var(--spacing-sm);
-  min-width: 44px;
-  min-height: 44px;
+  padding: var(--spacing-xs);
+  min-width: 32px;
+  min-height: 32px;
   color: var(--text-primary);
 }
 
@@ -613,11 +619,11 @@
 
 .project-menu__trigger-spinner {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
@@ -634,22 +640,22 @@
 
 .playback-pill {
   --playback-pill-icon: 28px;
-  --playback-pill-icon-sm: 18px;
+  --playback-pill-icon-sm: 16px;
 
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1 1 280px;
   box-sizing: border-box;
   width: 100%;
   min-width: 220px;
   max-width: 480px;
-  height: 42px;
-  padding: 4px 10px 4px 4px;
+  height: 32px;
+  padding: 2px 8px 2px 2px;
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--ui-border);
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
@@ -721,8 +727,8 @@
   align-items: stretch;
   flex: 1 1 auto;
   min-width: 0;
-  height: 32px;
-  padding-inline: 6px 4px;
+  height: 28px;
+  padding-inline: 4px 2px;
   box-sizing: border-box;
 }
 
@@ -743,9 +749,9 @@
 
 .playback-pill__prep-label {
   min-width: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 14px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -768,9 +774,9 @@
 
 .playback-pill__track-name {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 14px;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -780,9 +786,9 @@
 .playback-pill__track-time {
   display: block;
   align-self: end;
-  font-size: 11px;
-  line-height: 14px;
-  height: 14px;
+  font-size: 10px;
+  line-height: 12px;
+  height: 12px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;

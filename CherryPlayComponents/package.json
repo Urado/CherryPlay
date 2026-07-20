@@ -18,6 +18,13 @@
   ],
   "author": "",
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles/*": "./dist/styles/*"
+  },
   "dependencies": {
     "luxon": "^3.4.4"
   },

@@ -12,11 +12,11 @@
 }
 
 .playlist-header-section {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   border-bottom: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-shrink: 0;
   min-width: 0;
   container-type: inline-size;
@@ -25,14 +25,14 @@
 .playlist-header-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   min-width: 0;
 }
 
 .playlist-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-shrink: 0;
 }
 
@@ -40,9 +40,10 @@
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
-  font-size: var(--font-size-heading);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-heading);
-  padding: var(--spacing-sm) 12px;
+  line-height: var(--line-height-body);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 4px;
   flex: 1 1 auto;
   min-width: 0;
@@ -60,6 +61,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   padding: 6px;
+  min-width: 28px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,24 +149,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-sm);
-  font-size: var(--font-size-secondary);
-  line-height: 1.25;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-small);
+  line-height: 1.2;
   color: var(--text-secondary);
 }
 
 .playlist-stats-header__info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--spacing-xs);
   min-width: 0;
   flex: 1;
 }
 
 .playlist-stats-header__icon {
   display: block;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 0.875rem;
+  height: 0.875rem;
   flex-shrink: 0;
 }
 
@@ -191,19 +194,19 @@
 .player-view .playlist-header-source-row {
   display: flex;
   align-items: center;
-  min-height: 26px;
-  padding: 2px var(--spacing-md);
+  min-height: 20px;
+  padding: 1px var(--spacing-sm);
   border-bottom: 1px solid var(--ui-border);
   flex-shrink: 0;
 }
 
 .aimp-view--embedded .playlist-stats-header,
 .player-view .playlist-stats-header {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 .player-view .player-header-actions {
-  padding: 0 var(--spacing-md) var(--spacing-md);
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
   margin-top: 0;
 }
 
@@ -301,7 +304,7 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
-  min-height: 44px;
+  min-height: var(--track-item-min-height, 48px);
 }
 
 /* Чекбокс и первые колонки не сжимаются — всегда видны в party и узких лейаутах */
@@ -314,9 +317,10 @@
 .playlist-item-play,
 .cp-playback-control.playlist-item-play {
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
   color: var(--text-secondary);
   flex-shrink: 0;
   background: transparent;
@@ -364,8 +368,8 @@
 .cp-button.playlist-item-drag-handle {
   background: transparent;
   width: auto;
-  min-width: 28px;
-  min-height: 28px;
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
   padding: 4px;
 }
 
@@ -382,8 +386,8 @@
 .cp-button.playlist-item-checkbox {
   color: var(--text-secondary);
   flex-shrink: 0;
-  min-width: 28px;
-  min-height: 28px;
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
 }
 
 .playlist-item-checkbox:hover,
@@ -608,6 +612,7 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
+  min-height: var(--track-item-min-height, 48px);
 }
 
 .list-row:hover {
@@ -646,8 +651,10 @@
   background: transparent;
   border: 1px solid var(--ui-border);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
   display: flex;
   align-items: center;
   justify-content: center;

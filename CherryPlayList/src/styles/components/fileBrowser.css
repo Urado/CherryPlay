@@ -6,24 +6,24 @@
 }
 
 .file-browser-header {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-bottom: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-shrink: 0;
 }
 
 .file-browser-nav {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .file-browser-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -31,13 +31,13 @@
 .file-browser-choose-folder {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--spacing-xs);
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 4px;
-  font-size: var(--font-size-secondary);
+  font-size: var(--font-size-small);
   cursor: pointer;
   transition:
     background-color 0.2s,
@@ -70,7 +70,7 @@
 .breadcrumbs-inner {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   min-width: min-content;
 }
 
@@ -80,9 +80,9 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px var(--spacing-sm);
+  padding: var(--spacing-xs);
   border-radius: 4px;
-  font-size: var(--font-size-secondary);
+  font-size: var(--font-size-small);
   transition:
     background-color 0.2s,
     color 0.2s;
@@ -112,13 +112,13 @@
 .breadcrumb-dropdown-item {
   display: block;
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   text-align: left;
   background: transparent;
   border: none;
   color: var(--text-primary);
   cursor: pointer;
-  font-size: var(--font-size-body);
+  font-size: var(--font-size-small);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -131,7 +131,7 @@
 
 .breadcrumb-separator {
   color: var(--text-disabled);
-  font-size: var(--font-size-secondary);
+  font-size: var(--font-size-small);
 }
 
 .breadcrumb-item {
@@ -139,9 +139,9 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px var(--spacing-sm);
+  padding: var(--spacing-xs);
   border-radius: 4px;
-  font-size: var(--font-size-secondary);
+  font-size: var(--font-size-small);
   transition:
     background-color 0.2s,
     color 0.2s;
@@ -162,9 +162,9 @@
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
-  padding: var(--spacing-sm) 12px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 4px;
-  font-size: var(--font-size-body);
+  font-size: var(--font-size-secondary);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -201,7 +201,7 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
-  min-height: 44px;
+  min-height: var(--track-item-min-height, 48px);
 }
 
 .file-browser-item-play,
@@ -210,9 +210,10 @@
   background: transparent;
   border: 1px solid var(--ui-border);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -272,13 +273,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
 }
 
 .file-browser-item-icon .folder-icon,
 .file-browser-item-icon .file-icon {
-  font-size: 24px;
+  font-size: calc(var(--track-item-control-size, 32px) - 8px);
   color: var(--text-secondary);
 }
 

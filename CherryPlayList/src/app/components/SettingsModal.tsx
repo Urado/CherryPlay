@@ -20,7 +20,13 @@ import {
   parseSettingsBundleJson,
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
-import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import {
+  useAimpStore,
+  useProjectStore,
+  useSettingsStore,
+  useUIStore,
+  type TrackItemSizePreset,
+} from '@shared/stores';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
@@ -459,11 +465,10 @@ export const SettingsModal: React.FC = () => {
               <select
                 className="settings-select"
                 value={localTrackItemSizePreset}
-                onChange={(e) =>
-                  setLocalTrackItemSizePreset(e.target.value as 'small' | 'medium' | 'large')
-                }
+                onChange={(e) => setLocalTrackItemSizePreset(e.target.value as TrackItemSizePreset)}
                 id="settings-track-size"
               >
+                <option value="xsmall">Ультра маленькие</option>
                 <option value="small">Маленькие</option>
                 <option value="medium">Средние</option>
                 <option value="large">Большие</option>

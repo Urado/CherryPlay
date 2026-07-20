@@ -58,8 +58,8 @@
 .player-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
   flex-shrink: 0;
 }
 
@@ -67,7 +67,7 @@
 .player-session-controls {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .player-session-button {
@@ -77,9 +77,10 @@
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
   border-radius: 4px;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-body);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-secondary);
   font-weight: 500;
+  line-height: 1.25;
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -123,7 +124,7 @@
   border: 1px solid var(--ui-border);
   color: var(--text-secondary);
   border-radius: 4px;
-  padding: 4px;
+  padding: var(--spacing-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -131,7 +132,7 @@
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
-  margin-left: var(--spacing-sm);
+  margin-left: 0;
 }
 
 .player-settings-icon:hover {
@@ -151,13 +152,15 @@
   border: 1px solid var(--ui-border, var(--cp-ui-border));
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  width: 32px;
-  height: 32px;
+  /* Override .cp-button--sm min-height / icon-only size so xsmall can reach 24px */
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
   position: relative;
   flex-shrink: 0;
   border-radius: var(--cp-button-radius, 8px);
@@ -216,7 +219,7 @@
 .track-settings-dropdown {
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
-  border-radius: 8px;
+  border-radius: 6px;
   box-shadow: 0 8px 24px var(--ui-shadow);
   display: flex;
   flex-direction: column;
@@ -224,7 +227,7 @@
 }
 
 .track-settings-dropdown__body {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs);
 }
 
 .track-settings-dropdown__list {
@@ -239,7 +242,7 @@
 }
 
 .track-settings-dropdown__item + .track-settings-dropdown__item {
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .track-settings-dropdown__row,
@@ -247,12 +250,13 @@
   display: flex;
   align-items: center;
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-body);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-small);
+  line-height: 1.25;
   color: var(--text-primary);
   background-color: var(--bg-tertiary);
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   transition:
     background-color 0.2s,
@@ -297,15 +301,19 @@
 }
 
 .track-settings-dropdown__row .track-settings-dropdown__input {
-  width: 48px;
-  margin-left: var(--spacing-sm);
-  padding: 2px 6px;
-  font-size: var(--font-size-body);
+  width: 36px;
+  min-height: 22px;
+  height: 22px;
+  margin-left: var(--spacing-xs);
+  padding: 0 4px;
+  font-size: var(--font-size-small);
+  line-height: 1.25;
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
-  border-radius: 4px;
+  border-radius: 3px;
   color: var(--text-primary);
   text-align: center;
+  box-sizing: border-box;
   -moz-appearance: textfield;
 }
 
@@ -317,13 +325,23 @@
 
 .track-settings-dropdown__row .track-settings-dropdown__input:focus {
   outline: none;
+}
+
+.track-settings-dropdown__row .track-settings-dropdown__input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
   border-color: var(--accent-primary);
 }
 
 .track-settings-dropdown__row .track-settings-dropdown__suffix {
-  margin-left: 4px;
-  font-size: var(--font-size-body);
+  margin-left: 2px;
+  font-size: var(--font-size-small);
   color: var(--text-secondary);
+}
+
+.track-settings-dropdown__row--active .track-settings-dropdown__suffix {
+  color: var(--text-on-accent, var(--text-primary));
+  opacity: 0.9;
 }
 
 /* Track actions dropdown (ellipsis menu) */
@@ -500,7 +518,7 @@
   border: 1px solid var(--ui-border, var(--cp-ui-border));
   color: var(--text-secondary);
   border-radius: var(--cp-button-radius, 8px);
-  padding: 4px;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -509,9 +527,11 @@
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
-  min-width: 32px;
-  width: 32px;
-  height: 32px;
+  /* Override .cp-button--sm min-height / icon-only size so xsmall can reach 24px */
+  min-width: var(--track-item-control-size, 32px);
+  min-height: var(--track-item-control-size, 32px);
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
   flex-shrink: 0;
 }
 
@@ -643,8 +663,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
 }
 
 /* Ungroup button */
@@ -660,7 +680,7 @@
   justify-content: center;
   flex-shrink: 0;
   border-radius: 4px;
-  min-width: 32px;
+  min-width: var(--track-item-control-size, 32px);
   transition:
     background-color 0.2s,
     color 0.2s;
@@ -684,8 +704,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
 }
 
 /* Expand button for group */
@@ -699,8 +719,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--track-item-control-size, 32px);
+  height: var(--track-item-control-size, 32px);
   transition: color 0.2s;
 }
 

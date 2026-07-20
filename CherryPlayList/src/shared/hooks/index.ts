@@ -1,6 +1,7 @@
 export { useAudioPathDurations, useTrackDuration } from './useTrackDuration';
 export type { UseAudioPathDurationsOptions } from './useTrackDuration';
 export { useTrackItemSize } from './useTrackItemSize';
+export type { TrackItemSizePreset } from './useTrackItemSize';
 export {
   useWorkspaceDragAndDrop,
   useTrackWorkspaceDragAndDrop,

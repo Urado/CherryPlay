@@ -8,7 +8,12 @@ import { getPlatformCapabilities } from '@shared/platform/platformCapabilities';
 import type { AimpSourceSelection } from '../contracts/aimp';
 import type { CustomKeyBindings } from '../shortcuts/shortcutTypes';
 import { useLayoutStore } from '../stores/layoutStore';
-import { migrateFileBrowserPathsOnRehydrate, useSettingsStore } from '../stores/settingsStore';
+import {
+  migrateFileBrowserPathsOnRehydrate,
+  TRACK_ITEM_SIZE_PRESET_VALUES,
+  useSettingsStore,
+  type TrackItemSizePreset,
+} from '../stores/settingsStore';
 
 import { ipcService } from './ipcService';
 
@@ -29,7 +34,7 @@ export interface SettingsExportPersistedState {
   lastOpenedPlaylist: string;
   fileBrowserPath: string;
   fileBrowserPathsByWorkspaceId?: Record<WorkspaceId, string>;
-  trackItemSizePreset: 'small' | 'medium' | 'large';
+  trackItemSizePreset: TrackItemSizePreset;
   hourDividerInterval: number;
   showHourDividers: boolean;
   playerAudioDeviceId: string | null;
@@ -167,9 +172,9 @@ function isSettingsExportPersistedState(value: unknown): value is SettingsExport
       settings.exportStrategy === 'aimpPlaylist') &&
     typeof settings.lastOpenedPlaylist === 'string' &&
     typeof settings.fileBrowserPath === 'string' &&
-    (settings.trackItemSizePreset === 'small' ||
-      settings.trackItemSizePreset === 'medium' ||
-      settings.trackItemSizePreset === 'large') &&
+    (TRACK_ITEM_SIZE_PRESET_VALUES as readonly string[]).includes(
+      settings.trackItemSizePreset as string,
+    ) &&
     typeof settings.hourDividerInterval === 'number' &&
     typeof settings.showHourDividers === 'boolean' &&
     (settings.playerAudioDeviceId === null || typeof settings.playerAudioDeviceId === 'string') &&

@@ -525,7 +525,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             aria-label="Назад по истории навигации"
             icon={<ArrowBackIcon />}
             variant="ghost"
-            size="md"
+            size="sm"
           ></IconButton>
           <IconButton
             className="nav-button"
@@ -536,7 +536,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             aria-label="К родительской папке"
             icon={<ArrowUpwardIcon />}
             variant="ghost"
-            size="md"
+            size="sm"
           ></IconButton>
           <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
             <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
@@ -614,7 +614,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                 aria-label="Снять выделение"
                 icon={<ClearIcon />}
                 variant="ghost"
-                size="md"
+                size="sm"
               ></IconButton>
             ) : (
               filteredItems.length > 0 && (
@@ -627,7 +627,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                   aria-label="Выбрать всё"
                   icon={<SelectAllIcon />}
                   variant="ghost"
-                  size="md"
+                  size="sm"
                 ></IconButton>
               )
             )}

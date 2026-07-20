@@ -279,7 +279,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
         className="playlist-header-action-icon"
         title="Экспортировать коллекцию"
       >
-        <FileDownloadIcon style={{ fontSize: '20px' }} />
+        <FileDownloadIcon style={{ fontSize: '16px' }} />
       </button>
       {exportMenuOpen && (
         <div className="collection-export-menu">

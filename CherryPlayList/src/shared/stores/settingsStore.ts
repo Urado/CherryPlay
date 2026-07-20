@@ -33,13 +33,27 @@ export interface DemoPlayerFloatingSize {
 
 export type { LoudnessSettings };
 
+export const TRACK_ITEM_SIZE_PRESET_VALUES = ['xsmall', 'small', 'medium', 'large'] as const;
+export type TrackItemSizePreset = (typeof TRACK_ITEM_SIZE_PRESET_VALUES)[number];
+export const DEFAULT_TRACK_ITEM_SIZE_PRESET: TrackItemSizePreset = 'medium';
+
+export function clampTrackItemSizePreset(value: unknown): TrackItemSizePreset {
+  if (
+    typeof value === 'string' &&
+    (TRACK_ITEM_SIZE_PRESET_VALUES as readonly string[]).includes(value)
+  ) {
+    return value as TrackItemSizePreset;
+  }
+  return DEFAULT_TRACK_ITEM_SIZE_PRESET;
+}
+
 interface SettingsState extends FileBrowserPathPersistSlice {
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   exportPath: string;
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
-  trackItemSizePreset: 'small' | 'medium' | 'large';
+  trackItemSizePreset: TrackItemSizePreset;
   hourDividerInterval: number;
   showHourDividers: boolean;
   playerAudioDeviceId: string | null;
@@ -66,7 +80,7 @@ interface SettingsState extends FileBrowserPathPersistSlice {
    * `DEFAULT_FILEBROWSER_WORKSPACE_ID`. Remove after subtask 04 when no callers remain.
    */
   setFileBrowserPath: (path: string) => void;
-  setTrackItemSizePreset: (preset: 'small' | 'medium' | 'large') => void;
+  setTrackItemSizePreset: (preset: TrackItemSizePreset) => void;
   setHourDividerInterval: (interval: number) => void;
   setShowHourDividers: (show: boolean) => void;
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
@@ -117,7 +131,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       lastOpenedPlaylist: '',
       fileBrowserPath: '',
       fileBrowserPathsByWorkspaceId: {},
-      trackItemSizePreset: 'medium',
+      trackItemSizePreset: DEFAULT_TRACK_ITEM_SIZE_PRESET,
       hourDividerInterval: 3600,
       showHourDividers: true,
       playerAudioDeviceId: null,
@@ -259,7 +273,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       onRehydrateStorage: () => (state, _err) => {
         if (state) {
           const migrated = migrateFileBrowserPathsOnRehydrate(state);
-          useSettingsStore.setState(migrated);
+          useSettingsStore.setState({
+            ...migrated,
+            trackItemSizePreset: clampTrackItemSizePreset(state.trackItemSizePreset),
+          });
         }
         useSettingsStore.getState().setHasHydrated(true);
       },

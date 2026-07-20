@@ -119,7 +119,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   className="playlist-header-action-icon"
                   title="Deselect All"
                 >
-                  <ClearIcon style={{ fontSize: '20px' }} />
+                  <ClearIcon style={{ fontSize: '16px' }} />
                 </button>
                 {canCreateGroup && onCreateGroup && (
                   <button
@@ -127,7 +127,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                     className="playlist-header-action-icon"
                     title="Создать группу"
                   >
-                    <GroupAddIcon style={{ fontSize: '20px' }} />
+                    <GroupAddIcon style={{ fontSize: '16px' }} />
                   </button>
                 )}
                 {onRemoveSelected && (
@@ -141,7 +141,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                         : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                     }
                   >
-                    <DeleteSweepIcon style={{ fontSize: '20px' }} />
+                    <DeleteSweepIcon style={{ fontSize: '16px' }} />
                   </button>
                 )}
               </>
@@ -153,7 +153,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                   className="playlist-header-action-icon"
                   title="Select All"
                 >
-                  <SelectAllIcon style={{ fontSize: '20px' }} />
+                  <SelectAllIcon style={{ fontSize: '16px' }} />
                 </button>
                 {onClearAll && (
                   <button
@@ -161,7 +161,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                     className="playlist-header-action-icon delete-button"
                     title="Удалить всё"
                   >
-                    <DeleteForeverIcon style={{ fontSize: '20px' }} />
+                    <DeleteForeverIcon style={{ fontSize: '16px' }} />
                   </button>
                 )}
               </>
