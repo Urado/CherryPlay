@@ -1,0 +1,36 @@
+.party-connectivity-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.party-connectivity-banner--offline {
+  background: rgba(255, 193, 7, 0.12);
+  border-bottom-color: rgba(255, 193, 7, 0.35);
+}
+
+.party-connectivity-banner--unreachable {
+  background: rgba(244, 67, 54, 0.1);
+  border-bottom-color: rgba(244, 67, 54, 0.3);
+}
+
+.party-connectivity-banner-title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.party-connectivity-banner-hint {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary, #555555);
+}
+
+.party-connectivity-banner-retry {
+  flex-shrink: 0;
+}

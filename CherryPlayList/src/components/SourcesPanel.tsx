@@ -1,25 +1,17 @@
 import React from 'react';
 
-import { useUIStore } from '@shared/stores';
+import type { WorkspaceId } from '@core/types/workspace';
 
 import { FileBrowser } from './FileBrowser';
 
-export const SourcesPanel: React.FC = () => {
-  const { activeSource } = useUIStore();
+interface SourcesPanelProps {
+  workspaceId: WorkspaceId;
+}
 
+export const SourcesPanel: React.FC<SourcesPanelProps> = ({ workspaceId }) => {
   return (
     <div className="sources-panel">
-      {activeSource === 'fileBrowser' && <FileBrowser />}
-      {activeSource === 'playlists' && (
-        <div className="empty-state">
-          <p>Плейлисты (в разработке)</p>
-        </div>
-      )}
-      {activeSource === 'db' && (
-        <div className="empty-state">
-          <p>База данных (в разработке)</p>
-        </div>
-      )}
+      <FileBrowser workspaceId={workspaceId} />
     </div>
   );
 };

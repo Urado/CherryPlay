@@ -38,7 +38,11 @@ import {
   type Track,
   type TrackLoudness,
 } from '../../../src/core/types/track';
-import { getEffectiveGainDb, resolveLinearGain } from '../../../src/shared/audio/loudnessGain';
+import {
+  getEffectiveGainDb,
+  resolveAutoGainDb,
+  resolveLinearGain,
+} from '../../../src/shared/audio/loudnessGain';
 import {
   TRACK_GAIN_LINEAR_MAX,
   TRACK_GAIN_LINEAR_MIN,
@@ -94,6 +98,36 @@ describe('normalizeLoadedLoudness', () => {
   });
 });
 
+describe('resolveAutoGainDb', () => {
+  it('recomputes gain from scan metadata and current target', () => {
+    const loudness = createOkLoudness({
+      integratedLufs: -23,
+      truePeakDb: -12,
+      trackGainDb: 2,
+    });
+    expect(resolveAutoGainDb(loudness, -18)).toBe(5);
+    expect(resolveAutoGainDb(loudness, -14)).toBe(9);
+  });
+
+  it('caps gain by true-peak headroom', () => {
+    const loudness = createOkLoudness({
+      integratedLufs: -23,
+      truePeakDb: -2,
+      trackGainDb: 5,
+    });
+    expect(resolveAutoGainDb(loudness, -18)).toBe(1);
+  });
+
+  it('ignores stale persisted trackGainDb when target changes', () => {
+    const loudness = createOkLoudness({
+      integratedLufs: -20,
+      truePeakDb: -3,
+      trackGainDb: 99,
+    });
+    expect(resolveAutoGainDb(loudness, -18)).toBe(2);
+  });
+});
+
 describe('resolveLinearGain', () => {
   it('returns 1 when normalization is disabled', () => {
     const track = createTrack({ loudness: createOkLoudness({ trackGainDb: 6 }) });
@@ -111,28 +145,47 @@ describe('resolveLinearGain', () => {
     expect(resolveLinearGain(track, enabledSettings)).toBe(1);
   });
 
-  it('converts trackGainDb to linear gain', () => {
-    const track = createTrack({ loudness: createOkLoudness({ trackGainDb: 6 }) });
+  it('converts recomputed auto gain to linear gain', () => {
+    const track = createTrack({
+      loudness: createOkLoudness({ integratedLufs: -24, truePeakDb: -10, trackGainDb: 0 }),
+    });
+    // target -18 → min(6, 9) = 6
     expect(resolveLinearGain(track, enabledSettings)).toBeCloseTo(10 ** (6 / 20), 5);
   });
 
   it('clamps linear gain to engine maximum', () => {
-    const track = createTrack({ loudness: createOkLoudness({ trackGainDb: 40 }) });
+    const track = createTrack({
+      loudness: createOkLoudness({ integratedLufs: -70, truePeakDb: -50, trackGainDb: 40 }),
+    });
     expect(resolveLinearGain(track, enabledSettings)).toBeCloseTo(TRACK_GAIN_LINEAR_MAX, 5);
   });
 
-  it('attenuates tracks with negative trackGainDb', () => {
-    const track = createTrack({ loudness: createOkLoudness({ trackGainDb: -6 }) });
+  it('attenuates tracks with negative auto gain', () => {
+    const track = createTrack({
+      loudness: createOkLoudness({ integratedLufs: -12, truePeakDb: -1, trackGainDb: 0 }),
+    });
+    // target -18 → min(-6, 0) = -6
     expect(resolveLinearGain(track, enabledSettings)).toBeCloseTo(10 ** (-6 / 20), 5);
     expect(resolveLinearGain(track, enabledSettings)).toBeGreaterThanOrEqual(TRACK_GAIN_LINEAR_MIN);
   });
 
-  it('uses manualGainDb override instead of trackGainDb', () => {
+  it('uses manualGainDb override instead of auto gain', () => {
     const track = createTrack({
       loudness: createOkLoudness({ trackGainDb: 2, manualGainDb: -4 }),
     });
-    expect(getEffectiveGainDb(track)).toBe(-4);
+    expect(getEffectiveGainDb(track, enabledSettings)).toBe(-4);
     expect(resolveLinearGain(track, enabledSettings)).toBeCloseTo(10 ** (-4 / 20), 5);
+  });
+
+  it('uses current target for effective gain when target differs from scan-time', () => {
+    const track = createTrack({
+      loudness: createOkLoudness({
+        integratedLufs: -23,
+        truePeakDb: -12,
+        trackGainDb: 5,
+      }),
+    });
+    expect(getEffectiveGainDb(track, { ...enabledSettings, loudnessTargetLufs: -14 })).toBe(9);
   });
 });
 

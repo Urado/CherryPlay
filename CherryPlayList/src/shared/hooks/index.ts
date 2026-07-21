@@ -23,3 +23,6 @@ export type {
 
 export { usePlaybackPreview } from './usePlaybackPreview';
 export type { UsePlaybackPreviewOptions, UsePlaybackPreviewReturn } from './usePlaybackPreview';
+
+export { useModalKeyboard } from './useModalKeyboard';
+export type { UseModalKeyboardOptions } from './useModalKeyboard';

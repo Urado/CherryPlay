@@ -3,6 +3,8 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * Props for DisableButton component
  */
@@ -19,21 +21,16 @@ export interface DisableButtonProps {
 export const DisableButton: React.FC<DisableButtonProps> = ({ onToggle }) => {
   const { baseClassName, isDisabled } = useListRowContext();
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggle?.();
-  };
-
   return (
-    <button
-      type="button"
+    <ActionButton
+      onClick={() => onToggle?.()}
       className={`${baseClassName}-disable`}
-      onClick={handleClick}
       title={isDisabled ? 'Enable' : 'Disable'}
       aria-label={isDisabled ? 'Enable' : 'Disable'}
-    >
-      <BlockIcon style={{ fontSize: '18px' }} />
-    </button>
+      icon={<BlockIcon style={{ fontSize: '18px' }} />}
+      variant="ghost"
+      size="sm"
+    />
   );
 };
 

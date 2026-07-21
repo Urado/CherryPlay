@@ -1,4 +1,4 @@
-import type { OrganizerDto } from '@cherryplay/components';
+import { Button, type OrganizerDto } from '@cherryplay/components';
 import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -55,6 +55,8 @@ export function CabinetPage() {
   const [deletingPartyId, setDeletingPartyId] = useState<string | null>(null);
   const [togglingPartyId, setTogglingPartyId] = useState<string | null>(null);
   const [transitioningPartyId, setTransitioningPartyId] = useState<string | null>(null);
+  const [transitioningTargetState, setTransitioningTargetState] =
+    useState<PartyLifecycleState | null>(null);
   const [themeSelectionError, setThemeSelectionError] = useState<string | null>(null);
   const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
   const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
@@ -218,6 +220,7 @@ export function CabinetPage() {
 
   const handleLifecycleTransition = async (partyId: string, targetState: PartyLifecycleState) => {
     setTransitioningPartyId(partyId);
+    setTransitioningTargetState(targetState);
     setError(null);
     try {
       const updated = await partyApiService.transitionPartyLifecycle(partyId, targetState);
@@ -229,6 +232,7 @@ export function CabinetPage() {
       setError(extractApiErrorMessage(e, 'Ошибка смены состояния вечеринки'));
     } finally {
       setTransitioningPartyId(null);
+      setTransitioningTargetState(null);
     }
   };
 
@@ -267,17 +271,24 @@ export function CabinetPage() {
           <h1>Мой кабинет</h1>
           <div className="cabinet-header-actions">
             {organizer.role === 'admin' && (
-              <button
+              <Button
                 type="button"
-                className="cabinet-btn"
+                variant="secondary"
+                size="sm"
                 onClick={() => navigate(ROUTES.ADMIN_ORGANIZERS)}
               >
                 Админка
-              </button>
+              </Button>
             )}
-            <button className="logout-button" onClick={handleLogout} type="button">
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              className="logout-button"
+              onClick={handleLogout}
+            >
               Выйти
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -319,9 +330,10 @@ export function CabinetPage() {
         <div className="cabinet-parties">
           <div className="cabinet-parties-header">
             <h3>Мои вечеринки</h3>
-            <button
+            <Button
               type="button"
-              className="cabinet-btn cabinet-btn-primary"
+              variant={showCreateForm ? 'secondary' : 'primary'}
+              size="sm"
               onClick={() => {
                 setEditingParty(null);
                 setShowCreateForm(!showCreateForm);
@@ -329,7 +341,7 @@ export function CabinetPage() {
               }}
             >
               {showCreateForm ? 'Отмена' : 'Создать вечеринку'}
-            </button>
+            </Button>
           </div>
 
           {error && (
@@ -392,6 +404,7 @@ export function CabinetPage() {
               onToggleCatalog={handleToggleCatalog}
               onDeleteConfirm={handleDeleteConfirm}
               transitioningPartyId={transitioningPartyId}
+              transitioningTargetState={transitioningTargetState}
               onLifecycleTransition={handleLifecycleTransition}
             />
           )}

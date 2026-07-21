@@ -1,59 +1,66 @@
-# Party Workspace
+# Party module
 
-Workspace для создания и управления вечеринками с трансляцией плейлиста.
+Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (stores + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md).
 
-## Описание
+## Workspaces
 
-Этот workspace позволяет организаторам:
+| | Party Editor | Party Preview |
+| --- | --- | --- |
+| **ID** | `party-editor-workspace` | `party-preview-workspace` |
+| **Тип** | `party-editor` | `party-preview` |
+| **View** | `PartyEditorView` | `PartyPreviewView` |
+| **Wrapper** | `PartyEditorViewWrapper` | `PartyPreviewViewWrapper` |
 
-- Создавать вечеринки с выбором стиля оформления
-- Настраивать кастомизацию для выбранного стиля
-- Просматривать превью того, как плейлист будет выглядеть в браузере
-- Получать уникальный URL для веб-страницы вечеринки
+Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-## Компоненты
+**Party Editor:** баннер привязки, `PartyTrackDisplaySection`, контроль каталога **«В каталоге»** / **«По ссылке»**, `PartyEditor`, auth, connectivity-баннеры, entitlement.
 
-### PartyView
+**Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 
-Основной компонент workspace, который содержит:
+Оба wrapper → `PartyStreamingGate` (runtime provider only). **Нет** gate по `enableStreaming`; офлайн — `PartyConnectivityBanner` внутри view.
 
-- Форму создания вечеринки (PartyEditor)
-- Превью плейлиста (PartyPreview)
+## Party subsystem (три store)
 
-### PartyEditor
+```
+party/
+├── partyWorkspaceStore.ts           # production: форма, server/theme/lifecycle UI
+├── partyPreviewScenarioStore.ts   # preview scenario: sync/detached overrides
+├── partyPreviewScenarioActions.ts # продуктовые мутации сценария (не demo-gated)
+├── partyPreviewEffectiveState.ts  # resolvePartyPreviewEffectiveState + usePartyPreviewEffectiveState()
+├── partyPreviewMockPlayback.ts    # mock live + connection-break map
+├── partyEditorDemoStore.ts        # editor demo overlay (blockedOverride)
+├── partyWorkspaceDemoActions.ts   # demo orchestration (guardDemoMode)
+├── partyWorkspaceUtils.ts
+├── partyWorkspaceReconnectRefs.ts
+├── usePartyWorkspace.ts           # usePartyWorkspaceRuntime()
+├── PartyEditorView.tsx / PartyPreviewView.tsx
+├── PartyWorkspaceDemoPanel.tsx    # thin UI consumer scenario actions (preview mode)
+├── *ViewWrapper.tsx
+├── index.ts
+└── components/
+    ├── PartyPreviewScenarioControls.tsx  # scenario UI (panel variant in preview)
+    └── PartyEditor, PartyTrackDisplaySection, …
+```
 
-Компонент для редактирования настроек вечеринки:
+- **Production store** — форма и онлайн-UI; сбросы `resetPartyWorkspaceState` / `resetPartyLinkState` **не** трогают scenario и editor demo.
+- **Preview scenario store** — локальная симуляция превью; default `isSynchronized: true`; сброс — `resetPreviewScenario()` / кнопка «Сброс сценария» в preview-панели (эквивалент `syncPreviewWithProduction()`).
+- **Editor demo store** — только overlay blocked-reason в demo mode редактора.
+- **`usePartyPreviewEffectiveState()`** — единая точка merge для рендера preview (см. модульную документацию).
 
-- Название вечеринки
-- Выбор стиля (Cyberpunk, Sakura, Art Deco и др.)
-- Настройки кастомизации для выбранного стиля
-- **Поля для карточки каталога:** краткое описание (макс. 200 символов), город, дата/время, внешняя ссылка (URL + опциональный текст), теги танцев (до 20: предопределённые + свои)
-- Кнопка создания вечеринки
-- Отображение созданного URL
+## Состояние и API
 
-Данные сохраняются на сервере (Party entity, CreatePartyDto/UpdatePartyDto) и отображаются в каталоге (GET `/api/parties/public/list` → PublicPartyListItemDto).
+- `projectStore` — плейлист, `meta.linkedParty`, `meta.partyTrackDisplay`
+- `partyService` — HTTP API вечеринок
+- `partyWorkspaceStore` — production runtime (не scenario/demo)
 
-### PartyPreview
+## Layout
 
-Компонент для отображения превью плейлиста:
+Пресеты `party` и `aimp-party` — три колонки: player или aimp (50%), editor (25%), preview (25%). См. `layoutPresetFactories.ts` (фабрики), `layoutPreset.ts` (сигнатуры).
 
-- Использует библиотеку CherryPlayComponents
-- Показывает, как плейлист будет выглядеть в браузере
-- Применяет выбранный стиль и настройки кастомизации
-
-## Использование
-
-Workspace автоматически регистрируется при импорте модуля. Для использования в layout добавьте workspace типа `party`.
+Persist layout **v3**: legacy-зона `party` / `party-workspace` автоматически раскладывается в editor + preview (`migrateLegacyPartyLayout`).
 
 ## Зависимости
 
-- `@cherryplay/components` - библиотека компонентов для отображения плейлиста
-- `@shared/stores/projectStore` - главный store проекта (данные плейлиста, группы, настройки)
-- `@shared/services/partyService` - сервис для работы с вечеринками (пока моки)
-
-## Моки
-
-Взаимодействие с сервером пока мокируется через `partyService`:
-
-- `createParty()` - создает вечеринку с фейковыми данными
-- `getPartyUrl()` - генерирует URL для вечеринки
+- `@cherryplay/components`
+- `@shared/stores/projectStore`
+- `@shared/services/partyService`

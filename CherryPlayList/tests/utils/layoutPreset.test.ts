@@ -2,34 +2,41 @@ import type { Layout } from '../../src/core/types/layout';
 import { getLayoutPresetFromLayout } from '../../src/shared/utils/layoutPreset';
 
 describe('getLayoutPresetFromLayout', () => {
-  test('detects the persisted AIMP + Party preset from the layout tree', () => {
+  test('legacy AIMP zone layouts no longer match a built-in preset signature', () => {
     const layout: Layout = {
       version: 1,
       rootZone: {
         id: 'root',
         type: 'container',
         direction: 'horizontal',
-        sizes: [60, 40],
+        sizes: [50, 25, 25],
         zones: [
           {
             id: 'aimp-zone',
             type: 'workspace',
             workspaceId: 'aimp-workspace',
             workspaceType: 'aimp',
-            size: 60,
+            size: 50,
           },
           {
-            id: 'party-zone',
+            id: 'party-editor-zone',
             type: 'workspace',
-            workspaceId: 'party-workspace',
-            workspaceType: 'party',
-            size: 40,
+            workspaceId: 'party-editor-workspace',
+            workspaceType: 'party-editor',
+            size: 25,
+          },
+          {
+            id: 'party-preview-zone',
+            type: 'workspace',
+            workspaceId: 'party-preview-workspace',
+            workspaceType: 'party-preview',
+            size: 25,
           },
         ],
       },
     };
 
-    expect(getLayoutPresetFromLayout(layout)).toBe('aimp-party');
+    expect(getLayoutPresetFromLayout(layout)).toBeNull();
   });
 
   test('detects the persisted party preset from the layout tree', () => {
@@ -39,21 +46,28 @@ describe('getLayoutPresetFromLayout', () => {
         id: 'root',
         type: 'container',
         direction: 'horizontal',
-        sizes: [60, 40],
+        sizes: [50, 25, 25],
         zones: [
           {
             id: 'player-zone',
             type: 'workspace',
             workspaceId: 'player-workspace',
             workspaceType: 'player',
-            size: 60,
+            size: 50,
           },
           {
-            id: 'party-zone',
+            id: 'party-editor-zone',
             type: 'workspace',
-            workspaceId: 'party-workspace',
-            workspaceType: 'party',
-            size: 40,
+            workspaceId: 'party-editor-workspace',
+            workspaceType: 'party-editor',
+            size: 25,
+          },
+          {
+            id: 'party-preview-zone',
+            type: 'workspace',
+            workspaceId: 'party-preview-workspace',
+            workspaceType: 'party-preview',
+            size: 25,
           },
         ],
       },
@@ -79,10 +93,10 @@ describe('getLayoutPresetFromLayout', () => {
             size: 50,
           },
           {
-            id: 'party-zone',
+            id: 'party-editor-zone',
             type: 'workspace',
-            workspaceId: 'party-workspace',
-            workspaceType: 'party',
+            workspaceId: 'party-editor-workspace',
+            workspaceType: 'party-editor',
             size: 50,
           },
         ],

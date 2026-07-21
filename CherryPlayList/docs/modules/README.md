@@ -21,21 +21,21 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 - [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
 - [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
-- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов
+- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (несколько панелей per layout, path по `workspaceId`)
 - [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
 - [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
-- [AIMP](./workspaces/aimp.md) - Панель AIMP: мониторинг плейлиста/воспроизведения и стриминг на сайт (Windows x64, источник AIMP)
+- [AIMP](./workspaces/aimp.md) - AIMP: мониторинг и синхронизация **состояния** с сайтом (Windows x64)
 - [Test Zone](./workspaces/test-zone.md) - Тестовый модуль для проверки layout и реестра workspace
 
 ### Systems (модули)
 
 - [Drag and Drop](./systems/drag-and-drop.md) - Система перетаскивания треков и групп между workspace
 - [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
-- [Layout System](./systems/layout-system.md) - Система управления layout интерфейса
+- [Layout System](./systems/layout-system.md) - Рабочие пространства и layout (pill в шапке, built-in / **Мои**, auto-save, [режим редактирования](../../layout-edit-mode.md))
 - [Storage](./systems/storage.md) — обзор клиентского persist; подробнее: [архитектура](./systems/storage-architecture.md), [что храним](./systems/persisted-client-state.md)
-- [Demo Player](./systems/demo-player.md) - Глобальная система предпрослушивания треков без очереди
+- [Demo Player](./systems/demo-player.md) - Система предпрослушивания (floating-панель и workspace `demo-player`; основной плеер опционально в шапке)
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
-- [Streaming](./systems/streaming.md) - Система трансляции состояния плейлиста для вечеринок
+- [Streaming](./systems/streaming.md) - Site Streamer: orchestrator, SignalR, live playlist sync (`src/shared/streaming/`). UX decouple — [online-mode-ux-synthesis.md](../online-mode-ux-synthesis.md)
 - [Save / Load](./systems/save-load.md) - Система сохранения и загрузки проектов (.cherry формат, портативный режим)
 
 ## Supporting infrastructure (не модули в строгом смысле)
@@ -65,4 +65,4 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 ### Hooks & Utils
 
-- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Hook для клавиатурных сокращений
+- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Глобальные шорткаты и контракт клавиатуры модалок (`useModalKeyboard`)

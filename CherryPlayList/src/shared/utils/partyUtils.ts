@@ -124,6 +124,21 @@ export function countTotalTracks(items: ProjectItem[]): number {
   return count;
 }
 
+/** Collects track ids from a component playlist tree (preview / playback helpers). */
+export function collectComponentPlaylistTrackIds(items: ComponentPlayerItem[]): string[] {
+  const ids: string[] = [];
+  for (const item of items) {
+    if (item.type === 'track') {
+      ids.push(item.id);
+      continue;
+    }
+    if (item.type === 'group' && item.items) {
+      ids.push(...collectComponentPlaylistTrackIds(item.items));
+    }
+  }
+  return ids;
+}
+
 /**
  * Преобразует ProjectItem из приложения в формат для API (без path)
  */

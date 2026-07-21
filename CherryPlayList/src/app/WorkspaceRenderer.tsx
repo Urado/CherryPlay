@@ -3,8 +3,8 @@ import React, { memo } from 'react';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
-
-import { SourcesPanel } from '../components/SourcesPanel';
+import { useSettingsStore } from '@shared/stores';
+import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
 
 interface WorkspaceRendererProps {
   zone: WorkspaceZone;
@@ -15,27 +15,33 @@ interface WorkspaceRendererProps {
  * Использует реестр модулей для динамического рендеринга
  */
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
+  const playerInAppHeader = useSettingsStore((state) => state.playerInAppHeader);
   const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
-  if (zone.workspaceType === 'aimp' && !supportsAimpWorkspace) {
-    const message =
-      mode === 'demo'
-        ? DEMO_UNAVAILABLE_MESSAGE
-        : 'AIMP workspace is not available on this platform.';
+
+  if (playerInAppHeader && (zone.workspaceType === 'player' || zone.workspaceType === 'aimp')) {
     return (
-      <div className="empty-state">
-        <p>{message}</p>
+      <div className="workspace-player-in-header-hint">
+        <p>
+          Плеер отображается в шапке. Отключите опцию в настройках, чтобы вернуть панель в layout.
+        </p>
       </div>
     );
   }
 
-  // Special case for fileBrowser - it uses SourcesPanel
-  if (zone.workspaceType === 'fileBrowser') {
-    return (
-      <>
-        <h2 className="panel-title">Источники</h2>
-        <SourcesPanel />
-      </>
-    );
+  if (zone.workspaceType === 'aimp') {
+    if (!supportsAimpWorkspace) {
+      const message =
+        mode === 'demo'
+          ? DEMO_UNAVAILABLE_MESSAGE
+          : 'AIMP workspace is not available on this platform.';
+      return (
+        <div className="empty-state">
+          <p>{message}</p>
+        </div>
+      );
+    }
+
+    return <LegacyAimpWorkspaceAdapter zoneId={zone.id} />;
   }
 
   // Try to get module by ID first (for specific workspaces like playlist)

@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -6,7 +7,7 @@ import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'reac
 import { createPortal } from 'react-dom';
 
 import type { Track, TrackLoudness } from '@core/types/track';
-import { getEffectiveGainDb } from '@shared/audio/loudnessGain';
+import { getEffectiveGainDb, resolveAutoGainDb } from '@shared/audio/loudnessGain';
 import {
   getEffectiveCompressionStrength,
   resolveAutoCompressionStrength,
@@ -90,7 +91,7 @@ function hintQuietPassages(hasLraLow: boolean): string {
 
 function hintCalculatedGain(targetLufs: number): string {
   return [
-    `Усиление, которое приложение рассчитало при скане, чтобы подвести трек к ${targetLufs} LUFS.`,
+    `Усиление, рассчитанное по скану под текущую цель ${targetLufs} LUFS.`,
     'Учитывается запас по true peak (−1 dBTP): итоговое авто-усиление — минимум из «подгонки по LUFS» и «лимита по пику».',
     'Слайдер «Gain» выше заменяет это значение; «Выставить авто» под слайдером сбрасывает ручную настройку и снова использует расчётное значение.',
   ].join(' ');
@@ -190,8 +191,8 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
   }));
   const loudness = track.loudness;
   const visualState = getTrackLoudnessVisualState(loudness);
-  const effectiveGainDb = getEffectiveGainDb(track);
-  const autoGainDb = loudness?.status === 'ok' ? loudness.trackGainDb : undefined;
+  const effectiveGainDb = getEffectiveGainDb(track, loudnessSettings);
+  const autoGainDb = resolveAutoGainDb(loudness, loudnessSettings.loudnessTargetLufs);
   const sliderGainDb = effectiveGainDb ?? autoGainDb ?? 0;
   const autoCompressionStrength =
     loudness?.status === 'ok' ? resolveAutoCompressionStrength(track, loudnessSettings) : 0;
@@ -325,14 +326,15 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
                   ? 'Ошибка'
                   : 'Не сканирован'}
           </span>
-          <button
+          <IconButton
             type="button"
             className="track-loudness-popover__close"
             aria-label="Закрыть"
             onClick={onClose}
-          >
-            <CloseIcon style={{ fontSize: '18px' }} />
-          </button>
+            icon={<CloseIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
         </div>
       </div>
 
@@ -482,12 +484,15 @@ export const TrackLoudnessPopover: React.FC<TrackLoudnessPopoverProps> = ({
 
       {canScan && visualState !== 'pending' && (
         <div className="track-loudness-popover__footer">
-          <button type="button" className="modal-button secondary" onClick={onClose}>
-            Закрыть
-          </button>
-          <button type="button" className="modal-button primary" onClick={onScan}>
-            Сканировать
-          </button>
+          <Button
+            type="button"
+            className="modal-button"
+            onClick={onScan}
+            variant="primary"
+            size="sm"
+          >
+            {visualState === 'ok' ? 'Перерасчёт' : 'Сканировать'}
+          </Button>
         </div>
       )}
     </div>

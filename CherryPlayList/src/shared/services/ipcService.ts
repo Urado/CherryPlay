@@ -169,6 +169,14 @@ class IPCService {
   async openPath(fileOrFolderPath: string): Promise<void> {
     return this.invoke<void>('system:openPath', { path: fileOrFolderPath });
   }
+
+  /**
+   * Updates the Electron main window minimum size from renderer-computed layout mins.
+   * Silent on failure (no user notification) — it is a background shell hint.
+   */
+  async setMinimumWindowSize(minWidth: number, minHeight: number): Promise<void> {
+    return this.invoke<void>('system:setMinimumWindowSize', { minWidth, minHeight }, false);
+  }
 }
 
 export const ipcService = new IPCService();

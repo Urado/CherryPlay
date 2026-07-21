@@ -2,14 +2,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import { MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import { WorkspaceId } from '@core/types/workspace';
+import type {
+  ActiveWorkspace,
+  LayoutPreset,
+  UserWorkspace,
+  WorkspacePersistSlice,
+  WorkspaceRef,
+} from '@core/types/workspacePreset';
+import { allocateUnnamedWorkspaceName, DEFAULT_BUILTIN_PRESET } from '@core/types/workspacePreset';
 
 import {
-  AIMP_WORKSPACE_ID,
-  DEFAULT_PLAYLIST_WORKSPACE_ID,
-  DEFAULT_PLAYER_WORKSPACE_ID,
-  PARTY_WORKSPACE_ID,
-  generateWorkspaceId,
+  PARTY_EDITOR_WORKSPACE_ID,
+  PARTY_PREVIEW_WORKSPACE_ID,
 } from '../../core/constants/workspace';
 import {
   Layout,
@@ -20,592 +26,309 @@ import {
   SplitDirection,
 } from '../../core/types/layout';
 import { electronStorage } from '../storage/electronStorage';
+import { registerActiveLayoutGetter } from '../utils/layoutFocusBridge';
+import {
+  createInitialLayout,
+  createLayoutByPreset,
+  createPartyLayout,
+} from '../utils/layoutPresetFactories';
+import { getLayoutStructureSignature, getLayoutZoneSignature } from '../utils/layoutSignature';
 import {
   findZoneById,
   findParentZone,
   cleanupContainers,
   validateLayout,
+  updateZoneInTree,
+  syncContainerChildSizes,
 } from '../utils/layoutUtils';
+import { getCurrentLayoutViewport } from '../utils/layoutViewportBridge';
+import type { LayoutEditAirSide } from '../utils/layoutWorkspaceOperations';
+import {
+  addAdjacentWorkspaceToLayout,
+  addAdjacentWorkspaceToContainerLayout,
+  addInitialWorkspaceToLayout,
+  collectWorkspaceZones,
+  createEmptyLayout,
+  getAddWorkspaceErrorMessage,
+  logAddAdjacentMinSizeViolation,
+  getRemoveWorkspaceErrorMessage,
+  getWorkspaceAddedMessage,
+  migrateAimpZonesToPlayerInLayout,
+  migrateDuplicateFileBrowserWorkspaceIds,
+  isLayoutEmpty,
+  removeWorkspaceFromLayout,
+} from '../utils/layoutWorkspaceOperations';
+import { cleanupWorkspaceInstance, prepareWorkspaceInstance } from '../utils/workspaceLifecycle';
 
-import { ensureProjectStore } from './projectStoreFactory';
 import { useUIStore } from './uiStore';
 
-/**
- * Создает простой layout с двумя зонами (плейлист и браузер)
- */
-function createSimpleLayout(): Layout {
-  const playlistZoneId = uuidv4();
-  const fileBrowserZoneId = uuidv4();
-  const rootContainerId = uuidv4();
+export type { LayoutPreset } from '@core/types/workspacePreset';
+
+export const WORKSPACE_PERSIST_KEY = 'cherryplaylist-workspaces';
+export const LEGACY_LAYOUT_PERSIST_KEY = 'cherryplaylist-layout';
+
+function cloneLayout(layout: Layout): Layout {
+  return JSON.parse(JSON.stringify(layout)) as Layout;
+}
+
+/** Keeps active user workspace snapshot aligned with live layout (crash recovery / persist). */
+function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): WorkspacePersistSlice {
+  if (slice.activeWorkspace.kind !== 'user') {
+    return slice;
+  }
+
+  const activeId = slice.activeWorkspace.id;
+  const syncedLayout = cloneLayout(slice.layout);
 
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playlistZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
-          workspaceType: 'playlist',
-          size: 50,
-        },
-        {
-          id: fileBrowserZoneId,
-          type: 'workspace',
-          workspaceId: 'default-filebrowser-workspace',
-          workspaceType: 'fileBrowser',
-          size: 50,
-        },
-      ],
-      sizes: [50, 50],
-    },
-    version: 1,
+    ...slice,
+    userWorkspaces: slice.userWorkspaces.map((workspace) =>
+      workspace.id === activeId ? { ...workspace, layout: syncedLayout } : workspace,
+    ),
   };
 }
 
-/**
- * Создает layout с коллекциями вертикально
- * Структура:
- * - Root (horizontal)
- *   - Playlist (33%)
- *   - Vertical Container (33%)
- *     - Collection 1
- *     - Collection 2
- *   - File Browser (34%)
- */
-function createCollectionsVerticalLayout(): Layout {
-  const playlistZoneId = uuidv4();
-  const fileBrowserZoneId = uuidv4();
-  const collection1ZoneId = uuidv4();
-  const collection2ZoneId = uuidv4();
-  const verticalContainerId = uuidv4();
-  const rootContainerId = uuidv4();
+const LEGACY_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:player,workspace:party)';
+const LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:aimp,workspace:party)';
 
-  // Генерируем уникальные workspaceId для коллекций
-  const collection1WorkspaceId = generateWorkspaceId();
-  const collection2WorkspaceId = generateWorkspaceId();
+function isLegacyPartyZone(zone: Zone): zone is WorkspaceZone {
+  return (
+    zone.type === 'workspace' &&
+    (zone.workspaceType === 'party' || zone.workspaceId === 'party-workspace')
+  );
+}
 
-  // Создаём stores для коллекций
-  ensureProjectStore({
-    workspaceId: collection1WorkspaceId,
-    initialName: 'Collection 1',
-    persist: true,
-    supportsGroups: false,
-    maxItems: null,
-  });
-
-  ensureProjectStore({
-    workspaceId: collection2WorkspaceId,
-    initialName: 'Collection 2',
-    persist: true,
-    supportsGroups: false,
-    maxItems: null,
-  });
-
-  // Регистрируем коллекции в UI store
-  const uiStore = useUIStore.getState();
-  uiStore.addWorkspace({
-    id: collection1WorkspaceId,
-    type: 'collection',
-    name: 'Collection 1',
-  });
-  uiStore.addWorkspace({
-    id: collection2WorkspaceId,
-    type: 'collection',
-    name: 'Collection 2',
-  });
-
-  // Вертикальный контейнер с двумя коллекциями
-  const verticalContainer: ContainerZone = {
-    id: verticalContainerId,
-    type: 'container',
-    direction: 'vertical',
-    zones: [
-      {
-        id: collection1ZoneId,
-        type: 'workspace',
-        workspaceId: collection1WorkspaceId,
-        workspaceType: 'collection',
-        size: 50,
-      },
-      {
-        id: collection2ZoneId,
-        type: 'workspace',
-        workspaceId: collection2WorkspaceId,
-        workspaceType: 'collection',
-        size: 50,
-      },
-    ],
-    sizes: [50, 50],
-  };
-
-  // Связываем zoneId с workspace
-  uiStore.setWorkspaceZoneId(collection1WorkspaceId, collection1ZoneId);
-  uiStore.setWorkspaceZoneId(collection2WorkspaceId, collection2ZoneId);
-
+function createPartyEditorZone(size: number): WorkspaceZone {
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playlistZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
-          workspaceType: 'playlist',
-          size: 33,
-        },
-        verticalContainer,
-        {
-          id: fileBrowserZoneId,
-          type: 'workspace',
-          workspaceId: 'default-filebrowser-workspace',
-          workspaceType: 'fileBrowser',
-          size: 34,
-        },
-      ],
-      sizes: [33, 33, 34],
-    },
-    version: 1,
+    id: uuidv4(),
+    type: 'workspace',
+    workspaceId: PARTY_EDITOR_WORKSPACE_ID,
+    workspaceType: 'party-editor',
+    size,
   };
 }
 
-/**
- * Создает layout с коллекциями
- * Структура:
- * - Root (horizontal)
- *   - Playlist
- *   - Vertical Container
- *     - Horizontal Container (Collection 1, Collection 2)
- *     - File Browser
- */
-function createCollectionsLayout(): Layout {
-  const playlistZoneId = uuidv4();
-  const fileBrowserZoneId = uuidv4();
-  const collection1ZoneId = uuidv4();
-  const collection2ZoneId = uuidv4();
-  const horizontalContainerId = uuidv4();
-  const verticalContainerId = uuidv4();
-  const rootContainerId = uuidv4();
-
-  // Генерируем уникальные workspaceId для коллекций
-  const collection1WorkspaceId = generateWorkspaceId();
-  const collection2WorkspaceId = generateWorkspaceId();
-
-  // Создаём stores для коллекций
-  ensureProjectStore({
-    workspaceId: collection1WorkspaceId,
-    initialName: 'Collection 1',
-    persist: true,
-    supportsGroups: false,
-    maxItems: null,
-  });
-
-  ensureProjectStore({
-    workspaceId: collection2WorkspaceId,
-    initialName: 'Collection 2',
-    persist: true,
-    supportsGroups: false,
-    maxItems: null,
-  });
-
-  // Регистрируем коллекции в UI store
-  const uiStore = useUIStore.getState();
-  uiStore.addWorkspace({
-    id: collection1WorkspaceId,
-    type: 'collection',
-    name: 'Collection 1',
-  });
-  uiStore.addWorkspace({
-    id: collection2WorkspaceId,
-    type: 'collection',
-    name: 'Collection 2',
-  });
-
-  // Горизонтальный контейнер с двумя коллекциями
-  const horizontalContainer: ContainerZone = {
-    id: horizontalContainerId,
-    type: 'container',
-    direction: 'horizontal',
-    zones: [
-      {
-        id: collection1ZoneId,
-        type: 'workspace',
-        workspaceId: collection1WorkspaceId,
-        workspaceType: 'collection',
-        size: 50,
-      },
-      {
-        id: collection2ZoneId,
-        type: 'workspace',
-        workspaceId: collection2WorkspaceId,
-        workspaceType: 'collection',
-        size: 50,
-      },
-    ],
-    sizes: [50, 50],
-  };
-
-  // Вертикальный контейнер с горизонтальным контейнером и браузером
-  const verticalContainer: ContainerZone = {
-    id: verticalContainerId,
-    type: 'container',
-    direction: 'vertical',
-    zones: [
-      horizontalContainer,
-      {
-        id: fileBrowserZoneId,
-        type: 'workspace',
-        workspaceId: 'default-filebrowser-workspace',
-        workspaceType: 'fileBrowser',
-        size: 50,
-      },
-    ],
-    sizes: [50, 50],
-  };
-
-  // Связываем zoneId с workspace
-  uiStore.setWorkspaceZoneId(collection1WorkspaceId, collection1ZoneId);
-  uiStore.setWorkspaceZoneId(collection2WorkspaceId, collection2ZoneId);
-
+function createPartyPreviewZone(size: number): WorkspaceZone {
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playlistZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
-          workspaceType: 'playlist',
-          size: 50,
-        },
-        verticalContainer,
-      ],
-      sizes: [50, 50],
-    },
-    version: 1,
+    id: uuidv4(),
+    type: 'workspace',
+    workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
+    workspaceType: 'party-preview',
+    size,
   };
 }
 
-/**
- * Создает layout с рекурсивной структурой для тестирования
- * Структура:
- * - Root (horizontal)
- *   - Playlist (33%)
- *   - Test Zone 7 (33%)
- *   - Vertical Container (34%)
- *     - Horizontal Container 1 (33%)
- *       - Test Zone 1 (33%)
- *       - Test Zone 2 (33%)
- *       - Test Zone 5 (34%)
- *     - Horizontal Container 2 (33%)
- *       - Test Zone 3 (33%)
- *       - Test Zone 4 (33%)
- *       - Test Zone 6 (34%)
- *     - Horizontal Container 3 (34%)
- *       - Test Zone 8 (100%)
- */
-function createComplexLayout(): Layout {
-  const playlistZoneId = uuidv4();
-  const rootContainerId = uuidv4();
+function splitLegacyPartyZonesInContainer(container: ContainerZone): ContainerZone {
+  const newZones: Zone[] = [];
+  const newSizes: number[] = [];
 
-  // Тестовые зоны
-  const testZone1Id = uuidv4();
-  const testZone2Id = uuidv4();
-  const testZone3Id = uuidv4();
-  const testZone4Id = uuidv4();
-  const testZone5Id = uuidv4();
-  const testZone6Id = uuidv4();
-  const testZone7Id = uuidv4();
-  const testZone8Id = uuidv4();
+  for (let i = 0; i < container.zones.length; i++) {
+    const zone = container.zones[i];
+    if (isLegacyPartyZone(zone)) {
+      const halfSize = zone.size / 2;
+      newZones.push(createPartyEditorZone(halfSize));
+      newZones.push(createPartyPreviewZone(halfSize));
+      newSizes.push(halfSize, halfSize);
+    } else if (zone.type === 'container') {
+      newZones.push(splitLegacyPartyZonesInTree(zone));
+      newSizes.push(container.sizes[i]);
+    } else {
+      newZones.push(zone);
+      newSizes.push(container.sizes[i]);
+    }
+  }
 
-  // Горизонтальные контейнеры для тестовых зон
-  const horizontalContainer1Id = uuidv4();
-  const horizontalContainer2Id = uuidv4();
-  const horizontalContainer3Id = uuidv4();
-
-  // Вертикальный контейнер
-  const verticalContainerId = uuidv4();
-
-  // Первый горизонтальный контейнер с тремя тестовыми зонами
-  const horizontalContainer1: ContainerZone = {
-    id: horizontalContainer1Id,
-    type: 'container',
-    direction: 'horizontal',
-    zones: [
-      {
-        id: testZone1Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-1',
-        workspaceType: 'test1',
-        size: 33.33,
-      },
-      {
-        id: testZone2Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-2',
-        workspaceType: 'test2',
-        size: 33.33,
-      },
-      {
-        id: testZone5Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-5',
-        workspaceType: 'test5',
-        size: 33.34,
-      },
-    ],
-    sizes: [33.33, 33.33, 33.34],
-  };
-
-  // Второй горизонтальный контейнер с тремя тестовыми зонами
-  const horizontalContainer2: ContainerZone = {
-    id: horizontalContainer2Id,
-    type: 'container',
-    direction: 'horizontal',
-    zones: [
-      {
-        id: testZone3Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-3',
-        workspaceType: 'test3',
-        size: 33.33,
-      },
-      {
-        id: testZone4Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-4',
-        workspaceType: 'test4',
-        size: 33.33,
-      },
-      {
-        id: testZone6Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-6',
-        workspaceType: 'test6',
-        size: 33.34,
-      },
-    ],
-    sizes: [33.33, 33.33, 33.34],
-  };
-
-  // Третий горизонтальный контейнер с одной тестовой зоной
-  const horizontalContainer3: ContainerZone = {
-    id: horizontalContainer3Id,
-    type: 'container',
-    direction: 'horizontal',
-    zones: [
-      {
-        id: testZone8Id,
-        type: 'workspace',
-        workspaceId: 'test-workspace-8',
-        workspaceType: 'test8',
-        size: 100,
-      },
-    ],
-    sizes: [100],
-  };
-
-  // Вертикальный контейнер с тремя горизонтальными контейнерами
-  const verticalContainer: ContainerZone = {
-    id: verticalContainerId,
-    type: 'container',
-    direction: 'vertical',
-    zones: [horizontalContainer1, horizontalContainer2, horizontalContainer3],
-    sizes: [33.33, 33.33, 33.34],
-  };
-
-  // Root контейнер с плейлистом, тестовой зоной 7 и вертикальным контейнером
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playlistZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
-          workspaceType: 'playlist',
-          size: 33.33,
-        },
-        {
-          id: testZone7Id,
-          type: 'workspace',
-          workspaceId: 'test-workspace-7',
-          workspaceType: 'test7',
-          size: 33.33,
-        },
-        verticalContainer,
-      ],
-      sizes: [33.33, 33.33, 33.34],
-    },
-    version: 1,
+    ...container,
+    zones: newZones,
+    sizes: newSizes,
   };
 }
 
-/**
- * Типы предустановленных layout
- */
-export type LayoutPreset =
-  | 'simple'
-  | 'complex'
-  | 'collections'
-  | 'collections-vertical'
-  | 'player'
-  | 'party'
-  | 'aimp-party';
+function splitLegacyPartyZonesInTree(zone: Zone): Zone {
+  if (zone.type === 'workspace') {
+    return zone;
+  }
 
-/**
- * Создает layout для player workspace
- * Структура:
- * - Root (horizontal)
- *   - Player workspace (50%)
- *   - File Browser workspace (50%)
- */
-function createPlayerLayout(): Layout {
-  const playerZoneId = uuidv4();
-  const fileBrowserZoneId = uuidv4();
-  const rootContainerId = uuidv4();
+  return splitLegacyPartyZonesInContainer(zone);
+}
 
+function layoutContainsLegacyParty(zone: Zone): boolean {
+  if (zone.type === 'workspace') {
+    return isLegacyPartyZone(zone);
+  }
+
+  return zone.zones.some(layoutContainsLegacyParty);
+}
+
+export function migrateLegacyPartyLayout(layout: Layout): Layout {
+  const signature = getLayoutStructureSignature(layout.rootZone);
+
+  if (signature === LEGACY_PARTY_LAYOUT_SIGNATURE) {
+    return migrateAimpZonesToPlayerInLayout(createPartyLayout());
+  }
+
+  if (signature === LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE) {
+    return migrateAimpZonesToPlayerInLayout(createPartyLayout());
+  }
+
+  if (!layoutContainsLegacyParty(layout.rootZone)) {
+    return migrateAimpZonesToPlayerInLayout(layout);
+  }
+
+  if (layout.rootZone.type === 'container') {
+    return migrateAimpZonesToPlayerInLayout({
+      ...layout,
+      rootZone: splitLegacyPartyZonesInContainer(layout.rootZone),
+    });
+  }
+
+  return migrateAimpZonesToPlayerInLayout(createPartyLayout());
+}
+
+/** Persist migration entry point (v3 splits legacy party workspace into editor + preview). */
+export function migratePersistedLayoutState(
+  persistedState: unknown,
+  version: number,
+): { layout: Layout } {
+  if (version < 3) {
+    const state = persistedState as { layout?: Layout } | undefined;
+    const layout = state?.layout ?? createInitialLayout();
+    return { layout: migrateLegacyPartyLayout(layout) };
+  }
+  return persistedState as { layout: Layout };
+}
+
+export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
+  const layout = createInitialLayout();
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playerZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
-          workspaceType: 'player',
-          size: 50,
-        },
-        {
-          id: fileBrowserZoneId,
-          type: 'workspace',
-          workspaceId: 'default-filebrowser-workspace',
-          workspaceType: 'fileBrowser',
-          size: 50,
-        },
-      ],
-      sizes: [50, 50],
-    },
-    version: 1,
+    activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+    userWorkspaces: [],
+    layout,
   };
 }
 
-/**
- * Создает layout для party workspace
- * Структура:
- * - Root (horizontal)
- *   - Player workspace (60%) - слева плеер
- *   - Party workspace (40%) - справа создание вечеринки с превью
- */
-function createPartyLayout(): Layout {
-  const playerZoneId = uuidv4();
-  const partyZoneId = uuidv4();
-  const rootContainerId = uuidv4();
+/** Removes legacy layout-only persist key (always on hydrate, not only on migrate). */
+export async function removeLegacyLayoutPersistKey(): Promise<void> {
+  await electronStorage.removeItem(LEGACY_LAYOUT_PERSIST_KEY);
+}
+
+/** Coerces scratch / invalid user refs to default built-in collections (AC10). */
+export function normalizeWorkspacePersistSlice(
+  slice: WorkspacePersistSlice,
+): WorkspacePersistSlice {
+  if (slice.activeWorkspace.kind === 'scratch') {
+    return {
+      activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+      userWorkspaces: slice.userWorkspaces,
+      layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+    };
+  }
+
+  if (slice.activeWorkspace.kind === 'user') {
+    const userWorkspace = slice.userWorkspaces.find(
+      (workspace) => workspace.id === slice.activeWorkspace.id,
+    );
+    if (!userWorkspace) {
+      return {
+        activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+        userWorkspaces: slice.userWorkspaces,
+        layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+      };
+    }
+  }
+
+  const activeWorkspace =
+    slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'aimp-party'
+      ? { kind: 'builtin' as const, preset: 'party' as const }
+      : slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'collections'
+        ? { kind: 'builtin' as const, preset: 'collections-vertical' as const }
+        : slice.activeWorkspace;
+
+  const layout = migrateDuplicateFileBrowserWorkspaceIds(
+    migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout)),
+  );
+  const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
+    ...workspace,
+    layout: migrateDuplicateFileBrowserWorkspaceIds(
+      migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(workspace.layout)),
+    ),
+  }));
 
   return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: playerZoneId,
-          type: 'workspace',
-          workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
-          workspaceType: 'player',
-          size: 60,
-        },
-        {
-          id: partyZoneId,
-          type: 'workspace',
-          workspaceId: PARTY_WORKSPACE_ID,
-          workspaceType: 'party',
-          size: 40,
-        },
-      ],
-      sizes: [60, 40],
-    },
-    version: 1,
+    activeWorkspace,
+    userWorkspaces,
+    layout,
   };
 }
 
-function createAimpPartyLayout(): Layout {
-  const aimpZoneId = uuidv4();
-  const partyZoneId = uuidv4();
-  const rootContainerId = uuidv4();
+/** Persist migration for workspace store (v1). */
+export function migratePersistedWorkspaceState(
+  persistedState: unknown,
+  version: number,
+): WorkspacePersistSlice {
+  if (!persistedState || version === 0) {
+    return createDefaultWorkspacePersistSlice();
+  }
 
-  return {
-    rootZone: {
-      id: rootContainerId,
-      type: 'container',
-      direction: 'horizontal',
-      zones: [
-        {
-          id: aimpZoneId,
-          type: 'workspace',
-          workspaceId: AIMP_WORKSPACE_ID,
-          workspaceType: 'aimp',
-          size: 60,
-        },
-        {
-          id: partyZoneId,
-          type: 'workspace',
-          workspaceId: PARTY_WORKSPACE_ID,
-          workspaceType: 'party',
-          size: 40,
-        },
-      ],
-      sizes: [60, 40],
-    },
-    version: 1,
+  const state = persistedState as Partial<WorkspacePersistSlice>;
+  const layout = migrateLegacyPartyLayout(state.layout ?? createInitialLayout());
+  const activeWorkspace = state.activeWorkspace ?? {
+    kind: 'builtin' as const,
+    preset: DEFAULT_BUILTIN_PRESET,
   };
+  const userWorkspaces = Array.isArray(state.userWorkspaces) ? state.userWorkspaces : [];
+
+  return normalizeWorkspacePersistSlice({ activeWorkspace, userWorkspaces, layout });
 }
 
-/**
- * Создает layout по имени предустановки
- */
-function createLayoutByPreset(preset: LayoutPreset): Layout {
-  switch (preset) {
-    case 'simple':
-      return createSimpleLayout();
-    case 'complex':
-      return createComplexLayout();
-    case 'collections':
-      return createCollectionsLayout();
-    case 'collections-vertical':
-      return createCollectionsVerticalLayout();
-    case 'player':
-      return createPlayerLayout();
-    case 'party':
-      return createPartyLayout();
-    case 'aimp-party':
-      return createAimpPartyLayout();
-    default:
-      return createSimpleLayout();
+export function computeIsWorkspaceDirty(layout: Layout, baselineLayout: Layout | null): boolean {
+  if (!baselineLayout) {
+    return false;
+  }
+
+  return (
+    getLayoutZoneSignature(layout.rootZone) !== getLayoutZoneSignature(baselineLayout.rootZone)
+  );
+}
+
+function prepareLayoutWorkspaceInstances(layout: Layout): void {
+  for (const zone of collectWorkspaceZones(layout.rootZone)) {
+    prepareWorkspaceInstance(zone);
   }
 }
 
-/**
- * Создает начальный layout (по умолчанию с коллекциями)
- */
-function createInitialLayout(): Layout {
-  return createCollectionsLayout();
+function cleanupLayoutWorkspaceInstances(layout: Layout): void {
+  for (const zone of collectWorkspaceZones(layout.rootZone)) {
+    cleanupWorkspaceInstance(zone);
+  }
+}
+
+export const LAYOUT_EMPTY_PICKER_KEY = 'empty';
+
+export function getLayoutAirPickerKey(zoneId: ZoneId, side: LayoutEditAirSide): string {
+  return `${zoneId}:${side}`;
+}
+
+export function getLayoutContainerAirPickerKey(
+  containerId: ZoneId,
+  side: LayoutEditAirSide,
+): string {
+  return `container:${containerId}:${side}`;
 }
 
 interface LayoutState {
   layout: Layout;
+  activeWorkspace: ActiveWorkspace;
+  userWorkspaces: UserWorkspace[];
+  baselineLayout: Layout | null;
+  isLayoutEditMode: boolean;
+  openLayoutEditPickerKey: string | null;
 
   // Actions
+  setLayoutEditMode: (enabled: boolean) => void;
+  setOpenLayoutEditPickerKey: (key: string | null) => void;
+  toggleLayoutEditMode: () => void;
   updateZoneSize: (zoneId: ZoneId, newSize: number) => void;
   updateContainerSizes: (containerId: ZoneId, sizes: number[]) => void;
   addZone: (
@@ -618,18 +341,63 @@ interface LayoutState {
   setZoneDirection: (containerId: ZoneId, direction: SplitDirection) => void;
   replaceLayout: (newLayout: Layout) => void;
   setLayoutPreset: (preset: LayoutPreset) => void;
+  activateWorkspace: (ref: WorkspaceRef) => boolean;
+  saveCurrentWorkspace: (options?: { silent?: boolean }) => boolean;
+  saveCurrentWorkspaceAs: (name: string) => boolean;
+  saveCurrentWorkspaceAsUnnamed: () => boolean;
+  autoCommitWorkspaceChanges: () => boolean;
+  resetCurrentWorkspace: () => boolean;
+  createScratchWorkspace: () => boolean;
+  renameUserWorkspace: (id: string, name: string) => boolean;
+  deleteUserWorkspace: (id: string) => boolean;
+  addAdjacentWorkspace: (
+    targetZoneId: ZoneId,
+    side: LayoutEditAirSide,
+    workspaceType: string,
+  ) => void;
+  addAdjacentWorkspaceToContainer: (
+    containerId: ZoneId,
+    side: LayoutEditAirSide,
+    workspaceType: string,
+  ) => void;
+  addInitialWorkspace: (workspaceType: string) => void;
+  removeWorkspaceZone: (zoneId: ZoneId) => void;
 
   // Helpers
+  isWorkspaceDirty: () => boolean;
   findZone: (zoneId: ZoneId, root?: Zone) => Zone | null;
   findParent: (zoneId: ZoneId, root?: Zone, parent?: ContainerZone) => ContainerZone | null;
   cleanupEmptyContainers: () => void;
   validateLayout: () => boolean;
 }
 
+const initialLayout = createInitialLayout();
+
 export const useLayoutStore = createWithEqualityFn<LayoutState>()(
   persist(
     (set, get) => ({
-      layout: createInitialLayout(),
+      layout: initialLayout,
+      activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+      userWorkspaces: [],
+      baselineLayout: cloneLayout(initialLayout),
+      isLayoutEditMode: false,
+      openLayoutEditPickerKey: null,
+
+      setLayoutEditMode: (enabled) =>
+        set({
+          isLayoutEditMode: enabled,
+          ...(enabled ? {} : { openLayoutEditPickerKey: null }),
+        }),
+
+      setOpenLayoutEditPickerKey: (key) => set({ openLayoutEditPickerKey: key }),
+
+      toggleLayoutEditMode: () => {
+        const next = !get().isLayoutEditMode;
+        set({
+          isLayoutEditMode: next,
+          ...(next ? {} : { openLayoutEditPickerKey: null }),
+        });
+      },
 
       updateZoneSize: (zoneId, newSize) => {
         const state = get();
@@ -664,27 +432,13 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         }
 
         // Обновить контейнер
-        const updatedParent: ContainerZone = {
+        const updatedParent = syncContainerChildSizes({
           ...parent,
           sizes: newSizes,
-        };
+        });
 
-        // Обновить layout
         const updatedLayout = { ...state.layout };
-        const updateZoneInTree = (zone: Zone): Zone => {
-          if (zone.id === parent.id) {
-            return updatedParent;
-          }
-          if (zone.type === 'container') {
-            return {
-              ...zone,
-              zones: zone.zones.map(updateZoneInTree),
-            };
-          }
-          return zone;
-        };
-
-        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone);
+        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone, parent.id, updatedParent);
 
         set({ layout: updatedLayout });
         get().cleanupEmptyContainers();
@@ -710,32 +464,25 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         }
 
         // Обновить контейнер
-        const updatedContainer: ContainerZone = {
+        const updatedContainer = syncContainerChildSizes({
           ...container,
           sizes,
-        };
+        });
 
-        // Обновить layout
         const updatedLayout = { ...state.layout };
-        const updateZoneInTree = (zone: Zone): Zone => {
-          if (zone.id === containerId) {
-            return updatedContainer;
-          }
-          if (zone.type === 'container') {
-            return {
-              ...zone,
-              zones: zone.zones.map(updateZoneInTree),
-            };
-          }
-          return zone;
-        };
-
-        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone);
+        updatedLayout.rootZone = updateZoneInTree(
+          updatedLayout.rootZone,
+          containerId,
+          updatedContainer,
+        );
 
         set({ layout: updatedLayout });
         get().cleanupEmptyContainers();
       },
 
+      /**
+       * @deprecated Prefer `addAdjacentWorkspace` or `addInitialWorkspace` for layout edit mode.
+       */
       addZone: (parentId, workspaceId, workspaceType, _direction) => {
         const state = get();
         const parent = state.findZone(parentId);
@@ -744,8 +491,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        // Проверка что в контейнере меньше 10 зон
-        if (parent.zones.length >= 10) {
+        if (parent.zones.length >= MAX_ZONES_PER_CONTAINER) {
           return;
         }
 
@@ -785,80 +531,22 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           sizes: newSizes,
         };
 
-        // Обновить layout
         const updatedLayout = { ...state.layout };
-        const updateZoneInTree = (zone: Zone): Zone => {
-          if (zone.id === parentId) {
-            return updatedParent;
-          }
-          if (zone.type === 'container') {
-            return {
-              ...zone,
-              zones: zone.zones.map(updateZoneInTree),
-            };
-          }
-          return zone;
-        };
+        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone, parentId, updatedParent);
 
-        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone);
-
+        prepareWorkspaceInstance(newZone);
         set({ layout: updatedLayout });
         get().cleanupEmptyContainers();
       },
 
+      /**
+       * @deprecated Prefer `removeWorkspaceZone` for layout edit mode.
+       * Delegates to `removeWorkspaceZone`, which runs full workspace lifecycle cleanup
+       * (UI store, project store, type registry) and may leave an empty layout when the
+       * last zone is removed. No external callers outside this store (only interface + docs).
+       */
       removeZone: (zoneId) => {
-        const state = get();
-        const parent = state.findParent(zoneId);
-
-        if (!parent) {
-          return;
-        }
-
-        // Удалить зону из массива
-        const updatedZones = parent.zones.filter((z) => z.id !== zoneId);
-
-        // Если осталась только 1 зона, удаление не выполняется (будет обработано cleanupEmptyContainers)
-        if (updatedZones.length < 2) {
-          return;
-        }
-
-        // Пересчитать размеры для оставшихся зон (равномерно)
-        const newSizes = updatedZones.map(() => 100 / updatedZones.length);
-
-        // Обновить размеры в оставшихся зонах
-        const updatedZonesWithSizes = updatedZones.map((zone, index) => {
-          if (zone.type === 'workspace') {
-            return { ...zone, size: newSizes[index] };
-          }
-          return zone;
-        });
-
-        // Обновить контейнер
-        const updatedParent: ContainerZone = {
-          ...parent,
-          zones: updatedZonesWithSizes,
-          sizes: newSizes,
-        };
-
-        // Обновить layout
-        const updatedLayout = { ...state.layout };
-        const updateZoneInTree = (zone: Zone): Zone => {
-          if (zone.id === parent.id) {
-            return updatedParent;
-          }
-          if (zone.type === 'container') {
-            return {
-              ...zone,
-              zones: zone.zones.map(updateZoneInTree),
-            };
-          }
-          return zone;
-        };
-
-        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone);
-
-        set({ layout: updatedLayout });
-        get().cleanupEmptyContainers();
+        get().removeWorkspaceZone(zoneId);
       },
 
       setZoneDirection: (containerId, direction) => {
@@ -875,22 +563,12 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           direction,
         };
 
-        // Обновить layout
         const updatedLayout = { ...state.layout };
-        const updateZoneInTree = (zone: Zone): Zone => {
-          if (zone.id === containerId) {
-            return updatedContainer;
-          }
-          if (zone.type === 'container') {
-            return {
-              ...zone,
-              zones: zone.zones.map(updateZoneInTree),
-            };
-          }
-          return zone;
-        };
-
-        updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone);
+        updatedLayout.rootZone = updateZoneInTree(
+          updatedLayout.rootZone,
+          containerId,
+          updatedContainer,
+        );
 
         set({ layout: updatedLayout });
       },
@@ -900,8 +578,366 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
       },
 
       setLayoutPreset: (preset) => {
-        const newLayout = createLayoutByPreset(preset);
-        set({ layout: newLayout });
+        get().activateWorkspace({ kind: 'builtin', preset });
+      },
+
+      activateWorkspace: (ref) => {
+        const state = get();
+        if (state.isLayoutEditMode) {
+          return false;
+        }
+
+        let newLayout: Layout;
+        let activeWorkspace: ActiveWorkspace;
+
+        if (ref.kind === 'builtin') {
+          newLayout = createLayoutByPreset(ref.preset);
+          activeWorkspace = { kind: 'builtin', preset: ref.preset };
+        } else {
+          const userWorkspace = state.userWorkspaces.find((workspace) => workspace.id === ref.id);
+          if (!userWorkspace) {
+            return false;
+          }
+          newLayout = cloneLayout(userWorkspace.layout);
+          activeWorkspace = { kind: 'user', id: ref.id };
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+
+        if (ref.kind === 'user') {
+          prepareLayoutWorkspaceInstances(newLayout);
+        }
+
+        set({
+          layout: newLayout,
+          activeWorkspace,
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+        });
+        return true;
+      },
+
+      saveCurrentWorkspace: (options) => {
+        const state = get();
+        if (state.activeWorkspace.kind !== 'user') {
+          return false;
+        }
+
+        const workspaceId = state.activeWorkspace.id;
+        const now = new Date().toISOString();
+        const savedLayout = cloneLayout(state.layout);
+
+        set({
+          userWorkspaces: state.userWorkspaces.map((workspace) =>
+            workspace.id === workspaceId
+              ? { ...workspace, layout: savedLayout, updatedAt: now }
+              : workspace,
+          ),
+          baselineLayout: cloneLayout(state.layout),
+        });
+
+        if (!options?.silent) {
+          useUIStore.getState().addNotification({
+            type: 'success',
+            message: 'Рабочее пространство сохранено',
+          });
+        }
+        return true;
+      },
+
+      saveCurrentWorkspaceAsUnnamed: () => {
+        const state = get();
+        const now = new Date().toISOString();
+        const id = uuidv4();
+        const savedLayout = cloneLayout(state.layout);
+        const name = allocateUnnamedWorkspaceName(state.userWorkspaces.map((w) => w.name));
+        const newWorkspace: UserWorkspace = {
+          id,
+          name,
+          layout: savedLayout,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set({
+          userWorkspaces: [...state.userWorkspaces, newWorkspace],
+          activeWorkspace: { kind: 'user', id },
+          baselineLayout: cloneLayout(state.layout),
+        });
+        return true;
+      },
+
+      autoCommitWorkspaceChanges: () => {
+        const state = get();
+        if (!state.isWorkspaceDirty()) {
+          return true;
+        }
+
+        if (state.activeWorkspace.kind === 'user') {
+          return get().saveCurrentWorkspace({ silent: true });
+        }
+
+        if (state.activeWorkspace.kind === 'builtin' || state.activeWorkspace.kind === 'scratch') {
+          return get().saveCurrentWorkspaceAsUnnamed();
+        }
+
+        return true;
+      },
+
+      saveCurrentWorkspaceAs: (name) => {
+        const state = get();
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        if (state.userWorkspaces.some((workspace) => workspace.name === trimmedName)) {
+          useUIStore.getState().addNotification({
+            type: 'error',
+            message: 'Рабочее пространство с таким именем уже существует',
+          });
+          return false;
+        }
+
+        const now = new Date().toISOString();
+        const id = uuidv4();
+        const savedLayout = cloneLayout(state.layout);
+        const newWorkspace: UserWorkspace = {
+          id,
+          name: trimmedName,
+          layout: savedLayout,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set({
+          userWorkspaces: [...state.userWorkspaces, newWorkspace],
+          activeWorkspace: { kind: 'user', id },
+          baselineLayout: cloneLayout(state.layout),
+        });
+        return true;
+      },
+
+      resetCurrentWorkspace: () => {
+        const state = get();
+        let newLayout: Layout;
+        let isUserWorkspace = false;
+
+        switch (state.activeWorkspace.kind) {
+          case 'builtin':
+            newLayout = createLayoutByPreset(state.activeWorkspace.preset);
+            break;
+          case 'user': {
+            const userWorkspace = state.userWorkspaces.find(
+              (workspace) => workspace.id === state.activeWorkspace.id,
+            );
+            if (!userWorkspace) {
+              return false;
+            }
+            newLayout = cloneLayout(userWorkspace.layout);
+            isUserWorkspace = true;
+            break;
+          }
+          case 'scratch':
+            newLayout = createEmptyLayout();
+            break;
+          default:
+            return false;
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+
+        if (isUserWorkspace) {
+          prepareLayoutWorkspaceInstances(newLayout);
+        }
+
+        set({
+          layout: newLayout,
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+        });
+        return true;
+      },
+
+      createScratchWorkspace: () => {
+        const state = get();
+        if (state.isLayoutEditMode) {
+          return false;
+        }
+
+        cleanupLayoutWorkspaceInstances(state.layout);
+        const newLayout = createEmptyLayout();
+
+        set({
+          layout: newLayout,
+          activeWorkspace: { kind: 'scratch' },
+          baselineLayout: cloneLayout(newLayout),
+          openLayoutEditPickerKey: null,
+          isLayoutEditMode: true,
+        });
+        return true;
+      },
+
+      renameUserWorkspace: (id, name) => {
+        const state = get();
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        if (
+          state.userWorkspaces.some(
+            (workspace) => workspace.name === trimmedName && workspace.id !== id,
+          )
+        ) {
+          useUIStore.getState().addNotification({
+            type: 'error',
+            message: 'Рабочее пространство с таким именем уже существует',
+          });
+          return false;
+        }
+
+        const workspaceExists = state.userWorkspaces.some((workspace) => workspace.id === id);
+        if (!workspaceExists) {
+          return false;
+        }
+
+        set({
+          userWorkspaces: state.userWorkspaces.map((workspace) =>
+            workspace.id === id ? { ...workspace, name: trimmedName } : workspace,
+          ),
+        });
+        return true;
+      },
+
+      deleteUserWorkspace: (id) => {
+        const state = get();
+        const workspaceExists = state.userWorkspaces.some((workspace) => workspace.id === id);
+        if (!workspaceExists) {
+          return false;
+        }
+
+        const isActive = state.activeWorkspace.kind === 'user' && state.activeWorkspace.id === id;
+        const nextUserWorkspaces = state.userWorkspaces.filter((workspace) => workspace.id !== id);
+
+        if (isActive) {
+          cleanupLayoutWorkspaceInstances(state.layout);
+          const newLayout = createLayoutByPreset(DEFAULT_BUILTIN_PRESET);
+          set({
+            userWorkspaces: nextUserWorkspaces,
+            layout: newLayout,
+            activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
+            baselineLayout: cloneLayout(newLayout),
+            openLayoutEditPickerKey: null,
+          });
+        } else {
+          set({ userWorkspaces: nextUserWorkspaces });
+        }
+
+        return true;
+      },
+
+      isWorkspaceDirty: () => {
+        const state = get();
+        return computeIsWorkspaceDirty(state.layout, state.baselineLayout);
+      },
+
+      addAdjacentWorkspace: (targetZoneId, side, workspaceType) => {
+        const state = get();
+        const result = addAdjacentWorkspaceToLayout(
+          state.layout,
+          targetZoneId,
+          side,
+          workspaceType,
+          getCurrentLayoutViewport(),
+        );
+
+        if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: getAddWorkspaceErrorMessage(result.reason),
+          });
+          return;
+        }
+
+        prepareWorkspaceInstance(result.preparedZone);
+        set({ layout: result.layout, openLayoutEditPickerKey: null });
+        useUIStore.getState().addNotification({
+          type: 'success',
+          message: getWorkspaceAddedMessage(workspaceType),
+        });
+      },
+
+      addAdjacentWorkspaceToContainer: (containerId, side, workspaceType) => {
+        const state = get();
+        const result = addAdjacentWorkspaceToContainerLayout(
+          state.layout,
+          containerId,
+          side,
+          workspaceType,
+          getCurrentLayoutViewport(),
+        );
+
+        if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: getAddWorkspaceErrorMessage(result.reason),
+          });
+          return;
+        }
+
+        prepareWorkspaceInstance(result.preparedZone);
+        set({ layout: result.layout, openLayoutEditPickerKey: null });
+        useUIStore.getState().addNotification({
+          type: 'success',
+          message: getWorkspaceAddedMessage(workspaceType),
+        });
+      },
+
+      addInitialWorkspace: (workspaceType) => {
+        const state = get();
+        if (!isLayoutEmpty(state.layout)) {
+          return;
+        }
+
+        const result = addInitialWorkspaceToLayout(workspaceType, getCurrentLayoutViewport());
+
+        if (!result.ok) {
+          logAddAdjacentMinSizeViolation(result);
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: getAddWorkspaceErrorMessage(result.reason),
+          });
+          return;
+        }
+
+        prepareWorkspaceInstance(result.preparedZone);
+        set({ layout: result.layout });
+        useUIStore.getState().addNotification({
+          type: 'success',
+          message: getWorkspaceAddedMessage(workspaceType),
+        });
+      },
+
+      removeWorkspaceZone: (zoneId) => {
+        const state = get();
+        const result = removeWorkspaceFromLayout(state.layout, zoneId);
+
+        if (!result.ok) {
+          useUIStore.getState().addNotification({
+            type: 'warning',
+            message: getRemoveWorkspaceErrorMessage(result.reason),
+          });
+          return;
+        }
+
+        set({
+          layout: result.layout,
+          openLayoutEditPickerKey: null,
+        });
+        cleanupWorkspaceInstance(result.removedZone);
       },
 
       findZone: (zoneId, root) => {
@@ -941,20 +977,45 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
       },
     }),
     {
-      name: 'cherryplaylist-layout',
-      version: 2, // Увеличена версия для сброса старого layout и применения нового с тестовыми зонами
-      storage: electronStorage, // Используем localforage вместо localStorage
-      partialize: (state) => ({
-        // Сохраняем только layout, исключаем все методы
-        layout: state.layout,
-      }),
-      migrate: (persistedState: unknown, version: number) => {
-        // При изменении версии сбрасываем layout и используем новый
-        if (version === 2) {
-          return { layout: createInitialLayout() };
+      name: WORKSPACE_PERSIST_KEY,
+      version: 1,
+      storage: electronStorage,
+      partialize: (state) => {
+        const persistSlice = normalizeWorkspacePersistSlice({
+          activeWorkspace: state.activeWorkspace,
+          userWorkspaces: state.userWorkspaces,
+          layout: state.layout,
+        });
+        return syncActiveUserWorkspaceLayoutInSlice(persistSlice);
+      },
+      migrate: (persistedState: unknown, version: number) =>
+        migratePersistedWorkspaceState(persistedState, version),
+      onRehydrateStorage: () => async (state) => {
+        await removeLegacyLayoutPersistKey();
+
+        if (!state) {
+          return;
         }
-        return persistedState as { layout: Layout };
+
+        const normalized = syncActiveUserWorkspaceLayoutInSlice(
+          normalizeWorkspacePersistSlice({
+            activeWorkspace: state.activeWorkspace,
+            userWorkspaces: state.userWorkspaces,
+            layout: state.layout,
+          }),
+        );
+
+        useLayoutStore.setState({
+          activeWorkspace: normalized.activeWorkspace,
+          userWorkspaces: normalized.userWorkspaces,
+          layout: normalized.layout,
+          baselineLayout: cloneLayout(normalized.layout),
+          isLayoutEditMode: false,
+          openLayoutEditPickerKey: null,
+        });
       },
     },
   ),
 );
+
+registerActiveLayoutGetter(() => useLayoutStore.getState().layout);

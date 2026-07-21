@@ -14,6 +14,7 @@ import { useAuthStore } from '../stores/authStore';
 import { handleApiResponse } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 import type { PlayerItemForApi } from '../utils/partyUtils';
+import { constantTimeStringEqual } from '../utils/tokenUtils';
 
 export const MAX_SHORT_DESCRIPTION_LENGTH = 200;
 
@@ -94,6 +95,7 @@ export interface PartyDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  isListedInCatalog?: boolean;
 }
 
 export interface UpdatePartyDto {
@@ -441,7 +443,10 @@ class PartyService {
       throw new Error('Для получения доступа к темам необходимо войти в аккаунт');
     }
 
-    if (this.themeAccessCacheToken !== token) {
+    if (
+      this.themeAccessCacheToken === null ||
+      !constantTimeStringEqual(this.themeAccessCacheToken, token)
+    ) {
       this.invalidateThemeAccessCache();
       this.themeAccessCacheToken = token;
     }

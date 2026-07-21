@@ -3,6 +3,27 @@ export type { PlayerStatus } from './demoPlayerStore';
 export { useDragDropStore } from './dragDropStore';
 export { useLayoutStore } from './layoutStore';
 export type { LayoutPreset } from './layoutStore';
+export {
+  WORKSPACE_PERSIST_KEY,
+  LEGACY_LAYOUT_PERSIST_KEY,
+  migratePersistedWorkspaceState,
+  createDefaultWorkspacePersistSlice,
+  computeIsWorkspaceDirty,
+} from './layoutStore';
+export type {
+  ActiveWorkspace,
+  UserWorkspace,
+  WorkspacePersistSlice,
+  WorkspaceRef,
+  BuiltinWorkspaceId,
+} from '@core/types/workspacePreset';
+export {
+  DEFAULT_BUILTIN_PRESET,
+  UNNAMED_WORKSPACE_NAME,
+  allocateUnnamedWorkspaceName,
+  isUnnamedWorkspaceName,
+  toBuiltinWorkspaceId,
+} from '@core/types/workspacePreset';
 export { useAimpStore } from './aimpStore';
 export { useSettingsStore } from './settingsStore';
 export { useUIStore } from './uiStore';

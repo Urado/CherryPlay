@@ -9,6 +9,7 @@ import {
   DEFAULT_TARGET_LUFS,
   HEADROOM_DB_TP,
   LOUDNESS_ALGORITHM_VERSION,
+  computeAutoGainDb,
   type LoudnessScanError,
   type LoudnessScanResult,
 } from '../../src/shared/contracts/loudness.js';
@@ -162,6 +163,7 @@ export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
 
 /**
  * Compute per-track gain in dB with −1 dBTP headroom cap.
+ * @deprecated Prefer {@link computeAutoGainDb} from contracts — kept for existing imports.
  */
 export function computeTrackGainDb(
   integratedLufs: number,
@@ -169,9 +171,7 @@ export function computeTrackGainDb(
   targetLufs: number,
   headroomDbTp: number = HEADROOM_DB_TP,
 ): number {
-  const lufsGainDb = targetLufs - integratedLufs;
-  const headroomCapDb = headroomDbTp - truePeakDb;
-  return Math.min(lufsGainDb, headroomCapDb);
+  return computeAutoGainDb(integratedLufs, truePeakDb, targetLufs, headroomDbTp);
 }
 
 function getFfmpegCandidatePaths(): string[] {

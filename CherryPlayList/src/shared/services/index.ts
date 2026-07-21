@@ -23,6 +23,20 @@ export type {
   TransitionPartyLifecycleDto,
 } from './partyService';
 export { ThemeNotEntitledError, InvalidPartyLifecycleTransitionError } from './partyService';
+export {
+  AimpBroadcastSource,
+  CherryPlayPlayerBroadcastSource,
+  StreamingOrchestrator,
+  streamingOrchestrator,
+  isStreamingNetworkEnabled,
+} from '../streaming';
+export type {
+  PlaybackBroadcastSource,
+  PlaybackBroadcastSourceId,
+  PlaylistForApiPayload,
+  StreamingOrchestratorConfig,
+  StreamingNetworkPolicySettings,
+} from '../streaming';
 export { signalRService } from './signalRService';
 export type {
   PlaybackStateDto,
@@ -35,7 +49,7 @@ export type {
   PlaylistChangedHandler,
   ErrorHandler,
 } from './signalRService';
-export { getEffectiveGainDb, resolveLinearGain } from '../audio/loudnessGain';
+export { getEffectiveGainDb, resolveAutoGainDb, resolveLinearGain } from '../audio/loudnessGain';
 export { TRACK_GAIN_LINEAR_MIN, TRACK_GAIN_LINEAR_MAX } from '../audio/playback/effects';
 export { formatGainDb } from '../utils/formatGainDb';
 export {

@@ -7,6 +7,7 @@ const config: Config = {
   roots: ['<rootDir>/tests'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.ts',
     '^music-metadata$': '<rootDir>/tests/__mocks__/music-metadata.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
@@ -14,6 +15,12 @@ const config: Config = {
     '^@workspaces/(.*)$': '<rootDir>/src/workspaces/$1',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Ensure all packages render using the same React instance in Jest.
+    '^react$': '<rootDir>/node_modules/react',
+    '^react-dom$': '<rootDir>/node_modules/react-dom',
+    '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
+    '^react/jsx-runtime$': '<rootDir>/node_modules/react/jsx-runtime',
+    '^react/jsx-dev-runtime$': '<rootDir>/node_modules/react/jsx-dev-runtime',
     '^@cherryplay/components$': '<rootDir>/../CherryPlayComponents/src/index.ts',
     '^@cherryplay/components/(.*)$': '<rootDir>/../CherryPlayComponents/src/$1',
     // Legacy test import paths (pre-refactor src/state, src/hooks, …)

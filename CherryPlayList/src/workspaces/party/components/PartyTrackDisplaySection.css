@@ -1,21 +1,6 @@
-.party-track-display-section {
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--border-color, #333);
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-secondary, #1a1a1a);
-}
-
-.party-track-display-section__title {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary, #eee);
-}
-
 .party-track-display-section__hint {
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
+  margin: 0;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--text-secondary, #999);
 }
@@ -31,7 +16,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9375rem;
-  color: var(--text-primary, #eee);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
@@ -42,17 +27,17 @@
 
 .party-track-display-section__label {
   min-width: 8rem;
-  color: var(--text-secondary, #aaa);
+  color: var(--text-secondary);
   font-size: 0.875rem;
 }
 
 .party-track-display-section__input {
   width: 5rem;
   padding: 0.35rem 0.5rem;
-  border: 1px solid var(--border-color, #444);
+  border: 1px solid var(--ui-border);
   border-radius: var(--radius-sm, 4px);
-  background: var(--bg-tertiary, #111);
-  color: var(--text-primary, #eee);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .party-track-display-section__input:disabled {

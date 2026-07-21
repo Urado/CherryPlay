@@ -16,8 +16,8 @@
 - **Уведомления**: Система toast-уведомлений с автоматическим удалением через таймеры
 - **Drag-and-Drop**: Глобальное состояние перетаскивания (`draggedItems`, `isCopyMode`)
 - **Workspace Registry**: Реестр всех workspace в приложении (id, type, name, zoneId)
-- **File Browser Focus**: Запрос фокуса на файл в FileBrowser (для кнопки "Показать в браузере")
-- **Active Source**: Текущий активный источник треков (fileBrowser, playlists, db)
+- **File Browser Focus**: Запрос фокуса на файл в FileBrowser (кнопка «Показать в браузере»); **один** инстанс на запрос
+- **Active Source**: Текущий активный источник треков (`fileBrowser`, `playlists`, `db`) — глобальный; per-zone переключатель **вне MVP**
 
 ## Типы уведомлений
 
@@ -31,3 +31,30 @@
 - `settings` - Настройки приложения
 - `export` - Настройки экспорта
 - `trackSettings` - Настройки трека/группы
+
+## File Browser Focus
+
+Scoped focus для «Показать в браузере» / demo player:
+
+```typescript
+fileBrowserFocusRequest: {
+  path: string;
+  targetWorkspaceId: WorkspaceId; // уже разрешённый id
+  timestamp: number;
+} | null;
+```
+
+| Метод | Поведение |
+|-------|-----------|
+| `focusFileInBrowser(path, targetWorkspaceId?)` | Разрешает цель через `resolveFileBrowserFocusTarget`, выставляет request |
+| `acknowledgeFileBrowserFocus()` | Сбрасывает request; вызывает matching `FileBrowser` после обработки |
+
+**Порядок разрешения цели** (`resolveFileBrowserFocusTarget`):
+
+1. Явный `targetWorkspaceId`, если такая `fileBrowser`-зона есть в layout;
+2. зона с `DEFAULT_FILEBROWSER_WORKSPACE_ID`;
+3. первая `fileBrowser`-зона в порядке `collectWorkspaceZones`.
+
+Только `FileBrowser` с `workspaceId === targetWorkspaceId` реагирует на request. Типичный вызов без второго аргумента — `AppHeader` / demo player.
+
+См. [File Browser](../workspaces/file-browser.md).

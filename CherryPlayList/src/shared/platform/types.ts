@@ -37,6 +37,7 @@ export type InvokeChannel =
   | 'system:getPath'
   | 'system:openPath'
   | 'system:openExternal'
+  | 'system:setMinimumWindowSize'
   | 'config:getConfigPath'
   | 'config:getServerUrl'
   | 'config:setServerUrl'
@@ -56,6 +57,16 @@ export type AudioFileStat = {
   mtimeMs: number;
   size: number;
 };
+
+/**
+ * Minimum window size (client pixels) sent from renderer to the Electron shell.
+ * Renderer computes chrome insets + layout mins; the Electron main process
+ * applies it via `BrowserWindow.setMinimumSize` (handler in Electron subtask).
+ */
+export interface MinimumWindowSize {
+  minWidth: number;
+  minHeight: number;
+}
 
 export interface PlatformAimpApi {
   getState: () => Promise<IPCResponse<AimpBridgeState>>;

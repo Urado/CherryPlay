@@ -59,11 +59,13 @@ flowchart TB
 
 `setPlatform(impl, mode)` обновляет singleton `PlatformAPI` и кэш capabilities (`refreshPlatformCapabilities`).
 
-| Скрипт | Runtime |
-|--------|---------|
-| `npm run dev` | Electron |
-| `npm run dev:web` | Web demo (`demo`) |
+| Скрипт                  | Runtime                                    |
+| ----------------------- | ------------------------------------------ |
+| `npm run dev`           | Electron                                   |
+| `npm run dev:web`       | Web demo (`demo`)                          |
 | `npm run dev:capacitor` | Capacitor stub (`capacitor`), без Electron |
+
+В **web demo** URL CherryPlayServer по умолчанию — **пустая строка** (`demoConfig.ts`): REST и SignalR идут на same-origin (`/api`, `/partyHub`) и проксируются Vite на `:5000`. См. [веб-демо — Vite proxy](../../web-demo.md#vite-dev-proxy-и-cherryplayserver). Переменная **`VITE_API_URL`** задаёт прямой base URL (без proxy, нужен CORS).
 
 ---
 
@@ -71,19 +73,19 @@ flowchart TB
 
 Значения из `derivePlatformCapabilities()` (`src/shared/platform/platformCapabilities.ts`). **Источник истины — код**; таблица для обзора.
 
-| Capability | electron | demo | capacitor (stub) |
-|------------|:--------:|:----:|:----------------:|
-| `supportsLocalFilePlayback` | ✓ | ✗ | ✗ |
-| `supportsNativeFileSystem` | ✓ | ✗ | ✗ |
-| `supportsProjectPersistence` | ✓ | ✗ | ✗ |
-| `supportsAimpWorkspace` | ✓ | ✗ | ✗ |
-| `supportsAudioDeviceSelection` | ✓ | ✗ | ✗ |
-| `supportsLoudnessAnalysis` | ✓ | ✗ | ✗ |
-| `supportsRealAuth` | ✓ | ✗ | ✗ |
-| `simulatesExport` | ✗ | ✓ | ✗ |
-| `usesFixtureFileBrowser` | ✗ | ✓ | ✗ |
+| Capability                     | electron |     demo      | capacitor (stub) |
+| ------------------------------ | :------: | :-----------: | :--------------: |
+| `supportsLocalFilePlayback`    |    ✓     |       ✗       |        ✗         |
+| `supportsNativeFileSystem`     |    ✓     |       ✗       |        ✗         |
+| `supportsProjectPersistence`   |    ✓     |       ✗       |        ✗         |
+| `supportsAimpWorkspace`        |    ✓     | ✓ (simulated) |        ✗         |
+| `supportsAudioDeviceSelection` |    ✓     |       ✗       |        ✗         |
+| `supportsLoudnessAnalysis`     |    ✓     |       ✗       |        ✗         |
+| `supportsRealAuth`             |    ✓     |       ✗       |        ✗         |
+| `simulatesExport`              |    ✗     |       ✓       |        ✗         |
+| `usesFixtureFileBrowser`       |    ✗     |       ✓       |        ✗         |
 
-**AIMP** — только desktop: `supportsAimpWorkspace === true` только в `electron`. Demo и capacitor не монтируют реальный AIMP bridge.
+**AIMP** — в Electron: реальный named-pipe bridge; в **web demo**: `supportsAimpWorkspace === true` с симулированным `WebDemoPlatform.aimp` (фикстурный плейлист/playback, без AIMP.exe). Capacitor stub: `false`.
 
 **Capacitor stub:** все capability-флаги `false` (как у неготовых фич), guards показывают «Недоступно на этой платформе». После Etap 0–5 [Android brief](../../android-capacitor-brief.md) флаги включаются по мере появления плагинов — матрицу обновлять вместе с `derivePlatformCapabilities`.
 
@@ -93,11 +95,11 @@ flowchart TB
 
 ## Правило для контрибьюторов
 
-| Задача | Использовать |
-|--------|----------------|
-| Можно ли воспроизводить файлы, сохранять проект, AIMP, auth, export | `getPlatformCapabilities()` или guards |
-| React-компонент | `usePlatformCapabilities()` (тонкая обёртка над singleton) |
-| Идентичность runtime, логи, косметика демо (баннер, `document.title`) | `getAppMode()` |
+| Задача                                                                | Использовать                                               |
+| --------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Можно ли воспроизводить файлы, сохранять проект, AIMP, auth, export   | `getPlatformCapabilities()` или guards                     |
+| React-компонент                                                       | `usePlatformCapabilities()` (тонкая обёртка над singleton) |
+| Идентичность runtime, логи, косметика демо (баннер, `document.title`) | `getAppMode()`                                             |
 
 **Не** писать `getAppMode() === 'demo'` для feature gating — только capabilities или guards.
 
@@ -107,15 +109,15 @@ flowchart TB
 
 ## Public API (`@shared/platform`)
 
-| Экспорт | Назначение |
-|---------|------------|
-| `setPlatform`, `getPlatform`, `getPlatformAppMode`, `isPlatformInitialized` | Контекст и активная реализация |
-| `getPlatformCapabilities`, `derivePlatformCapabilities`, `refreshPlatformCapabilities` | Capability singleton |
-| `usePlatformCapabilities` | Hook для UI |
-| `getAppMode`, `isNativePlatformAvailable` | Identity; AIMP alias → `supportsAimpWorkspace` (deprecated для gating) |
-| `ElectronPlatform`, `WebDemoPlatform`, `CapacitorPlatform` | Реализации `PlatformAPI` |
-| `getPlatformUnavailableMessage`, `DEMO_UNAVAILABLE_MESSAGE`, `PLATFORM_UNAVAILABLE_MESSAGE` | Тексты blocked-feature toast |
-| `demoUnavailableResponse`, `throwDemoUnavailable` | Ответы IPC / ошибки в demo/stub |
+| Экспорт                                                                                     | Назначение                                                             |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `setPlatform`, `getPlatform`, `getPlatformAppMode`, `isPlatformInitialized`                 | Контекст и активная реализация                                         |
+| `getPlatformCapabilities`, `derivePlatformCapabilities`, `refreshPlatformCapabilities`      | Capability singleton                                                   |
+| `usePlatformCapabilities`                                                                   | Hook для UI                                                            |
+| `getAppMode`, `isNativePlatformAvailable`                                                   | Identity; AIMP alias → `supportsAimpWorkspace` (deprecated для gating) |
+| `ElectronPlatform`, `WebDemoPlatform`, `CapacitorPlatform`                                  | Реализации `PlatformAPI`                                               |
+| `getPlatformUnavailableMessage`, `DEMO_UNAVAILABLE_MESSAGE`, `PLATFORM_UNAVAILABLE_MESSAGE` | Тексты blocked-feature toast                                           |
+| `demoUnavailableResponse`, `throwDemoUnavailable`                                           | Ответы IPC / ошибки в demo/stub                                        |
 
 Типы: `AppMode` (`'electron' \| 'demo' \| 'capacitor'`), `PlatformCapabilities`, `PlatformAPI`, `InvokeChannel`, …
 
@@ -125,11 +127,11 @@ flowchart TB
 
 Тонкие обёртки над capabilities + стандартный toast (`notifyDemoUnavailable` → `getPlatformUnavailableMessage()`).
 
-| Модуль | Функции | Capability |
-|--------|---------|------------|
-| `guardNativeFileOperation.ts` | `isNativeFileOperationBlocked`, `guardNativeFileOperation` | `supportsNativeFileSystem` |
-| `guardPlayback.ts` | `isLocalFilePlaybackBlocked`, `guardPlaybackUnavailable` | `supportsLocalFilePlayback` |
-| `guardDemoAuth.ts` | `isDemoAuthMode` | `supportsRealAuth` |
+| Модуль                        | Функции                                                    | Capability                  |
+| ----------------------------- | ---------------------------------------------------------- | --------------------------- |
+| `guardNativeFileOperation.ts` | `isNativeFileOperationBlocked`, `guardNativeFileOperation` | `supportsNativeFileSystem`  |
+| `guardPlayback.ts`            | `isLocalFilePlaybackBlocked`, `guardPlaybackUnavailable`   | `supportsLocalFilePlayback` |
+| `guardDemoAuth.ts`            | `isDemoAuthMode`                                           | `supportsRealAuth`          |
 
 В UI/stores предпочтительно вызывать guard перед операцией или читать capability для условного рендера (например скрыть AIMP workspace при `!supportsAimpWorkspace`).
 
@@ -137,14 +139,14 @@ flowchart TB
 
 ## Связанные файлы
 
-| Путь | Роль |
-|------|------|
-| `src/bootstrap.ts` | Выбор платформы |
-| `src/shared/platform/platformCapabilities.ts` | Матрица capabilities |
-| `src/shared/platform/platformContext.ts` | Singleton platform + refresh capabilities |
-| `src/shared/platform/capacitorPlatform.ts` | Stub для Etap 0+ |
-| `src/shared/hooks/usePlatformCapabilities.ts` | React hook |
-| `electron/preload.ts` | Канонический IPC-контракт (`window.api`) |
+| Путь                                          | Роль                                      |
+| --------------------------------------------- | ----------------------------------------- |
+| `src/bootstrap.ts`                            | Выбор платформы                           |
+| `src/shared/platform/platformCapabilities.ts` | Матрица capabilities                      |
+| `src/shared/platform/platformContext.ts`      | Singleton platform + refresh capabilities |
+| `src/shared/platform/capacitorPlatform.ts`    | Stub для Etap 0+                          |
+| `src/shared/hooks/usePlatformCapabilities.ts` | React hook                                |
+| `electron/preload.ts`                         | Канонический IPC-контракт (`window.api`)  |
 
 ---
 

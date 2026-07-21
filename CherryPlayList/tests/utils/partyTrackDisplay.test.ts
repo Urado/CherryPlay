@@ -54,11 +54,11 @@ describe('convertPlaylistForApi + party track display', () => {
       stripLeadingCharsEnabled: true,
       stripLeadingCharsCount: 4,
     });
-    expect(result.items[0]).toEqual(
-      expect.objectContaining({
-        type: 'track',
-        name: 'my_song',
-      }),
-    );
+    const firstItem = result.items[0];
+    expect(firstItem).toBeDefined();
+    expect(firstItem).toMatchObject({
+      type: 'track',
+      name: 'my_song',
+    });
   });
 });

@@ -55,7 +55,15 @@
 
 ### Инициализация
 
-В `App.tsx` вызывается `initializeShortcuts` с колбэком, возвращающим текущие биндинги из `settingsStore.keyBindings`.
+В `App.tsx` вызывается `initializeShortcuts` с колбэком, возвращающим текущие биндинги из `settingsStore.keyBindings`, и опциональным `isShortcutsBlocked` — глобальная блокировка всех шорткатов (в edit mode layout):
+
+```tsx
+initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
+  isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
+});
+```
+
+Пока `isShortcutsBlocked()` возвращает `true`, `ShortcutManager.handleKeyDown` не выполняет зарегистрированные handlers (ранний return до match). Выход из layout edit mode по **Esc** обрабатывается отдельным listener в `App.tsx`, не через менеджер.
 
 ### Глобальные шорткаты
 
@@ -80,6 +88,24 @@
 - **Input-aware** - шорткаты блокируются в input/textarea (кроме `allowInInput`)
 - **Типобезопасность** - строгие типы для `ShortcutId`
 - **Персистентность** - кастомные биндинги сохраняются в localStorage
+- **Режим редактирования layout** — при `layoutStore.isLayoutEditMode === true` `ShortcutManager.handleKeyDown` **не выполняет** зарегистрированные шорткаты. Глобальные handlers в `AppHeader` отключаются через `useGlobalShortcuts(..., { enabled: !isLayoutEditMode })`. **Esc** в `App.tsx` (`capture: true`): при фокусе в поле имени pill — отмена rename; иначе закрытие picker и `requestExitEditMode()` (auto-commit). См. [layout-edit-mode.md](../../layout-edit-mode.md).
+
+## Модальные окна
+
+Единый контракт клавиатуры для модалок — хук **`useModalKeyboard`** (`src/shared/hooks/useModalKeyboard.ts`) и утилиты **`modalKeyboard.ts`**:
+
+| Клавиша | Поведение |
+| ------- | --------- |
+| **Enter** | Primary action (`onPrimary`), если передан и не disabled |
+| **Escape** | Cancel / close (`onCancel`) |
+| **Enter** в `textarea` / `contenteditable` | Новая строка, **не** submit |
+| **Enter** на overlay (`.modal-overlay`) | **Ничего** — модалка не закрывается |
+
+Стек вложенных модалок: только верхняя обрабатывает Enter/Escape. Подключено в Settings, Account, Link Party, **«Мои вечеринки»**, Save/Export, Workspace dialogs и др.
+
+Overlay: `onKeyDown={handleOverlayKeyDown}` на `.modal-overlay` предотвращает Enter/Space на backdrop.
+
+См. также [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md) (checklist P2).
 
 ## Утилиты
 

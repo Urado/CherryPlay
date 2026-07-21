@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React from 'react';
 
@@ -31,9 +32,15 @@ export const LoudnessScanProgressModal: React.FC<LoudnessScanProgressModalProps>
       <div className="modal-content loudness-scan-modal" role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2 className="modal-title">{title}</h2>
-          <button type="button" className="modal-close" onClick={onCancel} aria-label="Отмена">
-            <CloseIcon />
-          </button>
+          <IconButton
+            type="button"
+            className="modal-close"
+            onClick={onCancel}
+            aria-label="Отмена"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -55,9 +62,15 @@ export const LoudnessScanProgressModal: React.FC<LoudnessScanProgressModalProps>
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="modal-button secondary" onClick={onCancel}>
+          <Button
+            type="button"
+            className="modal-button"
+            onClick={onCancel}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
+          </Button>
         </div>
       </div>
     </div>

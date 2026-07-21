@@ -1,16 +1,23 @@
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 
+import { MAX_LAYOUT_DEPTH } from '@core/constants/layoutConstraints';
 import { ContainerZone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
-import { calculateMinSizePercent } from '@shared/utils';
+import { getMinSizePercentsForContainer } from '@shared/utils';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 
+import { WorkspaceLayoutEditContainerShell } from './WorkspaceLayoutEditContainerShell';
+import { WorkspaceLayoutEditShell } from './WorkspaceLayoutEditShell';
+
 interface SplitContainerProps {
   zone: ContainerZone;
-  depth?: number; // для ограничения вложенности (макс 6)
+  depth?: number;
 }
+
+const DIVIDER_MIN_HINT = 'Достигнут минимальный размер';
+const DIVIDER_MIN_HINT_MS = 1500;
 
 /**
  * Рекурсивный компонент для отображения контейнеров с возможностью изменения размеров
@@ -18,13 +25,38 @@ interface SplitContainerProps {
 const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 0 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [resizingIndex, setResizingIndex] = useState<number | null>(null);
+  const [dividerAtMinIndex, setDividerAtMinIndex] = useState<number | null>(null);
+  const [dividerMinHint, setDividerMinHint] = useState<string | null>(null);
+  const dividerHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { updateContainerSizes } = useLayoutStore();
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
 
-  // Ограничение вложенности до 6 уровней
-  const isMaxDepth = depth >= 6;
+  const isMaxDepth = depth >= MAX_LAYOUT_DEPTH;
 
-  // Обработка начала перетаскивания
+  const showDividerMinHint = useCallback((index: number) => {
+    setDividerAtMinIndex(index);
+    setDividerMinHint(DIVIDER_MIN_HINT);
+
+    if (dividerHintTimerRef.current !== null) {
+      clearTimeout(dividerHintTimerRef.current);
+    }
+
+    dividerHintTimerRef.current = setTimeout(() => {
+      setDividerMinHint(null);
+      setDividerAtMinIndex(null);
+      dividerHintTimerRef.current = null;
+    }, DIVIDER_MIN_HINT_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dividerHintTimerRef.current !== null) {
+        clearTimeout(dividerHintTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleMouseDown = useCallback(
     (index: number) => (e: React.MouseEvent) => {
       e.preventDefault();
@@ -34,7 +66,6 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
     [],
   );
 
-  // Обработка перемещения мыши при resize
   useEffect(() => {
     if (resizingIndex === null || !containerRef.current) {
       return;
@@ -48,7 +79,6 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
       const rect = containerRef.current.getBoundingClientRect();
       const isHorizontal = zone.direction === 'horizontal';
 
-      // Вычислить новую позицию в процентах
       let newPercent: number;
       if (isHorizontal) {
         const mouseX = e.clientX - rect.left;
@@ -58,22 +88,18 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
         newPercent = rect.height > 0 ? (mouseY / rect.height) * 100 : 50;
       }
 
-      // Ограничить процент в пределах 0-100
       newPercent = Math.max(0, Math.min(100, newPercent));
 
-      // Вычислить минимальный процент для 10px
-      const containerSizeValue = isHorizontal ? rect.width : rect.height;
-      const minPercent = containerSizeValue > 0 ? calculateMinSizePercent(containerSizeValue) : 0;
+      const minPercents = getMinSizePercentsForContainer(zone, rect.width, rect.height);
+      const minPercentLeft = minPercents[resizingIndex] ?? 0;
+      const minPercentRight = minPercents[resizingIndex + 1] ?? 0;
 
-      // Вычислить текущую позицию границы (сумма размеров зон слева)
       const currentLeftSize = zone.sizes
         .slice(0, resizingIndex + 1)
         .reduce((sum, size) => sum + size, 0);
 
-      // Вычислить изменение размера
       const delta = newPercent - currentLeftSize;
 
-      // Вычислить новые размеры для двух соседних зон
       const newSizes = [...zone.sizes];
       const leftZoneSize = newSizes[resizingIndex];
       const rightZoneSize = newSizes[resizingIndex + 1];
@@ -81,17 +107,16 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
       const newLeftZoneSize = leftZoneSize + delta;
       const newRightZoneSize = rightZoneSize - delta;
 
-      // Проверить минимальные размеры
-      if (newLeftZoneSize < minPercent || newRightZoneSize < minPercent) {
-        // Не позволяем нарушить минимум
+      if (newLeftZoneSize < minPercentLeft || newRightZoneSize < minPercentRight) {
+        showDividerMinHint(resizingIndex);
         return;
       }
 
-      // Обновить размеры только для двух соседних зон
+      setDividerAtMinIndex(null);
+
       newSizes[resizingIndex] = newLeftZoneSize;
       newSizes[resizingIndex + 1] = newRightZoneSize;
 
-      // Нормализовать размеры (сумма должна быть 100)
       const total = newSizes.reduce((sum, size) => sum + size, 0);
       if (Math.abs(total - 100) > 0.01) {
         const scale = 100 / total;
@@ -100,12 +125,12 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
         }
       }
 
-      // Обновить store
       updateContainerSizes(zone.id, newSizes);
     };
 
     const handleMouseUp = () => {
       setResizingIndex(null);
+      setDividerAtMinIndex(null);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -115,46 +140,33 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [resizingIndex, zone, updateContainerSizes]);
+  }, [resizingIndex, showDividerMinHint, updateContainerSizes, zone]);
 
   const isHorizontal = useMemo(() => zone.direction === 'horizontal', [zone.direction]);
+  const showContainerEditShell = isLayoutEditMode && zone.zones.length >= 2;
 
-  // Ограничение вложенности до 6 уровней
   if (isMaxDepth) {
     return (
       <div className="split-container-error">
-        <p>Maximum nesting depth reached (6 levels)</p>
+        <p>Достигнута максимальная вложенность ({MAX_LAYOUT_DEPTH} уровней)</p>
       </div>
     );
   }
 
-  return (
-    <div
-      ref={containerRef}
-      className={`split-container split-${zone.direction}`}
-      style={{
-        display: 'flex',
-        flexDirection: isHorizontal ? 'row' : 'column',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
+  const splitContent = (
+    <div ref={containerRef} className={`split-container split-${zone.direction}`}>
       {zone.zones.map((childZone, index) => (
         <React.Fragment key={childZone.id}>
           <div
-            className="split-zone"
+            className={`split-zone${childZone.type === 'workspace' && isLayoutEditMode ? ' split-zone--layout-edit' : ''}`}
             style={{
               flex: `0 0 ${zone.sizes[index]}%`,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              minWidth: isHorizontal ? '10px' : 'auto',
-              minHeight: isHorizontal ? 'auto' : '10px',
             }}
           >
             {childZone.type === 'container' ? (
               <SplitContainer zone={childZone} depth={depth + 1} />
+            ) : isLayoutEditMode ? (
+              <WorkspaceLayoutEditShell zone={childZone} />
             ) : (
               <WorkspaceRenderer zone={childZone} />
             )}
@@ -162,39 +174,34 @@ const SplitContainerComponent: React.FC<SplitContainerProps> = ({ zone, depth = 
           {index < zone.zones.length - 1 && (
             <button
               type="button"
-              className={`split-divider ${resizingIndex === index ? 'resizing' : ''}`}
+              className={`split-divider split-divider--${zone.direction} ${resizingIndex === index ? 'resizing' : ''}${dividerAtMinIndex === index ? ' split-divider--disabled' : ''}${isLayoutEditMode ? ' split-divider--layout-edit' : ''}`}
               onMouseDown={handleMouseDown(index)}
-              aria-label={isHorizontal ? 'Resize horizontal split' : 'Resize vertical split'}
-              style={{
-                width: isHorizontal ? '6px' : '100%',
-                height: isHorizontal ? '100%' : '6px',
-                cursor: isHorizontal ? 'col-resize' : 'row-resize',
-                flexShrink: 0,
-                userSelect: 'none',
-                backgroundColor: '#000000',
-                position: 'relative',
-                border: 'none',
-                padding: 0,
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              aria-label={isHorizontal ? 'Изменить ширину панелей' : 'Изменить высоту панелей'}
+              aria-disabled={dividerAtMinIndex === index ? true : undefined}
+              title={dividerAtMinIndex === index ? DIVIDER_MIN_HINT : undefined}
             >
-              <DragHandleIcon
-                style={{
-                  color: 'var(--text-secondary)',
-                  fontSize: isHorizontal ? '16px' : '16px',
-                  transform: isHorizontal ? 'rotate(90deg)' : 'none',
-                  opacity: 0.6,
-                }}
-              />
+              <DragHandleIcon className="split-divider__handle" aria-hidden />
             </button>
           )}
         </React.Fragment>
       ))}
+      {dividerMinHint !== null && (
+        <div className="split-divider-min-hint" role="status" aria-live="polite">
+          {dividerMinHint}
+        </div>
+      )}
     </div>
   );
+
+  if (showContainerEditShell) {
+    return (
+      <WorkspaceLayoutEditContainerShell zone={zone}>
+        {splitContent}
+      </WorkspaceLayoutEditContainerShell>
+    );
+  }
+
+  return splitContent;
 };
 
 SplitContainerComponent.displayName = 'SplitContainer';

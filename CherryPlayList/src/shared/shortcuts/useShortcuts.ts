@@ -82,10 +82,11 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
 /**
  * useGlobalShortcuts - Convenience hook for global shortcuts.
  *
- * This is a specialized version of useShortcuts that always keeps
- * handlers registered (enabled by default, no conditional logic).
+ * Accepts the same `options` as `useShortcuts`, including `enabled` to
+ * conditionally register handlers.
  *
  * @param handlers - Object mapping shortcut IDs to handler functions
+ * @param options - Configuration options (e.g. `{ enabled: false }` to suspend)
  *
  * @example
  * ```tsx
@@ -94,13 +95,14 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
  *   'global.saveAs': handleSaveAs,
  *   'global.open': handleOpen,
  *   'global.new': handleNew,
- * });
+ * }, { enabled: !isModalOpen });
  * ```
  */
 export function useGlobalShortcuts(
   handlers: Pick<ShortcutHandlers, 'global.save' | 'global.saveAs' | 'global.open' | 'global.new'>,
+  options: UseShortcutsOptions = {},
 ): void {
-  useShortcuts(handlers, { enabled: true });
+  useShortcuts(handlers, options);
 }
 
 /**

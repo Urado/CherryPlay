@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
@@ -27,16 +27,25 @@ import { AccountModal } from './components/AccountModal';
 import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
+import { CherryPlayStreamingController } from './components/CherryPlayStreamingController';
 import { DemoModeBanner } from './components/DemoModeBanner';
+import { DemoPlayerShell } from './components/DemoPlayerShell';
 import { ExportModal } from './components/ExportModal';
+import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
+import { MyPartiesPanel } from './components/MyPartiesPanel';
 import { SettingsModal } from './components/SettingsModal';
-import { SplitContainer } from './components/SplitContainer';
+import { useWindowMinSize } from './hooks';
+import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
 
 const App: React.FC = () => {
-  const { layout } = useLayoutStore();
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
+  const appContentRef = useRef<HTMLDivElement>(null);
+  const layoutHostRef = useRef<HTMLDivElement>(null);
+
+  useWindowMinSize(layoutHostRef);
 
   useEffect(() => {
     if (isDemoMode) {
@@ -50,7 +59,9 @@ const App: React.FC = () => {
       console.warn('Failed to initialize server config:', error);
     });
 
-    initializeShortcuts(() => useSettingsStore.getState().keyBindings);
+    initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
+      isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
+    });
 
     useGlobalHistoryStore.getState().registerErrorHandler((message) => {
       useUIStore.getState().addNotification({
@@ -104,44 +115,59 @@ const App: React.FC = () => {
 
   useTrackItemSize();
 
-  if (layout.rootZone.type !== 'container') {
-    return (
+  useEffect(() => {
+    if (!isLayoutEditMode) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          active.classList.contains('workspace-pill__rename-input')
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+        const { openLayoutEditPickerKey, setOpenLayoutEditPickerKey } = useLayoutStore.getState();
+        if (openLayoutEditPickerKey !== null) {
+          setOpenLayoutEditPickerKey(null);
+          return;
+        }
+        requestExitEditMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [isLayoutEditMode]);
+
+  return (
+    <CherryPlayStreamingController>
       <div className="app">
         {isDemoMode && <DemoModeBanner />}
         <AppHeader />
-        <div className="app-content">
-          <div className="empty-state">
-            <p>Error: Root zone must be a container</p>
+        <div ref={appContentRef} className="app-content">
+          <div ref={layoutHostRef} className="app-content-main">
+            <LayoutWorkspaceArea />
+          </div>
+          <div className="demo-player-shell-host">
+            <DemoPlayerShell contentContainerRef={appContentRef} />
           </div>
         </div>
         {supportsAimpWorkspace && <AimpIntegrationController />}
         <SettingsModal />
         <ExportModal />
         <LinkPartyModal />
+        <MyPartiesPanel />
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />
         <AppFooter />
       </div>
-    );
-  }
-
-  return (
-    <div className="app">
-      {isDemoMode && <DemoModeBanner />}
-      <AppHeader />
-      <div className="app-content">
-        <SplitContainer zone={layout.rootZone} />
-      </div>
-      {supportsAimpWorkspace && <AimpIntegrationController />}
-      <SettingsModal />
-      <ExportModal />
-      <LinkPartyModal />
-      <TrackSettingsModal />
-      <AccountModal />
-      <NotificationContainer />
-      <AppFooter />
-    </div>
+    </CherryPlayStreamingController>
   );
 };
 

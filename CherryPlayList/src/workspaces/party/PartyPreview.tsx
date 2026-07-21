@@ -6,8 +6,13 @@ import {
   partyViewerStatusFromId,
   type PartyThemeId,
   type CustomizationSettings,
+  type PartyViewerStatusId,
 } from '@cherryplay/components';
 import React, { useMemo } from 'react';
+
+import type { PartyLifecycleState } from '@shared/services/partyService';
+
+import { isPlaybackLiveActive, resolvePreviewViewerStatusId } from './partyPreviewLifecycle';
 
 import './PartyPreview.css';
 
@@ -19,6 +24,10 @@ interface PartyPreviewProps {
   partyName?: string;
   subtitle?: string;
   partyId?: string;
+  /** Server lifecycle; unlinked/draft → draft viewer status. */
+  previewLifecycleState?: PartyLifecycleState | null;
+  /** Demo-only: force viewer status (e.g. connection break). */
+  previewViewerStatusOverride?: PartyViewerStatusId | null;
 }
 
 export const PartyPreview: React.FC<PartyPreviewProps> = ({
@@ -26,10 +35,16 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
   themeId,
   customizationSettings = {},
   playbackState = null,
-  partyName = 'Превью вечеринки',
+  partyName = 'Как видят гости',
   subtitle,
   partyId = 'preview',
+  previewLifecycleState = null,
+  previewViewerStatusOverride = null,
 }) => {
+  const viewerStatusId =
+    previewViewerStatusOverride ??
+    resolvePreviewViewerStatusId(playbackState, previewLifecycleState);
+
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(
     () => ({
       partyId,
@@ -41,15 +56,24 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
         | undefined,
       playlist,
       playbackState: playbackState || null,
-      isSessionActive: playbackState !== null,
-      viewerStatus: partyViewerStatusFromId(playbackState !== null ? 'live' : 'starting_soon'),
+      isSessionActive: isPlaybackLiveActive(playbackState),
+      viewerStatus: partyViewerStatusFromId(viewerStatusId),
     }),
-    [partyId, partyName, subtitle, themeId, customizationSettings, playlist, playbackState],
+    [
+      partyId,
+      partyName,
+      subtitle,
+      themeId,
+      customizationSettings,
+      playlist,
+      playbackState,
+      viewerStatusId,
+    ],
   );
 
   return (
     <div className="party-preview">
-      <PartyDisplay data={displayData} showPlayer={playbackState !== null} />
+      <PartyDisplay data={displayData} showPlayer={isPlaybackLiveActive(playbackState)} />
     </div>
   );
 };

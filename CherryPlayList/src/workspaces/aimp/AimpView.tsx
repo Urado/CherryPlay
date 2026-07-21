@@ -1,9 +1,10 @@
+import { Button, Icon } from '@cherryplay/components';
+import ListIcon from '@mui/icons-material/List';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
 import { EmptyState, ItemList, ListRowCompound } from '@shared/components';
 import { type AimpPlaylistTrackDto } from '@shared/contracts/aimp';
-import { signalRService } from '@shared/services';
 import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import {
   canAdvanceAimpPlayback,
@@ -14,12 +15,14 @@ import {
   getAimpCurrentTrack,
   getAimpEffectiveProgressMs,
   isAimpDegraded,
-  startAimpOrganizerSession,
 } from '@shared/utils';
+import { PlaybackSourceSwitcher } from '@workspaces/player/components/PlaybackSourceSwitcher';
 
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
+  /** Rendered inside unified Player workspace (no duplicate panel title). */
+  embedded?: boolean;
 }
 
 interface AimpPlaylistRowProps {
@@ -88,7 +91,7 @@ function useProgressClock(isActive: boolean): number {
   return nowMs;
 }
 
-export const AimpView: React.FC<AimpViewProps> = () => {
+export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
   const bridgeState = useAimpStore((state) => state.bridgeState);
   const publishingBridgeReady = useAimpStore((state) => state.publishingBridgeReady);
   const publishingPath = useAimpStore((state) => state.publishingPath);
@@ -116,6 +119,13 @@ export const AimpView: React.FC<AimpViewProps> = () => {
     publishingBridgeReady &&
     canStartAimpLiveStream(bridgeState);
   const degraded = isAimpDegraded(bridgeState);
+  const connectionLabel =
+    STATUS_LABELS[bridgeState.connection.phase] ?? bridgeState.connection.phase;
+  const publishPathLabel = PUBLISHING_STATUS_LABELS[publishingPath.status] ?? publishingPath.status;
+  const pluginVersionLabel = bridgeState.pluginMetadata?.pluginVersion
+    ? `Plugin v${bridgeState.pluginMetadata.pluginVersion}`
+    : 'Plugin version unavailable';
+  const playlistNameLabel = bridgeState.playlistSnapshot?.playlistName ?? 'No snapshot yet';
 
   const startActionMessages = useMemo(() => {
     if (bridgeState.liveStreamStarted) {
@@ -124,10 +134,10 @@ export const AimpView: React.FC<AimpViewProps> = () => {
 
     const messages: string[] = [];
     if (!enableStreaming) {
-      messages.push('Сначала включите стриминг в общих настройках.');
+      messages.push('Сначала включите онлайн в настройках.');
     }
-    if (streamingSource !== 'aimp') {
-      messages.push('Выберите AIMP как источник стриминга.');
+    if (!embedded && streamingSource !== 'aimp') {
+      messages.push('Выберите AIMP как источник в зоне плеера.');
     }
     if (!availability.available) {
       availability.gatingReasons.forEach((reason) => messages.push(reason.message));
@@ -173,6 +183,7 @@ export const AimpView: React.FC<AimpViewProps> = () => {
     publishingPath.error,
     publishingPath.status,
     streamingSource,
+    embedded,
   ]);
 
   const handleToggleLiveStream = async () => {
@@ -186,37 +197,32 @@ export const AimpView: React.FC<AimpViewProps> = () => {
       if (bridgeState.liveStreamStarted) {
         await setLiveStreamStarted(false);
       } else {
-        await startAimpOrganizerSession({
-          bridgeState,
-          publishingBridgeReady,
-          actions: {
-            startSession: async () => {
-              await signalRService.startSession(linkedPartyId);
-            },
-            setLiveStreamStarted: async (liveStreamStarted) => {
-              await setLiveStreamStarted(liveStreamStarted);
-            },
-            endSession: async () => {
-              await signalRService.endSession(linkedPartyId);
-            },
-            resetPlaybackState: async () => {
-              await signalRService.resetPlaybackState(linkedPartyId);
-            },
-          },
-        });
+        if (!publishingBridgeReady) {
+          throw new Error('AIMP publishing path is not ready yet.');
+        }
+
+        if (!canStartAimpLiveStream(bridgeState)) {
+          throw new Error(
+            'AIMP snapshots and plugin connection are not ready for live streaming yet.',
+          );
+        }
+
+        await setLiveStreamStarted(true);
       }
 
       addNotification({
         type: 'success',
         message: bridgeState.liveStreamStarted
-          ? 'AIMP стриминг для Party остановлен'
-          : 'AIMP стриминг для Party запущен',
+          ? 'Онлайн через AIMP остановлен'
+          : 'Онлайн через AIMP запущен',
       });
     } catch (error) {
       addNotification({
         type: 'error',
         message:
-          error instanceof Error ? error.message : 'Не удалось изменить состояние AIMP стриминга',
+          error instanceof Error
+            ? error.message
+            : 'Не удалось изменить состояние онлайна через AIMP',
         duration: 5000,
       });
     } finally {
@@ -229,119 +235,189 @@ export const AimpView: React.FC<AimpViewProps> = () => {
       ? 'Остановка...'
       : 'Подготовка...'
     : bridgeState.liveStreamStarted
-      ? 'Остановить стриминг'
-      : 'Начать стриминг';
+      ? 'Выключить онлайн'
+      : 'Включить онлайн';
 
   return (
     <div
+      className={embedded ? 'aimp-view aimp-view--embedded' : 'aimp-view'}
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto auto minmax(0, 1fr) auto',
+        gridTemplateRows: embedded
+          ? 'auto auto minmax(0, 1fr) auto'
+          : 'auto auto minmax(0, 1fr) auto',
         gap: 12,
         height: '100%',
         minHeight: 0,
       }}
     >
-      <div>
-        <h2 className="panel-title">AIMP</h2>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
-          Read-only bridge workspace for external playback state.
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 8,
-        }}
-      >
-        <div className="app-card" style={{ padding: 12, borderRadius: 10 }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Connection</div>
-          <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: 4 }}>
-            {STATUS_LABELS[bridgeState.connection.phase] ?? bridgeState.connection.phase}
+      {embedded ? (
+        <div className="playlist-header-section">
+          <div className="playlist-header-source-row">
+            <PlaybackSourceSwitcher layout="topRow" />
           </div>
-          <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            App listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Plugin connected: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Publish path: {PUBLISHING_STATUS_LABELS[publishingPath.status] ?? publishingPath.status}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Live stream started: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
-          </div>
-          {publishingPath.error && (
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: '0.85rem',
-                color: 'var(--color-danger, #ff8a80)',
-              }}
-            >
-              {publishingPath.error}
+          <div className="playlist-stats-header">
+            <div className="playlist-stats-header__info">
+              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>
+                {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
+                  ? 'Плейлист пуст'
+                  : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
+              </span>
             </div>
-          )}
+            <details style={{ position: 'relative', flexShrink: 0 }}>
+              <summary
+                style={{
+                  listStyle: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-secondary)',
+                }}
+                title="Диагностика AIMP bridge"
+                aria-label="Показать диагностику AIMP bridge"
+              >
+                <Icon size="md" shape="circle" aria-hidden>
+                  i
+                </Icon>
+              </summary>
+              <div
+                className="app-card"
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 6px)',
+                  zIndex: 10,
+                  width: 'min(320px, calc(100vw - 24px))',
+                  padding: 10,
+                  borderRadius: 10,
+                  display: 'grid',
+                  gap: 4,
+                  fontSize: '0.8rem',
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Protocol: {bridgeState.protocolVersion}
+                </div>
+                <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
+                {publishingPath.error && (
+                  <div style={{ color: 'var(--color-danger, #ff8a80)' }}>
+                    {publishingPath.error}
+                  </div>
+                )}
+              </div>
+            </details>
+          </div>
         </div>
-
-        <div className="app-card" style={{ padding: 12, borderRadius: 10 }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Bridge metadata</div>
-          <div style={{ marginTop: 4, fontSize: '0.95rem', fontWeight: 600 }}>
-            {bridgeState.pluginMetadata?.pluginVersion
-              ? `Plugin v${bridgeState.pluginMetadata.pluginVersion}`
-              : 'Plugin version unavailable'}
-          </div>
-          <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Protocol: {bridgeState.protocolVersion}
-          </div>
-          <div style={{ marginTop: 4, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Playlist: {bridgeState.playlistSnapshot?.playlistName ?? 'No snapshot yet'}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ minHeight: 0, display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)' }}>
+      ) : (
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 12,
-            marginBottom: 8,
+            alignItems: 'flex-start',
+            gap: 8,
           }}
         >
-          <div style={{ fontWeight: 600 }}>
+          <div>
+            <h2 className="panel-title">AIMP</h2>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: 4 }}>
+              Мониторинг AIMP и онлайн для гостей.
+            </div>
+          </div>
+          <details style={{ position: 'relative', flexShrink: 0 }}>
+            <summary
+              style={{
+                listStyle: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-secondary)',
+              }}
+              title="Диагностика AIMP bridge"
+              aria-label="Показать диагностику AIMP bridge"
+            >
+              <Icon size="md" shape="circle" aria-hidden>
+                i
+              </Icon>
+            </summary>
+            <div
+              className="app-card"
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                zIndex: 10,
+                width: 'min(320px, calc(100vw - 24px))',
+                padding: 10,
+                borderRadius: 10,
+                display: 'grid',
+                gap: 4,
+                fontSize: '0.8rem',
+              }}
+            >
+              <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                Protocol: {bridgeState.protocolVersion}
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
+              {publishingPath.error && (
+                <div style={{ color: 'var(--color-danger, #ff8a80)' }}>{publishingPath.error}</div>
+              )}
+            </div>
+          </details>
+        </div>
+      )}
+
+      <div style={{ minHeight: 0, display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)' }}>
+        <div className="aimp-view__playlist-toolbar">
+          <div className="aimp-view__playlist-toolbar-title">
             Playlist{' '}
             {bridgeState.playlistSnapshot ? `(${bridgeState.playlistSnapshot.trackCount})` : ''}
           </div>
-          <button
+          <Button
             type="button"
-            className="modal-button primary"
+            className="modal-button"
             onClick={handleToggleLiveStream}
             disabled={
               isSubmittingLiveStream || (!bridgeState.liveStreamStarted && !canStartLiveStreamNow)
             }
+            variant="primary"
+            size="sm"
           >
             {liveStreamButtonLabel}
-          </button>
+          </Button>
         </div>
 
         {(degraded || startActionMessages.length > 0) && (
           <div
-            style={{
-              marginBottom: 8,
-              padding: 10,
-              borderRadius: 8,
-              background: degraded ? 'rgba(255, 152, 0, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-              border: degraded
-                ? '1px solid rgba(255, 152, 0, 0.35)'
-                : '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'grid',
-              gap: 4,
-              fontSize: '0.85rem',
-            }}
+            className={`aimp-view__playlist-banner ${
+              degraded ? 'aimp-view__playlist-banner--degraded' : 'aimp-view__playlist-banner--info'
+            }`}
           >
             {degraded && bridgeState.connection.disconnectReason?.message && (
               <div>{bridgeState.connection.disconnectReason.message}</div>

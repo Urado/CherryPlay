@@ -210,6 +210,8 @@ PartyTheme не поддерживает настройки кастомизац
 
 ## Использование в проектах
 
+PartyTheme — **изолированный** визуальный слой контента вечеринки. Контракт shell-примитивов (`Button`, `cp-button`, импорт `primitives.css`) относится к оболочке приложения (кабинет, модалки, редактор) и **не обязан** распространяться на темы: каждая PartyTheme живёт в своём `data-theme` и своих CSS. Дефолтные кнопки оболочки описаны в [CherryPlayComponents/README.md](CherryPlayComponents/README.md#default-shell-buttons).
+
 ### CherryPlayComponents (React/TypeScript)
 
 ```typescript

@@ -1,3 +1,5 @@
+import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
+
 import { DEMO_DEFAULT_ENABLE_STREAMING } from '../platform/fixtures/demoConfig';
 import { DEMO_MUSIC_ROOT } from '../platform/fixtures/fileBrowserTree';
 import { useProjectStore } from '../stores/projectStore';
@@ -24,6 +26,9 @@ export function applyDemoStoreDefaults(): void {
     exportPath: '',
     lastOpenedPlaylist: '',
     fileBrowserPath: DEMO_MUSIC_ROOT,
+    fileBrowserPathsByWorkspaceId: {
+      [DEFAULT_FILEBROWSER_WORKSPACE_ID]: DEMO_MUSIC_ROOT,
+    },
     enableStreaming: DEMO_DEFAULT_ENABLE_STREAMING,
     streamingSource: 'cherryPlayPlayer',
   });

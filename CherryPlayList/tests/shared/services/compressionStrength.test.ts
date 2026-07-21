@@ -123,9 +123,13 @@ describe('resolveAutoCompressionStrength', () => {
   });
 
   it('boosts strength when positive gain exceeds gate', () => {
+    const boostGainDb = COMPRESSION_BOOST_GATE_DB + COMPRESSION_BOOST_RANGE_DB / 2;
     const track = createTrack(
       createOkLoudness({
-        trackGainDb: COMPRESSION_BOOST_GATE_DB + COMPRESSION_BOOST_RANGE_DB / 2,
+        // Recomputed auto gain must exceed boost gate (persisted trackGainDb alone is ignored).
+        integratedLufs: -18 - boostGainDb,
+        truePeakDb: -1 - boostGainDb,
+        trackGainDb: 0,
         lraLowLufs: -18 - COMPRESSION_QUIET_GAP_RANGE_LU / 2,
         lraLu: 13,
       }),

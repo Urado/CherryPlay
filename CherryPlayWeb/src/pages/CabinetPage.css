@@ -52,28 +52,20 @@
   gap: 10px;
 }
 
+.logout-button {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cp-button.logout-button {
+  min-height: auto;
+}
+
 .cabinet-header h1 {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.logout-button {
-  padding: 10px 20px;
-  background: rgba(220, 53, 69, 0.2);
-  color: #ff6b6b;
-  border: 1px solid rgba(255, 107, 107, 0.5);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-button:hover {
-  background: rgba(220, 53, 69, 0.35);
-  border-color: #ff6b6b;
 }
 
 .organizer-info {
@@ -150,49 +142,6 @@
   margin: 0;
   font-size: 20px;
   color: var(--text-primary);
-}
-
-.cabinet-btn {
-  padding: 8px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.cabinet-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: var(--selected-border);
-}
-
-.cabinet-btn-primary {
-  background: rgba(0, 255, 0, 0.15);
-  color: #00ff88;
-  border-color: rgba(0, 255, 0, 0.4);
-}
-
-.cabinet-btn-primary:hover:not(:disabled) {
-  background: rgba(0, 255, 0, 0.25);
-  border-color: rgba(0, 255, 0, 0.6);
-}
-
-.cabinet-btn-sm {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-
-.cabinet-btn-danger {
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.5);
-  background: transparent;
-}
-
-.cabinet-btn-danger:hover:not(:disabled) {
-  background: var(--state-error-bg);
-  border-color: #ff6b6b;
 }
 
 .cabinet-error {
@@ -291,18 +240,23 @@
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
   font-size: 13px;
-  cursor: pointer;
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
 }
 
-.cabinet-tag-btn:hover:not(:disabled) {
+.cp-button.cabinet-tag-btn {
+  min-height: auto;
+}
+
+.cabinet-tag-btn:hover:not(:disabled),
+.cp-button.cabinet-tag-btn:hover:not(:disabled) {
   background: var(--bg-hover);
   border-color: var(--selected-border);
 }
 
-.cabinet-tag-btn--selected {
+.cabinet-tag-btn--selected,
+.cp-button.cabinet-tag-btn--selected {
   background: rgba(0, 255, 0, 0.15);
   border-color: rgba(0, 255, 0, 0.4);
   color: #00ff88;

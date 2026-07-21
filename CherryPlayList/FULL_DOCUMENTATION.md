@@ -127,8 +127,8 @@ User initiates playlist export. UI calls executeExport in ExportService, which s
     │   │   ├── components/
     │   │   ├── services/
     │   │   ├── stores/           # Zustand stores
-    │   │   ├── hooks/
-    │   │   └── utils/
+    │   │   ├── hooks/            # includes useWindowMinSize.ts (layout viewport + Electron min window)
+    │   │   └── utils/            # layoutWorkspaceMins.ts, layoutViewportBridge.ts, layoutWorkspaceOperations.ts, …
     │   ├── workspaces/           # Workspace modules (isolated)
     │   │   ├── playlist/
     │   │   ├── collection/
@@ -1245,6 +1245,25 @@ Plugin exports an object with methods `init(api)` and `destroy()`. API includes 
 
 ## 9.1 Design System Overview
 
+### 9.1.0 UI Layers and Migration Contract
+
+- **Primitives** (`@cherryplay/components`): base visual building blocks (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`) with classes `cp-*` and shared tokens. **Default shell buttons** ship with built-in styling (primary accent `#667eea`, variants `primary`/`secondary`/`danger`/`ghost`, sizes `sm`/`md`) after `primitives.css` import — no per-button CSS required. Canonical API and props: [CherryPlayComponents/README.md — UI-примитивы (shell)](../CherryPlayComponents/README.md#ui-примитивы-shell).
+- **Package-level wrappers**: `FormButton` in `@cherryplay/components` (legacy auth); maps `outline` → `ghost`.
+- **Domain components**: feature-specific components (playlist rows, modals, headers, workspace views) built on primitives/wrappers.
+- **PartyTheme isolation**: party content inside `PartyDisplay` uses isolated themes (`data-theme`); it does **not** inherit `cp-button` or shell primitive contracts. Shell and PartyTheme are separate visual layers.
+
+**Usage rules (current):**
+
+- Use primitives directly in new UI and in refactors where API parity is straightforward.
+- Keep `FormButton` only as a **legacy/backward-compat wrapper** where old props/behavior are still required.
+- Migration intent: reduce wrapper usage over time and keep new code on primitives first.
+
+**CSS contract:**
+
+- `src/styles/index.css` must import `@cherryplay/components/styles/primitives.css` before local CherryPlayList styles.
+- `primitives.css` already includes shell palette tokens and is sufficient for correct `cp-button` + `cp-button--icon-only` appearance.
+- CherryPlayList overrides shell accent on `:root` via `--accent-primary: #4a9eff` in `src/styles/variables.css` (picked up by `--cp-accent-primary`).
+
 ### 9.1.1 Theme System
 
 The application uses a **dark theme** by default with a modular theme system that allows for easy theme switching and future theme additions.
@@ -1331,6 +1350,13 @@ All colors are defined in a centralized theme configuration for easy modificatio
 
 ## 9.2 Window and Layout
 
+> **⚠️ Legacy / partially outdated.** This section reflects early layout design. For **current** workspace and edit-mode behavior, use:
+>
+> - [CherryPlayList/docs/layout-edit-mode.md](docs/layout-edit-mode.md) — workspace **pill** + **✎** edit mode, auto-save, zone picker, air regions
+> - [CherryPlayList/docs/modules/systems/layout-system.md](docs/modules/systems/layout-system.md) — built-in presets, persist key, `LayoutWorkspaceArea` render paths
+>
+> Below: retained historical detail; API names, UI controls, persist key, and constraints may differ from the implementation.
+
 ### 9.2.1 Window Configuration
 
 - **Default size:** Standard desktop size (e.g., `1200x800px` or `1400x900px`)
@@ -1373,7 +1399,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Zone Management:**
 
-- **Minimum zone size:** 10 pixels (enforced during resize)
+- **Minimum zone size:** per `workspaceType` on `IWorkspaceModule` (`minWidth` / `minHeight`); enforced during resize via `getMinSizePercentsForContainer()` — see [layout-system.md](docs/modules/systems/layout-system.md) § «Минимальные размеры зон» and `layoutWorkspaceMins.ts`
 - **Maximum zones per container:** 10 zones
 - **Maximum nesting depth:** 6 levels (prevents infinite recursion)
 - **Auto-cleanup:** If a container has only 1 child, the container is removed and replaced by its child
@@ -1383,7 +1409,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 - Users can drag dividers to adjust zone sizes
 - When resizing, adjacent zones adjust proportionally
-- Minimum size (10px) is enforced - resize stops when minimum is reached
+- Minimum per-workspace-type sizes are enforced (JS clamp in `SplitContainer`, not CSS on zones) — resize stops when either adjacent sibling would violate its `minWidth`/`minHeight`; see [layout-system.md](docs/modules/systems/layout-system.md)
 - Sizes are recalculated to maintain 100% total
 - Layout preserves percentage ratios when window is resized
 
@@ -1395,9 +1421,9 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Persistence:**
 
-- Layout structure is persisted via Zustand `persist` and `electronStorage` (localforage, typically IndexedDB), not raw `window.localStorage`
-- Layout is restored on application startup
-- Version field allows for future migration of layout structure
+- Workspace and layout tree persist via Zustand `persist` → **`cherryplaylist-workspaces`** (`electronStorage` / localforage, typically IndexedDB)
+- `isLayoutEditMode` and `baselineLayout` are **not** persisted
+- Layout is restored on application startup; built-in presets are not stored as user rows — see [layout-system.md](docs/modules/systems/layout-system.md)
 
 #### 9.2.4.3 Component Structure
 
@@ -1405,41 +1431,41 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 - Recursive component that renders container zones
 - Handles mouse events for divider dragging
-- Validates minimum sizes during resize
+- Enforces per-workspace-type minimum sizes during resize (JS clamp via `getMinSizePercentsForContainer` — no CSS min on zones); see [layout-system.md](docs/modules/systems/layout-system.md) § «Минимальные размеры зон»
 - Tracks resizing state for visual feedback
 - Limits nesting depth to 6 levels
 
 **WorkspaceRenderer Component:**
 
-- Renders workspace zones based on `workspaceType`
-- Maps workspace types to React components:
-  - `'playlist'` → `PlaylistView`
-  - `'fileBrowser'` → `FileBrowser` wrapped in `SourcesPanel`
-  - Future types can be added dynamically
+- Renders workspace zones based on `workspaceType` via **`workspaceRegistry`** (`IWorkspaceModule.component`)
+- Example mappings: `'playlist'` → `PlaylistView`, `'fileBrowser'` → `FileBrowserWorkspaceView` (`SourcesPanel` + `FileBrowser`)
+- Future types register in `src/workspaces/*/index.ts` and bootstrap import in `entry.tsx`
 
-**LayoutStore:**
+**LayoutStore** (`src/shared/stores/layoutStore.ts`):
 
-- Zustand store with persist middleware
-- Manages layout state tree
-- Provides methods for:
-  - `updateZoneSize(zoneId, newSize)` - Update single zone size
-  - `updateContainerSizes(containerId, sizes[])` - Update all sizes in container
-  - `addZone(parentId, workspaceId, workspaceType, direction?)` - Add new zone
-  - `removeZone(zoneId)` - Remove zone (triggers auto-cleanup)
-  - `setZoneDirection(containerId, direction)` - Change split direction
-  - `findZone(zoneId)` - Find zone by ID (recursive)
-  - `findParent(zoneId)` - Find parent container
-  - `cleanupEmptyContainers()` - Remove containers with 1 child
-  - `validateLayout()` - Validate layout constraints
+- Zustand store with `persist` middleware; storage key **`cherryplaylist-workspaces`** (see [persisted-client-state.md](docs/modules/systems/persisted-client-state.md))
+- Manages workspace state: `layout` tree, `activeWorkspace`, `userWorkspaces`, `isLayoutEditMode` (runtime only)
+- Zone tree operations: `addAdjacentWorkspace`, `addAdjacentWorkspaceToContainer`, `addInitialWorkspace`, `removeWorkspaceZone`, `updateZoneSize`, `updateContainerSizes`
+- Workspace lifecycle: `activateWorkspace`, `autoCommitWorkspaceChanges`, `saveCurrentWorkspaceAsUnnamed`
+- Legacy helpers may still exist (`addZone`, `removeZone`, `setLayoutPreset`) — prefer docs above for edit mode
+
+**Layout min-size utilities:**
+
+- `src/shared/utils/layoutWorkspaceMins.ts` — `computeMinLayoutSize`, `getMinSizePercentsForContainer`, `getWorkspaceMinSize`, `computeMinWindowSize`
+- `src/shared/utils/layoutViewportBridge.ts` — live layout viewport for add-feasibility checks
+- `src/shared/utils/layoutWorkspaceOperations.ts` — add/remove tree ops, `enforceMinSizeFeasibility`
+- `src/app/hooks/useWindowMinSize.ts` — measures layout viewport, registers bridge, sets Electron min window via IPC (`electron/ipc/system.ts`)
+
+**UI (current):** workspace **pill** (name + ▾) and separate **✎** button in `WorkspaceMenu` — not a preset dropdown. Built-in presets are chosen from the pill menu → **Встроенные**.
 
 #### 9.2.4.4 Visual Design
 
 **Divider:**
 
-- **Width/Height:** 2px (thin line)
-- **Color:** `var(--ui-border)` (default), `var(--accent-primary)` (hover/resizing)
+- **Visible bar:** `min-width` / `min-height` **6px** (`split-divider` in `app.css`); background `#000000`, hover `#1a1a1a`
+- **Hit area:** invisible `::before` padding **4px** around the bar for easier dragging
+- **Edit mode:** class `split-divider--layout-edit` — только `z-index: 5` (наложение над air-зонами); цвет divider как в обычном режиме
 - **Cursor:** `col-resize` (horizontal split), `row-resize` (vertical split)
-- **Transition:** Background color transition on hover (0.2s)
 
 **Container:**
 
@@ -1449,7 +1475,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Zone:**
 
-- **Minimum size:** 10px (enforced via CSS `min-width`/`min-height`)
+- **Minimum size:** per `workspaceType` on `IWorkspaceModule` (final allocated pixels; enforced in JS during divider drag)
 - **Flex basis:** Percentage-based (`flex: 0 0 ${size}%`)
 - **Overflow:** Hidden
 
@@ -1463,15 +1489,15 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 
 **Maximum Constraints:**
 
-- **10 zones per container:** Adding more zones is prevented (UI feedback: disabled button)
-- **6 nesting levels:** Deeper nesting shows warning or is prevented
-- **15 total zones:** Performance optimization threshold (memoization recommended)
+- **10 zones per container:** Adding more zones is prevented (toast warning in edit mode)
+- **6 nesting levels:** Deeper nesting is rejected when adding zones (`MAX_LAYOUT_DEPTH`)
 
 **Resize Constraints:**
 
-- Minimum 10px per zone is enforced
-- When dragging would violate minimum, resize stops at boundary
+- Per-type minimum sizes are enforced via `getMinSizePercentsForContainer` (hard clamp on both neighbors)
+- When dragging would violate a minimum, the divider position does not update
 - Adjacent zones adjust proportionally to maintain 100% total
+- Electron: minimum window size tracks layout via `useWindowMinSize` + `computeMinWindowSize`
 
 **Window Resize:**
 
@@ -1525,18 +1551,29 @@ The application supports multiple layout presets:
    - Allows simultaneous viewing of collections and file browser
 
 4. **Complex Layout** (`'complex'`):
-   - Includes test zones for development
+   - Includes test zones for development (DEV-only in menu)
+
+5. **Player Layout** (`'player'`):
+   - Focused playback workspace preset
+
+6. **Party Layout** (`'party'`):
+   - Online party: `party-editor` + `party-preview` zones (requires `enableStreaming`)
+
+7. **AIMP + Party** (`'aimp-party'`) — **legacy:** migrated to `'party'` on load; not shown in pill menu
 
 **Layout Presets:**
 
-Layout presets are defined in `layoutStore.ts` and can be selected via the header dropdown. The default layout is `'collections'`.
+Layout presets are defined in `layoutStore.ts` (`createLayoutByPreset`). Selection: workspace pill **▾** → **Встроенные**. Default on first run: **`collections`**. Interactive editing: **✎** — see [layout-edit-mode.md](docs/layout-edit-mode.md).
 
 Available presets:
 
-- `'simple'`: Playlist (50%) + FileBrowser (50%)
-- `'collections'`: Playlist (50%) + [Collections (horizontal, 50%) + FileBrowser (50%)]
-- `'collections-vertical'`: Playlist (33%) + Collections (vertical, 33%) + FileBrowser (34%)
-- `'complex'`: Test layout with multiple nested zones (development only)
+- `'simple'`: Playlist + FileBrowser
+- `'collections'`: Playlist + nested collections + FileBrowser (**default**)
+- `'collections-vertical'`: Playlist + vertical collections + FileBrowser
+- `'complex'`: Test layout with multiple nested zones (**development only**)
+- `'player'`: Playback-focused layout
+- `'party'`: Party editor + preview (when streaming enabled)
+- `'aimp-party'`: **legacy** — auto-migrates to `'party'`
 
 **Layout Migration:**
 

@@ -4,6 +4,7 @@ import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 
 import { demoPlaybackEngine } from '../audio/playback/playbackEngines';
+import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { formatMissingTrackMessage } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
 
@@ -35,6 +36,7 @@ interface DemoPlayerState {
   isDisabled: boolean;
 
   loadTrack: (track: Track, sourceWorkspaceId: WorkspaceId) => Promise<void>;
+  setActiveTrack: (track: Track, sourceWorkspaceId: WorkspaceId) => void;
   play: () => Promise<void>;
   pause: () => void;
   seek: (positionSeconds: number) => void;
@@ -52,6 +54,7 @@ interface DemoPlayerState {
 const INITIAL_STATE: Omit<
   DemoPlayerState,
   | 'loadTrack'
+  | 'setActiveTrack'
   | 'play'
   | 'pause'
   | 'seek'
@@ -81,19 +84,34 @@ const notifyMissingTrack = (track: Track): void => {
   });
 };
 
+let lastNotifiedDemoPlayerError: string | null = null;
+
+const notifyDemoPlayerErrorOnce = (message: string): void => {
+  if (lastNotifiedDemoPlayerError === message) {
+    return;
+  }
+  lastNotifiedDemoPlayerError = message;
+  useUIStore.getState().addNotification({ type: 'error', message });
+};
+
+const resetDemoPlayerErrorNotification = (): void => {
+  lastNotifiedDemoPlayerError = null;
+};
+
 const playbackEngine = demoPlaybackEngine;
+const handleDemoPlayerDeviceNotFound = (): void => {
+  useSettingsStore.getState().setDemoPlayerAudioDeviceId(null);
+  useUIStore.getState().addNotification({
+    type: 'warning',
+    message:
+      'Выбранное аудиоустройство для демо-плеера недоступно. Используется устройство по умолчанию.',
+  });
+};
 
 export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, get) => {
   const applyDevice = createApplyDevice({
     engine: playbackEngine,
-    onDeviceNotFound: () => {
-      useSettingsStore.getState().setDemoPlayerAudioDeviceId(null);
-      useUIStore.getState().addNotification({
-        type: 'warning',
-        message:
-          'Выбранное аудиоустройство для демо-плеера недоступно. Используется устройство по умолчанию.',
-      });
-    },
+    onDeviceNotFound: handleDemoPlayerDeviceNotFound,
   });
 
   const handleError = createHandleError({
@@ -101,6 +119,7 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     logLabel: 'Demo player',
     setErrorState: (message) => {
       set({ status: 'error', error: message });
+      notifyDemoPlayerErrorOnce(message);
     },
   });
 
@@ -108,6 +127,11 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     ...INITIAL_STATE,
 
     loadTrack: async (track, sourceWorkspaceId) => {
+      if (isLocalFilePlaybackBlocked()) {
+        get().setActiveTrack(track, sourceWorkspaceId);
+        return;
+      }
+
       const markTrackFound = (trackId: string) => {
         getProjectStore(sourceWorkspaceId)?.getState().markTrackAsMissing?.(trackId, false);
       };
@@ -129,6 +153,7 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
             handleError,
           }),
         onSuccess: (activeTrack, duration) => {
+          resetDemoPlayerErrorNotification();
           set({
             currentTrack: { ...activeTrack, isMissing: false },
             sourceWorkspaceId,
@@ -145,7 +170,24 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
       });
     },
 
+    setActiveTrack: (track, sourceWorkspaceId) => {
+      playbackEngine.stop();
+      resetDemoPlayerErrorNotification();
+      set({
+        currentTrack: { ...track },
+        sourceWorkspaceId,
+        status: 'paused',
+        position: 0,
+        duration: track.duration ?? 0,
+        error: null,
+      });
+    },
+
     play: async () => {
+      if (isLocalFilePlaybackBlocked()) {
+        return;
+      }
+
       try {
         await playTrackCore({
           engine: playbackEngine,
@@ -189,6 +231,7 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     clear: () => {
       playbackEngine.stop();
       const preservedVolume = get().volume;
+      resetDemoPlayerErrorNotification();
       set({ ...INITIAL_STATE, volume: preservedVolume });
     },
 
@@ -234,7 +277,12 @@ wirePlaybackEngine({
   engine: playbackEngine,
   getStatus: () => useDemoPlayerStore.getState().status,
   setStatus: (status) => {
-    useDemoPlayerStore.setState(status === 'playing' ? { status, error: null } : { status });
+    if (status === 'playing') {
+      resetDemoPlayerErrorNotification();
+      useDemoPlayerStore.setState({ status, error: null });
+      return;
+    }
+    useDemoPlayerStore.setState({ status });
   },
   setPosition: (position) => {
     useDemoPlayerStore.getState().setPosition(position);
@@ -250,14 +298,7 @@ wirePlaybackEngine({
   },
   getDeviceId: () => useSettingsStore.getState().demoPlayerAudioDeviceId,
   selectSettingsDeviceId: (state) => state.demoPlayerAudioDeviceId,
-  onDeviceNotFound: () => {
-    useSettingsStore.getState().setDemoPlayerAudioDeviceId(null);
-    useUIStore.getState().addNotification({
-      type: 'warning',
-      message:
-        'Выбранное аудиоустройство для демо-плеера недоступно. Используется устройство по умолчанию.',
-    });
-  },
+  onDeviceNotFound: handleDemoPlayerDeviceNotFound,
   onSettingsDeviceChange: (deviceId) => {
     const store = useDemoPlayerStore.getState();
     if (store.setAudioDevice) {

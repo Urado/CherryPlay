@@ -12,7 +12,7 @@
 
 ## Где описано подробно
 
-- **В приложении** — модуль [Streaming (systems)](../../CherryPlayList/docs/modules/systems/streaming.md): компоненты CherryPlayList (signalRService, partyService, partyStore), потоки создания вечеринки, подключения к SignalR, трансляции позиции и состояния, обработка разрыва связи.
+- **В приложении** — модуль [Streaming (systems)](../../CherryPlayList/docs/modules/systems/streaming.md): Site Streamer (`streamingOrchestrator`, `PlaybackBroadcastSource`, `partyPlaylistSync`), transport (`signalRService`), Party metadata (`partyService`); потоки создания вечеринки, подключения к SignalR, трансляции позиции и состояния, обработка разрыва связи.
 - **Сервер** — [CherryPlayServer/README.md](../../CherryPlayServer/README.md): запуск, API, Hub; схема БД — [DATABASE.md](../../CherryPlayServer/DATABASE.md).
 - **Веб-клиент** — [CherryPlayWeb/README.md](../../CherryPlayWeb/README.md): структура, используемые эндпоинты, настройка `VITE_API_URL`.
 - **Контракты** — [CONTRACTS.md](../../CONTRACTS.md) §2 (SignalR viewer), §3 (SignalR organizer), §4 (Streaming), §6 (PlaybackStateDto, PartyStateDto и др.).

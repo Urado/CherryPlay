@@ -2,11 +2,14 @@ import React from 'react';
 
 import type { PartyTrackDisplaySettings } from '@core/types/project';
 
+import { PartyEditorAccordion } from './PartyEditorAccordion';
 import './PartyTrackDisplaySection.css';
 
 export interface PartyTrackDisplaySectionProps {
   value: PartyTrackDisplaySettings;
   onChange: (next: PartyTrackDisplaySettings) => void;
+  /** Начальное состояние раскрытия блока. */
+  defaultExpanded?: boolean;
 }
 
 /**
@@ -16,12 +19,14 @@ export interface PartyTrackDisplaySectionProps {
 export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> = ({
   value,
   onChange,
+  defaultExpanded = true,
 }) => {
   return (
-    <section className="party-track-display-section" aria-labelledby="party-track-display-heading">
-      <h3 id="party-track-display-heading" className="party-track-display-section__title">
-        Отображение треков
-      </h3>
+    <PartyEditorAccordion
+      title="Отображение треков"
+      defaultExpanded={defaultExpanded}
+      className="party-track-display-section"
+    >
       <p className="party-track-display-section__hint">
         Учитывается в превью и в именах треков при публикации плейлиста на сервер. Файлы и проект не
         переименовываются.
@@ -55,6 +60,6 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
           />
         </label>
       </div>
-    </section>
+    </PartyEditorAccordion>
   );
 };

@@ -1,5 +1,5 @@
-let demoServerUrl =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000';
+/** Пустая строка = same-origin; Vite proxy перенаправляет /api и /partyHub на CherryPlayServer. */
+let demoServerUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
 
 /** Demo defaults applied on bootstrap (see demoReset / bootstrap). */
 export const DEMO_DEFAULT_ENABLE_STREAMING = true;

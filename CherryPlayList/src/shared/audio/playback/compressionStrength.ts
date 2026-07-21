@@ -98,7 +98,7 @@ export function resolveAutoCompressionStrength(track: Track, settings: LoudnessS
   const dynamicNeed = resolveDynamicNeed(loudness);
   let strength = quietNeed * dynamicNeed;
 
-  const gainDb = getEffectiveGainDb(track);
+  const gainDb = getEffectiveGainDb(track, settings);
   if (gainDb !== undefined && gainDb > COMPRESSION_BOOST_GATE_DB) {
     const boostFactor =
       1 + clamp01((gainDb - COMPRESSION_BOOST_GATE_DB) / COMPRESSION_BOOST_RANGE_DB);

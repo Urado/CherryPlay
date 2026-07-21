@@ -30,6 +30,7 @@
 | **[CherryPlayServer/README.md](../../CherryPlayServer/README.md)**     | Запуск сервера (.NET), ссылка на DATABASE; текущее состояние (InMemory, тестовые данные).                                     |
 | **[CherryPlayServer/API.md](../../CherryPlayServer/API.md)**           | Указатель на разделы CONTRACTS.md (REST, SignalR, DTO) для разработки сервера.                                                |
 | **[CherryPlayWeb/README.md](../../CherryPlayWeb/README.md)**           | Структура веб-приложения, установка и запуск, настройка `VITE_API_URL`, используемые эндпоинты и библиотеки (React, SignalR). |
+| **[CherryPlayComponents/README.md](../../CherryPlayComponents/README.md)** | Shared React: PartyDisplay, PartyTheme (изолированный слой), shell UI-примитивы с **дефолтными кнопками** (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`), CSS import contract (`primitives.css` для оболочки). |
 | **[GLOSSARY.md](../../GLOSSARY.md)**                                   | Глоссарий терминов (shortCode, partyId, organizer, viewer, Publish, freeze и др.).                                            |
 
 ## Модули CherryPlayList, связанные с интеграцией

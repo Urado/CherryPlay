@@ -53,6 +53,23 @@ export function clampLoudnessQuietGapRangeLu(value: number): number {
   );
 }
 
+/** Min/max for global loudness target slider in settings. */
+export function clampLoudnessTargetLufs(value: number): number {
+  return Math.min(MAX_TARGET_LUFS, Math.max(MIN_TARGET_LUFS, value));
+}
+
+/** Per-track auto gain in dB with −1 dBTP headroom cap (scan + playback + UI). */
+export function computeAutoGainDb(
+  integratedLufs: number,
+  truePeakDb: number,
+  targetLufs: number,
+  headroomDbTp: number = HEADROOM_DB_TP,
+): number {
+  const lufsGainDb = targetLufs - integratedLufs;
+  const headroomCapDb = headroomDbTp - truePeakDb;
+  return Math.min(lufsGainDb, headroomCapDb);
+}
+
 export function resolveQuietGapRangePercent(value: number): number {
   const clamped = clampLoudnessQuietGapRangeLu(value);
   return (

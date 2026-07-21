@@ -1,13 +1,16 @@
 import {
+  Button,
   formatDateInTimeZone,
   getDefaultTimeZone,
+  IconButton,
   sortPartiesByEventDateDesc,
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import LinkIcon from '@mui/icons-material/Link';
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
+import { useModalKeyboard } from '@shared/hooks';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
 import { useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
@@ -47,6 +50,15 @@ export const LinkPartyModal: React.FC = () => {
     }
   }, [modal, loadParties]);
 
+  const handleCancel = useCallback(() => {
+    closeModal();
+  }, [closeModal]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'linkParty',
+    onCancel: handleCancel,
+  });
+
   if (modal !== 'linkParty') {
     return null;
   }
@@ -60,6 +72,7 @@ export const LinkPartyModal: React.FC = () => {
       markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
+        // Party metadata: explicit bind-time playlist upload (not live session sync).
         const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
         addNotification({
@@ -83,19 +96,8 @@ export const LinkPartyModal: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    closeModal();
-  };
-
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
       handleCancel();
     }
   };
@@ -111,10 +113,16 @@ export const LinkPartyModal: React.FC = () => {
     >
       <div className="modal-content link-party-modal-content">
         <div className="modal-header">
-          <h2 className="modal-title">Привязать к вечеринке</h2>
-          <button type="button" className="modal-close" onClick={handleCancel} aria-label="Закрыть">
-            <CloseIcon />
-          </button>
+          <h2 className="modal-title">Подключить к вечеринке</h2>
+          <IconButton
+            type="button"
+            className="modal-close"
+            onClick={handleCancel}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -162,16 +170,20 @@ export const LinkPartyModal: React.FC = () => {
                             </span>
                           ) : null}
                         </div>
-                        <button
+                        <Button
                           type="button"
-                          className="modal-button primary link-party-modal-link-btn"
+                          className="modal-button link-party-modal-link-btn"
                           onClick={() => handleLink(party)}
                           disabled={linkingId !== null}
-                          aria-label={`Привязать к вечеринке ${party.name}`}
+                          loading={linkingId === party.id}
+                          loadingLabel="Подключение..."
+                          aria-label={`Подключить к вечеринке ${party.name}`}
+                          variant="primary"
+                          size="sm"
+                          startIcon={<LinkOutlinedIcon fontSize="small" />}
                         >
-                          <LinkIcon fontSize="small" />
-                          {linkingId === party.id ? 'Привязка...' : 'Привязать'}
-                        </button>
+                          Подключить
+                        </Button>
                       </li>
                     ))}
                   </ul>
@@ -182,9 +194,15 @@ export const LinkPartyModal: React.FC = () => {
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="modal-button secondary" onClick={handleCancel}>
+          <Button
+            type="button"
+            className="modal-button"
+            onClick={handleCancel}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
+          </Button>
         </div>
       </div>
     </div>

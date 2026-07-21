@@ -1,3 +1,5 @@
+import '@cherryplay/components/styles/primitives.css';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 

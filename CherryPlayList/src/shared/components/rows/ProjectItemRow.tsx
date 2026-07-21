@@ -451,21 +451,20 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
             Disabled when no actions are available (trackActionsDisabled=true or onTrackActions not provided).
             Always occupies the same space so the layout stays stable. */}
         {!isGroup && mode !== 'playlist' && (
-          <button
-            type="button"
-            className="playlist-item-settings playlist-item-actions"
+          <ListRowCompound.ActionButton
+            className="playlist-item-more"
             aria-label="Действия с треком"
             title={trackActionsDisabled || !onTrackActions ? undefined : 'Действия с треком'}
             disabled={trackActionsDisabled || !onTrackActions}
             onClick={(e) => {
-              e.stopPropagation();
               if (!trackActionsDisabled && onTrackActions) {
                 onTrackActions(item.id, (e.currentTarget as HTMLElement).getBoundingClientRect());
               }
             }}
-          >
-            <MoreVertIcon style={{ fontSize: '18px' }} />
-          </button>
+            icon={<MoreVertIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
         )}
 
         {/* Delete button */}

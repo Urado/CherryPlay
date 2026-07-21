@@ -1,0 +1,306 @@
+.party-editor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-primary, #ffffff);
+  position: relative;
+}
+
+.party-editor-shell-linked-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(0, 204, 136, 0.12);
+  border-bottom: 1px solid rgba(0, 204, 136, 0.35);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.party-editor-shell-linked-banner-icon {
+  font-size: 1.1rem;
+}
+
+.party-editor-shell-linked-banner-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.party-editor-shell-linked-banner-link {
+  font-size: 13px;
+  color: var(--accent-primary, #00cc88);
+  text-decoration: none;
+}
+
+.party-editor-shell-linked-banner-link:hover {
+  text-decoration: underline;
+}
+
+.party-editor-shell-linked-banner-copy {
+  font-size: 13px;
+  color: var(--accent-primary, #00cc88);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.party-editor-shell-linked-banner-copy:hover {
+  text-decoration: underline;
+}
+
+.party-editor-shell-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--bg-secondary, #f5f5f5);
+  flex-shrink: 0;
+}
+
+.party-editor-shell-header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.party-editor-shell-header-actions {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.party-editor-shell-header-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.party-editor-shell-header-toolbar > .party-lifecycle-actions--header,
+.party-editor-shell-header-toolbar > .party-editor-actions--header {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.party-editor-shell-header-toolbar > .party-catalog-visibility--header {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.party-editor-shell-header-groups {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.party-editor-shell-header-groups--lifecycle {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.party-editor-shell-header-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 6px;
+  border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  flex-shrink: 1;
+}
+
+.party-editor-shell-header-group:first-child,
+.party-editor-shell-header-groups:first-child .party-editor-shell-header-group:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.party-editor-shell-header-toolbar > .party-editor-shell-header-group {
+  border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+
+.party-editor-shell-header-toolbar > .party-editor-shell-header-group:first-child:last-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.party-editor-shell-header-group--status {
+  padding-right: 6px;
+}
+
+.party-editor-shell-header-group--transitions {
+  padding-left: 6px;
+}
+
+.party-editor-shell-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #000000);
+}
+
+.party-editor-shell-phase-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.party-editor-shell-phase-badge--draft {
+  background: rgba(158, 158, 158, 0.2);
+  color: var(--text-secondary, #555);
+}
+
+.party-editor-shell-phase-badge--ready {
+  background: rgba(0, 204, 136, 0.15);
+  color: var(--accent-primary, #00a86b);
+}
+
+.party-editor-shell-phase-badge--completed {
+  background: rgba(33, 150, 243, 0.12);
+  color: #1565c0;
+}
+
+.party-editor-shell-body {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-secondary, #f5f5f5);
+}
+
+.party-editor-shell-blocked-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.party-editor-shell-blocked-overlay-content {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+  border-radius: 8px;
+  background: var(--bg-primary, #ffffff);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.party-editor-shell-blocked-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.party-editor-shell-party-not-found {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.party-editor-shell-party-not-found-title {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text-primary, #000000);
+}
+
+.party-editor-shell-party-not-found-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary, #555555);
+}
+
+.party-editor-shell-party-not-found-button {
+  align-self: flex-start;
+}
+
+.party-editor--read-only .party-editor-input,
+.party-editor--read-only .party-editor-dropdown-button,
+.party-editor--read-only .cp-button.party-editor-tag-button,
+.party-editor--read-only textarea {
+  opacity: 0.85;
+  pointer-events: none;
+  cursor: default;
+}
+
+.party-editor-shell-info-hint {
+  flex-shrink: 0;
+}
+
+.party-editor-shell-header a:focus-visible,
+.party-editor-shell-header button:focus-visible {
+  outline: 2px solid var(--accent-primary, #00cc88);
+  outline-offset: 2px;
+}
+
+@container party-editor (max-width: 980px) {
+  .party-editor-shell-header-main {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .party-editor-shell-title {
+    font-size: 16px;
+  }
+
+  .party-editor-shell-header-group {
+    border-left: none;
+    padding: 0;
+  }
+}
+
+@container party-editor (max-width: 760px) {
+  .party-editor-shell-header {
+    padding: 10px;
+  }
+
+  .party-editor-shell-header-actions,
+  .party-editor-shell-header-toolbar {
+    gap: 6px;
+  }
+
+  .party-editor-shell-phase-badge {
+    font-size: 12px;
+  }
+}
+
+@container party-editor (max-width: 600px) {
+  .party-editor-shell-header-toolbar > .party-editor-shell-header-group {
+    border-left: none;
+    padding-left: 0;
+    width: 100%;
+  }
+}

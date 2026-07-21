@@ -7,7 +7,12 @@
  * 1. Initialize the manager in App.tsx:
  *    ```tsx
  *    import { initializeShortcuts } from '@shared/shortcuts';
- *    initializeShortcuts(() => useSettingsStore.getState().keyBindings);
+ *    import { useLayoutStore } from '@shared/stores/layoutStore';
+ *    import { useSettingsStore } from '@shared/stores/settingsStore';
+ *
+ *    initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
+ *      isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
+ *    });
  *    ```
  *
  * 2. Register handlers in components:
@@ -54,14 +59,22 @@ export { useGlobalShortcuts, useListShortcuts, useShortcuts } from './useShortcu
 import { shortcutManager } from './ShortcutManager';
 import type { CustomKeyBindings } from './shortcutTypes';
 
+export interface InitializeShortcutsOptions {
+  isShortcutsBlocked?: () => boolean;
+}
+
 /**
  * Initialize the shortcut system.
  * Should be called once at app startup.
  *
  * @param getCustomBindings - Function to get custom key bindings from settings
+ * @param options - Optional configuration (e.g. block shortcuts in layout edit mode)
  */
-export function initializeShortcuts(getCustomBindings: () => CustomKeyBindings): void {
-  shortcutManager.init(getCustomBindings);
+export function initializeShortcuts(
+  getCustomBindings: () => CustomKeyBindings,
+  options: InitializeShortcutsOptions = {},
+): void {
+  shortcutManager.init(getCustomBindings, options.isShortcutsBlocked);
 }
 
 /**

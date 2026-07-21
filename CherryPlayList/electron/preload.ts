@@ -45,12 +45,15 @@ const VALID_INVOKE_CHANNELS = [
   'system:getPath',
   'system:openPath',
   'system:openExternal',
+  'system:setMinimumWindowSize',
   'config:getConfigPath',
   'config:getServerUrl',
   'config:setServerUrl',
   'config:getConfig',
   'auth:openExternal',
   'auth:registerCallback',
+  'settings:saveBundle',
+  'settings:loadBundle',
 ] as const;
 
 const VALID_ON_CHANNELS = ['project:save-progress'] as const;

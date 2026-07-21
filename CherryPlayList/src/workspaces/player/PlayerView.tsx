@@ -1,4 +1,3 @@
-import * as signalR from '@microsoft/signalr';
 import React from 'react';
 
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -26,8 +25,6 @@ interface DragAndDropState {
 }
 
 interface PlayerViewProps {
-  name: string;
-  onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
   projectedEndTime: number | null;
@@ -82,10 +79,9 @@ interface PlayerViewProps {
   startTrackPlayback: (track: Track) => Promise<void>;
   pausePlayback: () => void;
   onNext?: () => void;
-  connectionState: signalR.HubConnectionState | null;
-  onReconnectClick?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
+  variant?: 'full' | 'header';
 }
 
 /**
@@ -93,8 +89,6 @@ interface PlayerViewProps {
  * Отображает UI плеера, вся логика находится в PlayerViewContainer
  */
 export const PlayerView: React.FC<PlayerViewProps> = ({
-  name,
-  onNameChange,
   allTracksCount,
   totalDuration,
   projectedEndTime,
@@ -146,16 +140,15 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   startTrackPlayback,
   pausePlayback,
   onNext,
-  connectionState,
-  onReconnectClick,
   serverTrackIds = null,
   jumpToTrack,
+  variant = 'full',
 }) => {
+  const isHeaderVariant = variant === 'header';
+
   return (
-    <div className="playlist-view player-view">
+    <div className={`playlist-view player-view${isHeaderVariant ? ' player-view--header' : ''}`}>
       <PlayerHeader
-        name={name}
-        onNameChange={onNameChange}
         allTracksCount={allTracksCount}
         totalDuration={totalDuration}
         projectedEndTime={projectedEndTime}
@@ -175,48 +168,48 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onCalculateLoudness={onCalculateLoudness}
         showLoudnessBatchButton={showLoudnessBatchButton}
         isLoudnessBatchScanning={isLoudnessBatchScanning}
-        connectionState={connectionState}
-        onReconnectClick={onReconnectClick}
       />
 
-      <PlayerTracksList
-        displayItems={displayItems}
-        zoneId={zoneId}
-        selectedItemIds={selectedItemIds}
-        activeTrackId={activeTrackId}
-        activePlayerTrackId={activePlayerTrackId}
-        playerStatus={playerStatus}
-        isPreparationMode={isPreparationMode}
-        mode={mode}
-        showHourDividers={showHourDividers}
-        plannedEndTime={plannedEndTime}
-        plannedEndDividerPosition={plannedEndDividerPosition}
-        calculateDividerMarkers={calculateDividerMarkers}
-        playerDrag={playerDrag}
-        getAllTracksInOrder={getAllTracksInOrder}
-        isTrackPlayed={isTrackPlayed}
-        isGroupDisabled={isGroupDisabled}
-        isTrackOrGroupDisabled={isTrackOrGroupDisabled}
-        getEffectiveTrackSettings={getEffectiveTrackSettings}
-        formatDividerLabel={formatDividerLabel}
-        formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
-        queueEndDividerPosition={queueEndDividerPosition}
-        formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
-        showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
-        toggleItemSelection={toggleItemSelection}
-        selectRange={selectRange}
-        removeItem={removeItem}
-        setGroupName={setGroupName}
-        handleToggleDisabled={handleToggleDisabled}
-        handleUngroupGroup={handleUngroupGroup}
-        handleOpenTrackSettings={handleOpenTrackSettings}
-        startTrackPlayback={startTrackPlayback}
-        pausePlayback={pausePlayback}
-        serverTrackIds={serverTrackIds}
-        jumpToTrack={jumpToTrack}
-      />
+      {!isHeaderVariant ? (
+        <PlayerTracksList
+          displayItems={displayItems}
+          zoneId={zoneId}
+          selectedItemIds={selectedItemIds}
+          activeTrackId={activeTrackId}
+          activePlayerTrackId={activePlayerTrackId}
+          playerStatus={playerStatus}
+          isPreparationMode={isPreparationMode}
+          mode={mode}
+          showHourDividers={showHourDividers}
+          plannedEndTime={plannedEndTime}
+          plannedEndDividerPosition={plannedEndDividerPosition}
+          calculateDividerMarkers={calculateDividerMarkers}
+          playerDrag={playerDrag}
+          getAllTracksInOrder={getAllTracksInOrder}
+          isTrackPlayed={isTrackPlayed}
+          isGroupDisabled={isGroupDisabled}
+          isTrackOrGroupDisabled={isTrackOrGroupDisabled}
+          getEffectiveTrackSettings={getEffectiveTrackSettings}
+          formatDividerLabel={formatDividerLabel}
+          formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+          queueEndDividerPosition={queueEndDividerPosition}
+          formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+          showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+          toggleItemSelection={toggleItemSelection}
+          selectRange={selectRange}
+          removeItem={removeItem}
+          setGroupName={setGroupName}
+          handleToggleDisabled={handleToggleDisabled}
+          handleUngroupGroup={handleUngroupGroup}
+          handleOpenTrackSettings={handleOpenTrackSettings}
+          startTrackPlayback={startTrackPlayback}
+          pausePlayback={pausePlayback}
+          serverTrackIds={serverTrackIds}
+          jumpToTrack={jumpToTrack}
+        />
+      ) : null}
 
-      <PlayerControls onNext={onNext} />
+      {!isPreparationMode ? <PlayerControls onNext={onNext} /> : null}
     </div>
   );
 };

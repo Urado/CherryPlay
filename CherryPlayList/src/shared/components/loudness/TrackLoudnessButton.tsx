@@ -3,7 +3,7 @@ import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import React from 'react';
 
 import type { Track } from '@core/types/track';
-import { getEffectiveGainDb } from '@shared/audio/loudnessGain';
+import { getEffectiveGainDb, resolveAutoGainDb } from '@shared/audio/loudnessGain';
 import {
   getEffectiveCompressionStrength,
   resolveAutoCompressionStrength,
@@ -40,8 +40,8 @@ export const TrackLoudnessButton: React.FC<TrackLoudnessButtonProps> = ({
     loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
   }));
   const visualState = getTrackLoudnessVisualState(track.loudness);
-  const autoGainDb = track.loudness?.status === 'ok' ? track.loudness.trackGainDb : undefined;
-  const effectiveGainDb = getEffectiveGainDb(track);
+  const autoGainDb = resolveAutoGainDb(track.loudness, loudnessSettings.loudnessTargetLufs);
+  const effectiveGainDb = getEffectiveGainDb(track, loudnessSettings);
   const autoCompressionStrength =
     track.loudness?.status === 'ok' ? resolveAutoCompressionStrength(track, loudnessSettings) : 0;
   const compressionStrength =

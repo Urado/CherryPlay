@@ -1,3 +1,4 @@
+import { Button, IconButton } from '@cherryplay/components';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -14,6 +15,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import type { WorkspaceId } from '@core/types/workspace';
 import { useAudioPathDurations, useItemSelection } from '@shared/hooks';
 import { getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
 import { DEMO_MUSIC_ROOT } from '@shared/platform/fixtures/fileBrowserTree';
@@ -31,8 +33,14 @@ import {
 
 import { FileBrowserItemRow } from './FileBrowserItemRow';
 
-export const FileBrowser: React.FC = () => {
-  const setFileBrowserPath = useSettingsStore((state) => state.setFileBrowserPath);
+interface FileBrowserProps {
+  workspaceId: WorkspaceId;
+}
+
+export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
+  const setFileBrowserPathForWorkspace = useSettingsStore(
+    (state) => state.setFileBrowserPathForWorkspace,
+  );
   const [pathNav, setPathNav] = useState<FileBrowserNavState>(() => createFileBrowserNavState(''));
   const currentPath = pathNav.entries[pathNav.index] ?? '';
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -68,7 +76,7 @@ export const FileBrowser: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const saved = useSettingsStore.getState().fileBrowserPath;
+        const saved = useSettingsStore.getState().getFileBrowserPathForWorkspace(workspaceId);
         let initialPath: string;
         if (saved && saved.trim() !== '') {
           initialPath = saved.trim();
@@ -90,13 +98,13 @@ export const FileBrowser: React.FC = () => {
     };
 
     void initializePath();
-  }, [usesFixtureFileBrowser]);
+  }, [usesFixtureFileBrowser, workspaceId]);
 
   useEffect(() => {
     if (currentPath && currentPath.trim() !== '') {
-      setFileBrowserPath(currentPath);
+      setFileBrowserPathForWorkspace(workspaceId, currentPath);
     }
-  }, [currentPath, setFileBrowserPath]);
+  }, [currentPath, setFileBrowserPathForWorkspace, workspaceId]);
 
   const goToPath = useCallback((path: string) => {
     setPathNav((state) => pushFileBrowserPath(state, path));
@@ -182,6 +190,10 @@ export const FileBrowser: React.FC = () => {
       return;
     }
 
+    if (focusRequest.targetWorkspaceId !== workspaceId) {
+      return;
+    }
+
     const { path } = focusRequest;
     const directory = fileService.getParentPath(path);
     setSearchQuery('');
@@ -195,7 +207,7 @@ export const FileBrowser: React.FC = () => {
     }
 
     acknowledgeFocusRequest();
-  }, [focusRequest, currentPath, acknowledgeFocusRequest, goToPath]);
+  }, [focusRequest, currentPath, acknowledgeFocusRequest, goToPath, workspaceId]);
 
   useEffect(() => {
     if (!pendingRevealPath) {
@@ -504,26 +516,28 @@ export const FileBrowser: React.FC = () => {
     <div className="file-browser">
       <div className="file-browser-header">
         <div className="file-browser-nav">
-          <button
+          <IconButton
             className="nav-button"
             onClick={handleBack}
             disabled={!canGoBack || loading}
             title="Назад (по истории навигации)"
             type="button"
             aria-label="Назад по истории навигации"
-          >
-            <ArrowBackIcon />
-          </button>
-          <button
+            icon={<ArrowBackIcon />}
+            variant="ghost"
+            size="md"
+          ></IconButton>
+          <IconButton
             className="nav-button"
             onClick={handleUp}
             disabled={!canGoUp || loading}
             title="К родительской папке"
             type="button"
             aria-label="К родительской папке"
-          >
-            <ArrowUpwardIcon />
-          </button>
+            icon={<ArrowUpwardIcon />}
+            variant="ghost"
+            size="md"
+          ></IconButton>
           <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
             <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
               {overflowIndex > 0 && (
@@ -591,39 +605,44 @@ export const FileBrowser: React.FC = () => {
           </div>
           <div className="file-browser-toolbar-actions">
             {hasSelectedPaths ? (
-              <button
+              <IconButton
                 type="button"
                 className="nav-button"
                 onClick={deselectAllVisible}
                 disabled={loading}
                 title="Снять выделение"
                 aria-label="Снять выделение"
-              >
-                <ClearIcon />
-              </button>
+                icon={<ClearIcon />}
+                variant="ghost"
+                size="md"
+              ></IconButton>
             ) : (
               filteredItems.length > 0 && (
-                <button
+                <IconButton
                   type="button"
                   className="nav-button"
                   onClick={selectAllVisible}
                   disabled={loading}
                   title="Выбрать всё"
                   aria-label="Выбрать всё"
-                >
-                  <SelectAllIcon />
-                </button>
+                  icon={<SelectAllIcon />}
+                  variant="ghost"
+                  size="md"
+                ></IconButton>
               )
             )}
-            <button
+            <Button
               type="button"
               className="file-browser-choose-folder"
               onClick={handleChooseFolder}
               disabled={loading}
               title="Выбрать папку"
+              startIcon={<FolderIcon />}
+              variant="secondary"
+              size="sm"
             >
-              <FolderIcon /> Папка
-            </button>
+              Папка
+            </Button>
           </div>
         </div>
         <input

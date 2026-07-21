@@ -1,9 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 
+import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
+import { useLayoutStore, useSettingsStore } from '../stores';
 import { useDemoPlayerStore, PlayerStatus } from '../stores/demoPlayerStore';
+import { collectWorkspaceTypes } from '../utils/layoutWorkspaceOperations';
 import { logger } from '../utils/logger';
 
 /**
@@ -58,7 +61,20 @@ export interface UsePlaybackPreviewReturn {
 export function usePlaybackPreview({
   workspaceId,
 }: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn {
-  const { currentTrack, status: playerStatus, loadTrack, play, pause } = useDemoPlayerStore();
+  const {
+    currentTrack,
+    status: playerStatus,
+    loadTrack,
+    setActiveTrack,
+    play,
+    pause,
+  } = useDemoPlayerStore();
+  const layout = useLayoutStore((state) => state.layout);
+  const setDemoPlayerFloatingOpen = useSettingsStore((state) => state.setDemoPlayerFloatingOpen);
+  const hasDemoPlayerWorkspace = useMemo(
+    () => collectWorkspaceTypes(layout.rootZone).has('demo-player'),
+    [layout],
+  );
 
   const activeTrackId = currentTrack?.id;
 
@@ -68,17 +84,45 @@ export function usePlaybackPreview({
    */
   const startPlayback = useCallback(
     async (track: Track) => {
+      const shouldOpenFloatingOnAttempt = !hasDemoPlayerWorkspace;
       try {
+        if (shouldOpenFloatingOnAttempt) {
+          setDemoPlayerFloatingOpen(true);
+        }
+
+        if (isLocalFilePlaybackBlocked()) {
+          setActiveTrack(track, workspaceId);
+          return;
+        }
+
         const isSameTrack = activeTrackId === track.id;
         if (!isSameTrack || playerStatus === 'ended') {
           await loadTrack(track, workspaceId);
         }
         await play();
       } catch (error) {
+        if (shouldOpenFloatingOnAttempt) {
+          const { currentTrack: latestTrack, status: latestStatus } = useDemoPlayerStore.getState();
+          const hasActiveDemoSession =
+            latestTrack !== null || latestStatus === 'playing' || latestStatus === 'loading';
+
+          if (!hasActiveDemoSession) {
+            setDemoPlayerFloatingOpen(false);
+          }
+        }
         logger.error('Failed to start track playback', error);
       }
     },
-    [activeTrackId, playerStatus, loadTrack, play, workspaceId],
+    [
+      activeTrackId,
+      playerStatus,
+      loadTrack,
+      play,
+      setActiveTrack,
+      setDemoPlayerFloatingOpen,
+      hasDemoPlayerWorkspace,
+      workspaceId,
+    ],
   );
 
   /**

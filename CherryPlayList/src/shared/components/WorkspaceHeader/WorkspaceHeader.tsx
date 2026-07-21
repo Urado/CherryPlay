@@ -110,73 +110,81 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
           onChange={(e) => onNameChange(e.target.value)}
           placeholder={placeholder}
         />
-        {hasSelectedItems && (
-          <>
-            <button
-              onClick={onDeselectAll}
-              className="playlist-header-action-icon"
-              title="Deselect All"
-            >
-              <ClearIcon style={{ fontSize: '20px' }} />
-            </button>
-            {canCreateGroup && onCreateGroup && (
-              <button
-                onClick={onCreateGroup}
-                className="playlist-header-action-icon"
-                title="Создать группу"
-              >
-                <GroupAddIcon style={{ fontSize: '20px' }} />
-              </button>
+        {(hasSelectedItems || (!hasSelectedItems && itemCount > 0) || extraActions) && (
+          <div className="playlist-header-actions">
+            {hasSelectedItems && (
+              <>
+                <button
+                  onClick={onDeselectAll}
+                  className="playlist-header-action-icon"
+                  title="Deselect All"
+                >
+                  <ClearIcon style={{ fontSize: '20px' }} />
+                </button>
+                {canCreateGroup && onCreateGroup && (
+                  <button
+                    onClick={onCreateGroup}
+                    className="playlist-header-action-icon"
+                    title="Создать группу"
+                  >
+                    <GroupAddIcon style={{ fontSize: '20px' }} />
+                  </button>
+                )}
+                {onRemoveSelected && (
+                  <button
+                    onClick={onRemoveSelected}
+                    className="playlist-header-action-icon delete-button"
+                    disabled={!canRemoveSelected}
+                    title={
+                      canRemoveSelected
+                        ? `Delete Selected (${selectedCount})`
+                        : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
+                    }
+                  >
+                    <DeleteSweepIcon style={{ fontSize: '20px' }} />
+                  </button>
+                )}
+              </>
             )}
-            {onRemoveSelected && (
-              <button
-                onClick={onRemoveSelected}
-                className="playlist-header-action-icon delete-button"
-                disabled={!canRemoveSelected}
-                title={
-                  canRemoveSelected
-                    ? `Delete Selected (${selectedCount})`
-                    : 'Нельзя удалить проигранные или текущий трек в режиме сессии'
-                }
-              >
-                <DeleteSweepIcon style={{ fontSize: '20px' }} />
-              </button>
+            {!hasSelectedItems && itemCount > 0 && (
+              <>
+                <button
+                  onClick={onSelectAll}
+                  className="playlist-header-action-icon"
+                  title="Select All"
+                >
+                  <SelectAllIcon style={{ fontSize: '20px' }} />
+                </button>
+                {onClearAll && (
+                  <button
+                    onClick={onClearAll}
+                    className="playlist-header-action-icon delete-button"
+                    title="Удалить всё"
+                  >
+                    <DeleteForeverIcon style={{ fontSize: '20px' }} />
+                  </button>
+                )}
+              </>
             )}
-          </>
+            {extraActions}
+          </div>
         )}
-        {!hasSelectedItems && itemCount > 0 && (
-          <>
-            <button
-              onClick={onSelectAll}
-              className="playlist-header-action-icon"
-              title="Select All"
-            >
-              <SelectAllIcon style={{ fontSize: '20px' }} />
-            </button>
-            {onClearAll && (
-              <button
-                onClick={onClearAll}
-                className="playlist-header-action-icon delete-button"
-                title="Удалить всё"
-              >
-                <DeleteForeverIcon style={{ fontSize: '20px' }} />
-              </button>
-            )}
-          </>
-        )}
-        {extraActions}
       </div>
       <div className="playlist-stats-header">
-        <ListIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-        <span>{itemCount} треков</span>
-        {itemCount > 0 && (
-          <>
-            <span style={{ margin: '0 8px' }}>•</span>
-            <TimerIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-            <span>{formatDuration(totalDuration)}</span>
-          </>
-        )}
-        {extraStats}
+        <div className="playlist-stats-header__info">
+          <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+          <span>{itemCount} треков</span>
+          {itemCount > 0 && (
+            <>
+              <span className="playlist-stats-header__sep" aria-hidden>
+                •
+              </span>
+              <TimerIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>{formatDuration(totalDuration)}</span>
+            </>
+          )}
+          {extraStats}
+        </div>
       </div>
     </div>
   );

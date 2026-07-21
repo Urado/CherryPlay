@@ -1,10 +1,28 @@
-import type { Track } from '@core/types/track';
+import type { Track, TrackLoudness } from '@core/types/track';
 
-import type { LoudnessSettings } from '../contracts/loudness';
+import { computeAutoGainDb, type LoudnessSettings } from '../contracts/loudness';
 
 import { TRACK_GAIN_LINEAR_MAX, TRACK_GAIN_LINEAR_MIN } from './playback/effects';
 
-export function getEffectiveGainDb(track: Track): number | undefined {
+export { computeAutoGainDb } from '../contracts/loudness';
+
+/** Auto gain from scan metadata and the current target LUFS (ignores persisted trackGainDb). */
+export function resolveAutoGainDb(
+  loudness: TrackLoudness | undefined,
+  targetLufs: number,
+): number | undefined {
+  if (!loudness || loudness.status !== 'ok') {
+    return undefined;
+  }
+
+  if (loudness.integratedLufs === undefined || loudness.truePeakDb === undefined) {
+    return undefined;
+  }
+
+  return computeAutoGainDb(loudness.integratedLufs, loudness.truePeakDb, targetLufs);
+}
+
+export function getEffectiveGainDb(track: Track, settings: LoudnessSettings): number | undefined {
   const loudness = track.loudness;
   if (!loudness) {
     return undefined;
@@ -14,8 +32,8 @@ export function getEffectiveGainDb(track: Track): number | undefined {
     return loudness.manualGainDb;
   }
 
-  if (loudness.status === 'ok' && loudness.trackGainDb !== undefined) {
-    return loudness.trackGainDb;
+  if (loudness.status === 'ok') {
+    return resolveAutoGainDb(loudness, settings.loudnessTargetLufs);
   }
 
   return undefined;
@@ -26,7 +44,7 @@ export function resolveLinearGain(track: Track, settings: LoudnessSettings): num
     return 1;
   }
 
-  const gainDb = getEffectiveGainDb(track);
+  const gainDb = getEffectiveGainDb(track, settings);
   if (gainDb === undefined) {
     return 1;
   }

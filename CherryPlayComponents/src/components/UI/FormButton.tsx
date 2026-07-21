@@ -1,10 +1,24 @@
-import React from 'react';
+import * as React from 'react';
+
+import { Button, type ButtonVariant } from '../primitives/Button/Button';
+
 import './FormButton.css';
 
-export interface FormButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface FormButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'children'
+> {
   variant?: 'primary' | 'secondary' | 'outline';
   loading?: boolean;
   fullWidth?: boolean;
+  children?: React.ReactNode;
+}
+
+function mapVariant(variant: FormButtonProps['variant']): ButtonVariant {
+  if (variant === 'outline') {
+    return 'ghost';
+  }
+  return variant ?? 'primary';
 }
 
 export const FormButton: React.FC<FormButtonProps> = ({
@@ -12,17 +26,20 @@ export const FormButton: React.FC<FormButtonProps> = ({
   loading = false,
   fullWidth = false,
   children,
-  className = '',
+  className,
   disabled,
   ...props
-}) => {
-  const buttonClassName = `form-button form-button--${variant} ${
-    fullWidth ? 'form-button--full-width' : ''
-  } ${loading ? 'form-button--loading' : ''} ${className}`.trim();
-
-  return (
-    <button className={buttonClassName} disabled={disabled || loading} {...props}>
-      {loading ? 'Загрузка...' : children}
-    </button>
-  );
-};
+}) => (
+  <Button
+    variant={mapVariant(variant)}
+    loading={loading}
+    fullWidth={fullWidth}
+    className={['form-button', variant === 'outline' ? 'form-button--outline' : '', className]
+      .filter(Boolean)
+      .join(' ')}
+    disabled={disabled}
+    {...props}
+  >
+    {children}
+  </Button>
+);

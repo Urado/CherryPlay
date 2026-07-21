@@ -3,7 +3,6 @@ import type { ProjectSessionMode } from '@core/types/project';
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
 
 import { useDemoPlayerStore } from './demoPlayerStore';
-import { usePlayerAudioStore } from './playerAudioStore';
 import { getProjectStore } from './projectStoreFactory';
 import { useSettingsStore } from './settingsStore';
 
@@ -28,37 +27,57 @@ function getSessionMode(): ProjectSessionMode {
   return playerProjectStore?.getState().sessionState?.mode ?? 'preparation';
 }
 
+interface SyncConflictParams {
+  targetDeviceId: string | null;
+  compareDeviceId: string | null;
+  targetPlaybackStatus: string;
+  pauseTarget: () => void;
+  setTargetDisabled: (disabled: boolean) => void;
+}
+
+function syncSharedOutputConflict({
+  targetDeviceId,
+  compareDeviceId,
+  targetPlaybackStatus,
+  pauseTarget,
+  setTargetDisabled,
+}: SyncConflictParams): void {
+  const mode = getSessionMode();
+  const shouldBlock = shouldBlockSharedOutput(targetDeviceId, compareDeviceId, mode);
+
+  if (shouldBlock) {
+    if (targetPlaybackStatus === 'playing') {
+      pauseTarget();
+    }
+    setTargetDisabled(true);
+    return;
+  }
+
+  setTargetDisabled(false);
+}
+
 /** Called from demo player when its output device changes or before play. */
 export function syncDemoWithMainPlayer(demoDeviceId: string | null): void {
   const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
-  const playerState = usePlayerAudioStore.getState();
-  const mode = getSessionMode();
-  const shouldBlock = shouldBlockSharedOutput(demoDeviceId, playerDeviceId, mode);
-
   const demoStore = useDemoPlayerStore.getState();
-  if (shouldBlock) {
-    if (playerState.status === 'playing') {
-      demoStore.pause();
-    }
-    demoStore.setDisabled(true);
-  } else {
-    demoStore.setDisabled(false);
-  }
+  syncSharedOutputConflict({
+    targetDeviceId: demoDeviceId,
+    compareDeviceId: playerDeviceId,
+    targetPlaybackStatus: demoStore.status,
+    pauseTarget: demoStore.pause,
+    setTargetDisabled: demoStore.setDisabled,
+  });
 }
 
 /** Called from main player when its output device changes or before play. */
 export function syncMainWithDemoPlayer(playerDeviceId: string | null): void {
   const demoPlayerDeviceId = useSettingsStore.getState().demoPlayerAudioDeviceId;
   const demoPlayerState = useDemoPlayerStore.getState();
-  const mode = getSessionMode();
-  const shouldBlock = shouldBlockSharedOutput(playerDeviceId, demoPlayerDeviceId, mode);
-
-  if (shouldBlock) {
-    if (demoPlayerState.status === 'playing') {
-      demoPlayerState.pause();
-    }
-    demoPlayerState.setDisabled(true);
-  } else {
-    demoPlayerState.setDisabled(false);
-  }
+  syncSharedOutputConflict({
+    targetDeviceId: playerDeviceId,
+    compareDeviceId: demoPlayerDeviceId,
+    targetPlaybackStatus: demoPlayerState.status,
+    pauseTarget: demoPlayerState.pause,
+    setTargetDisabled: demoPlayerState.setDisabled,
+  });
 }

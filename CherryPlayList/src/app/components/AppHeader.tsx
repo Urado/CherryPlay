@@ -1,4 +1,5 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import GroupsIcon from '@mui/icons-material/Groups';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -11,7 +12,6 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
-import { DemoPlayer } from '@shared/components';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
@@ -19,17 +19,23 @@ import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts } from '@shared/shortcuts';
 import {
-  LayoutPreset,
-  useAimpStore,
   useAuthStore,
   useLayoutStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { getAimpPartyPresetState, getLayoutPresetFromLayout } from '@shared/utils';
 
+import { HeaderPlaybackPill } from './HeaderPlaybackPill';
+import { HeaderPlayerHost } from './HeaderPlayerHost';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
+import { WorkspaceMenu } from './WorkspaceMenu';
+
+const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
+
+function layoutEditControlTitle(defaultTitle: string, isLayoutEditMode: boolean): string {
+  return isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : defaultTitle;
+}
 
 function caughtErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -105,63 +111,16 @@ export const AppHeader: React.FC = () => {
     getAllTracksInOrder,
   } = useProjectStore();
 
-  const { openModal, addNotification, focusFileInBrowser } = useUIStore();
-  const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
-  const layout = useLayoutStore((state) => state.layout);
-  const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
+  const { openModal, addNotification } = useUIStore();
+  const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
-  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
-  const aimpPartyPresetState = getAimpPartyPresetState({
-    sourceSelection: streamingSource,
-    environment: aimpBridgeState.environment,
-    enableStreaming,
-  });
-  const isAimpPresetVisible = aimpPartyPresetState.visible;
-  const { supportsAimpWorkspace, supportsProjectPersistence, usesFixtureFileBrowser } =
-    usePlatformCapabilities();
+  const { supportsProjectPersistence, usesFixtureFileBrowser } = usePlatformCapabilities();
 
   const notifyDemoBlocked = useCallback(() => {
     addNotification({ type: 'info', message: getPlatformUnavailableMessage() });
   }, [addNotification]);
-  const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
-  const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
-    persistedLayoutPreset ?? 'simple',
-  );
-
-  useEffect(() => {
-    if (persistedLayoutPreset && persistedLayoutPreset !== selectedLayout) {
-      setSelectedLayout(persistedLayoutPreset);
-    }
-  }, [persistedLayoutPreset, selectedLayout]);
-
-  // В production не позволяем использовать complex layout
-  useEffect(() => {
-    const isDev = import.meta.env.DEV;
-    if (!isDev && selectedLayout === 'complex') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout('simple');
-        setLayoutPreset('simple');
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedLayout, setLayoutPreset]);
-
-  useEffect(() => {
-    if (!isAimpPresetVisible && persistedLayoutPreset === 'aimp-party') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout(aimpPartyPresetState.fallbackPreset);
-        setLayoutPreset(aimpPartyPresetState.fallbackPreset);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [
-    aimpPartyPresetState.fallbackPreset,
-    isAimpPresetVisible,
-    persistedLayoutPreset,
-    setLayoutPreset,
-  ]);
-
   const closeProjectMenu = useCallback(() => setProjectMenuOpen(false), []);
 
   const openSaveAsModal = useCallback(() => {
@@ -532,7 +491,13 @@ export const AppHeader: React.FC = () => {
     ],
   );
 
-  useGlobalShortcuts(globalShortcutHandlers);
+  useEffect(() => {
+    if (isLayoutEditMode) {
+      setProjectMenuOpen(false);
+    }
+  }, [isLayoutEditMode]);
+
+  useGlobalShortcuts(globalShortcutHandlers, { enabled: !isLayoutEditMode });
 
   const handleExport = () => {
     const allTracks = getAllTracksInOrder();
@@ -552,152 +517,51 @@ export const AppHeader: React.FC = () => {
     openModal('account');
   };
 
-  const handleLayoutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const preset = e.target.value as LayoutPreset;
-    const isDev = import.meta.env.DEV;
-
-    // В production не позволяем выбирать complex
-    if (preset === 'complex' && !isDev) {
-      return;
-    }
-
-    if (
-      preset === 'simple' ||
-      preset === 'complex' ||
-      preset === 'collections' ||
-      preset === 'collections-vertical' ||
-      preset === 'player' ||
-      (preset === 'party' && enableStreaming) ||
-      (preset === 'aimp-party' && isAimpPresetVisible)
-    ) {
-      setSelectedLayout(preset);
-      setLayoutPreset(preset);
-      const presetNames: Record<LayoutPreset, string> = {
-        simple: 'Простой',
-        complex: 'Сложный',
-        collections: 'С коллекциями',
-        'collections-vertical': 'Коллекции вертикально',
-        player: 'Плеер',
-        party: 'Вечеринка',
-        'aimp-party': 'AIMP + Party',
-      };
-      addNotification({
-        type: 'info',
-        message: `Layout изменён: ${presetNames[preset]}`,
-      });
-    }
+  const handleMyParties = () => {
+    openModal('myParties');
   };
 
   return (
     <div className="app-header">
       <div className="app-header-toolbar">
         <div className="app-header-left">
-          <div className="app-header-actions">
-            <div className="action-group">
-              <div className="project-menu" ref={projectMenuRef}>
-                <button
-                  ref={projectMenuTriggerRef}
-                  type="button"
-                  id={projectMenuTriggerId}
-                  className="project-menu__trigger header-button"
-                  onClick={() => setProjectMenuOpen((o) => !o)}
-                  onKeyDown={onProjectMenuTriggerKeyDown}
-                  aria-haspopup="menu"
-                  aria-expanded={projectMenuOpen}
-                  aria-controls={projectMenuPanelId}
-                  aria-busy={isSaving}
-                  title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
-                >
-                  {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <MoreVertIcon style={{ fontSize: 28 }} aria-hidden />
-                </button>
-                {projectMenuOpen && (
-                  <div
-                    ref={projectMenuPanelRef}
-                    id={projectMenuPanelId}
-                    className="project-menu__panel"
-                    role="menu"
-                    tabIndex={-1}
-                    aria-labelledby={projectMenuTriggerId}
-                    onKeyDown={onProjectMenuKeyDown}
-                  >
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleNew();
-                      }}
-                    >
-                      Новый проект
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleLoad();
-                      }}
-                    >
-                      Открыть проект…
-                    </button>
-                    {usesFixtureFileBrowser && (
-                      <button
-                        type="button"
-                        className="project-menu__item"
-                        role="menuitem"
-                        disabled={isSaving}
-                        onClick={() => {
-                          closeProjectMenu();
-                          void handleLoadDemoProject();
-                        }}
-                      >
-                        Загрузить демо-проект
-                      </button>
+          <div className="app-header-top-row">
+            <div className="app-header-actions">
+              <div className="action-group">
+                <div className="project-menu" ref={projectMenuRef}>
+                  <button
+                    ref={projectMenuTriggerRef}
+                    type="button"
+                    id={projectMenuTriggerId}
+                    className="project-menu__trigger header-button"
+                    onClick={() => setProjectMenuOpen((o) => !o)}
+                    onKeyDown={onProjectMenuTriggerKeyDown}
+                    aria-haspopup="menu"
+                    aria-expanded={projectMenuOpen}
+                    aria-controls={projectMenuPanelId}
+                    aria-busy={isSaving}
+                    disabled={isLayoutEditMode}
+                    title={layoutEditControlTitle(
+                      'Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
+                      isLayoutEditMode,
                     )}
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleExport();
-                      }}
+                  >
+                    {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
+                    <MoreVertIcon
+                      className="header-button__icon header-button__icon--compact"
+                      aria-hidden
+                    />
+                  </button>
+                  {projectMenuOpen && (
+                    <div
+                      ref={projectMenuPanelRef}
+                      id={projectMenuPanelId}
+                      className="project-menu__panel"
+                      role="menu"
+                      tabIndex={-1}
+                      aria-labelledby={projectMenuTriggerId}
+                      onKeyDown={onProjectMenuKeyDown}
                     >
-                      Экспорт
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleSave();
-                      }}
-                    >
-                      {isSaving ? (
-                        <span className="project-menu__item-with-loader">
-                          <span
-                            className="project-menu__save-spinner"
-                            aria-label="Сохранение…"
-                            role="status"
-                          />
-                          Сохранить
-                        </span>
-                      ) : (
-                        'Сохранить'
-                      )}
-                    </button>
-                    {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
-                        no filePath (only «Сохранить») vs with filePath (+ «Сохранить как…») and
-                        `globalShortcutHandlers` when a renderer test harness exists. */}
-                    {meta.filePath ? (
                       <button
                         type="button"
                         className="project-menu__item"
@@ -705,97 +569,164 @@ export const AppHeader: React.FC = () => {
                         disabled={isSaving}
                         onClick={() => {
                           closeProjectMenu();
-                          openSaveAsModal();
+                          handleNew();
                         }}
                       >
-                        Сохранить как…
+                        Новый проект
                       </button>
-                    ) : null}
-                  </div>
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          void handleLoad();
+                        }}
+                      >
+                        Открыть проект…
+                      </button>
+                      {usesFixtureFileBrowser && (
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleLoadDemoProject();
+                          }}
+                        >
+                          Загрузить демо-проект
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          handleExport();
+                        }}
+                      >
+                        Экспорт
+                      </button>
+                      <button
+                        type="button"
+                        className="project-menu__item"
+                        role="menuitem"
+                        disabled={isSaving}
+                        onClick={() => {
+                          closeProjectMenu();
+                          void handleSave();
+                        }}
+                      >
+                        {isSaving ? (
+                          <span className="project-menu__item-with-loader">
+                            <span
+                              className="project-menu__save-spinner"
+                              aria-label="Сохранение…"
+                              role="status"
+                            />
+                            Сохранить проект
+                          </span>
+                        ) : (
+                          'Сохранить проект'
+                        )}
+                      </button>
+                      {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
+                        no filePath (only «Сохранить проект») vs with filePath (+ «Сохранить копию…») and
+                        `globalShortcutHandlers` when a renderer test harness exists. */}
+                      {meta.filePath ? (
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            openSaveAsModal();
+                          }}
+                        >
+                          Сохранить копию…
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="action-group">
+                <button
+                  type="button"
+                  className="header-button"
+                  onClick={handleMyParties}
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Мои вечеринки', isLayoutEditMode)}
+                  aria-label="Мои вечеринки"
+                >
+                  <GroupsIcon className="header-button__icon" aria-hidden />
+                </button>
+                {enableStreaming && (
+                  <button
+                    className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
+                    onClick={handleAccount}
+                    disabled={isLayoutEditMode}
+                    title={layoutEditControlTitle(
+                      isAuthenticated
+                        ? `Аккаунт: ${organizer?.name || 'Организатор'}`
+                        : 'Войти в аккаунт',
+                      isLayoutEditMode,
+                    )}
+                  >
+                    <AccountCircleIcon className="header-button__icon" aria-hidden />
+                    {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
+                  </button>
                 )}
+                <button
+                  className="header-button"
+                  onClick={handleSettings}
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
+                >
+                  <SettingsIcon className="header-button__icon" aria-hidden />
+                </button>
               </div>
             </div>
 
-            <div className="action-group">
-              {enableStreaming && (
-                <button
-                  className="header-button"
-                  onClick={handleAccount}
-                  title={
-                    isAuthenticated
-                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт'
-                  }
-                  style={{
-                    position: 'relative',
-                    color: isAuthenticated ? '#9e9e9e' : undefined,
-                  }}
-                >
-                  <AccountCircleIcon style={{ fontSize: '32px' }} />
-                  {isAuthenticated && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: '#4caf50',
-                        borderRadius: '50%',
-                        border: '1px solid white',
-                      }}
-                      title="Авторизован"
-                    />
-                  )}
-                </button>
-              )}
-              <button className="header-button" onClick={handleSettings} title="Настройки">
-                <SettingsIcon style={{ fontSize: '32px' }} />
-              </button>
+            <div className="app-header-status-row">
+              <HeaderPlayerHost />
             </div>
           </div>
 
-          <div className="app-header-project-name">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="project-name-input"
-              placeholder="Название проекта"
-            />
-            {meta.isDirty && (
-              <span className="dirty-indicator" title="Есть несохранённые изменения">
-                *
-              </span>
-            )}
-          </div>
+          <div className="app-header-project-row">
+            <div className="app-header-project-main">
+              <div className="app-header-project-name">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="project-name-input"
+                  placeholder="Название проекта"
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
+                />
+                {meta.isDirty && (
+                  <span className="dirty-indicator" title="Есть несохранённые изменения">
+                    *
+                  </span>
+                )}
+              </div>
 
-          <div className="app-header-layout">
-            <label htmlFor="layout-select" className="app-header-layout__label">
-              Layout:
-            </label>
-            <select
-              id="layout-select"
-              value={selectedLayout}
-              onChange={handleLayoutChange}
-              className="layout-select"
-            >
-              <option value="simple">Простой (Playlist + Browser)</option>
-              {import.meta.env.DEV && <option value="complex">Сложный (с тестовыми зонами)</option>}
-              <option value="collections">С коллекциями (Playlist + Collections + Browser)</option>
-              <option value="collections-vertical">
-                Коллекции вертикально (Playlist + Collections + Browser)
-              </option>
-              <option value="player">Плеер (Player + Browser)</option>
-              {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
-              {isAimpPresetVisible && supportsAimpWorkspace && (
-                <option value="aimp-party">AIMP + Party</option>
-              )}
-            </select>
+              <div className="app-header-playback-pill-row">
+                <HeaderPlaybackPill disabled={isLayoutEditMode} />
+              </div>
+            </div>
+
+            <WorkspaceMenu />
           </div>
         </div>
-
-        <DemoPlayer className="app-header-demo-player" onShowInBrowser={focusFileInBrowser} />
       </div>
 
       <SaveProjectAsModal

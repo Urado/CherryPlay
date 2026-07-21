@@ -9,6 +9,8 @@ const PlaylistModule: IWorkspaceModule = {
   type: 'playlist',
   name: 'Playlist',
   component: PlaylistView,
+  minWidth: 280,
+  minHeight: 200,
 };
 
 // Register the module
