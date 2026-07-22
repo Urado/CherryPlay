@@ -5,16 +5,16 @@
 .app-header {
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--ui-border);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-shrink: 0;
 }
 
 .app-header-toolbar {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   align-items: center;
   flex-wrap: wrap;
@@ -23,7 +23,7 @@
 .app-header-top-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   flex-wrap: wrap;
 }
@@ -31,7 +31,7 @@
 .app-header-status-row {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex: 1 1 320px;
   min-width: 0;
 }
@@ -41,8 +41,8 @@
   align-items: center;
   flex: 1 1 280px;
   min-width: 0;
-  /* Match .playback-pill height so an empty/reserved slot does not collapse the project row. */
-  min-height: 42px;
+  /* Match .playback-pill / .workspace-pill height so an empty/reserved slot does not collapse the project row. */
+  min-height: 32px;
 }
 
 .app-header-playback-pill-row .playback-pill {
@@ -53,7 +53,7 @@
 .app-header-left {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -69,7 +69,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   min-width: 0;
 }
@@ -467,13 +467,13 @@
 .app-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .action-group {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   align-items: center;
 }
 
@@ -633,24 +633,33 @@
 }
 
 .playback-pill {
-  --playback-pill-icon: 28px;
-  --playback-pill-icon-sm: 18px;
+  --playback-pill-icon: 24px;
+  --playback-pill-icon-sm: 16px;
 
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1 1 280px;
   box-sizing: border-box;
   width: 100%;
   min-width: 220px;
   max-width: 480px;
-  height: 42px;
-  padding: 4px 10px 4px 4px;
+  min-height: 32px;
+  height: 32px;
+  padding: 2px 6px 2px 2px;
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--ui-border);
   border-radius: 16px;
+  font-size: 14px;
   overflow: hidden;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.playback-pill:hover {
+  background-color: var(--bg-hover);
 }
 
 /* Invisible stand-in when pill is hidden (AIMP / non-CherryPlay source) — same box model, no reflow. */
@@ -721,8 +730,8 @@
   align-items: stretch;
   flex: 1 1 auto;
   min-width: 0;
-  height: 32px;
-  padding-inline: 6px 4px;
+  height: 28px;
+  padding-inline: 8px 4px;
   box-sizing: border-box;
 }
 
@@ -743,9 +752,9 @@
 
 .playback-pill__prep-label {
   min-width: 0;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 16px;
+  line-height: 1.25;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -768,7 +777,7 @@
 
 .playback-pill__track-name {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 16px;
   color: var(--text-primary);
@@ -781,8 +790,8 @@
   display: block;
   align-self: end;
   font-size: 11px;
-  line-height: 14px;
-  height: 14px;
+  line-height: 12px;
+  height: 12px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1000,9 +1009,27 @@
   padding: 0;
 }
 
-.playback-workspace--header .player-view--header .player-header-actions {
+.playback-workspace--header .player-view--header .player-header-toolbar {
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.playback-workspace--header .player-header-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.playback-workspace--header .player-session-controls {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.playback-workspace--header .player-session-button {
+  min-width: 0;
+  flex: 1 1 auto;
+  max-width: 100%;
 }
 
 .workspace-player-in-header-hint {

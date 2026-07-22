@@ -20,8 +20,8 @@ const ALTERNATE_SOURCE: Record<PlaybackSource, { id: PlaybackSource; label: stri
 interface PlaybackSourceSwitcherProps {
   disabled?: boolean;
   /**
-   * `inline` — muted link after stats text (legacy inline placement).
-   * `topRow` — slim dedicated strip above stats (Player + AIMP embedded headers).
+   * `inline` — muted link after stats text (compact toolbar placement).
+   * `topRow` — legacy dedicated strip above stats; retained for API compatibility.
    */
   layout?: 'inline' | 'topRow';
 }

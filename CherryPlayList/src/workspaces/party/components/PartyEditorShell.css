@@ -58,42 +58,48 @@
 
 .party-editor-shell-header {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 10px 12px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--ui-border);
   background: var(--bg-secondary, #f5f5f5);
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .party-editor-shell-header-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-sm);
   min-width: 0;
-  width: 100%;
+  flex: 1 1 auto;
 }
 
 .party-editor-shell-header-actions {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   min-width: 0;
-  gap: 8px;
+  gap: var(--spacing-xs);
+  flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-start;
-  padding-top: 8px;
-  border-top: 1px solid var(--ui-border);
+  margin-left: auto;
+  padding-top: 0;
+  border-top: none;
 }
 
 .party-editor-shell-header-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--spacing-xs);
   justify-content: flex-start;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -158,16 +164,18 @@
 
 .party-editor-shell-title {
   margin: 0;
-  font-size: 18px;
+  min-width: 0;
+  font-size: var(--font-size-body, 14px);
   font-weight: 600;
+  line-height: 1.25;
   color: var(--text-primary, #000000);
 }
 
 .party-editor-shell-phase-badge {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: var(--font-size-secondary, 12px);
   font-weight: 600;
   line-height: 1.2;
   flex-shrink: 0;
@@ -269,11 +277,7 @@
 @container party-editor (max-width: 980px) {
   .party-editor-shell-header-main {
     flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .party-editor-shell-title {
-    font-size: 16px;
+    gap: var(--spacing-xs);
   }
 
   .party-editor-shell-header-group {
@@ -282,22 +286,24 @@
   }
 }
 
-@container party-editor (max-width: 760px) {
-  .party-editor-shell-header {
-    padding: 10px;
+@container party-editor (max-width: 520px) {
+  .party-editor-shell-header-main {
+    flex-basis: 100%;
   }
 
   .party-editor-shell-header-actions,
   .party-editor-shell-header-toolbar {
-    gap: 6px;
+    width: 100%;
+    margin-left: 0;
+    gap: var(--spacing-xs);
   }
 
   .party-editor-shell-phase-badge {
-    font-size: 12px;
+    font-size: var(--font-size-secondary, 12px);
   }
 }
 
-@container party-editor (max-width: 600px) {
+@container party-editor (max-width: 420px) {
   .party-editor-shell-header-toolbar > .party-editor-shell-header-group {
     border-left: none;
     padding-left: 0;

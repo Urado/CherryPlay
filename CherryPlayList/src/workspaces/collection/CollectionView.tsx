@@ -275,16 +275,24 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   const exportButton = (
     <div className="collection-export-wrapper" ref={exportMenuRef}>
       <button
+        type="button"
         onClick={toggleExportMenu}
         className="playlist-header-action-icon"
         title="Экспортировать коллекцию"
+        aria-label="Экспортировать коллекцию"
+        aria-haspopup="menu"
+        aria-expanded={exportMenuOpen}
       >
         <FileDownloadIcon style={{ fontSize: '20px' }} />
       </button>
       {exportMenuOpen && (
-        <div className="collection-export-menu">
-          <button onClick={handleExportAsJSON}>Экспорт в JSON</button>
-          <button onClick={handleCopyTracks}>Скопировать в папку</button>
+        <div className="collection-export-menu" role="menu" aria-label="Экспорт коллекции">
+          <button type="button" role="menuitem" onClick={handleExportAsJSON}>
+            Экспорт в JSON
+          </button>
+          <button type="button" role="menuitem" onClick={handleCopyTracks}>
+            Скопировать в папку
+          </button>
         </div>
       )}
     </div>

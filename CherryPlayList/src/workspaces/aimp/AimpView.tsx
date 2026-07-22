@@ -252,18 +252,18 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
       }}
     >
       {embedded ? (
-        <div className="playlist-header-section">
-          <div className="playlist-header-source-row">
-            <PlaybackSourceSwitcher layout="topRow" />
-          </div>
-          <div className="playlist-stats-header">
-            <div className="playlist-stats-header__info">
-              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
-              <span>
-                {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
-                  ? 'Плейлист пуст'
-                  : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
-              </span>
+        <div className="playlist-header-section player-header">
+          <div className="player-header-toolbar">
+            <div className="player-header-toolbar__lead">
+              <div className="playlist-stats-header__info">
+                <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+                <span>
+                  {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
+                    ? 'Плейлист пуст'
+                    : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
+                </span>
+                <PlaybackSourceSwitcher layout="inline" />
+              </div>
             </div>
             <details style={{ position: 'relative', flexShrink: 0 }}>
               <summary

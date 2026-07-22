@@ -30,11 +30,15 @@
 .playback-source-switch--inline {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   font-size: inherit;
-  line-height: inherit;
-  height: 1.25em;
+  line-height: 1.25;
+  min-height: 32px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  box-sizing: border-box;
 }
 
+/* Retained for API compatibility; no current callers after compact header layout. */
 .playback-source-switch--top-row {
   display: inline-flex;
   align-items: center;
@@ -54,12 +58,82 @@
   cursor: not-allowed;
 }
 
+/* Player header toolbar — single row with wrap on narrow containers */
+.player-header-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  min-width: 0;
+}
+
+.player-header-toolbar__lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  /* Width basis in row layout only — see @container override (column would treat 200px as height). */
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.player-header-toolbar__lead .playlist-stats-header__info {
+  font-size: var(--font-size-secondary);
+  line-height: 1.25;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  row-gap: 2px;
+  align-items: center;
+  min-width: 0;
+}
+
+.player-header-toolbar__lead .playlist-stats-header__info > span:not(.playlist-stats-header__sep) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-header .player-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 0 1 auto;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+@container (max-width: 520px) {
+  .player-header-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Column main-axis: do not keep horizontal flex-basis/grow (was ~200px empty height). */
+  .player-header-toolbar__lead {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .player-header .player-header-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .player-header .player-session-button {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+}
+
 /* Player header actions */
 .player-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
+  gap: var(--spacing-xs);
   flex-shrink: 0;
 }
 
@@ -70,20 +144,29 @@
   gap: var(--spacing-sm);
 }
 
-.player-session-button {
+.player-session-button,
+.cp-button.player-session-button {
   /* Shared width so start/stop labels do not jump layout (longer RU: «Остановить проигрывание»). */
   min-width: 15em;
+  min-height: 32px;
   background-color: var(--bg-secondary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
   border-radius: 4px;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-body);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-secondary);
   font-weight: 500;
+  line-height: 1.25;
   cursor: pointer;
+  justify-content: flex-start;
+  text-align: left;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
+}
+
+.player-session-button .cp-button__label {
+  text-align: left;
 }
 
 .player-session-button:disabled {
@@ -112,12 +195,16 @@
 }
 
 /* Settings icon button */
-.player-settings-icon {
+.player-settings-icon,
+.cp-button.player-settings-icon {
   background: transparent;
   border: 1px solid var(--ui-border);
   color: var(--text-secondary);
   border-radius: 4px;
-  padding: 4px;
+  box-sizing: border-box;
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--spacing-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -125,7 +212,7 @@
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
-  margin-left: var(--spacing-sm);
+  margin-left: 0;
 }
 
 .player-settings-icon:hover {

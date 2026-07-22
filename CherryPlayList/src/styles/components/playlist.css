@@ -12,40 +12,84 @@
 }
 
 .playlist-header-section {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  flex-shrink: 0;
+  gap: var(--spacing-xs);
+  flex: 0 0 auto;
+  height: auto;
   min-width: 0;
+  overflow: visible;
   container-type: inline-size;
 }
 
-.playlist-header-row {
-  display: flex;
+.playlist-header-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name actions'
+    'stats stats';
+  gap: var(--spacing-xs) var(--spacing-sm);
   align-items: center;
-  gap: var(--spacing-sm);
   min-width: 0;
+  overflow: visible;
+}
+
+.playlist-name-input-header {
+  grid-area: name;
+}
+
+.playlist-stats-header--inline {
+  grid-area: stats;
+}
+
+.playlist-header-toolbar > .playlist-header-actions {
+  grid-area: actions;
+  justify-self: end;
+}
+
+@container (min-width: 420px) {
+  .playlist-header-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'name stats actions';
+  }
+
+  .playlist-stats-header--inline {
+    justify-self: end;
+  }
+}
+
+@container (max-width: 419px) {
+  .playlist-header-toolbar > .playlist-header-actions {
+    justify-self: stretch;
+    justify-content: flex-start;
+  }
 }
 
 .playlist-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
   flex-shrink: 0;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .playlist-name-input-header {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
-  font-size: var(--font-size-heading);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-heading);
-  padding: var(--spacing-sm) 12px;
+  line-height: var(--line-height-body, 1.35);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 4px;
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 32px;
+  box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
   outline: none;
@@ -59,7 +103,10 @@
   border-radius: 4px;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 6px;
+  box-sizing: border-box;
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--spacing-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,8 +179,8 @@
 }
 
 @container (max-width: 360px) {
-  .playlist-header-row,
-  .playlist-header-actions {
+  .playlist-header-actions,
+  .playlist-header-toolbar {
     gap: 4px;
   }
 
@@ -146,24 +193,31 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   font-size: var(--font-size-secondary);
   line-height: 1.25;
   color: var(--text-secondary);
+  min-width: 0;
+}
+
+.playlist-stats-header--inline {
+  justify-content: flex-start;
 }
 
 .playlist-stats-header__info {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
+  row-gap: 2px;
   min-width: 0;
   flex: 1;
 }
 
 .playlist-stats-header__icon {
   display: block;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1rem;
+  height: 1rem;
   flex-shrink: 0;
 }
 
@@ -180,31 +234,11 @@
   flex-shrink: 0;
 }
 
-/* Player + AIMP embedded: slim source switcher strip above stats row */
+/* Player + AIMP embedded: compact single-toolbar headers */
 .aimp-view--embedded .playlist-header-section,
 .player-view .playlist-header-section {
   gap: 0;
-  padding: 0;
-}
-
-.aimp-view--embedded .playlist-header-source-row,
-.player-view .playlist-header-source-row {
-  display: flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 2px var(--spacing-md);
-  border-bottom: 1px solid var(--ui-border);
-  flex-shrink: 0;
-}
-
-.aimp-view--embedded .playlist-stats-header,
-.player-view .playlist-stats-header {
   padding: var(--spacing-sm) var(--spacing-md);
-}
-
-.player-view .player-header-actions {
-  padding: 0 var(--spacing-md) var(--spacing-md);
-  margin-top: 0;
 }
 
 .playlist-actions {
