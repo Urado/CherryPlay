@@ -325,8 +325,8 @@
 .playlist-item {
   display: flex;
   align-items: center;
-  padding: var(--track-item-padding, 12px);
-  margin-bottom: var(--track-item-margin, 4px);
+  padding: var(--track-item-padding, 8px);
+  margin-bottom: var(--track-item-margin, 2px);
   background-color: var(--bg-tertiary);
   border: 1px solid transparent;
   border-radius: 4px;
@@ -335,7 +335,7 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
-  min-height: 44px;
+  min-height: 40px;
 }
 
 /* Чекбокс и первые колонки не сжимаются — всегда видны в party и узких лейаутах */
@@ -632,8 +632,8 @@
 .list-row {
   display: flex;
   align-items: center;
-  padding: var(--track-item-padding, 12px);
-  margin-bottom: var(--track-item-margin, 4px);
+  padding: var(--track-item-padding, 8px);
+  margin-bottom: var(--track-item-margin, 2px);
   background-color: var(--bg-tertiary);
   border: 1px solid transparent;
   border-radius: 4px;

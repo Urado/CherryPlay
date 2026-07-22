@@ -14,6 +14,7 @@ import {
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import type { TrackItemSizePreset } from '@shared/types/trackItemSize';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
 const DIVIDER_INTERVALS = [
@@ -348,11 +349,10 @@ export const SettingsModal: React.FC = () => {
               <select
                 className="settings-select"
                 value={localTrackItemSizePreset}
-                onChange={(e) =>
-                  setLocalTrackItemSizePreset(e.target.value as 'small' | 'medium' | 'large')
-                }
+                onChange={(e) => setLocalTrackItemSizePreset(e.target.value as TrackItemSizePreset)}
                 id="settings-track-size"
               >
+                <option value="tiny">Крохотные</option>
                 <option value="small">Маленькие</option>
                 <option value="medium">Средние</option>
                 <option value="large">Большие</option>

@@ -7,6 +7,7 @@ import type { WorkspaceId } from '@core/types/workspace';
 import type { AimpSourceSelection } from '../contracts/aimp';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
 import { electronStorage } from '../storage/electronStorage';
+import type { TrackItemSizePreset } from '../types/trackItemSize';
 
 interface FileBrowserPathPersistSlice {
   fileBrowserPath: string;
@@ -29,7 +30,7 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   exportPath: string;
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
-  trackItemSizePreset: 'small' | 'medium' | 'large';
+  trackItemSizePreset: TrackItemSizePreset;
   hourDividerInterval: number;
   showHourDividers: boolean;
   playerAudioDeviceId: string | null;
@@ -52,7 +53,7 @@ interface SettingsState extends FileBrowserPathPersistSlice {
    * `DEFAULT_FILEBROWSER_WORKSPACE_ID`. Remove after subtask 04 when no callers remain.
    */
   setFileBrowserPath: (path: string) => void;
-  setTrackItemSizePreset: (preset: 'small' | 'medium' | 'large') => void;
+  setTrackItemSizePreset: (preset: TrackItemSizePreset) => void;
   setHourDividerInterval: (interval: number) => void;
   setShowHourDividers: (show: boolean) => void;
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
