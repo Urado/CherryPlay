@@ -31,8 +31,7 @@ dotnet run
   - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
 - Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings\_\_DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
-- В режиме по умолчанию используется InMemory хранилище и тестовые данные (см. [CherryPlayServer/README.md](CherryPlayServer/README.md))
-  > **Примечание:** Это временное состояние для разработки. По плану релиза v1 (Epic A) будет реализована персистентная БД PostgreSQL.
+- По умолчанию (`UseInMemoryStorage=false` в appsettings) — **EF Core + PostgreSQL** (нужна БД: Docker `postgres` или локальный Postgres). Опционально `UseInMemoryStorage=true` — in-memory репозитории без Postgres (данные только в процессе). Dual storage intentional — см. [ARCHITECTURE.md](ARCHITECTURE.md), [CherryPlayServer/README.md](CherryPlayServer/README.md).
 
 ## 2. CherryPlayWeb
 

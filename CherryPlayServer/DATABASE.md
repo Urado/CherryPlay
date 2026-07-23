@@ -9,6 +9,12 @@
 - **Отдельный слой персистентности:** доменные сущности в `Core/Entities`, EF-сущности в `Infrastructure/Persistence/Entities`; маппинг Domain ↔ EF в `Infrastructure/Persistence/Mappings`. Репозитории возвращают только доменные типы.
 - **Soft delete:** у таблиц `organizers` и `parties` есть колонка `is_deleted`; в выборках применяется Global Query Filter. Удаление организатора/вечеринки — установка флага, без физического удаления строки.
 
+### Dual storage (InMemory vs EF) — intentional
+
+Схема и миграции ниже относятся к режиму **EF Core + PostgreSQL** (`UseInMemoryStorage=false`) — это путь **production** и обычного Docker/local с БД.
+
+Флаг `UseInMemoryStorage=true` в конфигурации (`Program.cs`) подключает in-memory реализации тех же репозиториев **без** PostgreSQL: удобно для локальной разработки и тестов без БД. Данные не персистятся между процессами. Это **намеренный** dual path за едиными интерфейсами репозиториев, а не незавершённая миграция. Обзор: [ARCHITECTURE.md](../ARCHITECTURE.md); запуск: [README.md](README.md).
+
 ---
 
 ## Organizer (организатор)

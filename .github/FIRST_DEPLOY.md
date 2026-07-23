@@ -104,7 +104,7 @@ sudo apt-get install -y nginx certbot python3-certbot-nginx
 cd ~/cherryplay-deploy
 docker compose -f docker-compose.prod.yml stop web
 
-sudo certbot certonly --standalone -d cherrypashkaparty.ru -d www.cherrypashkaparty.ru --non-interactive --agree-tos -m samurai-94@mail.ru
+sudo certbot certonly --standalone -d cherrypashkaparty.ru -d www.cherrypashkaparty.ru --non-interactive --agree-tos -m admin@yourdomain.com
 
 docker compose -f docker-compose.prod.yml start web
 ```

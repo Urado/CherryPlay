@@ -2,7 +2,8 @@
 
 Сервер для трансляции состояния плейлиста с использованием SignalR и персистентного хранилища PostgreSQL.
 
-> **Персистентность:** Данные (организаторы, вечеринки, плейлисты, состояние сессии) хранятся в PostgreSQL. Схема БД, миграции и настройка — в [DATABASE.md](DATABASE.md). Для локальной разработки можно использовать `UseInMemoryStorage=true` в конфигурации (см. appsettings.Development.json).
+> **Персистентность:** В production данные (организаторы, вечеринки, плейлисты, состояние сессии) хранятся в **PostgreSQL** через EF Core. Схема БД, миграции и настройка — в [DATABASE.md](DATABASE.md).  
+> **Dual storage (intentional):** `UseInMemoryStorage=true` переключает те же интерфейсы репозиториев на in-memory реализации (без Postgres; данные только в процессе) — для локальной разработки/тестов. Флаг читается в `Program.cs`. Обзор: корневой [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Требования
 
@@ -28,7 +29,7 @@ dotnet run
 
 ## SignalR Hub
 
-Hub доступен по адресу `/partyHub`
+Hub доступен по адресу `/partyHub`. Реализация: `Hubs/PartyHub` (+ partials). Контракты методов/событий — только в [CONTRACTS.md](../CONTRACTS.md).
 
 ### Методы клиента:
 - `JoinPartyAsViewer(shortCode: string)` - подключение зрителя к вечеринке
