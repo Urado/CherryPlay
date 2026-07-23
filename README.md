@@ -1,14 +1,55 @@
 # CherryPlay
 
-Монорепозиторий для проекта CherryPlay - системы управления плейлистами и синхронизации воспроизведения.
+**Live:** [https://cherrypashkaparty.ru](https://cherrypashkaparty.ru) · **Repo:** [github.com/Urado/CherryPlay](https://github.com/Urado/CherryPlay)
 
-## Проекты
+CherryPlay — live-синхронизация плейлиста для офлайн-мероприятий. Организатор ведёт эфир из desktop-приложения; гости видят актуальный плейлист и «сейчас играет» в браузере. Ядро продукта — **realtime backend на .NET 9** (ASP.NET Core + SignalR + EF Core / PostgreSQL), уже в продакшене.
 
-- **CherryPlayList** — Desktop приложение на Electron для создания и управления плейлистами; при выборе источника AIMP принимает состояние от плагина по named pipe и транслирует на сайт
-- **CherryPlayAimpPlugin** — нативный плагин AIMP (Windows x64), read-only мост: стримит плейлист и воспроизведение в CherryPlayList по NDJSON через `\\.\pipe\cherryplay-aimp-v1`
-- **CherryPlayComponents** - React компоненты и темы для отображения плейлистов
-- **CherryPlayServer** - Backend сервер на .NET для синхронизации воспроизведения
-- **CherryPlayWeb** - Web приложение для просмотра плейлистов
+## Architecture flow
+
+```text
+Electron (organizer)  →  API + SignalR (.NET 9)  →  Web (guests)
+```
+
+Опционально: AIMP → named pipe → CherryPlayList → тот же SignalR/API → Web. Подробнее: [ARCHITECTURE.md](ARCHITECTURE.md), [docs/integration/aimp-streaming.md](docs/integration/aimp-streaming.md).
+
+## Backend stack
+
+- **ASP.NET Core** (.NET 9)
+- **SignalR** (`/partyHub`) — live playback / playlist state
+- **EF Core** + **PostgreSQL** (prod); optional in-memory repos for local/dev — see [ARCHITECTURE.md](ARCHITECTURE.md)
+- **JWT / OAuth** (organizer auth; viewers are anonymous)
+- **Docker** + **GitHub Actions** CI/CD — [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md)
+
+## 1-minute demo
+
+1. Open **[https://cherrypashkaparty.ru](https://cherrypashkaparty.ru)** — public catalog / party pages (guests).
+2. Pick a listed party (or open a known `party/<shortCode>` URL) — playlist + live session state via SignalR.
+3. (Optional, local) Run organizer desktop: `cd CherryPlayList && npm run electron:dev` against a local or prod API — publish playlist / start session; watch Web update in real time.
+4. Contracts and hub surface: [CONTRACTS.md](CONTRACTS.md).
+
+## Screenshots
+
+**Catalog (prod)**
+
+![Public catalog](docs/resume/catalog.png)
+
+**Party live (prod)**
+
+![Guest party page](docs/resume/party-live.png)
+
+**Organizer (CherryPlayList web mode)**
+
+![Desktop organizer](docs/resume/desktop-organizer.png)
+
+Capture notes: [docs/resume/README.md](docs/resume/README.md).
+
+## Projects
+
+- **CherryPlayServer** — Backend (.NET 9): REST + SignalR, EF/PostgreSQL, JWT/OAuth
+- **CherryPlayList** — Desktop (Electron) for organizers; optional AIMP via named pipe
+- **CherryPlayWeb** — Web app for guests (catalog + party pages)
+- **CherryPlayComponents** — React playlist/theme components
+- **CherryPlayAimpPlugin** — Native AIMP plugin (Windows x64): read-only NDJSON bridge `\\.\pipe\cherryplay-aimp-v1`
 
 ## Быстрый старт
 
@@ -41,9 +82,10 @@ docker-compose down
 
 Если вы хотите запускать проекты локально без Docker:
 
-**Сервер (.NET):**
+**Сервер (.NET)** — из корня репозитория (solution включает Server + Tests):
 
 ```bash
+dotnet build CherryPlay.sln
 cd CherryPlayServer
 dotnet run
 ```
@@ -92,6 +134,7 @@ npm run build
 
 ## Документация
 
+- [ARCHITECTURE.md](ARCHITECTURE.md) — обзор архитектуры, bounded contexts, dual storage (InMemory / EF)
 - [DEV_SETUP.md](DEV_SETUP.md) — настройка окружения для разработки (порядок запуска, переменные)
 - [ENV.md](ENV.md) — справочник переменных окружения (бэкенд, фронт, БД, деплой; dev/prod)
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы MVP, архитектура
@@ -114,23 +157,27 @@ npm run build
 
 ```
 CherryPlay/
+├── CherryPlay.sln         # Server + Tests (`dotnet build CherryPlay.sln`)
 ├── CherryPlayList/        # Desktop приложение (Electron + React)
 ├── CherryPlayComponents/  # React компоненты библиотека
-├── CherryPlayServer/     # Backend сервер (.NET)
-├── CherryPlayWeb/        # Web приложение (React)
-├── docs/                  # Документация по интеграции
-│   └── integration/       # Подсистемы интеграции (Accounts & Auth, Party Management, Streaming)
-├── CONTRACTS.md          # Контракты API, SignalR и DTO для всех частей
-├── RELEASE_PLAN.md       # План релиза v1
-├── GLOSSARY.md           # Глоссарий терминов
-├── THEMES.md             # Документация по темам
-├── ADDING_THEME.md       # Инструкция по добавлению новой темы
-├── QUICK_START.md        # Быстрый старт (локальная разработка)
-├── DEV_SETUP.md          # Настройка окружения для разработки
-├── SCRIPTS.md            # Скрипты для сборки компонентов
-├── docker-compose.yml    # Docker Compose для production
+├── CherryPlayServer/      # Backend сервер (.NET 9); Hubs/PartyHub (+ partials)
+├── CherryPlayWeb/         # Web приложение (React)
+├── docs/                  # Документация по интеграции + resume assets
+│   ├── integration/       # Accounts & Auth, Party Management, Streaming, AIMP
+│   ├── resume/            # Screenshots for README (placeholders OK)
+│   └── archive/           # Historical / off-face docs (incl. personal todos)
+├── ARCHITECTURE.md        # Обзор архитектуры и dual storage
+├── CONTRACTS.md           # Контракты API, SignalR и DTO для всех частей
+├── RELEASE_PLAN.md        # План релиза v1
+├── GLOSSARY.md            # Глоссарий терминов
+├── THEMES.md              # Документация по темам
+├── ADDING_THEME.md        # Инструкция по добавлению новой темы
+├── QUICK_START.md         # Быстрый старт (локальная разработка)
+├── DEV_SETUP.md           # Настройка окружения для разработки
+├── SCRIPTS.md             # Скрипты для сборки компонентов
+├── docker-compose.yml     # Docker Compose для production
 ├── docker-compose.debug.yml  # Docker Compose для отладки
-└── README.md             # Этот файл
+└── README.md              # Этот файл
 ```
 
 ## Требования

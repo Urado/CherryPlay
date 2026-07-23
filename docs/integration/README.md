@@ -20,14 +20,15 @@
 
 ## Источники правды
 
-Описание API, SignalR и DTO **не дублируется** здесь. Единственный источник — **[CONTRACTS.md](../../CONTRACTS.md)**. Схема БД — **[CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md)**.
+Описание API, SignalR и DTO **не дублируется** здесь. Единственный источник — **[CONTRACTS.md](../../CONTRACTS.md)**. Схема БД — **[CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md)**. Обзор runtime / bounded contexts / dual storage — **[ARCHITECTURE.md](../../ARCHITECTURE.md)**.
 
 | Документ                                                               | Содержание                                                                                                                    |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **[ARCHITECTURE.md](../../ARCHITECTURE.md)**                           | Обзор: Electron → API+SignalR → Web; bounded contexts; dual InMemory / EF (`UseInMemoryStorage`).                             |
 | **[RELEASE_PLAN.md](../../RELEASE_PLAN.md)**                           | План релиза v1: цели, границы MVP, архитектура подсистем (§4), контракты (§6), эпики, критерии готовности.                    |
 | **[CONTRACTS.md](../../CONTRACTS.md)**                                 | Контракты Public (viewer) и Organizer: REST API, SignalR Hub (методы и события), DTO; роли; версионирование (§10).            |
 | **[CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md)** | Схема БД: Organizer, Party, PartyPlaylist, SessionState; связи и политика удаления (по плану §3.2, §4).                       |
-| **[CherryPlayServer/README.md](../../CherryPlayServer/README.md)**     | Запуск сервера (.NET), ссылка на DATABASE; текущее состояние (InMemory, тестовые данные).                                     |
+| **[CherryPlayServer/README.md](../../CherryPlayServer/README.md)**     | Запуск сервера (.NET); default EF+PostgreSQL; optional `UseInMemoryStorage=true` (см. ARCHITECTURE).                          |
 | **[CherryPlayServer/API.md](../../CherryPlayServer/API.md)**           | Указатель на разделы CONTRACTS.md (REST, SignalR, DTO) для разработки сервера.                                                |
 | **[CherryPlayWeb/README.md](../../CherryPlayWeb/README.md)**           | Структура веб-приложения, установка и запуск, настройка `VITE_API_URL`, используемые эндпоинты и библиотеки (React, SignalR). |
 | **[CherryPlayComponents/README.md](../../CherryPlayComponents/README.md)** | Shared React: PartyDisplay, PartyTheme (изолированный слой), shell UI-примитивы с **дефолтными кнопками** (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`), CSS import contract (`primitives.css` для оболочки). |

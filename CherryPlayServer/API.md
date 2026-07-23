@@ -32,6 +32,7 @@
 
 ## Другие документы сервера
 
-- [README.md](README.md) — запуск, текущее состояние (InMemory, тестовые данные).
-- [DATABASE.md](DATABASE.md) — схема БД.
+- [README.md](README.md) — запуск; dual storage (`UseInMemoryStorage` / EF+PostgreSQL).
+- [DATABASE.md](DATABASE.md) — схема БД (EF/PostgreSQL); см. также dual storage в [ARCHITECTURE.md](../ARCHITECTURE.md).
 - [OPS.md](OPS.md) — эксплуатация: health, логи, бэкап, rate limiting.
+- Переменные окружения и маппинг в ASP.NET Core — в корневом [ENV.md](../ENV.md); шаблон — корневой [.env.example](../.env.example)

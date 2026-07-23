@@ -21,6 +21,8 @@ docker-compose up -d
 
 ### 1. Запуск сервера (CherryPlayServer)
 
+Из корня репозитория (опционально): `dotnet build CherryPlay.sln`. Затем:
+
 ```bash
 cd CherryPlayServer
 dotnet restore   # при необходимости

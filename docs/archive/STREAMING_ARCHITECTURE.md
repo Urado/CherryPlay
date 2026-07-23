@@ -593,7 +593,7 @@ CherryPlayServer/
 │   │   ├── PartiesController.cs
 │   │   └── PublicPartiesController.cs
 │   ├── Hubs/
-│   │   └── PartyHub.cs           # SignalR Hub
+│   │   └── PartyHub (+ partials) # SignalR Hub
 │   ├── DTOs/
 │   │   └── ...
 │   └── Program.cs
