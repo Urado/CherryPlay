@@ -107,28 +107,30 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   return (
     <div className="playlist-header-section">
       <div className="playlist-header-toolbar">
-        <input
-          type="text"
-          className="playlist-name-input-header"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder={placeholder}
-        />
+        <div className="playlist-header-toolbar__primary">
+          <input
+            type="text"
+            className="playlist-name-input-header"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder={placeholder}
+          />
 
-        <div className="playlist-stats-header playlist-stats-header--inline">
-          <div className="playlist-stats-header__info">
-            <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
-            <span>{itemCount} треков</span>
-            {itemCount > 0 && (
-              <>
-                <span className="playlist-stats-header__sep" aria-hidden>
-                  •
-                </span>
-                <TimerIcon className="playlist-stats-header__icon" fontSize="inherit" />
-                <span>{formatDuration(totalDuration)}</span>
-              </>
-            )}
-            {extraStats}
+          <div className="playlist-stats-header playlist-stats-header--inline">
+            <div className="playlist-stats-header__info">
+              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>{itemCount} треков</span>
+              {itemCount > 0 && (
+                <>
+                  <span className="playlist-stats-header__sep" aria-hidden>
+                    •
+                  </span>
+                  <TimerIcon className="playlist-stats-header__icon" fontSize="inherit" />
+                  <span>{formatDuration(totalDuration)}</span>
+                </>
+              )}
+              {extraStats}
+            </div>
           </div>
         </div>
 

@@ -110,7 +110,7 @@
 | `playlist`      | 280        | 200         | Список треков               |
 | `fileBrowser`   | 240        | 200         | Панель источников           |
 | `collection`    | 200        | 150         | Сетка коллекции             |
-| `player`        | 320        | 120         | Панель воспроизведения      |
+| `player`        | 360        | 120         | Панель воспроизведения      |
 | `demo-player`   | 280        | 100         | Demo shell                  |
 | `party-editor`  | 400        | 300         | Редактор вечеринки          |
 | `party-preview` | 320        | 240         | Превью                      |
@@ -118,7 +118,7 @@
 
 Неизвестный тип → консервативный fallback **200×150** (`DEFAULT_WORKSPACE_MIN_SIZE`) + предупреждение в dev.
 
-> **`aimp`:** в реестре объявлен **320×120** (`src/workspaces/aimp/index.ts`); при lookup mins нормализуется в **`player`** (`getWorkspaceMinSize`).
+> **`aimp`:** в реестре объявлен **360×120** (`src/workspaces/aimp/index.ts`); при lookup mins нормализуется в **`player`** (`getWorkspaceMinSize`).
 
 Полный список в рантайме: `getAllRegisteredWorkspaceTypesWithMins()`.
 
@@ -168,6 +168,8 @@
 3. В main process: `setMinimumSize(max(appFloor 800×600, computed))`.
 
 Пересчёт при смене `layout`, resize окна, toggle `isLayoutEditMode` и прочих изменений chrome.
+
+Host зоны **Проигрывание** в шапке (`.app-header-player-host`) держит **min-width ~335px** под фиксированную кнопку сессии **17em** + utilities; chrome host плотнее обычной зоны (`padding-block: 4px` у `.player-header` в `.playback-workspace--header`) — см. [Player](../workspaces/player.md#шапка-зоны).
 
 **Веб-демо** (`npm run dev:web`): IPC нет; гарантия — clamp divider в `SplitContainer` + add-adjacent pre-check. Опциональный CSS-min на контейнере приложения не является основным механизмом.
 

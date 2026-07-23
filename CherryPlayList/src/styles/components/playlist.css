@@ -25,45 +25,46 @@
 }
 
 .playlist-header-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'name actions'
-    'stats stats';
-  gap: var(--spacing-xs) var(--spacing-sm);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-sm);
   min-width: 0;
-  overflow: visible;
 }
 
-.playlist-name-input-header {
-  grid-area: name;
+.playlist-header-toolbar__primary {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
-.playlist-stats-header--inline {
-  grid-area: stats;
+.playlist-header-toolbar__primary .playlist-name-input-header {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.playlist-header-toolbar__primary .playlist-stats-header--inline {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .playlist-header-toolbar > .playlist-header-actions {
-  grid-area: actions;
-  justify-self: end;
-}
-
-@container (min-width: 420px) {
-  .playlist-header-toolbar {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: 'name stats actions';
-  }
-
-  .playlist-stats-header--inline {
-    justify-self: end;
-  }
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 @container (max-width: 419px) {
   .playlist-header-toolbar > .playlist-header-actions {
-    justify-self: stretch;
+    flex: 1 1 100%;
     justify-content: flex-start;
+    margin-left: 0;
   }
 }
 
@@ -92,6 +93,7 @@
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   outline: none;
   transition: border-color 0.2s;
 }
@@ -207,11 +209,18 @@
 .playlist-stats-header__info {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
-  row-gap: 2px;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
+}
+
+.playlist-stats-header__info > span:not(.playlist-stats-header__sep) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .playlist-stats-header__icon {
@@ -225,6 +234,12 @@
   opacity: 0.5;
   line-height: 1;
   user-select: none;
+  flex-shrink: 0;
+}
+
+.playlist-stats-header__switch,
+.playback-source-switch--inline {
+  flex-shrink: 0;
 }
 
 .playlist-stats-header__switch {

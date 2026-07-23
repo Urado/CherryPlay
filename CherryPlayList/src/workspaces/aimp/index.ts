@@ -12,7 +12,7 @@ const AimpModule: IWorkspaceModule = {
   name: 'AIMP',
   component: AimpView,
   // Same as `player`; also normalized to `player` at lookup time.
-  minWidth: 320,
+  minWidth: 360,
   minHeight: 120,
 };
 

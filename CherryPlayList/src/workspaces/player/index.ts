@@ -12,7 +12,7 @@ const PlayerModule: IWorkspaceModule = {
   type: 'player',
   name: 'Player',
   component: PlayerViewContainer,
-  minWidth: 320,
+  minWidth: 360,
   minHeight: 120,
 };
 

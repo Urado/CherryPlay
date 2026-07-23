@@ -76,15 +76,18 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                     <span className="playlist-stats-header__sep" aria-hidden>
                       •
                     </span>
-                    <span title="Прогноз времени окончания по локальным часам: hh:mm:ss (formatTimeFromTimestamp)">
+                    <span
+                      className="playlist-stats-header__projected-end"
+                      title="Прогноз времени окончания по локальным часам: hh:mm:ss"
+                    >
                       Окончание: {formatTimeFromTimestamp(projectedEndTime)}
                     </span>
                   </>
                 )}
               </>
             )}
-            <PlaybackSourceSwitcher layout="inline" />
           </div>
+          <PlaybackSourceSwitcher layout="inline" />
 
           {showSelectionActions ? (
             <div className="playlist-header-actions">
@@ -93,8 +96,8 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   <IconButton
                     onClick={onDeselectAll}
                     className="playlist-header-action-icon"
-                    title="Deselect All"
-                    aria-label="Deselect All"
+                    title="Снять выделение"
+                    aria-label="Снять выделение"
                     icon={<ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                     variant="ghost"
                     size="sm"
@@ -116,7 +119,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                     disabled={!canRemoveSelectedItems}
                     title={
                       canRemoveSelectedItems
-                        ? `Delete Selected (${selectedItemsCount})`
+                        ? `Удалить выбранные (${selectedItemsCount})`
                         : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                     }
                     aria-label="Удалить выбранные"
@@ -129,8 +132,8 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 <IconButton
                   onClick={onSelectAll}
                   className="playlist-header-action-icon"
-                  title="Select All"
-                  aria-label="Select All"
+                  title="Выделить все"
+                  aria-label="Выделить все"
                   icon={<SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                   variant="ghost"
                   size="sm"
@@ -167,26 +170,28 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             )}
           </div>
 
-          <IconButton
-            onClick={onOpenGlobalSettings}
-            className="player-settings-icon"
-            title="Настройки проигрывания"
-            aria-label="Настройки проигрывания"
-            icon={<SettingsIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
-            variant="ghost"
-            size="sm"
-          ></IconButton>
+          <div className="player-header-actions__utilities">
+            <IconButton
+              onClick={onOpenGlobalSettings}
+              className="player-settings-icon"
+              title="Настройки проигрывания"
+              aria-label="Настройки проигрывания"
+              icon={<SettingsIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+              variant="ghost"
+              size="sm"
+            ></IconButton>
 
-          <IconButton
-            onClick={onExportTracksToText}
-            className="player-settings-icon"
-            title="Список треков в файл…"
-            disabled={allTracksCount === 0}
-            aria-label="Список треков в файл"
-            icon={<TextSnippetIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
-            variant="ghost"
-            size="sm"
-          ></IconButton>
+            <IconButton
+              onClick={onExportTracksToText}
+              className="player-settings-icon"
+              title="Список треков в файл…"
+              disabled={allTracksCount === 0}
+              aria-label="Список треков в файл"
+              icon={<TextSnippetIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+              variant="ghost"
+              size="sm"
+            ></IconButton>
+          </div>
         </div>
       </div>
     </div>

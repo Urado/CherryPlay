@@ -51,7 +51,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 - **`useStreamingOrchestrator`** — React-хук для источника **CherryPlay** (`streamingSource === 'cherryPlayPlayer'`):
   - активен при `enableStreaming`, `streamingSource === 'cherryPlayPlayer'`, `linkedParty`;
-  - используется в `PlayerViewContainer` (только `connectionState` + `reconnect` для UI);
+  - вызывается в **`CherryPlayStreamingController`** (`src/app/components/CherryPlayStreamingController.tsx`); `connectionState` + `reconnect` отдаются через **`useCherryPlayStreamingConnection`**;
   - **не** вызывает `signalRService.connect` напрямую.
 
 - **`useAimpStreamingOrchestrator`** — React-хук для **AIMP**:
@@ -80,7 +80,8 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 ### Workspaces (не владельцы SignalR)
 
-- **`PlayerViewContainer`** — локальная сессия, UI; вызывает `useStreamingOrchestrator` для индикатора соединения и reconnect. **Не** владеет connect/publish/teardown.
+- **`PlayerViewContainer`** — локальная сессия и UI зоны Проигрывание. **Не** владеет connect/publish/teardown и **не** показывает индикатор SignalR.
+- **`HeaderPlaybackPill`** — UI связи в шапке приложения: `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect; `signalRService.getConnectionErrorReason()` для readiness-подсказок).
 
 - **`AimpIntegrationController`** — AIMP bridge bootstrap, source selection sync; вызывает `useAimpStreamingOrchestrator`. **Не** содержит параллельного low-level SignalR path.
 
@@ -108,9 +109,9 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
    - подписка на `PlaybackBroadcastSource.subscribe`;
    - `subscribePartyPlaylistSync` / `subscribeAimpPartyPlaylistSync`;
    - начальный full-state publish.
-3. В `PlayerHeader` (при `enableStreaming`) — `connectionState` из хука и `signalRService.getConnectionErrorReason()`.
+3. В шапке приложения **`HeaderPlaybackPill`** (при `enableStreaming` и источнике CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**; `signalRService.getConnectionErrorReason()` — для readiness-подсказок pill (и внутри индикатора).
 
-`PlayerViewContainer` **не** вызывает `connect` / `joinPartyAsOrganizer` / store subscriptions напрямую.
+`PlayerViewContainer` **не** вызывает `connect` / `joinPartyAsOrganizer` / store subscriptions напрямую и **не** отображает состояние SignalR.
 
 ### 3. Трансляция позиции и состояния
 
@@ -131,7 +132,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 - `signalRService` обновляет `connectionState`; orchestrator планирует reconnect (`RECONNECT_DELAY_MS`).
 - `onPartyNotFound` — очистка `linkedParty`, уведомление пользователю.
-- `PlayerViewContainer` передаёт `reconnect` из хука в UI; таймеры reconnect — в orchestrator.
+- `HeaderPlaybackPill` / `StreamingConnectionIndicator` вызывают `reconnect` из `useCherryPlayStreamingConnection`; таймеры reconnect — в orchestrator.
 - Зрители CherryPlayWeb: `OnConnectionStatusChanged`, freeze, см. [docs/integration/streaming.md](../../../../docs/integration/streaming.md).
 
 ### 5. Teardown и смена источника

@@ -86,33 +86,53 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   return (
     <div className="player-controls">
       <div className="player-controls__buttons">
-        <PlaybackControlButton
-          control={hasError ? 'error' : isPlaying ? 'pause' : 'play'}
-          size="md"
-          onClick={handleToggle}
-          disabled={isDisabled}
-          title={
-            hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
-          }
-        />
-        <PlaybackControlButton
-          control="stop"
-          size="md"
-          onClick={handleStop}
-          disabled={isDisabled}
-          title="Начать заново"
-          aria-label="Начать заново"
-        />
-        <PlaybackControlButton
-          control="next"
-          size="md"
-          onClick={handleNext}
-          disabled={isNextDisabled}
-          title="Следующий"
-          aria-label="Следующий"
-        />
+        <div className="player-controls__transport">
+          <PlaybackControlButton
+            control={hasError ? 'error' : isPlaying ? 'pause' : 'play'}
+            size="sm"
+            onClick={handleToggle}
+            disabled={isDisabled}
+            title={
+              hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
+            }
+            aria-label={
+              hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
+            }
+          />
+          <PlaybackControlButton
+            control="stop"
+            size="sm"
+            onClick={handleStop}
+            disabled={isDisabled}
+            title="Начать заново"
+            aria-label="Начать заново"
+          />
+          <PlaybackControlButton
+            control="next"
+            size="sm"
+            onClick={handleNext}
+            disabled={isNextDisabled}
+            title="Следующий"
+            aria-label="Следующий"
+          />
+        </div>
+
+        <div className="player-controls__info">
+          <div
+            className="player-controls__track-name"
+            title={currentTrack?.name ?? 'Нет активного трека'}
+          >
+            {currentTrack?.name ?? 'Нет активного трека'}
+          </div>
+          {error ? (
+            <div className="player-controls__error" title={error}>
+              {error}
+            </div>
+          ) : null}
+        </div>
+
         <div className="player-controls__volume">
-          <VolumeDownIcon fontSize="small" />
+          <VolumeDownIcon fontSize="small" className="player-controls__volume-icon" aria-hidden />
           <input
             type="range"
             min={0}
@@ -122,17 +142,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
             onChange={handleVolumeChange}
             className="player-controls__volume-slider"
             title={`Громкость: ${Math.round(volume * 100)}%`}
+            aria-label="Громкость"
           />
-          <VolumeUpIcon fontSize="small" />
-          <span className="player-controls__volume-value">{Math.round(volume * 100)}%</span>
+          <VolumeUpIcon fontSize="small" className="player-controls__volume-icon" aria-hidden />
+          <span className="player-controls__volume-value" aria-hidden>
+            {Math.round(volume * 100)}%
+          </span>
         </div>
-      </div>
-
-      <div className="player-controls__info">
-        <div className="player-controls__track-name">
-          {currentTrack?.name ?? 'Нет активного трека'}
-        </div>
-        {error && <div className="player-controls__error">{error}</div>}
       </div>
 
       <div className="player-controls__timeline-row">
@@ -148,6 +164,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           onChange={timeline.handleChange}
           disabled={isDisabled}
           className="player-controls__timeline"
+          aria-label="Позиция воспроизведения"
         />
         <span className="player-controls__time player-controls__time--total">
           {formatPlayerTime(resolvedDuration)}

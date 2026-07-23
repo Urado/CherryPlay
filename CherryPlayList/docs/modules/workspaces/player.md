@@ -11,10 +11,32 @@ Workspace для автоматического последовательног
 ## Основные компоненты
 
 - **PlayerView** (`src/workspaces/player/PlayerView.tsx`) — основной компонент
+- **PlayerHeader** (`src/workspaces/player/components/PlayerHeader.tsx`) — шапка зоны (статистика, сессия, утилиты)
+- **PlayerControls** (`src/workspaces/player/PlayerControls.tsx`) — панель управления в режиме `session`
 - **TrackSettingsDropdown** (`src/workspaces/player/TrackSettingsDropdown.tsx`) — попап настроек трека (список, применение сразу)
 - **TrackSettingsModal** (`src/workspaces/player/TrackSettingsModal.tsx`) — модалка настроек группы/по умолчанию (Сохранить/Отмена)
 - **playerAudioStore** (`src/shared/stores/playerAudioStore.ts`) — store управления аудио
 - **projectStore** (`src/shared/stores/projectStore.ts`) — главный store проекта (данные плейлиста, группы, настройки, состояние сессии)
+
+## Шапка зоны
+
+`PlayerHeader` — компактная шапка списка в зоне `player` (и в host шапки приложения при `player-view--header`):
+
+- **Ряд 1** (`player-header-toolbar__lead`): статистика (число треков; суммарная длительность — иконка таймера + `hh:mm:ss` с tooltip; при наличии — «Окончание: …») → inline `PlaybackSourceSwitcher` → действия выделения.
+- **Ряд 2** (`player-header-actions`): кнопка сессии с фиксированной шириной **~17em** (**«Начать проигрывание»** / **«Остановить проигрывание»**) + utilities (настройки, экспорт списка).
+- При узком контейнере (`@container` **≤520px** в `player.css`): toolbar в колонку — ряд 1 сверху, ряд 2 снизу (кнопка сессии и utilities в одном горизонтальном ряду, без стека).
+- Более плотный padding секции (`padding-block: var(--spacing-xs)`); в host шапки ещё плотнее (`header.css`, `.playback-workspace--header`).
+
+Стили: `src/styles/components/player.css` (`.player-header*`, `.player-session-button`); host chrome — `.app-header-player-host` / `.playback-workspace--header` в `src/styles/components/header.css`.
+
+## Панель управления
+
+`PlayerControls` (класс `.player-controls`) показывается **только в режиме `session`** (`PlayerView`):
+
+- **Ряд 1** (`player-controls__buttons`): transport (Play/Pause, **«Начать заново»**/Stop, Next) | имя трека | громкость — кнопки `size="sm"`.
+- **Ряд 2** (`player-controls__timeline-row`): позиция · timeline · длительность трека.
+
+Стили: `src/styles/components/player.css` (`.player-controls*`). Stop останавливает аудио текущего трека; сброс сессии — только кнопка **«Остановить проигрывание»** в `PlayerHeader` (см. [GLOSSARY](../../../../GLOSSARY.md)).
 
 ## Настройки треков и групп
 
@@ -103,7 +125,7 @@ Workspace для автоматического последовательног
 
 **Плейлист и плеер:** `PlaylistView` использует тот же хук **`usePlayerDividers`**, что и плеер (контекст: `flattenItemsForDisplay` / порядок треков, демо‑текущий трек в подготовке, `playerAudioStore` в сессии). Упрощённые `calculateSimpleDividerMarkers` / `formatSimpleDividerLabel` в shared остаются вспомогательными; разметка списка опирается на полный расчёт, согласованный с сессией.
 
-**Формат времени в UI:** единый шаблон **`hh:mm:ss`** с ведущими нулями (`formatTimeFromDuration`, `formatTimeFromTimestamp` в `dividerUtils.ts`, реэкспорт `@shared/utils`). В **PlayerHeader**: «Длительность» — `formatTimeFromDuration(totalDuration)`; `totalDuration` в `PlayerViewContainer` — сумма длительностей **включённых** (не отключённых) треков и пауз между соседними треками при эффективном `pauseAndNext` (`pauseBetweenTracks`), а не «сырая» длина списка файлов. «Окончание» — wall-clock по `projectedEndTime` из `usePlayerDividers` (тот же расчёт, что у таймлайна); в шапке **`formatTimeFromTimestamp(projectedEndTime)`** в `PlayerHeader`.
+**Формат времени в UI:** единый шаблон **`hh:mm:ss`** с ведущими нулями (`formatTimeFromDuration`, `formatTimeFromTimestamp` в `dividerUtils.ts`, реэкспорт `@shared/utils`). В **PlayerHeader** суммарная длительность — **иконка `TimerIcon` + значение** `formatTimeFromDuration(totalDuration)` (видимой подписи «Длительность» нет; смысл — в `title`/tooltip); `totalDuration` в `PlayerViewContainer` — сумма длительностей **включённых** (не отключённых) треков и пауз между соседними треками при эффективном `pauseAndNext` (`pauseBetweenTracks`), а не «сырая» длина списка файлов. «Окончание» — wall-clock по `projectedEndTime` из `usePlayerDividers` (тот же расчёт, что у таймлайна); в шапке **`formatTimeFromTimestamp(projectedEndTime)`** в `PlayerHeader`.
 
 ### Переход к треку (Jump to Track)
 
@@ -157,14 +179,14 @@ Player может опционально транслировать состоя
 [Streaming System](../systems/streaming.md) (Site Streamer):
 
 - при `enableStreaming`, привязанной вечеринке (`meta.linkedParty`) и `streamingSource === 'cherryPlayPlayer'`:
-  - `PlayerViewContainer` вызывает **`useStreamingOrchestrator`** — только `connectionState` и `reconnect` для UI;
+  - SignalR lifecycle — **`CherryPlayStreamingController`** + **`useStreamingOrchestrator`**; UI связи в шапке — **`HeaderPlaybackPill`** / **`StreamingConnectionIndicator`** через **`useCherryPlayStreamingConnection`**;
   - connect, `StartSession`/`EndSession`, position ticks и full-state publish — **`streamingOrchestrator`** + **`CherryPlayPlayerBroadcastSource`**;
   - live sync плейлиста на сервер — **`partyPlaylistSync`** (REST PUT), не effects в Player UI.
-- `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую.
+- `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую и **не** рендерит индикатор соединения.
 
 Локальная сессия Player (`playerAudioStore`, `usePlayerSession`) — источник правды для broadcast source; сессия работает автономно без сервера.
 
 ## См. также
 
 - [Режим редактирования layout](../../layout-edit-mode.md) — зона `player` (singleton в picker; legacy `aimp` → `player`)
-- [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон) — `player`: **320×120** px (`src/workspaces/player/index.ts`)
+- [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон) — `player`: **360×120** px (`src/workspaces/player/index.ts`)

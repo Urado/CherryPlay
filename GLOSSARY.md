@@ -47,7 +47,8 @@
 | `partyLifecycleState` draft/ready/completed | **Не на сайте** / **Опубликована** / **Архив** |
 | `sessionState.mode` preparation/session | Pill: **«Проигрывание не запущено»** / трек + play-pause |
 | SignalR connected (`StreamingConnectionIndicator`) | **Онлайн** _(состояние связи; не toggle Settings)_ |
-| Stop (player controls)              | **Начать заново** (сброс сессии)               |
+| Stop (player controls)              | **Начать заново** — остановка аудио текущего трека (`playerAudioStore.stop`); **не** сброс сессии |
+| Session reset (`PlayerHeader`)      | **Остановить проигрывание** — `handleResetSession` (режим → `preparation`) |
 
 См. [online-mode-ux-synthesis.md](CherryPlayList/docs/online-mode-ux-synthesis.md).
 

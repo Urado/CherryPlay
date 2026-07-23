@@ -989,7 +989,8 @@
 
 .app-header-player-host {
   flex: 1 1 360px;
-  min-width: 280px;
+  /* Budget: fixed 17em session + 2×32px utilities + gaps + host pad (~335px @ 12px). Keep in sync with .player-session-button. */
+  min-width: 335px;
   max-width: 720px;
   min-height: 0;
 }
@@ -1009,27 +1010,17 @@
   padding: 0;
 }
 
+/* Host-only density; shrink/nowrap for session button lives in player.css */
 .playback-workspace--header .player-view--header .player-header-toolbar {
-  flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
 }
 
-.playback-workspace--header .player-header-actions {
-  flex-wrap: wrap;
-  min-width: 0;
-  max-width: 100%;
+.playback-workspace--header .player-view--header .playlist-header-section.player-header {
+  padding-block: 4px;
 }
 
-.playback-workspace--header .player-session-controls {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.playback-workspace--header .player-session-button {
-  min-width: 0;
-  flex: 1 1 auto;
-  max-width: 100%;
+.playback-workspace--header .player-header-actions__utilities {
+  gap: var(--spacing-xs);
 }
 
 .workspace-player-in-header-hint {
