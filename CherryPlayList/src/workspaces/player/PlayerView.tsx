@@ -27,7 +27,6 @@ interface DragAndDropState {
 interface PlayerViewProps {
   allTracksCount: number;
   totalDuration: number;
-  projectedEndTime: number | null;
   hasSelectedItems: boolean;
   canCreateGroup: boolean;
   canRemoveSelectedItems: boolean;
@@ -78,7 +77,6 @@ interface PlayerViewProps {
   onNext?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
-  variant?: 'full' | 'header';
 }
 
 /**
@@ -88,7 +86,6 @@ interface PlayerViewProps {
 export const PlayerView: React.FC<PlayerViewProps> = ({
   allTracksCount,
   totalDuration,
-  projectedEndTime,
   hasSelectedItems,
   canCreateGroup,
   canRemoveSelectedItems,
@@ -136,16 +133,12 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   onNext,
   serverTrackIds = null,
   jumpToTrack,
-  variant = 'full',
 }) => {
-  const isHeaderVariant = variant === 'header';
-
   return (
-    <div className={`playlist-view player-view${isHeaderVariant ? ' player-view--header' : ''}`}>
+    <div className="playlist-view player-view">
       <PlayerHeader
         allTracksCount={allTracksCount}
         totalDuration={totalDuration}
-        projectedEndTime={projectedEndTime}
         hasSelectedItems={hasSelectedItems}
         canCreateGroup={canCreateGroup}
         canRemoveSelectedItems={canRemoveSelectedItems}
@@ -161,44 +154,42 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onExportTracksToText={onExportTracksToText}
       />
 
-      {!isHeaderVariant ? (
-        <PlayerTracksList
-          displayItems={displayItems}
-          zoneId={zoneId}
-          selectedItemIds={selectedItemIds}
-          activeTrackId={activeTrackId}
-          activePlayerTrackId={activePlayerTrackId}
-          playerStatus={playerStatus}
-          isPreparationMode={isPreparationMode}
-          mode={mode}
-          showHourDividers={showHourDividers}
-          plannedEndTime={plannedEndTime}
-          plannedEndDividerPosition={plannedEndDividerPosition}
-          calculateDividerMarkers={calculateDividerMarkers}
-          playerDrag={playerDrag}
-          getAllTracksInOrder={getAllTracksInOrder}
-          isTrackPlayed={isTrackPlayed}
-          isGroupDisabled={isGroupDisabled}
-          isTrackOrGroupDisabled={isTrackOrGroupDisabled}
-          getEffectiveTrackSettings={getEffectiveTrackSettings}
-          formatDividerLabel={formatDividerLabel}
-          formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
-          queueEndDividerPosition={queueEndDividerPosition}
-          formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
-          showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
-          toggleItemSelection={toggleItemSelection}
-          selectRange={selectRange}
-          removeItem={removeItem}
-          setGroupName={setGroupName}
-          handleToggleDisabled={handleToggleDisabled}
-          handleUngroupGroup={handleUngroupGroup}
-          handleOpenTrackSettings={handleOpenTrackSettings}
-          startTrackPlayback={startTrackPlayback}
-          pausePlayback={pausePlayback}
-          serverTrackIds={serverTrackIds}
-          jumpToTrack={jumpToTrack}
-        />
-      ) : null}
+      <PlayerTracksList
+        displayItems={displayItems}
+        zoneId={zoneId}
+        selectedItemIds={selectedItemIds}
+        activeTrackId={activeTrackId}
+        activePlayerTrackId={activePlayerTrackId}
+        playerStatus={playerStatus}
+        isPreparationMode={isPreparationMode}
+        mode={mode}
+        showHourDividers={showHourDividers}
+        plannedEndTime={plannedEndTime}
+        plannedEndDividerPosition={plannedEndDividerPosition}
+        calculateDividerMarkers={calculateDividerMarkers}
+        playerDrag={playerDrag}
+        getAllTracksInOrder={getAllTracksInOrder}
+        isTrackPlayed={isTrackPlayed}
+        isGroupDisabled={isGroupDisabled}
+        isTrackOrGroupDisabled={isTrackOrGroupDisabled}
+        getEffectiveTrackSettings={getEffectiveTrackSettings}
+        formatDividerLabel={formatDividerLabel}
+        formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+        queueEndDividerPosition={queueEndDividerPosition}
+        formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+        showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+        toggleItemSelection={toggleItemSelection}
+        selectRange={selectRange}
+        removeItem={removeItem}
+        setGroupName={setGroupName}
+        handleToggleDisabled={handleToggleDisabled}
+        handleUngroupGroup={handleUngroupGroup}
+        handleOpenTrackSettings={handleOpenTrackSettings}
+        startTrackPlayback={startTrackPlayback}
+        pausePlayback={pausePlayback}
+        serverTrackIds={serverTrackIds}
+        jumpToTrack={jumpToTrack}
+      />
 
       {!isPreparationMode ? <PlayerControls onNext={onNext} /> : null}
     </div>

@@ -19,7 +19,7 @@ export interface PartyTrackDisplaySectionProps {
 export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> = ({
   value,
   onChange,
-  defaultExpanded = true,
+  defaultExpanded = false,
 }) => {
   return (
     <PartyEditorAccordion

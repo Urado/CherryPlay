@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { useProjectStore } from '@shared/stores/projectStore';
+
 import type { PartyEditorPhase } from '../partyEditorPhase';
 
 import { PartyCardFieldsSection } from './PartyCardFieldsSection';
@@ -32,6 +34,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   connection,
   isBlocked = false,
 }) => {
+  const projectName = useProjectStore((state) => state.name);
   const {
     partyName,
     partyTitle,
@@ -110,6 +113,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         partyName={partyName}
         partyTitle={partyTitle}
         partySubtitle={partySubtitle}
+        projectName={projectName}
         readOnly={isReadOnly}
         onPartyNameChange={onPartyNameChange}
         onPartyTitleChange={onPartyTitleChange}

@@ -176,7 +176,7 @@
 - **▾** меню workspace (переключение пресетов / пользовательских workspace);
 - переименование проекта;
 - кнопки настроек, экспорта, аккаунта, demo player (floating);
-- **HeaderPlaybackPill** и **HeaderPlayerHost** (`playerInAppHeader`) — `disabled` / `pointer-events: none`, приглушены;
+- **HeaderPlaybackPill** — `disabled` / `pointer-events: none`, приглушён;
 - меню **Проект** (принудительно закрывается при входе в режим);
 - **глобальные горячие клавиши** (`useGlobalShortcuts` с `enabled: false`).
 
@@ -190,7 +190,7 @@
 
 Список строится в `workspaceLayoutEditOptions.ts`:
 
-1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts`.
+1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts` (`fileBrowser` → **«Браузер»**).
 2. **Singleton-типы**, уже присутствующие в layout, **скрываются** из picker. Тип **`aimp`** в picker **не показывается** (legacy, исключён в `workspaceLayoutEditOptions.ts`).
 
 | Тип             | Примечание                                 |

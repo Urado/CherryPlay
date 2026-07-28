@@ -96,9 +96,9 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     {
       value: 'default',
       label: 'По умолчанию',
-      title: `По умолчанию (${defaultActionAfterTrack === 'next' ? 'Без паузы' : defaultActionAfterTrack === 'pauseAndNext' ? 'Интервал' : 'Остановка'})`,
+      title: `По умолчанию (${defaultActionAfterTrack === 'next' ? 'Без паузы' : defaultActionAfterTrack === 'pauseAndNext' ? 'Интервал' : 'Пауза'})`,
     },
-    { value: 'pause', label: 'Остановка', title: 'Остановка после трека' },
+    { value: 'pause', label: 'Пауза в конце трека', title: 'Пауза в конце трека' },
     { value: 'next', label: 'Без паузы', title: 'Сразу следующий трек' },
     { value: 'pauseAndNext', label: 'Интервал', title: 'Интервал между треками' },
   ];

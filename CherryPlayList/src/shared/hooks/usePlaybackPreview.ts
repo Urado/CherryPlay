@@ -92,6 +92,10 @@ export function usePlaybackPreview({
 
         if (isLocalFilePlaybackBlocked()) {
           setActiveTrack(track, workspaceId);
+          useDemoPlayerStore.setState({
+            error: 'Воспроизведение невозможно',
+            status: 'error',
+          });
           return;
         }
 
@@ -99,6 +103,17 @@ export function usePlaybackPreview({
         if (!isSameTrack || playerStatus === 'ended') {
           await loadTrack(track, workspaceId);
         }
+
+        const { isDisabled } = useDemoPlayerStore.getState();
+        if (isDisabled) {
+          // Keep demo UI open with explicit blocked messaging (same as local-file blocked path).
+          useDemoPlayerStore.setState({
+            error: 'Воспроизведение невозможно',
+            status: 'error',
+          });
+          return;
+        }
+
         await play();
       } catch (error) {
         if (shouldOpenFloatingOnAttempt) {

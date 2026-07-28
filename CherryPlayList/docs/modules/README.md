@@ -21,7 +21,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 - [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
 - [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
-- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (несколько панелей per layout, path по `workspaceId`)
+- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (**«Браузер»** в UI; несколько панелей per layout, path по `workspaceId`)
 - [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
 - [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
 - [AIMP](./workspaces/aimp.md) - AIMP: мониторинг и синхронизация **состояния** с сайтом (Windows x64)
@@ -33,7 +33,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 - [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
 - [Layout System](./systems/layout-system.md) - Рабочие пространства и layout (pill в шапке, built-in / **Мои**, auto-save, [режим редактирования](../../layout-edit-mode.md))
 - [Storage](./systems/storage.md) — обзор клиентского persist; подробнее: [архитектура](./systems/storage-architecture.md), [что храним](./systems/persisted-client-state.md)
-- [Demo Player](./systems/demo-player.md) - Система предпрослушивания (floating-панель и workspace `demo-player`; основной плеер опционально в шапке)
+- [Demo Player](./systems/demo-player.md) - Система предпрослушивания (floating-панель и workspace `demo-player`)
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo
 - [Streaming](./systems/streaming.md) - Site Streamer: orchestrator, SignalR, live playlist sync (`src/shared/streaming/`). UX decouple — [online-mode-ux-synthesis.md](../online-mode-ux-synthesis.md)
 - [Save / Load](./systems/save-load.md) - Система сохранения и загрузки проектов (.cherry формат, портативный режим)

@@ -128,7 +128,8 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
     if (modifier) {
       classes.push(`${base}--${modifier}`);
     }
-    if (isActive && variant === 'toolbar') {
+    if (isActive) {
+      classes.push('party-workspace-demo-panel-button--active');
       classes.push('party-preview-scenario-controls-button--active');
     }
     return classes.join(' ');
@@ -152,16 +153,18 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
             onClick={() => setPreviewLifecycleOverride(lifecycle)}
             variant="secondary"
             size="sm"
+            aria-pressed={activeLifecycle === lifecycle}
           >
             {label}
           </Button>
         ))}
         <Button
           type="button"
-          className={buttonClassName(activeMockLive, 'live')}
+          className={buttonClassName(Boolean(activeMockLive), 'live')}
           onClick={setPreviewMockLive}
           variant="secondary"
           size="sm"
+          aria-pressed={Boolean(activeMockLive)}
         >
           Эфир (live)
         </Button>
@@ -172,15 +175,17 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
   const trackBlock = (
     <div className="party-workspace-demo-panel-track-row">
       <span className="party-workspace-demo-panel-track-label">Трек в эфире:</span>
-      <button
+      <Button
         type="button"
-        className="party-workspace-demo-panel-stepper"
+        className="party-workspace-demo-panel-button party-workspace-demo-panel-stepper"
         onClick={() => handlePreviewTrackChange(displayTrackNumber - 1)}
-        disabled={!hasPreviewTracks}
+        disabled={!hasPreviewTracks || isSynchronized}
+        variant="secondary"
+        size="sm"
         aria-label="Предыдущий трек"
       >
         -
-      </button>
+      </Button>
       <input
         type="number"
         min={1}
@@ -188,18 +193,20 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
         value={displayTrackNumber}
         className="party-workspace-demo-panel-track-input"
         onChange={(event) => handlePreviewTrackChange(Number(event.target.value))}
-        disabled={!hasPreviewTracks}
+        disabled={!hasPreviewTracks || isSynchronized}
         aria-label="Номер трека в эфире"
       />
-      <button
+      <Button
         type="button"
-        className="party-workspace-demo-panel-stepper"
+        className="party-workspace-demo-panel-button party-workspace-demo-panel-stepper"
         onClick={() => handlePreviewTrackChange(displayTrackNumber + 1)}
-        disabled={!hasPreviewTracks}
+        disabled={!hasPreviewTracks || isSynchronized}
+        variant="secondary"
+        size="sm"
         aria-label="Следующий трек"
       >
         +
-      </button>
+      </Button>
       <span className="party-workspace-demo-panel-track-total">/ {previewTrackIds.length}</span>
     </div>
   );
@@ -268,6 +275,7 @@ export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControls
         allowLockedSelection
         showApplyButton
         applyButtonLabel="Изменить дизайн"
+        applyButtonClassName="party-workspace-demo-panel-button"
       />
     ) : null;
 

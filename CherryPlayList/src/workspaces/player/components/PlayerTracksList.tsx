@@ -225,15 +225,17 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
           const isDraggedItem =
             isItemDragState(playerDrag.draggedItems) &&
             playerDrag.draggedItems.allFlatIndices.has(flatIndex);
-          const isActive = activeTrackId === item.id;
-          const isPlaying = isActive && playerStatus === 'playing';
+          // Demo preview highlight (play button) vs session current track (dividers / isCurrent)
+          const isPreviewActive = activeTrackId === item.id;
+          const isPlaying = isPreviewActive && playerStatus === 'playing';
+          const isCurrentTrack = track?.id === activePlayerTrackId;
 
           const showPlannedEndDividerBeforeActive =
             !isPreparationMode &&
             plannedEndTime !== null &&
             plannedEndDividerPosition === -1 &&
-            isActive &&
-            track !== null;
+            track !== null &&
+            item.id === activePlayerTrackId;
 
           const hasPlannedEndDivider =
             !isPreparationMode &&
@@ -256,8 +258,6 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             isTrackOrGroupDisabled,
             getAllTracksInOrder,
           );
-
-          const isCurrentTrack = track?.id === activePlayerTrackId;
           const isLocked = isItemLocked(
             item,
             isPreparationMode,
@@ -297,7 +297,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                     ? playerDrag.insertPosition
                     : null
                 }
-                isActive={isActive}
+                isActive={isPreviewActive}
                 isPlaying={isPlaying}
                 isPlayed={itemState.isPlayed}
                 isDisabled={itemState.isDisabled}

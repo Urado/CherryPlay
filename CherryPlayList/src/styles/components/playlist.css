@@ -561,9 +561,20 @@
 }
 
 .playlist-hour-divider {
-  height: 3px;
+  /* Scales with track-item size (--track-item-padding / --track-item-margin from useTrackItemSize). */
+  --playlist-hour-divider-height: max(1px, calc(var(--track-item-padding, 8px) * 0.375));
+  --playlist-hour-divider-margin-y: max(2px, var(--track-item-padding, 8px));
+  --playlist-hour-divider-gap: max(8px, calc(var(--track-item-padding, 8px) * 3));
+  --playlist-hour-divider-label-pad-y: max(1px, calc(var(--track-item-padding, 8px) * 0.25));
+  --playlist-hour-divider-label-pad-x: max(4px, calc(var(--track-item-padding, 8px) * 1.25));
+  --playlist-hour-divider-label-font: max(
+    9px,
+    calc(var(--font-size-secondary, 12px) * (0.75 + var(--track-item-padding, 8px) / 32))
+  );
+
+  height: var(--playlist-hour-divider-height);
   background-color: var(--accent-primary);
-  margin: 8px 0;
+  margin: var(--playlist-hour-divider-margin-y) 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -572,7 +583,7 @@
 
 /* Слот списка — одна отсечка; две подряд возможны лишь как редкий крайний случай. */
 .playlist-hour-divider + .playlist-hour-divider {
-  margin-top: 24px;
+  margin-top: var(--playlist-hour-divider-gap);
 }
 
 .playlist-hour-divider--interval {
@@ -602,10 +613,11 @@
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--bg-secondary);
-  padding: 2px 10px;
+  padding: var(--playlist-hour-divider-label-pad-y, 2px) var(--playlist-hour-divider-label-pad-x, 10px);
   color: var(--text-primary);
-  font-size: var(--font-size-secondary);
+  font-size: var(--playlist-hour-divider-label-font, var(--font-size-secondary));
   font-weight: 500;
+  line-height: 1.2;
   white-space: nowrap;
   max-width: min(340px, calc(100% - 12px));
   overflow: hidden;

@@ -38,14 +38,6 @@
   box-sizing: border-box;
 }
 
-/* Denser inline source switch inside player stats (do not force 32px row height). */
-.player-header-toolbar__lead .playback-source-switch--inline {
-  min-height: 0;
-  padding: 0 var(--spacing-xs);
-  line-height: 1.2;
-}
-
-/* Retained for API compatibility; no current callers after compact header layout. */
 .playback-source-switch--top-row {
   display: inline-flex;
   align-items: center;
@@ -65,107 +57,7 @@
   cursor: not-allowed;
 }
 
-/* Player header toolbar — single row with wrap on narrow containers */
-.player-header-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  /* Tighter row gap (stats ↔ session) than column gap between lead/actions. */
-  gap: 2px var(--spacing-sm);
-  min-width: 0;
-}
-
-.player-header-toolbar__lead {
-  display: flex;
-  /* Keep stats + selection icons on one row; stats ellipsize when tight. */
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 2px var(--spacing-xs);
-  /* Width basis in row layout only — see @container override (column would treat 200px as height). */
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-
-.player-header-toolbar__lead .playlist-stats-header__info {
-  font-size: var(--font-size-secondary);
-  line-height: 1.2;
-  color: var(--text-secondary);
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--spacing-xs);
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  padding: 0;
-  margin: 0;
-}
-
-.player-header-toolbar__lead .playlist-stats-header__info > span:not(.playlist-stats-header__sep) {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Switch sits outside overflow:hidden stats info so it is never clipped. */
-.player-header-toolbar__lead .playlist-stats-header__switch {
-  flex-shrink: 0;
-}
-
-.player-header-toolbar__lead .playlist-header-actions {
-  flex-shrink: 0;
-}
-
-.player-header .player-header-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--spacing-xs);
-  flex: 0 0 auto;
-  margin-top: 0;
-  min-width: 0;
-}
-
-.player-header-actions__utilities {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  flex-shrink: 0;
-}
-
-@container (max-width: 520px) {
-  .player-header-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  /* Column main-axis: do not keep horizontal flex-basis/grow (was ~200px empty height). */
-  .player-header-toolbar__lead {
-    flex: 0 0 auto;
-    width: 100%;
-  }
-
-  /* Row 2: fixed-size session button + utility icons side-by-side (never stack). */
-  .player-header .player-header-actions {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-  }
-
-  .player-header .player-session-controls {
-    flex: 0 0 auto;
-  }
-
-  .player-header-actions__utilities {
-    flex-shrink: 0;
-  }
-}
-
-/* Compact vertical padding for player playlist header (stats + session rows). */
+/* Compact vertical padding for player playlist header. */
 .player-view .playlist-header-section.player-header {
   padding-block: var(--spacing-xs);
   padding-inline: var(--spacing-md);
@@ -177,7 +69,15 @@
   }
 }
 
-/* Player header actions */
+/* Session start fills the name-input slot in the shared header toolbar. */
+.playlist-header-toolbar__primary .player-session-controls {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 17em;
+}
+
 .player-header-actions {
   display: flex;
   align-items: center;
@@ -185,18 +85,11 @@
   flex-shrink: 0;
 }
 
-/* Session start controls */
-.player-session-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
 .player-session-button,
 .cp-button.player-session-button {
-  /* Fixed 17em intentional (RU label); keep .app-header-player-host min-width (~335px) in sync. */
-  flex: 0 0 17em;
-  width: 17em;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
   min-height: 32px;
@@ -205,9 +98,9 @@
   color: var(--text-primary);
   border-radius: 4px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-secondary);
-  font-weight: 500;
-  line-height: 1.25;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-heading);
+  line-height: var(--line-height-body, 1.35);
   cursor: pointer;
   justify-content: flex-start;
   text-align: left;
@@ -222,10 +115,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.playback-workspace--header .player-session-controls {
-  flex: 0 0 auto;
 }
 
 .player-session-button:disabled {

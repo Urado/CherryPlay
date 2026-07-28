@@ -194,6 +194,15 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
     [className, interactionBlocked, isDisabled, storeIsDisabled],
   );
 
+  const timelineProgressPercent = useMemo(() => {
+    if (playbackBlocked || timeline.resolvedDuration <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, (timeline.displayPosition / timeline.resolvedDuration) * 100));
+  }, [playbackBlocked, timeline.displayPosition, timeline.resolvedDuration]);
+
+  const volumeProgressPercent = useMemo(() => Math.min(100, Math.max(0, volume * 100)), [volume]);
+
   return (
     <div className={containerClassName}>
       <div className="demo-player__info-row">
@@ -202,7 +211,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           {error ? <div className="demo-player__error">{error}</div> : null}
           {storeIsDisabled && !error ? (
             <div className="demo-player__warning">
-              Заблокирован: используется то же устройство, что и плеер
+              Воспроизведение невозможно: используется то же устройство, что и плеер
             </div>
           ) : null}
         </div>
@@ -218,7 +227,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           disabled={isDisabled}
           title={
             storeIsDisabled
-              ? 'Прослушивание файла недоступно (то же устройство, что у плеера)'
+              ? 'Воспроизведение невозможно (то же устройство, что у плеера)'
               : isPlaying
                 ? 'Пауза'
                 : 'Воспроизвести'
@@ -237,6 +246,11 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           onChange={timeline.handleChange}
           disabled={isDisabled}
           className="demo-player__timeline"
+          style={
+            {
+              '--demo-range-progress': `${timelineProgressPercent}%`,
+            } as React.CSSProperties
+          }
           aria-label="Позиция воспроизведения демо-трека"
           aria-valuemin={0}
           aria-valuemax={timeline.resolvedDuration}
@@ -256,6 +270,11 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
             onChange={handleVolumeChange}
             disabled={isDisabled}
             className="demo-player__volume-slider"
+            style={
+              {
+                '--demo-range-progress': `${volumeProgressPercent}%`,
+              } as React.CSSProperties
+            }
             aria-label="Громкость демо-плеера"
             aria-valuemin={0}
             aria-valuemax={1}

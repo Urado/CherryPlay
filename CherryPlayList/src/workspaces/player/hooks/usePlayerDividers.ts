@@ -10,7 +10,6 @@ import {
   calculatePlannedEndDividerPosition,
   calculateQueueEndDividerPosition,
   calculateQueueEndMarker,
-  calculateProjectedEndTime,
   calculatePlannedEndMarker,
   formatTimeFromDuration,
   formatTimeFromTimestamp,
@@ -132,12 +131,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     [dividerCalculationContext, dividerMarkersResult],
   );
 
-  // Прогнозируемое время окончания плейлиста
-  // Использует ту же логику, что и calculateDividerMarkers
-  const projectedEndTime = useMemo(() => {
-    return calculateProjectedEndTime(dividerCalculationContext);
-  }, [dividerCalculationContext]);
-
   // Вычисление plannedEndMarker независимо от showHourDividers
   // Красная отсечка должна показываться всегда при наличии plannedEndTime
   const plannedEndMarker = useMemo(() => {
@@ -231,7 +224,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
   return {
     calculateDividerMarkers,
     formatDividerLabel,
-    projectedEndTime,
     formatPlannedEndTimelineLabel,
     plannedEndDividerPosition,
     plannedEndMarker,

@@ -269,8 +269,8 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
             setHasPendingThemeOverride(false);
             onThemeIdChange(pendingThemeId);
           }}
-          variant="primary"
-          size="md"
+          variant="secondary"
+          size="sm"
         >
           {applyButtonLabel}
         </Button>

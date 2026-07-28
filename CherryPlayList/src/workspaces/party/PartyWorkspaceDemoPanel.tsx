@@ -64,7 +64,8 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
   previewCustomizationSettings = {},
   showDemoReset = true,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(mode === 'preview');
+  /* Work (editor) and party (preview) modes: scenarios panel starts collapsed. */
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [panelHeightPx, setPanelHeightPx] = useState<number | null>(null);
   const panelRef = useRef<HTMLElement>(null);
   const dragStateRef = useRef<{ startY: number; startHeight: number; moved: boolean } | null>(null);

@@ -38,7 +38,6 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;
   demoPlayerFloatingSize: DemoPlayerFloatingSize | null;
   demoPlayerFloatingOpen: boolean;
-  playerInAppHeader: boolean;
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
   streamingSource: AimpSourceSelection;
@@ -61,7 +60,6 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setDemoPlayerFloatingPosition: (position: DemoPlayerFloatingPosition | null) => void;
   setDemoPlayerFloatingSize: (size: DemoPlayerFloatingSize | null) => void;
   setDemoPlayerFloatingOpen: (open: boolean) => void;
-  setPlayerInAppHeader: (enabled: boolean) => void;
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
@@ -108,7 +106,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       demoPlayerFloatingPosition: null,
       demoPlayerFloatingSize: null,
       demoPlayerFloatingOpen: true,
-      playerInAppHeader: false,
       keyBindings: {},
       enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
@@ -175,7 +172,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setDemoPlayerFloatingPosition: (position) => set({ demoPlayerFloatingPosition: position }),
       setDemoPlayerFloatingSize: (size) => set({ demoPlayerFloatingSize: size }),
       setDemoPlayerFloatingOpen: (open) => set({ demoPlayerFloatingOpen: open }),
-      setPlayerInAppHeader: (enabled) => set({ playerInAppHeader: enabled }),
       setKeyBinding: (id, binding) =>
         set((state) => ({
           keyBindings: { ...state.keyBindings, [id]: binding },
@@ -201,7 +197,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         demoPlayerFloatingPosition: state.demoPlayerFloatingPosition,
         demoPlayerFloatingSize: state.demoPlayerFloatingSize,
         demoPlayerFloatingOpen: state.demoPlayerFloatingOpen,
-        playerInAppHeader: state.playerInAppHeader,
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
         streamingSource: state.streamingSource,

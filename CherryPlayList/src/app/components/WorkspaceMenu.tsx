@@ -1,6 +1,7 @@
 import { IconButton } from '@cherryplay/components';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CheckIcon from '@mui/icons-material/Check';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -111,6 +112,13 @@ export const WorkspaceMenu: React.FC = () => {
     setUserSubmenuId(null);
   }, []);
 
+  const toggleMenu = useCallback(() => {
+    if (isLayoutEditMode) {
+      return;
+    }
+    setMenuOpen((open) => !open);
+  }, [isLayoutEditMode]);
+
   const cancelInlineRename = useCallback(() => {
     setIsInlineRenaming(false);
     setInlineRenameDraft('');
@@ -187,16 +195,6 @@ export const WorkspaceMenu: React.FC = () => {
 
   const showInlineRename = isInlineRenaming && canRenameOnPill;
 
-  const notifyPresetSwitch = useCallback(
-    (preset: LayoutPreset) => {
-      addNotification({
-        type: 'info',
-        message: `Рабочее пространство: ${LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}`,
-      });
-    },
-    [addNotification],
-  );
-
   const handleActivateBuiltin = useCallback(
     (preset: LayoutPreset) => {
       if (isBuiltinActive(activeWorkspace, preset)) {
@@ -205,12 +203,9 @@ export const WorkspaceMenu: React.FC = () => {
       }
       closeMenu();
       cancelInlineRename();
-      const activated = requestActivateWorkspace({ kind: 'builtin', preset });
-      if (activated) {
-        notifyPresetSwitch(preset);
-      }
+      requestActivateWorkspace({ kind: 'builtin', preset });
     },
-    [activeWorkspace, closeMenu, cancelInlineRename, notifyPresetSwitch, requestActivateWorkspace],
+    [activeWorkspace, closeMenu, cancelInlineRename, requestActivateWorkspace],
   );
 
   const handleActivateUser = useCallback(
@@ -221,25 +216,9 @@ export const WorkspaceMenu: React.FC = () => {
       }
       closeMenu();
       cancelInlineRename();
-      const activated = requestActivateWorkspace({ kind: 'user', id });
-      if (activated) {
-        const workspace = userWorkspaces.find((entry) => entry.id === id);
-        if (workspace) {
-          addNotification({
-            type: 'info',
-            message: `Рабочее пространство: ${workspace.name}`,
-          });
-        }
-      }
+      requestActivateWorkspace({ kind: 'user', id });
     },
-    [
-      activeWorkspace,
-      addNotification,
-      cancelInlineRename,
-      closeMenu,
-      requestActivateWorkspace,
-      userWorkspaces,
-    ],
+    [activeWorkspace, cancelInlineRename, closeMenu, requestActivateWorkspace],
   );
 
   const openRenameModal = useCallback(
@@ -385,7 +364,7 @@ export const WorkspaceMenu: React.FC = () => {
     [focusMenuItemAt],
   );
 
-  const onChevronKeyDown = useCallback(
+  const onMenuTriggerKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if (menuOpen || isLayoutEditMode) return;
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -400,6 +379,10 @@ export const WorkspaceMenu: React.FC = () => {
     renameTargetId !== null
       ? userWorkspaces.find((workspace) => workspace.id === renameTargetId)?.name
       : undefined;
+
+  const menuTriggerTitle = isLayoutEditMode
+    ? LAYOUT_EDIT_DISABLED_TITLE
+    : 'Выбрать рабочее пространство';
 
   return (
     <div className="app-header-workspace">
@@ -436,18 +419,33 @@ export const WorkspaceMenu: React.FC = () => {
           ) : (
             <button
               type="button"
-              className={`workspace-pill__label-btn${canRenameOnPill ? ' workspace-pill__label-btn--rename' : ''}${isUnnamedPill ? ' workspace-pill__label-btn--unnamed' : ''}`}
-              title={canRenameOnPill ? 'Нажмите, чтобы переименовать' : pillLabel}
-              onClick={(e) => {
-                if (canRenameOnPill) {
-                  e.stopPropagation();
-                  startInlineRename();
-                }
-              }}
+              className={`workspace-pill__label-btn${isUnnamedPill ? ' workspace-pill__label-btn--unnamed' : ''}`}
+              title={menuTriggerTitle}
+              disabled={isLayoutEditMode}
+              aria-haspopup="menu"
+              aria-expanded={showMenuPanel}
+              aria-controls={panelId}
+              onClick={toggleMenu}
+              onKeyDown={onMenuTriggerKeyDown}
             >
               {pillLabel}
             </button>
           )}
+
+          {canRenameOnPill && !showInlineRename ? (
+            <button
+              type="button"
+              className="workspace-pill__rename-btn"
+              title="Переименовать"
+              aria-label="Переименовать рабочее пространство"
+              onClick={(e) => {
+                e.stopPropagation();
+                startInlineRename();
+              }}
+            >
+              <DriveFileRenameOutlineIcon className="workspace-pill__rename-icon" aria-hidden />
+            </button>
+          ) : null}
 
           <button
             ref={chevronRef}
@@ -458,13 +456,9 @@ export const WorkspaceMenu: React.FC = () => {
             aria-expanded={showMenuPanel}
             aria-controls={panelId}
             aria-label="Выбрать рабочее пространство"
-            title={isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : 'Выбрать рабочее пространство'}
-            onClick={() => {
-              if (!isLayoutEditMode) {
-                setMenuOpen((open) => !open);
-              }
-            }}
-            onKeyDown={onChevronKeyDown}
+            title={menuTriggerTitle}
+            onClick={toggleMenu}
+            onKeyDown={onMenuTriggerKeyDown}
           >
             <ArrowDropDownIcon className="workspace-pill__chevron" aria-hidden />
           </button>

@@ -2,11 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
+import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
-import { logger } from '@shared/utils';
-import { isFileNotFoundError } from '@shared/utils/fileErrors';
-
-import { usePlayerMode } from './usePlayerMode';
 
 interface UsePlayerPlaybackOptions {
   allTracks: Track[];
@@ -37,7 +34,15 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
   const mode = useProjectStore((state) => state.sessionState.mode);
   const isPreparationMode = mode === 'preparation';
 
-  const playerMode = usePlayerMode();
+  // Row preview always uses demo player (preparation and session)
+  const {
+    startPlayback: startTrackPlayback,
+    pausePlayback,
+    activeTrackId,
+    playerStatus,
+  } = usePlaybackPreview({
+    workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
+  });
 
   // Для режима сессии нужны дополнительные функции из playerAudioStore
   const {
@@ -71,51 +76,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
   }, [playerAudioStatus, activePlayerTrackId]);
 
   /**
-   * Запускает воспроизведение трека
-   */
-  const startTrackPlayback = useCallback(
-    async (track: Track) => {
-      try {
-        if (isPreparationMode) {
-          // В режиме подготовки используем демо-плеер
-          const isSameTrack = playerMode.currentTrack?.id === track.id;
-          if (!isSameTrack || playerMode.status === 'ended') {
-            // Для демо-плеера нужен workspaceId
-            await playerMode.loadTrack(track, DEFAULT_PLAYER_WORKSPACE_ID);
-          }
-          await playerMode.play();
-        } else {
-          // В режиме сессии используем playerAudioStore
-          const isSameTrack = activePlayerTrackId === track.id;
-          if (!isSameTrack || playerAudioStatus === 'ended') {
-            await loadPlayerTrack(track);
-          }
-          await playPlayer();
-        }
-      } catch (error) {
-        if (!isFileNotFoundError(error)) {
-          logger.error('Failed to start track playback', error);
-        }
-      }
-    },
-    [
-      isPreparationMode,
-      playerMode,
-      activePlayerTrackId,
-      playerAudioStatus,
-      loadPlayerTrack,
-      playPlayer,
-    ],
-  );
-
-  /**
-   * Ставит воспроизведение на паузу
-   */
-  const pausePlayback = useCallback(() => {
-    playerMode.pause();
-  }, [playerMode]);
-
-  /**
    * Обработчик окончания трека
    * Исправлена проблема с getState() - используем ref для актуальных значений
    */
@@ -147,18 +107,8 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
 
       // Применяем действие после трека
       if (settings.actionAfterTrack === 'pause') {
-        // Пауза после трека - переходим к следующему и ставим на паузу
-        const nextTrack = getNextActiveTrack();
-        if (nextTrack) {
-          const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
-          markSkippedDisabledTracks(currentIndex, nextIndex);
-          await loadPlayerTrack(nextTrack);
-          setCurrentTrack(nextTrack.id);
-          // Трек уже на паузе после загрузки
-        } else {
-          markSkippedDisabledTracks(currentIndex, allTracks.length);
-          setCurrentTrack(null);
-        }
+        // Пауза в конце трека — остаёмся на текущем закончившемся треке, без автоперехода
+        return;
       } else if (settings.actionAfterTrack === 'pauseAndNext') {
         // Пауза между треками - ждем время паузы, затем переходим
         const nextTrack = getNextActiveTrack();
@@ -277,7 +227,7 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     startTrackPlayback,
     pausePlayback,
     handleNext,
-    activeTrackId: isPreparationMode ? playerMode.currentTrack?.id : activePlayerTrackId,
-    playerStatus: isPreparationMode ? playerMode.status : playerAudioStatus,
+    activeTrackId,
+    playerStatus,
   };
 }

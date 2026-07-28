@@ -37,7 +37,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
  * Mode for ProjectItemRow display
  * - 'playlist': Basic mode for playlist view (no disable, no settings)
  * - 'player-preparation': Player in preparation mode (has settings, no disable)
- * - 'player-session': Player in session mode (has settings, has disable)
+ * - 'player-session': Player in session mode (has settings, has disable, demo preview)
  */
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 
@@ -139,7 +139,7 @@ export interface ProjectItemRowProps {
  * Supports three modes:
  * - 'playlist': Basic mode with play, delete buttons
  * - 'player-preparation': Player mode with settings button
- * - 'player-session': Player mode with settings and disable buttons
+ * - 'player-session': Player mode with settings, disable, and demo preview buttons
  */
 export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   item,
@@ -185,7 +185,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Determine what to show based on mode
-  const showPlayButton = mode === 'playlist' || (mode === 'player-preparation' && !isGroup);
+  const showPlayButton = !isGroup;
   const showDisableButton = mode === 'player-session';
   const showSettingsButton = mode !== 'playlist';
 
@@ -353,7 +353,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       className={isGroup ? 'playlist-item--group' : ''}
       data-item-id={item.id}
     >
-      {/* Play button (for tracks in playlist/preparation mode) */}
+      {/* Play button (demo preview in playlist / player preparation / player session) */}
       {showPlayButton && track && onPlay && (
         <ListRowCompound.PlayButton onPlay={handlePlay} onPause={handlePause} />
       )}

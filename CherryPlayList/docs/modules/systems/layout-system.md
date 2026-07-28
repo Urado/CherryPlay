@@ -108,7 +108,7 @@
 | `workspaceType` | `minWidth` | `minHeight` | Примечание                  |
 | --------------- | ---------- | ----------- | --------------------------- |
 | `playlist`      | 280        | 200         | Список треков               |
-| `fileBrowser`   | 240        | 200         | Панель источников           |
+| `fileBrowser`   | 240        | 200         | **«Браузер»** (file browser) |
 | `collection`    | 200        | 150         | Сетка коллекции             |
 | `player`        | 360        | 120         | Панель воспроизведения      |
 | `demo-player`   | 280        | 100         | Demo shell                  |
@@ -169,7 +169,7 @@
 
 Пересчёт при смене `layout`, resize окна, toggle `isLayoutEditMode` и прочих изменений chrome.
 
-Host зоны **Проигрывание** в шапке (`.app-header-player-host`) держит **min-width ~335px** под фиксированную кнопку сессии **17em** + utilities; chrome host плотнее обычной зоны (`padding-block: 4px` у `.player-header` в `.playback-workspace--header`) — см. [Player](../workspaces/player.md#шапка-зоны).
+Chrome шапки учитывает pill workspace, **HeaderPlaybackPill** и прочий UI; отдельного host основного плеера в шапке **нет** (зона **Проигрывание** — только в layout). Плотность шапки зоны `player` — см. [Player](../workspaces/player.md#шапка-зоны).
 
 **Веб-демо** (`npm run dev:web`): IPC нет; гарантия — clamp divider в `SplitContainer` + add-adjacent pre-check. Опциональный CSS-min на контейнере приложения не является основным механизмом.
 

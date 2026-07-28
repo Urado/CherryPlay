@@ -129,6 +129,10 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     loadTrack: async (track, sourceWorkspaceId) => {
       if (isLocalFilePlaybackBlocked()) {
         get().setActiveTrack(track, sourceWorkspaceId);
+        set({
+          error: 'Воспроизведение невозможно',
+          status: 'error',
+        });
         return;
       }
 

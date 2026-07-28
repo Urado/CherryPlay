@@ -40,7 +40,7 @@
 - **Экспорт:** `exportPath`, `exportStrategy` (`copyWithNumberPrefix` | `aimpPlaylist`)
 - **Файлы и плейлист:** `lastOpenedPlaylist`, `fileBrowserPathsByWorkspaceId` (`Record<WorkspaceId, string>`), legacy `fileBrowserPath` (зеркало path для `DEFAULT_FILEBROWSER_WORKSPACE_ID`; при rehydrate мигрируется в map — см. `migrateFileBrowserPathsOnRehydrate` в `settingsStore.ts`)
 - **Отображение списка:** `trackItemSizePreset`, `hourDividerInterval`, `showHourDividers`
-- **Аудио:** `playerAudioDeviceId`, `demoPlayerAudioDeviceId`, `demoPlayerFloatingPosition` (`{ x, y }` \| `null`), `demoPlayerFloatingOpen` (`boolean`), `playerInAppHeader` (`boolean`). `demoPlayerFloatingOpen` — persisted preference; runtime visibility floating-панели может переопределяться логикой layout и активной demo-сессии — см. [Demo Player — Floating: открытие / подавление](./demo-player.md#floating-открытие--подавление).
+- **Аудио:** `playerAudioDeviceId`, `demoPlayerAudioDeviceId`, `demoPlayerFloatingPosition` (`{ x, y }` \| `null`), `demoPlayerFloatingOpen` (`boolean`). `demoPlayerFloatingOpen` — persisted preference; runtime visibility floating-панели может переопределяться логикой layout и активной demo-сессии — см. [Demo Player — Floating: открытие / подавление](./demo-player.md#floating-открытие--подавление). Поле `playerInAppHeader` из настроек **удалено**; при наличии в старом persist игнорируется (основной плеер не хостится в шапке).
 - **Клавиши:** `keyBindings` (пользовательские привязки)
 - **Стриминг / Онлайн:** `enableStreaming`, `streamingSource` (в UI — **Онлайн**, **Источник состояния для гостей**)
 

@@ -221,10 +221,10 @@ export const TrackSettingsModal: React.FC = () => {
                   ? 'Без паузы'
                   : defaultActionAfterTrack === 'pauseAndNext'
                     ? 'Интервал между треками'
-                    : 'Остановка после трека'}
+                    : 'Пауза в конце трека'}
                 )
               </option>
-              <option value="pause">Остановка после трека</option>
+              <option value="pause">Пауза в конце трека</option>
               <option value="next">Без паузы</option>
               <option value="pauseAndNext">Интервал между треками</option>
             </select>

@@ -28,14 +28,14 @@ export const PlayButton: React.FC<PlayButtonProps> = ({
   disabled = false,
   disabledTitle,
 }) => {
-  const { baseClassName, isActive, isPlaying, isLocked } = useListRowContext();
+  // isLocked still blocks drag/edit on played/current rows; demo play must stay clickable.
+  const { baseClassName, isActive, isPlaying } = useListRowContext();
 
   const playing = isActive && isPlaying;
-  const isButtonDisabled = disabled || isLocked;
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (isButtonDisabled) {
+    if (disabled) {
       return;
     }
     if (playing && onPause) {
@@ -51,7 +51,7 @@ export const PlayButton: React.FC<PlayButtonProps> = ({
       size="sm"
       onClick={handleClick}
       className={`${baseClassName}-play ${isActive ? 'active' : ''}`}
-      disabled={isButtonDisabled}
+      disabled={disabled}
       title={disabled ? disabledTitle : undefined}
       aria-label={playing ? 'Pause' : 'Play'}
     />

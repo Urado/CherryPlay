@@ -9,24 +9,20 @@ import { PlayerViewContainerContent } from './PlayerViewContainerContent';
 interface PlayerViewContainerProps {
   workspaceId: WorkspaceId;
   zoneId: string;
-  variant?: 'full' | 'header';
 }
 
 export const PlayerViewContainer: React.FC<PlayerViewContainerProps> = ({
   workspaceId,
   zoneId,
-  variant = 'full',
 }) => {
   const streamingSource = useSettingsStore((state) => state.streamingSource);
 
   return (
-    <div
-      className={`playback-workspace${variant === 'header' ? ' playback-workspace--header' : ''}`}
-    >
+    <div className="playback-workspace">
       {streamingSource === 'aimp' ? (
         <AimpView workspaceId={workspaceId} zoneId={zoneId} embedded />
       ) : (
-        <PlayerViewContainerContent workspaceId={workspaceId} zoneId={zoneId} variant={variant} />
+        <PlayerViewContainerContent workspaceId={workspaceId} zoneId={zoneId} />
       )}
     </div>
   );

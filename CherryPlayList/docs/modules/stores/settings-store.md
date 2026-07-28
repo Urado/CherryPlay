@@ -14,7 +14,7 @@ Store для хранения настроек приложения.
 
 - **Экспорт**: Путь для экспорта, стратегия экспорта (copyWithNumberPrefix, aimpPlaylist)
 - **UI**: Размеры строк треков (small, medium, large), отсечки по времени (интервал, показывать/скрыть)
-- **Аудио**: Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); опция `playerInAppHeader` для отображения основного плеера в шапке — см. [Demo Player](../systems/demo-player.md#размещение)
+- **Аудио**: Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`) — см. [Demo Player](../systems/demo-player.md#размещение). Настройки «Показывать плеер в шапке» / `playerInAppHeader` **нет** (основной плеер только в layout-зоне `player`).
 - **Проекты**: Путь последнего открытого плейлиста
 - **Файловый браузер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
 - **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`. Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит этот флаг, но в demo mode политика принудительно держит `networkEnabled=false`; отдельной настройки в UI нет. Party preset/зоны **не** скрываются — см. [Party](../workspaces/party.md).

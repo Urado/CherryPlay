@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { APP_VERSION } from '@shared/config';
+import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import {
@@ -13,8 +14,9 @@ import {
   parseSettingsBundleJson,
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
-import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import type { TrackItemSizePreset } from '@shared/types/trackItemSize';
+import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
 
 const DIVIDER_INTERVALS = [
@@ -42,12 +44,16 @@ export const SettingsModal: React.FC = () => {
     demoPlayerAudioDeviceId,
     setPlayerAudioDeviceId,
     setDemoPlayerAudioDeviceId,
-    playerInAppHeader,
-    setPlayerInAppHeader,
     enableStreaming,
     setEnableStreaming,
+    streamingSource,
+    setStreamingSource,
   } = useSettingsStore();
-  const { supportsAudioDeviceSelection, supportsNativeFileSystem } = usePlatformCapabilities();
+  const bridgeState = useAimpStore((state) => state.bridgeState);
+  const { supportsAudioDeviceSelection, supportsNativeFileSystem, supportsAimpWorkspace } =
+    usePlatformCapabilities();
+  const aimpAvailability = getAimpAvailability(bridgeState);
+  const canSelectAimp = supportsAimpWorkspace && aimpAvailability.available;
 
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
   const [pendingImportBundle, setPendingImportBundle] = useState<SettingsExportBundle | null>(null);
@@ -64,8 +70,9 @@ export const SettingsModal: React.FC = () => {
   const [localDemoPlayerDeviceId, setLocalDemoPlayerDeviceId] = useState<string | null>(
     demoPlayerAudioDeviceId,
   );
-  const [localPlayerInAppHeader, setLocalPlayerInAppHeader] = useState(playerInAppHeader);
   const [localEnableStreaming, setLocalEnableStreaming] = useState(false);
+  const [localStreamingSource, setLocalStreamingSource] =
+    useState<AimpSourceSelection>(streamingSource);
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -99,9 +106,9 @@ export const SettingsModal: React.FC = () => {
         setLocalShowHourDividers(showHourDividers);
         setLocalPlayerDeviceId(playerAudioDeviceId);
         setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
-        setLocalPlayerInAppHeader(playerInAppHeader);
         if (hasHydrated) {
           setLocalEnableStreaming(enableStreaming);
+          setLocalStreamingSource(streamingSource);
         }
       }, 0);
       return () => clearTimeout(timeoutId);
@@ -115,8 +122,8 @@ export const SettingsModal: React.FC = () => {
     showHourDividers,
     playerAudioDeviceId,
     demoPlayerAudioDeviceId,
-    playerInAppHeader,
     enableStreaming,
+    streamingSource,
   ]);
 
   const syncLocalStateFromStore = useCallback(() => {
@@ -126,8 +133,8 @@ export const SettingsModal: React.FC = () => {
     setLocalShowHourDividers(state.showHourDividers);
     setLocalPlayerDeviceId(state.playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(state.demoPlayerAudioDeviceId);
-    setLocalPlayerInAppHeader(state.playerInAppHeader);
     setLocalEnableStreaming(state.enableStreaming);
+    setLocalStreamingSource(state.streamingSource);
   }, []);
 
   const formatImportSummary = useCallback((result: ReturnType<typeof applySettingsImport>) => {
@@ -257,27 +264,30 @@ export const SettingsModal: React.FC = () => {
 
     setPlayerAudioDeviceId(localPlayerDeviceId);
     setDemoPlayerAudioDeviceId(localDemoPlayerDeviceId);
-    setPlayerInAppHeader(localPlayerInAppHeader);
     setEnableStreaming(localEnableStreaming);
+    setStreamingSource(
+      localStreamingSource === 'aimp' && !canSelectAimp ? 'cherryPlayPlayer' : localStreamingSource,
+    );
 
     addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
   }, [
     addNotification,
+    canSelectAimp,
     closeModal,
     localDemoPlayerDeviceId,
     localEnableStreaming,
     localHourDividerInterval,
     localPlayerDeviceId,
-    localPlayerInAppHeader,
     localShowHourDividers,
+    localStreamingSource,
     localTrackItemSizePreset,
     setDemoPlayerAudioDeviceId,
     setEnableStreaming,
     setHourDividerInterval,
     setPlayerAudioDeviceId,
-    setPlayerInAppHeader,
     setShowHourDividers,
+    setStreamingSource,
     setTrackItemSizePreset,
   ]);
 
@@ -287,8 +297,8 @@ export const SettingsModal: React.FC = () => {
     setLocalShowHourDividers(showHourDividers);
     setLocalPlayerDeviceId(playerAudioDeviceId);
     setLocalDemoPlayerDeviceId(demoPlayerAudioDeviceId);
-    setLocalPlayerInAppHeader(playerInAppHeader);
     setLocalEnableStreaming(enableStreaming);
+    setLocalStreamingSource(streamingSource);
     closeModal();
   }, [
     closeModal,
@@ -296,8 +306,8 @@ export const SettingsModal: React.FC = () => {
     enableStreaming,
     hourDividerInterval,
     playerAudioDeviceId,
-    playerInAppHeader,
     showHourDividers,
+    streamingSource,
     trackItemSizePreset,
   ]);
 
@@ -468,6 +478,38 @@ export const SettingsModal: React.FC = () => {
               )}
             </div>
 
+            {supportsAimpWorkspace && (
+              <div className="settings-group">
+                <label className="settings-label" htmlFor="settings-streaming-source">
+                  Источник проигрывания
+                </label>
+                <select
+                  className="settings-select"
+                  id="settings-streaming-source"
+                  value={localStreamingSource}
+                  onChange={(e) => setLocalStreamingSource(e.target.value as AimpSourceSelection)}
+                >
+                  <option value="cherryPlayPlayer">CherryPlay</option>
+                  <option value="aimp" disabled={!canSelectAimp && localStreamingSource !== 'aimp'}>
+                    AIMP{!canSelectAimp ? ' (недоступен)' : ''}
+                  </option>
+                </select>
+                {!canSelectAimp && (
+                  <div
+                    className="settings-description"
+                    style={{
+                      marginTop: 4,
+                      fontSize: '0.85rem',
+                      color: 'var(--text-secondary, #9e9e9e)',
+                    }}
+                  >
+                    {aimpAvailability.gatingReasons[0]?.message ??
+                      'AIMP сейчас недоступен на этой платформе.'}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="settings-group">
               <label className="settings-label" htmlFor="demo-player-audio-device">
                 Куда играет прослушивание файлов
@@ -505,31 +547,6 @@ export const SettingsModal: React.FC = () => {
                   {getPlatformUnavailableMessage()}
                 </div>
               )}
-            </div>
-
-            <div className="settings-group">
-              <div className="settings-checkbox-group">
-                <input
-                  type="checkbox"
-                  className="settings-checkbox"
-                  checked={localPlayerInAppHeader}
-                  onChange={(e) => setLocalPlayerInAppHeader(e.target.checked)}
-                  id="settings-player-in-header"
-                />
-                <label className="settings-checkbox-label" htmlFor="settings-player-in-header">
-                  Показывать плеер в шапке
-                </label>
-              </div>
-              <div
-                className="settings-description"
-                style={{
-                  marginTop: 4,
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary, #9e9e9e)',
-                }}
-              >
-                Компактная панель проигрывания в шапке вместо зоны «Проигрывание» в layout.
-              </div>
             </div>
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />

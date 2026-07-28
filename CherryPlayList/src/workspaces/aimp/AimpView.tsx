@@ -16,8 +16,6 @@ import {
   getAimpEffectiveProgressMs,
   isAimpDegraded,
 } from '@shared/utils';
-import { PlaybackSourceSwitcher } from '@workspaces/player/components/PlaybackSourceSwitcher';
-
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
@@ -253,16 +251,17 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     >
       {embedded ? (
         <div className="playlist-header-section player-header">
-          <div className="player-header-toolbar">
-            <div className="player-header-toolbar__lead">
-              <div className="playlist-stats-header__info">
-                <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
-                <span>
-                  {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
-                    ? 'Плейлист пуст'
-                    : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
-                </span>
-                <PlaybackSourceSwitcher layout="inline" />
+          <div className="playlist-header-toolbar">
+            <div className="playlist-header-toolbar__primary">
+              <div className="playlist-stats-header playlist-stats-header--inline">
+                <div className="playlist-stats-header__info">
+                  <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+                  <span>
+                    {(bridgeState.playlistSnapshot?.trackCount ?? 0) === 0
+                      ? 'Плейлист пуст'
+                      : `${bridgeState.playlistSnapshot?.trackCount ?? 0} треков`}
+                  </span>
+                </div>
               </div>
             </div>
             <details style={{ position: 'relative', flexShrink: 0 }}>

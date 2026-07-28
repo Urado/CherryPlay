@@ -13,7 +13,24 @@ import {
 export const RECONNECT_INTERVAL_MS = 60_000;
 export { ERROR_PARTY_NOT_FOUND, ERROR_CONNECTION } from './partyWorkspaceConstants';
 export const THEME_ACCESS_FALLBACK_ERROR =
-  'Не удалось проверить доступ к темам. Для безопасности доступны только базовая и текущая темы.';
+  'Не удалось проверить доступ к темам. Доступны только базовая и текущая темы.';
+
+/** Display name when party name is empty/missing — falls back to project name. */
+export function resolveDisplayPartyName(
+  partyName: string | null | undefined,
+  projectName: string | null | undefined,
+  fallback = 'Вечеринка',
+): string {
+  const trimmedParty = partyName?.trim() ?? '';
+  if (trimmedParty.length > 0) {
+    return trimmedParty;
+  }
+  const trimmedProject = projectName?.trim() ?? '';
+  if (trimmedProject.length > 0) {
+    return trimmedProject;
+  }
+  return fallback;
+}
 
 export const REVOKED_THEME_PACKAGE_CODE = 'revoked-current-theme';
 export const REVOKED_THEME_PACKAGE_NAME = 'Не доступна в пакетах';

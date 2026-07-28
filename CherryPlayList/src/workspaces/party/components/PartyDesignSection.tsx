@@ -30,7 +30,7 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
   onThemeIdChange,
   onCustomizationSettingsChange,
   readOnly = false,
-  defaultExpanded = true,
+  defaultExpanded = false,
   lockedThemes = [],
   visibleThemeIds = null,
   isThemeAccessLoading = false,

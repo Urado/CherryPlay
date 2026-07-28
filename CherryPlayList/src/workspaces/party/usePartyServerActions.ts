@@ -24,7 +24,11 @@ import {
 } from './partyWorkspaceApiBuilders';
 import { finalizePartyCreation, handlePartyCreationFailure } from './partyWorkspaceCreateFlow';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
-import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWorkspaceUtils';
+import {
+  buildThemeNotEntitledMessage,
+  isThemeNotEntitledError,
+  resolveDisplayPartyName,
+} from './partyWorkspaceUtils';
 import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
 
 const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string> = {
@@ -39,7 +43,7 @@ function resolvePartyNameForServer(
   store: ReturnType<typeof getPartyStore>,
   projectName: string,
 ): string {
-  const nameToUse = store.partyName.trim() || projectName.trim() || 'Вечеринка';
+  const nameToUse = resolveDisplayPartyName(store.partyName, projectName, 'Вечеринка');
   if (!store.partyName.trim()) {
     store.setPartyName(nameToUse);
   }

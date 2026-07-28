@@ -27,7 +27,6 @@ import {
 } from '@shared/stores';
 
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
-import { HeaderPlayerHost } from './HeaderPlayerHost';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { WorkspaceMenu } from './WorkspaceMenu';
 
@@ -693,10 +692,6 @@ export const AppHeader: React.FC = () => {
                   <SettingsIcon className="header-button__icon" aria-hidden />
                 </button>
               </div>
-            </div>
-
-            <div className="app-header-status-row">
-              <HeaderPlayerHost />
             </div>
           </div>
 

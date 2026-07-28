@@ -28,14 +28,6 @@
   flex-wrap: wrap;
 }
 
-.app-header-status-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex: 1 1 320px;
-  min-width: 0;
-}
-
 .app-header-playback-pill-row {
   display: flex;
   align-items: center;
@@ -166,14 +158,10 @@
   font-size: inherit;
   font-family: inherit;
   text-align: left;
-  cursor: default;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.workspace-pill__label-btn--rename {
-  cursor: text;
 }
 
 .workspace-pill__label-btn--unnamed {
@@ -181,12 +169,39 @@
   font-style: italic;
 }
 
-.workspace-pill__label-btn--rename:hover:not(:disabled) {
+.workspace-pill__label-btn:hover:not(:disabled) {
   color: var(--text-primary);
 }
 
 .workspace-pill__label-btn:disabled {
   cursor: not-allowed;
+}
+
+.workspace-pill__rename-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.workspace-pill__rename-btn:hover {
+  background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+.workspace-pill__rename-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+}
+
+.workspace-pill__rename-icon {
+  font-size: 16px !important;
 }
 
 .workspace-pill__rename-input {
@@ -777,9 +792,9 @@
 
 .playback-pill__track-name {
   display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 14px;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -789,9 +804,9 @@
 .playback-pill__track-time {
   display: block;
   align-self: end;
-  font-size: 11px;
-  line-height: 12px;
-  height: 12px;
+  font-size: 10px;
+  line-height: 11px;
+  height: 11px;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -985,53 +1000,6 @@
   50% {
     opacity: 0.45;
   }
-}
-
-.app-header-player-host {
-  flex: 1 1 360px;
-  /* Budget: fixed 17em session + 2×32px utilities + gaps + host pad (~335px @ 12px). Keep in sync with .player-session-button. */
-  min-width: 335px;
-  max-width: 720px;
-  min-height: 0;
-}
-
-.app-header-player-host--blocked {
-  pointer-events: none;
-  opacity: 0.55;
-}
-
-.playback-workspace--header {
-  min-width: 0;
-}
-
-.playback-workspace--header .player-view--header {
-  border: none;
-  background: transparent;
-  padding: 0;
-}
-
-/* Host-only density; shrink/nowrap for session button lives in player.css */
-.playback-workspace--header .player-view--header .player-header-toolbar {
-  gap: 2px;
-}
-
-.playback-workspace--header .player-view--header .playlist-header-section.player-header {
-  padding-block: 4px;
-}
-
-.playback-workspace--header .player-header-actions__utilities {
-  gap: var(--spacing-xs);
-}
-
-.workspace-player-in-header-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: var(--spacing-md);
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-align: center;
 }
 
 .visually-hidden {
@@ -1369,11 +1337,42 @@
 
 .demo-player__timeline,
 .demo-player__volume-slider {
+  --demo-range-track: color-mix(in srgb, var(--ui-border, rgba(255, 255, 255, 0.2)) 80%, transparent);
+  --demo-range-fill: var(--accent-primary, #4a9eff);
+  --demo-range-progress: 0%;
+
   appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ui-border, rgba(255, 255, 255, 0.2)) 80%, transparent);
+  background: linear-gradient(
+    to right,
+    var(--demo-range-fill) 0%,
+    var(--demo-range-fill) var(--demo-range-progress),
+    var(--demo-range-track) var(--demo-range-progress),
+    var(--demo-range-track) 100%
+  );
   outline: none;
+}
+
+.demo-player__timeline::-webkit-slider-runnable-track,
+.demo-player__volume-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.demo-player__timeline::-moz-range-track,
+.demo-player__volume-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--demo-range-track);
+}
+
+.demo-player__timeline::-moz-range-progress,
+.demo-player__volume-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--demo-range-fill);
 }
 
 .demo-player__timeline::-webkit-slider-thumb,
@@ -1381,6 +1380,7 @@
   appearance: none;
   width: 12px;
   height: 12px;
+  margin-top: -4px;
   border-radius: 50%;
   background: var(--accent-primary, #4a9eff);
   border: none;

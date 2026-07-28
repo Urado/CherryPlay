@@ -2,6 +2,7 @@ import { partyThemes, type CustomizationSettings, type PartyThemeId } from '@che
 import React, { useMemo } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { useProjectStore } from '@shared/stores/projectStore';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
@@ -10,6 +11,7 @@ import { usePartyPreviewEffectiveState } from './partyPreviewEffectiveState';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
 import './PartyPreviewView.css';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
+import { resolveDisplayPartyName } from './partyWorkspaceUtils';
 
 interface PartyPreviewViewProps {
   workspaceId: WorkspaceId;
@@ -40,6 +42,14 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
     lastManualCheckFailed,
     handleManualReconnect,
   } = runtime;
+  const projectName = useProjectStore((state) => state.name);
+  const displayPartyName = useMemo(() => {
+    const title = partyTitle.trim();
+    if (title.length > 0) {
+      return title;
+    }
+    return resolveDisplayPartyName(partyName, projectName, 'Как видят гости');
+  }, [partyTitle, partyName, projectName]);
 
   const {
     isSynchronized,
@@ -121,7 +131,7 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
             effectiveCustomizationSettings as CustomizationSettings<PartyThemeId>
           }
           playbackState={effectivePlaybackState}
-          partyName={partyTitle.trim() || partyName || 'Как видят гости'}
+          partyName={displayPartyName}
           subtitle={partySubtitle.trim() || undefined}
           previewLifecycleState={previewLifecycleState}
           previewViewerStatusOverride={previewViewerStatusOverride}
