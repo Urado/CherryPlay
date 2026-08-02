@@ -1,11 +1,14 @@
 import { Button } from '@cherryplay/components';
 import React from 'react';
 
+import type { ProjectSessionMode } from '@core/types/project';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
-import { PARTY_EDITOR_LIFECYCLE_BADGE_LABELS } from '../partyEditorPhase';
+import { resolvePartyLifecycleServerBadgeLabel } from '../partyEditorPhase';
 
 import './PartyLifecycleControls.css';
+
+export type PartyLifecycleControlSlot = 'all' | 'accent' | 'secondary';
 
 export interface PartyLifecycleControlsProps {
   partyLifecycleState: PartyLifecycleState;
@@ -13,8 +16,9 @@ export interface PartyLifecycleControlsProps {
   pendingTransition?: PartyLifecycleState | null;
   disabled?: boolean;
   onTransition: (targetState: PartyLifecycleState) => void;
-  /** Compact horizontal layout for shell header. */
   layout?: 'default' | 'header';
+  sessionMode?: ProjectSessionMode;
+  slot?: PartyLifecycleControlSlot;
 }
 
 function isLoadingForTarget(
@@ -32,28 +36,42 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   disabled = false,
   onTransition,
   layout = 'default',
+  sessionMode,
+  slot = 'all',
 }) => {
+  if (partyLifecycleState === 'completed') {
+    return null;
+  }
+
   const isDisabled = disabled || isTransitioning;
   const isHeader = layout === 'header';
+  const showAccentPublish =
+    partyLifecycleState === 'draft' && (slot === 'all' || slot === 'accent');
+  const showSecondaryReady =
+    partyLifecycleState === 'ready' && (slot === 'all' || slot === 'secondary');
+
+  if (!showAccentPublish && !showSecondaryReady) {
+    return null;
+  }
 
   const transitionButtons = (
     <>
-      {partyLifecycleState === 'draft' && (
+      {showAccentPublish && (
         <Button
           type="button"
           className="party-lifecycle-action"
           disabled={isDisabled}
           loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
           onClick={() => onTransition('ready')}
-          title="Страница вечеринки станет доступна гостям (статус «Опубликована»)"
+          title="Опубликовать вечеринку на сайте (статус «Не начато»)"
           variant="primary"
           size="sm"
         >
-          {isHeader ? 'Открыть' : 'Открыть для гостей'}
+          Опубликовать
         </Button>
       )}
 
-      {partyLifecycleState === 'ready' && (
+      {showSecondaryReady && (
         <>
           <Button
             type="button"
@@ -61,11 +79,11 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
             disabled={isDisabled}
             loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
             onClick={() => onTransition('draft')}
-            title="Снять страницу с сайта (статус «Не на сайте»)"
+            title="Вернуть вечеринку в черновик"
             variant="secondary"
             size="sm"
           >
-            {isHeader ? 'Снять' : 'Снять с сайта'}
+            Вернуть в черновик
           </Button>
           <Button
             type="button"
@@ -73,28 +91,13 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
             disabled={isDisabled}
             loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
             onClick={() => onTransition('completed')}
-            title="Завершить вечеринку"
+            title="Перевести вечеринку в архив"
             variant="secondary"
             size="sm"
           >
-            Завершить
+            В архив
           </Button>
         </>
-      )}
-
-      {partyLifecycleState === 'completed' && (
-        <Button
-          type="button"
-          className="party-lifecycle-action"
-          disabled={isDisabled}
-          loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
-          onClick={() => onTransition('ready')}
-          title="Вернуть вечеринку на сайт (статус «Опубликована»)"
-          variant="secondary"
-          size="sm"
-        >
-          Вернуть
-        </Button>
       )}
     </>
   );
@@ -116,7 +119,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
       <div className="party-lifecycle-header">
         <span className="party-lifecycle-header-label">Статус вечеринки</span>
         <span className={`party-lifecycle-badge party-lifecycle-badge--${partyLifecycleState}`}>
-          {PARTY_EDITOR_LIFECYCLE_BADGE_LABELS[partyLifecycleState]}
+          {resolvePartyLifecycleServerBadgeLabel(partyLifecycleState, sessionMode)}
         </span>
       </div>
 

@@ -1,13 +1,17 @@
+import { Button } from '@cherryplay/components';
 import React, { useMemo } from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
+import { useProjectStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { PartyCatalogVisibilityControl } from './components/PartyCatalogVisibilityControl';
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { PartyEditor } from './components/PartyEditor';
 import {
+  getPartyEditorActionVisibility,
   PartyEditorActions,
+  shouldShowPartyCatalogVisibilityControl,
   shouldShowPartyLifecycleControls,
 } from './components/PartyEditorActions';
 import { PartyEditorShell } from './components/PartyEditorShell';
@@ -77,6 +81,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     isThemeAccessLoading,
     themeAccessErrorMessage,
     themeEntitlementModal,
+    themeAccess,
     setPartyName,
     setPartyTitle,
     setPartySubtitle,
@@ -111,6 +116,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   );
 
   const linkedParty = meta.linkedParty;
+  const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const phaseInput = {
     isAuth,
     isClientOutdated,
@@ -132,32 +138,31 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     shouldShowPartyTrackDisplaySection(phase) && (!isBlocked || preserveShellContent);
   const showLifecycle =
     editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
+  const showCatalog = editorPhase != null && shouldShowPartyCatalogVisibilityControl(editorPhase);
+  const showCopyUrl =
+    Boolean(linkedParty?.url) && (editorPhase === 'draft-linked' || editorPhase === 'ready');
+  const showGuestAccess = showCatalog || showCopyUrl;
 
   const networkActionsDisabled = !isNetworkEnabledForEditor || serverUnreachable;
 
-  const connectivityBanner = useMemo(() => {
-    if (!isNetworkEnabledForEditor) {
-      return <PartyConnectivityBanner kind="offline" />;
-    }
-    if (serverUnreachable && !isBlocked) {
-      return (
-        <PartyConnectivityBanner
-          kind="unreachable"
-          isReconnecting={isReconnecting}
-          lastManualCheckFailed={lastManualCheckFailed}
-          onManualReconnect={handleManualReconnect}
-        />
-      );
-    }
-    return null;
-  }, [
-    isNetworkEnabledForEditor,
-    serverUnreachable,
-    isBlocked,
-    isReconnecting,
-    lastManualCheckFailed,
-    handleManualReconnect,
-  ]);
+  const isCurrentThemeLocked = lockedThemeInfos.some((item) => item.themeId === themeId);
+  const createBlockedByTheme = isThemeAccessLoading || !themeAccess || isCurrentThemeLocked;
+  const createBlockedByThemeTitle = isCurrentThemeLocked
+    ? 'Выберите тему, доступную в вашем тарифе'
+    : isThemeAccessLoading || !themeAccess
+      ? (themeAccessErrorMessage ?? 'Дождитесь проверки доступа к темам')
+      : undefined;
+
+  const connectivityBanner = !isNetworkEnabledForEditor ? (
+    <PartyConnectivityBanner kind="offline" />
+  ) : serverUnreachable && !isBlocked ? (
+    <PartyConnectivityBanner
+      kind="unreachable"
+      isReconnecting={isReconnecting}
+      lastManualCheckFailed={lastManualCheckFailed}
+      onManualReconnect={handleManualReconnect}
+    />
+  ) : null;
 
   const editorFields = useMemo(
     () => ({
@@ -262,15 +267,115 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     [linkedParty, serverError, isCheckingParty, handleRetry],
   );
 
+  const editorActionVisibility = editorPhase
+    ? getPartyEditorActionVisibility(editorPhase, {
+        isAuthenticated: isAuth,
+        hasOnPublish: true,
+        hasOnOpenLinkParty: true,
+      })
+    : null;
+
+  const editorActionProps = editorPhase
+    ? {
+        compact: true as const,
+        phase: editorPhase,
+        partyName,
+        linkedParty,
+        isAuthenticated: isAuth,
+        isCreating,
+        isPublishing,
+        networkDisabled: networkActionsDisabled,
+        networkOffline: !isNetworkEnabledForEditor,
+        createBlockedByTheme,
+        createBlockedByThemeTitle,
+        onCreateParty: handleCreateParty,
+        onPublish: handlePublish,
+        onOpenLinkParty: () => openModal('linkParty'),
+      }
+    : null;
+
+  const showSecondaryEditorActions = Boolean(
+    editorActionVisibility &&
+    ((editorActionVisibility.showLinkParty && isAuth) ||
+      (editorActionVisibility.showPublish && editorPhase === 'draft-linked')),
+  );
+  const showAccentEditorActions = Boolean(
+    editorActionVisibility &&
+    (editorActionVisibility.showCreate ||
+      (editorActionVisibility.showPublish && editorPhase === 'ready')),
+  );
+
+  const lifecycleState = partyLifecycleState ?? 'draft';
+  const showSecondaryLifecycle = showLifecycle && lifecycleState === 'ready';
+  const showAccentLifecycle = showLifecycle && lifecycleState === 'draft';
+
+  const secondaryEditorActions =
+    showSecondaryEditorActions && editorActionProps ? (
+      <PartyEditorActions {...editorActionProps} slot="secondary" />
+    ) : null;
+  const accentEditorActions =
+    showAccentEditorActions && editorActionProps ? (
+      <PartyEditorActions {...editorActionProps} slot="accent" />
+    ) : null;
+
+  const secondaryLifecycle = showSecondaryLifecycle ? (
+    <PartyLifecycleControls
+      layout="header"
+      slot="secondary"
+      partyLifecycleState={lifecycleState}
+      isTransitioning={isTransitioningLifecycle}
+      pendingTransition={pendingLifecycleTransition}
+      disabled={isCreating || isPublishing || networkActionsDisabled}
+      sessionMode={sessionMode}
+      onTransition={(target) => void handleLifecycleTransition(target)}
+    />
+  ) : null;
+
+  const accentLifecycle = showAccentLifecycle ? (
+    <PartyLifecycleControls
+      layout="header"
+      slot="accent"
+      partyLifecycleState={lifecycleState}
+      isTransitioning={isTransitioningLifecycle}
+      pendingTransition={pendingLifecycleTransition}
+      disabled={isCreating || isPublishing || networkActionsDisabled}
+      sessionMode={sessionMode}
+      onTransition={(target) => void handleLifecycleTransition(target)}
+    />
+  ) : null;
+
+  const guestAccessGroup = showGuestAccess ? (
+    <div className="party-editor-shell-header-group" role="group" aria-label="Доступ гостей">
+      {showCatalog && (
+        <PartyCatalogVisibilityControl
+          layout="header"
+          isListedInCatalog={isListedInCatalog}
+          disabled={networkActionsDisabled}
+          isUpdating={isTogglingCatalogVisibility}
+          networkOffline={!isNetworkEnabledForEditor}
+          onChange={(listed) => void handleCatalogVisibilityChange(listed)}
+        />
+      )}
+      {showCopyUrl ? (
+        <Button type="button" onClick={() => void handleCopyUrl()} variant="secondary" size="sm">
+          Скопировать URL
+        </Button>
+      ) : null}
+    </div>
+  ) : null;
+
+  const hasSecondaryToolbar =
+    showSecondaryEditorActions || showSecondaryLifecycle || showGuestAccess;
+  const hasAccentToolbar = showAccentEditorActions || showAccentLifecycle;
+
   return (
     <div className="party-editor-view">
       <PartyEditorShell
         phase={phase}
-        linkedParty={linkedParty}
-        onCopyUrl={linkedParty?.url ? () => void handleCopyUrl() : undefined}
         isBlocked={isBlocked}
         blockedReason={blockedReason}
         hidePhaseBadge={showLifecycle}
+        sessionMode={sessionMode}
         connectivityBanner={connectivityBanner}
         blockedOverlayProps={{
           clientRequiredVersion,
@@ -280,42 +385,29 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
           onResetAndCreateNew: handleResetAndCreateNewParty,
         }}
         headerActions={
-          editorPhase ? (
+          editorPhase &&
+          editorPhase !== 'completed' &&
+          (hasSecondaryToolbar || hasAccentToolbar) ? (
             <div className="party-editor-shell-header-toolbar">
-              {editorPhase !== 'completed' && (
-                <PartyCatalogVisibilityControl
-                  layout="header"
-                  isListedInCatalog={isListedInCatalog}
-                  disabled={networkActionsDisabled}
-                  isUpdating={isTogglingCatalogVisibility}
-                  networkOffline={!isNetworkEnabledForEditor}
-                  onChange={(listed) => void handleCatalogVisibilityChange(listed)}
-                />
-              )}
-              {showLifecycle && (
-                <PartyLifecycleControls
-                  layout="header"
-                  partyLifecycleState={partyLifecycleState ?? 'draft'}
-                  isTransitioning={isTransitioningLifecycle}
-                  pendingTransition={pendingLifecycleTransition}
-                  disabled={isCreating || isPublishing || networkActionsDisabled}
-                  onTransition={(target) => void handleLifecycleTransition(target)}
-                />
-              )}
-              <PartyEditorActions
-                compact
-                phase={editorPhase}
-                partyName={partyName}
-                linkedParty={linkedParty}
-                isAuthenticated={isAuth}
-                isCreating={isCreating}
-                isPublishing={isPublishing}
-                networkDisabled={networkActionsDisabled}
-                networkOffline={!isNetworkEnabledForEditor}
-                onCreateParty={handleCreateParty}
-                onPublish={handlePublish}
-                onOpenLinkParty={() => openModal('linkParty')}
-              />
+              {hasAccentToolbar ? (
+                <div className="party-editor-shell-header-toolbar-accent">
+                  {accentLifecycle}
+                  {accentEditorActions}
+                </div>
+              ) : null}
+              {hasSecondaryToolbar ? (
+                <div className="party-editor-shell-header-toolbar-secondary">
+                  {secondaryEditorActions ? (
+                    <div className="party-editor-shell-header-group">{secondaryEditorActions}</div>
+                  ) : null}
+                  {secondaryLifecycle ? (
+                    <div className="party-editor-shell-header-group party-editor-shell-header-group--transitions">
+                      {secondaryLifecycle}
+                    </div>
+                  ) : null}
+                  {guestAccessGroup}
+                </div>
+              ) : null}
             </div>
           ) : undefined
         }

@@ -1,0 +1,40 @@
+---
+description: Always launch every subagent with model inherit (not auto). Use whenever invoking the Task tool or any subagent.
+alwaysApply: true
+---
+
+# Subagents Always Use Inherit Model
+
+## Core rule
+
+Whenever you launch a **subagent** (via the `Task` tool or equivalent), you **must** set `model` to `inherit`.
+
+**Not `auto`.** The required value is **`inherit`** — never pass `model: "auto"`.
+
+## When this applies
+
+- Every `Task` / subagent invocation, including workers, reviewers, scheduler, business-analyst, explore, shell, and any other `subagent_type`
+- Parallel launches: each subagent in the batch must use `model: "inherit"`
+- Resumed subagents: if the tool allows setting model on resume, keep `inherit`; otherwise do not override with a specific slug
+
+## Required behavior
+
+- Always pass `model: "inherit"` on subagent launches
+- Do **not** pass `model: "auto"` — use **`inherit`**, not auto
+- Do **not** pass a specific model slug (`claude-*`, `gpt-*`, `composer-*`, etc.) unless the user **explicitly** overrides this rule in the current message
+- Do **not** omit `model`; always set it explicitly to `"inherit"`
+
+## Example
+
+```text
+Task({
+  subagent_type: "worker-frontend",
+  model: "inherit",
+  description: "...",
+  prompt: "..."
+})
+```
+
+## Exception
+
+Only if the user explicitly requests a different model for a subagent in the current message may you use that requested model instead of `inherit`.

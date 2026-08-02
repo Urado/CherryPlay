@@ -1,11 +1,3 @@
-/**
- * Party metadata subsystem — explicit server actions (create, publish, lifecycle, bind).
- *
- * REST writes here: `createParty`, `updateParty`, `updatePartyPlaylist` (explicit Publish),
- * `transitionPartyLifecycle`. Live playlist PUT during broadcast is owned by Site Streamer
- * (`partyPlaylistSync` via orchestrator), not Player workspace effects.
- */
-
 import { useCallback } from 'react';
 
 import {
@@ -26,14 +18,15 @@ import { finalizePartyCreation, handlePartyCreationFailure } from './partyWorksp
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import {
   buildThemeNotEntitledMessage,
+  isThemeGranted,
   isThemeNotEntitledError,
   resolveDisplayPartyName,
 } from './partyWorkspaceUtils';
 import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
 
 const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string> = {
-  draft: 'Вечеринка снята с сайта',
-  ready: 'Вечеринка на сайте, готова к гостям',
+  draft: 'Вечеринка возвращена в черновик',
+  ready: 'Вечеринка опубликована',
   completed: 'Вечеринка в архиве',
 };
 
@@ -193,6 +186,28 @@ export function usePartyServerActions(
         duration: 5000,
       });
       openModal('account');
+      return;
+    }
+    if (store.isThemeAccessLoading) {
+      addNotification({
+        type: 'warning',
+        message: 'Дождитесь проверки доступа к темам',
+      });
+      return;
+    }
+    if (store.themeAccess === null) {
+      addNotification({
+        type: 'warning',
+        message: store.themeAccessErrorMessage ?? 'Дождитесь проверки доступа к темам',
+      });
+      return;
+    }
+    if (!isThemeGranted(store.themeId, store.themeAccess)) {
+      addNotification({
+        type: 'error',
+        message: 'У вас нет доступа к выбранной теме. Выберите доступную тему.',
+        duration: 7000,
+      });
       return;
     }
     const nameToUse = resolvePartyNameForServer(store, projectName);

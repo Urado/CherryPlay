@@ -6,14 +6,14 @@ const rootDir = join(dirname(fileURLToPath(import.meta.url)), '..');
 const srcDir = join(rootDir, 'src');
 const distDir = join(rootDir, 'dist');
 
-function copyCssFiles(dir) {
+function copyThemeAssets(dir) {
   for (const entry of readdirSync(dir)) {
     const srcPath = join(dir, entry);
     if (statSync(srcPath).isDirectory()) {
-      copyCssFiles(srcPath);
+      copyThemeAssets(srcPath);
       continue;
     }
-    if (!entry.endsWith('.css')) {
+    if (!entry.endsWith('.css') && !entry.endsWith('.jpg') && !entry.endsWith('.png')) {
       continue;
     }
     const rel = relative(srcDir, srcPath);
@@ -23,4 +23,4 @@ function copyCssFiles(dir) {
   }
 }
 
-copyCssFiles(srcDir);
+copyThemeAssets(srcDir);

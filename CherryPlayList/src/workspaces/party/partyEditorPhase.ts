@@ -1,5 +1,9 @@
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
+import {
+  PARTY_LIFECYCLE_SERVER_BADGE_LABELS,
+  resolvePartyLifecycleServerBadgeLabel,
+} from './partyLifecycleLabels';
 import { ERROR_PARTY_NOT_FOUND } from './partyWorkspaceConstants';
 
 export type PartyEditorPhase = 'draft-unlinked' | 'draft-linked' | 'ready' | 'completed';
@@ -30,7 +34,6 @@ export interface PartyEditorPhaseResult {
   phase: PartyEditorPhase | null;
   blockedReason: PartyEditorBlockedReason | null;
   isBlocked: boolean;
-  /** Effective lifecycle when linked; null when unlinked. */
   effectiveLifecycle: PartyLifecycleState | null;
 }
 
@@ -49,13 +52,11 @@ export const PARTY_EDITOR_PHASE_BADGE_LABELS: Partial<
   completed: 'completed',
 };
 
-export const PARTY_EDITOR_LIFECYCLE_BADGE_LABELS: Record<PartyLifecycleState, string> = {
-  draft: 'Не на сайте',
-  ready: 'Опубликована',
-  completed: 'Архив',
-};
+export const PARTY_EDITOR_LIFECYCLE_BADGE_LABELS: Record<PartyLifecycleState, string> =
+  PARTY_LIFECYCLE_SERVER_BADGE_LABELS;
 
-/** When demo override is set, blocked UI overlays the last resolved phase without mutating auth/server state. */
+export { resolvePartyLifecycleServerBadgeLabel };
+
 export function applyDemoBlockedOverride(
   baseResult: PartyEditorPhaseResult,
   input: ResolvePartyEditorPhaseInput,

@@ -34,7 +34,7 @@ Streaming System связывает:
 
 Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: подключают хуки orchestrator и отображают UI, но не владеют SignalR lifecycle.
 
-> **UX (2026-07):** пользовательские строки приведены к термину **«Онлайн»**; preset **«Онлайн-вечеринка»**, шапка **«Проигрывание не запущено»**, индикатор **«Нет связи»**. Карта переименований и оставшийся checklist — [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md) §8.
+> **UX:** пользовательские строки — **«Онлайн»**; preset **«Онлайн-вечеринка»**. В шапке: **HeaderPartyStatus** (при Онлайн) + **HeaderPlaybackPill** только в session mode; индикатор связи в session pill. См. [GLOSSARY](../../../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
 
 ## Основные компоненты (клиент CherryPlayList)
 
@@ -81,7 +81,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 ### Workspaces (не владельцы SignalR)
 
 - **`PlayerViewContainer`** — локальная сессия и UI зоны Проигрывание. **Не** владеет connect/publish/teardown и **не** показывает индикатор SignalR.
-- **`HeaderPlaybackPill`** — UI связи в шапке приложения: `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect; `signalRService.getConnectionErrorReason()` для readiness-подсказок).
+- **`HeaderPlaybackPill`** — session-only UI в шапке (трек/transport + связь): виден при `session` и `streamingSource === 'cherryPlayPlayer'` (**не** требует `enableStreaming`). `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect). Prep / readiness lamp в pill **нет**.
 
 - **`AimpIntegrationController`** — AIMP bridge bootstrap, source selection sync; вызывает `useAimpStreamingOrchestrator`. **Не** содержит параллельного low-level SignalR path.
 
@@ -109,7 +109,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
    - подписка на `PlaybackBroadcastSource.subscribe`;
    - `subscribePartyPlaylistSync` / `subscribeAimpPartyPlaylistSync`;
    - начальный full-state publish.
-3. В шапке приложения **`HeaderPlaybackPill`** (при `enableStreaming` и источнике CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**; `signalRService.getConnectionErrorReason()` — для readiness-подсказок pill (и внутри индикатора).
+3. В шапке **`HeaderPlaybackPill`** (session + источник CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**. Сводка lifecycle вечеринки — отдельный **`HeaderPartyStatus`** (только при **Онлайн**); см. [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill).
 
 `PlayerViewContainer` **не** вызывает `connect` / `joinPartyAsOrganizer` / store subscriptions напрямую и **не** отображает состояние SignalR.
 
@@ -157,7 +157,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 - orchestrator не стартует; нет SignalR connect и hub invokes;
 - нет position timer;
-- индикаторы соединения в Player скрыты;
+- **`HeaderPartyStatus` скрыт**; session **`HeaderPlaybackPill`** (CherryPlay) **может остаться** видимым — локальная сессия без сети; живого SignalR нет;
 - Party **остаётся видимой** в layout и меню preset; внутри зон — баннер **«Онлайн-функции отключены»**; сетевые действия disabled.
 
 См. [Party](../workspaces/party.md), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).

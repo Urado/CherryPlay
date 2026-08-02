@@ -23,6 +23,7 @@ import {
 } from '@core/types/project';
 import { Track } from '@core/types/track';
 
+import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/resetPartyWorkspaceForFreshProject';
 import {
   HistoryCommand,
   ItemsState,
@@ -55,7 +56,11 @@ import {
   collectItemsById,
   insertIntoGroup,
 } from './projectStoreCore';
-import { registerExternalApplyHandler, registerProjectStore } from './projectStoreFactory';
+import {
+  registerExternalApplyHandler,
+  registerProjectStore,
+  type ProjectStore,
+} from './projectStoreFactory';
 
 type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
 
@@ -246,6 +251,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+        resetPartyWorkspaceForFreshProject();
       },
 
       loadProject: (data) => {
@@ -669,7 +675,10 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
       setGroupName: (groupId, name) => {
         const state = get();
         const group = findItemRecursive(state.items, groupId);
-        const oldName = group && isProjectGroup(group) ? group.name : '';
+        if (!group || !isProjectGroup(group)) {
+          return;
+        }
+        const oldName = group.name;
 
         set((s) => ({
           items: updateGroupInItems(s.items, groupId, (g) => ({
@@ -897,20 +906,15 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         const state = get();
         if (itemIds.length === 0) return;
 
-        // 1. Собираем элементы для перемещения (в порядке itemIds)
         const itemsToMove = collectItemsById(state.items, itemIds);
         if (itemsToMove.length === 0) return;
 
-        // 2. Удаляем элементы из текущих позиций
         let newItems = removeItemsById(state.items, itemIds);
 
-        // 3. Вставляем в целевую позицию
         if (targetParentId === null) {
-          // Вставка в корень
           const safeIndex = Math.min(Math.max(0, targetIndex), newItems.length);
           newItems.splice(safeIndex, 0, ...itemsToMove);
         } else {
-          // Вставка в группу
           newItems = insertIntoGroup(newItems, targetParentId, targetIndex, itemsToMove);
         }
 
@@ -1206,8 +1210,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 );
 
 export function initializeProjectStoreHistory(): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as any);
+  registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as unknown as ProjectStore);
 
   registerExternalApplyHandler((workspaceId, command, mode) => {
     if (workspaceId === PROJECT_WORKSPACE_ID) {

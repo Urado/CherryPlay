@@ -6,16 +6,18 @@ import { useModalKeyboard } from '@shared/hooks';
 import { useUIStore } from '@shared/stores';
 
 import { AccountView } from './AccountView';
+import { MyPartiesList } from './MyPartiesList';
 
 export const AccountModal: React.FC = () => {
   const { modal, closeModal } = useUIStore();
+  const isAccountOpen = modal === 'account';
 
   const { handleOverlayKeyDown } = useModalKeyboard({
-    enabled: modal === 'account',
+    enabled: isAccountOpen,
     onCancel: closeModal,
   });
 
-  if (modal !== 'account') {
+  if (!isAccountOpen) {
     return null;
   }
 
@@ -47,6 +49,7 @@ export const AccountModal: React.FC = () => {
         </div>
         <div className="account-modal-body">
           <AccountView />
+          <MyPartiesList />
         </div>
       </div>
     </div>

@@ -7,7 +7,8 @@ import type { PartyThemeId } from '../index';
 import { FloatingPetals } from './FloatingPetals';
 import '../../components/PartyDisplay/PartyDisplay.css';
 
-const SPRING_CROSS_STEP_POSTER_SRC = '/images/spring-cross-step-poster.jpg';
+const SPRING_CROSS_STEP_POSTER_SRC = new URL('./spring-cross-step-poster.jpg', import.meta.url)
+  .href;
 
 export interface PartyInfoDisplayData {
   partyName: string;
@@ -26,11 +27,6 @@ export interface SpringCrossStepPartyInfoDisplayProps {
   className?: string;
 }
 
-/**
- * PartyInfoDisplay для темы spring-cross-step.
- * Визуально как страница плейлиста: фон с лепестками, шапка с постером и заголовком,
- * блок «Скоро начнём», контент в карточке.
- */
 export const PartyInfoDisplay: React.FC<SpringCrossStepPartyInfoDisplayProps> = ({
   data,
   className = '',

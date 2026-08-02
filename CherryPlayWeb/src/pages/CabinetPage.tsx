@@ -1,4 +1,4 @@
-import { Button, type OrganizerDto } from '@cherryplay/components';
+import { Button, DEFAULT_PARTY_THEME_ID, type OrganizerDto } from '@cherryplay/components';
 import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -20,7 +20,7 @@ type CabinetLocationState = { deniedToast?: string; error?: string } | null;
 
 const emptyForm: CreatePartyDto = {
   name: '',
-  partyThemeId: 'basic',
+  partyThemeId: DEFAULT_PARTY_THEME_ID,
   isListedInCatalog: false,
   timeZone: getDefaultTimeZone(),
   shortDescription: '',

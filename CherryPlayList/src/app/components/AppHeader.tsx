@@ -1,5 +1,4 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import GroupsIcon from '@mui/icons-material/Groups';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -26,11 +25,11 @@ import {
   useUIStore,
 } from '@shared/stores';
 
+import { HeaderPartyStatus } from './HeaderPartyStatus';
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
+import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceMenu } from './WorkspaceMenu';
-
-const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
 
 function layoutEditControlTitle(defaultTitle: string, isLayoutEditMode: boolean): string {
   return isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : defaultTitle;
@@ -42,15 +41,11 @@ function caughtErrorMessage(error: unknown): string {
   return 'Неизвестная ошибка';
 }
 
-/** Parent directory of a .cherry file path (cross-platform). */
 function directoryOfProjectFile(filePath: string): string {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
 }
 
-/**
- * Assembles the project state snapshot passed to `serializeProject` (quick save and save-as).
- */
 function projectStateDataForSave(params: {
   name: string;
   items: ProjectItem[];
@@ -111,8 +106,12 @@ export const AppHeader: React.FC = () => {
   } = useProjectStore();
 
   const { openModal, addNotification } = useUIStore();
-  const { setLastOpenedPlaylist, enableStreaming } = useSettingsStore();
+  const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const showHeaderPartyStatus = enableStreaming;
+  const showHeaderPlaybackPill =
+    sessionState.mode === 'session' && streamingSource === 'cherryPlayPlayer';
+  const showHeaderPlaybackPillRow = showHeaderPartyStatus || showHeaderPlaybackPill;
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
   const { supportsProjectPersistence, usesFixtureFileBrowser } = usePlatformCapabilities();
@@ -131,7 +130,7 @@ export const AppHeader: React.FC = () => {
   const focusProjectMenuItemAt = useCallback((index: number) => {
     const panel = projectMenuPanelRef.current;
     if (!panel) return;
-    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
     if (items.length === 0) return;
     const i = ((index % items.length) + items.length) % items.length;
     items[i]?.focus();
@@ -170,7 +169,7 @@ export const AppHeader: React.FC = () => {
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       const panel = projectMenuPanelRef.current;
       if (!panel) return;
-      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
       if (items.length === 0) return;
       const current = items.indexOf(document.activeElement as HTMLElement);
 
@@ -429,9 +428,7 @@ export const AppHeader: React.FC = () => {
                 url,
               });
             })
-            .catch(() => {
-              // Server unreachable — keep linkedParty without url
-            });
+            .catch(() => {});
         }
       }
     } catch (error) {
@@ -461,8 +458,6 @@ export const AppHeader: React.FC = () => {
           notifyDemoBlocked();
           return;
         }
-        // With no file path, menu only shows "Сохранить" (not "Сохранить как…") — first-save flow
-        // is handleSave → open save-as modal. Reuse the same path so the shortcut never diverges.
         if (!meta.filePath) {
           void handleSave();
         } else {
@@ -514,10 +509,6 @@ export const AppHeader: React.FC = () => {
 
   const handleAccount = () => {
     openModal('account');
-  };
-
-  const handleMyParties = () => {
-    openModal('myParties');
   };
 
   return (
@@ -634,9 +625,6 @@ export const AppHeader: React.FC = () => {
                           'Сохранить проект'
                         )}
                       </button>
-                      {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
-                        no filePath (only «Сохранить проект») vs with filePath (+ «Сохранить копию…») and
-                        `globalShortcutHandlers` when a renderer test harness exists. */}
                       {meta.filePath ? (
                         <button
                           type="button"
@@ -657,16 +645,6 @@ export const AppHeader: React.FC = () => {
               </div>
 
               <div className="action-group">
-                <button
-                  type="button"
-                  className="header-button"
-                  onClick={handleMyParties}
-                  disabled={isLayoutEditMode}
-                  title={layoutEditControlTitle('Мои вечеринки', isLayoutEditMode)}
-                  aria-label="Мои вечеринки"
-                >
-                  <GroupsIcon className="header-button__icon" aria-hidden />
-                </button>
                 {enableStreaming && (
                   <button
                     className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
@@ -714,9 +692,14 @@ export const AppHeader: React.FC = () => {
                 )}
               </div>
 
-              <div className="app-header-playback-pill-row">
-                <HeaderPlaybackPill disabled={isLayoutEditMode} />
-              </div>
+              {showHeaderPlaybackPillRow ? (
+                <div className="app-header-playback-pill-row">
+                  {showHeaderPartyStatus ? <HeaderPartyStatus disabled={isLayoutEditMode} /> : null}
+                  {showHeaderPlaybackPill ? (
+                    <HeaderPlaybackPill disabled={isLayoutEditMode} />
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <WorkspaceMenu />

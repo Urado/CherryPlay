@@ -101,7 +101,7 @@ initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
 | **Enter** в `textarea` / `contenteditable` | Новая строка, **не** submit |
 | **Enter** на overlay (`.modal-overlay`) | **Ничего** — модалка не закрывается |
 
-Стек вложенных модалок: только верхняя обрабатывает Enter/Escape. Подключено в Settings, Account, Link Party, **«Мои вечеринки»**, Save/Export, Workspace dialogs и др.
+Стек вложенных модалок: только верхняя обрабатывает Enter/Escape. Подключено в Settings, Account (включая confirm удаления в **«Мои вечеринки»**), Link Party, Save/Export, Workspace dialogs и др.
 
 Overlay: `onKeyDown={handleOverlayKeyDown}` на `.modal-overlay` предотвращает Enter/Space на backdrop.
 

@@ -1,6 +1,14 @@
-import { Button, getPartyTheme, partyThemes, type PartyThemeId } from '@cherryplay/components';
+import {
+  Button,
+  DEFAULT_PARTY_THEME_ID,
+  getPartyTheme,
+  partyThemes,
+  type PartyThemeId,
+} from '@cherryplay/components';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+
+import { buildThemeLockAriaLabel, buildThemeLockInfoMessage } from '../partyWorkspaceUtils';
 
 import './PartyEditor.css';
 
@@ -86,10 +94,10 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
   });
 
   const sortedStylesForDropdown = [...stylesForDropdown].sort((a, b) => {
-    if (a.id === 'basic' && b.id !== 'basic') {
+    if (a.id === DEFAULT_PARTY_THEME_ID && b.id !== DEFAULT_PARTY_THEME_ID) {
       return -1;
     }
-    if (b.id === 'basic' && a.id !== 'basic') {
+    if (b.id === DEFAULT_PARTY_THEME_ID && a.id !== DEFAULT_PARTY_THEME_ID) {
       return 1;
     }
 
@@ -202,7 +210,9 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
             className={`party-editor-dropdown-item ${isSelected ? 'party-editor-dropdown-item--selected' : ''} ${isLocked ? 'party-editor-dropdown-item--locked' : ''}`}
             onClick={() => handleStyleSelect(style.id)}
             aria-label={
-              isLocked ? `${style.name}. Требуется пакет ${lockedTheme?.packageName}.` : style.name
+              isLocked
+                ? buildThemeLockAriaLabel(style.name, lockedTheme?.packageName ?? '')
+                : style.name
             }
           >
             <div className="party-editor-dropdown-item-content">
@@ -211,7 +221,7 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
               <div className="party-editor-dropdown-item-preview">{style.preview}</div>
               {isLocked && lockedTheme && (
                 <div className="party-editor-theme-lock-info">
-                  Доступно в пакете {lockedTheme.packageName}
+                  {buildThemeLockInfoMessage(lockedTheme.packageName)}
                 </div>
               )}
             </div>
@@ -246,7 +256,7 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
             });
           }}
           aria-expanded={isDropdownOpen}
-          disabled={readOnly}
+          disabled={readOnly || isThemeAccessLoading}
         >
           <div className="party-editor-dropdown-button-content">
             <div className="party-editor-dropdown-selected">

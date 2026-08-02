@@ -63,7 +63,7 @@
 | **Settings** → **«Онлайн»** (`enableStreaming`)      | Глобальный privacy/offline; блокирует SignalR и REST, **не** скрывает Party                 |
 | **WorkspaceMenu**                                      | Пресет **«Онлайн-вечеринка»** (`party`) **всегда** в списке (`partyDiscoverabilityEnabled`) |
 | **Party zones**                                        | Всегда в layout; при офлайне — баннер **«Онлайн-функции отключены»** внутри зоны           |
-| **AppHeader**                                          | Кнопка **«Мои вечеринки»**; индикатор SignalR в Player при `enableStreaming`               |
+| **AppHeader**                                          | **Account** (аккаунт + **«Мои вечеринки»**); **HeaderPartyStatus** (lifecycle UI labels + **«К вечеринке»**) при **Онлайн**; **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
 | **PlayerHeader**                                       | **«Начать проигрывание»** / **«Остановить проигрывание»**; Stop в controls — **«Начать заново»** |
 | **Settings** → **«Источник состояния для гостей»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
 
@@ -76,15 +76,15 @@
 - Дефолт при первом запуске — **`collections`**, не Party.
 - Доки: [`layout-system.md`](./modules/systems/layout-system.md), [`layout-edit-mode.md`](./layout-edit-mode.md).
 
-**Вывод:** идея «переключить пользователя на preset Party» **конфликтует** с моделью кастомных workspace — пользователь может уже собрать свой layout.
+**Вывод:** авто-переключение на preset Party по-прежнему **нежелательно**. Явная кнопка **«К вечеринке»** (см. §2.3) — opt-in на preset `party` с **no-op**, если layout уже party / aimp-party / editor+preview; кастомные workspace без Party-зон остаются first-class.
 
 ### 2.5. Визуальные / сценарные проблемы
 
 1. ~~**`enableStreaming` управляет и сетью, и discoverability Party**~~ — **исправлено:** split `networkEnabled` / `partyDiscoverabilityEnabled` ([`onlineNetworkPolicy.ts`](../src/shared/streaming/onlineNetworkPolicy.ts)).
-2. **«Начать сессию»** звучит как локальное действие, но при наличии party + streaming запускает и SignalR — пользователь не видит связи с «онлайном». _(Частично: переименовано в «Начать проигрывание»; агрегированный статус в шапке — backlog.)_
+2. **«Начать сессию»** звучит как локальное действие, но при наличии party + streaming запускает и SignalR — пользователь не видит связи с «онлайном». _(Частично: переименовано в «Начать проигрывание»; в шапке — **HeaderPartyStatus** + session pill.)_
 3. **Два «плеера» в одном layout** (Player + что-то ещё) или **Player vs AIMP** — непонятно, какой источник «на сайт». _(Частично: переключатель в зоне Проигрывание.)_
-4. **Party и Player разнесены по зонам** — чтобы управлять вечеринкой и видеть эфир, нужно иметь нужный layout; в другом layout **нет глобального статуса** «идёт проигрывание / идёт онлайн».
-5. **Нет единого места в шапке**, где видно: вечеринка, готовность, соединение, факт проигрывания. _(Частично: **«Мои вечеринки»**; status pill — backlog.)_
+4. **Party и Player разнесены по зонам** — чтобы управлять вечеринкой и видеть эфир, нужно иметь нужный layout; в другом layout **нет глобального статуса** «идёт проигрывание / идёт онлайн». _(Частично: шапка показывает status + pill без смены layout.)_
+5. **Нет единого места в шапке**, где видно: вечеринка, готовность, соединение, факт проигрывания. _(Сделано: **HeaderPartyStatus** + session **HeaderPlaybackPill**; каталог — только Editor / **Мои вечеринки**.)_
 6. ~~**Термин «стриминг»** в настройках~~ — **исправлено:** **«Онлайн»** в UI.
 
 ---
@@ -131,8 +131,8 @@
   - идёт ли **проигрывание плейлиста**;
   - идёт ли **онлайн / трансляция** (если применимо);
   - состояние **текущей вечerинки** (нет / черновик / готова / завершена / …).
-- По клику — **не переключение workspace**, а **подменю с быстрыми действиями** (copy link, открыть настройки party, переподключить, … — уточнить список).
-- **Не форсировать** переход на preset «Вечerинка» при клике.
+- **Shipped (2026-08):** при **Онлайн** — read-only lifecycle status (`HeaderPartyStatus`: **Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив**; secondary **нет связи** при unreachable) + кнопка **«К вечеринке»** → `setLayoutPreset('party')` (no-op на уже party-layout); session-only `HeaderPlaybackPill` (без prep / readiness). Copy и матрица видимости: [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill).
+- **Backlog:** подменю быстрых действий по клику на статус (copy link, reconnect, …); **не** авто-переключать layout при старте проигрывания.
 
 ### 3.6. Индикатор «готовности к онлайну»
 
@@ -178,14 +178,14 @@ UI может агрегировать это в один статус («Не �
 
 ### 5.1. Шапка и подменю
 
-- Точный **набор полей** статуса (одна строка vs badge + tooltip).
-- **Список быстрых действий** в подменю (минимум vs «почти полный Party»).
-- Где физически в шапке: рядом с workspace pill, отдельный «Онлайн» pill, часть AppHeader справа?
+- **Сделано (2026-08):** единые lifecycle UI labels + **«К вечеринке»**; session pill без prep/readiness. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status).
+- **Ещё открыто:** точный набор быстрых действий в **подменю** (если появится); checklist готовности — не в header lamp (§3.6 / §8).
+- Где физически в шапке: рядом с именем проекта (текущее) vs отдельный «Онлайн» pill справа — продукт может уточнить.
 
 ### 5.2. Название действия старта проигрывания
 
-- Замена «Начать сессию» — **конкретная формулировка не выбрана** (варианты не обсуждались: «Запустить», «В эфир», «Играть плейлист», …).
-- Как в одной кнопке **мягко** сообщить, что онлайн не пойдёт (offline / нет party) — toast, статус в шапке, checklist?
+- **Сделано:** **«Начать проигрывание»** / **«Остановить проигрывание»** (`PlayerHeader`).
+- Как в одной кнопке **мягко** сообщить, что онлайн не пойдёт (offline / нет party) — toast, статус в шапке, checklist? — backlog.
 
 ### 5.3. Player + AIMP в одном блоке
 
@@ -202,7 +202,7 @@ UI может агрегировать это в один статус («Не �
 - ~~Снятие gate с `WorkspaceMenu` и `PartyStreamingGate`~~ — **сделано** (in-zone stubs, `partyDiscoverabilityEnabled` always true).
 - ~~Split `networkEnabled` vs `enableStreaming` в коде~~ — **сделано** (`onlineNetworkPolicy`); пользователь видит только **«Онлайн»**.
 - ~~Контроль каталога **«В каталоге»** / **«По ссылке»**~~ — **сделано** в Party Editor и **«Мои вечеринки»**.
-- Единый **online status** hook/store для шапки, Player, Party (сейчас размазано: settings, PlayerViewContainer, party runtime) — backlog (status pill §5.1).
+- ~~Сводка lifecycle в шапке~~ — **сделано** (`HeaderPartyStatus` + session `HeaderPlaybackPill`); единый online-status hook/store и подменю checklist (§5.1) — backlog.
 
 ### 5.6. Модерация / бан пользователей
 
@@ -242,7 +242,7 @@ UI может агрегировать это в один статус («Не �
 | Online policy    | `onlineNetworkPolicy.ts`, `useOnlineNetworkPolicy.ts`                              |
 | Party connectivity | `PartyConnectivityBanner.tsx`, `PartyEditorView.tsx`, `PartyPreviewView.tsx`     |
 | Preset visibility | `WorkspaceMenu.tsx`, `aimpPresetVisibility.ts`                                    |
-| Catalog listing  | `PartyCatalogVisibilityControl.tsx`, `partyWorkspaceStore.ts`, `MyPartiesPanel.tsx` |
+| Catalog listing  | `PartyCatalogVisibilityControl.tsx`, `partyWorkspaceStore.ts`, `MyPartiesList.tsx` |
 | Настройки        | `SettingsModal.tsx`, `settingsStore.ts` (`enableStreaming`, `streamingSource`)     |
 | Сессия + SignalR | `PlayerHeader.tsx`, `PlayerControls.tsx`, `usePlayerSession.ts`                    |
 | Party actions    | `PartyEditorActions.tsx`, `PartyLifecycleControls.tsx`, `usePartyServerActions.ts` |
@@ -256,16 +256,16 @@ UI может агрегировать это в один статус («Не �
 
 - [x] Отвязать **видимость Party** от `enableStreaming` (2026-07)
 - [x] Переформулировать **privacy/offline** отдельно от discoverability Party (`networkEnabled` internal, `partyDiscoverabilityEnabled` always on)
-- [ ] Добавить в **шапку** статус онлайна + подменю (без смены layout) — backlog; **«Мои вечеринки»** добавлено
-- [ ] Агрегировать **checklist готовности** (party, publish, link, source, session, connection)
+- [x] **Шапка:** **HeaderPartyStatus** (lifecycle labels + **«К вечеринке»**) при Онлайн; session-only **HeaderPlaybackPill**; **«Мои вечеринки»** — секция в Account. Подменю «Онлайн: статус ▾» с checklist — по-прежнему backlog
+- [ ] Агрегировать **checklist готовности** (party, publish, link, source, session, connection) — не в header lamp; backlog (Editor numbered ready-hint убран)
 - [x] Переименовать **«Начать сессию»** → **«Начать проигрывание»** / **«Остановить проигрывание»**
 - [x] Stop в player controls → **«Начать заново»** (label/a11y; поведение без изменений)
 - [x] Унифицировать термин **«Онлайн»** в UI (copy-only, 2026-07)
 - [x] **Player/AIMP** как один блок источника (переключатель в зоне Проигрывание)
 - [x] Заглушки Party: offline (`PartyConnectivityBanner`), no auth (есть), server down (in-zone banner, не full replace)
-- [x] Контроль каталога **«В каталоге»** / **«По ссылке»** в Editor и **«Мои вечеринки»**
+- [x] Контроль каталога **«В каталоге»** / **«По ссылке»** в Editor (**только `ready`**) и **«Мои вечеринки»**
 - [x] Единый контракт клавиатуры модалок (`useModalKeyboard`)
-- [ ] Учесть **кастомные workspace** — не завязать UX на preset switch
+- [ ] Учесть **кастомные workspace** — не завязать UX на preset switch _(частично: **«К вечеринке»** no-op на `party` / `aimp-party` / layout с editor+preview)_
 - [ ] Backlog: локальный плеер под Playlist (`pasha_todo`)
 - [ ] Backlog: модерация пользователей (`pasha_todo`)
 
@@ -278,3 +278,5 @@ UI может агрегировать это в один статус («Не �
 | 2026-07-04 | Первичный синтез после ревью кода и диалога с Павлом                                                                                                      |
 | 2026-07-04 | **Copy rename (UI):** «Онлайн», «Начать проигрывание», Party actions, layout presets, lifecycle badges — см. [GLOSSARY.md](../../GLOSSARY.md) § UI vs код |
 | 2026-07-08 | **Desktop feedback follow-up:** Party always visible; `networkEnabled`/`partyDiscoverabilityEnabled` split; catalog control; «Мои вечеринки»; modal keyboard contract; Stop → «Начать заново». См. [party.md](./modules/workspaces/party.md) |
+| 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + **«К вечеринке»**; session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill) |
+| 2026-08-02 | **Party lifecycle visual clarity:** единые метки **Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив** (Editor + header); actions **Опубликовать** / **Вернуть в черновик** / **В архив**; каталог только в `ready`; без баннера привязки и ready numbered hint; archive без **«Вернуть»** в UI |

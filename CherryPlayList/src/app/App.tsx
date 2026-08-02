@@ -33,7 +33,6 @@ import { DemoPlayerShell } from './components/DemoPlayerShell';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
-import { MyPartiesPanel } from './components/MyPartiesPanel';
 import { SettingsModal } from './components/SettingsModal';
 import { useWindowMinSize } from './hooks';
 import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
@@ -75,21 +74,18 @@ const App: React.FC = () => {
       return;
     }
 
-    // Проверяем валидность токена при старте приложения
     const checkAuthOnStart = async () => {
       const token = useAuthStore.getState().accessToken;
       if (!token) {
         return;
       }
 
-      // Проверяем, не истек ли токен локально
       if (isTokenExpired(token)) {
         console.warn('[App] Token expired on startup, clearing auth');
         clearAuthSession();
         return;
       }
 
-      // Проверяем, истекает ли токен в ближайшие 7 дней
       if (isTokenExpiringSoon(token, 7)) {
         const daysLeft = getDaysUntilExpiration(token);
         if (daysLeft !== null && daysLeft > 0) {
@@ -101,12 +97,10 @@ const App: React.FC = () => {
         }
       }
 
-      // Проверяем валидность токена на сервере
       try {
         await authService.getCurrentOrganizer();
       } catch (error) {
         console.warn('[App] Token validation failed on startup:', error);
-        // Ошибка уже обработана в authService
       }
     };
 
@@ -161,7 +155,6 @@ const App: React.FC = () => {
         <SettingsModal />
         <ExportModal />
         <LinkPartyModal />
-        <MyPartiesPanel />
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />

@@ -65,7 +65,7 @@ Workspace для автоматического последовательног
 
 ## Сессии и интеграция
 
-> **Термины в UI и в коде:** в интерфейсе — **«Начать проигрывание»** / **«Остановить проигрывание»** (сессия в header); в controls сессии Stop — **«Начать заново»**; в коде и persist — `session` / `sessionState.mode`. **Next** виден только в режиме `session`. Синхронизация состояния с сервером для гостей — настройка **«Онлайн»** (`enableStreaming`). См. [GLOSSARY](../../../../GLOSSARY.md) (термин **session**, таблица UI).
+> **Термины в UI и в коде:** в интерфейсе — **«Начать проигрывание»** / **«Остановить проигрывание»** (шапка зоны **Проигрывание** / `PlayerHeader`); в controls сессии Stop — **«Начать заново»**; в коде и persist — `session` / `sessionState.mode`. **Next** виден только в режиме `session`. В **AppHeader** при session + CherryPlay — [`HeaderPlaybackPill`](../../../src/app/components/HeaderPlaybackPill.tsx) (трек/transport; **не** старт сессии). Синхронизация состояния с сервером для гостей — настройка **«Онлайн»** (`enableStreaming`). См. [GLOSSARY](../../../../GLOSSARY.md) (термин **session**, таблица UI), [party.md — Шапка](./party.md#шапка-appheader-статус-и-pill).
 
 **Session** — воспроизведение плейлиста в зоне **Проигрывание**. Запускается кнопкой **«Начать проигрывание»** и **не зависит от авторизации или наличия вечеринки**. При включённом **Онлайн** и подключённой вечеринке состояние session может синхронизироваться с сервером (только состояние — трек, позиция, плейлист; **звук локально** у организатора). Session работает и без вечеринки.
 
@@ -190,7 +190,7 @@ Player может опционально транслировать состоя
 [Streaming System](../systems/streaming.md) (Site Streamer):
 
 - при `enableStreaming`, привязанной вечеринке (`meta.linkedParty`) и `streamingSource === 'cherryPlayPlayer'`:
-  - SignalR lifecycle — **`CherryPlayStreamingController`** + **`useStreamingOrchestrator`**; UI связи в шапке — **`HeaderPlaybackPill`** / **`StreamingConnectionIndicator`** через **`useCherryPlayStreamingConnection`**;
+  - SignalR lifecycle — **`CherryPlayStreamingController`** + **`useStreamingOrchestrator`**; UI связи в шапке — **`HeaderPlaybackPill`** (только session mode) / **`StreamingConnectionIndicator`** через **`useCherryPlayStreamingConnection`**; сводка lifecycle вечеринки — **`HeaderPartyStatus`** при **Онлайн** (см. [party.md — Шапка](./party.md#шапка-appheader-статус-и-pill));
   - connect, `StartSession`/`EndSession`, position ticks и full-state publish — **`streamingOrchestrator`** + **`CherryPlayPlayerBroadcastSource`**;
   - live sync плейлиста на сервер — **`partyPlaylistSync`** (REST PUT), не effects в Player UI.
 - `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую и **не** рендерит индикатор соединения.

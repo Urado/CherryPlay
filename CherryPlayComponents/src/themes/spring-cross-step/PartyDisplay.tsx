@@ -10,8 +10,8 @@ import { FloatingPetals } from './FloatingPetals';
 import { PlaylistView } from './PlaylistView';
 import '../../components/PartyDisplay/PartyDisplay.css';
 
-/** URL постера темы: ресурс из public/images/ приложения (копируется в контейнер при сборке). */
-const SPRING_CROSS_STEP_POSTER_SRC = '/images/spring-cross-step-poster.jpg';
+const SPRING_CROSS_STEP_POSTER_SRC = new URL('./spring-cross-step-poster.jpg', import.meta.url)
+  .href;
 
 function canShowCurrentTrack(data: PartyDisplayData): boolean {
   const state = data.playbackState;
@@ -26,11 +26,6 @@ export interface SpringCrossStepPartyDisplayProps {
   showPlayer?: boolean;
 }
 
-/**
- * PartyDisplay for spring-cross-step theme.
- * Layout from reference: centered header with poster (fixed resource URL), title, subtitle, session;
- * then player; then playlist in a card. Floating petals on background.
- */
 export const PartyDisplay: React.FC<SpringCrossStepPartyDisplayProps> = ({
   data,
   className = '',

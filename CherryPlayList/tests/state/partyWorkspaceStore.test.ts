@@ -12,9 +12,9 @@ describe('partyWorkspaceStore', () => {
     resetPartyWorkspaceState();
   });
 
-  it('starts with default cyberpunk theme and empty party name', () => {
+  it('starts with default basic theme and empty party name', () => {
     const state = usePartyWorkspaceStore.getState();
-    expect(state.themeId).toBe('cyberpunk');
+    expect(state.themeId).toBe('basic');
     expect(state.partyName).toBe('');
     expect(state.serverError).toBeNull();
     expect(state.partyVerified).toBe(false);

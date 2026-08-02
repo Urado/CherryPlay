@@ -27,7 +27,7 @@
 | `Name`                         | string      | NOT NULL                                                     | Название организации / отображаемое имя.                      |
 | `LogoUrl`                      | string      | NULL                                                         | URL логотипа (опционально).                                   |
 | `Links`                        | JSON/string | NULL                                                         | Ссылки (соцсети, сайт) — JSON-объект или текст.               |
-| `DefaultPartyThemeId`          | string      | NULL                                                         | PartyTheme по умолчанию (cyberpunk, sakura, art-deco, basic). |
+| `DefaultPartyThemeId`          | string      | NULL                                                         | PartyTheme по умолчанию организатора. Продуктовый дефолт сервера — `PartyThemeDefaults.Id` (`basic`), согласован с клиентским `DEFAULT_PARTY_THEME_ID`; также cyberpunk, sakura, art-deco, spring-cross-step. |
 | `Role`                         | string      | NOT NULL, default organizer, CHECK IN (`organizer`, `admin`) | Роль организатора: `organizer` или `admin`.                   |
 | `DefaultCustomizationSettings` | JSON        | NULL                                                         | Настройки оформления по умолчанию (override на уровне party). |
 | `CreatedAt`                    | datetime    | NOT NULL                                                     | Дата создания.                                                |
@@ -166,7 +166,7 @@ _Связь с учётной записью: email+пароль (таблица
 | `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                                                       |
 | `PartyLifecycleState`   | int       | NOT NULL, default 1 (Draft)    | Жизненный цикл: 1 = Draft, 2 = Ready, 3 = Completed. JSON: `draft`, `ready`, `completed`. |
 | `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                                            |
-| `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор (cyberpunk, sakura, art-deco, basic).                            |
+| `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор. Продуктовый дефолт сущности — `PartyThemeDefaults.Id` (`basic`); также cyberpunk, sakura, art-deco, spring-cross-step. |
 | `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).                                         |
 | `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге.                                 |
 | `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                                            |

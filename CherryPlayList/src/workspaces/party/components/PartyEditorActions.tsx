@@ -5,6 +5,8 @@ import type { PartyEditorPhase } from '../partyEditorPhase';
 
 import './PartyEditor.css';
 
+export type PartyEditorActionSlot = 'all' | 'accent' | 'secondary';
+
 export interface PartyEditorActionsProps {
   phase: PartyEditorPhase;
   partyName: string;
@@ -12,15 +14,15 @@ export interface PartyEditorActionsProps {
   isAuthenticated: boolean;
   isCreating: boolean;
   isPublishing: boolean;
-  /** When false, network-only actions (create, publish, link) are disabled. */
   networkDisabled?: boolean;
-  /** When true, `networkDisabled` is due to «Онлайн» being off (not server reachability). */
   networkOffline?: boolean;
+  createBlockedByTheme?: boolean;
+  createBlockedByThemeTitle?: string;
   onCreateParty?: () => void;
   onPublish?: () => void;
   onOpenLinkParty?: () => void;
-  /** Shorter labels and header group wrapper for shell toolbar. */
   compact?: boolean;
+  slot?: PartyEditorActionSlot;
 }
 
 export function getPartyEditorActionVisibility(
@@ -43,7 +45,11 @@ export function shouldShowPartyLifecycleControls(
   phase: PartyEditorPhase,
   linkedParty: { id: string; shortCode: string } | null | undefined,
 ): boolean {
-  return phase !== 'draft-unlinked' && linkedParty != null;
+  return (phase === 'draft-linked' || phase === 'ready') && linkedParty != null;
+}
+
+export function shouldShowPartyCatalogVisibilityControl(phase: PartyEditorPhase): boolean {
+  return phase === 'ready';
 }
 
 export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
@@ -55,10 +61,13 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
   isPublishing,
   networkDisabled = false,
   networkOffline = false,
+  createBlockedByTheme = false,
+  createBlockedByThemeTitle = 'Выберите тему, доступную в вашем тарифе',
   onCreateParty,
   onPublish,
   onOpenLinkParty,
   compact = false,
+  slot = 'all',
 }) => {
   if (phase === 'completed') {
     return null;
@@ -70,7 +79,14 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
     hasOnOpenLinkParty: Boolean(onOpenLinkParty),
   });
 
-  if (!showPublish && !showCreate && !showLinkParty) {
+  const showAccentCreate = showCreate && (slot === 'all' || slot === 'accent');
+  const showSecondaryLink = showLinkParty && (slot === 'all' || slot === 'secondary');
+  const showAccentPublish =
+    showPublish && phase === 'ready' && (slot === 'all' || slot === 'accent');
+  const showSecondaryPublish =
+    showPublish && phase === 'draft-linked' && (slot === 'all' || slot === 'secondary');
+
+  if (!showAccentCreate && !showSecondaryLink && !showAccentPublish && !showSecondaryPublish) {
     return null;
   }
 
@@ -80,34 +96,16 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
     ? 'Включите «Онлайн» в настройках'
     : 'Недоступно без подключения к серверу';
 
-  const actions = (
+  return (
     <div
       className="party-editor-actions party-editor-actions--header"
       aria-busy={isCreating || isPublishing}
       aria-live="polite"
     >
-      {showPublish && onPublish && (
-        <Button
-          onClick={onPublish}
-          disabled={actionDisabled}
-          loading={isPublishing || isCreating}
-          loadingLabel="Обновление..."
-          type="button"
-          title={
-            networkDisabled
-              ? networkDisabledTitle
-              : 'Обновить плейлист и настройки, которые видят гости'
-          }
-          variant={compact && phase === 'draft-linked' ? 'secondary' : 'primary'}
-          size="sm"
-        >
-          {compact ? 'Обновить на сайте' : 'Обновить для гостей'}
-        </Button>
-      )}
-      {showCreate && onCreateParty && (
+      {showAccentCreate && onCreateParty && (
         <Button
           onClick={onCreateParty}
-          disabled={!isAuthenticated || actionDisabled}
+          disabled={!isAuthenticated || actionDisabled || createBlockedByTheme}
           loading={isCreating}
           loadingLabel="Создание..."
           type="button"
@@ -116,15 +114,17 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
               ? networkDisabledTitle
               : !isAuthenticated
                 ? 'Требуется авторизация'
-                : 'Создать запись вечеринки на сервере'
+                : createBlockedByTheme
+                  ? createBlockedByThemeTitle
+                  : 'Создать запись вечеринки на сервере'
           }
-          variant="secondary"
+          variant="primary"
           size="sm"
         >
           {compact ? 'Создать' : 'Новая вечеринка на сервере'}
         </Button>
       )}
-      {showLinkParty && onOpenLinkParty && (
+      {showSecondaryLink && onOpenLinkParty && (
         <Button
           onClick={onOpenLinkParty}
           disabled={networkDisabled}
@@ -140,8 +140,24 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           {compact ? 'Подключить' : 'Подключить к существующей'}
         </Button>
       )}
+      {(showAccentPublish || showSecondaryPublish) && onPublish && (
+        <Button
+          onClick={onPublish}
+          disabled={actionDisabled}
+          loading={isPublishing || isCreating}
+          loadingLabel="Обновление..."
+          type="button"
+          title={
+            networkDisabled
+              ? networkDisabledTitle
+              : 'Обновить плейлист и настройки, которые видят гости'
+          }
+          variant={showAccentPublish ? 'primary' : 'secondary'}
+          size="sm"
+        >
+          {compact ? 'Обновить на сайте' : 'Обновить для гостей'}
+        </Button>
+      )}
     </div>
   );
-
-  return actions;
 };

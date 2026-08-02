@@ -13,7 +13,7 @@
 
 Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-**Party Editor:** баннер привязки, `PartyTrackDisplaySection`, контроль каталога **«В каталоге»** / **«По ссылке»**, `PartyEditor`, auth, connectivity-баннеры, entitlement.
+**Party Editor:** `PartyTrackDisplaySection`, lifecycle (**Опубликовать** / **Вернуть в черновик** / **В архив**), каталог **«По ссылке»** / **«В каталоге»** только при `ready`, **«Скопировать URL»** при draft-linked/ready, `PartyEditor`, auth, connectivity-баннеры, entitlement.
 
 **Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 
@@ -43,7 +43,7 @@ party/
 ```
 
 - **Production store** — форма и онлайн-UI; сбросы `resetPartyWorkspaceState` / `resetPartyLinkState` **не** трогают scenario и editor demo.
-- **Preview scenario store** — локальная симуляция превью; default `isSynchronized: true`; сброс — `resetPreviewScenario()` / кнопка «Сброс сценария» в preview-панели (эквивалент `syncPreviewWithProduction()`).
+- **Preview scenario store** — локальная симуляция превью; default `isSynchronized: true`; сброс — `resetPreviewScenario()` / кнопка **«Снова как на сайте»** в preview-панели (эквивалент `syncPreviewWithProduction()`).
 - **Editor demo store** — только overlay blocked-reason в demo mode редактора.
 - **`usePartyPreviewEffectiveState()`** — единая точка merge для рендера preview (см. модульную документацию).
 

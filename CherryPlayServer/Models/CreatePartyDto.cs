@@ -16,10 +16,7 @@ public record CreatePartyDto
     [StringLength(500)]
     public string? Subtitle { get; init; }
 
-    /// <summary>
-    /// PartyTheme идентификатор (см. GLOSSARY.md)
-    /// </summary>
-    public PartyThemeId PartyThemeId { get; init; } = PartyThemeId.Basic;
+    public PartyThemeId PartyThemeId { get; init; } = PartyThemeDefaults.Id;
 
     public Dictionary<string, object>? CustomizationSettings { get; init; }
 
@@ -55,6 +52,5 @@ public record CreatePartyDto
     [StringLength(200)]
     public string? ExternalLinkText { get; init; }
 
-    /// <summary>Dance tags (predefined + custom). Max 20 items.</summary>
     public List<string>? DanceTags { get; init; }
 }

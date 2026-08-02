@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PARTY_THEME_ID,
   partyThemes,
   type PartyThemeId,
   getDefaultCustomizationSettings,
@@ -21,11 +22,7 @@ import {
   partyWorkspaceOneShotGuards,
   partyWorkspaceReconnectRefs,
 } from './partyWorkspaceReconnectRefs';
-import {
-  resetPartyLinkState,
-  resetPartyWorkspaceState,
-  usePartyWorkspaceStore,
-} from './partyWorkspaceStore';
+import { resetPartyLinkState, usePartyWorkspaceStore } from './partyWorkspaceStore';
 import {
   ERROR_CONNECTION,
   ERROR_PARTY_NOT_FOUND,
@@ -35,14 +32,13 @@ import {
   REVOKED_THEME_PACKAGE_NAME,
   THEME_ACCESS_FALLBACK_ERROR,
 } from './partyWorkspaceUtils';
+import { resetPartyWorkspaceForFreshProject } from './resetPartyWorkspaceForFreshProject';
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
 export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolean) {
   const meta = useProjectStore((state) => state.meta);
-  const projectContextKey = useProjectStore(
-    (state) => `${state.meta.filePath ?? ''}\0${state.name}`,
-  );
+  const projectIdentityKey = useProjectStore((state) => state.meta.filePath ?? '');
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
   const setPartyThemeIdInMeta = useProjectStore((state) => state.setPartyThemeId);
@@ -170,22 +166,6 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     [setPartyCustomizationSettingsInMeta],
   );
 
-  useEffect(() => {
-    const store = getPartyStore();
-    const tid = meta.partyThemeId;
-    if (tid && isValidPartyTheme(tid)) {
-      store.setThemeId(tid as PartyThemeId);
-      store.setCustomizationSettings(
-        resolveLoadedCustomizationSettings(tid as PartyThemeId, meta.partyCustomizationSettings),
-      );
-    } else {
-      store.setThemeId('cyberpunk');
-      store.setCustomizationSettings(
-        getDefaultCustomizationSettings('cyberpunk') as Record<string, unknown>,
-      );
-    }
-  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectContextKey]);
-
   const stopReconnectTimer = useCallback(() => {
     if (partyWorkspaceReconnectRefs.intervalId !== null) {
       clearInterval(partyWorkspaceReconnectRefs.intervalId);
@@ -207,7 +187,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         const resolvedThemeId: PartyThemeId =
           party.partyThemeId && isValidPartyTheme(party.partyThemeId)
             ? party.partyThemeId
-            : 'cyberpunk';
+            : DEFAULT_PARTY_THEME_ID;
         store.setThemeId(resolvedThemeId);
         const resolvedCustomization = resolveLoadedCustomizationSettings(
           resolvedThemeId,
@@ -440,23 +420,33 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     }
   }, []);
 
-  const prevProjectContextKeyRef = useRef(projectContextKey);
+  const prevProjectIdentityKeyRef = useRef(projectIdentityKey);
   const prevLinkedPartyRef = useRef(meta.linkedParty);
 
   useEffect(() => {
-    if (prevProjectContextKeyRef.current === projectContextKey) {
+    if (prevProjectIdentityKeyRef.current === projectIdentityKey) {
       return;
     }
-    prevProjectContextKeyRef.current = projectContextKey;
-    resetPartyWorkspaceState();
-    partyWorkspaceOneShotGuards.themeAccessGuardKey = null;
-    partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
-    partyWorkspaceOneShotGuards.oauthCallbackRegistered = false;
-    clearPartyWorkspaceLinkedPartyCheck();
-    partyWorkspaceReconnectRefs.linkedParty = null;
+    prevProjectIdentityKeyRef.current = projectIdentityKey;
+    resetPartyWorkspaceForFreshProject();
     stopReconnectTimer();
-    partyWorkspaceReconnectRefs.cancelled = true;
-  }, [projectContextKey, stopReconnectTimer]);
+  }, [projectIdentityKey, stopReconnectTimer]);
+
+  useEffect(() => {
+    const store = getPartyStore();
+    const tid = meta.partyThemeId;
+    if (tid && isValidPartyTheme(tid)) {
+      store.setThemeId(tid as PartyThemeId);
+      store.setCustomizationSettings(
+        resolveLoadedCustomizationSettings(tid as PartyThemeId, meta.partyCustomizationSettings),
+      );
+    } else {
+      store.setThemeId(DEFAULT_PARTY_THEME_ID);
+      store.setCustomizationSettings(
+        getDefaultCustomizationSettings(DEFAULT_PARTY_THEME_ID) as Record<string, unknown>,
+      );
+    }
+  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
 
   useEffect(() => {
     if (networkEnabled) {
@@ -597,7 +587,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
 
   const visibleThemeIds: PartyThemeId[] | null = useMemo(() => {
     if (!themeAccess) {
-      return null;
+      const safe = new Set<PartyThemeId>([DEFAULT_PARTY_THEME_ID]);
+      if (isValidPartyTheme(themeId)) {
+        safe.add(themeId);
+      }
+      return partyThemes.map((theme) => theme.id).filter((id) => safe.has(id));
     }
 
     const visible = new Set<PartyThemeId>();

@@ -1,7 +1,3 @@
-/**
- * Modal and Settings Styles
- */
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -208,7 +204,6 @@
   flex-shrink: 0;
 }
 
-/* Link Party Modal */
 .link-party-modal-content {
   max-width: 480px;
 }
@@ -316,9 +311,20 @@
   cursor: not-allowed;
 }
 
-/* My Parties panel */
-.my-parties-panel-content {
-  max-width: 560px;
+.my-parties-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--ui-border);
+}
+
+.my-parties-list-title {
+  margin: 0;
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .my-parties-panel-auth-stub {
@@ -509,11 +515,10 @@
   z-index: 1001;
 }
 
-/* Account / Login modal — в стиле приложения (тёмная подложка) */
 .account-modal-content {
   width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
+  max-width: 640px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -584,7 +589,6 @@
   min-height: 0;
 }
 
-/* Форма входа по центру (не слева) */
 .account-view .auth-form-container {
   width: 100%;
   display: flex;

@@ -2,6 +2,8 @@
 
 Система **PartyTheme** для CherryPlay Components: визуальный стиль контента вечеринки (плейлист, текущий трек, страница info). Не путать с темой оболочки приложения (тёмная/светлая). См. [GLOSSARY.md](../../GLOSSARY.md).
 
+Продуктовый default: константа `DEFAULT_PARTY_THEME_ID` (`'basic'`) из `@cherryplay/components` / `partyThemeTypes.ts`.
+
 ## Доступные PartyTheme
 
 ### Cyberpunk
@@ -52,7 +54,7 @@ import { PlaylistView, applyPartyTheme, PartyThemeId } from '@cherryplay/compone
 // Применить PartyTheme к компоненту (в API поле partyThemeId)
 <PlaylistView
   playlist={playlistData}
-  themeId="cyberpunk"
+  themeId="basic"
 />
 
 // Или применить PartyTheme программно

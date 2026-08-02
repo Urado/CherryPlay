@@ -176,6 +176,7 @@
 - **▾** меню workspace (переключение пресетов / пользовательских workspace);
 - переименование проекта;
 - кнопки настроек, экспорта, аккаунта, demo player (floating);
+- **HeaderPartyStatus** (**«К вечеринке»**) — кнопка `disabled` (как остальные header controls);
 - **HeaderPlaybackPill** — `disabled` / `pointer-events: none`, приглушён;
 - меню **Проект** (принудительно закрывается при входе в режим);
 - **глобальные горячие клавиши** (`useGlobalShortcuts` с `enabled: false`).

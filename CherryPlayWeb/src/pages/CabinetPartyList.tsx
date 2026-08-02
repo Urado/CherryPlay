@@ -1,4 +1,4 @@
-import { Button } from '@cherryplay/components';
+import { Button, DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
 import { Link } from 'react-router-dom';
 
 import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
@@ -37,7 +37,7 @@ export interface CabinetPartyListProps {
 
 const emptyCreateForm: CreatePartyDto = {
   name: '',
-  partyThemeId: 'basic',
+  partyThemeId: DEFAULT_PARTY_THEME_ID,
   isListedInCatalog: false,
 };
 

@@ -169,7 +169,7 @@
 
 Пересчёт при смене `layout`, resize окна, toggle `isLayoutEditMode` и прочих изменений chrome.
 
-Chrome шапки учитывает pill workspace, **HeaderPlaybackPill** и прочий UI; отдельного host основного плеера в шапке **нет** (зона **Проигрывание** — только в layout). Плотность шапки зоны `player` — см. [Player](../workspaces/player.md#шапка-зоны).
+Chrome шапки учитывает pill workspace, **HeaderPartyStatus** (при **Онлайн**: lifecycle UI labels + **«К вечеринке»** → preset `party`), **HeaderPlaybackPill** (session + CherryPlay; без prep/readiness; **не** gate от `enableStreaming`) и прочий UI; отдельного host основного плеера в шапке **нет** (зона **Проигрывание** — только в layout). Детали: [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill). Плотность шапки зоны `player` — см. [Player](../workspaces/player.md#шапка-зоны).
 
 **Веб-демо** (`npm run dev:web`): IPC нет; гарантия — clamp divider в `SplitContainer` + add-adjacent pre-check. Опциональный CSS-min на контейнере приложения не является основным механизмом.
 

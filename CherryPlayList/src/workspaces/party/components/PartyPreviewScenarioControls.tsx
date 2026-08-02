@@ -47,8 +47,8 @@ interface PartyPreviewScenarioControlsProps {
 }
 
 const LIFECYCLE_PRESETS: { label: string; lifecycle: PartyLifecycleState }[] = [
-  { label: 'Не на сайте', lifecycle: 'draft' },
-  { label: 'Опубликована', lifecycle: 'ready' },
+  { label: 'Черновик', lifecycle: 'draft' },
+  { label: 'Не начато', lifecycle: 'ready' },
   { label: 'Архив', lifecycle: 'completed' },
 ];
 

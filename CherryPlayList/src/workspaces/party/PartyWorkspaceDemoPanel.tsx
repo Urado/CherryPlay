@@ -1,4 +1,4 @@
-import { Button, type PartyThemeId } from '@cherryplay/components';
+import { Button, DEFAULT_PARTY_THEME_ID, type PartyThemeId } from '@cherryplay/components';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -35,7 +35,6 @@ interface PartyWorkspaceDemoPanelProps {
   previewThemeId?: PartyThemeId;
   previewDesignOptions?: Array<{ id: PartyThemeId; name: string; isAvailable: boolean }>;
   previewCustomizationSettings?: Record<string, unknown>;
-  /** When false, hides demo-only reset in preview mode (production Electron). */
   showDemoReset?: boolean;
 }
 
@@ -59,12 +58,11 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
     previewLifecycleState: null,
     effectivePlaybackState: null,
   },
-  previewThemeId = 'cyberpunk',
+  previewThemeId = DEFAULT_PARTY_THEME_ID,
   previewDesignOptions = [],
   previewCustomizationSettings = {},
   showDemoReset = true,
 }) => {
-  /* Work (editor) and party (preview) modes: scenarios panel starts collapsed. */
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [panelHeightPx, setPanelHeightPx] = useState<number | null>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -252,7 +250,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Не на сайте (подключена)
+                  Черновик (подключена)
                 </Button>
                 <Button
                   type="button"
@@ -261,7 +259,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Опубликована
+                  Не начато
                 </Button>
                 <Button
                   type="button"

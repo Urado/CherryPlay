@@ -11,8 +11,9 @@ export interface WorkspacePickerOption {
   name: string;
 }
 
-/** Shared hint shown on a disabled add-workspace control when no add fits the viewport. */
 export const AIR_DISABLED_HINT = 'Недостаточно места — увеличьте окно или измените пропорции';
+
+export const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
 
 function isWorkspaceTypeUsedInLayout(type: string, usedTypes: Set<string>): boolean {
   if (type === 'player' || type === 'aimp') {

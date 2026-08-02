@@ -1,5 +1,6 @@
 import {
   Button,
+  DEFAULT_PARTY_THEME_ID,
   convertUtcToLocalDateTime,
   convertLocalDateTimeToUtc,
   getDefaultTimeZone,
@@ -53,7 +54,9 @@ export function CabinetPartyForm({
   const lockedByThemeId = new Map(
     (themeAccess?.visibleLockedThemes ?? []).map((item) => [item.themeId, item]),
   );
-  const selectedThemeId = isEditing ? (editForm.partyThemeId ?? 'basic') : createForm.partyThemeId;
+  const selectedThemeId = isEditing
+    ? (editForm.partyThemeId ?? DEFAULT_PARTY_THEME_ID)
+    : createForm.partyThemeId;
   const selectableThemeOptions = PARTY_THEME_OPTIONS.filter((option) => {
     if (grantedThemes.has(option.value)) return true;
     if (lockedByThemeId.has(option.value)) return true;

@@ -1,10 +1,7 @@
-/**
- * Страница информации о вечеринке (описание, место, дата).
- * Использует тематический компонент PartyInfoDisplay из библиотеки компонентов.
- */
 import {
   Button,
   ButtonLink,
+  DEFAULT_PARTY_THEME_ID,
   getDefaultTimeZone,
   PartyInfoDisplay,
   isValidPartyTheme,
@@ -94,7 +91,9 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
     );
   }
 
-  const themeId = isValidPartyTheme(party.partyThemeId) ? party.partyThemeId : 'basic';
+  const themeId = isValidPartyTheme(party.partyThemeId)
+    ? party.partyThemeId
+    : DEFAULT_PARTY_THEME_ID;
 
   return (
     <div className="party-info-page" data-theme={themeId}>

@@ -1,3 +1,5 @@
+import { DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
+
 import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
 
 import { DEMO_DEFAULT_ENABLE_STREAMING } from '../platform/fixtures/demoConfig';
@@ -10,9 +12,6 @@ import { DEMO_LINKED_PARTY } from './demoPartyFixture';
 
 export { DEMO_PERSIST_STORAGE_KEYS, resetDemoPersistStorage } from './demoResetStorage';
 
-/**
- * Applies in-memory demo defaults after stores are registered (call from entry.tsx).
- */
 export function applyDemoStoreDefaults(): void {
   if (import.meta.env.VITE_APP_MODE !== 'demo') {
     return;
@@ -21,7 +20,7 @@ export function applyDemoStoreDefaults(): void {
   applyDemoAuthSession();
   const project = useProjectStore.getState();
   project.setLinkedParty(DEMO_LINKED_PARTY);
-  project.setPartyThemeId('cyberpunk');
+  project.setPartyThemeId(DEFAULT_PARTY_THEME_ID);
   useSettingsStore.setState({
     exportPath: '',
     lastOpenedPlaylist: '',

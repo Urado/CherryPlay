@@ -7,9 +7,7 @@ export interface PartyCatalogVisibilityControlProps {
   isListedInCatalog: boolean;
   disabled?: boolean;
   isUpdating?: boolean;
-  /** When true, disabled state is due to «Онлайн» being off. */
   networkOffline?: boolean;
-  /** Inline toggle for Party Editor shell header. */
   layout?: 'default' | 'header';
   onChange: (listed: boolean) => void;
 }
@@ -70,7 +68,7 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
       <div className="party-catalog-visibility-header">
         <span className="party-catalog-visibility-label">Каталог</span>
         <span className="party-catalog-visibility-hint">
-          Отдельно от статуса публикации на сайте
+          Отдельно от статуса вечеринки на сайте
         </span>
       </div>
       {toggleButton}

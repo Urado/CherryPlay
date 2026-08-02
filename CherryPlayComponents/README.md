@@ -29,7 +29,7 @@ import { PartyDisplay, PartyDisplayData } from '@cherryplay/components';
 const data: PartyDisplayData = {
   partyId: '...',
   partyName: 'Моя вечеринка',
-  themeId: 'cyberpunk', // или 'sakura', 'art-deco'
+  themeId: 'basic', // или 'cyberpunk', 'sakura', 'art-deco'
   customizationSettings: { accentColor: '#00ff00' },
   playlist: { ... },
   playbackState: { ... },
@@ -427,12 +427,12 @@ CherryPlayComponents/
 
 ### Доступные темы
 
-Список идентификаторов и поведение (в т.ч. модуль палитры `basic` в `src/themes/basic/palette/`) описаны в [THEMES.md](../THEMES.md).
+Список идентификаторов и поведение (в т.ч. модуль палитры `basic` в `src/themes/basic/palette/`) описаны в [THEMES.md](../THEMES.md). Продуктовый default — константа `DEFAULT_PARTY_THEME_ID` (`'basic'`) из `@cherryplay/components`.
 
 - **cyberpunk** — неоновая тема в стиле киберпанк
 - **sakura** — пастельная тема
 - **art-deco** — ар-деко
-- **basic** — настраиваемая палитра; исходники палитры — `src/themes/basic/palette/`
+- **basic** — настраиваемая палитра; исходники палитры — `src/themes/basic/palette/` (также `DEFAULT_PARTY_THEME_ID`)
 - **spring-cross-step** — расширенная весенняя тема с переопределёнными компонентами
 
 ### Добавление новой темы

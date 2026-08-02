@@ -1,4 +1,8 @@
-import { getDefaultCustomizationSettings, type PartyThemeId } from '@cherryplay/components';
+import {
+  DEFAULT_PARTY_THEME_ID,
+  getDefaultCustomizationSettings,
+  type PartyThemeId,
+} from '@cherryplay/components';
 import { createWithEqualityFn } from 'zustand/traditional';
 
 import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
@@ -27,7 +31,6 @@ export interface PartyWorkspaceState {
   externalLinkUrl: string;
   externalLinkText: string;
   danceTags: string[];
-  /** Catalog discoverability: true = «В каталоге», false = «По ссылке». */
   isListedInCatalog: boolean;
   isTogglingCatalogVisibility: boolean;
   isCreating: boolean;
@@ -85,16 +88,15 @@ export interface PartyWorkspaceState {
   resetPartyLinkState: () => void;
 }
 
-const defaultCustomizationSettings = getDefaultCustomizationSettings('cyberpunk') as Record<
-  string,
-  unknown
->;
+const defaultCustomizationSettings = getDefaultCustomizationSettings(
+  DEFAULT_PARTY_THEME_ID,
+) as Record<string, unknown>;
 
 const initialPartyWorkspaceState = {
   partyName: '',
   partyTitle: '',
   partySubtitle: '',
-  themeId: 'cyberpunk' as PartyThemeId,
+  themeId: DEFAULT_PARTY_THEME_ID,
   customizationSettings: defaultCustomizationSettings,
   eventDateTime: '',
   eventEndDateTime: '',
@@ -170,11 +172,14 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setThemeAccessErrorMessage: (themeAccessErrorMessage) => set({ themeAccessErrorMessage }),
   setThemeEntitlementModal: (themeEntitlementModal) => set({ themeEntitlementModal }),
   resetPartyWorkspaceState: () =>
-    set({
+    set((state) => ({
       ...initialPartyWorkspaceState,
       customizationSettings: { ...defaultCustomizationSettings },
       danceTags: [],
-    }),
+      themeAccess: state.themeAccess,
+      isThemeAccessLoading: state.isThemeAccessLoading,
+      themeAccessErrorMessage: state.themeAccessErrorMessage,
+    })),
   resetPartyLinkState: () =>
     set({
       serverError: null,

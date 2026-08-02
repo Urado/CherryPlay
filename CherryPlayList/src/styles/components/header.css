@@ -1,7 +1,3 @@
-/**
- * App Header Styles
- */
-
 .app-header {
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--ui-border);
@@ -33,13 +29,105 @@
   align-items: center;
   flex: 1 1 280px;
   min-width: 0;
-  /* Match .playback-pill / .workspace-pill height so an empty/reserved slot does not collapse the project row. */
+  gap: var(--spacing-sm);
   min-height: 32px;
 }
 
 .app-header-playback-pill-row .playback-pill {
   flex: 1 1 280px;
   max-width: 480px;
+}
+
+.header-party-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 2px 4px 2px 10px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+}
+
+.header-party-status__summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.header-party-status__primary,
+.header-party-status__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.header-party-status__primary {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-party-status__secondary {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.header-party-status__label {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-party-status__info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+  line-height: 0;
+  color: var(--text-secondary);
+  cursor: help;
+}
+
+.header-party-status__info > svg,
+.header-party-status__icon > svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+}
+
+.header-party-status__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 0;
+}
+
+.header-party-status__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 13px;
 }
 
 .app-header-left {
@@ -557,7 +645,6 @@
   border: 1px solid var(--surface-primary, #fff);
 }
 
-/* Project menu: single entry point for new / open / save / save as */
 .project-menu {
   position: relative;
 }
@@ -677,14 +764,6 @@
   background-color: var(--bg-hover);
 }
 
-/* Invisible stand-in when pill is hidden (AIMP / non-CherryPlay source) — same box model, no reflow. */
-.playback-pill--slot-reserved {
-  visibility: hidden;
-  pointer-events: none;
-  background: transparent;
-  border-color: transparent;
-}
-
 .playback-pill--blocked {
   opacity: 0.55;
   pointer-events: none;
@@ -750,38 +829,16 @@
   box-sizing: border-box;
 }
 
-.playback-pill__prep-row,
 .playback-pill__track {
-  grid-area: 1 / 1;
+  display: grid;
+  grid-template-areas: 'stack';
+  align-items: center;
+  justify-items: stretch;
   align-self: stretch;
   min-width: 0;
   min-height: 0;
   height: 100%;
   overflow: hidden;
-}
-
-.playback-pill__prep-row {
-  display: flex;
-  align-items: center;
-}
-
-.playback-pill__prep-label {
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.playback-pill__track {
-  /* Title + time share one cell so a hidden time row cannot push the title up. */
-  display: grid;
-  grid-template-areas: 'stack';
-  align-items: center;
-  justify-items: stretch;
 }
 
 .playback-pill__track-name,
@@ -817,7 +874,6 @@
   visibility: hidden;
 }
 
-/* When the timeline is visible, pin the title to the top so both lines fit. */
 .playback-pill__track:has(.playback-pill__track-time:not(.playback-pill__track-time--placeholder))
   .playback-pill__track-name {
   align-self: start;
@@ -841,57 +897,10 @@
   accent-color: var(--accent-primary);
 }
 
-.playback-pill__hint {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  width: var(--playback-pill-icon);
-  height: var(--playback-pill-icon);
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: help;
-}
-
-.playback-pill__hint > .playback-pill__hint-glyph.cp-icon {
-  width: 100%;
-  height: 100%;
-}
-
-.playback-pill__hint > .playback-pill__hint-glyph.cp-icon--circle {
-  border-color: currentColor;
-  font-size: 14px;
-}
-
-.playback-pill__hint:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-  border-radius: 999px;
-}
-
-.playback-pill__hint--active {
-  color: var(--state-warning, #e6a700);
-}
-
-.playback-pill__hint--empty {
-  visibility: hidden;
-  pointer-events: none;
-  cursor: default;
-}
-
 .playback-pill__online {
   flex-shrink: 0;
   margin-left: auto;
   align-self: center;
-}
-
-.playback-pill__slot--inert,
-.playback-pill__layer--hidden {
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .streaming-connection-indicator {
@@ -1145,7 +1154,6 @@
   padding-left: 20px;
 }
 
-/* Адаптивность для маленьких экранов */
 @media (max-width: 768px) {
   .app-header-toolbar {
     flex-direction: column;
@@ -1337,7 +1345,11 @@
 
 .demo-player__timeline,
 .demo-player__volume-slider {
-  --demo-range-track: color-mix(in srgb, var(--ui-border, rgba(255, 255, 255, 0.2)) 80%, transparent);
+  --demo-range-track: color-mix(
+    in srgb,
+    var(--ui-border, rgba(255, 255, 255, 0.2)) 80%,
+    transparent
+  );
   --demo-range-fill: var(--accent-primary, #4a9eff);
   --demo-range-progress: 0%;
 

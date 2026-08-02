@@ -57,8 +57,8 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
       )}
       {selectedLockedTheme && (
         <div className="party-editor-theme-restricted-note">
-          Текущая тема больше не входит в ваш доступ. Вы можете сохранить как есть или переключиться
-          на доступную тему.
+          Текущая тема больше не входит в ваш доступ. Выберите доступную тему, чтобы создать
+          вечеринку, или переключитесь на доступную тему перед сохранением.
         </div>
       )}
     </PartyEditorAccordion>

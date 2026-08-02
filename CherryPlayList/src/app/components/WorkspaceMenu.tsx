@@ -20,9 +20,8 @@ import { useOnlineNetworkPolicy } from '@shared/streaming';
 import { isPartyLayoutPresetDiscoverable } from '@shared/utils/aimpPresetVisibility';
 
 import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
+import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceNameModal } from './WorkspaceNameModal';
-
-const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
 
 const ALL_BUILTIN_PRESETS: LayoutPreset[] = [
   'simple',

@@ -1,0 +1,62 @@
+---
+description: Do not write code comments; remove comments when editing a file
+alwaysApply: true
+---
+
+# No Code Comments
+
+## Core rule
+
+In this project, **do not write comments in application code**. When you **edit** a source file, **remove existing comments** from that file (do not leave them behind).
+
+## What counts as a comment
+
+- Line comments: `// ...`
+- Block comments: `/* ... */`
+- JSDoc / TSDoc: `/** ... */` and property docs on the same style
+- JSX/HTML comments: `{/* ... */}` and `<!-- ... -->`
+
+## Scope
+
+Applies to application and script source, including but not limited to:
+
+- `**/*.{ts,tsx,js,jsx,mjs,cjs}`
+- `**/*.{cs,cpp,h,hpp}`
+- CSS/SCSS when edited: `/* ... */`
+
+Does **not** apply to:
+
+- Markdown documentation (`.md`)
+- Cursor rules (`.mdc`), skills, agent prompts
+- License headers only if the file/license **requires** keeping them — otherwise remove narrating comments
+
+## Required behavior
+
+1. **Never add** comments that explain what the code does, history, TODOs-in-comments, or “why” notes — express intent in names and structure instead.
+2. **When editing a file**, strip comments in that file as part of the same change (full-file cleanup of comments, not only around your hunk).
+3. Do not replace removed comments with new ones.
+4. Prefer clear identifiers and small functions over commented sections.
+
+## Examples
+
+```typescript
+// ❌ BAD — narrating comment
+// Reset party form when creating a new project
+resetPartyWorkspaceForFreshProject();
+
+// ✅ GOOD — no comment
+resetPartyWorkspaceForFreshProject();
+```
+
+```typescript
+// ❌ BAD — JSDoc restating the name
+/** Returns the display party name. */
+export function resolveDisplayPartyName(...) { ... }
+
+// ✅ GOOD
+export function resolveDisplayPartyName(...) { ... }
+```
+
+## Exception
+
+Only keep or add a comment if the user **explicitly** asks for a comment in that file in the current message.

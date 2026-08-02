@@ -10,7 +10,7 @@ public class Party
     public string? Title { get; set; }
     public string? Subtitle { get; set; }
     public string ShortCode { get; set; } = string.Empty;
-    public PartyThemeId PartyThemeId { get; set; } = PartyThemeId.Cyberpunk;
+    public PartyThemeId PartyThemeId { get; set; } = PartyThemeDefaults.Id;
     public Dictionary<string, object>? CustomizationSettings { get; set; }
     public PartyPlaylist Playlist { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
