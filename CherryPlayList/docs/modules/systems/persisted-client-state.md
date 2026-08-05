@@ -42,7 +42,7 @@
 - **Отображение списка:** `trackItemSizePreset`, `hourDividerInterval`, `showHourDividers`
 - **Аудио:** `playerAudioDeviceId`, `demoPlayerAudioDeviceId`, `demoPlayerFloatingPosition` (`{ x, y }` \| `null`), `demoPlayerFloatingOpen` (`boolean`). `demoPlayerFloatingOpen` — persisted preference; runtime visibility floating-панели может переопределяться логикой layout и активной demo-сессии — см. [Demo Player — Floating: открытие / подавление](./demo-player.md#floating-открытие--подавление). Поле `playerInAppHeader` из настроек **удалено**; при наличии в старом persist игнорируется (основной плеер не хостится в шапке).
 - **Клавиши:** `keyBindings` (пользовательские привязки)
-- **Стриминг / Онлайн:** `enableStreaming`, `streamingSource` (в UI — **Онлайн**, **Источник состояния для гостей**)
+- **Стриминг / Онлайн:** `enableStreaming`, `streamingSource` (в UI — **Онлайн**, **Источник проигрывания**)
 
 Поле **`_hasHydrated`** и сеттеры в persist **не** входят.
 
@@ -114,7 +114,7 @@ Auto-save использует `allocateUnnamedWorkspaceName()` (`workspacePrese
 - **`meta`** (урезанно для сериализации):
   - `filePath`, `isDirty`, `lastSavedAt`
   - **`linkedParty`** — только `{ id, shortCode }` или `null` (URL в persist не хранится)
-  - **`partyTrackDisplay`** — настройки отображения имён треков для страницы вечеринки
+  - **`partyTrackDisplay`** — настройки отображения имён треков для страницы вечеринки (`stripLeadingCharsEnabled`, режим `count` \| `untilDelimiter`, count, delimiter; см. [Party](../workspaces/party.md#отображение-имён-треков-party-track-display))
   - **`partyThemeId`** (опционально) — черновик/кэш идентификатора темы вечеринки (до синхронизации с сервером)
   - **`partyCustomizationSettings`** (опционально) — черновик/кэш настроек кастомизации темы (локальный JSON)
 

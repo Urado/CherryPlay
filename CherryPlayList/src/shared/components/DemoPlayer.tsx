@@ -11,6 +11,7 @@ import { useDemoPlayerStore } from '../stores/demoPlayerStore';
 import type { PlayerStatus } from '../stores/demoPlayerStore';
 import { useUIStore } from '../stores/uiStore';
 import { formatPlayerTime } from '../utils/durationUtils';
+import { DEMO_PLAY_FAILURE_MESSAGE, togglePlayPause } from '../utils/togglePlayPause';
 
 type NotificationType = 'success' | 'error' | 'info';
 
@@ -58,9 +59,7 @@ interface DemoPlayerProps {
   onShowInBrowser?: (path: string) => void;
   controller?: DemoPlayerController;
   notify?: (payload: NotificationPayload) => void;
-  /** When false, unmount does not call clear() — used by DemoPlayerShell on dock/undock. Default: true. */
   clearOnUnmount?: boolean;
-  /** Blocks all controls (e.g. layout edit mode) without changing store disabled state. */
   interactionBlocked?: boolean;
 }
 
@@ -137,27 +136,24 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
     };
   }, [clear, clearOnUnmount]);
 
-  const handleToggle = useCallback(async () => {
-    if (!currentTrack) {
-      return;
-    }
-    if (isPlaying) {
-      pause();
-      return;
-    }
-
-    try {
-      await play();
-    } catch {
-      const existingError = controller ? error : useDemoPlayerStore.getState().error;
-      if (!existingError) {
-        addNotification({
-          type: 'error',
-          message: 'Не удалось начать воспроизведение. Проверьте настройки аудио.',
-        });
-      }
-    }
-  }, [addNotification, controller, currentTrack, error, isPlaying, pause, play]);
+  const handleToggle = useCallback(() => {
+    void togglePlayPause({
+      hasTrack: currentTrack !== null,
+      isPlaying,
+      blocked: isDisabled,
+      play,
+      pause,
+      onPlayFailure: () => {
+        const existingError = controller ? error : useDemoPlayerStore.getState().error;
+        if (!existingError) {
+          addNotification({
+            type: 'error',
+            message: DEMO_PLAY_FAILURE_MESSAGE,
+          });
+        }
+      },
+    });
+  }, [addNotification, controller, currentTrack, error, isDisabled, isPlaying, pause, play]);
 
   const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(event.target.value);

@@ -1,6 +1,8 @@
 import { Button } from '@cherryplay/components';
 import React from 'react';
 
+import { resolvePartyCatalogLabel, resolvePartyCatalogToggleHint } from '../partyCatalogLabels';
+
 import './PartyCatalogVisibilityControl.css';
 
 export interface PartyCatalogVisibilityControlProps {
@@ -10,16 +12,6 @@ export interface PartyCatalogVisibilityControlProps {
   networkOffline?: boolean;
   layout?: 'default' | 'header';
   onChange: (listed: boolean) => void;
-}
-
-function getCatalogLabel(isListedInCatalog: boolean): string {
-  return isListedInCatalog ? 'В каталоге' : 'По ссылке';
-}
-
-function getCatalogToggleHint(isListedInCatalog: boolean): string {
-  return isListedInCatalog
-    ? 'Вечеринка в общем каталоге. Нажмите, чтобы оставить только по ссылке.'
-    : 'Вечеринка только по ссылке. Нажмите, чтобы добавить в каталог.';
 }
 
 export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityControlProps> = ({
@@ -32,7 +24,7 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
 }) => {
   const isDisabled = disabled || isUpdating;
   const isHeader = layout === 'header';
-  const label = getCatalogLabel(isListedInCatalog);
+  const label = resolvePartyCatalogLabel(isListedInCatalog);
 
   const disabledTitle = networkOffline
     ? 'Включите «Онлайн» в настройках'
@@ -46,7 +38,7 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
       aria-pressed={isListedInCatalog}
       aria-label={`Каталог: ${label}`}
       aria-busy={isUpdating}
-      title={isDisabled ? disabledTitle : getCatalogToggleHint(isListedInCatalog)}
+      title={isDisabled ? disabledTitle : resolvePartyCatalogToggleHint(isListedInCatalog)}
       onClick={() => onChange(!isListedInCatalog)}
       variant="secondary"
       size="sm"

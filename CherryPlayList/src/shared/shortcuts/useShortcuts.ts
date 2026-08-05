@@ -1,43 +1,17 @@
-/**
- * useShortcuts Hook
- *
- * React hook for registering keyboard shortcut handlers.
- */
+import { useEffect, useMemo, useRef } from 'react';
 
-import { useEffect, useRef } from 'react';
+import { toggleSessionPlayPause } from '@shared/utils/togglePlayPause';
 
 import { shortcutManager } from './ShortcutManager';
 import type { ShortcutHandlers, ShortcutId, UseShortcutsOptions } from './shortcutTypes';
 
-/**
- * useShortcuts - Register handlers for keyboard shortcuts.
- *
- * Handlers are registered when the component mounts (or when enabled becomes true)
- * and unregistered when the component unmounts (or when enabled becomes false).
- *
- * @param handlers - Object mapping shortcut IDs to handler functions
- * @param options - Configuration options
- *
- * @example
- * ```tsx
- * useShortcuts({
- *   'global.save': handleSave,
- *   'global.open': handleOpen,
- *   'list.undo': undo,
- *   'list.redo': redo,
- *   'list.delete': hasSelection ? removeSelected : undefined,
- * }, { enabled: true });
- * ```
- */
 export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOptions = {}): void {
   const { enabled = true } = options;
 
-  // Keep track of which handlers we've registered
   const registeredIds = useRef<Set<ShortcutId>>(new Set());
 
   useEffect(() => {
     if (!enabled) {
-      // Unregister all handlers when disabled
       for (const id of registeredIds.current) {
         shortcutManager.unregisterHandler(id);
       }
@@ -45,13 +19,10 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
       return;
     }
 
-    // Get the list of handler entries
     const handlerEntries = Object.entries(handlers) as [ShortcutId, (() => void) | undefined][];
 
-    // Track which IDs we should have registered
     const currentIds = new Set<ShortcutId>();
 
-    // Register handlers
     for (const [id, handler] of handlerEntries) {
       if (handler) {
         shortcutManager.registerHandler(id, handler);
@@ -59,17 +30,14 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
       }
     }
 
-    // Unregister handlers that were removed
     for (const id of registeredIds.current) {
       if (!currentIds.has(id)) {
         shortcutManager.unregisterHandler(id);
       }
     }
 
-    // Update our tracking set
     registeredIds.current = currentIds;
 
-    // Cleanup on unmount
     return () => {
       for (const id of registeredIds.current) {
         shortcutManager.unregisterHandler(id);
@@ -79,25 +47,6 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
   }, [handlers, enabled]);
 }
 
-/**
- * useGlobalShortcuts - Convenience hook for global shortcuts.
- *
- * Accepts the same `options` as `useShortcuts`, including `enabled` to
- * conditionally register handlers.
- *
- * @param handlers - Object mapping shortcut IDs to handler functions
- * @param options - Configuration options (e.g. `{ enabled: false }` to suspend)
- *
- * @example
- * ```tsx
- * useGlobalShortcuts({
- *   'global.save': handleSave,
- *   'global.saveAs': handleSaveAs,
- *   'global.open': handleOpen,
- *   'global.new': handleNew,
- * }, { enabled: !isModalOpen });
- * ```
- */
 export function useGlobalShortcuts(
   handlers: Pick<ShortcutHandlers, 'global.save' | 'global.saveAs' | 'global.open' | 'global.new'>,
   options: UseShortcutsOptions = {},
@@ -105,23 +54,6 @@ export function useGlobalShortcuts(
   useShortcuts(handlers, options);
 }
 
-/**
- * useListShortcuts - Convenience hook for list operation shortcuts.
- *
- * @param handlers - Object mapping list shortcut IDs to handler functions
- * @param options - Configuration options
- *
- * @example
- * ```tsx
- * useListShortcuts({
- *   'list.undo': undo,
- *   'list.redo': redo,
- *   'list.delete': hasSelection ? removeSelected : undefined,
- *   'list.selectAll': selectAll,
- *   'list.escape': deselectAll,
- * }, { enabled: isListFocused });
- * ```
- */
 export function useListShortcuts(
   handlers: Pick<
     ShortcutHandlers,
@@ -129,5 +61,16 @@ export function useListShortcuts(
   >,
   options: UseShortcutsOptions = {},
 ): void {
+  useShortcuts(handlers, options);
+}
+
+export function usePlayerShortcuts(options: UseShortcutsOptions = {}): void {
+  const handlers = useMemo(
+    () => ({
+      'player.togglePlay': toggleSessionPlayPause,
+    }),
+    [],
+  );
+
   useShortcuts(handlers, options);
 }

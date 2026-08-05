@@ -1,4 +1,9 @@
-import { Button, DEFAULT_PARTY_THEME_ID, type PartyThemeId } from '@cherryplay/components';
+import {
+  Button,
+  DEFAULT_PARTY_THEME_ID,
+  Disclosure,
+  type PartyThemeId,
+} from '@cherryplay/components';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -273,23 +278,27 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
               </div>
             </div>
 
-            <div className="party-workspace-demo-panel-group">
-              <span className="party-workspace-demo-panel-group-label">Блокирующие оверлеи</span>
-              <div className="party-workspace-demo-panel-buttons">
-                {BLOCKED_SCENARIOS.map(({ label, reason, onClick }) => (
-                  <Button
-                    key={reason}
-                    type="button"
-                    className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
-                    onClick={onClick ?? (() => demoSetBlockedOverride(reason))}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    {label}
-                  </Button>
-                ))}
+            <Disclosure
+              title="Блокирующие оверлеи"
+              className="party-workspace-demo-panel-accordion"
+            >
+              <div className="party-workspace-demo-panel-accordion-content">
+                <div className="party-workspace-demo-panel-buttons">
+                  {BLOCKED_SCENARIOS.map(({ label, reason, onClick }) => (
+                    <Button
+                      key={reason}
+                      type="button"
+                      className="party-workspace-demo-panel-button party-workspace-demo-panel-button--blocked"
+                      onClick={onClick ?? (() => demoSetBlockedOverride(reason))}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            </Disclosure>
 
             <div className="party-workspace-demo-panel-group">
               <Button

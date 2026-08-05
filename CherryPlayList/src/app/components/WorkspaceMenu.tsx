@@ -15,7 +15,7 @@ import { LAYOUT_PRESET_DISPLAY_NAMES_RU } from '@core/constants/layoutPresetDisp
 import type { ActiveWorkspace, LayoutPreset } from '@core/types/workspacePreset';
 import { isUnnamedWorkspaceName, UNNAMED_WORKSPACE_NAME } from '@core/types/workspacePreset';
 import { usePlatformCapabilities } from '@shared/platform';
-import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { useLayoutStore, useSettingsStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 import { isPartyLayoutPresetDiscoverable } from '@shared/utils/aimpPresetVisibility';
 
@@ -80,7 +80,6 @@ export const WorkspaceMenu: React.FC = () => {
 
   const { streamingSource, setStreamingSource } = useSettingsStore();
   const { partyDiscoverabilityEnabled } = useOnlineNetworkPolicy();
-  const addNotification = useUIStore((state) => state.addNotification);
   const { supportsAimpWorkspace } = usePlatformCapabilities();
   const { requestActivateWorkspace } = useWorkspaceActivation();
 
@@ -244,11 +243,10 @@ export const WorkspaceMenu: React.FC = () => {
       }
       const renamed = renameUserWorkspace(renameTargetId, name);
       if (renamed) {
-        addNotification({ type: 'success', message: 'Название обновлено' });
         setNameModalOpen(false);
       }
     },
-    [addNotification, renameTargetId, renameUserWorkspace],
+    [renameTargetId, renameUserWorkspace],
   );
 
   const handleDeleteConfirm = useCallback(() => {
@@ -257,10 +255,9 @@ export const WorkspaceMenu: React.FC = () => {
     }
     const deleted = deleteUserWorkspace(deleteTarget.id);
     if (deleted) {
-      addNotification({ type: 'info', message: `Удалено: ${deleteTarget.name}` });
       setDeleteTarget(null);
     }
-  }, [addNotification, deleteTarget, deleteUserWorkspace]);
+  }, [deleteTarget, deleteUserWorkspace]);
 
   useEffect(() => {
     if (activeWorkspace.kind !== 'builtin') {

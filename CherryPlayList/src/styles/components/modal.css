@@ -311,22 +311,6 @@
   cursor: not-allowed;
 }
 
-.my-parties-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--ui-border);
-}
-
-.my-parties-list-title {
-  margin: 0;
-  font-size: var(--font-size-body);
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
 .my-parties-panel-auth-stub {
   display: flex;
   flex-direction: column;
@@ -651,34 +635,41 @@
   color: inherit;
 }
 
-.account-view-card {
+.account-disclosure-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
+}
+
+.account-disclosure-card {
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-md);
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   border-radius: 8px;
 }
 
-.account-view-card-disclosure.cp-disclosure {
+.account-disclosure.cp-disclosure {
   margin: 0;
   padding: 0;
   border: none;
   background: transparent;
 }
 
-.account-view-card-disclosure .cp-disclosure__title {
+.account-disclosure .cp-disclosure__title {
   font-size: var(--font-size-body);
   font-weight: 600;
-}
-
-.account-view-card-disclosure .cp-disclosure__toggle:hover .cp-disclosure__title {
   color: var(--text-primary);
 }
 
-.account-view-card-disclosure .cp-disclosure__panel {
+.account-disclosure .cp-disclosure__toggle:hover .cp-disclosure__title {
+  color: var(--text-primary);
+}
+
+.account-disclosure .cp-disclosure__panel {
   margin-top: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .account-view-field {
@@ -722,6 +713,8 @@
 .account-view-actions {
   display: flex;
   justify-content: flex-end;
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--ui-border);
 }
 
 .account-view-logout-btn {

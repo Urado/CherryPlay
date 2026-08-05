@@ -72,18 +72,8 @@ export const LinkPartyModal: React.FC = () => {
       markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
-        // Party metadata: explicit bind-time playlist upload (not live session sync).
         const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
-        addNotification({
-          type: 'success',
-          message: `Плейлист привязан к вечеринке «${party.name}» и отправлен на сервер`,
-        });
-      } else {
-        addNotification({
-          type: 'success',
-          message: `Плейлист привязан к вечеринке «${party.name}»`,
-        });
       }
       closeModal();
     } catch (e) {
@@ -113,7 +103,7 @@ export const LinkPartyModal: React.FC = () => {
     >
       <div className="modal-content link-party-modal-content">
         <div className="modal-header">
-          <h2 className="modal-title">Подключить к вечеринке</h2>
+          <h2 className="modal-title">Привязать существующую вечеринку</h2>
           <IconButton
             type="button"
             className="modal-close"
@@ -131,7 +121,8 @@ export const LinkPartyModal: React.FC = () => {
           ) : (
             <>
               <p className="link-party-modal-description">
-                Выберите вечеринку, созданную на сервере, чтобы связать с ней текущий плейлист.
+                Выберите вечеринку, уже созданную на сервере, чтобы привязать её к текущему проекту.
+                Новая вечеринка не создаётся, трансляция не запускается.
               </p>
 
               {loading && (
@@ -176,13 +167,14 @@ export const LinkPartyModal: React.FC = () => {
                           onClick={() => handleLink(party)}
                           disabled={linkingId !== null}
                           loading={linkingId === party.id}
-                          loadingLabel="Подключение..."
-                          aria-label={`Подключить к вечеринке ${party.name}`}
+                          loadingLabel="Привязка..."
+                          aria-label={`Привязать вечеринку ${party.name}`}
+                          title="Привязать эту вечеринку на сервере к текущему проекту"
                           variant="primary"
                           size="sm"
                           startIcon={<LinkOutlinedIcon fontSize="small" />}
                         >
-                          Подключить
+                          Привязать
                         </Button>
                       </li>
                     ))}

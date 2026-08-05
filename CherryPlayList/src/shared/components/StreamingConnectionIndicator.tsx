@@ -8,6 +8,7 @@ export interface StreamingConnectionIndicatorProps {
   onReconnect?: () => void;
   className?: string;
   compact?: boolean;
+  hasLinkedParty?: boolean;
 }
 
 export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicatorProps> = ({
@@ -15,15 +16,21 @@ export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicator
   onReconnect,
   className,
   compact = false,
+  hasLinkedParty = true,
 }) => {
-  const connectionErrorReason = signalRService.getConnectionErrorReason();
+  const rawErrorReason = signalRService.getConnectionErrorReason();
+  const connectionErrorReason = !hasLinkedParty
+    ? 'Нет вечеринки'
+    : rawErrorReason === 'Нет вечеринки'
+      ? 'Нет соединения с сервером'
+      : rawErrorReason;
   const isConnected = connectionState === signalR.HubConnectionState.Connected;
   const isConnecting =
     connectionState === signalR.HubConnectionState.Connecting ||
     connectionState === signalR.HubConnectionState.Reconnecting;
 
   const isDisconnected = !isConnected && !isConnecting;
-  const canReconnect = isDisconnected && onReconnect;
+  const canReconnect = hasLinkedParty && isDisconnected && Boolean(onReconnect);
 
   const getConnectionTooltip = () => {
     if (isConnected) {
@@ -32,9 +39,12 @@ export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicator
     if (isConnecting) {
       return 'Подключение...';
     }
+    if (!hasLinkedParty) {
+      return 'Нет вечеринки';
+    }
     if (canReconnect) {
       return connectionErrorReason
-        ? `${connectionErrorReason} Нажмите для переподключения.`
+        ? `${connectionErrorReason}. Нажмите для переподключения.`
         : 'Нет соединения с сервером. Нажмите для переподключения.';
     }
     if (connectionErrorReason) {
@@ -74,7 +84,6 @@ export const StreamingConnectionIndicator: React.FC<StreamingConnectionIndicator
     />
   );
 
-  // Compact: fixed 28×28 shell; hit target is always the same box (button or status).
   if (compact) {
     return (
       <span className={shellClassName}>

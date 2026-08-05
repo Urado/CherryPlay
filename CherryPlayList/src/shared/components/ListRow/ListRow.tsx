@@ -111,7 +111,7 @@ export const ListRow: React.FC<ListRowProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === 'Enter') {
       event.preventDefault();
       onClick?.(event as unknown as React.MouseEvent);
     }
@@ -160,6 +160,7 @@ export const ListRow: React.FC<ListRowProps> = ({
         aria-pressed={isSelected}
         aria-disabled={isDisabled}
         style={computedStyle}
+        data-list-row=""
         data-item-id={dataItemId ?? id}
         data-file-path={dataFilePath}
       >

@@ -7,7 +7,7 @@ import {
   type PartyLifecycleState,
 } from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
-import { sanitizeExternalUrl } from '@shared/utils';
+import { copyTextToClipboard, sanitizeExternalUrl } from '@shared/utils';
 
 import {
   buildCreatePartyDto,
@@ -23,12 +23,6 @@ import {
   resolveDisplayPartyName,
 } from './partyWorkspaceUtils';
 import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
-
-const LIFECYCLE_TRANSITION_SUCCESS_MESSAGES: Record<PartyLifecycleState, string> = {
-  draft: 'Вечеринка возвращена в черновик',
-  ready: 'Вечеринка опубликована',
-  completed: 'Вечеринка в архиве',
-};
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
@@ -138,10 +132,6 @@ export function usePartyServerActions(
       try {
         const party = await partyService.transitionPartyLifecycle(linkedParty.id, targetState);
         store.setPartyLifecycleState(party.partyLifecycleState);
-        addNotification({
-          type: 'success',
-          message: LIFECYCLE_TRANSITION_SUCCESS_MESSAGES[targetState],
-        });
       } catch (error) {
         console.error('Failed to transition party lifecycle:', error);
         if (error instanceof InvalidPartyLifecycleTransitionError) {
@@ -219,7 +209,7 @@ export function usePartyServerActions(
       const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi(), {
         partyName: nameToUse,
       });
-      await finalizePartyCreation(store, createData, 'Вечеринка успешно создана', {
+      await finalizePartyCreation(store, createData, {
         loadThemeAccess: effects.loadThemeAccess,
         checkPartyExists: effects.checkPartyExists,
         setLinkedParty,
@@ -290,8 +280,6 @@ export function usePartyServerActions(
         await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
         await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
         await effects.loadThemeAccess(true);
-
-        addNotification({ type: 'success', message: 'Плейлист и метаданные опубликованы' });
       } catch (error) {
         console.error('Failed to publish playlist:', error);
         if (isThemeNotEntitledError(error)) {
@@ -317,7 +305,7 @@ export function usePartyServerActions(
       const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi(), {
         partyName: nameToUse,
       });
-      await finalizePartyCreation(store, createData, 'Вечеринка создана и опубликована', {
+      await finalizePartyCreation(store, createData, {
         loadThemeAccess: effects.loadThemeAccess,
         checkPartyExists: effects.checkPartyExists,
         setLinkedParty,
@@ -364,16 +352,16 @@ export function usePartyServerActions(
       return;
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       addNotification({
         type: 'success',
-        message: 'URL скопирован в буфер обмена',
+        message: 'URL скопирован',
       });
     } catch (error) {
       console.error('Failed to copy URL:', error);
       addNotification({
         type: 'error',
-        message: 'Не удалось скопировать URL',
+        message: 'Не удалось скопировать URL. Скопируйте ссылку вручную.',
       });
     }
   }, [meta.linkedParty?.url, addNotification]);

@@ -5,6 +5,7 @@ import { WorkspaceId } from '@core/types/workspace';
 
 import { demoPlaybackEngine } from '../audio/playback/playbackEngines';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
+import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
 import { formatMissingTrackMessage } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
 
@@ -130,7 +131,7 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
       if (isLocalFilePlaybackBlocked()) {
         get().setActiveTrack(track, sourceWorkspaceId);
         set({
-          error: 'Воспроизведение невозможно',
+          error: DEMO_UNAVAILABLE_MESSAGE,
           status: 'error',
         });
         return;

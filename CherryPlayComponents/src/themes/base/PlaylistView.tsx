@@ -112,14 +112,17 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
     );
   };
 
+  const totalTracks = flatTracks.length;
   const statsLabel =
-    !isSessionActive && notYetPlayedCount === 0
-      ? 'Вечеринка окончена'
-      : notYetPlayedCount === 0
-        ? 'Сейчас последний трек'
-        : notYetPlayedCount === 1
-          ? 'Последний трек'
-          : null;
+    totalTracks === 0
+      ? null
+      : !isSessionActive && notYetPlayedCount === 0
+        ? 'Вечеринка окончена'
+        : notYetPlayedCount === 0
+          ? 'Сейчас последний трек'
+          : notYetPlayedCount === 1
+            ? 'Последний трек'
+            : null;
 
   return (
     <div className={`party-playlist-view ${className}`} data-theme={themeId}>

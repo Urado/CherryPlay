@@ -6,7 +6,6 @@ import { useModalKeyboard } from '@shared/hooks';
 import { useUIStore } from '@shared/stores';
 
 import { AccountView } from './AccountView';
-import { MyPartiesList } from './MyPartiesList';
 
 export const AccountModal: React.FC = () => {
   const { modal, closeModal } = useUIStore();
@@ -49,7 +48,6 @@ export const AccountModal: React.FC = () => {
         </div>
         <div className="account-modal-body">
           <AccountView />
-          <MyPartiesList />
         </div>
       </div>
     </div>

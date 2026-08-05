@@ -77,6 +77,7 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
             <button
               type="button"
               className="action-button party-editor-shell-party-not-found-button"
+              title="Отвязывает проект от вечеринки на сервере"
               onClick={() => void onResetAndCreateNew?.()}
             >
               Отключить от вечеринки

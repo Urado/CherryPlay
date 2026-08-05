@@ -2,7 +2,7 @@
 
 Обозреватель файлов для просмотра и выбора треков из локальной файловой системы.
 
-**Отображаемое имя в UI:** **«Браузер»** (`fileBrowser` → `workspaceDisplayNames.ts`). Ранее в продукте могло фигурировать «Источники» — актуальная подпись зон/picker — **«Браузер»**.
+**Отображаемое имя в UI:** **«Файловый менеджер»** (`fileBrowser` → `workspaceDisplayNames.ts`). Внутренний id типа — `fileBrowser`. Ранее в UI могло фигурировать «Браузер» / «Источники» — актуальная подпись зон/picker — **«Файловый менеджер»**.
 
 ## Описание
 
@@ -32,12 +32,12 @@
 | **Focus «Показать в браузере»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md) |
 | **Удаление зоны** | `cleanupWorkspaceInstance` удаляет запись пути из map |
 
-**Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Браузер 1/2»), path в узле layout tree.
+**Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Файловый менеджер 1/2»), path в узле layout tree.
 
 ## Основные компоненты
 
 - **FileBrowserWorkspaceView** (`src/workspaces/fileBrowser/FileBrowserWorkspaceView.tsx`) — оболочка workspace-модуля: `SourcesPanel` с `workspaceId` зоны.
-- **FileBrowser** (`src/components/FileBrowser.tsx`) — компонент браузера файлов; рендерится в панели **«Браузер»** (`SourcesPanel`).
+- **FileBrowser** (`src/components/FileBrowser.tsx`) — компонент файлового менеджера; рендерится в панели **«Файловый менеджер»** (`SourcesPanel`).
 - **FileBrowserItemRow** (`src/components/FileBrowserItemRow.tsx`) — строка элемента списка на базе ListRowCompound. Для аудиофайлов: сначала кнопка Play (демо-плеер), затем имя и мета; для папок и не-аудио файлов: иконка (папка/файл), затем имя и мета. Расположение совпадает с плейлистом, коллекциями и плеером (кнопка проигрывания в начале строки).
 
 ## Строка элемента (файл / папка)

@@ -1,4 +1,4 @@
-import { Button, IconButton, InfoIcon } from '@cherryplay/components';
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -14,7 +14,7 @@ import {
   parseSettingsBundleJson,
   type SettingsExportBundle,
 } from '@shared/services/settingsExportService';
-import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import { useAimpStore, useSettingsStore, useUIStore } from '@shared/stores';
 import type { TrackItemSizePreset } from '@shared/types/trackItemSize';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
@@ -29,9 +29,6 @@ const DIVIDER_INTERVALS = [
 
 export const SettingsModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
-  const projectSettings = useProjectStore((s) => s.settings);
-  const projectMeta = useProjectStore((s) => s.meta);
-  const setPortableMode = useProjectStore((s) => s.setPortableMode);
   const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
@@ -137,19 +134,6 @@ export const SettingsModal: React.FC = () => {
     setLocalStreamingSource(state.streamingSource);
   }, []);
 
-  const formatImportSummary = useCallback((result: ReturnType<typeof applySettingsImport>) => {
-    const workspaceParts: string[] = [];
-    if (result.workspacesImported > 0) {
-      workspaceParts.push(`добавлено ${result.workspacesImported}`);
-    }
-    if (result.workspacesUpdated > 0) {
-      workspaceParts.push(`обновлено ${result.workspacesUpdated}`);
-    }
-    const workspaceSummary =
-      workspaceParts.length > 0 ? workspaceParts.join(', ') : 'без изменений workspace';
-    return `Импортировано полей настроек: ${result.settingsFieldCount}; workspace: ${workspaceSummary}`;
-  }, []);
-
   const beginImport = useCallback((bundle: SettingsExportBundle) => {
     setPendingImportBundle(bundle);
     setImportConfirmOpen(true);
@@ -162,10 +146,7 @@ export const SettingsModal: React.FC = () => {
 
     setExportInProgress(true);
     try {
-      const outcome = await exportSettingsBundle();
-      if (outcome === 'exported') {
-        addNotification({ type: 'success', message: 'Резервная копия настроек экспортирована' });
-      }
+      await exportSettingsBundle();
     } catch (error) {
       console.error('Settings export failed', error);
       addNotification({
@@ -237,9 +218,8 @@ export const SettingsModal: React.FC = () => {
     }
 
     try {
-      const result = applySettingsImport(pendingImportBundle);
+      applySettingsImport(pendingImportBundle);
       syncLocalStateFromStore();
-      addNotification({ type: 'success', message: formatImportSummary(result) });
     } catch (error) {
       console.error('Settings import apply failed', error);
       addNotification({
@@ -250,7 +230,7 @@ export const SettingsModal: React.FC = () => {
       setPendingImportBundle(null);
       setImportConfirmOpen(false);
     }
-  }, [addNotification, formatImportSummary, pendingImportBundle, syncLocalStateFromStore]);
+  }, [addNotification, pendingImportBundle, syncLocalStateFromStore]);
 
   const handleImportCancel = useCallback(() => {
     setPendingImportBundle(null);
@@ -269,10 +249,8 @@ export const SettingsModal: React.FC = () => {
       localStreamingSource === 'aimp' && !canSelectAimp ? 'cherryPlayPlayer' : localStreamingSource,
     );
 
-    addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
   }, [
-    addNotification,
     canSelectAimp,
     closeModal,
     localDemoPlayerDeviceId,
@@ -384,6 +362,25 @@ export const SettingsModal: React.FC = () => {
               </div>
             </div>
 
+            <div className="settings-group">
+              <label className="settings-label" htmlFor="settings-hour-divider">
+                Интервал отсечек в плейлисте
+              </label>
+              <select
+                className="settings-select"
+                value={localHourDividerInterval}
+                onChange={(e) => setLocalHourDividerInterval(Number(e.target.value))}
+                id="settings-hour-divider"
+                disabled={!localShowHourDividers}
+              >
+                {DIVIDER_INTERVALS.map((interval) => (
+                  <option key={interval.value} value={interval.value}>
+                    {interval.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
 
             <div
@@ -420,23 +417,45 @@ export const SettingsModal: React.FC = () => {
               </div>
             </div>
 
+            <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
+
+            <div
+              className="settings-section-title"
+              style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+            >
+              Проигрывание
+            </div>
+
             <div className="settings-group">
-              <label className="settings-label" htmlFor="settings-hour-divider">
-                Интервал отсечек в плейлисте
+              <label className="settings-label" htmlFor="settings-streaming-source">
+                Источник проигрывания
               </label>
               <select
                 className="settings-select"
-                value={localHourDividerInterval}
-                onChange={(e) => setLocalHourDividerInterval(Number(e.target.value))}
-                id="settings-hour-divider"
-                disabled={!localShowHourDividers}
+                id="settings-streaming-source"
+                value={localStreamingSource}
+                onChange={(e) => setLocalStreamingSource(e.target.value as AimpSourceSelection)}
               >
-                {DIVIDER_INTERVALS.map((interval) => (
-                  <option key={interval.value} value={interval.value}>
-                    {interval.label}
-                  </option>
-                ))}
+                <option value="cherryPlayPlayer">CherryPlay</option>
+                <option value="aimp" disabled={!canSelectAimp && localStreamingSource !== 'aimp'}>
+                  AIMP{!canSelectAimp ? ' (недоступен)' : ''}
+                </option>
               </select>
+              {!canSelectAimp && (
+                <div
+                  className="settings-description"
+                  style={{
+                    marginTop: 4,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary, #9e9e9e)',
+                  }}
+                >
+                  {supportsAimpWorkspace
+                    ? (aimpAvailability.gatingReasons[0]?.message ??
+                      'AIMP сейчас недоступен на этой платформе.')
+                    : 'AIMP доступен только в десктопном приложении.'}
+                </div>
+              )}
             </div>
 
             <div className="settings-group">
@@ -477,38 +496,6 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {supportsAimpWorkspace && (
-              <div className="settings-group">
-                <label className="settings-label" htmlFor="settings-streaming-source">
-                  Источник проигрывания
-                </label>
-                <select
-                  className="settings-select"
-                  id="settings-streaming-source"
-                  value={localStreamingSource}
-                  onChange={(e) => setLocalStreamingSource(e.target.value as AimpSourceSelection)}
-                >
-                  <option value="cherryPlayPlayer">CherryPlay</option>
-                  <option value="aimp" disabled={!canSelectAimp && localStreamingSource !== 'aimp'}>
-                    AIMP{!canSelectAimp ? ' (недоступен)' : ''}
-                  </option>
-                </select>
-                {!canSelectAimp && (
-                  <div
-                    className="settings-description"
-                    style={{
-                      marginTop: 4,
-                      fontSize: '0.85rem',
-                      color: 'var(--text-secondary, #9e9e9e)',
-                    }}
-                  >
-                    {aimpAvailability.gatingReasons[0]?.message ??
-                      'AIMP сейчас недоступен на этой платформе.'}
-                  </div>
-                )}
-              </div>
-            )}
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="demo-player-audio-device">
@@ -559,54 +546,17 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             <div
-              className="settings-group"
+              className="settings-description"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
+                marginTop: 4,
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary, #9e9e9e)',
               }}
             >
-              <div
-                className="settings-checkbox-group"
-                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-              >
-                <input
-                  type="checkbox"
-                  className="settings-checkbox"
-                  checked={!!projectSettings?.portableMode}
-                  onChange={(e) => setPortableMode(e.target.checked)}
-                  id="settings-portable-mode"
-                  disabled={!projectMeta.filePath}
-                />
-                <label
-                  className="settings-checkbox-label"
-                  htmlFor="settings-portable-mode"
-                  style={!projectMeta.filePath ? { opacity: 0.5 } : undefined}
-                >
-                  Портативный режим
-                </label>
-              </div>
-
-              <InfoIcon
-                className="settings-info-icon"
-                title="При сохранении треки копируются в папку tracks/ рядом с файлом проекта. Позволяет перенести проект на другой компьютер."
-              />
+              Переносимый проект (копия треков рядом с .cherry) включается при сохранении через меню
+              «Файл» → «Сохранить как…» — флажок «Переносимый проект». Обычное сохранение сохраняет
+              режим из файла проекта.
             </div>
-
-            {!projectMeta.filePath && (
-              <div
-                className="settings-description"
-                style={{
-                  marginTop: 4,
-                  fontStyle: 'italic',
-                  fontSize: '0.85rem',
-                  color: 'var(--text-secondary, #9e9e9e)',
-                }}
-              >
-                Сначала сохраните проект в файл, чтобы включить портативный режим.
-              </div>
-            )}
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
 

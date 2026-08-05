@@ -173,7 +173,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 
     return (
       <SettingsButton
-        title={isGroup ? 'Настройки группы' : 'Настройки трека'}
+        title={isGroup ? 'Настройки тайминга группы' : 'Настройки тайминга трека'}
         indicator={indicator}
         onClick={(e) => {
           if (isGroup) {

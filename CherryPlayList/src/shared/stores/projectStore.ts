@@ -39,6 +39,7 @@ import {
 } from '../commands';
 import { electronStorage } from '../storage/electronStorage';
 import { cloneItem, cloneItems } from '../utils/historyCore';
+import { normalizePartyTrackDisplaySettings } from '../utils/partyUtils';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
 import {
@@ -1185,9 +1186,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
                     shortCode: persistedMeta.linkedParty.shortCode,
                   }
                 : null,
-              partyTrackDisplay: persistedMeta.partyTrackDisplay ?? {
-                ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
-              },
+              partyTrackDisplay: normalizePartyTrackDisplaySettings(
+                persistedMeta.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+              ),
               partyThemeId: persistedMeta.partyThemeId,
               partyCustomizationSettings: persistedMeta.partyCustomizationSettings,
             }

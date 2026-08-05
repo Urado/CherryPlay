@@ -120,7 +120,7 @@
 - пунктирная рамка вокруг контентной области (`workspace-layout-edit-content-frame`, **1px dashed**, слой **поверх** air-зон — иначе левая/нижняя граница перекрывается);
 - затемнение содержимого (overlay поверх `WorkspaceRenderer`, взаимодействие с workspace заблокировано);
 - четыре **«воздушные»** области по сторонам (CSS `--layout-edit-air-size`, **24px**): top, right, bottom, left; разделены SVG-диагоналями от углов зоны (`ResizeObserver` пересчитывает геометрию при resize);
-- **×** — удалить текущий workspace (`removeWorkspaceZone`); компактная кнопка **22×22px**, смещена **внутрь** контентной области (`air-size + 6px` от угла), яркая иконка на контрастной подложке.
+- **×** (закрыть / удалить зону) — **справа** в chrome панели (как в окнах Windows); компактная кнопка, смещена **внутрь** контентной области (`air-size + 6px` от **правого** верхнего угла), яркая иконка на контрастной подложке (`removeWorkspaceZone`).
 
 ### Оболочка контейнера (`WorkspaceLayoutEditContainerShell`)
 
@@ -179,7 +179,7 @@
 - **HeaderPartyStatus** (**«К вечеринке»**) — кнопка `disabled` (как остальные header controls);
 - **HeaderPlaybackPill** — `disabled` / `pointer-events: none`, приглушён;
 - меню **Проект** (принудительно закрывается при входе в режим);
-- **глобальные горячие клавиши** (`useGlobalShortcuts` с `enabled: false`).
+- **глобальные и player горячие клавиши** (`useGlobalShortcuts` / `usePlayerShortcuts` с `enabled: false`).
 
 **Не** блокируется: **имя в pill** (переименование), кнопка **✎**.
 
@@ -191,7 +191,7 @@
 
 Список строится в `workspaceLayoutEditOptions.ts`:
 
-1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts` (`fileBrowser` → **«Браузер»**).
+1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts` (`fileBrowser` → **«Файловый менеджер»**).
 2. **Singleton-типы**, уже присутствующие в layout, **скрываются** из picker. Тип **`aimp`** в picker **не показывается** (legacy, исключён в `workspaceLayoutEditOptions.ts`).
 
 | Тип             | Примечание                                 |
@@ -229,8 +229,8 @@
 
 При добавлении зоны (`addAdjacentWorkspace`, `addAdjacentWorkspaceToContainer`, `addInitialWorkspace`):
 
-- **Успех** — toast `success`: «Добавлен workspace: …» (`getWorkspaceAddedMessage`, RU-имя из `workspaceDisplayNames`).
-- **Ошибка** — toast `warning` с текстом из `getAddWorkspaceErrorMessage` (дубликат singleton, лимит глубины/зон, недостаток места по mins и т.д.).
+- **Успех** — без toast (зона появляется в layout молча).
+- **Ошибка / отказ** — toast `warning` с текстом из `getAddWorkspaceErrorMessage` (дубликат singleton, лимит глубины/зон, недостаток места по mins и т.д.).
 
 ### Проверка минимальных размеров при добавлении
 
@@ -329,9 +329,9 @@
 ## Как проверить
 
 1. `npm run dev` (Electron) или `npm run dev:web`.
-2. **✎** — inline-подсказка «Редактирование окон — Esc для выхода» рядом с **✎** в шапке; у каждой зоны air-области (клик по зоне → picker) и ×; контент затемнён; рамка видна со всех сторон.
+2. **✎** — inline-подсказка «Редактирование окон — Esc для выхода» рядом с **✎** в шапке; у каждой зоны air-области (клик по зоне → picker) и **× справа** в chrome; контент затемнён; рамка видна со всех сторон.
 3. У горизонтального ряда из 2+ зон — span-полосы **сверху/снизу**; у вертикального столбца — **слева/справа**; клик **в любой точке** полосы открывает picker и добавляет workspace на весь ряд (полоса занимает **24px**, клики не проходят к air-зонам workspace).
-4. Клик по air-зоне одной workspace → добавить рядом с ней; **Enter** / **Space** на air-зоне — тот же picker; singleton (`playlist`, `player`, `demo-player`, …) не дублируется в picker; **`fileBrowser`** можно добавить повторно; успех/ошибка — toast.
+4. Клик по air-зоне одной workspace → добавить рядом с ней; **Enter** / **Space** на air-зоне — тот же picker; singleton (`playlist`, `player`, `demo-player`, …) не дублируется в picker; **`fileBrowser`** можно добавить повторно; при успехе toast нет, при отказе — toast `warning`.
 5. **×** — зона удаляется; для collection очищается store; для fileBrowser — запись path в settings.
 6. Удалить все зоны → **✎** → центральный **+** для первой зоны.
 7. Перетащить divider — пропорции меняются.

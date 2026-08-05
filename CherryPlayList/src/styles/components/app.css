@@ -339,7 +339,7 @@
 .workspace-layout-edit-close {
   position: absolute;
   top: calc(var(--layout-edit-air-size) + 6px);
-  left: calc(var(--layout-edit-air-size) + 6px);
+  right: calc(var(--layout-edit-air-size) + 6px);
   z-index: 4;
   display: inline-flex;
   align-items: center;

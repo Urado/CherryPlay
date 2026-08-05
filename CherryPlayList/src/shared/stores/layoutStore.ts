@@ -52,7 +52,6 @@ import {
   getAddWorkspaceErrorMessage,
   logAddAdjacentMinSizeViolation,
   getRemoveWorkspaceErrorMessage,
-  getWorkspaceAddedMessage,
   migrateAimpZonesToPlayerInLayout,
   migrateDuplicateFileBrowserWorkspaceIds,
   isLayoutEmpty,
@@ -71,7 +70,6 @@ function cloneLayout(layout: Layout): Layout {
   return JSON.parse(JSON.stringify(layout)) as Layout;
 }
 
-/** Keeps active user workspace snapshot aligned with live layout (crash recovery / persist). */
 function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): WorkspacePersistSlice {
   if (slice.activeWorkspace.kind !== 'user') {
     return slice;
@@ -186,7 +184,6 @@ export function migrateLegacyPartyLayout(layout: Layout): Layout {
   return migrateAimpZonesToPlayerInLayout(createPartyLayout());
 }
 
-/** Persist migration entry point (v3 splits legacy party workspace into editor + preview). */
 export function migratePersistedLayoutState(
   persistedState: unknown,
   version: number,
@@ -208,12 +205,10 @@ export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
   };
 }
 
-/** Removes legacy layout-only persist key (always on hydrate, not only on migrate). */
 export async function removeLegacyLayoutPersistKey(): Promise<void> {
   await electronStorage.removeItem(LEGACY_LAYOUT_PERSIST_KEY);
 }
 
-/** Coerces scratch / invalid user refs to default built-in collections (AC10). */
 export function normalizeWorkspacePersistSlice(
   slice: WorkspacePersistSlice,
 ): WorkspacePersistSlice {
@@ -262,7 +257,6 @@ export function normalizeWorkspacePersistSlice(
   };
 }
 
-/** Persist migration for workspace store (v1). */
 export function migratePersistedWorkspaceState(
   persistedState: unknown,
   version: number,
@@ -325,7 +319,6 @@ interface LayoutState {
   isLayoutEditMode: boolean;
   openLayoutEditPickerKey: string | null;
 
-  // Actions
   setLayoutEditMode: (enabled: boolean) => void;
   setOpenLayoutEditPickerKey: (key: string | null) => void;
   toggleLayoutEditMode: () => void;
@@ -342,7 +335,7 @@ interface LayoutState {
   replaceLayout: (newLayout: Layout) => void;
   setLayoutPreset: (preset: LayoutPreset) => void;
   activateWorkspace: (ref: WorkspaceRef) => boolean;
-  saveCurrentWorkspace: (options?: { silent?: boolean }) => boolean;
+  saveCurrentWorkspace: () => boolean;
   saveCurrentWorkspaceAs: (name: string) => boolean;
   saveCurrentWorkspaceAsUnnamed: () => boolean;
   autoCommitWorkspaceChanges: () => boolean;
@@ -363,7 +356,6 @@ interface LayoutState {
   addInitialWorkspace: (workspaceType: string) => void;
   removeWorkspaceZone: (zoneId: ZoneId) => void;
 
-  // Helpers
   isWorkspaceDirty: () => boolean;
   findZone: (zoneId: ZoneId, root?: Zone) => Zone | null;
   findParent: (zoneId: ZoneId, root?: Zone, parent?: ContainerZone) => ContainerZone | null;
@@ -412,11 +404,9 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        // Обновить размер целевой зоны
         const newSizes = [...parent.sizes];
         newSizes[zoneIndex] = newSize;
 
-        // Пересчитать остальные размеры пропорционально
         const otherZonesTotal = newSizes.reduce((sum, size, idx) => {
           return idx === zoneIndex ? sum : sum + size;
         }, 0);
@@ -431,7 +421,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           }
         }
 
-        // Обновить контейнер
         const updatedParent = syncContainerChildSizes({
           ...parent,
           sizes: newSizes,
@@ -452,18 +441,15 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        // Проверка что количество размеров совпадает с количеством зон
         if (sizes.length !== container.zones.length) {
           return;
         }
 
-        // Проверка что сумма размеров равна 100 (с небольшой погрешностью)
         const totalSize = sizes.reduce((sum, size) => sum + size, 0);
         if (Math.abs(totalSize - 100) > 0.01) {
           return;
         }
 
-        // Обновить контейнер
         const updatedContainer = syncContainerChildSizes({
           ...container,
           sizes,
@@ -480,9 +466,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         get().cleanupEmptyContainers();
       },
 
-      /**
-       * @deprecated Prefer `addAdjacentWorkspace` or `addInitialWorkspace` for layout edit mode.
-       */
       addZone: (parentId, workspaceId, workspaceType, _direction) => {
         const state = get();
         const parent = state.findZone(parentId);
@@ -495,25 +478,18 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        // Если direction не указан, использовать направление родителя
-        // const newDirection = direction || parent.direction; // Не используется, но оставлено для будущего
-
-        // Создать новую workspace зону
         const newZone: WorkspaceZone = {
           id: uuidv4(),
           type: 'workspace',
           workspaceId,
           workspaceType,
-          size: 0, // будет пересчитано
+          size: 0,
         };
 
-        // Добавить зону в контейнер
         const updatedZones = [...parent.zones, newZone];
 
-        // Пересчитать размеры (равномерно распределить между всеми зонами)
         const newSizes = updatedZones.map(() => 100 / updatedZones.length);
 
-        // Обновить размеры в новых зонах
         const updatedZonesWithSizes = updatedZones.map((zone, index) => {
           if (zone.id === newZone.id) {
             return { ...zone, size: newSizes[index] };
@@ -524,7 +500,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return zone;
         });
 
-        // Обновить контейнер
         const updatedParent: ContainerZone = {
           ...parent,
           zones: updatedZonesWithSizes,
@@ -539,12 +514,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         get().cleanupEmptyContainers();
       },
 
-      /**
-       * @deprecated Prefer `removeWorkspaceZone` for layout edit mode.
-       * Delegates to `removeWorkspaceZone`, which runs full workspace lifecycle cleanup
-       * (UI store, project store, type registry) and may leave an empty layout when the
-       * last zone is removed. No external callers outside this store (only interface + docs).
-       */
       removeZone: (zoneId) => {
         get().removeWorkspaceZone(zoneId);
       },
@@ -557,7 +526,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        // Обновить контейнер
         const updatedContainer: ContainerZone = {
           ...container,
           direction,
@@ -617,7 +585,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         return true;
       },
 
-      saveCurrentWorkspace: (options) => {
+      saveCurrentWorkspace: () => {
         const state = get();
         if (state.activeWorkspace.kind !== 'user') {
           return false;
@@ -636,12 +604,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           baselineLayout: cloneLayout(state.layout),
         });
 
-        if (!options?.silent) {
-          useUIStore.getState().addNotification({
-            type: 'success',
-            message: 'Рабочее пространство сохранено',
-          });
-        }
         return true;
       },
 
@@ -674,7 +636,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         }
 
         if (state.activeWorkspace.kind === 'user') {
-          return get().saveCurrentWorkspace({ silent: true });
+          return get().saveCurrentWorkspace();
         }
 
         if (state.activeWorkspace.kind === 'builtin' || state.activeWorkspace.kind === 'scratch') {
@@ -863,10 +825,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         prepareWorkspaceInstance(result.preparedZone);
         set({ layout: result.layout, openLayoutEditPickerKey: null });
-        useUIStore.getState().addNotification({
-          type: 'success',
-          message: getWorkspaceAddedMessage(workspaceType),
-        });
       },
 
       addAdjacentWorkspaceToContainer: (containerId, side, workspaceType) => {
@@ -890,10 +848,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         prepareWorkspaceInstance(result.preparedZone);
         set({ layout: result.layout, openLayoutEditPickerKey: null });
-        useUIStore.getState().addNotification({
-          type: 'success',
-          message: getWorkspaceAddedMessage(workspaceType),
-        });
       },
 
       addInitialWorkspace: (workspaceType) => {
@@ -915,10 +869,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         prepareWorkspaceInstance(result.preparedZone);
         set({ layout: result.layout });
-        useUIStore.getState().addNotification({
-          type: 'success',
-          message: getWorkspaceAddedMessage(workspaceType),
-        });
       },
 
       removeWorkspaceZone: (zoneId) => {
@@ -956,7 +906,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         const state = get();
         const cleaned = cleanupContainers(state.layout.rootZone);
 
-        // Если rootZone изменился, обновить layout
         if (cleaned.id !== state.layout.rootZone.id) {
           set({
             layout: {
@@ -969,8 +918,6 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
       validateLayout: () => {
         const state = get();
-        // Используем фиксированные размеры для валидации (можно улучшить, получая из DOM)
-        // Для базовой валидации используем стандартные размеры окна
         const containerWidth = 1200;
         const containerHeight = 800;
         return validateLayout(state.layout.rootZone, containerWidth, containerHeight);

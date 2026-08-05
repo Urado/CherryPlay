@@ -6,7 +6,7 @@ import { useAimpStore } from '../stores/aimpStore';
 import { formatAimpPublishingPathError } from '../utils/aimpPublishingPath';
 
 import { AimpBroadcastSource } from './AimpBroadcastSource';
-import { isStreamingNetworkEnabled } from './onlineNetworkPolicy';
+import { isStreamingHubAllowed } from './onlineNetworkPolicy';
 import { streamingOrchestrator } from './streamingOrchestrator';
 
 export interface UseAimpStreamingOrchestratorOptions {
@@ -15,10 +15,6 @@ export interface UseAimpStreamingOrchestratorOptions {
   onPartyNotFound?: () => void;
 }
 
-/**
- * React hook for AIMP Site Streamer lifecycle.
- * Active only when network policy allows and `streamingSource === 'aimp'`.
- */
 export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestratorOptions): void {
   const { partyId, hasHydrated, onPartyNotFound } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
@@ -37,9 +33,9 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
     onPartyNotFoundRef.current = onPartyNotFound;
   }, [onPartyNotFound]);
 
-  const networkEnabled = isStreamingNetworkEnabled({ enableStreaming });
+  const hubAllowed = isStreamingHubAllowed({ enableStreaming });
   const orchestratorActive =
-    hasHydrated && networkEnabled && streamingSource === 'aimp' && partyId !== null;
+    hasHydrated && hubAllowed && streamingSource === 'aimp' && partyId !== null;
 
   useEffect(() => {
     if (!orchestratorActive || !partyId) {

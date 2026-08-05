@@ -357,7 +357,11 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
           <ListRowCompound.ActionButton
             className="playlist-item-more"
             aria-label="Действия с треком"
-            title={trackActionsDisabled || !onTrackActions ? undefined : 'Действия с треком'}
+            title={
+              trackActionsDisabled || !onTrackActions
+                ? undefined
+                : 'Действия: перейти к треку, удалить и др.'
+            }
             disabled={trackActionsDisabled || !onTrackActions}
             onClick={(e) => {
               if (!trackActionsDisabled && onTrackActions) {

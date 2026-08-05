@@ -127,17 +127,17 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
       {showSecondaryLink && onOpenLinkParty && (
         <Button
           onClick={onOpenLinkParty}
-          disabled={networkDisabled}
+          disabled={actionDisabled}
           type="button"
           title={
             networkDisabled
               ? networkDisabledTitle
-              : 'Подключить текущий плейлист к вечеринке, уже созданной на сервере'
+              : 'Привязать существующую вечеринку на сервере к этому проекту (не создаёт новую и не запускает трансляцию)'
           }
           variant="secondary"
           size="sm"
         >
-          {compact ? 'Подключить' : 'Подключить к существующей'}
+          {compact ? 'Привязать…' : 'Привязать существующую…'}
         </Button>
       )}
       {(showAccentPublish || showSecondaryPublish) && onPublish && (

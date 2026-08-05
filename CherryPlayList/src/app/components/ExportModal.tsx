@@ -4,7 +4,6 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { useModalKeyboard } from '@shared/hooks';
-import { getPlatformCapabilities } from '@shared/platform';
 import { exportService, ipcService } from '@shared/services';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 
@@ -30,8 +29,7 @@ export const ExportModal: React.FC = () => {
     }
 
     prevModalRef.current = modal;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modal]);
+  }, [modal, exportPath, exportStrategy]);
 
   const handleBrowse = useCallback(async () => {
     try {
@@ -73,12 +71,6 @@ export const ExportModal: React.FC = () => {
         await exportService.exportWithNumberPrefix(tracksToExport, localExportPath);
       }
 
-      addNotification({
-        type: 'success',
-        message: getPlatformCapabilities().simulatesExport
-          ? 'Экспорт симулирован (демо)'
-          : 'Экспорт завершён',
-      });
       closeModal();
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка экспорта: ${(error as Error).message}` });

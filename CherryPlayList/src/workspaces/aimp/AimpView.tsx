@@ -19,7 +19,6 @@ import {
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
-  /** Rendered inside unified Player workspace (no duplicate panel title). */
   embedded?: boolean;
 }
 

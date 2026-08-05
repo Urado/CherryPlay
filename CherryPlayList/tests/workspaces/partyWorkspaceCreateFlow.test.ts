@@ -65,11 +65,11 @@ describe('finalizePartyCreation', () => {
     mockGetPartyUrl.mockResolvedValue('https://example.com/p/abc123');
   });
 
-  it('links party and notifies on success', async () => {
+  it('links party on success without success toast', async () => {
     const store = createMockStore();
     const deps = createFinalizeDeps();
 
-    await finalizePartyCreation(store, createData, 'Created!', deps);
+    await finalizePartyCreation(store, createData, deps);
 
     expect(mockCreateParty).toHaveBeenCalledWith(createData);
     expect(deps.loadThemeAccess).toHaveBeenCalledWith(true);
@@ -83,10 +83,7 @@ describe('finalizePartyCreation', () => {
     expect(store.setPartyLifecycleState).toHaveBeenCalledWith('draft');
     expect(store.setIsListedInCatalog).toHaveBeenCalledWith(false);
     expect(deps.markAsDirty).toHaveBeenCalled();
-    expect(deps.addNotification).toHaveBeenCalledWith({
-      type: 'success',
-      message: 'Created!',
-    });
+    expect(deps.addNotification).not.toHaveBeenCalled();
   });
 
   it('returns early when party is not found after creation', async () => {
@@ -94,7 +91,7 @@ describe('finalizePartyCreation', () => {
     const deps = createFinalizeDeps();
     deps.checkPartyExists.mockResolvedValue(false);
 
-    await finalizePartyCreation(store, createData, 'Created!', deps);
+    await finalizePartyCreation(store, createData, deps);
 
     expect(deps.setLinkedParty).not.toHaveBeenCalled();
     expect(store.setPartyVerified).not.toHaveBeenCalled();
@@ -109,7 +106,7 @@ describe('finalizePartyCreation', () => {
     const deps = createFinalizeDeps();
     mockGetPartyUrl.mockRejectedValue(new Error('Network error'));
 
-    await finalizePartyCreation(store, createData, 'Created!', deps);
+    await finalizePartyCreation(store, createData, deps);
 
     expect(mockCreateParty).toHaveBeenCalledWith(createData);
     expect(deps.checkPartyExists).toHaveBeenCalledWith('party-1');

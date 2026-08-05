@@ -5,7 +5,7 @@ import { signalRService } from '../services/signalRService';
 import { logger } from '../utils';
 
 import { AimpBroadcastSource } from './AimpBroadcastSource';
-import { isStreamingNetworkEnabled } from './onlineNetworkPolicy';
+import { isStreamingHubAllowed } from './onlineNetworkPolicy';
 import type { StreamingNetworkPolicySettings } from './onlineNetworkPolicy';
 import { subscribeAimpPartyPlaylistSync, subscribePartyPlaylistSync } from './partyPlaylistSync';
 import type { PlaybackBroadcastSource } from './PlaybackBroadcastSource';
@@ -26,10 +26,6 @@ const RECONNECT_DELAY_MS = 10_000;
 const POSITION_TICK_MS = 1_000;
 const FULL_STATE_COALESCE_MS = 50;
 
-/**
- * Site Streamer orchestrator — SignalR connect, publish, position ticks, live playlist sync.
- * Live playlist PUT: `partyPlaylistSync` (not Party metadata hooks).
- */
 export class StreamingOrchestrator {
   private config: StreamingOrchestratorConfig | null = null;
   private running = false;
@@ -58,10 +54,6 @@ export class StreamingOrchestrator {
     return this.enqueueLifecycle(() => this.applyTeardown());
   }
 
-  /**
-   * Awaits any in-flight teardown, then starts with the next config.
-   * Use when switching broadcast sources to avoid disconnecting a fresh connection.
-   */
   async switchSource(config: StreamingOrchestratorConfig): Promise<void> {
     return this.enqueueLifecycle(() => this.applyStart(config));
   }
@@ -76,7 +68,7 @@ export class StreamingOrchestrator {
   }
 
   private async applyStart(config: StreamingOrchestratorConfig): Promise<void> {
-    if (!isStreamingNetworkEnabled(config.networkSettings)) {
+    if (!isStreamingHubAllowed(config.networkSettings)) {
       await this.applyTeardown();
       return;
     }
@@ -372,7 +364,6 @@ export class StreamingOrchestrator {
     }
   }
 
-  /** CherryPlay Player or AIMP playlist changes → REST PUT + full-state coalesce. */
   private startSourceSubscriptions(partyId: string): void {
     const config = this.config;
     if (!config) {

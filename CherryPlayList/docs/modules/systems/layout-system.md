@@ -108,7 +108,7 @@
 | `workspaceType` | `minWidth` | `minHeight` | Примечание                  |
 | --------------- | ---------- | ----------- | --------------------------- |
 | `playlist`      | 280        | 200         | Список треков               |
-| `fileBrowser`   | 240        | 200         | **«Браузер»** (file browser) |
+| `fileBrowser`   | 240        | 200         | **«Файловый менеджер»** (id `fileBrowser`) |
 | `collection`    | 200        | 150         | Сетка коллекции             |
 | `player`        | 360        | 120         | Панель воспроизведения      |
 | `demo-player`   | 280        | 100         | Demo shell                  |

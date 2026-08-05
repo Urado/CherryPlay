@@ -122,7 +122,7 @@ npm run dev
 
 Запускает Vite dev server и Electron с preload/IPC.
 
-**Веб-демо (только браузер, фикстуры вместо ФС):** см. **[docs/web-demo.md](docs/web-demo.md)** — `npm run dev:web`, Vite proxy к серверу, переменные `VITE_*`, ограничения и сообщение **«Не доступно в демо»**.
+**Веб-демо (только браузер):** см. **[docs/web-demo.md](docs/web-demo.md)** — fixtures (`npm run dev:web`) и live (`npm run dev:web:live` / `VITE_DEMO_LIVE`), Vite proxy, Online/сеть, переменные `VITE_*`, ограничения и сообщение **«Не доступно в демо»**. Electron: `npm run dev` без изменений.
 
 **Рабочие пространства и layout:** см. **[docs/layout-edit-mode.md](docs/layout-edit-mode.md)** — pill в шапке (встроенные + **Мои**), автосохранение, inline-переименование, режим **✎** для правки зон. Layout **не** входит в файл проекта `.cherry`.
 

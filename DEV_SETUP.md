@@ -79,21 +79,33 @@ npm run dev
 - **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например: `{ "serverUrl": "http://localhost:5000" }`
 - **Через переменную окружения**: при сборке/запуске задать `VITE_API_URL=http://localhost:5000`
 
-### Веб-демо в браузере (`dev:web`)
+### Веб-демо в браузере
+
+Два режима (подробности: [CherryPlayList/docs/web-demo.md](CherryPlayList/docs/web-demo.md)):
+
+| Команда | Режим | Сервер |
+| ------- | ----- | ------ |
+| `npm run dev:web` | Fixtures — UI без Electron, party/auth на фикстурах | Не нужен |
+| `npm run dev:web:live` | Live — REST/SignalR через Vite proxy (`VITE_DEMO_LIVE=1`) | CherryPlayServer на `:5000` |
 
 ```bash
 cd CherryPlayList
 npm run dev:web
+# или
+npm run dev:web:live
 ```
 
-Откройте http://localhost:5173. По умолчанию REST и SignalR идут через **Vite proxy** на `http://localhost:5000` (CORS не нужен). Подробности: [CherryPlayList/docs/web-demo.md](CherryPlayList/docs/web-demo.md). При прямом `VITE_API_URL` бэкенд должен разрешать origin `:5173` (см. `appsettings.Development.json`, `docker-compose.debug.yml`).
+Откройте http://localhost:5173. В **live** REST и SignalR идут same-origin через **Vite proxy** на `http://localhost:5000` (CORS не нужен). При прямом `VITE_API_URL` бэкенд должен разрешать origin `:5173` (см. `appsettings.Development.json`, `docker-compose.debug.yml`). Electron: `npm run dev` — без изменений.
 
 ## Переменные окружения (сводка)
 
 | Переменная     | Проект         | Описание                                                                                                                          |
 | -------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_API_URL` | CherryPlayWeb  | Базовый URL API сервера (по умолчанию подставляется при сборке; для dev часто задаётся в `.env`). Пример: `http://localhost:5000` |
-| `VITE_API_URL` | CherryPlayList | URL сервера (при сборке; иначе `serverConfig.*.json` или настройки в UI)                                                          |
+| `VITE_API_URL` | CherryPlayList | URL сервера (при сборке; иначе `serverConfig.*.json` или настройки в UI); в web demo — опциональный прямой base (без proxy) |
+| `VITE_APP_MODE` | CherryPlayList | `demo` для веб-демо (`dev:web` / `dev:web:project` / `dev:web:live`); см. [ENV.md](ENV.md), [web-demo.md](CherryPlayList/docs/web-demo.md) |
+| `VITE_DEMO_LIVE` | CherryPlayList | `1` в `dev:web:live` — live REST/SignalR + local login; без флага — fixtures |
+| `VITE_LOAD_DEMO_PROJECT` | CherryPlayList | `1` в `dev:web:project` — автозагрузка `sample.cherry` |
 
 ## Проверка связки
 

@@ -128,14 +128,15 @@
 
 .playlist-header-action-icon.delete-button,
 .cp-button.playlist-header-action-icon.delete-button {
-  border-color: var(--state-error);
-  color: var(--state-error);
+  border-color: var(--ui-border);
+  color: var(--text-secondary);
 }
 
 .playlist-header-action-icon.delete-button:hover,
 .cp-button.playlist-header-action-icon.delete-button:hover:not(:disabled) {
-  background-color: var(--state-error);
-  color: var(--text-primary);
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: var(--state-error);
+  color: var(--state-error);
 }
 
 .collection-export-wrapper {
@@ -536,9 +537,17 @@
 .playlist-item-delete,
 .cp-button.playlist-item-delete,
 .cp-button.playlist-item-action.playlist-item-delete {
+  color: var(--text-secondary);
+  border-color: var(--ui-border, var(--cp-ui-border));
+  background: transparent;
+}
+
+.playlist-item-delete:hover:not(:disabled),
+.cp-button.playlist-item-delete:hover:not(:disabled),
+.cp-button.playlist-item-action.playlist-item-delete:hover:not(:disabled) {
   color: var(--cp-accent-danger, var(--state-error, #d32f2f));
   border-color: var(--cp-accent-danger, var(--state-error, #d32f2f));
-  background: transparent;
+  background: rgba(220, 53, 69, 0.12);
 }
 
 /* Borderless row actions keep transparent chrome (do not use border:none). */

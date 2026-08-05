@@ -10,7 +10,6 @@ import {
   PARTY_PREVIEW_WORKSPACE_ID,
   generateWorkspaceId,
 } from '@core/constants/workspace';
-import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import {
   ContainerZone,
   Layout,
@@ -39,7 +38,6 @@ import { logger } from './logger';
 
 export type LayoutEditAirSide = 'top' | 'right' | 'bottom' | 'left';
 
-/** Tolerance (px) so float rounding does not spuriously reject a feasible add. */
 const MIN_SIZE_FEASIBILITY_EPSILON = 0.5;
 
 const SINGLETON_WORKSPACE_TYPES = new Set([
@@ -166,7 +164,6 @@ function migrateAimpZoneToPlayer(zone: Zone): Zone {
   return zone;
 }
 
-/** Merges legacy standalone AIMP zones into unified Player workspace zones. */
 export function migrateAimpZonesToPlayerInLayout(layout: Layout): Layout {
   return {
     ...layout,
@@ -201,7 +198,6 @@ function migrateDuplicateFileBrowserZone(zone: Zone, seenDefaultId: { value: boo
   return zone;
 }
 
-/** Assigns new workspace ids to duplicate default fileBrowser zones (keeps first default id). */
 export function migrateDuplicateFileBrowserWorkspaceIds(layout: Layout): Layout {
   const seenDefaultId = { value: false };
 
@@ -260,11 +256,8 @@ function buildSplitContainer(
   };
 }
 
-/** Diagnostics attached to a `min_size_violation` for detailed console logging. */
 export interface AddAdjacentMinSizeDiagnostics {
-  /** Proposed tree that failed to fit; `null` when the viewport was unknown. */
   proposedRoot: Zone | null;
-  /** Live layout viewport at the time of the check; `null` when unknown. */
   viewport: LayoutViewportSize | null;
 }
 
@@ -283,19 +276,6 @@ export type AddAdjacentWorkspaceResult =
       minSizeDiagnostics?: AddAdjacentMinSizeDiagnostics;
     };
 
-/**
- * Rejects a successful add-adjacent result when the resulting (proposed) tree
- * cannot satisfy every workspace min at the current layout viewport size.
- * Uses a conservative 50/50 split simulation encoded in `result.layout`.
- *
- * Viewport argument semantics:
- * - `undefined` (argument omitted): the caller opts out of the feasibility check
- *   (e.g. pure tree-shape unit tests). The check is skipped.
- * - `null`: the viewport is genuinely unknown at the call site. We cannot prove
- *   the add fits, so we conservatively reject with `min_size_violation` rather
- *   than silently allowing a potentially unusable layout. Real callers (the
- *   layout store) pass the live viewport, or `null` when it cannot be measured.
- */
 type MinSizeFeasibilityResult = AddAdjacentWorkspaceResult | AddInitialWorkspaceResult;
 
 function enforceMinSizeFeasibility<T extends MinSizeFeasibilityResult>(
@@ -338,11 +318,6 @@ function enforceMinSizeFeasibility<T extends MinSizeFeasibilityResult>(
   return result;
 }
 
-/**
- * Logs a detailed recursive breakdown of a rejected add-adjacent operation.
- * Only call this for an actual user-triggered add (not availability probing),
- * so the console is not spammed on every render.
- */
 export function logAddAdjacentMinSizeViolation(
   result: AddAdjacentWorkspaceResult | AddInitialWorkspaceResult,
 ): void {
@@ -354,11 +329,6 @@ export function logAddAdjacentMinSizeViolation(
   logMinSizeViolation(diagnostics.proposedRoot, diagnostics.viewport);
 }
 
-/**
- * Whether at least one of the given workspace types can be added adjacent to the
- * target workspace zone on the given side. Used to decide whether the air "+"
- * control should be shown. Never logs (availability probing runs every render).
- */
 export function canAddAdjacentWorkspace(
   layout: Layout,
   targetZoneId: ZoneId,
@@ -373,10 +343,6 @@ export function canAddAdjacentWorkspace(
   );
 }
 
-/**
- * Whether at least one of the given workspace types can be added on a container
- * span side. Mirrors `canAddAdjacentWorkspace` for container air bands.
- */
 export function canAddAdjacentWorkspaceToContainer(
   layout: Layout,
   containerId: ZoneId,
@@ -396,9 +362,6 @@ export function canAddAdjacentWorkspaceToContainer(
   );
 }
 
-/**
- * Whether the first workspace in an empty layout can fit the current viewport.
- */
 export function canAddInitialWorkspace(
   workspaceType: string,
   currentLayoutViewport?: LayoutViewportSize | null,
@@ -406,10 +369,6 @@ export function canAddInitialWorkspace(
   return addInitialWorkspaceToLayout(workspaceType, currentLayoutViewport).ok;
 }
 
-/**
- * Logs a detailed recursive breakdown of the min-size calculation (both axes)
- * when an add-adjacent operation is rejected because it does not fit.
- */
 function logMinSizeViolation(proposedRoot: Zone | null, viewport: LayoutViewportSize | null): void {
   if (!proposedRoot || !viewport) {
     logger.warn(
@@ -440,7 +399,6 @@ function logMinSizeViolation(proposedRoot: Zone | null, viewport: LayoutViewport
   logger.warn(report);
 }
 
-/** Air sides that span an entire split container (perpendicular to its direction). */
 export function getContainerSpanSides(direction: SplitDirection): LayoutEditAirSide[] {
   return direction === 'horizontal' ? ['top', 'bottom'] : ['left', 'right'];
 }
@@ -688,8 +646,4 @@ export function getRemoveWorkspaceErrorMessage(
     default:
       return 'Не удалось удалить workspace';
   }
-}
-
-export function getWorkspaceAddedMessage(workspaceType: string): string {
-  return `Добавлен workspace: ${getWorkspaceDisplayNameRu(workspaceType)}`;
 }

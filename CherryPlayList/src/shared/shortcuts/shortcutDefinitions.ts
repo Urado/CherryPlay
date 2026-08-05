@@ -1,45 +1,33 @@
-/**
- * Keyboard Shortcuts Definitions
- *
- * Default key bindings for all application shortcuts.
- */
+import type { ShortcutCategory, ShortcutDefinition, ShortcutId } from './shortcutTypes';
 
-import type { ShortcutDefinition, ShortcutId } from './shortcutTypes';
-
-/**
- * Default shortcut definitions.
- * These can be overridden by user settings.
- */
 export const DEFAULT_SHORTCUTS: Record<ShortcutId, ShortcutDefinition> = {
-  // Global file operations
   'global.save': {
     id: 'global.save',
     defaultBinding: { code: 'KeyS', ctrlKey: true },
-    description: 'Сохранить проект',
-    allowInInput: true, // Allow saving even when in input field
+    description: 'Сохранить проект (меню «Файл»)',
+    allowInInput: true,
     category: 'global',
   },
   'global.saveAs': {
     id: 'global.saveAs',
     defaultBinding: { code: 'KeyS', ctrlKey: true, shiftKey: true },
-    description: 'Сохранить проект как...',
+    description: 'Сохранить как… (меню «Файл»)',
     allowInInput: true,
     category: 'global',
   },
   'global.open': {
     id: 'global.open',
     defaultBinding: { code: 'KeyO', ctrlKey: true },
-    description: 'Открыть проект',
+    description: 'Открыть проект (меню «Файл»)',
     category: 'global',
   },
   'global.new': {
     id: 'global.new',
     defaultBinding: { code: 'KeyN', ctrlKey: true },
-    description: 'Создать новый проект',
+    description: 'Создать новый проект (меню «Файл»)',
     category: 'global',
   },
 
-  // List operations
   'list.undo': {
     id: 'list.undo',
     defaultBinding: { code: 'KeyZ', ctrlKey: true },
@@ -69,19 +57,21 @@ export const DEFAULT_SHORTCUTS: Record<ShortcutId, ShortcutDefinition> = {
     id: 'list.escape',
     defaultBinding: { code: 'Escape' },
     description: 'Снять выделение / Отмена',
-    allowInInput: true, // Allow Escape to blur input fields
+    allowInInput: true,
     category: 'list',
+  },
+
+  'player.togglePlay': {
+    id: 'player.togglePlay',
+    defaultBinding: { code: 'Space' },
+    description: 'Пауза / воспроизведение (сессия)',
+    allowInInput: false,
+    category: 'player',
   },
 };
 
-/**
- * Get all shortcut IDs.
- */
 export const ALL_SHORTCUT_IDS = Object.keys(DEFAULT_SHORTCUTS) as ShortcutId[];
 
-/**
- * Get shortcut IDs by category.
- */
-export function getShortcutsByCategory(category: 'global' | 'list'): ShortcutId[] {
+export function getShortcutsByCategory(category: ShortcutCategory): ShortcutId[] {
   return ALL_SHORTCUT_IDS.filter((id) => DEFAULT_SHORTCUTS[id].category === category);
 }

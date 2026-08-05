@@ -1,5 +1,6 @@
 import { DEMO_LINKED_PARTY, demoTransitionPartyLifecycle } from '@shared/demo/demoPartyFixture';
 import { getAppMode } from '@shared/platform';
+import { isDemoFixturesMode } from '@shared/platform/demoLiveMode';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 import { useProjectStore } from '@shared/stores/projectStore';
 
@@ -18,15 +19,13 @@ function getProjectStore() {
 }
 
 function guardDemoMode(): boolean {
-  return getAppMode() === 'demo';
+  return isDemoFixturesMode(getAppMode());
 }
 
-/** Clears editor demo overlay only — does not touch scenario or production server flags. */
 function clearEditorDemoOverrides(): void {
   resetEditorDemoState();
 }
 
-/** Clears party-not-found production flags when leaving that demo fixture. */
 function clearPartyNotFoundProductionFlags(partyExistsOnServer: boolean): void {
   const store = getPartyStore();
   store.setServerError(null);
@@ -62,7 +61,6 @@ export function demoSetBlockedOverride(reason: PartyEditorBlockedReason): void {
   usePartyEditorDemoStore.getState().setBlockedOverride(reason);
 }
 
-/** Linked party exists in file meta, but server no longer has it. */
 export function demoSetPartyNotFound(): void {
   if (!guardDemoMode()) return;
   const store = getPartyStore();

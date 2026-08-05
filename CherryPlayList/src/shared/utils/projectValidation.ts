@@ -86,9 +86,26 @@ function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrack
   } else if (raw.stripLeadingCharsCount !== undefined) {
     warnings.push('Invalid stripLeadingCharsCount in partyTrackDisplay, using 0');
   }
+  let mode: PartyTrackDisplaySettings['stripLeadingCharsMode'] = 'count';
+  if (raw.stripLeadingCharsMode === 'untilDelimiter') {
+    mode = 'untilDelimiter';
+  } else if (raw.stripLeadingCharsMode !== undefined && raw.stripLeadingCharsMode !== 'count') {
+    warnings.push('Invalid stripLeadingCharsMode in partyTrackDisplay, using count');
+  }
+  let delimiter = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsDelimiter;
+  if (typeof raw.stripLeadingCharsDelimiter === 'string') {
+    delimiter =
+      raw.stripLeadingCharsDelimiter.length > 0
+        ? raw.stripLeadingCharsDelimiter.slice(0, 1)
+        : DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsDelimiter;
+  } else if (raw.stripLeadingCharsDelimiter !== undefined) {
+    warnings.push('Invalid stripLeadingCharsDelimiter in partyTrackDisplay, using space');
+  }
   return {
     stripLeadingCharsEnabled: enabled,
+    stripLeadingCharsMode: mode,
     stripLeadingCharsCount: count,
+    stripLeadingCharsDelimiter: delimiter,
   };
 }
 

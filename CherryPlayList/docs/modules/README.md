@@ -21,7 +21,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 - [Playlist](./workspaces/playlist.md) - Модуль основного плейлиста
 - [Collections](./workspaces/collections.md) - Коллекции (облегчённые плейлисты)
-- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (**«Браузер»** в UI; несколько панелей per layout, path по `workspaceId`)
+- [File Browser](./workspaces/file-browser.md) - Обозреватель файлов (**«Файловый менеджер»** в UI; id `fileBrowser`; несколько панелей per layout, path по `workspaceId`)
 - [Player](./workspaces/player.md) - Модуль плеера для автоматического воспроизведения и сессий
 - [Party](./workspaces/party.md) - Модуль вечеринки с трансляцией
 - [AIMP](./workspaces/aimp.md) - AIMP: мониторинг и синхронизация **состояния** с сайтом (Windows x64)
@@ -56,7 +56,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 ### Platform
 
-- [Platform layer](./platform/README.md) — bootstrap, `PlatformAPI`, capabilities, guards; Electron / web demo / Capacitor stub
+- [Platform layer](./platform/README.md) — bootstrap, `PlatformAPI`, capabilities, guards; Electron / web demo (fixtures `dev:web` / live `dev:web:live`) / Capacitor stub; см. [веб-демо](../web-demo.md)
 
 ### Audio
 
@@ -64,4 +64,4 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 ### Hooks & Utils
 
-- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Глобальные шорткаты и контракт клавиатуры модалок (`useModalKeyboard`)
+- [Keyboard Shortcuts](./hooks-utils/keyboard-shortcuts.md) - Шорткаты категорий `global` / `list` / `player`; контракт клавиатуры модалок (`useModalKeyboard`)

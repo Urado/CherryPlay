@@ -37,10 +37,6 @@ function PlaylistIcon(): React.ReactElement {
   );
 }
 
-/**
- * PlaylistView for spring-cross-step theme.
- * Header with icon + "Плейлист", stats with dot separators; same structure as reference.
- */
 export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
   playlist,
   currentTrackId = null,
@@ -144,7 +140,12 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
           <span className="party-playlist-header-label">Плейлист</span>
         </div>
         <div className="party-playlist-stats">
-          {!isSessionActive && notYetPlayedCount === 0 ? (
+          {flatTracks.length === 0 ? (
+            <>
+              <span className="party-playlist-stats-remaining-label">Осталось треков:</span>
+              <span className="party-playlist-stats-not-yet-played">{notYetPlayedCount}</span>
+            </>
+          ) : !isSessionActive && notYetPlayedCount === 0 ? (
             <span className="party-playlist-stats-not-yet-played">Вечеринка окончена</span>
           ) : notYetPlayedCount === 0 ? (
             <span className="party-playlist-stats-not-yet-played">Сейчас последний трек</span>

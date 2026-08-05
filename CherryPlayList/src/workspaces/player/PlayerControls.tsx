@@ -6,6 +6,7 @@ import React, { useCallback } from 'react';
 import { usePlaybackTimeline } from '@shared/hooks/usePlaybackTimeline';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
+import { togglePlayPause } from '@shared/utils/togglePlayPause';
 
 interface PlayerControlsProps {
   onNext?: () => void;
@@ -32,34 +33,27 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
 
   const isPlaying = status === 'playing';
   const isDisabled = !isSessionMode || !currentTrack;
+  const isScrubberDisabled = isDisabled || isSessionMode;
   const isNextDisabled = !isSessionMode || !onNext;
   const resolvedDuration = duration || currentTrack?.duration || 0;
   const timeline = usePlaybackTimeline({
     position: isDisabled ? 0 : position,
     duration: resolvedDuration,
-    disabled: isDisabled,
+    disabled: isScrubberDisabled,
     seek,
   });
-  // Show error if there's a loaded track OR if we're in session mode with an expected track
-  // (handles the case where loadTrack fails before currentTrack is set in the audio store)
   const hasError =
     error !== null && (currentTrack !== null || (isSessionMode && sessionCurrentTrackId !== null));
 
-  const handleToggle = useCallback(async () => {
-    if (isDisabled) {
-      return;
-    }
-
-    if (isPlaying) {
-      pause();
-    } else {
-      try {
-        await play();
-      } catch {
-        // Ошибка уже обработана в store
-      }
-    }
-  }, [isDisabled, isPlaying, play, pause]);
+  const handleToggle = useCallback(() => {
+    void togglePlayPause({
+      hasTrack: currentTrack !== null,
+      isPlaying,
+      blocked: isDisabled,
+      play,
+      pause,
+    });
+  }, [currentTrack, isDisabled, isPlaying, pause, play]);
 
   const handleStop = useCallback(() => {
     if (isDisabled) {
@@ -162,9 +156,10 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           onPointerDown={timeline.beginScrub}
           onInput={timeline.handleInput}
           onChange={timeline.handleChange}
-          disabled={isDisabled}
+          disabled={isScrubberDisabled}
           className="player-controls__timeline"
           aria-label="Позиция воспроизведения"
+          title={isSessionMode ? 'Во время трансляции перемотка отключена' : undefined}
         />
         <span className="player-controls__time player-controls__time--total">
           {formatPlayerTime(resolvedDuration)}

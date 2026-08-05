@@ -1,5 +1,6 @@
 import {
   Button,
+  Disclosure,
   formatDateInTimeZone,
   getDefaultTimeZone,
   IconButton,
@@ -11,11 +12,14 @@ import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useModalKeyboard } from '@shared/hooks';
-import { getAppMode } from '@shared/platform';
 import { partyService, type PartyDto } from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming/useOnlineNetworkPolicy';
-import { PARTY_EDITOR_LIFECYCLE_BADGE_LABELS } from '@workspaces/party/partyEditorPhase';
+import {
+  resolvePartyCatalogLabel,
+  resolvePartyCatalogToggleHint,
+} from '@workspaces/party/partyCatalogLabels';
+import { resolvePartyLifecycleServerBadgeLabel } from '@workspaces/party/partyEditorPhase';
 import { partyWorkspaceOneShotGuards } from '@workspaces/party/partyWorkspaceReconnectRefs';
 import { resetPartyLinkState, usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 
@@ -30,8 +34,8 @@ function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
 
 export const MyPartiesList: React.FC = () => {
   const { addNotification } = useUIStore();
-  const isDemoMode = getAppMode() === 'demo';
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
+  const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
 
@@ -51,7 +55,7 @@ export const MyPartiesList: React.FC = () => {
   const deleteCancelRef = useRef<HTMLButtonElement | null>(null);
 
   const loadParties = useCallback(async () => {
-    if (!isAuthenticated || (!networkEnabled && !isDemoMode)) {
+    if (!isAuthenticated || !networkEnabled) {
       return;
     }
     setLoading(true);
@@ -64,7 +68,7 @@ export const MyPartiesList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, isDemoMode, networkEnabled]);
+  }, [isAuthenticated, networkEnabled]);
 
   useEffect(() => {
     void loadParties();
@@ -96,7 +100,7 @@ export const MyPartiesList: React.FC = () => {
   }, [restoreDeleteTriggerFocus]);
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget || (!networkEnabled && !isDemoMode)) {
+    if (!deleteTarget || !networkEnabled) {
       return;
     }
 
@@ -113,10 +117,6 @@ export const MyPartiesList: React.FC = () => {
         markAsDirty();
       }
 
-      addNotification({
-        type: 'success',
-        message: `Вечеринка «${party.name}» удалена`,
-      });
       setDeleteTarget(null);
       deleteTriggerRef.current = null;
     } catch (e) {
@@ -127,15 +127,7 @@ export const MyPartiesList: React.FC = () => {
     } finally {
       setDeletingId(null);
     }
-  }, [
-    addNotification,
-    deleteTarget,
-    isDemoMode,
-    linkedParty?.id,
-    markAsDirty,
-    networkEnabled,
-    setLinkedParty,
-  ]);
+  }, [addNotification, deleteTarget, linkedParty?.id, markAsDirty, networkEnabled, setLinkedParty]);
 
   const { handleOverlayKeyDown: handleDeleteOverlayKeyDown } = useModalKeyboard({
     enabled: deleteTarget !== null,
@@ -156,7 +148,7 @@ export const MyPartiesList: React.FC = () => {
   };
 
   const handleBind = async (party: PartyDto) => {
-    if (!networkEnabled && !isDemoMode) {
+    if (!networkEnabled) {
       return;
     }
     setBindingId(party.id);
@@ -166,10 +158,6 @@ export const MyPartiesList: React.FC = () => {
       setLinkedParty({ id: party.id, shortCode: party.shortCode, url });
       syncLinkedPartyWorkspaceFields(party);
       markAsDirty();
-      addNotification({
-        type: 'success',
-        message: `Проект привязан к вечеринке «${party.name}»`,
-      });
     } catch (e) {
       addNotification({
         type: 'error',
@@ -181,7 +169,7 @@ export const MyPartiesList: React.FC = () => {
   };
 
   const handleToggleListed = async (party: PartyDto, listed: boolean) => {
-    if (!networkEnabled && !isDemoMode) {
+    if (!networkEnabled) {
       return;
     }
     const previous = party.isListedInCatalog ?? false;
@@ -199,10 +187,6 @@ export const MyPartiesList: React.FC = () => {
       if (linkedParty?.id === party.id) {
         usePartyWorkspaceStore.getState().setIsListedInCatalog(listed);
       }
-      addNotification({
-        type: 'success',
-        message: listed ? 'Вечеринка добавлена в каталог' : 'Вечеринка доступна только по ссылке',
-      });
     } catch (e) {
       setParties((current) =>
         current.map((item) =>
@@ -218,153 +202,149 @@ export const MyPartiesList: React.FC = () => {
     }
   };
 
-  const networkActionsDisabled = !networkEnabled && !isDemoMode;
-  const showOfflineStub = networkActionsDisabled && !isDemoMode;
+  const networkActionsDisabled = !networkEnabled;
+  const showOfflineStub = !networkEnabled;
   const networkDisabledTitle = 'Включите «Онлайн» в настройках';
 
   return (
     <>
-      <section className="my-parties-list" aria-labelledby="my-parties-list-title">
-        <h3 className="my-parties-list-title" id="my-parties-list-title">
-          Мои вечеринки
-        </h3>
+      <section className="account-disclosure-card" aria-label="Мои вечеринки">
+        <Disclosure title="Мои вечеринки" className="account-disclosure" defaultExpanded={false}>
+          {!isAuthenticated ? (
+            <div className="my-parties-panel-auth-stub" role="status">
+              <p className="my-parties-panel-auth-stub-text">
+                Для управления вечеринками необходимо войти в аккаунт.
+              </p>
+            </div>
+          ) : (
+            <>
+              {showOfflineStub && (
+                <div className="my-parties-panel-offline-stub" role="status" aria-live="polite">
+                  <span className="my-parties-panel-offline-stub-title">
+                    Онлайн-функции отключены
+                  </span>
+                  <span className="my-parties-panel-offline-stub-hint">
+                    Включите «Онлайн» в настройках для загрузки списка и действий с сервером.
+                  </span>
+                </div>
+              )}
 
-        {!isAuthenticated ? (
-          <div className="my-parties-panel-auth-stub" role="status">
-            <p className="my-parties-panel-auth-stub-text">
-              Для управления вечеринками необходимо войти в аккаунт.
-            </p>
-          </div>
-        ) : (
-          <>
-            {showOfflineStub && (
-              <div className="my-parties-panel-offline-stub" role="status" aria-live="polite">
-                <span className="my-parties-panel-offline-stub-title">
-                  Онлайн-функции отключены
-                </span>
-                <span className="my-parties-panel-offline-stub-hint">
-                  Включите «Онлайн» в настройках для загрузки списка и действий с сервером.
-                </span>
-              </div>
-            )}
+              {loading && (
+                <div className="my-parties-panel-loading">Загрузка списка вечеринок...</div>
+              )}
+              {error && (
+                <div className="my-parties-panel-error" role="alert">
+                  {error}
+                </div>
+              )}
+              {!loading && !error && networkEnabled && parties.length === 0 && (
+                <div className="my-parties-panel-empty">У вас пока нет вечеринок на сервере.</div>
+              )}
+              {!loading && !error && parties.length > 0 && (
+                <ul className="my-parties-panel-list" aria-label="Список вечеринок">
+                  {parties.map((party) => {
+                    const isLinked = linkedParty?.id === party.id;
+                    const isListed = party.isListedInCatalog ?? false;
+                    const isRowBusy =
+                      bindingId === party.id || deletingId === party.id || togglingId === party.id;
 
-            {loading && (
-              <div className="my-parties-panel-loading">Загрузка списка вечеринок...</div>
-            )}
-            {error && (
-              <div className="my-parties-panel-error" role="alert">
-                {error}
-              </div>
-            )}
-            {!loading && !error && networkEnabled && parties.length === 0 && (
-              <div className="my-parties-panel-empty">У вас пока нет вечеринок на сервере.</div>
-            )}
-            {!loading && !error && parties.length > 0 && (
-              <ul className="my-parties-panel-list" aria-label="Список вечеринок">
-                {parties.map((party) => {
-                  const isLinked = linkedParty?.id === party.id;
-                  const isListed = party.isListedInCatalog ?? false;
-                  const isRowBusy =
-                    bindingId === party.id || deletingId === party.id || togglingId === party.id;
+                    return (
+                      <li
+                        key={party.id}
+                        className={`my-parties-panel-item${isLinked ? ' my-parties-panel-item--linked' : ''}`}
+                      >
+                        <div className="my-parties-panel-item-main">
+                          <div className="my-parties-panel-item-info">
+                            <span className="my-parties-panel-item-name">{party.name}</span>
+                            <span className="my-parties-panel-item-code">
+                              Код: {party.shortCode}
+                            </span>
+                            {party.eventDateTime ? (
+                              <span className="my-parties-panel-item-date">
+                                {formatDateInTimeZone(
+                                  party.eventDateTime,
+                                  party.timeZone ?? getDefaultTimeZone(),
+                                )}
+                              </span>
+                            ) : null}
+                          </div>
 
-                  return (
-                    <li
-                      key={party.id}
-                      className={`my-parties-panel-item${isLinked ? ' my-parties-panel-item--linked' : ''}`}
-                    >
-                      <div className="my-parties-panel-item-main">
-                        <div className="my-parties-panel-item-info">
-                          <span className="my-parties-panel-item-name">{party.name}</span>
-                          <span className="my-parties-panel-item-code">Код: {party.shortCode}</span>
-                          {party.eventDateTime ? (
-                            <span className="my-parties-panel-item-date">
-                              {formatDateInTimeZone(
-                                party.eventDateTime,
-                                party.timeZone ?? getDefaultTimeZone(),
+                          <div className="my-parties-panel-item-badges">
+                            <span className="my-parties-panel-badge my-parties-panel-badge--lifecycle">
+                              {resolvePartyLifecycleServerBadgeLabel(
+                                party.partyLifecycleState,
+                                isLinked ? sessionMode : undefined,
                               )}
                             </span>
-                          ) : null}
+                            {isLinked && (
+                              <span className="my-parties-panel-badge my-parties-panel-badge--linked">
+                                Привязана
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="my-parties-panel-item-badges">
-                          <span className="my-parties-panel-badge my-parties-panel-badge--lifecycle">
-                            {PARTY_EDITOR_LIFECYCLE_BADGE_LABELS[party.partyLifecycleState]}
-                          </span>
-                          <span
-                            className={`my-parties-panel-badge my-parties-panel-badge--catalog${isListed ? ' my-parties-panel-badge--listed' : ''}`}
+                        <div className="my-parties-panel-item-actions">
+                          <Button
+                            type="button"
+                            className={`my-parties-panel-catalog-toggle-btn${isListed ? ' my-parties-panel-catalog-toggle-btn--listed' : ''}`}
+                            disabled={networkActionsDisabled || isRowBusy}
+                            loading={togglingId === party.id}
+                            aria-pressed={isListed}
+                            aria-label={`Каталог: ${resolvePartyCatalogLabel(isListed)}`}
+                            title={
+                              networkActionsDisabled
+                                ? networkDisabledTitle
+                                : resolvePartyCatalogToggleHint(isListed)
+                            }
+                            onClick={() => void handleToggleListed(party, !isListed)}
+                            variant="secondary"
+                            size="sm"
                           >
-                            {isListed ? 'В каталоге' : 'По ссылке'}
-                          </span>
-                          {isLinked && (
-                            <span className="my-parties-panel-badge my-parties-panel-badge--linked">
-                              Привязана
-                            </span>
-                          )}
+                            {resolvePartyCatalogLabel(isListed)}
+                          </Button>
+
+                          <Button
+                            type="button"
+                            className="modal-button my-parties-panel-bind-btn"
+                            onClick={() => void handleBind(party)}
+                            disabled={networkActionsDisabled || isRowBusy || isLinked}
+                            loading={bindingId === party.id}
+                            title={
+                              networkActionsDisabled
+                                ? networkDisabledTitle
+                                : isLinked
+                                  ? 'Уже привязана к проекту'
+                                  : `Привязать к проекту: ${party.name}`
+                            }
+                            aria-label={`Привязать к проекту: ${party.name}`}
+                            variant="primary"
+                            size="sm"
+                            startIcon={<LinkOutlinedIcon fontSize="small" />}
+                          >
+                            Привязать
+                          </Button>
+
+                          <IconButton
+                            type="button"
+                            className="modal-button my-parties-panel-delete-btn"
+                            onClick={(event) => handleOpenDeleteConfirm(party, event.currentTarget)}
+                            disabled={networkActionsDisabled || isRowBusy}
+                            title={networkActionsDisabled ? networkDisabledTitle : 'Удалить'}
+                            aria-label={`Удалить вечеринку ${party.name}`}
+                            variant="ghost"
+                            size="sm"
+                            icon={<DeleteOutlineIcon fontSize="small" />}
+                          />
                         </div>
-                      </div>
-
-                      <div className="my-parties-panel-item-actions">
-                        <Button
-                          type="button"
-                          className={`my-parties-panel-catalog-toggle-btn${isListed ? ' my-parties-panel-catalog-toggle-btn--listed' : ''}`}
-                          disabled={networkActionsDisabled || isRowBusy}
-                          loading={togglingId === party.id}
-                          aria-pressed={isListed}
-                          aria-label={`Каталог: ${isListed ? 'В каталоге' : 'По ссылке'}`}
-                          title={
-                            networkActionsDisabled
-                              ? networkDisabledTitle
-                              : isListed
-                                ? 'В каталоге. Нажмите, чтобы оставить только по ссылке.'
-                                : 'По ссылке. Нажмите, чтобы добавить в каталог.'
-                          }
-                          onClick={() => void handleToggleListed(party, !isListed)}
-                          variant="secondary"
-                          size="sm"
-                        >
-                          {isListed ? 'В каталоге' : 'По ссылке'}
-                        </Button>
-
-                        <Button
-                          type="button"
-                          className="modal-button my-parties-panel-bind-btn"
-                          onClick={() => void handleBind(party)}
-                          disabled={networkActionsDisabled || isRowBusy || isLinked}
-                          loading={bindingId === party.id}
-                          title={
-                            networkActionsDisabled
-                              ? networkDisabledTitle
-                              : isLinked
-                                ? 'Уже привязана к проекту'
-                                : `Привязать к проекту: ${party.name}`
-                          }
-                          aria-label={`Привязать к проекту: ${party.name}`}
-                          variant="primary"
-                          size="sm"
-                          startIcon={<LinkOutlinedIcon fontSize="small" />}
-                        >
-                          Привязать
-                        </Button>
-
-                        <IconButton
-                          type="button"
-                          className="modal-button my-parties-panel-delete-btn"
-                          onClick={(event) => handleOpenDeleteConfirm(party, event.currentTarget)}
-                          disabled={networkActionsDisabled || isRowBusy}
-                          title={networkActionsDisabled ? networkDisabledTitle : 'Удалить'}
-                          aria-label={`Удалить вечеринку ${party.name}`}
-                          variant="ghost"
-                          size="sm"
-                          icon={<DeleteOutlineIcon fontSize="small" />}
-                        />
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </>
-        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
+        </Disclosure>
       </section>
 
       {deleteTarget && (
@@ -376,9 +356,7 @@ export const MyPartiesList: React.FC = () => {
             }
           }}
           onKeyDown={handleDeleteOverlayKeyDown}
-          role="button"
-          tabIndex={0}
-          aria-label="Закрыть подтверждение удаления"
+          role="presentation"
         >
           <div
             className="modal-content workspace-delete-dialog"

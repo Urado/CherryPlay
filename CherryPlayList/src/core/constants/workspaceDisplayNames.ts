@@ -1,7 +1,7 @@
 const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   playlist: 'Плейлист',
   collection: 'Коллекция',
-  fileBrowser: 'Браузер',
+  fileBrowser: 'Файловый менеджер',
   player: 'Проигрывание',
   'demo-player': 'Демо-плеер',
   aimp: 'AIMP',
@@ -13,10 +13,6 @@ const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   autogenerator: 'Автогенератор',
 };
 
-/**
- * Returns a Russian display name for a workspace type.
- * Falls back to module name or raw type when no alias is defined.
- */
 export function getWorkspaceDisplayNameRu(type: string, fallbackName?: string): string {
   const knownName = WORKSPACE_DISPLAY_NAMES_RU[type];
   if (knownName) {

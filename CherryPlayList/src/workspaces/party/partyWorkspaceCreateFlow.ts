@@ -15,11 +15,7 @@ export type FinalizePartyCreationDeps = {
   checkPartyExists: (partyId: string) => Promise<boolean>;
   setLinkedParty: (party: { id: string; shortCode: string; url: string }) => void;
   markAsDirty: () => void;
-  addNotification: (notification: {
-    type: 'success' | 'error' | 'warning' | 'info';
-    message: string;
-    duration?: number;
-  }) => void;
+  addNotification: (notification: { type: 'error'; message: string; duration?: number }) => void;
 };
 
 export type HandlePartyCreationFailureDeps = {
@@ -30,7 +26,6 @@ export type HandlePartyCreationFailureDeps = {
 export async function finalizePartyCreation(
   store: PartyStore,
   createData: CreatePartyDto,
-  successMessage: string,
   deps: FinalizePartyCreationDeps,
 ): Promise<void> {
   const party = await partyService.createParty(createData);
@@ -66,7 +61,6 @@ export async function finalizePartyCreation(
   store.setPartyLifecycleState(party.partyLifecycleState);
   store.setIsListedInCatalog(party.isListedInCatalog ?? createData.isListedInCatalog ?? false);
   deps.markAsDirty();
-  deps.addNotification({ type: 'success', message: successMessage });
 }
 
 export async function handlePartyCreationFailure(

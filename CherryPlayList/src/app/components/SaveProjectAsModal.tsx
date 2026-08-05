@@ -19,9 +19,6 @@ export interface SaveProjectAsModalProps {
   }) => void | Promise<void>;
 }
 
-/**
- * Диалог «Сохранить как…»: имя проекта, папка назначения и вариант переносимого пакета.
- */
 export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
   open,
   isSaving,
@@ -88,7 +85,7 @@ export const SaveProjectAsModal: React.FC<SaveProjectAsModalProps> = ({
       >
         <div className="modal-header">
           <h2 className="modal-title" id={titleId}>
-            Сохранить проект как…
+            Сохранить как…
           </h2>
           <IconButton
             className="modal-close"

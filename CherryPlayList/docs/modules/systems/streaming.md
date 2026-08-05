@@ -68,7 +68,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
   - **не** заменяет initial publish и explicit Publish из Party workspace.
 
 - **`onlineNetworkPolicy`** — внутренние helpers (`isStreamingNetworkEnabled`, `isPartyDiscoverabilityEnabled`, `getOnlineNetworkPolicy`):
-  - `networkEnabled` — зеркалит **«Онлайн»** (`enableStreaming`) и demo mode; блокирует SignalR и REST; **не** user-facing label.
+  - `networkEnabled` — зеркалит **«Онлайн»** (`enableStreaming`); UI/баннеры offline. Hub (SignalR) дополнительно требует `supportsRealAuth` (`isStreamingHubAllowed`) — в fixtures demo hub не стартует. **Не** user-facing label. См. [веб-демо](../../web-demo.md).
   - `partyDiscoverabilityEnabled` — **всегда `true`**; пресет Party и зоны editor/preview не скрываются при офлайне.
   - Хук `useOnlineNetworkPolicy()` — snapshot для Party, orchestrator, **«Мои вечеринки»**.
 
@@ -167,4 +167,5 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 - [CONTRACTS.md](../../../../CONTRACTS.md) §3.5–§4, §6 — hub methods, DTO
 - [docs/integration/streaming.md](../../../../docs/integration/streaming.md) — потоки organizer/viewer, freeze
 - [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md) — follow-up UX (шапка, «Онлайн», gates)
+- [Веб-демо](../../web-demo.md) — fixtures vs live, `networkEnabled` / hub / `VITE_DEMO_LIVE`
 - [Playback Engine — слои](../audio/playback-layers.md) — Party Player vs Demo Player

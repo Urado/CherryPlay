@@ -7,7 +7,7 @@ import { useModalKeyboard } from '@shared/hooks';
 import { useProjectStore, useUIStore } from '@shared/stores';
 
 export const TrackSettingsModal: React.FC = () => {
-  const { closeModal, addNotification, modal, trackSettingsContext } = useUIStore();
+  const { closeModal, modal, trackSettingsContext } = useUIStore();
   const {
     settings,
     setDefaultPauseBetweenTracks,
@@ -125,10 +125,8 @@ export const TrackSettingsModal: React.FC = () => {
       });
     }
 
-    addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
   }, [
-    addNotification,
     closeModal,
     defaultActionAfterTrack,
     defaultPauseBetweenTracks,

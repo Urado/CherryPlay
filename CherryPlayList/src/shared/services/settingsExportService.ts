@@ -309,7 +309,7 @@ function prepareLayoutStateForSettingsImport(): void {
 
   if (state.isWorkspaceDirty()) {
     if (state.activeWorkspace.kind === 'user') {
-      state.saveCurrentWorkspace({ silent: true });
+      state.saveCurrentWorkspace();
     } else {
       state.resetCurrentWorkspace();
     }

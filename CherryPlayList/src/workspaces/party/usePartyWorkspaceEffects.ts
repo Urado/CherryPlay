@@ -80,12 +80,6 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
 
             const organizerInfo = await authService.getCurrentOrganizer();
             authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
-
-            addNotification({
-              type: 'success',
-              message: 'Успешный вход в систему',
-              duration: 3000,
-            });
           } catch (error) {
             addNotification({
               type: 'error',
@@ -160,10 +154,15 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
 
   const handleCustomizationSettingsChange = useCallback(
     (settings: Record<string, unknown>) => {
-      getPartyStore().setCustomizationSettings(settings);
+      const store = getPartyStore();
+      store.setCustomizationSettings(settings);
       setPartyCustomizationSettingsInMeta(settings);
+      const metaThemeId = useProjectStore.getState().meta.partyThemeId;
+      if (!metaThemeId || !isValidPartyTheme(metaThemeId)) {
+        setPartyThemeIdInMeta(store.themeId);
+      }
     },
-    [setPartyCustomizationSettingsInMeta],
+    [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
   const stopReconnectTimer = useCallback(() => {
@@ -391,11 +390,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     resetPartyLinkState();
     setLinkedParty(null);
     markAsDirty();
-    addNotification({
-      type: 'info',
-      message: 'Связь с вечеринкой удалена. Можно создать новую.',
-    });
-  }, [setLinkedParty, markAsDirty, addNotification]);
+  }, [setLinkedParty, markAsDirty]);
 
   const handleEventEndDateTimeChange = useCallback((value: string) => {
     const store = getPartyStore();
@@ -434,18 +429,14 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
 
   useEffect(() => {
     const store = getPartyStore();
-    const tid = meta.partyThemeId;
-    if (tid && isValidPartyTheme(tid)) {
-      store.setThemeId(tid as PartyThemeId);
-      store.setCustomizationSettings(
-        resolveLoadedCustomizationSettings(tid as PartyThemeId, meta.partyCustomizationSettings),
-      );
-    } else {
-      store.setThemeId(DEFAULT_PARTY_THEME_ID);
-      store.setCustomizationSettings(
-        getDefaultCustomizationSettings(DEFAULT_PARTY_THEME_ID) as Record<string, unknown>,
-      );
-    }
+    const resolvedThemeId: PartyThemeId =
+      meta.partyThemeId && isValidPartyTheme(meta.partyThemeId)
+        ? meta.partyThemeId
+        : DEFAULT_PARTY_THEME_ID;
+    store.setThemeId(resolvedThemeId);
+    store.setCustomizationSettings(
+      resolveLoadedCustomizationSettings(resolvedThemeId, meta.partyCustomizationSettings),
+    );
   }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
 
   useEffect(() => {

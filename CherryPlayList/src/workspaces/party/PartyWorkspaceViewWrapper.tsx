@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
-import { getAppMode } from '@shared/platform';
+import { getAppMode, isDemoFixturesMode } from '@shared/platform';
 
 import { PartyEditorView } from './PartyEditorView';
 import { PartyPreviewView } from './PartyPreviewView';
@@ -19,14 +19,14 @@ export const PartyWorkspaceViewWrapper: React.FC<PartyWorkspaceViewWrapperProps>
   view,
   ...props
 }) => {
-  const isDemoMode = getAppMode() === 'demo';
+  const showDemoPanel = isDemoFixturesMode(getAppMode());
 
   return (
     <PartyStreamingGate>
       {view === 'editor' ? (
-        <PartyEditorView {...props} showDemoPanel={isDemoMode} />
+        <PartyEditorView {...props} showDemoPanel={showDemoPanel} />
       ) : (
-        <PartyPreviewView {...props} showDemoPanel={isDemoMode} />
+        <PartyPreviewView {...props} showDemoPanel={showDemoPanel} />
       )}
     </PartyStreamingGate>
   );

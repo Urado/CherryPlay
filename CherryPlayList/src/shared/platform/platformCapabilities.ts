@@ -1,20 +1,6 @@
+import { isDemoLiveMode } from './demoLiveMode';
 import type { AppMode } from './types';
 
-/**
- * Feature flags for gating UI, guards, and stores.
- * Derived from {@link AppMode} — use {@link getPlatformCapabilities()} instead of raw mode checks.
- *
- * | Capability | electron | demo | capacitor (stub) |
- * |------------|----------|------|------------------|
- * | supportsLocalFilePlayback | ✓ | ✗ | ✗ |
- * | supportsNativeFileSystem | ✓ | ✗ | ✗ |
- * | supportsProjectPersistence | ✓ | ✗ | ✗ |
- * | supportsAimpWorkspace | ✓ | ✓ (simulated) | ✗ |
- * | supportsAudioDeviceSelection | ✓ | ✗ | ✗ |
- * | supportsRealAuth | ✓ | ✗ | ✗ |
- * | simulatesExport | ✗ | ✓ | ✗ |
- * | usesFixtureFileBrowser | ✗ | ✓ | ✗ |
- */
 export interface PlatformCapabilities {
   readonly mode: AppMode;
   readonly supportsLocalFilePlayback: boolean;
@@ -51,7 +37,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsProjectPersistence: false,
         supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: false,
-        supportsRealAuth: false,
+        supportsRealAuth: isDemoLiveMode(),
         simulatesExport: true,
         usesFixtureFileBrowser: true,
       };
@@ -87,7 +73,6 @@ export function getPlatformCapabilities(): PlatformCapabilities {
   return cachedCapabilities;
 }
 
-/** Resets capabilities cache — for unit tests only. */
 export function resetPlatformCapabilitiesForTests(): void {
   cachedCapabilities = null;
 }

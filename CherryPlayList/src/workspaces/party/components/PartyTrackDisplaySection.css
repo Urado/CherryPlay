@@ -40,6 +40,61 @@
   color: var(--text-primary);
 }
 
+.party-track-display-section__input--delimiter {
+  width: 3rem;
+  text-align: center;
+}
+
+.party-track-display-section__mode-fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.party-track-display-section__mode-fieldset:disabled {
+  opacity: 0.5;
+}
+
+.party-track-display-section__legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.party-track-display-section__preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-tertiary);
+  font-size: 0.875rem;
+}
+
+.party-track-display-section__preview-label {
+  color: var(--text-secondary);
+}
+
+.party-track-display-section__preview-sample,
+.party-track-display-section__preview-result {
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.party-track-display-section__preview-result {
+  font-weight: 600;
+}
+
+.party-track-display-section__preview-arrow {
+  color: var(--text-tertiary);
+}
+
 .party-track-display-section__input:disabled {
   opacity: 0.5;
   cursor: not-allowed;

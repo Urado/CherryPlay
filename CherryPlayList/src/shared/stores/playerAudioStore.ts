@@ -4,6 +4,14 @@ import { Track } from '@core/types/track';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
 import { mainPlaybackEngine } from '../audio/playback/playbackEngines';
+import {
+  isDemoLiveMockPlaybackEnabled,
+  loadDemoLiveMockTrack,
+  pauseDemoLiveMockPlayback,
+  playDemoLiveMockPlayback,
+  seekDemoLiveMockPlayback,
+  stopDemoLiveMockPlayback,
+} from '../demo/demoLiveMockPlayback';
 import { formatMissingTrackMessage } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
 
@@ -130,6 +138,12 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     ...INITIAL_STATE,
 
     loadTrack: async (track) => {
+      if (isDemoLiveMockPlaybackEnabled()) {
+        clearPauseTimer();
+        loadDemoLiveMockTrack(track);
+        return;
+      }
+
       await loadTrackCore({
         engine: playbackEngine,
         track,
@@ -161,6 +175,12 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     },
 
     play: async () => {
+      if (isDemoLiveMockPlaybackEnabled()) {
+        clearPauseTimer();
+        playDemoLiveMockPlayback();
+        return;
+      }
+
       try {
         await playTrackCore({
           engine: playbackEngine,
@@ -177,11 +197,20 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
 
     pause: () => {
       clearPauseTimer();
+      if (isDemoLiveMockPlaybackEnabled()) {
+        pauseDemoLiveMockPlayback();
+        return;
+      }
       playbackEngine.pause();
     },
 
     stop: () => {
       clearPauseTimer();
+      if (isDemoLiveMockPlaybackEnabled()) {
+        stopDemoLiveMockPlayback();
+        set({ status: 'idle', position: 0, error: null });
+        return;
+      }
       playbackEngine.stop();
       set({ status: 'idle', position: 0, error: null });
     },
@@ -191,6 +220,11 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     },
 
     seek: (positionSeconds) => {
+      if (isDemoLiveMockPlaybackEnabled()) {
+        seekDemoLiveMockPlayback(positionSeconds);
+        return;
+      }
+
       const { currentTrack, duration } = get();
       if (!currentTrack) {
         return;
@@ -214,6 +248,12 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
 
     clear: () => {
       clearPauseTimer();
+      if (isDemoLiveMockPlaybackEnabled()) {
+        stopDemoLiveMockPlayback();
+        const preservedVolume = get().volume;
+        set({ ...INITIAL_STATE, volume: preservedVolume });
+        return;
+      }
       playbackEngine.stop();
       const preservedVolume = get().volume;
       set({ ...INITIAL_STATE, volume: preservedVolume });

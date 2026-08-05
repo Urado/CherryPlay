@@ -14,11 +14,10 @@ Store для хранения настроек приложения.
 
 - **Экспорт**: Путь для экспорта, стратегия экспорта (copyWithNumberPrefix, aimpPlaylist)
 - **UI**: Размеры строк треков (small, medium, large), отсечки по времени (интервал, показывать/скрыть)
-- **Аудио**: Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`) — см. [Demo Player](../systems/demo-player.md#размещение). Настройки «Показывать плеер в шапке» / `playerInAppHeader` **нет** (основной плеер только в layout-зоне `player`).
-- **Проекты**: Путь последнего открытого плейлиста
-- **Файловый браузер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
-- **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`. Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит этот флаг, но в demo mode политика принудительно держит `networkEnabled=false`; отдельной настройки в UI нет. Party preset/зоны **не** скрываются — см. [Party](../workspaces/party.md).
-- **Синхронизация с сайтом:** `streamingSource` — **«Источник состояния для гостей»** (CherryPlay или AIMP); на сайт уходит **состояние** воспроизведения, не аудиопоток.
+- **Аудио / воспроизведение** (порядок в `SettingsModal`, секция **«Проигрывание»**): сначала **«Источник проигрывания»** (`streamingSource` — CherryPlay или AIMP; пункт всегда виден, AIMP disabled вне десктопа / при недоступности моста; на сайт уходит **состояние** воспроизведения, не аудиопоток), затем устройства вывода («Куда играет CherryPlay» и demo player). Выбор устройств для player и demo player; позиция и открытость плавающей панели предпрослушивания (`demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`) — см. [Demo Player](../systems/demo-player.md#размещение). Настройки «Показывать плеер в шапке» / `playerInAppHeader` **нет** (основной плеер только в layout-зоне `player`).
+- **Проекты**: Путь последнего открытого плейлиста. **Переносимый проект** — не чекбокс в настройках: в секции **«Настройки проекта»** текстовая подсказка на **Файл** → **Сохранить как…** → **«Переносимый проект»**; флаг `portableMode` хранится в `.cherry` ([Save/Load](../systems/save-load.md)).
+- **Файловый менеджер:** `fileBrowserPathsByWorkspaceId` — map `Record<WorkspaceId, string>`; текущая папка **на каждую** зону `fileBrowser` по её `workspaceId`. Legacy `fileBrowserPath` persist для обратной совместимости и зеркала path default-зоны; при записи в default id обновляются оба поля.
+- **Онлайн** (`enableStreaming`): связь с сервером и страницей для гостей; при выключении — **«Работа без сети»**. Код и persist — имя `enableStreaming`. Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит этот флаг (в т.ч. в web demo fixtures/live); отдельной настройки в UI нет. SignalR hub стартует только при Online ON **и** `supportsRealAuth` (Electron или live demo) — fixtures не поднимают hub. Party preset/зоны **не** скрываются — см. [Party](../workspaces/party.md), [веб-демо](../../web-demo.md).
 
 > **Важно:** Настройки уровня проекта (например, `portableMode`) хранятся в `ProjectSettings` внутри `.cherry` файла и управляются через `projectStore.setPortableMode`. Они **не** являются частью `settingsStore`.
 
@@ -79,7 +78,7 @@ interface SettingsExportBundle {
 4. `userWorkspaces` — merge по `id` (входящий выигрывает; при коллизии имён — суффикс `(2)`, `(3)`, …; это не то же самое, что серия «Без имени N» при auto-save в приложении).
 5. `activeWorkspace` применяется, если валиден и не edit mode; `scratch` игнорируется.
 
-Toast после импорта: число полей настроек и сводка по workspace (новые / обновлённые).
+Успешный импорт **без toast** (диалог закрывается, настройки и workspace применяются). Toast — только при **ошибке** чтения/разбора/применения bundle.
 
 ### Безопасность
 
@@ -89,3 +88,4 @@ Toast после импорта: число полей настроек и св�
 
 - [Клиентское persist](../systems/persisted-client-state.md) — ключ `cherryplaylist-workspaces`
 - [Layout System](../systems/layout-system.md) — пользовательские workspace presets
+- [Веб-демо](../../web-demo.md) — Online / `networkEnabled` в fixtures и live

@@ -1,5 +1,6 @@
 export { getAppMode, isNativePlatformAvailable } from './appMode';
 export { CapacitorPlatform } from './capacitorPlatform';
+export { isDemoFixturesMode, isDemoLiveMode } from './demoLiveMode';
 export {
   DEMO_UNAVAILABLE_MESSAGE,
   PLATFORM_UNAVAILABLE_MESSAGE,

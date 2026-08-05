@@ -5,7 +5,7 @@ import { signalRService } from '../services/signalRService';
 import { useSettingsStore } from '../stores';
 
 import { CherryPlayPlayerBroadcastSource } from './CherryPlayPlayerBroadcastSource';
-import { isStreamingNetworkEnabled } from './onlineNetworkPolicy';
+import { isStreamingHubAllowed, isStreamingNetworkEnabled } from './onlineNetworkPolicy';
 import { streamingOrchestrator } from './streamingOrchestrator';
 
 export interface UseStreamingOrchestratorOptions {
@@ -19,10 +19,6 @@ export interface UseStreamingOrchestratorResult {
   reconnect: () => void;
 }
 
-/**
- * React hook for CherryPlay Player Site Streamer lifecycle.
- * Active only when network policy allows and `streamingSource === 'cherryPlayPlayer'`.
- */
 export function useStreamingOrchestrator(
   options: UseStreamingOrchestratorOptions,
 ): UseStreamingOrchestratorResult {
@@ -41,8 +37,9 @@ export function useStreamingOrchestrator(
   }, [onPartyNotFound]);
 
   const networkEnabled = isStreamingNetworkEnabled({ enableStreaming });
+  const hubAllowed = isStreamingHubAllowed({ enableStreaming });
   const orchestratorActive =
-    networkEnabled && streamingSource === 'cherryPlayPlayer' && partyId !== null;
+    hubAllowed && streamingSource === 'cherryPlayPlayer' && partyId !== null;
 
   const connectionState = networkEnabled && orchestratorActive ? hubConnectionState : null;
 
@@ -69,7 +66,7 @@ export function useStreamingOrchestrator(
         void streamingOrchestrator.teardown();
       }
     };
-  }, [orchestratorActive, partyId, enableStreaming, networkEnabled, streamingSource]);
+  }, [orchestratorActive, partyId, enableStreaming, hubAllowed, streamingSource]);
 
   useEffect(() => {
     if (!orchestratorActive || !partyId) {

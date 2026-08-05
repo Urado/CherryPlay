@@ -63,11 +63,11 @@
 | **Settings** → **«Онлайн»** (`enableStreaming`)      | Глобальный privacy/offline; блокирует SignalR и REST, **не** скрывает Party                 |
 | **WorkspaceMenu**                                      | Пресет **«Онлайн-вечеринка»** (`party`) **всегда** в списке (`partyDiscoverabilityEnabled`) |
 | **Party zones**                                        | Всегда в layout; при офлайне — баннер **«Онлайн-функции отключены»** внутри зоны           |
-| **AppHeader**                                          | **Account** (аккаунт + **«Мои вечеринки»**); **HeaderPartyStatus** (lifecycle UI labels + **«К вечеринке»**) при **Онлайн**; **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
+| **AppHeader**                                          | Верхний ряд: слева меню **«Файл»** (⋮), справа **Account** + **Settings**; нижний ряд: **HeaderPartyStatus** (lifecycle UI labels + **«К вечеринке»**) при **Онлайн**, **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
 | **PlayerHeader**                                       | **«Начать проигрывание»** / **«Остановить проигрывание»**; Stop в controls — **«Начать заново»** |
-| **Settings** → **«Источник состояния для гостей»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
+| **Settings** → **«Источник проигрывания»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
 
-Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит `enableStreaming` + demo mode; **не** показывается пользователю. См. [party.md](./modules/workspaces/party.md).
+Внутренний `networkEnabled` (`onlineNetworkPolicy`) зеркалит `enableStreaming` (в т.ч. web demo); hub дополнительно gated через `supportsRealAuth`. **Не** показывается пользователю. См. [party.md](./modules/workspaces/party.md), [веб-демо](./web-demo.md).
 
 ### 2.4. Layout и кастомизация workspace (важный контекст)
 
@@ -280,3 +280,4 @@ UI может агрегировать это в один статус («Не �
 | 2026-07-08 | **Desktop feedback follow-up:** Party always visible; `networkEnabled`/`partyDiscoverabilityEnabled` split; catalog control; «Мои вечеринки»; modal keyboard contract; Stop → «Начать заново». См. [party.md](./modules/workspaces/party.md) |
 | 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + **«К вечеринке»**; session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill) |
 | 2026-08-02 | **Party lifecycle visual clarity:** единые метки **Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив** (Editor + header); actions **Опубликовать** / **Вернуть в черновик** / **В архив**; каталог только в `ready`; без баннера привязки и ready numbered hint; archive без **«Вернуть»** в UI |
+| 2026-08-03 | **Web-demo dual mode:** `networkEnabled` зеркалит `enableStreaming` (fixtures + live); hub только при `supportsRealAuth` (Electron / `VITE_DEMO_LIVE`). См. [web-demo.md](./web-demo.md) |
