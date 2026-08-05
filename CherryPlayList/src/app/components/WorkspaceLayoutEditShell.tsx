@@ -57,20 +57,16 @@ function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): 
   const isSingleton = isSingletonWorkspaceType(zone.workspaceType);
 
   if (isLastZone) {
-    return `Удалить последний workspace «${displayName}»? Layout станет пустым.`;
+    return `Удалить последнее окно «${displayName}»? Рабочие окна станут пустыми.`;
   }
 
   if (isSingleton) {
-    return `Удалить единственный workspace «${displayName}» этого типа?`;
+    return `Удалить единственное окно «${displayName}» этого типа?`;
   }
 
   return null;
 }
 
-/**
- * Edit-mode frame around a workspace: four "air" regions (top/right/bottom/left)
- * separated by diagonals from workspace corners, plus a dimmed content area.
- */
 export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> = ({ zone }) => {
   const shellRef = useRef<HTMLDivElement>(null);
   const layout = useLayoutStore((state) => state.layout);
@@ -103,8 +99,6 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
       },
       { top: false, right: false, bottom: false, left: false },
     );
-    // `dimensions` is included so availability recomputes on shell resize, when the
-    // live layout viewport (read from the bridge) may cross a workspace min threshold.
   }, [layout, zone.id, workspaceOptions, dimensions.width, dimensions.height]);
 
   const handleSelectWorkspace = useCallback(

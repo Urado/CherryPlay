@@ -1,5 +1,5 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -526,7 +526,7 @@ export const AppHeader: React.FC = () => {
                   )}
                 >
                   {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <MoreVertIcon
+                  <InsertDriveFileOutlinedIcon
                     className="header-button__icon header-button__icon--compact"
                     aria-hidden
                   />
@@ -633,10 +633,19 @@ export const AppHeader: React.FC = () => {
                   </div>
                 )}
               </div>
+              <button
+                className="header-button"
+                onClick={handleSettings}
+                disabled={isLayoutEditMode}
+                aria-label="Настройки"
+                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
+              >
+                <SettingsIcon className="header-button__icon" aria-hidden />
+              </button>
             </div>
 
-            <div className="app-header-account-cluster">
-              {enableStreaming && (
+            {enableStreaming ? (
+              <div className="app-header-account-cluster">
                 <button
                   className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
                   onClick={handleAccount}
@@ -652,36 +661,31 @@ export const AppHeader: React.FC = () => {
                   <AccountCircleIcon className="header-button__icon" aria-hidden />
                   {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
                 </button>
-              )}
-              <button
-                className="header-button"
-                onClick={handleSettings}
-                disabled={isLayoutEditMode}
-                aria-label="Настройки"
-                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
-              >
-                <SettingsIcon className="header-button__icon" aria-hidden />
-              </button>
-            </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="app-header-project-row">
             <div className="app-header-project-main">
               <div className="app-header-project-name">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="project-name-input"
-                  placeholder="Название проекта"
-                  disabled={isLayoutEditMode}
-                  title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
-                />
-                {meta.isDirty && (
-                  <span className="dirty-indicator" title="Есть несохранённые изменения">
-                    *
-                  </span>
-                )}
+                <span className="app-header-project-name__eyebrow">Проект</span>
+                <div className="app-header-project-name__row">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="project-name-input"
+                    placeholder="Название проекта"
+                    disabled={isLayoutEditMode}
+                    aria-label="Название проекта"
+                    title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
+                  />
+                  {meta.isDirty && (
+                    <span className="dirty-indicator" title="Есть несохранённые изменения">
+                      *
+                    </span>
+                  )}
+                </div>
               </div>
 
               {showHeaderPlaybackPillRow ? (

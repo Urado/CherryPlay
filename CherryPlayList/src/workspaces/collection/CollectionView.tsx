@@ -242,7 +242,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   const toggleExportMenu = useCallback(() => {
     const tracksLength = tracks.length;
     if (tracksLength === 0) {
-      addNotification({ type: 'warning', message: 'Коллекция пуста' });
+      addNotification({ type: 'warning', message: 'Подборка пуста' });
       return;
     }
     setExportMenuOpen((prev) => !prev);
@@ -254,15 +254,15 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
         type="button"
         onClick={toggleExportMenu}
         className="playlist-header-action-icon"
-        title="Экспортировать коллекцию"
-        aria-label="Экспортировать коллекцию"
+        title="Экспортировать подборку"
+        aria-label="Экспортировать подборку"
         aria-haspopup="menu"
         aria-expanded={exportMenuOpen}
       >
         <FileDownloadIcon style={{ fontSize: '20px' }} />
       </button>
       {exportMenuOpen && (
-        <div className="collection-export-menu" role="menu" aria-label="Экспорт коллекции">
+        <div className="collection-export-menu" role="menu" aria-label="Экспорт подборки">
           <button type="button" role="menuitem" onClick={handleExportAsJSON}>
             Экспорт в JSON
           </button>
@@ -281,7 +281,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
         onNameChange={setName}
         itemCount={tracks.length}
         totalDuration={totalDuration}
-        placeholder="Название коллекции"
+        placeholder="Название подборки"
         hasSelectedItems={hasSelectedTracks}
         selectedCount={selectedItemIds.size}
         onSelectAll={selectAll}

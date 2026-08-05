@@ -25,7 +25,6 @@ export const LayoutEmptyWorkspaceState: React.FC = () => {
     void viewportToken;
     const viewport = getCurrentLayoutViewport();
     return options.some((option) => canAddInitialWorkspace(option.type, viewport));
-    // `viewportToken` bumps on resize so availability re-checks against the live viewport.
   }, [options, viewportToken]);
   const { listId, pickerPosition, syncPickerPosition } = useWorkspacePickerMenu({
     anchorRef: buttonRef,
@@ -68,7 +67,7 @@ export const LayoutEmptyWorkspaceState: React.FC = () => {
           aria-expanded={isOpen}
           aria-haspopup="menu"
           aria-controls={isOpen ? listId : undefined}
-          title={canAddAny ? 'Добавить workspace' : AIR_DISABLED_HINT}
+          title={canAddAny ? 'Добавить окно' : AIR_DISABLED_HINT}
         >
           <AddIcon fontSize="small" aria-hidden />
         </button>

@@ -53,11 +53,11 @@
 
 Меню (только **вне** edit mode, по **▾**):
 
-| Секция         | Содержимое                                              |
-| -------------- | ------------------------------------------------------- |
-| **Мои**        | Пользовательские workspace; ⋯ → переименовать / удалить |
-| **Встроенные** | Built-in пресеты с RU-именами                           |
-| —              | **Создать с нуля…**                                     |
+| Секция           | Содержимое                                                                 |
+| ---------------- | -------------------------------------------------------------------------- |
+| **Мои**          | Пользовательские workspace; ⋯ → переименовать / удалить                    |
+| **Рабочие окна** | Built-in пресеты с RU-именами и one-line описаниями (см. [layout-system](./modules/systems/layout-system.md)) |
+| —                | **Создать с нуля…**                                                        |
 
 Отдельных пунктов **Сохранить** / **Сбросить** в меню **нет** — сохранение автоматическое (см. ниже).
 
@@ -176,7 +176,7 @@
 - **▾** меню workspace (переключение пресетов / пользовательских workspace);
 - переименование проекта;
 - кнопки настроек, экспорта, аккаунта, demo player (floating);
-- **HeaderPartyStatus** (**«К вечеринке»**) — кнопка `disabled` (как остальные header controls);
+- **HeaderPartyStatus** (**«Играть для гостей»**) — кнопка `disabled` (как остальные header controls);
 - **HeaderPlaybackPill** — `disabled` / `pointer-events: none`, приглушён;
 - меню **Проект** (принудительно закрывается при входе в режим);
 - **глобальные и player горячие клавиши** (`useGlobalShortcuts` / `usePlayerShortcuts` с `enabled: false`).
@@ -189,10 +189,11 @@
 
 ## Доступные типы workspace (picker)
 
-Список строится в `workspaceLayoutEditOptions.ts`:
+Список строится в `workspaceLayoutEditOptions.ts` → `getWorkspacePickerOptions`:
 
-1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts` (`fileBrowser` → **«Файловый менеджер»**).
+1. Все модули из **`workspaceRegistry`** (`getAllModulesByType()`), включая **`fileBrowser`** (side-effect регистрация в `src/entry.tsx` → `@workspaces/fileBrowser`); имена на русском через `workspaceDisplayNames.ts` (`fileBrowser` → **«Файлы»**, `collection` → **«Подборка»**, `demo-player` → **«Предпросмотр (только у вас)»**, `player` → **«Проигрывание»**).
 2. **Singleton-типы**, уже присутствующие в layout, **скрываются** из picker. Тип **`aimp`** в picker **не показывается** (legacy, исключён в `workspaceLayoutEditOptions.ts`).
+3. Типы **`test1`…`test8`** **всегда исключены** из picker (даже в DEV) — `isTestWorkspaceType`; регистрация и render уже открытых зон **сохраняются**.
 
 | Тип             | Примечание                                 |
 | --------------- | ------------------------------------------ |
@@ -204,7 +205,7 @@
 
 **Правило playback (один «плеер» на layout):** в layout допускается только одна зона воспроизведения — `player`. Legacy-зона `aimp` при добавлении/проверке дубликата считается эквивалентом `player`; при миграции layout `aimp` → `player` (`migrateAimpZonesToPlayerInLayout`). В picker `aimp` отсутствует.
 
-Типы **`fileBrowser`**, **`collection`** и **`test1`…`test8`** можно добавлять **несколько раз** (новый `workspaceId` на каждую зону через `generateWorkspaceId()`). Встроенные пресеты явно задают `DEFAULT_FILEBROWSER_WORKSPACE_ID` для единственной fileBrowser-зоны; при загрузке сохранённого layout дубликаты default id переназначаются (`migrateDuplicateFileBrowserWorkspaceIds`).
+Типы **`fileBrowser`** и **`collection`** можно добавлять **несколько раз** (новый `workspaceId` на каждую зону через `generateWorkspaceId()`). Типы **`test1`…`test8`** в picker **не** предлагаются; если уже есть в сохранённом layout — рендерятся. Встроенные пресеты явно задают `DEFAULT_FILEBROWSER_WORKSPACE_ID` для единственной fileBrowser-зоны; при загрузке сохранённого layout дубликаты default id переназначаются (`migrateDuplicateFileBrowserWorkspaceIds`).
 
 Сортировка picker — по русскому отображаемому имени.
 
@@ -282,7 +283,7 @@
 
 ## Пресеты vs ручное редактирование
 
-- **Встроенные пресеты** задают начальное дерево через `createLayoutByPreset`; переключение — через **▾** → **Встроенные**.
+- **Встроенные пресеты** задают начальное дерево через `createLayoutByPreset`; переключение — через **▾** → секция **Рабочие окна**.
 - В **edit mode** смена workspace **заблокирована** (только ▾ disabled).
 - Правки дерева при выходе из edit mode или при переключении workspace **автоматически** сохраняются (см. § «Автосохранение»); built-in при этом форкается в **Мои** с именем по `allocateUnnamedWorkspaceName`, если layout изменился.
 - Пустой layout и произвольная конфигурация **валидны**: `LayoutWorkspaceArea` обрабатывает пустое состояние, одиночную зону и контейнеры.
@@ -315,7 +316,7 @@
 | `src/shared/utils/workspaceLifecycle.ts`                   | `prepareWorkspaceInstance` / `cleanupWorkspaceInstance`                                  |
 | `src/app/components/LayoutWorkspaceArea.tsx`               | Пустой / root workspace / `SplitContainer`                                               |
 | `src/app/components/LayoutEmptyWorkspaceState.tsx`         | Пустой layout в edit mode, picker с ключом `'empty'`                                     |
-| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`)                                          |
+| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`, без `test*`)                 |
 | `src/app/components/WorkspacePickerMenu.tsx`               | Portal-меню выбора типа workspace                                                        |
 | `src/app/components/SplitContainer.tsx`                    | Рекурсивный split; container-shell при 2+ зонах в edit mode                              |
 | `src/app/components/WorkspaceLayoutEditShell.tsx`          | Edit-frame workspace, air-регионы, content-frame, удаление                               |
@@ -337,7 +338,7 @@
 7. Перетащить divider — пропорции меняются.
 8. Правка built-in → **✎** выход → запись в **Мои** («Без имени» или «Без имени 2», …); клик по имени → задать своё.
 9. **Создать с нуля…** → сразу edit mode, pill «Без имени».
-10. **▾** → переключение **Мои** / **Встроенные**; при dirty — тихий auto-commit перед switch.
+10. **▾** → переключение **Рабочие окна** (built-in) / **Мои**; при dirty — тихий auto-commit перед switch.
 11. Два auto-save с built-in без переименования → в **Мои** «Без имени» и «Без имени 2».
 12. **Персистентность** (Electron): перезапуск — workspace и дерево на месте, edit mode выключен. **Веб-демо**: F5 сбрасывает `cherryplaylist-workspaces`.
 13. **Минимальные размеры:** при узком окне добавление зоны с большим min может дать toast «Недостаточно места. Увеличьте окно или измените пропорции разделителями.»; divider не сжимает зону ниже per-type min (см. [Layout System](./modules/systems/layout-system.md)).

@@ -247,7 +247,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
               '--demo-range-progress': `${timelineProgressPercent}%`,
             } as React.CSSProperties
           }
-          aria-label="Позиция воспроизведения демо-трека"
+          aria-label="Позиция воспроизведения предпросмотра"
           aria-valuemin={0}
           aria-valuemax={timeline.resolvedDuration}
           aria-valuenow={timeline.displayPosition}
@@ -271,7 +271,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
                 '--demo-range-progress': `${volumeProgressPercent}%`,
               } as React.CSSProperties
             }
-            aria-label="Громкость демо-плеера"
+            aria-label="Громкость предпросмотра"
             aria-valuemin={0}
             aria-valuemax={1}
             aria-valuenow={volume}
@@ -283,8 +283,8 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
           className="demo-player__show-button"
           onClick={handleShowInBrowser}
           disabled={isDisabled || !currentTrack || !onShowInBrowser}
-          title="Показать файл в проводнике"
-          aria-label="Показать файл в проводнике"
+          title="Показать в файлах"
+          aria-label="Показать в файлах"
         >
           <FolderOpenIcon fontSize="small" />
         </button>

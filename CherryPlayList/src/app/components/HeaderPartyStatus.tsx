@@ -14,9 +14,9 @@ import { resolveHeaderPartyStatusTooltip } from './headerPartyStatusVisuals';
 import { isOnlinePartyLayoutPreset, resolveHeaderPartyStatus } from './resolveHeaderPartyStatus';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 
-const GO_TO_PARTY_LABEL = 'К вечеринке';
-const GO_TO_PARTY_TITLE = 'Переключить раскладку на «Онлайн-вечеринка»';
-const ALREADY_ON_PARTY_TITLE = 'Раскладка вечеринки уже открыта';
+const GO_TO_PARTY_LABEL = 'Играть для гостей';
+const GO_TO_PARTY_TITLE = 'Открыть раскладку «Играть для гостей»';
+const ALREADY_ON_PARTY_TITLE = 'Раскладка «Играть для гостей» уже открыта';
 
 function layoutHasOnlinePartyZones(layout: Layout): boolean {
   const types = collectWorkspaceTypes(layout.rootZone);
@@ -95,13 +95,16 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
 
   return (
     <div className="header-party-status" role="group" aria-label="Статус вечеринки">
-      <div className="header-party-status__summary">
-        {status.primary ? (
-          <StatusChip label={status.primary} className="header-party-status__primary" />
-        ) : null}
-        {status.secondary ? (
-          <StatusChip label={status.secondary} className="header-party-status__secondary" />
-        ) : null}
+      <div className="header-party-status__text">
+        <span className="header-party-status__eyebrow">Вечеринка</span>
+        <div className="header-party-status__summary">
+          {status.primary ? (
+            <StatusChip label={status.primary} className="header-party-status__primary" />
+          ) : null}
+          {status.secondary ? (
+            <StatusChip label={status.secondary} className="header-party-status__secondary" />
+          ) : null}
+        </div>
       </div>
       <button
         type="button"

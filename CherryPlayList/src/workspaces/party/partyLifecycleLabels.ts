@@ -1,7 +1,12 @@
 import type { ProjectSessionMode } from '@core/types/project';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
-export type PartyLifecycleDisplayLabel = 'Локально' | 'Черновик' | 'Не начато' | 'Идёт' | 'Архив';
+export type PartyLifecycleDisplayLabel =
+  | 'Не создана'
+  | 'Черновик'
+  | 'Ждёт начала'
+  | 'Идёт'
+  | 'Завершена';
 
 export interface ResolvePartyLifecycleDisplayLabelInput {
   linkedParty: { id: string; shortCode: string } | null | undefined;
@@ -11,23 +16,23 @@ export interface ResolvePartyLifecycleDisplayLabelInput {
 
 export const PARTY_LIFECYCLE_SERVER_BADGE_LABELS: Record<PartyLifecycleState, string> = {
   draft: 'Черновик',
-  ready: 'Не начато',
-  completed: 'Архив',
+  ready: 'Ждёт начала',
+  completed: 'Завершена',
 };
 
 export function resolvePartyLifecycleDisplayLabel(
   input: ResolvePartyLifecycleDisplayLabelInput,
 ): PartyLifecycleDisplayLabel {
   if (!input.linkedParty) {
-    return 'Локально';
+    return 'Не создана';
   }
 
   const lifecycle = input.partyLifecycleState ?? 'draft';
   if (lifecycle === 'completed') {
-    return 'Архив';
+    return 'Завершена';
   }
   if (lifecycle === 'ready') {
-    return input.sessionMode === 'session' ? 'Идёт' : 'Не начато';
+    return input.sessionMode === 'session' ? 'Идёт' : 'Ждёт начала';
   }
   return 'Черновик';
 }

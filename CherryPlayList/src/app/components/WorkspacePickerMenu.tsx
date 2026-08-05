@@ -200,7 +200,7 @@ export const WorkspacePickerMenu: React.FC<WorkspacePickerMenuProps> = ({
       id={listId}
       className="workspace-layout-edit-picker workspace-layout-edit-picker--portal"
       role="menu"
-      aria-label="Доступные workspace"
+      aria-label="Доступные окна"
       tabIndex={-1}
       onKeyDown={handleMenuKeyDown}
       style={{
@@ -212,7 +212,7 @@ export const WorkspacePickerMenu: React.FC<WorkspacePickerMenuProps> = ({
     >
       {options.length === 0 ? (
         <div className="workspace-layout-edit-picker__empty" role="presentation">
-          Нет доступных workspace
+          Нет доступных окон
         </div>
       ) : (
         options.map((option, index) => (

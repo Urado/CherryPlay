@@ -10,7 +10,7 @@
 - проверки регистрации workspace-модулей в реестре;
 - визуальной отладки сложных конфигураций зон.
 
-Модуль не предназначен для production-использования. Типы **`test1`…`test8`** регистрируются **всегда** (side-effect import `@workspaces/testZone` в `entry.tsx`); picker не фильтрует их по `import.meta.env.DEV` — предназначены для dev/отладки layout.
+Модуль не предназначен для production-использования. Типы **`test1`…`test8`** регистрируются **всегда** (side-effect import `@workspaces/testZone` в `entry.tsx`). В picker «добавить зону» (`getWorkspacePickerOptions`) они **всегда скрыты** (даже в DEV) — discoverability only; уже открытые зоны в layout **продолжают рендериться**.
 
 ## Структура модуля
 
@@ -31,7 +31,7 @@ src/workspaces/testZone/
 
 - `test1` … `test8` — восемь различных workspace-типов, использующих один и тот же `TestZoneView`.
 
-При импорте модуля регистрируются все эти типы в `WorkspaceRegistry`, после чего их можно использовать в layout пресетах и при **динамическом** добавлении зон в [режиме редактирования layout](../../layout-edit-mode.md) (кнопка **✎** в шапке).
+При импорте модуля регистрируются все эти типы в `WorkspaceRegistry`. Добавить их из UI picker в [режиме редактирования layout](../../layout-edit-mode.md) **нельзя**; зоны остаются доступны для фабрик/тестов и для уже сохранённых layout.
 
 ## Назначение и использование
 
@@ -41,9 +41,9 @@ src/workspaces/testZone/
   - поведения layout при сложных вложенных структурах.
 - Обычно применяется при разработке и отладке layout (типы всегда в реестре; см. [Layout System — минимальные размеры](../systems/layout-system.md#минимальные-размеры-зон) — `test1`…`test8`: **150×100** px).
 
-В production-сборке модуль может быть отключён или удалён в будущем, чтобы не засорять список доступных workspace.
+В production-сборке модуль может быть отключён или удалён в будущем; сейчас скрытие — только из picker/меню, без удаления регистрации.
 
 ## См. также
 
-- [Режим редактирования layout](../../layout-edit-mode.md) — типы `test1`…`test8` в picker (не singleton)
+- [Режим редактирования layout](../../layout-edit-mode.md) — типы `test1`…`test8` **не** в picker; registration/render сохранены
 - [Layout System — минимальные размеры зон](../systems/layout-system.md#минимальные-размеры-зон)

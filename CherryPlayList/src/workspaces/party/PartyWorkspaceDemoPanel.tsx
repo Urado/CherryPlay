@@ -264,7 +264,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Не начато
+                  Ждёт начала
                 </Button>
                 <Button
                   type="button"
@@ -273,7 +273,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Архив
+                  Завершена
                 </Button>
               </div>
             </div>

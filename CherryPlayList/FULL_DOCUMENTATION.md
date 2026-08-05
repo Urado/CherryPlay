@@ -157,7 +157,7 @@ The demo player is a lightweight audio preview pipeline located in the applicati
 ### Components
 
 1. **demoPlayerStore** — orchestrates the audio element, exposes actions (`loadTrack`, `play`, `pause`, `seek`, `setVolume`, etc.), stores `position`, `duration`, `volume`, `status`, and `sourceWorkspaceId`.
-2. **DemoPlayer component** — rendered at the top of `AppHeader`; shows title, "Show in browser" button, play/pause toggle, timeline slider with live position, and volume slider. The component receives data through `useDemoPlayerController` (can be substituted in tests), validates the path before calling "Show in browser" and cleans up store resources on unmount.
+2. **DemoPlayer component** — rendered at the top of `AppHeader`; shows title, **«Показать в файлах»** ("Show in files") button, play/pause toggle, timeline slider with live position, and volume slider. The component receives data through `useDemoPlayerController` (can be substituted in tests), validates the path before calling focus-in-sources and cleans up store resources on unmount.
 3. **Playlist/Collection buttons** — every track row owns a play button that calls `demoPlayerStore.loadTrack(track, workspaceId)` followed by `play()`.
 4. **FileBrowser bridge** — action in `uiStore` focuses the originating file path when the header button is pressed.
 
@@ -1984,7 +1984,7 @@ Navigation panel contains from left to right: "Back" button (←), "Up" button (
 
 - **Location:** Always visible in the top-most row of `AppHeader`.
 - **Layout:**
-  - Left block: Play/Pause button, track title (ellipsis if long), "Show in browser" button.
+  - Left block: Play/Pause button, track title (ellipsis if long), **«Показать в файлах»** button.
   - Middle block: timeline slider with current time on the left and total duration on the right.
   - Right block: volume slider (0–100%).
 - **Behavior:**

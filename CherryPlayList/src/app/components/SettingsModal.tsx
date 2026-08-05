@@ -542,28 +542,6 @@ export const SettingsModal: React.FC = () => {
               className="settings-section-title"
               style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
             >
-              Настройки проекта
-            </div>
-
-            <div
-              className="settings-description"
-              style={{
-                marginTop: 4,
-                fontSize: '0.85rem',
-                color: 'var(--text-secondary, #9e9e9e)',
-              }}
-            >
-              Переносимый проект (копия треков рядом с .cherry) включается при сохранении через меню
-              «Файл» → «Сохранить как…» — флажок «Переносимый проект». Обычное сохранение сохраняет
-              режим из файла проекта.
-            </div>
-
-            <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
-
-            <div
-              className="settings-section-title"
-              style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
-            >
               Резервная копия настроек
             </div>
 

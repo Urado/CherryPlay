@@ -28,7 +28,7 @@
   3. Проигрывание / трансляция **на сайт** (онлайн)
   4. Потенциально — библиотека треков (будущее)
 - **Первичный акцент UI:** «собери плейлист», а не «начни эфир».
-- Онлайн-вечеринка **важна**, но не должна **захватывать** весь интерфейс и вытеснять офлайн-сценарии.
+- Онлайн-сценарий (вечеринка для гостей) **важен**, но не должен **захватывать** весь интерфейс и вытеснять офлайн-сценарии.
 - С **`pasha_todo`** частично **не согласен** по акценту «стриминг как единственный главный сценарий» и по идее насильно переключать layout.
 
 ---
@@ -61,9 +61,9 @@
 | Место                                                  | Поведение (после desktop feedback follow-up, 2026-07)                                      |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | **Settings** → **«Онлайн»** (`enableStreaming`)      | Глобальный privacy/offline; блокирует SignalR и REST, **не** скрывает Party                 |
-| **WorkspaceMenu**                                      | Пресет **«Онлайн-вечеринка»** (`party`) **всегда** в списке (`partyDiscoverabilityEnabled`) |
+| **WorkspaceMenu**                                      | Пресет **«Играть для гостей»** (`party`) **всегда** в меню **Рабочие окна** (`partyDiscoverabilityEnabled`) |
 | **Party zones**                                        | Всегда в layout; при офлайне — баннер **«Онлайн-функции отключены»** внутри зоны           |
-| **AppHeader**                                          | Верхний ряд: слева меню **«Файл»** (⋮), справа **Account** + **Settings**; нижний ряд: **HeaderPartyStatus** (lifecycle UI labels + **«К вечеринке»**) при **Онлайн**, **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
+| **AppHeader**                                          | Верхний ряд: слева меню **«Файл»** (⋮), справа **Account** + **Settings**; нижний ряд: **HeaderPartyStatus** (lifecycle UI labels + **«Играть для гостей»**) при **Онлайн**, **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
 | **PlayerHeader**                                       | **«Начать проигрывание»** / **«Остановить проигрывание»**; Stop в controls — **«Начать заново»** |
 | **Settings** → **«Источник проигрывания»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
 
@@ -72,11 +72,11 @@
 ### 2.4. Layout и кастомизация workspace (важный контекст)
 
 - Пользователь работает не только с **встроенными пресетами**, но и с **«Мои»** workspace, **scratch** и **режимом редактирования** (✎).
-- Layout **кастомизируется**: можно добавить `party-editor`, `party-preview`, `player`, `aimp` и др. в произвольную раскладку без переключения на preset «Вечerинка».
-- Дефолт при первом запуске — **`collections`**, не Party.
+- Layout **кастомизируется**: можно добавить `party-editor`, `party-preview`, `player`, `aimp` и др. в произвольную раскладку без переключения на preset **«Играть для гостей»**.
+- Дефолт при первом запуске — **`collections`** (**«Сборка плейлиста»**), не Party.
 - Доки: [`layout-system.md`](./modules/systems/layout-system.md), [`layout-edit-mode.md`](./layout-edit-mode.md).
 
-**Вывод:** авто-переключение на preset Party по-прежнему **нежелательно**. Явная кнопка **«К вечеринке»** (см. §2.3) — opt-in на preset `party` с **no-op**, если layout уже party / aimp-party / editor+preview; кастомные workspace без Party-зон остаются first-class.
+**Вывод:** авто-переключение на preset Party по-прежнему **нежелательно**. Явная кнопка **«Играть для гостей»** (см. §2.3) — opt-in на preset `party` с **no-op**, если layout уже party / aimp-party / editor+preview; кастомные workspace без Party-зон остаются first-class. Отдельного переключателя режимов «Сборка / Проигрывание» в шапке **нет**.
 
 ### 2.5. Визуальные / сценарные проблемы
 
@@ -95,7 +95,7 @@
 
 | Режим                    | Сеть           | Party                     | Что видит пользователь                                       |
 | ------------------------ | -------------- | ------------------------- | ------------------------------------------------------------ |
-| Сборка плейлиста         | не обязательна | опционально               | Playlist, коллекции, file browser — **основной фокус**       |
+| Сборка плейлиста         | не обязательна | опционально               | Playlist, подборки, **Файлы** — **основной фокус**       |
 | Локальное проигрывание   | не нужна       | не нужна                  | Сессия плеера без трансляции — **допустимо, не главный CTA** |
 | Онлайн (страница гостей) | нужна          | нужна                     | Party + источник воспроизведения + трансляция                |
 | Privacy / офлайн         | **выключена**  | **видна**, но с заглушкой | «Онлайн-функции отключены» — не прячем концепт Party          |
@@ -131,8 +131,8 @@
   - идёт ли **проигрывание плейлиста**;
   - идёт ли **онлайн / трансляция** (если применимо);
   - состояние **текущей вечerинки** (нет / черновик / готова / завершена / …).
-- **Shipped (2026-08):** при **Онлайн** — read-only lifecycle status (`HeaderPartyStatus`: **Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив**; secondary **нет связи** при unreachable) + кнопка **«К вечеринке»** → `setLayoutPreset('party')` (no-op на уже party-layout); session-only `HeaderPlaybackPill` (без prep / readiness). Copy и матрица видимости: [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill).
-- **Backlog:** подменю быстрых действий по клику на статус (copy link, reconnect, …); **не** авто-переключать layout при старте проигрывания.
+- **Shipped (2026-08):** при **Онлайн** — read-only lifecycle status (`HeaderPartyStatus`: **Не создана** / **Черновик** / **Ждёт начала** / **Идёт** / **Завершена**; secondary **нет связи** при unreachable) + кнопка **«Играть для гостей»** → `setLayoutPreset('party')` (no-op на уже party-layout); session-only `HeaderPlaybackPill` (без prep / readiness). Copy и матрица видимости: [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill).
+- **Backlog:** подменю быстрых действий по клику на статус (copy link, reconnect, …); **не** авто-переключать layout при старте проигрывания; **не** вводить mode switcher «Сборка / Проигрывание» в шапке.
 
 ### 3.6. Индикатор «готовности к онлайну»
 
@@ -156,8 +156,8 @@ UI может агрегировать это в один статус («Не �
 ### 3.8. Layout и Party
 
 - Кастомные workspace — **first-class**; пользователь сам решает, где Party Editor/Preview и Player/AIMP.
-- Встроенный preset «Вечerинка» остаётся **шаблоном**, не единственным входом.
-- При `enableStreaming === false` preset «Вечerинка» **всё равно должен быть доступен** (или заменён нейтральным «Онлайн»-шаблоном) — **не скрывать**.
+- Встроенный preset **«Играть для гостей»** (`party`) остаётся **шаблоном**, не единственным входом.
+- При `enableStreaming === false` preset **«Играть для гостей»** **всё равно должен быть доступен** — **не скрывать**.
 
 ---
 
@@ -178,7 +178,7 @@ UI может агрегировать это в один статус («Не �
 
 ### 5.1. Шапка и подменю
 
-- **Сделано (2026-08):** единые lifecycle UI labels + **«К вечеринке»**; session pill без prep/readiness. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status).
+- **Сделано (2026-08):** единые lifecycle UI labels + **«Играть для гостей»**; session pill без prep/readiness. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status).
 - **Ещё открыто:** точный набор быстрых действий в **подменю** (если появится); checklist готовности — не в header lamp (§3.6 / §8).
 - Где физически в шапке: рядом с именем проекта (текущее) vs отдельный «Онлайн» pill справа — продукт может уточнить.
 
@@ -256,7 +256,7 @@ UI может агрегировать это в один статус («Не �
 
 - [x] Отвязать **видимость Party** от `enableStreaming` (2026-07)
 - [x] Переформулировать **privacy/offline** отдельно от discoverability Party (`networkEnabled` internal, `partyDiscoverabilityEnabled` always on)
-- [x] **Шапка:** **HeaderPartyStatus** (lifecycle labels + **«К вечеринке»**) при Онлайн; session-only **HeaderPlaybackPill**; **«Мои вечеринки»** — секция в Account. Подменю «Онлайн: статус ▾» с checklist — по-прежнему backlog
+- [x] **Шапка:** **HeaderPartyStatus** (lifecycle labels + **«Играть для гостей»**) при Онлайн; session-only **HeaderPlaybackPill**; **«Мои вечеринки»** — секция в Account. Подменю «Онлайн: статус ▾» с checklist — по-прежнему backlog
 - [ ] Агрегировать **checklist готовности** (party, publish, link, source, session, connection) — не в header lamp; backlog (Editor numbered ready-hint убран)
 - [x] Переименовать **«Начать сессию»** → **«Начать проигрывание»** / **«Остановить проигрывание»**
 - [x] Stop в player controls → **«Начать заново»** (label/a11y; поведение без изменений)
@@ -265,7 +265,8 @@ UI может агрегировать это в один статус («Не �
 - [x] Заглушки Party: offline (`PartyConnectivityBanner`), no auth (есть), server down (in-zone banner, не full replace)
 - [x] Контроль каталога **«В каталоге»** / **«По ссылке»** в Editor (**только `ready`**) и **«Мои вечеринки»**
 - [x] Единый контракт клавиатуры модалок (`useModalKeyboard`)
-- [ ] Учесть **кастомные workspace** — не завязать UX на preset switch _(частично: **«К вечеринке»** no-op на `party` / `aimp-party` / layout с editor+preview)_
+- [x] UI copy rename (2026-08): меню **Рабочие окна**; preset/zone display names; header **«Играть для гостей»**; `complex`/`test*` скрыты из discoverability
+- [ ] Учесть **кастомные workspace** — не завязать UX на preset switch _(частично: **«Играть для гостей»** no-op на `party` / `aimp-party` / layout с editor+preview)_
 - [ ] Backlog: локальный плеер под Playlist (`pasha_todo`)
 - [ ] Backlog: модерация пользователей (`pasha_todo`)
 
@@ -278,6 +279,8 @@ UI может агрегировать это в один статус («Не �
 | 2026-07-04 | Первичный синтез после ревью кода и диалога с Павлом                                                                                                      |
 | 2026-07-04 | **Copy rename (UI):** «Онлайн», «Начать проигрывание», Party actions, layout presets, lifecycle badges — см. [GLOSSARY.md](../../GLOSSARY.md) § UI vs код |
 | 2026-07-08 | **Desktop feedback follow-up:** Party always visible; `networkEnabled`/`partyDiscoverabilityEnabled` split; catalog control; «Мои вечеринки»; modal keyboard contract; Stop → «Начать заново». См. [party.md](./modules/workspaces/party.md) |
-| 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + **«К вечеринке»**; session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill) |
-| 2026-08-02 | **Party lifecycle visual clarity:** единые метки **Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив** (Editor + header); actions **Опубликовать** / **Вернуть в черновик** / **В архив**; каталог только в `ready`; без баннера привязки и ready numbered hint; archive без **«Вернуть»** в UI |
+| 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + **«Играть для гостей»** (ранее «К вечеринке»); session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill) |
+| 2026-08-02 | **Party lifecycle visual clarity:** единые метки Editor + header; actions **Опубликовать** / **Вернуть в черновик** / **В архив**; каталог только в `ready`; без баннера привязки и ready numbered hint; archive без **«Вернуть»** в UI. Актуальные UI-метки — в строке 2026-08-05 (Sonya-friendly) |
 | 2026-08-03 | **Web-demo dual mode:** `networkEnabled` зеркалит `enableStreaming` (fixtures + live); hub только при `supportsRealAuth` (Electron / `VITE_DEMO_LIVE`). См. [web-demo.md](./web-demo.md) |
+| 2026-08-05 | **UI copy rename:** меню **Рабочие окна**; presets **Простая сборка** / **Сборка плейлиста** / **Играть и править** / **Играть для гостей**; зоны **Файлы** (ранее **Источники**) / **Подборка** / **Предпросмотр (только у вас)**; `complex`/`test*` скрыты из discoverability. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-рабочие-окна-и-зоны) |
+| 2026-08-05 | **Party lifecycle Sonya-friendly labels:** **Не создана** / **Черновик** / **Ждёт начала** / **Идёт** / **Завершена** (display only; server enum `draft`/`ready`/`completed` без изменений); tooltip **Черновик** ≠ каталог (**«По ссылке»** / **«В каталоге»**). Actions **В архив** / **Вернуть в черновик** без смены. См. [GLOSSARY — lifecycle UI labels](../../GLOSSARY.md#cherryplaylist-lifecycle-ui-labels) |

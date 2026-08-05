@@ -5,13 +5,13 @@ import {
 } from '../../src/workspaces/party/partyLifecycleLabels';
 
 describe('resolvePartyLifecycleDisplayLabel', () => {
-  it('returns Локально when there is no linked party', () => {
+  it('returns Не создана when there is no linked party', () => {
     expect(
       resolvePartyLifecycleDisplayLabel({
         linkedParty: null,
         partyLifecycleState: null,
       }),
-    ).toBe('Локально');
+    ).toBe('Не создана');
   });
 
   it('returns Черновик for linked draft', () => {
@@ -23,14 +23,14 @@ describe('resolvePartyLifecycleDisplayLabel', () => {
     ).toBe('Черновик');
   });
 
-  it('returns Не начато for ready outside session', () => {
+  it('returns Ждёт начала for ready outside session', () => {
     expect(
       resolvePartyLifecycleDisplayLabel({
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: 'ready',
         sessionMode: 'preparation',
       }),
-    ).toBe('Не начато');
+    ).toBe('Ждёт начала');
   });
 
   it('returns Идёт for ready in session', () => {
@@ -43,13 +43,13 @@ describe('resolvePartyLifecycleDisplayLabel', () => {
     ).toBe('Идёт');
   });
 
-  it('returns Архив for completed', () => {
+  it('returns Завершена for completed', () => {
     expect(
       resolvePartyLifecycleDisplayLabel({
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: 'completed',
       }),
-    ).toBe('Архив');
+    ).toBe('Завершена');
   });
 });
 
@@ -73,7 +73,7 @@ describe('resolveHeaderPartyStatus', () => {
         sessionMode: 'preparation',
         serverUnreachable: true,
       }),
-    ).toEqual({ primary: 'Локально', secondary: 'нет связи' });
+    ).toEqual({ primary: 'Не создана', secondary: 'нет связи' });
   });
 
   it('keeps primary and overlays нет связи for linked ready when unreachable', () => {
@@ -84,7 +84,7 @@ describe('resolveHeaderPartyStatus', () => {
         sessionMode: 'preparation',
         serverUnreachable: true,
       }),
-    ).toEqual({ primary: 'Не начато', secondary: 'нет связи' });
+    ).toEqual({ primary: 'Ждёт начала', secondary: 'нет связи' });
   });
 
   it('keeps primary without secondary when reachable', () => {
@@ -101,9 +101,9 @@ describe('resolveHeaderPartyStatus', () => {
 
 describe('resolvePartyLifecycleServerBadgeLabel', () => {
   it('maps ready to Идёт only in session', () => {
-    expect(resolvePartyLifecycleServerBadgeLabel('ready')).toBe('Не начато');
+    expect(resolvePartyLifecycleServerBadgeLabel('ready')).toBe('Ждёт начала');
     expect(resolvePartyLifecycleServerBadgeLabel('ready', 'session')).toBe('Идёт');
     expect(resolvePartyLifecycleServerBadgeLabel('draft')).toBe('Черновик');
-    expect(resolvePartyLifecycleServerBadgeLabel('completed')).toBe('Архив');
+    expect(resolvePartyLifecycleServerBadgeLabel('completed')).toBe('Завершена');
   });
 });

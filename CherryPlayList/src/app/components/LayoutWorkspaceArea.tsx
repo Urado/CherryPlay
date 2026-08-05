@@ -22,9 +22,9 @@ export const LayoutWorkspaceArea: React.FC = () => {
     return (
       <div className="layout-empty-workspace-state layout-empty-workspace-state--placeholder">
         <div className="layout-empty-workspace-state__placeholder-copy">
-          <p className="layout-empty-workspace-state__placeholder-text">Layout пуст</p>
+          <p className="layout-empty-workspace-state__placeholder-text">Нет рабочих окон</p>
           <p className="layout-empty-workspace-state__placeholder-hint">
-            Нажмите «Настроить окна» ✎ в шапке, чтобы добавить workspace
+            Нажмите «Настроить окна» ✎ в шапке, чтобы добавить окно
           </p>
         </div>
       </div>

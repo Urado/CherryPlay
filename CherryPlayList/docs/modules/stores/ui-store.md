@@ -16,7 +16,7 @@
 - **Уведомления**: Система toast-уведомлений с автоматическим удалением через таймеры
 - **Drag-and-Drop**: Глобальное состояние перетаскивания (`draggedItems`, `isCopyMode`)
 - **Workspace Registry**: Реестр всех workspace в приложении (id, type, name, zoneId)
-- **File Browser Focus**: Запрос фокуса на файл в FileBrowser (кнопка «Показать в браузере»); **один** инстанс на запрос
+- **File Browser Focus**: Запрос фокуса на файл в FileBrowser (кнопка «Показать в файлах»); **один** инстанс на запрос
 - **Active Source**: Текущий активный источник треков (`fileBrowser`, `playlists`, `db`) — глобальный; per-zone переключатель **вне MVP**
 
 ## Типы уведомлений
@@ -38,7 +38,7 @@ API `addNotification` принимает:
 
 ## File Browser Focus
 
-Scoped focus для «Показать в браузере» / demo player:
+Scoped focus для «Показать в файлах» / demo player:
 
 ```typescript
 fileBrowserFocusRequest: {

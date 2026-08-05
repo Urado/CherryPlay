@@ -14,9 +14,6 @@ import type { ContainerZone, Layout, WorkspaceZone } from '../../core/types/layo
 
 import { setupCollectionZoneForPreset } from './workspaceLifecycle';
 
-/**
- * Создает простой layout с двумя зонами (плейлист и браузер)
- */
 export function createSimpleLayout(): Layout {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
@@ -49,16 +46,6 @@ export function createSimpleLayout(): Layout {
   };
 }
 
-/**
- * Создает layout с коллекциями вертикально
- * Структура:
- * - Root (horizontal)
- *   - Playlist (33%)
- *   - Vertical Container (33%)
- *     - Collection 1
- *     - Collection 2
- *   - File Browser (34%)
- */
 function createCollectionsVerticalLayout(): Layout {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
@@ -86,8 +73,8 @@ function createCollectionsVerticalLayout(): Layout {
     size: 50,
   };
 
-  setupCollectionZoneForPreset(collection1Zone, 'Collection 1');
-  setupCollectionZoneForPreset(collection2Zone, 'Collection 2');
+  setupCollectionZoneForPreset(collection1Zone, 'Подборка 1');
+  setupCollectionZoneForPreset(collection2Zone, 'Подборка 2');
 
   const verticalContainer: ContainerZone = {
     id: verticalContainerId,
@@ -125,15 +112,6 @@ function createCollectionsVerticalLayout(): Layout {
   };
 }
 
-/**
- * Создает layout с коллекциями
- * Структура:
- * - Root (horizontal)
- *   - Playlist
- *   - Vertical Container
- *     - Horizontal Container (Collection 1, Collection 2)
- *     - File Browser
- */
 export function createCollectionsLayout(): Layout {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
@@ -162,8 +140,8 @@ export function createCollectionsLayout(): Layout {
     size: 50,
   };
 
-  setupCollectionZoneForPreset(collection1Zone, 'Collection 1');
-  setupCollectionZoneForPreset(collection2Zone, 'Collection 2');
+  setupCollectionZoneForPreset(collection1Zone, 'Подборка 1');
+  setupCollectionZoneForPreset(collection2Zone, 'Подборка 2');
 
   const horizontalContainer: ContainerZone = {
     id: horizontalContainerId,
@@ -211,9 +189,6 @@ export function createCollectionsLayout(): Layout {
   };
 }
 
-/**
- * Создает layout с рекурсивной структурой для тестирования
- */
 export function createComplexLayout(): Layout {
   const playlistZoneId = uuidv4();
   const rootContainerId = uuidv4();
@@ -344,9 +319,6 @@ export function createComplexLayout(): Layout {
   };
 }
 
-/**
- * Создает layout для player workspace
- */
 export function createPlayerLayout(): Layout {
   const playerZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
@@ -379,9 +351,6 @@ export function createPlayerLayout(): Layout {
   };
 }
 
-/**
- * Создает layout для party workspace
- */
 export function createPartyLayout(): Layout {
   const playerZoneId = uuidv4();
   const partyEditorZoneId = uuidv4();
@@ -426,9 +395,6 @@ function createAimpPartyLayout(): Layout {
   return createPartyLayout();
 }
 
-/**
- * Создает layout по имени предустановки
- */
 export function createLayoutByPreset(preset: LayoutPreset): Layout {
   switch (preset) {
     case 'simple':
@@ -450,7 +416,6 @@ export function createLayoutByPreset(preset: LayoutPreset): Layout {
   }
 }
 
-/** Создает начальный layout (по умолчанию с коллекциями) */
 export function createInitialLayout(): Layout {
   return createCollectionsVerticalLayout();
 }

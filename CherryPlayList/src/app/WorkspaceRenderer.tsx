@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 
+import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
@@ -9,11 +10,7 @@ interface WorkspaceRendererProps {
   zone: WorkspaceZone;
 }
 
-/**
- * Компонент для рендеринга workspace зон на основе типа
- * Использует реестр модулей для динамического рендеринга
- */
-const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
+function renderWorkspaceBody(zone: WorkspaceZone): React.ReactNode {
   const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
 
   if (zone.workspaceType === 'aimp') {
@@ -32,10 +29,8 @@ const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) 
     return <LegacyAimpWorkspaceAdapter zoneId={zone.id} />;
   }
 
-  // Try to get module by ID first (for specific workspaces like playlist)
   let module = workspaceRegistry.getModule(zone.workspaceId);
 
-  // If not found by ID, try to get by type (for dynamic workspaces like collection)
   if (!module) {
     module = workspaceRegistry.getModuleByType(zone.workspaceType);
   }
@@ -48,8 +43,23 @@ const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) 
     );
   }
 
-  // Render the workspace component
-  return React.createElement(module.component, { workspaceId: zone.workspaceId, zoneId: zone.id });
+  return React.createElement(module.component, {
+    workspaceId: zone.workspaceId,
+    zoneId: zone.id,
+  });
+}
+
+const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
+  const zoneTitle = getWorkspaceDisplayNameRu(zone.workspaceType);
+
+  return (
+    <div className="workspace-zone">
+      <div className="workspace-zone__eyebrow" title={zoneTitle}>
+        {zoneTitle}
+      </div>
+      <div className="workspace-zone__body">{renderWorkspaceBody(zone)}</div>
+    </div>
+  );
 };
 
 export const WorkspaceRenderer = memo(WorkspaceRendererComponent);

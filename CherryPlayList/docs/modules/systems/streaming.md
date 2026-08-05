@@ -34,7 +34,7 @@ Streaming System связывает:
 
 Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: подключают хуки orchestrator и отображают UI, но не владеют SignalR lifecycle.
 
-> **UX:** пользовательские строки — **«Онлайн»**; preset **«Онлайн-вечеринка»**. В шапке: **HeaderPartyStatus** (при Онлайн) + **HeaderPlaybackPill** только в session mode; индикатор связи в session pill. См. [GLOSSARY](../../../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
+> **UX:** пользовательские строки — **«Онлайн»**; preset / кнопка шапки **«Играть для гостей»** (`party`). В шапке: **HeaderPartyStatus** (при Онлайн) + **HeaderPlaybackPill** только в session mode; индикатор связи в session pill. См. [GLOSSARY](../../../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
 
 ## Основные компоненты (клиент CherryPlayList)
 

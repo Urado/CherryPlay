@@ -1,7 +1,55 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 
 import type { Track } from '@core/types/track';
+
+jest.mock('@cherryplay/components', () => {
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  return {
+    PlaybackControlButton: ({
+      children: _children,
+      control: _control,
+      size: _size,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      control?: string;
+      size?: string;
+    }) => ReactActual.createElement('button', { type: 'button', ...props }),
+  };
+});
+
+jest.mock('../../src/shared/utils/togglePlayPause', () => ({
+  DEMO_PLAY_FAILURE_MESSAGE: 'Не удалось начать воспроизведение. Проверьте настройки аудио.',
+  togglePlayPause: async ({
+    hasTrack,
+    isPlaying,
+    blocked,
+    play,
+    pause,
+    onPlayFailure,
+  }: {
+    hasTrack: boolean;
+    isPlaying: boolean;
+    blocked?: boolean;
+    play: () => Promise<void>;
+    pause: () => void;
+    onPlayFailure?: () => void;
+  }) => {
+    if (blocked || !hasTrack) {
+      return;
+    }
+    if (isPlaying) {
+      pause();
+      return;
+    }
+    try {
+      await play();
+    } catch {
+      onPlayFailure?.();
+    }
+  },
+}));
 
 import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
 
@@ -141,7 +189,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать файл в проводнике' });
+    const showButton = screen.getByRole('button', { name: 'Показать в файлах' });
     fireEvent.click(showButton);
 
     expect(onShow).toHaveBeenCalledWith(track.path);
@@ -156,7 +204,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать файл в проводнике' });
+    const showButton = screen.getByRole('button', { name: 'Показать в файлах' });
     fireEvent.click(showButton);
 
     expect(onShow).not.toHaveBeenCalled();
@@ -188,7 +236,9 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} interactionBlocked notify={jest.fn()} />);
 
-    const timeline = screen.getByRole('slider', { name: 'Позиция воспроизведения демо-трека' });
+    const timeline = screen.getByRole('slider', {
+      name: 'Позиция воспроизведения предпросмотра',
+    });
     expect(timeline).toHaveValue('42');
     expect(timeline).toBeDisabled();
   });

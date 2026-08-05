@@ -48,17 +48,19 @@
 
 ### Встроенные (built-in)
 
-Фабрики пресетов — `layoutPresetFactories.ts` (`createLayoutByPreset`, `createSimpleLayout`, `createCollectionsLayout`, `createPartyLayout` и др.); сигнатуры сопоставления — `layoutPreset.ts` (`getLayoutPresetFromLayout`). Имена в UI — на русском (`LAYOUT_PRESET_DISPLAY_NAMES_RU` в `src/core/constants/layoutPresetDisplayNames.ts`, меню `WorkspaceMenu`).
+Фабрики пресетов — `layoutPresetFactories.ts` (`createLayoutByPreset`, `createSimpleLayout`, `createCollectionsLayout`, `createPartyLayout` и др.); сигнатуры сопоставления — `layoutPreset.ts` (`getLayoutPresetFromLayout`). Имена и one-line описания в UI — на русском (`LAYOUT_PRESET_DISPLAY_NAMES_RU` / `LAYOUT_PRESET_DESCRIPTIONS_RU` в `src/core/constants/layoutPresetDisplayNames.ts`). Меню / aria / секция встроенных — **«Рабочие окна»** (`WorkspaceMenu`); не продуктовый термин «Layout».
 
-| `LayoutPreset`         | Отображаемое имя      | Доступность                                                      |
-| ---------------------- | --------------------- | ---------------------------------------------------------------- |
-| `simple`               | Плейлист + источники  | всегда                                                           |
-| `complex`              | Сложный               | только `import.meta.env.DEV`                                     |
-| `collections`          | Сборка плейлиста      | всегда; **по умолчанию** при первом запуске                      |
-| `collections-vertical` | Коллекции вертикально | всегда                                                           |
-| `player`               | Проигрывание          | всегда                                                           |
-| `party`                | Онлайн-вечеринка      | **всегда** (`partyDiscoverabilityEnabled`; офлайн — in-zone stub) |
-| `aimp-party`           | AIMP + Party          | **legacy:** не показывается в меню; persist мигрирует на `party` |
+Список пунктов меню встроенных (`ALL_BUILTIN_PRESETS`): `simple`, `collections-vertical`, `player`, `party`. Id `complex` / `collections` / `aimp-party` в меню **не** перечисляются.
+
+| `LayoutPreset`         | Отображаемое имя (RU) | Описание (`LAYOUT_PRESET_DESCRIPTIONS_RU`) / доступность |
+| ---------------------- | --------------------- | -------------------------------------------------------- |
+| `simple`               | **Простая сборка**    | «Плейлист и панель источников — минимум панелей»; в меню |
+| `collections`          | **Сборка плейлиста**  | без one-liner в map; legacy id — при rehydrate мигрирует на `collections-vertical`; в меню встроенных **не** отдельным пунктом |
+| `collections-vertical` | **Сборка плейлиста**  | secondary — «Вертикальная раскладка: подборки (буфер) и источники»; в меню; **`DEFAULT_BUILTIN_PRESET`** (first-run / fallback) |
+| `player`               | **Играть и править**  | «Играть локально и править список / файлы в одной раскладке»; в меню |
+| `party`                | **Играть для гостей** | «Вечеринка для гостей: настройка и превью страницы»; в меню (`partyDiscoverabilityEnabled`; офлайн — in-zone stub) |
+| `complex`              | Сложный (display map) | без one-liner; **скрыт** всегда (ни prod, ни DEV); factory/id/render сохранены |
+| `aimp-party`           | AIMP + Party          | без one-liner; **legacy:** не в меню; persist мигрирует на `party`; copy clarity **отложено** |
 
 Встроенные layout **нельзя перезаписать**. При auto-commit с dirty built-in/scratch вызывается `saveCurrentWorkspaceAsUnnamed()` (имя по `allocateUnnamedWorkspaceName`).
 
@@ -66,7 +68,7 @@
 
 - Создаются автоматически при правке built-in/scratch (часто с именем **«Без имени»**) или при явном именовании scratch в pill.
 - **Переименование:** клик по имени в pill (inline) или ⋯ → «Переименовать…» в меню.
-- **Удаление:** ⋯ → «Удалить…» (с подтверждением). При удалении активного — fallback на built-in `collections`.
+- **Удаление:** ⋯ → «Удалить…» (с подтверждением). При удалении активного — fallback на built-in `collections-vertical` (`DEFAULT_BUILTIN_PRESET`).
 - Имена уникальны при ручном переименовании. Auto-save: первый — **«Без имени»**, далее **«Без имени 2»**, **«Без имени 3»**, …
 
 ### Scratch («Создать с нуля…»)
@@ -108,13 +110,13 @@
 | `workspaceType` | `minWidth` | `minHeight` | Примечание                  |
 | --------------- | ---------- | ----------- | --------------------------- |
 | `playlist`      | 280        | 200         | Список треков               |
-| `fileBrowser`   | 240        | 200         | **«Файловый менеджер»** (id `fileBrowser`) |
-| `collection`    | 200        | 150         | Сетка коллекции             |
-| `player`        | 360        | 120         | Панель воспроизведения      |
-| `demo-player`   | 280        | 100         | Demo shell                  |
+| `fileBrowser`   | 240        | 200         | UI **«Файлы»** (id `fileBrowser`) |
+| `collection`    | 200        | 150         | UI **«Подборка»**           |
+| `player`        | 360        | 120         | UI **«Проигрывание»**       |
+| `demo-player`   | 280        | 100         | UI **«Предпросмотр (только у вас)»** |
 | `party-editor`  | 400        | 300         | Редактор вечеринки          |
 | `party-preview` | 320        | 240         | Превью                      |
-| `test1`…`test8` | 150        | 100         | Зарегистрированы всегда (`entry.tsx`); предназначены для dev/отладки layout |
+| `test1`…`test8` | 150        | 100         | Зарегистрированы всегда (`entry.tsx`); **не** в picker «добавить зону» (даже DEV); уже открытые зоны рендерятся |
 
 Неизвестный тип → консервативный fallback **200×150** (`DEFAULT_WORKSPACE_MIN_SIZE`) + предупреждение в dev.
 
@@ -169,7 +171,7 @@
 
 Пересчёт при смене `layout`, resize окна, toggle `isLayoutEditMode` и прочих изменений chrome.
 
-Chrome шапки учитывает pill workspace, **HeaderPartyStatus** (при **Онлайн**: lifecycle UI labels + **«К вечеринке»** → preset `party`), **HeaderPlaybackPill** (session + CherryPlay; без prep/readiness; **не** gate от `enableStreaming`) и прочий UI; отдельного host основного плеера в шапке **нет** (зона **Проигрывание** — только в layout). Детали: [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill). Плотность шапки зоны `player` — см. [Player](../workspaces/player.md#шапка-зоны).
+Chrome шапки учитывает pill **Рабочие окна**, **HeaderPartyStatus** (при **Онлайн**: lifecycle UI labels + **«Играть для гостей»** → preset `party`), **HeaderPlaybackPill** (session + CherryPlay; без prep/readiness; **не** gate от `enableStreaming`) и прочий UI; отдельного host основного плеера в шапке **нет** (зона **Проигрывание** — только в layout). Детали: [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill). Плотность шапки зоны `player` — см. [Player](../workspaces/player.md#шапка-зоны).
 
 **Веб-демо** (`npm run dev:web`): IPC нет; гарантия — clamp divider в `SplitContainer` + add-adjacent pre-check. Опциональный CSS-min на контейнере приложения не является основным механизмом.
 
@@ -193,7 +195,7 @@ Chrome шапки учитывает pill workspace, **HeaderPartyStatus** (пр
 | Элемент | Назначение                                                                                                                |
 | ------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом |
-| **▾**   | Меню: **Мои** / **Встроенные** / **Создать с нуля…** (disabled в edit mode)                                               |
+| **▾**   | Меню **Рабочие окна**: **Мои** / встроенные пресеты / **Создать с нуля…** (disabled в edit mode)                          |
 | **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                    |
 
 Ручных пунктов **Сохранить** / **Сбросить** нет. При переключении workspace и auto-commit блокирующих диалогов нет.

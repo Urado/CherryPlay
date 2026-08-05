@@ -5,8 +5,8 @@ import { ensureProjectStore, removeProjectStore } from '../stores/projectStoreFa
 import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
 
-const COLLECTION_NAME_PREFIX = 'Коллекция ';
-const COLLECTION_NAME_PATTERN = /^Коллекция (\d+)$/;
+const COLLECTION_NAME_PREFIX = 'Подборка ';
+const COLLECTION_NAME_PATTERN = /^(?:Подборка|Коллекция) (\d+)$/;
 
 function getNextCollectionNumber(collectionNames: string[]): number {
   let maxNumber = 0;
@@ -27,7 +27,6 @@ function getNextCollectionNumber(collectionNames: string[]): number {
   return collectionNames.length + 1;
 }
 
-/** Registers a collection workspace created by layout preset builders (fixed display name). */
 export function setupCollectionZoneForPreset(zone: WorkspaceZone, name: string): void {
   const { workspaceId, workspaceType, id: zoneId } = zone;
 

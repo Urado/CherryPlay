@@ -13,15 +13,14 @@ interface WorkspaceLayoutEditAirControlProps {
   onToggle: () => void;
   onClose: () => void;
   onSelectWorkspace: (workspaceType: string) => void;
-  /** Center icon in a full-width band (container shell); default places icon like the old add button. */
   iconPlacement?: 'workspace-side' | 'band-center';
 }
 
 const AIR_SIDE_ARIA_LABELS: Record<LayoutEditAirSide, string> = {
-  top: 'Добавить workspace сверху',
-  right: 'Добавить workspace справа',
-  bottom: 'Добавить workspace снизу',
-  left: 'Добавить workspace слева',
+  top: 'Добавить окно сверху',
+  right: 'Добавить окно справа',
+  bottom: 'Добавить окно снизу',
+  left: 'Добавить окно слева',
 };
 
 export const WorkspaceLayoutEditAirControl: React.FC<WorkspaceLayoutEditAirControlProps> = ({

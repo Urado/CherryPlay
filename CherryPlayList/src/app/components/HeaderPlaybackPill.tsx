@@ -63,7 +63,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
         .filter(Boolean)
         .join(' ')}
       role="group"
-      aria-label="Вечеринка и проигрывание"
+      aria-label="Проигрывание"
     >
       <button
         type="button"
@@ -81,6 +81,7 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
       </button>
 
       <div className="playback-pill__main">
+        <span className="playback-pill__eyebrow">Проигрывание</span>
         <div className="playback-pill__track" title={trackLabel}>
           <span className="playback-pill__track-name">{trackLabel}</span>
           <span

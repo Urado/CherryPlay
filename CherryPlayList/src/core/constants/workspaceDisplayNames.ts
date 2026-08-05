@@ -1,9 +1,9 @@
 const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   playlist: 'Плейлист',
-  collection: 'Коллекция',
-  fileBrowser: 'Файловый менеджер',
+  collection: 'Подборка',
+  fileBrowser: 'Файлы',
   player: 'Проигрывание',
-  'demo-player': 'Демо-плеер',
+  'demo-player': 'Предпросмотр (только у вас)',
   aimp: 'AIMP',
   'party-editor': 'Настройка вечеринки',
   'party-preview': 'Как видят гости',

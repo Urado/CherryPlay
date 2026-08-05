@@ -2,7 +2,7 @@
 
 Обозреватель файлов для просмотра и выбора треков из локальной файловой системы.
 
-**Отображаемое имя в UI:** **«Файловый менеджер»** (`fileBrowser` → `workspaceDisplayNames.ts`). Внутренний id типа — `fileBrowser`. Ранее в UI могло фигурировать «Браузер» / «Источники» — актуальная подпись зон/picker — **«Файловый менеджер»**.
+**Отображаемое имя в UI:** **«Файлы»** (`fileBrowser` → `workspaceDisplayNames.ts`). Внутренний id типа — `fileBrowser`. Ранее в UI могло фигурировать «Браузер» / «Файловый менеджер» / «Источники» — актуальная подпись зон/picker — **«Файлы»**.
 
 ## Описание
 
@@ -29,15 +29,15 @@
 | **Props** | `FileBrowser({ workspaceId })`, `SourcesPanel({ workspaceId })` |
 | **Текущая папка** | `settingsStore.fileBrowserPathsByWorkspaceId[workspaceId]` — см. [Settings Store](../stores/settings-store.md) |
 | **История «Назад»** | Локальный state в каждом `FileBrowser` (не persist) |
-| **Focus «Показать в браузере»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md) |
+| **Focus «Показать в файлах»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md) |
 | **Удаление зоны** | `cleanupWorkspaceInstance` удаляет запись пути из map |
 
-**Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Файловый менеджер 1/2»), path в узле layout tree.
+**Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Файлы 1/2»), path в узле layout tree.
 
 ## Основные компоненты
 
 - **FileBrowserWorkspaceView** (`src/workspaces/fileBrowser/FileBrowserWorkspaceView.tsx`) — оболочка workspace-модуля: `SourcesPanel` с `workspaceId` зоны.
-- **FileBrowser** (`src/components/FileBrowser.tsx`) — компонент файлового менеджера; рендерится в панели **«Файловый менеджер»** (`SourcesPanel`).
+- **FileBrowser** (`src/components/FileBrowser.tsx`) — компонент обозревателя файлов; рендерится в панели **«Файлы»** (`SourcesPanel`).
 - **FileBrowserItemRow** (`src/components/FileBrowserItemRow.tsx`) — строка элемента списка на базе ListRowCompound. Для аудиофайлов: сначала кнопка Play (демо-плеер), затем имя и мета; для папок и не-аудио файлов: иконка (папка/файл), затем имя и мета. Расположение совпадает с плейлистом, коллекциями и плеером (кнопка проигрывания в начале строки).
 
 ## Строка элемента (файл / папка)
@@ -98,7 +98,7 @@
 - Ctrl+Click (Cmd+Click) — переключение выделения элемента (добавить/снять из выделения).
 - Shift+Click — выделение диапазона от последнего выделенного до кликнутого элемента.
 
-## «Показать в браузере» (scoped focus)
+## «Показать в файлах» (scoped focus)
 
 Запрос идёт через `uiStore.focusFileInBrowser(path, targetWorkspaceId?)`. `uiStore` разрешает цель через `resolveFileBrowserFocusTarget`:
 

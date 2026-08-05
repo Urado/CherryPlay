@@ -11,7 +11,10 @@ import {
   requestCreateScratchWorkspace,
   requestToggleLayoutEditMode,
 } from '@app/hooks/useWorkspaceDirtyGuard';
-import { LAYOUT_PRESET_DISPLAY_NAMES_RU } from '@core/constants/layoutPresetDisplayNames';
+import {
+  getLayoutPresetDescriptionRu,
+  LAYOUT_PRESET_DISPLAY_NAMES_RU,
+} from '@core/constants/layoutPresetDisplayNames';
 import type { ActiveWorkspace, LayoutPreset } from '@core/types/workspacePreset';
 import { isUnnamedWorkspaceName, UNNAMED_WORKSPACE_NAME } from '@core/types/workspacePreset';
 import { usePlatformCapabilities } from '@shared/platform';
@@ -23,13 +26,7 @@ import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceNameModal } from './WorkspaceNameModal';
 
-const ALL_BUILTIN_PRESETS: LayoutPreset[] = [
-  'simple',
-  'complex',
-  'collections-vertical',
-  'player',
-  'party',
-];
+const ALL_BUILTIN_PRESETS: LayoutPreset[] = ['simple', 'collections-vertical', 'player', 'party'];
 
 function getActiveWorkspaceLabel(
   activeWorkspace: ActiveWorkspace,
@@ -93,11 +90,7 @@ export const WorkspaceMenu: React.FC = () => {
   );
 
   const visibleBuiltinPresets = useMemo(() => {
-    const isDev = import.meta.env.DEV;
     return ALL_BUILTIN_PRESETS.filter((preset) => {
-      if (preset === 'complex') {
-        return isDev;
-      }
       if (preset === 'party') {
         return isPartyLayoutPresetDiscoverable(partyDiscoverabilityEnabled);
       }
@@ -264,12 +257,6 @@ export const WorkspaceMenu: React.FC = () => {
       return;
     }
 
-    const isDev = import.meta.env.DEV;
-    if (!isDev && activeWorkspace.preset === 'complex') {
-      requestActivateWorkspace({ kind: 'builtin', preset: 'simple' }, { bypassDirtyGuard: true });
-      return;
-    }
-
     if (activeWorkspace.preset === 'aimp-party') {
       requestActivateWorkspace({ kind: 'builtin', preset: 'party' }, { bypassDirtyGuard: true });
       if (supportsAimpWorkspace && streamingSource !== 'aimp') {
@@ -376,9 +363,7 @@ export const WorkspaceMenu: React.FC = () => {
       ? userWorkspaces.find((workspace) => workspace.id === renameTargetId)?.name
       : undefined;
 
-  const menuTriggerTitle = isLayoutEditMode
-    ? LAYOUT_EDIT_DISABLED_TITLE
-    : 'Выбрать рабочее пространство';
+  const menuTriggerTitle = isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : 'Рабочие окна';
 
   return (
     <div className="app-header-workspace">
@@ -421,10 +406,12 @@ export const WorkspaceMenu: React.FC = () => {
               aria-haspopup="menu"
               aria-expanded={showMenuPanel}
               aria-controls={panelId}
+              aria-label={`Рабочие окна: ${pillLabel}`}
               onClick={toggleMenu}
               onKeyDown={onMenuTriggerKeyDown}
             >
-              {pillLabel}
+              <span className="workspace-pill__eyebrow">Рабочие окна</span>
+              <span className="workspace-pill__name">{pillLabel}</span>
             </button>
           )}
 
@@ -451,7 +438,7 @@ export const WorkspaceMenu: React.FC = () => {
             aria-haspopup="menu"
             aria-expanded={showMenuPanel}
             aria-controls={panelId}
-            aria-label="Выбрать рабочее пространство"
+            aria-label="Рабочие окна"
             title={menuTriggerTitle}
             onClick={toggleMenu}
             onKeyDown={onMenuTriggerKeyDown}
@@ -467,9 +454,40 @@ export const WorkspaceMenu: React.FC = () => {
             className="workspace-menu__panel"
             role="menu"
             tabIndex={-1}
+            aria-label="Рабочие окна"
             aria-labelledby={triggerId}
             onKeyDown={onMenuKeyDown}
           >
+            <div className="workspace-menu__section-label" role="presentation">
+              Рабочие окна
+            </div>
+
+            {visibleBuiltinPresets.map((preset) => {
+              const description = getLayoutPresetDescriptionRu(preset);
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  className="workspace-menu__item workspace-menu__item--with-description"
+                  role="menuitem"
+                  title={description}
+                  onClick={() => handleActivateBuiltin(preset)}
+                >
+                  <span className="workspace-menu__item-text">
+                    <span className="workspace-menu__item-label">
+                      {LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}
+                    </span>
+                    {description ? (
+                      <span className="workspace-menu__item-description">{description}</span>
+                    ) : null}
+                  </span>
+                  {isBuiltinActive(activeWorkspace, preset) ? (
+                    <CheckIcon className="workspace-menu__check" aria-hidden />
+                  ) : null}
+                </button>
+              );
+            })}
+
             <div className="workspace-menu__section-label" role="presentation">
               Мои
             </div>
@@ -536,27 +554,6 @@ export const WorkspaceMenu: React.FC = () => {
                 </div>
               ))
             )}
-
-            <div className="workspace-menu__section-label" role="presentation">
-              Встроенные
-            </div>
-
-            {visibleBuiltinPresets.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                className="workspace-menu__item"
-                role="menuitem"
-                onClick={() => handleActivateBuiltin(preset)}
-              >
-                <span className="workspace-menu__item-label">
-                  {LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}
-                </span>
-                {isBuiltinActive(activeWorkspace, preset) ? (
-                  <CheckIcon className="workspace-menu__check" aria-hidden />
-                ) : null}
-              </button>
-            ))}
 
             <div className="workspace-menu__separator" role="separator" />
 

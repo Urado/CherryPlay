@@ -132,7 +132,7 @@ CherryPlayList/
 
 - Имеет собственную папку в `workspaces/`
 - Содержит `index.ts` - регистрирует модуль в `WorkspaceRegistry` при импорте
-- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`). **Файловый менеджер** (`fileBrowser`): `FileBrowser` в `components/`, показывается через SourcesPanel при зоне типа `fileBrowser`.
+- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`). Зона **«Файлы»** (`fileBrowser`): `FileBrowser` в `components/`, показывается через SourcesPanel при зоне типа `fileBrowser`.
 - Использует только `@core/` и `@shared/` для зависимостей
 - Имеет собственную документацию в `README.md`
 

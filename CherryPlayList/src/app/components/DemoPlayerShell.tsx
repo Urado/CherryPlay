@@ -13,13 +13,13 @@ import {
   FALLBACK_PANEL_WIDTH_PX,
   FLOATING_PANEL_FIXED_HEIGHT_PX,
 } from '@app/hooks/demoPlayerFloatingPositioning';
+import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { DemoPlayer } from '@shared/components';
 import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDemoPlayerStore } from '@shared/stores/demoPlayerStore';
 import { collectWorkspaceTypes } from '@shared/utils/layoutWorkspaceOperations';
 
 export interface DemoPlayerShellProps {
-  /** `.app-content` element used for floating bounds and default position. */
   contentContainerRef: React.RefObject<HTMLElement | null>;
 }
 
@@ -140,7 +140,7 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
         <IconButton
           type="button"
           className="demo-player-panel__grip"
-          aria-label="Перетащить панель прослушивания"
+          aria-label="Перетащить панель предпросмотра"
           title="Перетащить панель (стрелки; Shift+стрелки — большой шаг)"
           onKeyDown={handleGripKeyDown}
           disabled={isLayoutBlocked}
@@ -149,12 +149,12 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
           borderless
           icon={<DragHandleIcon fontSize="small" aria-hidden />}
         />
-        <span className="demo-player-panel__title">Прослушивание</span>
+        <span className="demo-player-panel__title">{getWorkspaceDisplayNameRu('demo-player')}</span>
         <IconButton
           type="button"
           className="demo-player-panel__close"
-          aria-label="Закрыть окно прослушивания"
-          title="Закрыть панель и остановить прослушивание"
+          aria-label="Закрыть панель предпросмотра"
+          title="Закрыть панель и остановить предпросмотр"
           onClick={handleCloseFloatingPanel}
           disabled={isLayoutBlocked}
           variant="ghost"

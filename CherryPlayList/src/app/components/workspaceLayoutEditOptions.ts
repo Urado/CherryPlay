@@ -23,12 +23,16 @@ function isWorkspaceTypeUsedInLayout(type: string, usedTypes: Set<string>): bool
   return usedTypes.has(type);
 }
 
+function isTestWorkspaceType(type: string): boolean {
+  return /^test\d$/.test(type);
+}
+
 export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOption[] {
   const usedTypes = layout ? collectWorkspaceTypes(layout.rootZone) : new Set<string>();
 
   const options = workspaceRegistry
     .getAllModulesByType()
-    .filter((module) => module.type !== 'aimp')
+    .filter((module) => module.type !== 'aimp' && !isTestWorkspaceType(module.type))
     .map((module) => ({
       type: module.type,
       name: getWorkspaceDisplayNameRu(module.type, module.name),

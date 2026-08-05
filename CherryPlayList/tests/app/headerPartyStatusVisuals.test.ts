@@ -5,15 +5,19 @@ import {
 
 describe('resolveHeaderPartyStatusTooltip', () => {
   it('maps each lifecycle primary label to Russian title', () => {
-    expect(resolveHeaderPartyStatusTooltip('Локально')).toBe(
-      'Проект ещё не привязан к вечеринке на сервере',
+    expect(resolveHeaderPartyStatusTooltip('Не создана')).toBe(
+      'Вечеринка на сервере ещё не создана — только этот проект',
     );
-    expect(resolveHeaderPartyStatusTooltip('Черновик')).toBe('Вечеринка на сервере в черновике');
-    expect(resolveHeaderPartyStatusTooltip('Не начато')).toBe(
-      'Опубликована на сайте, ожидает начала',
+    expect(resolveHeaderPartyStatusTooltip('Черновик')).toBe(
+      'Есть на сервере, ещё готовится. Это не «скрыта из каталога» — каталог настраивается отдельно («По ссылке» / «В каталоге»)',
     );
-    expect(resolveHeaderPartyStatusTooltip('Идёт')).toBe('Идёт локальная сессия проигрывания');
-    expect(resolveHeaderPartyStatusTooltip('Архив')).toBe('Вечеринка в архиве');
+    expect(resolveHeaderPartyStatusTooltip('Ждёт начала')).toBe(
+      'Опубликована для гостей, проигрывание ещё не запущено',
+    );
+    expect(resolveHeaderPartyStatusTooltip('Идёт')).toBe(
+      'Сейчас идёт проигрывание; гости видят актуальное состояние',
+    );
+    expect(resolveHeaderPartyStatusTooltip('Завершена')).toBe('Вечеринка завершена');
   });
 
   it('maps нет связи secondary overlay', () => {

@@ -24,7 +24,7 @@
 
 ### Модули приложения
 
-- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections, File Browser / **«Файловый менеджер»**, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player, Commands, Streaming); инфраструктура: **[Platform layer](modules/platform/README.md)** (capabilities, guards).
+- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections / **«Подборка»**, File Browser / **«Файлы»**, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout / **Рабочие окна**, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player / **«Предпросмотр (только у вас)»**, Commands, Streaming); инфраструктура: **[Platform layer](modules/platform/README.md)** (capabilities, guards).
 - Документация по каждому модулю — по ссылкам из modules/README.md (workspaces/_.md, systems/_.md, stores/_.md, services/_.md).
 
 ### Проверка и релиз

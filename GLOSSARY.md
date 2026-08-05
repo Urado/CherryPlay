@@ -28,10 +28,10 @@
 | Термин                   | Описание                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **session** (сессия)     | **Код:** `sessionState.mode === 'session'` в зоне Проигрывание. **UI:** **«Начать проигрывание»** / **«Остановить проигрывание»**; в шапке **`HeaderPlaybackPill`** — имя трека и управление (только при источнике CherryPlay). При **Онлайн** и `linkedParty` на сайт уходит **состояние**, не звук. **Не путать** с lifecycle-меткой **«Идёт»** (`ready` + session) и с индикатором SignalR **«Онлайн»**. |
-| **preparation**          | **Код:** `sessionState.mode === 'preparation'`. Режим подготовки: редактирование плейлиста без локального проигрывания. В шапке **нет** playback pill. Переход к настройке вечеринки — блок **HeaderPartyStatus** (**«К вечеринке»**) при включённом **Онлайн**, либо зоны Party в layout.                                                                                                                  |
+| **preparation**          | **Код:** `sessionState.mode === 'preparation'`. Режим подготовки: редактирование плейлиста без локального проигрывания. В шапке **нет** playback pill. Переход к раскладке вечеринки — блок **HeaderPartyStatus** (**«Играть для гостей»**) при включённом **Онлайн**, либо зоны Party в layout.                                                                                                              |
 | **Publish**              | **Код/API:** PUT плейлиста и метаданных (`updatePartyPlaylist`, `updateParty`). **UI:** **«Обновить на сайте»** / **«Обновить для гостей»**. **Не путать** с lifecycle **«Опубликовать»** (`draft` → `ready`) — тот меняет статус страницы без обязательного обновления плейлиста.                                                                                                                          |
 | **freeze**               | Поведение UI зрителя при потере связи: блок «сейчас играет» скрывается; плейлист и пометки проигранных остаются видимыми. Также при завершении сессии организатором состояние на сервере сохраняется (IsActive=false); зрители видят тот же эффект — плейлист и пометки без блока «сейчас играет».                                                                                                          |
-| **unlisted**             | Вечеринка не в общем каталоге. **UI:** **«По ссылке»** (`isListedInCatalog=false`). **Отдельно** от lifecycle: вечеринка может быть **«Не начато»** / **«Идёт»**, но оставаться **«По ссылке»**.                                                                                                                                                                                                            |
+| **unlisted**             | Вечеринка не в общем каталоге. **UI:** **«По ссылке»** (`isListedInCatalog=false`). **Отдельно** от lifecycle: вечеринка может быть **«Ждёт начала»** / **«Идёт»**, но оставаться **«По ссылке»**.                                                                                                                                                                                                            |
 | **catalog** (в каталоге) | Вечеринка в общем каталоге для зрителей. **UI:** **«В каталоге»** (`isListedInCatalog=true`). В Party Editor контроль каталога — **только** при lifecycle `ready` (`layout="header"`: кнопка без текстовой подсказки; строка «Отдельно от статуса…» — только в `layout="default"`, в shipped Editor не используется).                                                                                       |
 
 ### CherryPlayList: UI vs код (2026-07)
@@ -40,12 +40,14 @@
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enableStreaming`                                  | **Онлайн** / **Работа без сети** (toggle в настройках; ON — «Связь с сервером и страницей для гостей», OFF — «Работа без сети — запросы к серверу не выполняются»)                                                                                |
 | `networkEnabled`                                   | _(внутренний флаг; отдельной метки в UI нет)_                                                                                                                                                                                                     |
-| `partyDiscoverabilityEnabled`                      | _(внутренний; preset и зоны Party **всегда** в меню рабочих пространств)_                                                                                                                                                                         |
+| `partyDiscoverabilityEnabled`                      | _(внутренний; preset `party` и зоны Party **всегда** discoverable в меню **Рабочие окна** / picker)_                                                                                                                                             |
 | `isListedInCatalog`                                | **В каталоге** / **По ссылке** — в Editor только при lifecycle `ready`; также **Мои вечеринки**                                                                                                                                                   |
 | `streamingSource`                                  | **Источник проигрывания** (CherryPlay / AIMP; среди playback-related в Settings — первым)                                                                                                                                                          |
-| `fileBrowser` (workspace type id)                  | **Файловый менеджер** (панель в layout / picker; id остаётся `fileBrowser`)                                                                                                                                                                        |
+| `fileBrowser` (workspace type id)                  | **Файлы** (панель в layout / picker; id остаётся `fileBrowser`)                                                                                                                                                                                      |
+| `collection` (workspace type id)                   | **Подборка** (id остаётся `collection`)                                                                                                                                                                                                            |
+| `demo-player` (workspace type id)                  | **Предпросмотр (только у вас)** (зона и floating shell; id `demo-player`)                                                                                                                                                                          |
 | `linkedParty`                                      | Привязка проекта к серверной вечеринке (`{ id, shortCode }`); баннера «Подключено…» в Editor **нет**                                                                                                                                              |
-| `partyLifecycleState` draft/ready/completed        | Единые UI-метки (**Локально** / **Черновик** / **Не начато** / **Идёт** / **Архив**) — см. [lifecycle UI labels](#cherryplaylist-lifecycle-ui-labels) и [header party-status](#cherryplaylist-header-party-status). Серверный enum без изменений. |
+| `partyLifecycleState` draft/ready/completed        | Единые UI-метки (**Не создана** / **Черновик** / **Ждёт начала** / **Идёт** / **Завершена**) — см. [lifecycle UI labels](#cherryplaylist-lifecycle-ui-labels) и [header party-status](#cherryplaylist-header-party-status). Серверный enum без изменений. |
 | `sessionState.mode` preparation/session            | Prep: pill **скрыт**. Session + `cherryPlayPlayer`: pill — трек + play-pause (не зависит от **Онлайн**)                                                                                                                                           |
 | SignalR connected (`StreamingConnectionIndicator`) | **Онлайн** _(состояние связи в session pill; не toggle Settings)_                                                                                                                                                                                 |
 | Stop (player controls)                             | **Начать заново** — остановка аудио текущего трека (`playerAudioStore.stop`); **не** сброс сессии                                                                                                                                                 |
@@ -69,22 +71,24 @@
 
 Единые продуктовые метки (`resolvePartyLifecycleDisplayLabel` / `partyLifecycleLabels.ts`). Серверный `PartyLifecycleState` по-прежнему `draft` \| `ready` \| `completed` — **без** новых enum-значений.
 
-| Условие                             | UI-метка      |
-| ----------------------------------- | ------------- |
-| нет `meta.linkedParty`              | **Локально**  |
-| `linkedParty` + `draft`             | **Черновик**  |
-| `linkedParty` + `ready`, не session | **Не начато** |
-| `linkedParty` + `ready`, session    | **Идёт**      |
-| `linkedParty` + `completed`         | **Архив**     |
+| Условие                             | UI-метка         |
+| ----------------------------------- | ---------------- |
+| нет `meta.linkedParty`              | **Не создана**   |
+| `linkedParty` + `draft`             | **Черновик**     |
+| `linkedParty` + `ready`, не session | **Ждёт начала**  |
+| `linkedParty` + `ready`, session    | **Идёт**         |
+| `linkedParty` + `completed`         | **Завершена**    |
+
+**Черновик ≠ каталог:** метка **«Черновик»** — lifecycle на сервере (ещё готовится), **не** «скрыта из каталога». Видимость в каталоге — отдельно: **«По ссылке»** / **«В каталоге»** (только при `ready`). Tooltip в шапке это явно поясняет (`headerPartyStatusVisuals`).
 
 **Где видны:**
 
 | Поверхность                                         | Метки                                                                                                                                                                                                       |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **AppHeader** (`HeaderPartyStatus`, при **Онлайн**) | Полная лестница, включая **Локально** и **Идёт** — **основной** статус для организатора                                                                                                                     |
-| Party Editor shell phase badge                      | Обычно **скрыт**, когда показаны lifecycle-controls (`hidePhaseBadge={showLifecycle}`: фазы `draft-linked` / `ready`). Чаще виден **Архив** (`completed`) или когда header/lifecycle UI статус не закрывает |
-| **Мои вечеринки**                                   | Lifecycle badge (`resolvePartyLifecycleServerBadgeLabel`): **Черновик** / **Не начато** / **Архив**; для строки, совпадающей с `linkedParty` проекта, при `sessionState.mode === 'session'` и lifecycle `ready` — **Идёт** (session-overlay, как в Editor/шапке) |
-| Preview scenario presets                            | Только server states: **Черновик** / **Не начато** / **Архив** (без **Локально** / **Идёт**)                                                                                                                |
+| **AppHeader** (`HeaderPartyStatus`, при **Онлайн**) | Полная лестница, включая **Не создана** и **Идёт** — **основной** статус для организатора                                                                                                                     |
+| Party Editor shell phase badge                      | Обычно **скрыт**, когда показаны lifecycle-controls (`hidePhaseBadge={showLifecycle}`: фазы `draft-linked` / `ready`). Чаще виден **Завершена** (`completed`) или когда header/lifecycle UI статус не закрывает |
+| **Мои вечеринки**                                   | Lifecycle badge (`resolvePartyLifecycleServerBadgeLabel`): **Черновик** / **Ждёт начала** / **Завершена**; для строки, совпадающей с `linkedParty` проекта, при `sessionState.mode === 'session'` и lifecycle `ready` — **Идёт** (session-overlay, как в Editor/шапке) |
+| Preview scenario presets                            | Только server states: **Черновик** / **Ждёт начала** / **Завершена** (без **Не создана** / **Идёт**)                                                                                                                |
 
 ### CherryPlayList: lifecycle и действия Party Editor
 
@@ -106,8 +110,8 @@
 | ---------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `draft-unlinked` | **Создание вечеринки**       | —                                                                                                    |
 | `draft-linked`   | **Редактирование вечеринки** | Метка **Черновик** в коде есть, но при видимых lifecycle-controls badge **скрыт** (`hidePhaseBadge`) |
-| `ready`          | **Публикация и настройки**   | То же: **Не начато** / **Идёт** не показываются в shell, пока видны lifecycle-controls               |
-| `completed`      | **Завершённая вечеринка**    | **Архив** (lifecycle-controls нет → badge обычно виден)                                              |
+| `ready`          | **Публикация и настройки**   | То же: **Ждёт начала** / **Идёт** не показываются в shell, пока видны lifecycle-controls               |
+| `completed`      | **Завершённая вечеринка**    | **Завершена** (lifecycle-controls нет → badge обычно виден)                                              |
 
 Первичный статус организатора при **Онлайн** — [AppHeader](#cherryplaylist-header-party-status), не shell badge. Нумерованной ready-phase подсказки в Editor **нет**. Контроль каталога (**«По ссылке»** / **«В каталоге»**) — **только** в фазе `ready`.
 
@@ -117,16 +121,16 @@
 
 **Видимость:** блок [`HeaderPartyStatus`](CherryPlayList/src/app/components/HeaderPartyStatus.tsx) только при **Онлайн** (`enableStreaming === true`). При выключенном онлайне блок не рендерится.
 
-| Условие                             | Primary       | Secondary |
-| ----------------------------------- | ------------- | --------- |
-| нет `meta.linkedParty`              | **Локально**  | —         |
-| `linkedParty` + `draft`             | **Черновик**  | —         |
-| `linkedParty` + `ready`, не session | **Не начато** | —         |
-| `linkedParty` + `ready`, session    | **Идёт**      | —         |
-| `linkedParty` + `completed`         | **Архив**     | —         |
+| Условие                             | Primary          | Secondary |
+| ----------------------------------- | ---------------- | --------- |
+| нет `meta.linkedParty`              | **Не создана**   | —         |
+| `linkedParty` + `draft`             | **Черновик**     | —         |
+| `linkedParty` + `ready`, не session | **Ждёт начала**  | —         |
+| `linkedParty` + `ready`, session    | **Идёт**         | —         |
+| `linkedParty` + `completed`         | **Завершена**    | —         |
 
 - При `serverUnreachable` primary без изменений; secondary = **нет связи**.
-- Кнопка **«К вечеринке»** — icon-only (Dashboard) с `title` на hover → `setLayoutPreset('party')` (**«Онлайн-вечеринка»**); **no-op**, если уже preset `party` / `aimp-party` или в layout уже есть зоны `party-editor` + `party-preview`. В layout edit mode кнопка disabled.
+- Кнопка **«Играть для гостей»** — icon-only (Dashboard); `title` **«Открыть раскладку «Играть для гостей»»** (или **«Раскладка «Играть для гостей» уже открыта»** при no-op) → `setLayoutPreset('party')` (preset display **«Играть для гостей»**); **no-op**, если уже preset `party` / `aimp-party` или в layout уже есть зоны `party-editor` + `party-preview`. В layout edit mode кнопка disabled.
 
 Подробнее: [party.md — Шапка](CherryPlayList/docs/modules/workspaces/party.md#шапка-appheader-статус-и-pill).
 
@@ -152,17 +156,28 @@
 | Offline           | `PartyConnectivityBanner` `kind="offline"` | **«Онлайн-функции отключены»**                                  |
 | Сервер недоступен | `kind="unreachable"`                       | **«Не удалось подключиться к серверу»**; **«Проверить сейчас»** |
 
-### CherryPlayList: рабочее пространство и зоны
+### CherryPlayList: рабочие окна и зоны
 
-| Термин                    | Код                                    | Русский UI                                                                                              |
-| ------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **workspace**             | `WorkspaceMenu`, `layoutStore`         | **Рабочее пространство**; **«Выбрать рабочее пространство»**; **«Сохранить рабочее пространство как…»** |
-| **layout preset `party`** | `LAYOUT_PRESET_DISPLAY_NAMES_RU.party` | **Онлайн-вечеринка** — встроенный шаблон раскладки                                                      |
-| **zone `party-editor`**   | `workspaceDisplayNames`                | **Настройка вечеринки**                                                                                 |
-| **zone `party-preview`**  | `workspaceDisplayNames`                | **Как видят гости**                                                                                     |
-| **zone `player`**         | preset `player`                        | **Проигрывание**                                                                                        |
+Меню встроенных пресетов / framing в шапке — **«Рабочие окна»** (`WorkspaceMenu`; не продуктовый термин «Layout»). Сохранённый пользовательский снимок layout (user / scratch) по-прежнему может называться **рабочим пространством** во внутренних/persist-контекстах.
 
-**Не путать:** preset **«Онлайн-вечеринка»** (раскладка окон) и toggle **«Онлайн»** в настройках (сеть и API).
+| Термин / id                         | Код                                              | Русский UI (shipped)                                                                                          |
+| ----------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **меню пресетов**                   | `WorkspaceMenu`                                  | **Рабочие окна** (trigger / aria / секция встроенных)                                                         |
+| **layout preset `simple`**          | `LAYOUT_PRESET_DISPLAY_NAMES_RU` / `LAYOUT_PRESET_DESCRIPTIONS_RU` | **Простая сборка** — «Плейлист и панель файлов — минимум панелей» |
+| **`collections` / `collections-vertical`** | то же                                      | **Сборка плейлиста** (оба id; у `collections-vertical` — secondary «Вертикальная раскладка: подборки (буфер) и источники»; `DEFAULT_BUILTIN_PRESET` / first-run / fallback — `collections-vertical`; legacy `collections` мигрирует на `collections-vertical`, в меню встроенных не отдельным пунктом) |
+| **`player`** (preset)               | то же                                            | **Играть и править** — «Играть локально и править список / файлы в одной раскладке» |
+| **`party`** (preset)                | то же                                            | **Играть для гостей** — «Вечеринка для гостей: настройка и превью страницы»; тот же label, что у кнопки шапки |
+| **`complex`**                       | factory / id сохранены                           | **не** в меню встроенных (ни prod, ни DEV)                                                                    |
+| **`aimp-party`**                    | legacy                                           | **AIMP + Party** — copy/clarity **отложено**; в меню не показывается                                          |
+| **zone `fileBrowser`**              | `workspaceDisplayNames`                          | **Файлы**                                                                                                     |
+| **zone `collection`**               | то же                                            | **Подборка**                                                                                                  |
+| **zone `demo-player`**              | то же (+ floating `DemoPlayerShell`)             | **Предпросмотр (только у вас)**                                                                               |
+| **zone `player`**                   | то же                                            | **Проигрывание**                                                                                              |
+| **zone `party-editor`**             | то же                                            | **Настройка вечеринки**                                                                                       |
+| **zone `party-preview`**            | то же                                            | **Как видят гости**                                                                                           |
+| **`test1`…`test8`**                 | зарегистрированы; picker фильтрует               | Не в «добавить зону»; уже открытые зоны продолжают рендериться                                                |
+
+**Не путать:** preset / кнопка **«Играть для гостей»** (раскладка окон для вечеринки) и toggle **«Онлайн»** в настройках (сеть и API); preset **«Играть и править»** (локальное проигрывание) ≠ party-layout.
 
 ---
 
@@ -224,12 +239,14 @@
 | **PartyTheme**                                                     | Изолированный визуальный слой контента вечеринки (`PartyDisplay`, `data-theme`). **Не обязан** наследовать `cp-button` или shell-токены; контракт примитивов на темы не распространяется. См. [THEMES.md](THEMES.md), [CherryPlayComponents/README.md](CherryPlayComponents/README.md#default-shell-buttons).                                      |
 | **FormButton**                                                     | Legacy-обёртка над `Button` в `@cherryplay/components` (auth-формы); `outline` → `ghost`. Новый shell UI — через `Button` напрямую.                                                                                                                                                                                                                |
 
-### Обозреватель файлов (CherryPlayList, панель источников)
+### Файлы (CherryPlayList, зона `fileBrowser`)
+
+Панель в UI — **«Файлы»** (id `fileBrowser`). Внутренние имена модулей/IPC могут оставаться File Browser.
 
 | Термин                            | Описание                                                                                                                                                                                                                                                                             |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Назад** (кнопка в File Browser) | Возврат к **предыдущему шагу по истории** открытых папок, а не в родительский каталог.                                                                                                                                                                                               |
-| **Вверх** (кнопка в File Browser) | Переход в **родительскую** папку в файловой системе. Не путать с «Назад» — при переходе по крошкам/диалогу родитель и «предыдущий в истории» путь различаются. См. [CherryPlayList/docs/modules/workspaces/file-browser.md](CherryPlayList/docs/modules/workspaces/file-browser.md). |
+| **Назад** (кнопка в зоне)         | Возврат к **предыдущему шагу по истории** открытых папок, а не в родительский каталог.                                                                                                                                                                                               |
+| **Вверх** (кнопка в зоне)         | Переход в **родительскую** папку в файловой системе. Не путать с «Назад» — при переходе по крошкам/диалогу родитель и «предыдущий в истории» путь различаются. См. [CherryPlayList/docs/modules/workspaces/file-browser.md](CherryPlayList/docs/modules/workspaces/file-browser.md). |
 
 ---
 

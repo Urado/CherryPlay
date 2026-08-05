@@ -2,6 +2,8 @@
 
 Глобальная система предпрослушивания треков без очереди, используемая во всех workspace.
 
+**Отображаемое имя в UI** (зона `demo-player` и заголовок floating `DemoPlayerShell`): **«Предпросмотр (только у вас)»** (`workspaceDisplayNames.ts`). Внутренний id — `demo-player`. Не эфир и не гостевой плеер.
+
 Целевая архитектура playback (слои, гибридное состояние, отдельный engine-инстанс `demo`, загрузка через adapter): [Playback Engine — слои](../audio/playback-layers.md) (см. также [Два независимых экземпляра](../audio/playback-layers.md#два-независимых-экземпляра)).
 
 ## Описание
@@ -21,7 +23,7 @@ Demo Player обеспечивает единое поведение предп�
 - **demoPlayerStore** (`src/shared/stores/demoPlayerStore.ts`) — store воспроизведения (семантика не зависит от размещения UI)
 - **DemoPlayerShell** (`src/app/components/DemoPlayerShell.tsx`) — плавающая панель (drag, кнопка закрытия `X`, suppression при наличии workspace `demo-player`); монтируется из `App.tsx`
 - **DemoPlayer workspace** (`src/workspaces/demoPlayer/DemoPlayerWorkspaceView.tsx`) — рендер того же `<DemoPlayer />` внутри layout-зоны типа `demo-player`
-- **DemoPlayer** (`src/shared/components/DemoPlayer.tsx`) — UI управления (play/pause, таймлайн, громкость, «Показать файл в проводнике»). В shell/workspace рендерится с `clearOnUnmount={false}`: очистка сессии выполняется в `DemoPlayerShell` (кнопка **X**, cleanup при размонтировании shell), а не при unmount внутреннего `DemoPlayer`.
+- **DemoPlayer** (`src/shared/components/DemoPlayer.tsx`) — UI управления (play/pause, таймлайн, громкость, «Показать в файлах»). В shell/workspace рендерится с `clearOnUnmount={false}`: очистка сессии выполняется в `DemoPlayerShell` (кнопка **X**, cleanup при размонтировании shell), а не при unmount внутреннего `DemoPlayer`.
 
 Дополнительно:
 
@@ -65,7 +67,7 @@ Demo Player рендерится в двух UI-контекстах внутр�
 - Управление: Play/Pause, перемотка по таймлайну, регулировка громкости
 - Таймлайн обнуляется в UI только при `playbackBlocked` (нет трека, ошибка, device conflict); в layout edit (`interactionBlocked`) позиция сохраняется, контролы отключены
 - Отображение текущей позиции и общей длительности
-- Кнопка **«Показать файл в проводнике»** для навигации к файлу
+- Кнопка **«Показать в файлах»** для навигации к файлу
 - Выбор аудиоустройства (синхронизация с player workspace)
 - Автоматическая блокировка звука demo **только в режиме сессии** плеера, когда выбран тот же аудио-выход, что и у основного плеера (в т.ч. когда оба «по умолчанию», т.е. оба null); при сбросе сессии блокировка снимается — политика в `playbackDeviceConflictSync.ts` (`shouldBlockSharedOutput`: `devicesMatch && mode === 'session'`); stores вызывают `syncDemoWithMainPlayer` / `syncMainWithDemoPlayer`
 - Toast-уведомления об ошибках воспроизведения дедуплицируются на уровне `demoPlayerStore` (`notifyDemoPlayerErrorOnce`); сброс при `clear`, успешной загрузке трека и переходе в `playing`, чтобы повторная ошибка в новом контексте снова показывала toast

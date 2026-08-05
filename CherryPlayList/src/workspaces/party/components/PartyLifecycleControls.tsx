@@ -63,7 +63,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
           disabled={isDisabled}
           loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
           onClick={() => onTransition('ready')}
-          title="Опубликовать вечеринку на сайте (статус «Не начато»)"
+          title="Опубликовать вечеринку на сайте (статус «Ждёт начала»)"
           variant="primary"
           size="sm"
         >
