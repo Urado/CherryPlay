@@ -1,5 +1,5 @@
 import { isProjectGroup, isProjectTrack, ProjectGroup, ProjectItem } from '@core/types/project';
-import { Track } from '@core/types/track';
+import { Track, type TrackLoudness } from '@core/types/track';
 
 export interface ItemPositionInfo {
   item: ProjectItem;
@@ -145,6 +145,22 @@ export function updateTrackInItems(
     }
     if (isProjectGroup(item)) {
       return { ...item, items: updateTrackInItems(item.items, trackId, duration) };
+    }
+    return item;
+  });
+}
+
+export function updateTrackLoudnessInItems(
+  items: ProjectItem[],
+  trackId: string,
+  loudness: TrackLoudness,
+): ProjectItem[] {
+  return items.map((item) => {
+    if (isProjectTrack(item) && item.id === trackId) {
+      return { ...item, loudness };
+    }
+    if (isProjectGroup(item)) {
+      return { ...item, items: updateTrackLoudnessInItems(item.items, trackId, loudness) };
     }
     return item;
   });

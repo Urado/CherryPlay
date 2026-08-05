@@ -10,6 +10,12 @@ import { APP_VERSION } from '@shared/config/appVersion';
 import { getPlatformCapabilities } from '@shared/platform/platformCapabilities';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
+import {
+  clampLoudnessQuietGapRangeLu,
+  clampLoudnessTargetLufs,
+  DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
+  DEFAULT_LOUDNESS_TARGET_LUFS,
+} from '../contracts/loudness';
 import type { CustomKeyBindings } from '../shortcuts/shortcutTypes';
 import { normalizeBuiltinLayoutOverrides, useLayoutStore } from '../stores/layoutStore';
 import { migrateFileBrowserPathsOnRehydrate, useSettingsStore } from '../stores/settingsStore';
@@ -42,6 +48,10 @@ export interface SettingsExportPersistedState {
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
   streamingSource: AimpSourceSelection;
+  loudnessNormalizationEnabled?: boolean;
+  loudnessTargetLufs?: number;
+  loudnessCompressionEnabled?: boolean;
+  loudnessQuietGapRangeLu?: number;
 }
 
 export interface SettingsExportBundle {
@@ -100,6 +110,10 @@ export function pickSettingsExportFields(
     keyBindings: state.keyBindings,
     enableStreaming: state.enableStreaming,
     streamingSource: state.streamingSource,
+    loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
+    loudnessTargetLufs: state.loudnessTargetLufs,
+    loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+    loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
   };
 }
 
@@ -184,6 +198,14 @@ function isSettingsExportPersistedState(value: unknown): value is SettingsExport
     settings.keyBindings !== null &&
     typeof settings.enableStreaming === 'boolean' &&
     (settings.streamingSource === 'cherryPlayPlayer' || settings.streamingSource === 'aimp') &&
+    (settings.loudnessNormalizationEnabled === undefined ||
+      typeof settings.loudnessNormalizationEnabled === 'boolean') &&
+    (settings.loudnessTargetLufs === undefined ||
+      typeof settings.loudnessTargetLufs === 'number') &&
+    (settings.loudnessCompressionEnabled === undefined ||
+      typeof settings.loudnessCompressionEnabled === 'boolean') &&
+    (settings.loudnessQuietGapRangeLu === undefined ||
+      typeof settings.loudnessQuietGapRangeLu === 'number') &&
     (settings.fileBrowserPathsByWorkspaceId === undefined ||
       coerceFileBrowserPathsByWorkspaceId(settings.fileBrowserPathsByWorkspaceId) !== undefined)
   );
@@ -343,6 +365,22 @@ function normalizeImportedSettings(
     ...settings,
     fileBrowserPath: migrated.fileBrowserPath,
     fileBrowserPathsByWorkspaceId: migrated.fileBrowserPathsByWorkspaceId,
+    loudnessNormalizationEnabled:
+      typeof settings.loudnessNormalizationEnabled === 'boolean'
+        ? settings.loudnessNormalizationEnabled
+        : true,
+    loudnessCompressionEnabled:
+      typeof settings.loudnessCompressionEnabled === 'boolean'
+        ? settings.loudnessCompressionEnabled
+        : false,
+    loudnessTargetLufs:
+      typeof settings.loudnessTargetLufs === 'number'
+        ? clampLoudnessTargetLufs(settings.loudnessTargetLufs)
+        : DEFAULT_LOUDNESS_TARGET_LUFS,
+    loudnessQuietGapRangeLu:
+      typeof settings.loudnessQuietGapRangeLu === 'number'
+        ? clampLoudnessQuietGapRangeLu(settings.loudnessQuietGapRangeLu)
+        : DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
   };
 }
 

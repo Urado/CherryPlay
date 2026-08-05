@@ -68,6 +68,7 @@ export interface ProjectItemRowProps {
   trackActionsDisabled?: boolean;
 
   settingsButton?: React.ReactNode;
+  loudnessControls?: React.ReactNode;
 }
 
 export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
@@ -104,6 +105,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   onTrackActions,
   trackActionsDisabled = false,
   settingsButton,
+  loudnessControls,
 }) => {
   const isGroup = isProjectGroup(item);
   const track = isGroup ? null : item;
@@ -146,6 +148,14 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       onRenameGroup(item.id, trimmedName);
     }
     setIsEditingName(false);
+  };
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.track-loudness-popover, .track-loudness-button')) {
+      return;
+    }
+    onToggleSelect(item.id, e);
   };
 
   const handleCancelEdit = () => {
@@ -273,7 +283,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       isLocked={isLocked}
       level={level}
       draggable={!isLocked && !isEditingName}
-      onClick={(e) => onToggleSelect(item.id, e)}
+      onClick={handleRowClick}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -321,6 +331,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
           ⚠
         </span>
       )}
+
+      {!isGroup && track && loudnessControls}
 
       {displayDuration && (
         <ListRowCompound.Secondary>

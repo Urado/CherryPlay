@@ -16,6 +16,12 @@ const config: Config = {
     '^@workspaces/(.*)$': '<rootDir>/src/workspaces/$1',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Ensure all packages render using the same React instance in Jest.
+    '^react$': '<rootDir>/node_modules/react',
+    '^react-dom$': '<rootDir>/node_modules/react-dom',
+    '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
+    '^react/jsx-runtime$': '<rootDir>/node_modules/react/jsx-runtime',
+    '^react/jsx-dev-runtime$': '<rootDir>/node_modules/react/jsx-dev-runtime',
     '^@cherryplay/components$': '<rootDir>/../CherryPlayComponents/src/index.ts',
     '^@cherryplay/components/(.*)$': '<rootDir>/../CherryPlayComponents/src/$1',
     '^\\.\\./\\.\\./src/state/(.*)$': '<rootDir>/src/shared/stores/$1',

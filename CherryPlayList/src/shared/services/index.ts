@@ -49,6 +49,22 @@ export type {
   PlaylistChangedHandler,
   ErrorHandler,
 } from './signalRService';
+export { getEffectiveGainDb, resolveAutoGainDb, resolveLinearGain } from '../audio/loudnessGain';
+export { TRACK_GAIN_LINEAR_MIN, TRACK_GAIN_LINEAR_MAX } from '../audio/playback/effects';
+export { formatGainDb } from '../utils/formatGainDb';
+export {
+  loudnessService,
+  needsScan,
+  normalizeLoadedLoudness,
+  createLoudnessService,
+} from './loudnessService';
+export type {
+  LoudnessCancelToken,
+  LoudnessScanProgress,
+  LoudnessServiceDeps,
+  NeedsScanContext,
+  NeedsScanOptions,
+} from './loudnessService';
 export { projectService } from './projectService';
 export type { ProjectStateData } from './projectService';
 export { playlistService } from './playlistService';

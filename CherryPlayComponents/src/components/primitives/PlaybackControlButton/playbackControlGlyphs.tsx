@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 /** Material-style transport glyphs (no MUI dependency). viewBox 0 0 24 24. */
 export const playbackControlGlyphs = {

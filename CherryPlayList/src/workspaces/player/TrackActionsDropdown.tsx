@@ -1,6 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
+
+export const TRACK_ACTIONS_DROPDOWN_WIDTH = 240;
+
 export interface TrackActionsDropdownProps {
   trackId: string;
   anchorRect: DOMRect;
@@ -38,22 +42,10 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
     };
   }, [onClose]);
 
-  const gap = 4;
-  const estimatedWidth = 200;
-  let left = anchorRect.right + gap;
-  if (left + estimatedWidth > window.innerWidth) {
-    left = anchorRect.left - estimatedWidth - gap;
-  }
-
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    left,
-    top: anchorRect.top + anchorRect.height / 2,
-    transform: 'translateY(-50%)',
-    zIndex: 1001,
-    minWidth: 180,
-    maxWidth: 240,
-  };
+  const style = buildAnchorPanelStyle({
+    anchorRect,
+    panelWidth: TRACK_ACTIONS_DROPDOWN_WIDTH,
+  });
 
   const content = (
     <div

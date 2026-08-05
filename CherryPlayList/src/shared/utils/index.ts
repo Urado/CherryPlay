@@ -120,3 +120,10 @@ export {
 } from './togglePlayPause';
 export type { TogglePlayPauseParams } from './togglePlayPause';
 export { copyTextToClipboard } from './copyTextToClipboard';
+export {
+  ANCHOR_PANEL_GAP_PX,
+  ANCHOR_PANEL_Z_INDEX,
+  buildAnchorPanelStyle,
+  resolveAnchorPanelCenterY,
+  resolveAnchorPanelLeft,
+} from './anchorPanelLayout';

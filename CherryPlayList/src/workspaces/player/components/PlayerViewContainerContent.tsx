@@ -4,7 +4,9 @@ import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import { LoudnessScanProgressModal } from '@shared/components/loudness/LoudnessScanProgressModal';
 import { useWorkspaceDragAndDrop, useTrackDuration, useDragDropExecutor } from '@shared/hooks';
+import { getPlatformCapabilities } from '@shared/platform';
 import { fileService, ipcService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
@@ -15,6 +17,7 @@ import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils
 import { createTrackWithId } from '@shared/utils/trackFactory';
 
 import { useJumpToTrack } from '../hooks/useJumpToTrack';
+import { useLoudnessScanFlow } from '../hooks/useLoudnessScanFlow';
 import { usePlayerDividers } from '../hooks/usePlayerDividers';
 import { usePlayerPlayback } from '../hooks/usePlayerPlayback';
 import { usePlayerSession } from '../hooks/usePlayerSession';
@@ -145,7 +148,19 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const isPreparationMode = mode === 'preparation';
 
-  const { showHourDividers, enableStreaming } = useSettingsStore();
+  const { showHourDividers, enableStreaming, loudnessNormalizationEnabled } = useSettingsStore();
+  const { scanState, cancelScan, ensureSessionGateReady, scanAllTracks } = useLoudnessScanFlow();
+
+  const supportsLoudnessAnalysis = useMemo(() => {
+    try {
+      return getPlatformCapabilities().supportsLoudnessAnalysis;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const showLoudnessBatchButton =
+    isPreparationMode && loudnessNormalizationEnabled && supportsLoudnessAnalysis;
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
       return isTrackOrGroupDisabledUtil(
@@ -230,10 +245,31 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       setCurrentTrack,
     });
 
+  const resolveFreshTracks = useCallback(
+    (tracks: Track[]) =>
+      tracks.map((track) => {
+        const item = findItemById(track.id);
+        return item && !isProjectGroup(item) ? item : track;
+      }),
+    [findItemById],
+  );
+
+  const beforeStartSession = useCallback(async () => {
+    return ensureSessionGateReady(allTracks, isTrackActive, resolveFreshTracks);
+  }, [allTracks, isTrackActive, ensureSessionGateReady, resolveFreshTracks]);
+
   const { handleStartSession, handleResetSession: handleResetSessionFromHook } = usePlayerSession({
     allTracks,
     isTrackActive,
+    beforeStartSession,
   });
+
+  const handleCalculateLoudness = useCallback(() => {
+    if (allTracks.length === 0) {
+      return;
+    }
+    void scanAllTracks(allTracks);
+  }, [allTracks, scanAllTracks]);
 
   const handleResetSession = useCallback(async () => {
     if (enableStreaming && linkedParty) {
@@ -243,7 +279,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
         addNotification({
           type: 'error',
-          message: '╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨▒╤А╨╛╤Б╨╕╤В╤М ╤Б╨╛╤Б╤В╨╛╤П╨╜╨╕╨╡ ╨╜╨░ ╤Б╨╡╤А╨▓╨╡╤А╨╡',
+          message: 'Не удалось сбросить состояние воспроизведения на сервере',
           duration: 5000,
         });
         return;
@@ -279,7 +315,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const handleToggleDisabled = useCallback(
     (itemId: string) => {
-      // ╨Ч╨░╨┐╤А╨╡╤Й╨░╨╡╨╝ ╨╛╤В╨║╨╗╤О╤З╨╡╨╜╨╕╨╡ ╤В╨╡╨║╤Г╤Й╨╡╨│╨╛ ╤В╤А╨╡╨║╨░
+      // Запрещаем отключение текущего трека
       if (itemId === activePlayerTrackId) {
         return;
       }
@@ -435,7 +471,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     }
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
-  // Party metadata reads only (getPartyUrl, getPartyState) тАФ no REST playlist PUT here.
+  // Party metadata reads only (getPartyUrl, getPartyState) — no REST playlist PUT here.
   // Live playlist sync during session: Site Streamer `partyPlaylistSync` via orchestrator.
   useEffect(() => {
     const regenerateUrl = () => {
@@ -490,56 +526,70 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
   }, [linkedParty?.shortCode]);
 
   return (
-    <PlayerView
-      allTracksCount={allTracks.length}
-      totalDuration={totalDuration}
-      hasSelectedItems={hasSelectedItems}
-      canCreateGroup={canCreateGroup}
-      canRemoveSelectedItems={canRemoveSelectedItems}
-      selectedItemsCount={selectedItemIds.size}
-      isPreparationMode={isPreparationMode}
-      onDeselectAll={deselectAll}
-      onCreateGroup={handleCreateGroup}
-      onRemoveSelectedItems={handleRemoveSelectedItems}
-      onSelectAll={selectAll}
-      onStartSession={handleStartSession}
-      onResetSession={handleResetSession}
-      onOpenGlobalSettings={handleOpenGlobalSettings}
-      onExportTracksToText={handleExportTracksToText}
-      displayItems={displayItems}
-      zoneId={zoneId}
-      selectedItemIds={selectedItemIds}
-      activeTrackId={activeTrackId}
-      activePlayerTrackId={activePlayerTrackId}
-      playerStatus={playerStatus}
-      mode={mode}
-      showHourDividers={showHourDividers}
-      plannedEndTime={plannedEndTime}
-      plannedEndDividerPosition={plannedEndDividerPosition}
-      calculateDividerMarkers={calculateDividerMarkers}
-      playerDrag={playerDrag}
-      getAllTracksInOrder={getAllTracksInOrder}
-      isTrackPlayed={isTrackPlayed}
-      isGroupDisabled={isGroupDisabled}
-      isTrackOrGroupDisabled={isTrackOrGroupDisabled}
-      getEffectiveTrackSettings={getEffectiveTrackSettings}
-      formatDividerLabel={formatDividerLabel}
-      formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
-      queueEndDividerPosition={queueEndDividerPosition}
-      formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
-      showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
-      toggleItemSelection={toggleItemSelection}
-      selectRange={selectRange}
-      removeItem={removeItem}
-      setGroupName={setGroupName}
-      handleToggleDisabled={handleToggleDisabled}
-      handleUngroupGroup={handleUngroupGroup}
-      handleOpenTrackSettings={handleOpenTrackSettings}
-      startTrackPlayback={startTrackPlayback}
-      pausePlayback={pausePlayback}
-      onNext={handleNext}
-      serverTrackIds={serverTrackIds}
-      jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
-    />
+    <>
+      <LoudnessScanProgressModal
+        open={scanState.open}
+        title={scanState.title}
+        completed={scanState.completed}
+        total={scanState.total}
+        currentTrackName={scanState.currentTrackName}
+        errorMessage={scanState.errorMessage}
+        onCancel={cancelScan}
+      />
+      <PlayerView
+        allTracksCount={allTracks.length}
+        totalDuration={totalDuration}
+        hasSelectedItems={hasSelectedItems}
+        canCreateGroup={canCreateGroup}
+        canRemoveSelectedItems={canRemoveSelectedItems}
+        selectedItemsCount={selectedItemIds.size}
+        isPreparationMode={isPreparationMode}
+        onDeselectAll={deselectAll}
+        onCreateGroup={handleCreateGroup}
+        onRemoveSelectedItems={handleRemoveSelectedItems}
+        onSelectAll={selectAll}
+        onStartSession={handleStartSession}
+        onResetSession={handleResetSession}
+        onOpenGlobalSettings={handleOpenGlobalSettings}
+        onExportTracksToText={handleExportTracksToText}
+        onCalculateLoudness={handleCalculateLoudness}
+        showLoudnessBatchButton={showLoudnessBatchButton}
+        isLoudnessBatchScanning={scanState.open}
+        displayItems={displayItems}
+        zoneId={zoneId}
+        selectedItemIds={selectedItemIds}
+        activeTrackId={activeTrackId}
+        activePlayerTrackId={activePlayerTrackId}
+        playerStatus={playerStatus}
+        mode={mode}
+        showHourDividers={showHourDividers}
+        plannedEndTime={plannedEndTime}
+        plannedEndDividerPosition={plannedEndDividerPosition}
+        calculateDividerMarkers={calculateDividerMarkers}
+        playerDrag={playerDrag}
+        getAllTracksInOrder={getAllTracksInOrder}
+        isTrackPlayed={isTrackPlayed}
+        isGroupDisabled={isGroupDisabled}
+        isTrackOrGroupDisabled={isTrackOrGroupDisabled}
+        getEffectiveTrackSettings={getEffectiveTrackSettings}
+        formatDividerLabel={formatDividerLabel}
+        formatPlannedEndTimelineLabel={formatPlannedEndTimelineLabel}
+        queueEndDividerPosition={queueEndDividerPosition}
+        formatQueueEndTimelineLabel={formatQueueEndTimelineLabel}
+        showQueueEndDividerAtListBottom={showQueueEndDividerAtListBottom}
+        toggleItemSelection={toggleItemSelection}
+        selectRange={selectRange}
+        removeItem={removeItem}
+        setGroupName={setGroupName}
+        handleToggleDisabled={handleToggleDisabled}
+        handleUngroupGroup={handleUngroupGroup}
+        handleOpenTrackSettings={handleOpenTrackSettings}
+        startTrackPlayback={startTrackPlayback}
+        pausePlayback={pausePlayback}
+        onNext={handleNext}
+        serverTrackIds={serverTrackIds}
+        jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
+      />
+    </>
   );
 };

@@ -2,7 +2,7 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import { Track } from '@core/types/track';
 
-import { DEFAULT_PLAYER_WORKSPACE_ID } from '../../core/constants/workspace';
+import { wireLoudnessPlaybackSync } from '../audio/playback/loudnessPlaybackSync';
 import { mainPlaybackEngine } from '../audio/playback/playbackEngines';
 import {
   isDemoLiveMockPlaybackEnabled,
@@ -26,7 +26,7 @@ import {
   resolveTrackPrecheck,
   wirePlaybackEngine,
 } from './playbackStoreCore';
-import { getProjectStore } from './projectStoreFactory';
+import { useProjectStore } from './projectStore';
 import { useSettingsStore } from './settingsStore';
 import { useUIStore } from './uiStore';
 
@@ -96,11 +96,11 @@ const notifyMissingTrack = (track: Track): void => {
 };
 
 const markTrackFound = (trackId: string): void => {
-  getProjectStore(DEFAULT_PLAYER_WORKSPACE_ID)?.getState().markTrackAsMissing?.(trackId, false);
+  useProjectStore.getState().markTrackAsMissing?.(trackId, false);
 };
 
 const markTrackMissing = (trackId: string): void => {
-  getProjectStore(DEFAULT_PLAYER_WORKSPACE_ID)?.getState().markTrackAsMissing?.(trackId, true);
+  useProjectStore.getState().markTrackAsMissing?.(trackId, true);
 };
 
 const playbackEngine = mainPlaybackEngine;
@@ -308,6 +308,8 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
     },
   };
 });
+
+wireLoudnessPlaybackSync();
 
 wirePlaybackEngine({
   engine: playbackEngine,

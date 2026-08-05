@@ -18,10 +18,11 @@ interface UsePlayerSessionOptions {
   allTracks: Track[];
   isTrackActive: (trackId: string) => boolean;
   onSessionStart?: () => Promise<void> | void;
+  beforeStartSession?: () => Promise<boolean>;
 }
 
 export function usePlayerSession(options: UsePlayerSessionOptions) {
-  const { allTracks, isTrackActive, onSessionStart } = options;
+  const { allTracks, isTrackActive, onSessionStart, beforeStartSession } = options;
 
   const { startSession, resetSession, setCurrentTrack } = useProjectStore();
   const {
@@ -39,6 +40,13 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     const hasActiveTracks = allTracks.some((track) => isTrackActive(track.id));
     if (!hasActiveTracks) {
       return;
+    }
+
+    if (beforeStartSession) {
+      const canStart = await beforeStartSession();
+      if (!canStart) {
+        return;
+      }
     }
 
     startSession();
@@ -81,6 +89,7 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     setCurrentTrack,
     playPlayer,
     onSessionStart,
+    beforeStartSession,
   ]);
 
   const handleResetSession = useCallback(() => {

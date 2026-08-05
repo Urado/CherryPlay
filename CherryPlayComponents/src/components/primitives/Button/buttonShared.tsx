@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 import { cn } from '../../../utils/cn';
 
@@ -124,12 +124,11 @@ export function useIconOnlyA11yWarning(iconOnly: boolean, hasAccessibleName: boo
   const warnedAboutIconOnlyNameRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (
-      import.meta.env.DEV &&
-      iconOnly &&
-      !hasAccessibleName &&
-      !warnedAboutIconOnlyNameRef.current
-    ) {
+    const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+      ?.NODE_ENV;
+    const isDev = nodeEnv === 'development';
+
+    if (isDev && iconOnly && !hasAccessibleName && !warnedAboutIconOnlyNameRef.current) {
       warnedAboutIconOnlyNameRef.current = true;
       console.warn(ICON_ONLY_ACCESSIBLE_NAME_WARNING);
     }

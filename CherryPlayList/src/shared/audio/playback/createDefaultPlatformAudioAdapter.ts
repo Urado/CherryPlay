@@ -40,6 +40,22 @@ export function createDefaultPlatformAudioAdapter(): PlatformAudioAdapter {
       }
     },
 
+    async analyzeLoudness(filePath: string, targetLufs: number) {
+      try {
+        return await ipcService.analyzeLoudness(filePath, targetLufs, false);
+      } catch {
+        return null;
+      }
+    },
+
+    async statAudioFile(filePath: string) {
+      try {
+        return await ipcService.statAudioFile(filePath, false);
+      } catch {
+        return null;
+      }
+    },
+
     async setSinkId(
       target: HTMLAudioElement | AudioContext,
       deviceId: string | null,

@@ -45,6 +45,7 @@
     "@emotion/styled": "^11.14.1",
     "@microsoft/signalr": "^10.0.0",
     "@mui/icons-material": "^6.0.0",
+    "ffmpeg-static": "^5.2.0",
     "localforage": "^1.10.0",
     "music-metadata": "^11.12.3",
     "react": "^19.0.0",
@@ -69,9 +70,9 @@
     "@vitejs/plugin-react": "^6.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "esbuild": "^0.27.0",
     "electron": "^41.0.0",
     "electron-builder": "^26.0.0",
+    "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -129,6 +130,9 @@
       "output": "release",
       "buildResources": "build"
     },
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**"
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -147,6 +151,14 @@
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
     "extraResources": [
+      {
+        "from": "node_modules/ffmpeg-static",
+        "to": "ffmpeg-static",
+        "filter": [
+          "ffmpeg",
+          "ffmpeg.exe"
+        ]
+      },
       {
         "from": "plugins/example-plugin",
         "to": "plugins/example-plugin",

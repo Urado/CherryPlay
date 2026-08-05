@@ -1,3 +1,6 @@
+import type { LoudnessAnalyzeResult } from '../../contracts/loudness';
+import type { AudioFileStat } from '../../platform/types';
+
 import type { PlaybackSource } from './types';
 
 /**
@@ -32,6 +35,16 @@ export interface PlatformAudioAdapter {
    * @returns Duration in seconds, or `null` if unknown.
    */
   getDuration?(filePath: string): Promise<number | null>;
+
+  /**
+   * Measures integrated loudness and true peak via platform scanner (Electron IPC).
+   */
+  analyzeLoudness?(filePath: string, targetLufs: number): Promise<LoudnessAnalyzeResult | null>;
+
+  /**
+   * Returns audio file metadata for staleness checks (`mtimeMs`, `size`).
+   */
+  statAudioFile?(filePath: string): Promise<AudioFileStat | null>;
 
   /**
    * Routes output to the given device on an HTML element or Web Audio context.

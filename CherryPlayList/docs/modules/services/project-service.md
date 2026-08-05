@@ -32,6 +32,33 @@
 
 Проект сохраняется в формате `.cherry` (JSON) с версионированием для будущих миграций.
 
+### Поле `track.loudness` (опционально)
+
+На каждом сохранённом треке (`SavedProjectTrack`) может присутствовать блок метаданных громкости из FFmpeg ebur128. Поле **опционально** — старые проекты загружаются без изменений; отсутствие трактуется как «не сканирован».
+
+| Поле               | Тип                            | Когда присутствует           | Описание                                             |
+| ------------------ | ------------------------------ | ---------------------------- | ---------------------------------------------------- |
+| `status`           | `'ok' \| 'pending' \| 'error'` | всегда                       | Состояние измерения                                  |
+| `integratedLufs`   | `number`                       | `status === 'ok'`            | Integrated loudness (LUFS)                           |
+| `lraLowLufs`       | `number`                       | `status === 'ok'` (optional) | EBU R128 LRA low (~10th percentile; тихие участки)   |
+| `lraLu`            | `number`                       | `status === 'ok'` (optional) | Loudness range (LU)                                  |
+| `truePeakDb`       | `number`                       | `status === 'ok'`            | True peak (dBTP / dBFS fallback)                     |
+| `trackGainDb`      | `number`                       | `status === 'ok'`            | Предвычисленный gain с headroom −1 dBTP              |
+| `manualGainDb`     | `number`                       | optional                     | Ручной override; заменяет `trackGainDb` для playback |
+| `fileMtime`        | `number`                       | обычно                       | `mtimeMs` файла на момент скана (staleness)          |
+| `algorithmVersion` | `1`                            | `status === 'ok'`            | Версия формулы; bump → повторный скан                |
+| `errorMessage`     | `string`                       | `status === 'error'`         | Текст ошибки для UI                                  |
+
+Устаревшее поле `scannedAt` в старых проектах игнорируется; новые сканы его не пишут.
+
+**Staleness:** при загрузке и перед сканом `loudnessService.needsScan` сравнивает `fileMtime` с актуальным `mtime` на диске (`audio:statAudioFile`). Несовпадение, `status !== 'ok'`, отсутствие блока или устаревший `algorithmVersion` ⇒ нужен повторный скан.
+
+**Load normalization:** `status: 'pending'` при загрузке сбрасывается (`normalizeLoadedLoudness`) — прерванный скан не блокирует проект.
+
+**Portable mode:** `loudness` сериализуется вместе с треком; при копировании файлов в `tracks/` относительные пути и `fileMtime` остаются согласованными с скопированными файлами.
+
+См. также: [Нормализация громкости (loudness v1)](../audio/loudness-normalization.md), [IPC `audio:analyzeLoudness`](./ipc-service.md#audio-analyzeloudness).
+
 ## Валидация
 
 - Проверка версии формата

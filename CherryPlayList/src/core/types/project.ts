@@ -1,4 +1,4 @@
-import { Track } from './track';
+import type { Track, TrackLoudness } from './track';
 
 /**
  * Действие после окончания трека
@@ -141,6 +141,7 @@ export interface SavedProjectTrack {
   path: string;
   name: string;
   duration?: number;
+  loudness?: TrackLoudness;
 }
 
 /**
