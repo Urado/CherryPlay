@@ -237,7 +237,7 @@ describe('workspaceStore', () => {
       expect(names).toContain('Без имени 2');
     });
 
-    it('autoCommitWorkspaceChanges forks builtin edits as unnamed user workspace', () => {
+    it('autoCommitWorkspaceChanges upserts builtin override without forking to Мои', () => {
       act(() => {
         useLayoutStore.getState().setLayoutPreset('collections');
         const rootId = useLayoutStore.getState().layout.rootZone.id;
@@ -246,9 +246,42 @@ describe('workspaceStore', () => {
       });
 
       const state = useLayoutStore.getState();
-      expect(state.activeWorkspace.kind).toBe('user');
-      expect(state.userWorkspaces[0]?.name).toBe('Без имени');
+      expect(state.activeWorkspace).toEqual({ kind: 'builtin', preset: 'collections-vertical' });
+      expect(state.userWorkspaces).toHaveLength(0);
+      expect(state.hasBuiltinOverride('collections-vertical')).toBe(true);
       expect(state.isWorkspaceDirty()).toBe(false);
+    });
+
+    it('autoCommitWorkspaceChanges discards size-only builtin edits without override', () => {
+      act(() => {
+        useLayoutStore.getState().setLayoutPreset('simple');
+      });
+
+      const root = useLayoutStore.getState().layout.rootZone;
+      expect(root.type).toBe('container');
+      const containerId = root.id;
+      const originalSizes = root.type === 'container' ? ([...root.sizes] as number[]) : [];
+
+      act(() => {
+        useLayoutStore.getState().updateContainerSizes(
+          containerId,
+          originalSizes.map((size, index) =>
+            index === 0 ? Math.max(size - 10, 20) : Math.min(size + 10, 80),
+          ),
+        );
+        expect(useLayoutStore.getState().autoCommitWorkspaceChanges()).toBe(true);
+      });
+
+      const state = useLayoutStore.getState();
+      expect(state.activeWorkspace).toEqual({ kind: 'builtin', preset: 'simple' });
+      expect(state.userWorkspaces).toHaveLength(0);
+      expect(state.hasBuiltinOverride('simple')).toBe(false);
+      expect(state.isWorkspaceDirty()).toBe(false);
+      const afterRoot = state.layout.rootZone;
+      expect(afterRoot.type).toBe('container');
+      if (afterRoot.type === 'container') {
+        expect(afterRoot.sizes).toEqual(originalSizes);
+      }
     });
 
     it('autoCommitWorkspaceChanges silently saves user workspace', () => {

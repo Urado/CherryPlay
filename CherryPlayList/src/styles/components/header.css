@@ -314,6 +314,9 @@
 }
 
 .workspace-pill__eyebrow {
+  display: block;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   color: var(--text-secondary);
@@ -326,6 +329,9 @@
 }
 
 .workspace-pill__name {
+  display: block;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   color: var(--text-primary);
@@ -503,9 +509,27 @@
 }
 
 .workspace-menu__item-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-menu__item-label-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+
+.workspace-menu__changed-mark {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  font-style: italic;
 }
 
 .workspace-menu__item-description {
@@ -555,6 +579,11 @@
 .workspace-menu__more-btn:hover {
   background-color: var(--bg-hover);
   color: var(--text-primary);
+}
+
+.workspace-menu__more-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
 }
 
 .workspace-menu__submenu {

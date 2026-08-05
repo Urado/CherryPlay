@@ -4,7 +4,6 @@ function formatSizePercent(size: number): string {
   return size.toFixed(2);
 }
 
-/** Structure-only signature (preset matching, legacy migration). */
 export function getLayoutStructureSignature(zone: Zone): string {
   if (zone.type === 'workspace') {
     return `workspace:${zone.workspaceType}`;
@@ -13,7 +12,14 @@ export function getLayoutStructureSignature(zone: Zone): string {
   return `${zone.direction}(${zone.zones.map(getLayoutStructureSignature).join(',')})`;
 }
 
-/** Full signature including container sizes (dirty detection, resize tracking). */
+export function getLayoutStructureDirtySignature(zone: Zone): string {
+  if (zone.type === 'workspace') {
+    return `workspace:${zone.workspaceType}:${zone.workspaceId}`;
+  }
+
+  return `${zone.direction}(${zone.zones.map(getLayoutStructureDirtySignature).join(',')})`;
+}
+
 export function getLayoutZoneSignature(zone: Zone): string {
   if (zone.type === 'workspace') {
     return `workspace:${zone.workspaceType}:${zone.workspaceId}`;

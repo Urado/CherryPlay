@@ -31,7 +31,7 @@ Stores, сервисы, хуки и утилиты считаются подде
 
 - [Drag and Drop](./systems/drag-and-drop.md) - Система перетаскивания треков и групп между workspace
 - [Undo/Redo](./systems/undo-redo.md) - Система отмены и повтора действий на базе Command Pattern
-- [Layout System](./systems/layout-system.md) - **Рабочие окна** и layout (pill в шапке, built-in / **Мои**, auto-save, [режим редактирования](../../layout-edit-mode.md))
+- [Layout System](./systems/layout-system.md) - **Рабочие окна** и layout (pill в шапке, built-in override / **Мои**, auto-save, [режим редактирования](../../layout-edit-mode.md))
 - [Storage](./systems/storage.md) — обзор клиентского persist; подробнее: [архитектура](./systems/storage-architecture.md), [что храним](./systems/persisted-client-state.md)
 - [Demo Player](./systems/demo-player.md) - Предпрослушивание (UI **«Предпросмотр (только у вас)»**; floating и workspace `demo-player`)
 - [Commands System](./systems/commands-system.md) - Командная система, лежащая в основе undo/redo

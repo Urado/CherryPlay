@@ -28,21 +28,24 @@
 | `ActiveWorkspace`              | `{ kind: 'builtin'; preset }` \| `{ kind: 'user'; id }` \| `{ kind: 'scratch' }` |
 | `UserWorkspace`                | `{ id, name, layout, createdAt?, updatedAt? }` — сохранённый снимок дерева       |
 | `LayoutPreset`                 | Идентификатор встроенного пресета (`simple`, `collections`, …)                   |
-| `UNNAMED_WORKSPACE_NAME`       | `'Без имени'` — базовое auto-имя                                                 |
+| `BuiltinLayoutOverrides`       | `Partial<Record<LayoutPreset, Layout>>` — override поверх фабрики для builtin    |
+| `UNNAMED_WORKSPACE_NAME`       | `'Без имени'` — базовое auto-имя (scratch → **Мои**)                             |
 | `allocateUnnamedWorkspaceName` | Следующее свободное auto-имя в серии «Без имени» / «Без имени N»                 |
 | `isUnnamedWorkspaceName`       | Проверка auto-имени (курсив в pill, ограничения при ручном rename)               |
 
-**Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** персистятся как записи — при активации дерево строится через `createLayoutByPreset(preset)` (`layoutPresetFactories.ts`).
+**Дерево `layout`** — живое runtime-состояние зон. **Пользовательские workspace** хранят полные копии в `userWorkspaces[]`. Встроенные пресеты **не** становятся записями в `userWorkspaces`. `resolveBuiltinLayout(preset, overrides)`: если есть override для preset — **clone** этого layout целиком; иначе — `createLayoutByPreset(preset)` (`layoutPresetFactories.ts`). Это **не** field-merge фабрики с override.
 
-### Именование пользовательских workspace (auto-save)
+### Именование пользовательских workspace (auto-save scratch)
 
-| Шаг                             | Имя в **Мои**      |
-| ------------------------------- | ------------------ |
-| 1-й auto-save (нет «Без имени») | **Без имени**      |
-| 2-й при занятом «Без имени»     | **Без имени 2**    |
-| далее                           | **Без имени 3**, … |
+| Шаг                                      | Имя в **Мои**      |
+| ---------------------------------------- | ------------------ |
+| 1-й auto-save scratch (нет «Без имени»)  | **Без имени**      |
+| 2-й при занятом «Без имени»              | **Без имени 2**    |
+| далее                                    | **Без имени 3**, … |
 
-Реализация: `allocateUnnamedWorkspaceName()` в `workspacePreset.ts`, вызов из `saveCurrentWorkspaceAsUnnamed()` в `layoutStore`. После переименования единственного «Без имени» слот снова доступен.
+Реализация: `allocateUnnamedWorkspaceName()` в `workspacePreset.ts`, вызов из `saveCurrentWorkspaceAsUnnamed()` в `layoutStore` (только **scratch**, не builtin). После переименования единственного «Без имени» слот снова доступен.
+
+Исторические **«Без имени»** от старого auto-fork builtin → **Мои** **не мигрируются**.
 
 ## Рабочие пространства
 
@@ -54,35 +57,36 @@
 
 | `LayoutPreset`         | Отображаемое имя (RU) | Описание (`LAYOUT_PRESET_DESCRIPTIONS_RU`) / доступность |
 | ---------------------- | --------------------- | -------------------------------------------------------- |
-| `simple`               | **Простая сборка**    | «Плейлист и панель источников — минимум панелей»; в меню |
+| `simple`               | **Простая сборка**    | «Плейлист и панель файлов — минимум панелей»; в меню |
 | `collections`          | **Сборка плейлиста**  | без one-liner в map; legacy id — при rehydrate мигрирует на `collections-vertical`; в меню встроенных **не** отдельным пунктом |
-| `collections-vertical` | **Сборка плейлиста**  | secondary — «Вертикальная раскладка: подборки (буфер) и источники»; в меню; **`DEFAULT_BUILTIN_PRESET`** (first-run / fallback) |
+| `collections-vertical` | **Сборка плейлиста**  | secondary — «Вертикальная раскладка: подборки (буфер) и файлы»; в меню; **`DEFAULT_BUILTIN_PRESET`** (first-run / fallback) |
 | `player`               | **Играть и править**  | «Играть локально и править список / файлы в одной раскладке»; в меню |
 | `party`                | **Играть для гостей** | «Вечеринка для гостей: настройка и превью страницы»; в меню (`partyDiscoverabilityEnabled`; офлайн — in-zone stub) |
 | `complex`              | Сложный (display map) | без one-liner; **скрыт** всегда (ни prod, ни DEV); factory/id/render сохранены |
 | `aimp-party`           | AIMP + Party          | без one-liner; **legacy:** не в меню; persist мигрирует на `party`; copy clarity **отложено** |
 
-Встроенные layout **нельзя перезаписать**. При auto-commit с dirty built-in/scratch вызывается `saveCurrentWorkspaceAsUnnamed()` (имя по `allocateUnnamedWorkspaceName`).
+Structural-правки встроенного пресета **не** создают запись в **Мои**: upsert в `builtinLayoutOverrides[preset]`, активный workspace остаётся `{ kind: 'builtin', preset }`. Политика dirty — **Variant A** (только структура; sizes alone → discard к baseline). Сброс: **«Сбросить к исходному»** → `clearBuiltinOverride`. Подробности — [layout-edit-mode.md](../../layout-edit-mode.md#builtin-variant-a-structure-only).
 
 ### Пользовательские (Мои)
 
-- Создаются автоматически при правке built-in/scratch (часто с именем **«Без имени»**) или при явном именовании scratch в pill.
+- Создаются при auto-commit **scratch**, при явном именовании scratch в pill (`saveCurrentWorkspaceAs`), или остаются как legacy-копии (в т.ч. старые «Без имени» от прежнего auto-fork builtin).
 - **Переименование:** клик по имени в pill (inline) или ⋯ → «Переименовать…» в меню.
 - **Удаление:** ⋯ → «Удалить…» (с подтверждением). При удалении активного — fallback на built-in `collections-vertical` (`DEFAULT_BUILTIN_PRESET`).
-- Имена уникальны при ручном переименовании. Auto-save: первый — **«Без имени»**, далее **«Без имени 2»**, **«Без имени 3»**, …
+- Имена уникальны при ручном переименовании. Auto-save scratch: первый — **«Без имени»**, далее **«Без имени 2»**, **«Без имени 3»**, …
 
 ### Scratch («Создать с нуля…»)
 
-`activeWorkspace: { kind: 'scratch' }`, пустое дерево. В pill — **«Без имени»**. **Сразу включается edit mode.** В persist **не** попадает (`normalizeWorkspacePersistSlice` → `collections` при rehydrate). Сохранение — через auto-commit при выходе/переключении или через ввод имени в pill (`saveCurrentWorkspaceAs`).
+`activeWorkspace: { kind: 'scratch' }`, пустое дерево. В pill — **«Без имени»**. **Сразу включается edit mode.** В persist **не** попадает (`normalizeWorkspacePersistSlice` → builtin `collections-vertical` / `DEFAULT_BUILTIN_PRESET` при rehydrate). Сохранение — через auto-commit при выходе/переключении или через ввод имени в pill (`saveCurrentWorkspaceAs`).
 
 ### Переключение и автосохранение
 
-| API                            | Поведение                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------------------- |
-| `activateWorkspace(ref)`       | Смена workspace; cleanup/prepare lifecycle для зон                                          |
-| `autoCommitWorkspaceChanges()` | При dirty: user → `saveCurrentWorkspace`; builtin/scratch → `saveCurrentWorkspaceAsUnnamed` |
-| `requestActivateWorkspace`     | Auto-commit, затем switch (`useWorkspaceDirtyGuard`)                                        |
-| `isWorkspaceDirty()`           | `getLayoutZoneSignature(layout)` ≠ baseline (runtime)                                       |
+| API                            | Поведение                                                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `activateWorkspace(ref)`       | Builtin: `resolveBuiltinLayout` (override → clone целиком, иначе фабрика); user/scratch — снимок / пустое дерево; cleanup/prepare lifecycle |
+| `autoCommitWorkspaceChanges()` | **user** dirty → `saveCurrentWorkspace`; **builtin** structure dirty → upsert override (иначе discard sizes к baseline); **scratch** dirty → `saveCurrentWorkspaceAsUnnamed` |
+| `clearBuiltinOverride(preset)` | Всегда удаляет override из map; live layout / baseline пересобираются фабрикой **только** если этот builtin сейчас активен; для неактивного preset — только map |
+| `requestActivateWorkspace`     | Auto-commit, затем switch (`useWorkspaceDirtyGuard`)                                                                                      |
+| `isWorkspaceDirty()`           | Builtin: `structureOnly` (`getLayoutStructureDirtySignature`); user/scratch: полная `getLayoutZoneSignature` vs baseline                  |
 
 Переключение через **▾** **заблокировано** в `isLayoutEditMode`. Вне edit mode при dirty — **тихий** auto-commit перед switch (без диалогов).
 
@@ -194,11 +198,11 @@ Chrome шапки учитывает pill **Рабочие окна**, **HeaderP
 
 | Элемент | Назначение                                                                                                                |
 | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом |
-| **▾**   | Меню **Рабочие окна**: **Мои** / встроенные пресеты / **Создать с нуля…** (disabled в edit mode)                          |
+| **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом; при builtin override — eyebrow **«Рабочие окна · изменено»** |
+| **▾**   | Меню: **Рабочие окна** (built-in; метка **«изменено»** + ⋯ → **«Сбросить к исходному»**) / **Мои** / **Создать с нуля…** (disabled в edit mode) |
 | **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                    |
 
-Ручных пунктов **Сохранить** / **Сбросить** нет. При переключении workspace и auto-commit блокирующих диалогов нет.
+Отдельного пункта **Сохранить** нет. Для изменённых builtin — **«Сбросить к исходному»**. При переключении workspace и auto-commit блокирующих диалогов нет.
 
 ## Режим редактирования (кратко)
 
@@ -235,7 +239,8 @@ isLayoutEmpty(layout)?
 ## См. также
 
 - [Режим редактирования layout](../../layout-edit-mode.md)
-- [Клиентское persist](./persisted-client-state.md)
-- [Settings Store](../stores/settings-store.md) — экспорт bundle с `userWorkspaces`
+- [Клиентское persist](./persisted-client-state.md) — `builtinLayoutOverrides` в `cherryplaylist-workspaces`
+- [Settings Store](../stores/settings-store.md) — экспорт bundle с `userWorkspaces` и `builtinLayoutOverrides`
 - `src/shared/utils/layoutWorkspaceMins.ts` — `computeMinLayoutSize`, lookup mins
-- `src/core/types/workspacePreset.ts` — `allocateUnnamedWorkspaceName`, `isUnnamedWorkspaceName`
+- `src/shared/utils/layoutSignature.ts` — structure vs full zone signatures
+- `src/core/types/workspacePreset.ts` — `BuiltinLayoutOverrides`, `allocateUnnamedWorkspaceName`

@@ -4,10 +4,10 @@
 
 **Персистентность дерева и workspace:**
 
-| Среда                            | Поведение                                                                                                                                                                                                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Electron** (`npm run dev`)     | Состояние workspace (`activeWorkspace`, `userWorkspaces`, живое `layout`) пишется в Zustand persist (`cherryplaylist-workspaces`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения.                 |
-| **Веб-демо** (`npm run dev:web`) | При каждом старте bootstrap **очищает** `cherryplaylist-workspaces` ([AC12](./web-demo.md#что-работает-в-демо), `resetDemoPersistStorage`). Правки **не переживают** полную перезагрузку страницы; **внутри одной сессии** (без F5) persist работает как обычно. |
+| Среда                            | Поведение                                                                                                                                                                                                                                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Electron** (`npm run dev`)     | Состояние workspace (`activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides`, живое `layout`) пишется в Zustand persist (`cherryplaylist-workspaces`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения.                         |
+| **Веб-демо** (`npm run dev:web`) | При каждом старте bootstrap **очищает** `cherryplaylist-workspaces` (включая overrides; [AC12](./web-demo.md#что-работает-в-демо), `resetDemoPersistStorage`). Правки **не переживают** полную перезагрузку страницы; **внутри одной сессии** (без F5) persist работает как обычно. |
 
 Флаг **`isLayoutEditMode`** и **`baselineLayout`** между сессиями **не** сохраняются (ни в Electron, ни в веб-демо).
 
@@ -53,13 +53,13 @@
 
 Меню (только **вне** edit mode, по **▾**):
 
-| Секция           | Содержимое                                                                 |
-| ---------------- | -------------------------------------------------------------------------- |
-| **Мои**          | Пользовательские workspace; ⋯ → переименовать / удалить                    |
-| **Рабочие окна** | Built-in пресеты с RU-именами и one-line описаниями (см. [layout-system](./modules/systems/layout-system.md)) |
-| —                | **Создать с нуля…**                                                        |
+| Секция             | Содержимое                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Рабочие окна**   | Built-in пресеты с RU-именами и one-line описаниями (см. [layout-system](./modules/systems/layout-system.md)); при override — метка **«изменено»**, ⋯ → **«Сбросить к исходному»** |
+| **Мои**            | Пользовательские workspace; ⋯ → переименовать / удалить                                                                                    |
+| —                  | **Создать с нуля…**                                                                                                                        |
 
-Отдельных пунктов **Сохранить** / **Сбросить** в меню **нет** — сохранение автоматическое (см. ниже).
+Отдельного пункта **Сохранить** нет — сохранение автоматическое (см. ниже). Для встроенных с override доступен **«Сбросить к исходному»** (см. Variant A ниже: active vs inactive).
 
 Подробнее о модели — [Layout System](./modules/systems/layout-system.md).
 
@@ -75,11 +75,27 @@
 | **Переключение workspace** (▾)  | Сначала auto-commit, затем `activateWorkspace`        |
 | **Создать с нуля…** при dirty   | Сначала auto-commit, затем пустой scratch + edit mode |
 
-| Активный workspace | Auto-commit                                                                             |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| **user**           | Обновляет снимок в `userWorkspaces` (`saveCurrentWorkspace`, без toast)                 |
-| **builtin**        | `saveCurrentWorkspaceAsUnnamed()` → **«Без имени»** или **«Без имени 2»**, … (см. ниже) |
-| **scratch**        | То же через `saveCurrentWorkspaceAsUnnamed`                                             |
+| Активный workspace | Auto-commit                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **user**           | Обновляет снимок в `userWorkspaces` (`saveCurrentWorkspace`, без toast)                                                                     |
+| **builtin**        | **Variant A** (structure-only): см. таблицу ниже — **без** fork в **Мои** / «Без имени»                                                     |
+| **scratch**        | `saveCurrentWorkspaceAsUnnamed()` → **«Без имени»** или **«Без имени 2»**, … (см. ниже)                                                     |
+
+### Builtin: Variant A (structure-only)
+
+Dirty / commit для **builtin** сравнивает **структуру** (`getLayoutStructureDirtySignature`: состав зон, типы, топология, значимые `workspaceId` — **без** `sizes`), а не полный снимок с размерами.
+
+| Ситуация при auto-commit (builtin)                         | Поведение                                                                                                      |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Структура **изменена** относительно baseline               | Upsert `builtinLayoutOverrides[preset]` (полный layout на момент commit, включая sizes этого commit); pill остаётся на том же `{ kind: 'builtin', preset }` |
+| Структура **не** изменена (в т.ч. только resize dividers) | **No-op** для persist: layout возвращается к **baseline** (фабрика или уже существующий override); в **Мои** ничего не пишется |
+| Esc / выход из ✎ / switch без structural dirty             | То же no-op — **не** создаёт «Без имени»                                                                       |
+
+Активация / rehydrate builtin: `resolveBuiltinLayout` — при override **clone** сохранённого layout, иначе `createLayoutByPreset(preset)` (не field-merge).
+
+**«Сбросить к исходному»** (`clearBuiltinOverride`): всегда удаляет override для пресета и снимает **«изменено»**. Live layout / baseline пересобираются фабрикой **только** если этот builtin сейчас активен; для неактивного preset в меню — только запись в `builtinLayoutOverrides` (при следующей активации — чистая фабрика).
+
+Исторические копии **«Без имени»** в **Мои**, созданные старым auto-fork с builtin, **не мигрируются** и остаются как обычные user workspace.
 
 Автоматический fallback built-in (`WorkspaceMenu.tsx`, `useEffect`):
 
@@ -88,17 +104,17 @@
 | production + preset `complex` | `simple` | `true` (без auto-commit) |
 | preset `aimp-party` (legacy)  | `party`  | `true` (без auto-commit) |
 
-### Именование
+### Именование (scratch → «Мои»)
 
-Константы и функции — `src/core/types/workspacePreset.ts`:
+Серия **«Без имени»** используется при auto-commit **scratch** (и при явном сохранении безымянного user), **не** при правке встроенных пресетов. Константы и функции — `src/core/types/workspacePreset.ts`:
 
 | Символ                                | Назначение                                                                    |
 | ------------------------------------- | ----------------------------------------------------------------------------- |
-| `UNNAMED_WORKSPACE_NAME`              | `'Без имени'` — базовое имя для первого auto-save                             |
+| `UNNAMED_WORKSPACE_NAME`              | `'Без имени'` — базовое имя для первого auto-save scratch                     |
 | `allocateUnnamedWorkspaceName(names)` | Первый свободный auto-имя: «Без имени», затем «Без имени 2», «Без имени 3», … |
 | `isUnnamedWorkspaceName(name)`        | `true` для «Без имени» и «Без имени N» (N ≥ 2)                                |
 
-**Правило нумерации:** пока в **Мои** нет записи с именем **«Без имени»**, новый auto-save получает именно его. Если **«Без имени»** уже занят — выдаётся следующий свободный суффикс (`Без имени 2`, `Без имени 3`, …). Если пользователь переименовал единственный «Без имени», следующий auto-save снова может быть **«Без имени»**.
+**Правило нумерации:** пока в **Мои** нет записи с именем **«Без имени»**, новый auto-save scratch получает именно его. Если **«Без имени»** уже занят — выдаётся следующий свободный суффикс (`Без имени 2`, `Без имени 3`, …). Если пользователь переименовал единственный «Без имени», следующий auto-save снова может быть **«Без имени»**.
 
 **Pill (шапка):**
 
@@ -283,9 +299,10 @@
 
 ## Пресеты vs ручное редактирование
 
-- **Встроенные пресеты** задают начальное дерево через `createLayoutByPreset`; переключение — через **▾** → секция **Рабочие окна**.
-- В **edit mode** смена workspace **заблокирована** (только ▾ disabled).
-- Правки дерева при выходе из edit mode или при переключении workspace **автоматически** сохраняются (см. § «Автосохранение»); built-in при этом форкается в **Мои** с именем по `allocateUnnamedWorkspaceName`, если layout изменился.
+- **Встроенные пресеты** задают baseline через `createLayoutByPreset`; переключение — через **▾** → секция **Рабочие окна**. Structural-правки builtin пишутся в `builtinLayoutOverrides` на том же preset (см. Variant A выше) — **без** auto-fork в **Мои**.
+- В **edit mode** смена workspace **заблокирована** (▾ disabled).
+- Правки **user** / **scratch** при выходе из edit mode или при переключении **автоматически** сохраняются в **Мои** (см. § «Автосохранение»).
+- Явный путь в **Мои** с нуля — **«Создать с нуля…»** / именование scratch в pill; Esc / выход из ✎ на builtin **не** создаёт «Без имени».
 - Пустой layout и произвольная конфигурация **валидны**: `LayoutWorkspaceArea` обрабатывает пустое состояние, одиночную зону и контейнеры.
 - **Пустой layout вне edit mode**: placeholder «Layout пуст»; подсказка «Нажмите «Настроить окна» ✎ в шапке…» (см. терминологию ниже); центральный **+** — только в edit mode (`LayoutEmptyWorkspaceState`).
 
@@ -294,6 +311,8 @@
 | Контекст                                           | Текст                                                                                          |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Кнопка **✎** (`title` / `aria-label`)              | **«Настроить окна»** (вход), **«Выйти из режима редактирования (Esc)»** / **«Готово»** (выход) |
+| Секция / framing встроенных                        | **«Рабочие окна»**; при override — **«изменено»** (пункт меню / eyebrow pill)                  |
+| Сброс override builtin (⋯)                         | **«Сбросить к исходному»**                                                                     |
 | Placeholder пустого layout (`LayoutWorkspaceArea`) | **«Нажмите «Настроить окна» ✎ в шапке, чтобы добавить workspace»**                             |
 
 Открытие/создание **проекта** (.cherry) **не** меняет активный workspace (настройки уровня приложения).
@@ -304,11 +323,12 @@
 
 | Путь                                                       | Роль                                                                                     |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `src/shared/stores/layoutStore.ts`                         | Workspace state, persist, auto-commit, edit mode                                         |
-| `src/app/components/WorkspaceMenu.tsx`                     | Pill, dropdown, inline rename, ✎, inline edit hint (`app-header-workspace-edit-hint`)    |
+| `src/shared/stores/layoutStore.ts`                         | Workspace state, persist, `builtinLayoutOverrides`, auto-commit, edit mode               |
+| `src/app/components/WorkspaceMenu.tsx`                     | Pill, dropdown, **«изменено»**, **«Сбросить к исходному»**, ✎, edit hint                 |
 | `src/app/App.tsx`                                          | Esc-обработка edit mode, `useWindowMinSize`                                              |
 | `src/app/hooks/useWorkspaceDirtyGuard.ts`                  | Auto-commit перед switch / exit / scratch                                                |
-| `src/core/types/workspacePreset.ts`                        | Типы, `UNNAMED_WORKSPACE_NAME`                                                           |
+| `src/core/types/workspacePreset.ts`                        | Типы, `BuiltinLayoutOverrides`, `UNNAMED_WORKSPACE_NAME`                                 |
+| `src/shared/utils/layoutSignature.ts`                      | `getLayoutStructureDirtySignature` / `getLayoutZoneSignature`                            |
 | `src/shared/utils/layoutWorkspaceOperations.ts`            | Add/remove дерева, singleton, `enforceMinSizeFeasibility`, `getAddWorkspaceErrorMessage` |
 | `src/shared/utils/layoutWorkspaceMins.ts`                  | `computeMinLayoutSize`, per-type mins lookup                                             |
 | `src/shared/utils/layoutViewportBridge.ts`                 | Live layout viewport для add-adjacent check                                              |
@@ -336,9 +356,10 @@
 5. **×** — зона удаляется; для collection очищается store; для fileBrowser — запись path в settings.
 6. Удалить все зоны → **✎** → центральный **+** для первой зоны.
 7. Перетащить divider — пропорции меняются.
-8. Правка built-in → **✎** выход → запись в **Мои** («Без имени» или «Без имени 2», …); клик по имени → задать своё.
-9. **Создать с нуля…** → сразу edit mode, pill «Без имени».
-10. **▾** → переключение **Рабочие окна** (built-in) / **Мои**; при dirty — тихий auto-commit перед switch.
-11. Два auto-save с built-in без переименования → в **Мои** «Без имени» и «Без имени 2».
-12. **Персистентность** (Electron): перезапуск — workspace и дерево на месте, edit mode выключен. **Веб-демо**: F5 сбрасывает `cherryplaylist-workspaces`.
-13. **Минимальные размеры:** при узком окне добавление зоны с большим min может дать toast «Недостаточно места. Увеличьте окно или измените пропорции разделителями.»; divider не сжимает зону ниже per-type min (см. [Layout System](./modules/systems/layout-system.md)).
+8. **Structural-правка builtin** (добавить/удалить зону) → **✎** / Esc выход → **нет** новой записи в **Мои**; активный workspace тот же builtin; метка **«изменено»**; после перезапуска Electron override на месте.
+9. Открыл ✎ на builtin и вышел **без** смены структуры (в т.ч. только dividers) → no-op: нет «Мои», layout как baseline.
+10. **▾** → ⋯ у изменённого builtin → **«Сбросить к исходному»** — override снят, метка **«изменено»** снята; если preset был активен — live layout = фабрика.
+11. **Создать с нуля…** → сразу edit mode, pill «Без имени»; выход / switch → запись в **Мои** («Без имени» / «Без имени N»).
+12. **▾** → переключение **Рабочие окна** / **Мои**; при dirty — тихий auto-commit перед switch (builtin: только structure).
+13. **Персистентность** (Electron): перезапуск — workspace, overrides и дерево на месте, edit mode выключен. **Веб-демо**: F5 сбрасывает `cherryplaylist-workspaces` (включая overrides).
+14. **Минимальные размеры:** при узком окне добавление зоны с большим min может дать toast «Недостаточно места. Увеличьте окно или измените пропорции разделителями.»; divider не сжимает зону ниже per-type min (см. [Layout System](./modules/systems/layout-system.md)).

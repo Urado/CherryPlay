@@ -1342,8 +1342,8 @@ All colors are defined in a centralized theme configuration for easy modificatio
 
 > **⚠️ Legacy / partially outdated.** This section reflects early layout design. For **current** workspace and edit-mode behavior, use:
 >
-> - [CherryPlayList/docs/layout-edit-mode.md](docs/layout-edit-mode.md) — workspace **pill** + **✎** edit mode, auto-save, zone picker, air regions
-> - [CherryPlayList/docs/modules/systems/layout-system.md](docs/modules/systems/layout-system.md) — built-in presets, persist key, `LayoutWorkspaceArea` render paths
+> - [CherryPlayList/docs/layout-edit-mode.md](docs/layout-edit-mode.md) — workspace **pill** + **✎** edit mode, builtin override (Variant A), auto-save, zone picker, air regions
+> - [CherryPlayList/docs/modules/systems/layout-system.md](docs/modules/systems/layout-system.md) — **Рабочие окна**, `builtinLayoutOverrides`, persist key, `LayoutWorkspaceArea` render paths
 >
 > Below: retained historical detail; API names, UI controls, persist key, and constraints may differ from the implementation.
 
@@ -1434,9 +1434,9 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 **LayoutStore** (`src/shared/stores/layoutStore.ts`):
 
 - Zustand store with `persist` middleware; storage key **`cherryplaylist-workspaces`** (see [persisted-client-state.md](docs/modules/systems/persisted-client-state.md))
-- Manages workspace state: `layout` tree, `activeWorkspace`, `userWorkspaces`, `isLayoutEditMode` (runtime only)
+- Manages workspace state: `layout` tree, `activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides`, `isLayoutEditMode` (runtime only)
 - Zone tree operations: `addAdjacentWorkspace`, `addAdjacentWorkspaceToContainer`, `addInitialWorkspace`, `removeWorkspaceZone`, `updateZoneSize`, `updateContainerSizes`
-- Workspace lifecycle: `activateWorkspace`, `autoCommitWorkspaceChanges`, `saveCurrentWorkspaceAsUnnamed`
+- Workspace lifecycle: `activateWorkspace`, `autoCommitWorkspaceChanges`, `clearBuiltinOverride`, `saveCurrentWorkspaceAsUnnamed` (scratch only; builtin → override, Variant A)
 - Legacy helpers may still exist (`addZone`, `removeZone`, `setLayoutPreset`) — prefer docs above for edit mode
 
 **Layout min-size utilities:**
@@ -1446,7 +1446,7 @@ Layout is represented as a recursive tree structure. Types: `ZoneType` ('contain
 - `src/shared/utils/layoutWorkspaceOperations.ts` — add/remove tree ops, `enforceMinSizeFeasibility`
 - `src/app/hooks/useWindowMinSize.ts` — measures layout viewport, registers bridge, sets Electron min window via IPC (`electron/ipc/system.ts`)
 
-**UI (current):** workspace **pill** (name + ▾) and separate **✎** button in `WorkspaceMenu` — not a preset dropdown. Built-in presets are chosen from the pill menu → **Встроенные**.
+**UI (current):** workspace **pill** (name + ▾) and separate **✎** button in `WorkspaceMenu` — not a preset dropdown. Built-in presets are chosen from the pill menu → **Рабочие окна** (override / **«изменено»** / **«Сбросить к исходному»** — см. [layout-edit-mode.md](docs/layout-edit-mode.md)).
 
 #### 9.2.4.4 Visual Design
 
@@ -1553,14 +1553,14 @@ The application supports multiple layout presets:
 
 **Layout Presets:**
 
-Layout presets are defined in `layoutStore.ts` (`createLayoutByPreset`). Selection: workspace pill **▾** → **Встроенные**. Default on first run: **`collections`**. Interactive editing: **✎** — see [layout-edit-mode.md](docs/layout-edit-mode.md).
+Layout presets are defined via `createLayoutByPreset` (`layoutPresetFactories.ts`). Selection: workspace pill **▾** → **Рабочие окна**. Default on first run: **`collections-vertical`** (`DEFAULT_BUILTIN_PRESET`). Structural edits on builtins → `builtinLayoutOverrides` (Variant A); interactive editing: **✎** — see [layout-edit-mode.md](docs/layout-edit-mode.md).
 
 Available presets:
 
 - `'simple'`: Playlist + FileBrowser
-- `'collections'`: Playlist + nested collections + FileBrowser (**default**)
-- `'collections-vertical'`: Playlist + vertical collections + FileBrowser
-- `'complex'`: Test layout with multiple nested zones (**development only**)
+- `'collections'`: Playlist + nested collections + FileBrowser (legacy id → migrates to `collections-vertical`)
+- `'collections-vertical'`: Playlist + vertical collections + FileBrowser (**default**)
+- `'complex'`: Test layout with multiple nested zones (**hidden** from menu)
 - `'player'`: Playback-focused layout
 - `'party'`: Party editor + preview (when streaming enabled)
 - `'aimp-party'`: **legacy** — auto-migrates to `'party'`

@@ -1,13 +1,17 @@
 import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
 import type { Layout } from '@core/types/layout';
 import type { WorkspaceId } from '@core/types/workspace';
-import type { ActiveWorkspace, UserWorkspace } from '@core/types/workspacePreset';
+import type {
+  ActiveWorkspace,
+  BuiltinLayoutOverrides,
+  UserWorkspace,
+} from '@core/types/workspacePreset';
 import { APP_VERSION } from '@shared/config/appVersion';
 import { getPlatformCapabilities } from '@shared/platform/platformCapabilities';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
 import type { CustomKeyBindings } from '../shortcuts/shortcutTypes';
-import { useLayoutStore } from '../stores/layoutStore';
+import { normalizeBuiltinLayoutOverrides, useLayoutStore } from '../stores/layoutStore';
 import { migrateFileBrowserPathsOnRehydrate, useSettingsStore } from '../stores/settingsStore';
 import { isTrackItemSizePreset, type TrackItemSizePreset } from '../types/trackItemSize';
 
@@ -48,6 +52,7 @@ export interface SettingsExportBundle {
   workspaces: {
     userWorkspaces: UserWorkspace[];
     activeWorkspace?: ActiveWorkspace;
+    builtinLayoutOverrides?: BuiltinLayoutOverrides;
   };
 }
 
@@ -115,6 +120,7 @@ export function buildSettingsExportBundle(): SettingsExportBundle {
         ...workspace,
         layout: cloneLayout(workspace.layout),
       })),
+      builtinLayoutOverrides: normalizeBuiltinLayoutOverrides(layoutState.builtinLayoutOverrides),
       ...(activeWorkspace ? { activeWorkspace } : {}),
     },
   };
@@ -219,6 +225,18 @@ export function validateSettingsExportBundle(data: unknown): data is SettingsExp
     return false;
   }
 
+  if (workspacesRecord.builtinLayoutOverrides !== undefined) {
+    const overrides = workspacesRecord.builtinLayoutOverrides;
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+      return false;
+    }
+    for (const layout of Object.values(overrides as Record<string, unknown>)) {
+      if (!layout || typeof layout !== 'object') {
+        return false;
+      }
+    }
+  }
+
   return !hasAuthFields(bundle);
 }
 
@@ -306,15 +324,7 @@ function isImportableActiveWorkspace(
 
 function prepareLayoutStateForSettingsImport(): void {
   const state = useLayoutStore.getState();
-
-  if (state.isWorkspaceDirty()) {
-    if (state.activeWorkspace.kind === 'user') {
-      state.saveCurrentWorkspace();
-    } else {
-      state.resetCurrentWorkspace();
-    }
-  }
-
+  state.autoCommitWorkspaceChanges();
   state.setLayoutEditMode(false);
 }
 
@@ -349,7 +359,18 @@ export function applySettingsImport(bundle: SettingsExportBundle): SettingsImpor
     bundle.workspaces.userWorkspaces,
   );
 
-  useLayoutStore.setState({ userWorkspaces: merged });
+  const incomingOverrides = normalizeBuiltinLayoutOverrides(
+    bundle.workspaces.builtinLayoutOverrides,
+  );
+  const mergedOverrides: BuiltinLayoutOverrides = {
+    ...normalizeBuiltinLayoutOverrides(layoutState.builtinLayoutOverrides),
+    ...incomingOverrides,
+  };
+
+  useLayoutStore.setState({
+    userWorkspaces: merged,
+    builtinLayoutOverrides: mergedOverrides,
+  });
 
   const activeWorkspace = bundle.workspaces.activeWorkspace;
   if (activeWorkspace && isImportableActiveWorkspace(activeWorkspace, merged)) {
@@ -362,6 +383,14 @@ export function applySettingsImport(bundle: SettingsExportBundle): SettingsImpor
       useLayoutStore.getState().activateWorkspace({
         kind: 'user',
         id: activeWorkspace.id,
+      });
+    }
+  } else {
+    const current = useLayoutStore.getState().activeWorkspace;
+    if (current.kind === 'builtin') {
+      useLayoutStore.getState().activateWorkspace({
+        kind: 'builtin',
+        preset: current.preset,
       });
     }
   }

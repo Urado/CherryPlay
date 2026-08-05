@@ -14,7 +14,7 @@
 | ------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------- |
 | `cherryplaylist-auth`          | `useAuthStore` (`authStore.ts`)                                   | Сессия организатора                                 |
 | `cherryplaylist-settings`      | `useSettingsStore` (`settingsStore.ts`)                           | Пользовательские настройки приложения               |
-| `cherryplaylist-workspaces`    | `useLayoutStore` (`layoutStore.ts`)                               | Рабочие пространства и дерево layout                |
+| `cherryplaylist-workspaces`    | `useLayoutStore` (`layoutStore.ts`)                               | Workspace, layout, `builtinLayoutOverrides`         |
 | `cherryplaylist-project`       | `useProjectStore` (`projectStore.ts`)                             | Основной плейлист-проект (главный workspace)        |
 | `cherryplaylist-<workspaceId>` | `ensureProjectStore` с `persist: true` (`projectStoreFactory.ts`) | Отдельные проекты по id workspace (коллекции и др.) |
 
@@ -52,36 +52,38 @@
 
 Ключ **`cherryplaylist-workspaces`** (persist version **1**) в `layoutStore.ts`. В `partialize` попадает срез `WorkspacePersistSlice`:
 
-| Поле                  | Описание                                                                                                         |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **`activeWorkspace`** | `{ kind: 'builtin', preset }` \| `{ kind: 'user', id }` — **не** `scratch` (нормализуется при persist/rehydrate) |
-| **`userWorkspaces`**  | Массив `{ id, name, layout, createdAt?, updatedAt? }` — сохранённые пользовательские снимки дерева               |
-| **`layout`**          | Живое дерево зон текущего workspace (корень, контейнеры, workspace-зоны, размеры)                                |
+| Поле                         | Описание                                                                                                         |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **`activeWorkspace`**        | `{ kind: 'builtin', preset }` \| `{ kind: 'user', id }` — **не** `scratch` (нормализуется при persist/rehydrate) |
+| **`userWorkspaces`**         | Массив `{ id, name, layout, createdAt?, updatedAt? }` — сохранённые пользовательские снимки дерева               |
+| **`builtinLayoutOverrides`** | `Partial<Record<LayoutPreset, Layout>>` — structural-override поверх фабрики для builtin (Variant A)             |
+| **`layout`**                 | Живое дерево зон текущего workspace (корень, контейнеры, workspace-зоны, размеры)                                |
 
 **Не** сохраняется (runtime only): **`isLayoutEditMode`**, **`openLayoutEditPickerKey`**, **`baselineLayout`**, dirty-хелперы. См. [layout-edit-mode.md](../../layout-edit-mode.md), [Layout System](./layout-system.md).
 
-**По умолчанию** (свежая установка / пустой persist): `activeWorkspace: { kind: 'builtin', preset: 'collections' }`, `userWorkspaces: []`, layout от `createCollectionsLayout()`.
+**По умолчанию** (свежая установка / пустой persist): `activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET }` (`collections-vertical`), `userWorkspaces: []`, `builtinLayoutOverrides: {}`, layout от `createCollectionsVerticalLayout()` / `createInitialLayout()` / `createLayoutByPreset(DEFAULT_BUILTIN_PRESET)`.
 
 ### Миграция с `cherryplaylist-layout`
 
-Старый ключ **`cherryplaylist-layout`** (только `layout`) **не мигрируется** в пользовательский preset. При гидрации `onRehydrateStorage` всегда вызывает `removeLegacyLayoutPersistKey()` — ключ удаляется из IndexedDB. Если есть только legacy-данные, приложение стартует с дефолтным built-in `collections` (как при первом запуске).
+Старый ключ **`cherryplaylist-layout`** (только `layout`) **не мигрируется** в пользовательский preset. При гидрации `onRehydrateStorage` всегда вызывает `removeLegacyLayoutPersistKey()` — ключ удаляется из IndexedDB. Если есть только legacy-данные, приложение стартует с дефолтным built-in `collections-vertical` (`DEFAULT_BUILTIN_PRESET`, как при первом запуске).
 
 ### Автосохранение и runtime API (`layoutStore`)
 
 Изменения дерева layout **не привязаны к файлу проекта** (`.cherry`). Сохраняются на уровне приложения:
 
-| Метод                              | Когда                                                    |
-| ---------------------------------- | -------------------------------------------------------- |
-| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…» при dirty   |
-| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`      |
-| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **builtin** / **scratch** — новая запись в **Мои** |
-| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)              |
+| Метод                              | Когда                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…»; builtin — structure-only upsert override / no-op |
+| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`                                            |
+| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **scratch** — новая запись в **Мои** («Без имени» / «Без имени N»)                       |
+| `clearBuiltinOverride(preset)`     | Удалить override из map; если preset **активен** — пересобрать live layout фабрикой; иначе только map. UI — **«Сбросить к исходному»** |
+| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)                                                    |
 
-Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет.
+Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет. Builtin **не** форкается в «Без имени». Исторические «Без имени» от старого auto-fork **не мигрируются**.
 
 ### Имена «Без имени»
 
-Auto-save использует `allocateUnnamedWorkspaceName()` (`workspacePreset.ts`):
+Auto-save **scratch** использует `allocateUnnamedWorkspaceName()` (`workspacePreset.ts`):
 
 1. Если нет workspace с именем **«Без имени»** → **«Без имени»**
 2. Иначе → **«Без имени 2»**, **«Без имени 3»**, … (первый свободный номер)
@@ -92,13 +94,13 @@ Auto-save использует `allocateUnnamedWorkspaceName()` (`workspacePrese
 
 Данные коллекций лежат в **`cherryplaylist-<workspaceId>`** по **`workspaceId` из дерева layout**, а не по имени пользовательского workspace. Смена built-in/user workspace пересоздаёт дерево — старые ключи коллекций могут остаться в хранилище. См. [Layout System](./layout-system.md).
 
-**Electron:** после перезапуска восстанавливаются `activeWorkspace`, `userWorkspaces` и живое `layout`.
+**Electron:** после перезапуска восстанавливаются `activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides` и живое `layout` (для активного builtin layout согласуется с фабрикой + override при rehydrate/activate).
 
-**Веб-демо** (`VITE_APP_MODE=demo`, `npm run dev:web`): при каждом старте `bootstrap.ts` вызывает `resetDemoPersistStorage()` и **удаляет** `cherryplaylist-workspaces` (и другие ключи AC12) **до** гидрации сторов. В рамках **одной** сессии страницы persist работает как обычно; полная перезагрузка снова очищает ключ. См. [веб-демо](../../web-demo.md), [layout-edit-mode.md](../../layout-edit-mode.md).
+**Веб-демо** (`VITE_APP_MODE=demo`, `npm run dev:web`): при каждом старте `bootstrap.ts` вызывает `resetDemoPersistStorage()` и **удаляет** `cherryplaylist-workspaces` (включая overrides; и другие ключи AC12) **до** гидрации сторов. В рамках **одной** сессии страницы persist работает как обычно; полная перезагрузка снова очищает ключ. См. [веб-демо](../../web-demo.md), [layout-edit-mode.md](../../layout-edit-mode.md).
 
 ### Экспорт/импорт bundle
 
-Пользовательские workspace и настройки можно выгрузить в JSON (`cherryplaylist-settings-bundle.json`, `schemaVersion: 1`) из **Настройки → Резервная копия настроек**. В bundle входят поля `settingsStore` и `userWorkspaces` (снимки layout), опционально `activeWorkspace`. Живое дерево `layout` вне сохранённых user workspace **не** экспортируется отдельно.
+Настройки и workspace можно выгрузить в JSON (`cherryplaylist-settings-bundle.json`, `schemaVersion: 1`) из **Настройки → Резервная копия настроек**. В bundle входят поля `settingsStore`, `userWorkspaces`, **`builtinLayoutOverrides`**, опционально `activeWorkspace`. Живое дерево `layout` вне сохранённых user workspace / overrides **не** экспортируется отдельно.
 
 **Безопасность:** в bundle **нет** данных auth (`accessToken`, `organizer`, `refreshToken`) — экспортируются только поля `settingsStore`; валидатор `validateSettingsExportBundle` отклоняет файлы с auth-полями. См. [Settings Store](../stores/settings-store.md).
 

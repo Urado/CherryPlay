@@ -9,9 +9,12 @@ export {
   migratePersistedWorkspaceState,
   createDefaultWorkspacePersistSlice,
   computeIsWorkspaceDirty,
+  resolveBuiltinLayout,
+  normalizeBuiltinLayoutOverrides,
 } from './layoutStore';
 export type {
   ActiveWorkspace,
+  BuiltinLayoutOverrides,
   UserWorkspace,
   WorkspacePersistSlice,
   WorkspaceRef,
@@ -38,7 +41,6 @@ export {
   PROJECT_WORKSPACE_ID,
 } from './projectStore';
 
-// Global history store for unified undo/redo
 export {
   useGlobalHistoryStore,
   createMoveDescription,
@@ -46,7 +48,6 @@ export {
 } from './globalHistoryStore';
 export type { CompositeAction, CommandPart } from './globalHistoryStore';
 
-// Project store factory for Collections and other workspaces
 export {
   ensureProjectStore,
   getProjectStore,
@@ -59,7 +60,6 @@ export {
 } from './projectStoreFactory';
 export type { ProjectStoreOptions, ProjectStoreState, ProjectStore } from './projectStoreFactory';
 
-// Shared utility functions for working with ProjectItem
 export {
   findItemRecursive,
   getAllTracksRecursive,

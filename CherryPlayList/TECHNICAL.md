@@ -209,7 +209,7 @@ CherryPlayList/
 Связь CherryPlayList с **CherryPlayServer** и **CherryPlayWeb** (авторизация, вечеринки, стриминг состояния) описана в разделе документации по интеграции и согласована с планом релиза v1:
 
 - **[Интеграция приложение — сервер — веб](../../docs/integration/README.md)** — обзор подсистем (Accounts & Auth, Party Management, Streaming), роли, ссылки на контракты и БД (общая документация в корне репозитория).
-- **[Оглавление документации](./docs/README.md)** — модули, интеграция, [веб-демо](./docs/web-demo.md), [рабочие пространства и edit mode layout](./docs/layout-edit-mode.md) (pill, auto-save, «Без имени»), ссылки на корневые документы репозитория.
+- **[Оглавление документации](./docs/README.md)** — модули, интеграция, [веб-демо](./docs/web-demo.md), [рабочие пространства и edit mode layout](./docs/layout-edit-mode.md) (pill, **Рабочие окна**, builtin override / Variant A, auto-save scratch «Без имени»), ссылки на корневые документы репозитория.
 
 ### Хранение данных
 

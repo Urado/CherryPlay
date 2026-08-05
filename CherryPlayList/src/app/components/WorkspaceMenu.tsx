@@ -53,6 +53,7 @@ function isUserActive(activeWorkspace: ActiveWorkspace, id: string): boolean {
 export const WorkspaceMenu: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userSubmenuId, setUserSubmenuId] = useState<string | null>(null);
+  const [builtinSubmenuPreset, setBuiltinSubmenuPreset] = useState<LayoutPreset | null>(null);
   const [nameModalOpen, setNameModalOpen] = useState(false);
   const [nameModalInitialName, setNameModalInitialName] = useState('');
   const [nameModalKey, setNameModalKey] = useState(0);
@@ -70,10 +71,12 @@ export const WorkspaceMenu: React.FC = () => {
 
   const activeWorkspace = useLayoutStore((state) => state.activeWorkspace);
   const userWorkspaces = useLayoutStore((state) => state.userWorkspaces);
+  const builtinLayoutOverrides = useLayoutStore((state) => state.builtinLayoutOverrides);
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
   const renameUserWorkspace = useLayoutStore((state) => state.renameUserWorkspace);
   const saveCurrentWorkspaceAs = useLayoutStore((state) => state.saveCurrentWorkspaceAs);
   const deleteUserWorkspace = useLayoutStore((state) => state.deleteUserWorkspace);
+  const clearBuiltinOverride = useLayoutStore((state) => state.clearBuiltinOverride);
 
   const { streamingSource, setStreamingSource } = useSettingsStore();
   const { partyDiscoverabilityEnabled } = useOnlineNetworkPolicy();
@@ -83,6 +86,8 @@ export const WorkspaceMenu: React.FC = () => {
   const pillLabel = getActiveWorkspaceLabel(activeWorkspace, userWorkspaces);
   const canRenameOnPill = activeWorkspace.kind === 'user' || activeWorkspace.kind === 'scratch';
   const isUnnamedPill = canRenameOnPill && isUnnamedWorkspaceName(pillLabel);
+  const activeBuiltinHasOverride =
+    activeWorkspace.kind === 'builtin' && Boolean(builtinLayoutOverrides[activeWorkspace.preset]);
 
   const existingUserNames = useMemo(
     () => userWorkspaces.map((workspace) => workspace.name),
@@ -101,6 +106,7 @@ export const WorkspaceMenu: React.FC = () => {
   const closeMenu = useCallback(() => {
     setMenuOpen(false);
     setUserSubmenuId(null);
+    setBuiltinSubmenuPreset(null);
   }, []);
 
   const toggleMenu = useCallback(() => {
@@ -212,6 +218,15 @@ export const WorkspaceMenu: React.FC = () => {
     [activeWorkspace, cancelInlineRename, closeMenu, requestActivateWorkspace],
   );
 
+  const handleResetBuiltin = useCallback(
+    (preset: LayoutPreset) => {
+      clearBuiltinOverride(preset);
+      setBuiltinSubmenuPreset(null);
+      closeMenu();
+    },
+    [clearBuiltinOverride, closeMenu],
+  );
+
   const openRenameModal = useCallback(
     (name: string, userId: string) => {
       setNameModalInitialName(name);
@@ -271,13 +286,26 @@ export const WorkspaceMenu: React.FC = () => {
     supportsAimpWorkspace,
   ]);
 
-  const focusMenuItemAt = useCallback((index: number) => {
+  const getMenuItems = useCallback(() => {
     const panel = panelRef.current;
-    if (!panel) return;
-    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
-    if (items.length === 0) return;
-    const i = ((index % items.length) + items.length) % items.length;
-    items[i]?.focus();
+    if (!panel) return [];
+    return [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
+  }, []);
+
+  const focusMenuItemAt = useCallback(
+    (index: number) => {
+      const items = getMenuItems();
+      if (items.length === 0) return;
+      const i = ((index % items.length) + items.length) % items.length;
+      items[i]?.focus();
+    },
+    [getMenuItems],
+  );
+
+  const focusMoreButton = useCallback((selector: string) => {
+    queueMicrotask(() => {
+      panelRef.current?.querySelector<HTMLElement>(selector)?.focus();
+    });
   }, []);
 
   useEffect(() => {
@@ -289,8 +317,16 @@ export const WorkspaceMenu: React.FC = () => {
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (builtinSubmenuPreset) {
+          const preset = builtinSubmenuPreset;
+          setBuiltinSubmenuPreset(null);
+          focusMoreButton(`[data-workspace-more="builtin:${preset}"]`);
+          return;
+        }
         if (userSubmenuId) {
+          const userId = userSubmenuId;
           setUserSubmenuId(null);
+          focusMoreButton(`[data-workspace-more="user:${userId}"]`);
           return;
         }
         closeMenu();
@@ -303,7 +339,7 @@ export const WorkspaceMenu: React.FC = () => {
       document.removeEventListener('mousedown', onDocMouseDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [closeMenu, menuOpen, userSubmenuId]);
+  }, [builtinSubmenuPreset, closeMenu, focusMoreButton, menuOpen, userSubmenuId]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -313,13 +349,23 @@ export const WorkspaceMenu: React.FC = () => {
     return () => window.cancelAnimationFrame(id);
   }, [focusMenuItemAt, menuOpen]);
 
+  useEffect(() => {
+    if (!builtinSubmenuPreset && !userSubmenuId) {
+      return;
+    }
+    const id = window.requestAnimationFrame(() => {
+      panelRef.current
+        ?.querySelector<HTMLElement>('.workspace-menu__submenu [role="menuitem"]')
+        ?.focus();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [builtinSubmenuPreset, userSubmenuId]);
+
   const showMenuPanel = menuOpen && !isLayoutEditMode;
 
   const onMenuKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const panel = panelRef.current;
-      if (!panel) return;
-      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
+      const items = getMenuItems();
       if (items.length === 0) return;
       const current = items.indexOf(document.activeElement as HTMLElement);
 
@@ -340,11 +386,55 @@ export const WorkspaceMenu: React.FC = () => {
           e.preventDefault();
           focusMenuItemAt(items.length - 1);
           break;
+        case 'ArrowRight': {
+          const active = document.activeElement;
+          if (!(active instanceof HTMLElement)) break;
+          if (
+            active.classList.contains('workspace-menu__more-btn') &&
+            active.getAttribute('aria-expanded') !== 'true'
+          ) {
+            e.preventDefault();
+            active.click();
+            break;
+          }
+          const moreBtn = active
+            .closest('.workspace-menu__row')
+            ?.querySelector<HTMLElement>('.workspace-menu__more-btn');
+          if (!moreBtn || moreBtn === active) break;
+          e.preventDefault();
+          moreBtn.focus();
+          break;
+        }
+        case 'ArrowLeft': {
+          const active = document.activeElement;
+          if (!(active instanceof HTMLElement)) break;
+          if (active.closest('.workspace-menu__submenu')) {
+            e.preventDefault();
+            if (builtinSubmenuPreset) {
+              const preset = builtinSubmenuPreset;
+              setBuiltinSubmenuPreset(null);
+              focusMoreButton(`[data-workspace-more="builtin:${preset}"]`);
+            } else if (userSubmenuId) {
+              const userId = userSubmenuId;
+              setUserSubmenuId(null);
+              focusMoreButton(`[data-workspace-more="user:${userId}"]`);
+            }
+            break;
+          }
+          if (!active.classList.contains('workspace-menu__more-btn')) break;
+          const rowItem = active
+            .closest('.workspace-menu__row')
+            ?.querySelector<HTMLElement>('.workspace-menu__item[role="menuitem"]');
+          if (!rowItem) break;
+          e.preventDefault();
+          rowItem.focus();
+          break;
+        }
         default:
           break;
       }
     },
-    [focusMenuItemAt],
+    [builtinSubmenuPreset, focusMenuItemAt, focusMoreButton, getMenuItems, userSubmenuId],
   );
 
   const onMenuTriggerKeyDown = useCallback(
@@ -363,7 +453,15 @@ export const WorkspaceMenu: React.FC = () => {
       ? userWorkspaces.find((workspace) => workspace.id === renameTargetId)?.name
       : undefined;
 
-  const menuTriggerTitle = isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : 'Рабочие окна';
+  const menuTriggerTitle = isLayoutEditMode
+    ? LAYOUT_EDIT_DISABLED_TITLE
+    : activeBuiltinHasOverride
+      ? 'Рабочие окна · изменено'
+      : 'Рабочие окна';
+  const pillEyebrow = activeBuiltinHasOverride ? 'Рабочие окна · изменено' : 'Рабочие окна';
+  const pillAriaLabel = activeBuiltinHasOverride
+    ? `Рабочие окна: ${pillLabel}, изменено`
+    : `Рабочие окна: ${pillLabel}`;
 
   return (
     <div className="app-header-workspace">
@@ -406,11 +504,11 @@ export const WorkspaceMenu: React.FC = () => {
               aria-haspopup="menu"
               aria-expanded={showMenuPanel}
               aria-controls={panelId}
-              aria-label={`Рабочие окна: ${pillLabel}`}
+              aria-label={pillAriaLabel}
               onClick={toggleMenu}
               onKeyDown={onMenuTriggerKeyDown}
             >
-              <span className="workspace-pill__eyebrow">Рабочие окна</span>
+              <span className="workspace-pill__eyebrow">{pillEyebrow}</span>
               <span className="workspace-pill__name">{pillLabel}</span>
             </button>
           )}
@@ -438,7 +536,7 @@ export const WorkspaceMenu: React.FC = () => {
             aria-haspopup="menu"
             aria-expanded={showMenuPanel}
             aria-controls={panelId}
-            aria-label="Рабочие окна"
+            aria-label={pillAriaLabel}
             title={menuTriggerTitle}
             onClick={toggleMenu}
             onKeyDown={onMenuTriggerKeyDown}
@@ -464,27 +562,67 @@ export const WorkspaceMenu: React.FC = () => {
 
             {visibleBuiltinPresets.map((preset) => {
               const description = getLayoutPresetDescriptionRu(preset);
+              const isModified = Boolean(builtinLayoutOverrides[preset]);
+              const isActive = isBuiltinActive(activeWorkspace, preset);
               return (
-                <button
-                  key={preset}
-                  type="button"
-                  className="workspace-menu__item workspace-menu__item--with-description"
-                  role="menuitem"
-                  title={description}
-                  onClick={() => handleActivateBuiltin(preset)}
-                >
-                  <span className="workspace-menu__item-text">
-                    <span className="workspace-menu__item-label">
-                      {LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}
+                <div key={preset} className="workspace-menu__row">
+                  <button
+                    type="button"
+                    className="workspace-menu__item workspace-menu__item--with-description workspace-menu__item--selectable"
+                    role="menuitem"
+                    title={description}
+                    onClick={() => handleActivateBuiltin(preset)}
+                  >
+                    <span className="workspace-menu__item-text">
+                      <span className="workspace-menu__item-label">
+                        <span className="workspace-menu__item-label-text">
+                          {LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}
+                        </span>
+                        {isModified ? (
+                          <span className="workspace-menu__changed-mark">изменено</span>
+                        ) : null}
+                      </span>
+                      {description ? (
+                        <span className="workspace-menu__item-description">{description}</span>
+                      ) : null}
                     </span>
-                    {description ? (
-                      <span className="workspace-menu__item-description">{description}</span>
-                    ) : null}
-                  </span>
-                  {isBuiltinActive(activeWorkspace, preset) ? (
-                    <CheckIcon className="workspace-menu__check" aria-hidden />
+                    {isActive ? <CheckIcon className="workspace-menu__check" aria-hidden /> : null}
+                  </button>
+                  {isModified ? (
+                    <div className="workspace-menu__row-actions">
+                      <button
+                        type="button"
+                        className="workspace-menu__more-btn"
+                        role="menuitem"
+                        data-workspace-more={`builtin:${preset}`}
+                        aria-haspopup="menu"
+                        aria-expanded={builtinSubmenuPreset === preset}
+                        aria-label={`Действия: ${LAYOUT_PRESET_DISPLAY_NAMES_RU[preset]}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserSubmenuId(null);
+                          setBuiltinSubmenuPreset((current) =>
+                            current === preset ? null : preset,
+                          );
+                        }}
+                      >
+                        <MoreHorizIcon fontSize="small" aria-hidden />
+                      </button>
+                      {builtinSubmenuPreset === preset ? (
+                        <div className="workspace-menu__submenu" role="menu">
+                          <button
+                            type="button"
+                            className="workspace-menu__submenu-item"
+                            role="menuitem"
+                            onClick={() => handleResetBuiltin(preset)}
+                          >
+                            Сбросить к исходному
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
-                </button>
+                </div>
               );
             })}
 
@@ -514,11 +652,14 @@ export const WorkspaceMenu: React.FC = () => {
                     <button
                       type="button"
                       className="workspace-menu__more-btn"
+                      role="menuitem"
+                      data-workspace-more={`user:${workspace.id}`}
                       aria-haspopup="menu"
                       aria-expanded={userSubmenuId === workspace.id}
                       aria-label={`Действия: ${workspace.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
+                        setBuiltinSubmenuPreset(null);
                         setUserSubmenuId((current) =>
                           current === workspace.id ? null : workspace.id,
                         );

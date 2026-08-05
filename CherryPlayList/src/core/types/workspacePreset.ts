@@ -1,6 +1,5 @@
 import type { Layout } from './layout';
 
-/** Built-in layout preset identifiers (factory layouts). */
 export type LayoutPreset =
   | 'simple'
   | 'complex'
@@ -10,7 +9,6 @@ export type LayoutPreset =
   | 'party'
   | 'aimp-party';
 
-/** Stable id for built-ins: `builtin:${LayoutPreset}` */
 export type BuiltinWorkspaceId = `builtin:${LayoutPreset}`;
 
 export type ActiveWorkspace =
@@ -28,20 +26,21 @@ export interface UserWorkspace {
   updatedAt?: string;
 }
 
+export type BuiltinLayoutOverrides = Partial<Record<LayoutPreset, Layout>>;
+
 export interface WorkspacePersistSlice {
   activeWorkspace: ActiveWorkspace;
   userWorkspaces: UserWorkspace[];
   layout: Layout;
+  builtinLayoutOverrides?: BuiltinLayoutOverrides;
 }
 
 export const DEFAULT_BUILTIN_PRESET: LayoutPreset = 'collections-vertical';
 
-/** Display name for auto-created user workspaces until the user renames them. */
 export const UNNAMED_WORKSPACE_NAME = 'Без имени';
 
 const UNNAMED_WORKSPACE_NAME_PREFIX = `${UNNAMED_WORKSPACE_NAME} `;
 
-/** True for auto-generated names: «Без имени», «Без имени 2», … */
 export function isUnnamedWorkspaceName(name: string): boolean {
   const trimmed = name.trim();
   if (trimmed === UNNAMED_WORKSPACE_NAME) {
@@ -58,7 +57,6 @@ export function isUnnamedWorkspaceName(name: string): boolean {
   return Number.isInteger(index) && index >= 2;
 }
 
-/** First unnamed workspace is «Без имени»; further ones get «Без имени 2», «Без имени 3», … */
 export function allocateUnnamedWorkspaceName(existingNames: readonly string[]): string {
   const trimmedNames = existingNames.map((name) => name.trim());
   if (!trimmedNames.includes(UNNAMED_WORKSPACE_NAME)) {

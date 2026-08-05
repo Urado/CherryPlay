@@ -2,7 +2,6 @@ import type { WorkspaceRef } from '@core/types/workspacePreset';
 import { useLayoutStore } from '@shared/stores';
 
 export interface RequestActivateWorkspaceOptions {
-  /** Skip auto-commit before switch (e.g. automatic AIMP/settings fallback). */
   bypassDirtyGuard?: boolean;
 }
 
@@ -59,10 +58,7 @@ export function requestExitEditMode(): void {
     return;
   }
 
-  if (state.isWorkspaceDirty()) {
-    state.autoCommitWorkspaceChanges();
-  }
-
+  state.autoCommitWorkspaceChanges();
   state.setLayoutEditMode(false);
 }
 

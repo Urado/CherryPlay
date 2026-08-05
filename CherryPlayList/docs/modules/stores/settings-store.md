@@ -63,20 +63,22 @@ interface SettingsExportBundle {
   settings: SettingsExportPersistedState; // поля settingsStore (partialize)
   workspaces: {
     userWorkspaces: UserWorkspace[];
+    builtinLayoutOverrides?: BuiltinLayoutOverrides; // Partial<Record<LayoutPreset, Layout>>
     activeWorkspace?: ActiveWorkspace; // опционально; scratch не экспортируется
   };
 }
 ```
 
-**Экспорт** включает все partialize-поля `settingsStore` (в т.ч. `fileBrowserPathsByWorkspaceId`, `demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); для совместимости v1 дублируется path default-зоны в `fileBrowserPath` (`pickSettingsExportFields`). Также экспортируются **сохранённые** `userWorkspaces` (снимки layout). Живое дерево `layout` попадает в bundle только если оно уже записано в user workspace (в т.ч. через **auto-commit** при выходе из edit mode или переключении workspace).
+**Экспорт** включает все partialize-поля `settingsStore` (в т.ч. `fileBrowserPathsByWorkspaceId`, `demoPlayerFloatingPosition`, `demoPlayerFloatingOpen`); для совместимости v1 дублируется path default-зоны в `fileBrowserPath` (`pickSettingsExportFields`). Также экспортируются **сохранённые** `userWorkspaces` и **`builtinLayoutOverrides`** (structural-override встроенных пресетов). Живое дерево `layout` попадает в bundle через user workspace или через override (в т.ч. после **auto-commit** structural-правок builtin).
 
 **Импорт:**
 
 1. Парсинг JSON, проверка `schemaVersion === 1` и `validateSettingsExportBundle`.
 2. Подтверждение в `SettingsImportConfirmDialog`.
 3. `settings` — перезапись полей в `useSettingsStore`; `normalizeImportedSettings` мигрирует legacy `fileBrowserPath` → map под `DEFAULT_FILEBROWSER_WORKSPACE_ID`.
-4. `userWorkspaces` — merge по `id` (входящий выигрывает; при коллизии имён — суффикс `(2)`, `(3)`, …; это не то же самое, что серия «Без имени N» при auto-save в приложении).
-5. `activeWorkspace` применяется, если валиден и не edit mode; `scratch` игнорируется.
+4. `userWorkspaces` — merge по `id` (входящий выигрывает; при коллизии имён — суффикс `(2)`, `(3)`, …; это не то же самое, что серия «Без имени N» при auto-save scratch).
+5. `builtinLayoutOverrides` — merge по preset (входящий выигрывает; отсутствующее поле в старых bundle — без изменений текущих overrides).
+6. `activeWorkspace` применяется, если валиден и не edit mode; `scratch` игнорируется.
 
 Успешный импорт **без toast** (диалог закрывается, настройки и workspace применяются). Toast — только при **ошибке** чтения/разбора/применения bundle.
 
@@ -86,6 +88,6 @@ interface SettingsExportBundle {
 
 ## См. также
 
-- [Клиентское persist](../systems/persisted-client-state.md) — ключ `cherryplaylist-workspaces`
-- [Layout System](../systems/layout-system.md) — пользовательские workspace presets
+- [Клиентское persist](../systems/persisted-client-state.md) — ключ `cherryplaylist-workspaces` (`userWorkspaces`, `builtinLayoutOverrides`)
+- [Layout System](../systems/layout-system.md) — builtin override + **Мои**
 - [Веб-демо](../../web-demo.md) — Online / `networkEnabled` в fixtures и live

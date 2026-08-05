@@ -6,6 +6,7 @@ import { MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import { WorkspaceId } from '@core/types/workspace';
 import type {
   ActiveWorkspace,
+  BuiltinLayoutOverrides,
   LayoutPreset,
   UserWorkspace,
   WorkspacePersistSlice,
@@ -32,7 +33,11 @@ import {
   createLayoutByPreset,
   createPartyLayout,
 } from '../utils/layoutPresetFactories';
-import { getLayoutStructureSignature, getLayoutZoneSignature } from '../utils/layoutSignature';
+import {
+  getLayoutStructureDirtySignature,
+  getLayoutStructureSignature,
+  getLayoutZoneSignature,
+} from '../utils/layoutSignature';
 import {
   findZoneById,
   findParentZone,
@@ -84,6 +89,84 @@ function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): Wor
       workspace.id === activeId ? { ...workspace, layout: syncedLayout } : workspace,
     ),
   };
+}
+
+const KNOWN_LAYOUT_PRESET_KEYS: readonly LayoutPreset[] = [
+  'simple',
+  'complex',
+  'collections',
+  'collections-vertical',
+  'player',
+  'party',
+  'aimp-party',
+];
+
+function isKnownLayoutPresetKey(key: string): key is LayoutPreset {
+  return (KNOWN_LAYOUT_PRESET_KEYS as readonly string[]).includes(key);
+}
+
+function migrateBuiltinPresetKey(preset: LayoutPreset): LayoutPreset {
+  if (preset === 'aimp-party') {
+    return 'party';
+  }
+  if (preset === 'collections') {
+    return 'collections-vertical';
+  }
+  return preset;
+}
+
+function migrateLayoutTree(layout: Layout): Layout {
+  return migrateDuplicateFileBrowserWorkspaceIds(
+    migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(layout)),
+  );
+}
+
+export function normalizeBuiltinLayoutOverrides(
+  overrides: BuiltinLayoutOverrides | undefined | null,
+): BuiltinLayoutOverrides {
+  if (!overrides || typeof overrides !== 'object') {
+    return {};
+  }
+
+  const legacyEntries: Array<{ target: LayoutPreset; layout: Layout }> = [];
+  const canonicalEntries: Array<{ target: LayoutPreset; layout: Layout }> = [];
+
+  for (const [key, layout] of Object.entries(overrides)) {
+    if (!isKnownLayoutPresetKey(key) || !layout || typeof layout !== 'object') {
+      continue;
+    }
+
+    const target = migrateBuiltinPresetKey(key);
+    const migratedLayout = migrateLayoutTree(layout);
+    const entry = { target, layout: migratedLayout };
+
+    if (key === target) {
+      canonicalEntries.push(entry);
+    } else {
+      legacyEntries.push(entry);
+    }
+  }
+
+  const result: BuiltinLayoutOverrides = {};
+  for (const entry of legacyEntries) {
+    result[entry.target] = entry.layout;
+  }
+  for (const entry of canonicalEntries) {
+    result[entry.target] = entry.layout;
+  }
+  return result;
+}
+
+export function resolveBuiltinLayout(
+  preset: LayoutPreset,
+  overrides: BuiltinLayoutOverrides,
+): Layout {
+  const normalizedPreset = migrateBuiltinPresetKey(preset);
+  const override = overrides[normalizedPreset];
+  if (override) {
+    return cloneLayout(override);
+  }
+  return createLayoutByPreset(normalizedPreset);
 }
 
 const LEGACY_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:player,workspace:party)';
@@ -202,6 +285,7 @@ export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
     activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
     userWorkspaces: [],
     layout,
+    builtinLayoutOverrides: {},
   };
 }
 
@@ -212,48 +296,52 @@ export async function removeLegacyLayoutPersistKey(): Promise<void> {
 export function normalizeWorkspacePersistSlice(
   slice: WorkspacePersistSlice,
 ): WorkspacePersistSlice {
+  const builtinLayoutOverrides = normalizeBuiltinLayoutOverrides(slice.builtinLayoutOverrides);
+  const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
+    ...workspace,
+    layout: migrateLayoutTree(workspace.layout),
+  }));
+
   if (slice.activeWorkspace.kind === 'scratch') {
     return {
       activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
-      userWorkspaces: slice.userWorkspaces,
-      layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+      userWorkspaces,
+      layout: resolveBuiltinLayout(DEFAULT_BUILTIN_PRESET, builtinLayoutOverrides),
+      builtinLayoutOverrides,
     };
   }
 
   if (slice.activeWorkspace.kind === 'user') {
-    const userWorkspace = slice.userWorkspaces.find(
+    const userWorkspace = userWorkspaces.find(
       (workspace) => workspace.id === slice.activeWorkspace.id,
     );
     if (!userWorkspace) {
       return {
         activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
-        userWorkspaces: slice.userWorkspaces,
-        layout: createLayoutByPreset(DEFAULT_BUILTIN_PRESET),
+        userWorkspaces,
+        layout: resolveBuiltinLayout(DEFAULT_BUILTIN_PRESET, builtinLayoutOverrides),
+        builtinLayoutOverrides,
       };
     }
+
+    return {
+      activeWorkspace: slice.activeWorkspace,
+      userWorkspaces,
+      layout: migrateLayoutTree(slice.layout),
+      builtinLayoutOverrides,
+    };
   }
 
-  const activeWorkspace =
-    slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'aimp-party'
-      ? { kind: 'builtin' as const, preset: 'party' as const }
-      : slice.activeWorkspace.kind === 'builtin' && slice.activeWorkspace.preset === 'collections'
-        ? { kind: 'builtin' as const, preset: 'collections-vertical' as const }
-        : slice.activeWorkspace;
-
-  const layout = migrateDuplicateFileBrowserWorkspaceIds(
-    migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(slice.layout)),
-  );
-  const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
-    ...workspace,
-    layout: migrateDuplicateFileBrowserWorkspaceIds(
-      migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(workspace.layout)),
-    ),
-  }));
+  const activeWorkspace: ActiveWorkspace = {
+    kind: 'builtin',
+    preset: migrateBuiltinPresetKey(slice.activeWorkspace.preset),
+  };
 
   return {
     activeWorkspace,
     userWorkspaces,
-    layout,
+    layout: resolveBuiltinLayout(activeWorkspace.preset, builtinLayoutOverrides),
+    builtinLayoutOverrides,
   };
 }
 
@@ -272,13 +360,30 @@ export function migratePersistedWorkspaceState(
     preset: DEFAULT_BUILTIN_PRESET,
   };
   const userWorkspaces = Array.isArray(state.userWorkspaces) ? state.userWorkspaces : [];
+  const builtinLayoutOverrides = normalizeBuiltinLayoutOverrides(state.builtinLayoutOverrides);
 
-  return normalizeWorkspacePersistSlice({ activeWorkspace, userWorkspaces, layout });
+  return normalizeWorkspacePersistSlice({
+    activeWorkspace,
+    userWorkspaces,
+    layout,
+    builtinLayoutOverrides,
+  });
 }
 
-export function computeIsWorkspaceDirty(layout: Layout, baselineLayout: Layout | null): boolean {
+export function computeIsWorkspaceDirty(
+  layout: Layout,
+  baselineLayout: Layout | null,
+  options?: { structureOnly?: boolean },
+): boolean {
   if (!baselineLayout) {
     return false;
+  }
+
+  if (options?.structureOnly) {
+    return (
+      getLayoutStructureDirtySignature(layout.rootZone) !==
+      getLayoutStructureDirtySignature(baselineLayout.rootZone)
+    );
   }
 
   return (
@@ -315,6 +420,7 @@ interface LayoutState {
   layout: Layout;
   activeWorkspace: ActiveWorkspace;
   userWorkspaces: UserWorkspace[];
+  builtinLayoutOverrides: BuiltinLayoutOverrides;
   baselineLayout: Layout | null;
   isLayoutEditMode: boolean;
   openLayoutEditPickerKey: string | null;
@@ -340,6 +446,8 @@ interface LayoutState {
   saveCurrentWorkspaceAsUnnamed: () => boolean;
   autoCommitWorkspaceChanges: () => boolean;
   resetCurrentWorkspace: () => boolean;
+  clearBuiltinOverride: (preset: LayoutPreset) => boolean;
+  hasBuiltinOverride: (preset: LayoutPreset) => boolean;
   createScratchWorkspace: () => boolean;
   renameUserWorkspace: (id: string, name: string) => boolean;
   deleteUserWorkspace: (id: string) => boolean;
@@ -371,6 +479,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
       layout: initialLayout,
       activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
       userWorkspaces: [],
+      builtinLayoutOverrides: {},
       baselineLayout: cloneLayout(initialLayout),
       isLayoutEditMode: false,
       openLayoutEditPickerKey: null,
@@ -559,8 +668,9 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         let activeWorkspace: ActiveWorkspace;
 
         if (ref.kind === 'builtin') {
-          newLayout = createLayoutByPreset(ref.preset);
-          activeWorkspace = { kind: 'builtin', preset: ref.preset };
+          const preset = migrateBuiltinPresetKey(ref.preset);
+          newLayout = resolveBuiltinLayout(preset, state.builtinLayoutOverrides);
+          activeWorkspace = { kind: 'builtin', preset };
         } else {
           const userWorkspace = state.userWorkspaces.find((workspace) => workspace.id === ref.id);
           if (!userWorkspace) {
@@ -631,6 +741,37 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
       autoCommitWorkspaceChanges: () => {
         const state = get();
+
+        if (state.activeWorkspace.kind === 'builtin') {
+          const baseline = state.baselineLayout;
+          if (!baseline) {
+            return true;
+          }
+
+          const structureDirty = computeIsWorkspaceDirty(state.layout, baseline, {
+            structureOnly: true,
+          });
+
+          if (structureDirty) {
+            const preset = state.activeWorkspace.preset;
+            const savedLayout = cloneLayout(state.layout);
+            set({
+              builtinLayoutOverrides: {
+                ...state.builtinLayoutOverrides,
+                [preset]: savedLayout,
+              },
+              baselineLayout: cloneLayout(state.layout),
+              activeWorkspace: { kind: 'builtin', preset },
+            });
+            return true;
+          }
+
+          if (computeIsWorkspaceDirty(state.layout, baseline)) {
+            set({ layout: cloneLayout(baseline) });
+          }
+          return true;
+        }
+
         if (!state.isWorkspaceDirty()) {
           return true;
         }
@@ -639,7 +780,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return get().saveCurrentWorkspace();
         }
 
-        if (state.activeWorkspace.kind === 'builtin' || state.activeWorkspace.kind === 'scratch') {
+        if (state.activeWorkspace.kind === 'scratch') {
           return get().saveCurrentWorkspaceAsUnnamed();
         }
 
@@ -682,13 +823,15 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
       resetCurrentWorkspace: () => {
         const state = get();
+
+        if (state.activeWorkspace.kind === 'builtin') {
+          return get().clearBuiltinOverride(state.activeWorkspace.preset);
+        }
+
         let newLayout: Layout;
         let isUserWorkspace = false;
 
         switch (state.activeWorkspace.kind) {
-          case 'builtin':
-            newLayout = createLayoutByPreset(state.activeWorkspace.preset);
-            break;
           case 'user': {
             const userWorkspace = state.userWorkspaces.find(
               (workspace) => workspace.id === state.activeWorkspace.id,
@@ -719,6 +862,36 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           openLayoutEditPickerKey: null,
         });
         return true;
+      },
+
+      clearBuiltinOverride: (preset) => {
+        const state = get();
+        const normalizedPreset = migrateBuiltinPresetKey(preset);
+        const nextOverrides: BuiltinLayoutOverrides = { ...state.builtinLayoutOverrides };
+        delete nextOverrides[normalizedPreset];
+        const newLayout = createLayoutByPreset(normalizedPreset);
+        const isActiveBuiltin =
+          state.activeWorkspace.kind === 'builtin' &&
+          state.activeWorkspace.preset === normalizedPreset;
+
+        if (isActiveBuiltin) {
+          cleanupLayoutWorkspaceInstances(state.layout);
+          set({
+            builtinLayoutOverrides: nextOverrides,
+            layout: newLayout,
+            baselineLayout: cloneLayout(newLayout),
+            openLayoutEditPickerKey: null,
+          });
+        } else {
+          set({ builtinLayoutOverrides: nextOverrides });
+        }
+
+        return true;
+      },
+
+      hasBuiltinOverride: (preset) => {
+        const normalizedPreset = migrateBuiltinPresetKey(preset);
+        return Boolean(get().builtinLayoutOverrides[normalizedPreset]);
       },
 
       createScratchWorkspace: () => {
@@ -784,7 +957,10 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         if (isActive) {
           cleanupLayoutWorkspaceInstances(state.layout);
-          const newLayout = createLayoutByPreset(DEFAULT_BUILTIN_PRESET);
+          const newLayout = resolveBuiltinLayout(
+            DEFAULT_BUILTIN_PRESET,
+            state.builtinLayoutOverrides,
+          );
           set({
             userWorkspaces: nextUserWorkspaces,
             layout: newLayout,
@@ -801,6 +977,11 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
       isWorkspaceDirty: () => {
         const state = get();
+        if (state.activeWorkspace.kind === 'builtin') {
+          return computeIsWorkspaceDirty(state.layout, state.baselineLayout, {
+            structureOnly: true,
+          });
+        }
         return computeIsWorkspaceDirty(state.layout, state.baselineLayout);
       },
 
@@ -932,6 +1113,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           activeWorkspace: state.activeWorkspace,
           userWorkspaces: state.userWorkspaces,
           layout: state.layout,
+          builtinLayoutOverrides: state.builtinLayoutOverrides,
         });
         return syncActiveUserWorkspaceLayoutInSlice(persistSlice);
       },
@@ -949,6 +1131,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
             activeWorkspace: state.activeWorkspace,
             userWorkspaces: state.userWorkspaces,
             layout: state.layout,
+            builtinLayoutOverrides: state.builtinLayoutOverrides ?? {},
           }),
         );
 
@@ -956,6 +1139,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           activeWorkspace: normalized.activeWorkspace,
           userWorkspaces: normalized.userWorkspaces,
           layout: normalized.layout,
+          builtinLayoutOverrides: normalized.builtinLayoutOverrides,
           baselineLayout: cloneLayout(normalized.layout),
           isLayoutEditMode: false,
           openLayoutEditPickerKey: null,

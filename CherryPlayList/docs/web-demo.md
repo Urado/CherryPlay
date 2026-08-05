@@ -142,7 +142,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 - **Party / auth (live)** — local login/register против сервера; данные вечеринок с API; SignalR при Online ON через proxy. Гостевой URL (`getPartyUrl`) при пустом `serverUrl` (Vite proxy / same-origin) — `http://localhost:3000/party/{shortCode}`; при непустом `VITE_API_URL` — эвристика host + `:5000`→`:3000` (как в Electron).
 - **Загрузка демо-проекта** — меню **Файл** → **«Учебный демо-проект…»** (`title`: «Загружает учебный демо-проект, не настоящую вечеринку») или `npm run dev:web:project` (fixtures; live-флаг выключен). При `meta.isDirty` — confirm перед отбрасыванием изменений (см. [Save/Load](./modules/systems/save-load.md)).
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех без записи файлов на диск; **без** success-toast (модалка закрывается).
-- **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-settings`, `cherryplaylist-workspaces`, `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Ключ `cherryplaylist-auth`: в **fixtures** тоже очищается; в **live** (`VITE_DEMO_LIVE=1`) **сохраняется**, чтобы сессия переживала F5. Остальные ключи в live по-прежнему сбрасываются — workspace/layout после полной перезагрузки не восстанавливаются. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
+- **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-settings`, `cherryplaylist-workspaces` (включая `builtinLayoutOverrides`), `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Ключ `cherryplaylist-auth`: в **fixtures** тоже очищается; в **live** (`VITE_DEMO_LIVE=1`) **сохраняется**, чтобы сессия переживала F5. Остальные ключи в live по-прежнему сбрасываются — workspace/layout/overrides после полной перезагрузки не восстанавливаются. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
 
 ---
 
@@ -193,14 +193,14 @@ npm run dev
 3. DnD / Save / Play-preview — toast **`warning`** **«Не доступно в демо»** где capability блокирует.
 4. `npm run dev:web:project` или меню **Файл** → **«Учебный демо-проект…»** — `sample.cherry`.
 5. Экспорт — модалка закрывается без success-toast; файлы на диск не пишутся.
-6. [Режим редактирования layout](./layout-edit-mode.md) — после F5 workspace **не** сохраняется (сброс AC12).
+6. [Режим редактирования layout](./layout-edit-mode.md) — после F5 workspace / overrides **не** сохраняются (сброс AC12).
 
 ### Live
 
 7. Поднять CherryPlayServer на `:5000`, затем `npm run dev:web:live`.
 8. Online ON — SignalR negotiate/connect через proxy (`/partyHub`); local login работает.
 9. Online OFF — hub неактивен; баннеры согласованы с настройкой.
-10. Полная перезагрузка страницы — auth в live сохраняется (AC12 не чистит `cherryplaylist-auth`); workspace/layout сбрасываются.
+10. Полная перезагрузка страницы — auth в live сохраняется (AC12 не чистит `cherryplaylist-auth`); workspace/layout/overrides сбрасываются.
 
 ### Electron
 
