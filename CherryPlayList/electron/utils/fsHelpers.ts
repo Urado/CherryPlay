@@ -6,6 +6,11 @@ import { logger } from './logger.js';
 // Supported audio file extensions
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.m4a', '.ogg'] as const;
 
+/** Coerce fs.stat numeric fields (Node may type them as number | bigint). */
+export function normalizeStatNumber(value: number | bigint): number {
+  return typeof value === 'bigint' ? Number(value) : value;
+}
+
 /**
  * Check if a file is an audio file based on its extension
  */

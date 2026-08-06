@@ -1,4 +1,10 @@
-import { AuthForm } from '@cherryplay/components';
+import {
+  Disclosure,
+  AuthForm,
+  Button,
+  ForgotPasswordForm,
+  ChangePasswordForm,
+} from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
@@ -8,6 +14,8 @@ import {
   getAppMode,
   getPlatform,
   getPlatformCapabilities,
+  isDemoFixturesMode,
+  isDemoLiveMode,
   isPlatformInitialized,
 } from '@shared/platform';
 import { authService } from '@shared/services/authService';
@@ -15,67 +23,34 @@ import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
 import { clearAuthSession, setAuthSessionToken } from '@shared/utils/authSession';
 
+import { MyPartiesList } from './MyPartiesList';
+
+type UnauthenticatedPanel = 'login' | 'forgot';
+
 export const AccountView: React.FC = () => {
-  const { accessToken, setOrganizer, isAuthenticated } = useAuthStore();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const storeOrganizer = useAuthStore((state) => state.organizer);
+  const setOrganizer = useAuthStore((state) => state.setOrganizer);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [loading, setLoading] = useState(false);
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isOrganizerCardExpanded, setIsOrganizerCardExpanded] = useState(false);
+  const [isChangePasswordExpanded, setIsChangePasswordExpanded] = useState(false);
+  const [unauthenticatedPanel, setUnauthenticatedPanel] = useState<UnauthenticatedPanel>('login');
   const addNotification = useUIStore((state) => state.addNotification);
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
-
-  useEffect(() => {
-    if (!getPlatformCapabilities().supportsRealAuth) {
-      if (isAuthenticated()) {
-        setOrganizerInfo(getDemoOrganizerDto());
-        setOrganizer({ id: DEMO_ORGANIZER_DTO.id, name: DEMO_ORGANIZER_DTO.name });
-      }
-      return;
-    }
-    // Загружаем информацию об организаторе при монтировании, если есть токен
-    if (isAuthenticated() && accessToken) {
-      loadOrganizerInfo();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
-
-  // Обработка OAuth callback - регистрируем при монтировании компонента
-  useEffect(() => {
-    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const registerCallback = async () => {
-      try {
-        // Регистрируем callback handler
-        const result = (await getPlatform().invoke('auth:registerCallback')) as
-          | { success: true; data: { code: string; provider: string } }
-          | { success: false; error: string };
-
-        if (isMounted && result.success && result.data) {
-          const { code, provider } = result.data;
-          await handleOAuthExchange(code, provider);
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Error handling OAuth callback:', error);
-          setError(error instanceof Error ? error.message : 'Failed to handle OAuth callback');
-        }
-      }
-    };
-
-    registerCallback();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const isDemoMode = getAppMode() === 'demo';
+  const isFixturesDemo = isDemoFixturesMode(getAppMode());
+  const isLiveDemo = isDemoLiveMode() && isDemoMode;
+  const authenticated = isAuthenticated();
 
   const loadOrganizerInfo = async () => {
-    if (!accessToken) return;
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      return;
+    }
 
     try {
       setLoading(true);
@@ -94,25 +69,75 @@ export const AccountView: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (isDemoFixturesMode(getAppMode())) {
+      if (useAuthStore.getState().isAuthenticated()) {
+        setOrganizerInfo(getDemoOrganizerDto());
+        setOrganizer({ id: DEMO_ORGANIZER_DTO.id, name: DEMO_ORGANIZER_DTO.name });
+      }
+      return;
+    }
+    if (!getPlatformCapabilities().supportsRealAuth) {
+      return;
+    }
+    if (useAuthStore.getState().isAuthenticated() && useAuthStore.getState().accessToken) {
+      void loadOrganizerInfo();
+    }
+  }, [accessToken, storeOrganizer?.id, setOrganizer]);
+
+  useEffect(() => {
+    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const registerCallback = async () => {
+      try {
+        const result = (await getPlatform().invoke('auth:registerCallback')) as
+          | { success: true; data: { code: string; provider: string } }
+          | { success: false; error: string };
+
+        if (isMounted && result.success && result.data) {
+          const { code, provider } = result.data;
+          await handleOAuthExchange(code, provider);
+        }
+      } catch (callbackError) {
+        if (isMounted) {
+          console.error('Error handling OAuth callback:', callbackError);
+          setError(
+            callbackError instanceof Error
+              ? callbackError.message
+              : 'Failed to handle OAuth callback',
+          );
+        }
+      }
+    };
+
+    void registerCallback();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authenticated) {
+      setUnauthenticatedPanel('login');
+    }
+  }, [authenticated]);
+
   const handleOAuthExchange = async (code: string, provider: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Генерируем deviceId (можно использовать что-то уникальное для устройства)
       const deviceId = `desktop-${Date.now()}`;
 
       const token = await authService.exchangeCode(code, provider, deviceId);
       setAuthSessionToken(token);
 
-      // Загружаем информацию об организаторе
       await loadOrganizerInfo();
-
-      addNotification({
-        type: 'success',
-        message: 'Successfully logged in',
-        duration: 3000,
-      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to authenticate';
       setError(errorMessage);
@@ -134,11 +159,6 @@ export const AccountView: React.FC = () => {
       await authService.logout();
       setOrganizerInfo(null);
       closeModal();
-      addNotification({
-        type: 'success',
-        message: 'Вы вышли из аккаунта',
-        duration: 3000,
-      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to logout';
       setError(errorMessage);
@@ -152,12 +172,43 @@ export const AccountView: React.FC = () => {
     }
   };
 
-  const isDemoMode = getAppMode() === 'demo';
+  const handleForgotPasswordSuccess = (message: string) => {
+    addNotification({
+      type: 'info',
+      message: `${message} Ссылка для сброса пароля откроется в браузере на сайте CherryPlay.`,
+      duration: 12000,
+    });
+  };
+
+  const handleChangePasswordSuccess = () => {
+    clearAuthSession();
+    setOrganizerInfo(null);
+    setIsChangePasswordExpanded(false);
+    setUnauthenticatedPanel('login');
+    setError(null);
+    addNotification({
+      type: 'success',
+      message: 'Пароль успешно изменён. Войдите снова с новым паролем.',
+      duration: 8000,
+    });
+  };
+
+  const organizer: OrganizerDto | null =
+    organizerInfo ??
+    (isFixturesDemo
+      ? getDemoOrganizerDto()
+      : storeOrganizer
+        ? {
+            id: storeOrganizer.id,
+            name: storeOrganizer.name,
+            createdAt: '',
+            logoUrl: null,
+          }
+        : null);
 
   if (!isDemoMode && isClientOutdated) {
     return (
       <div className="account-view">
-        <h1>Аккаунт</h1>
         <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
       </div>
     );
@@ -165,87 +216,140 @@ export const AccountView: React.FC = () => {
 
   return (
     <div className="account-view">
-      <h1>Аккаунт</h1>
-
-      {isDemoMode && (
-        <p className="account-view-demo-hint" style={{ opacity: 0.85, marginBottom: '1rem' }}>
+      {isFixturesDemo && (
+        <p className="account-view-demo-hint">
           Веб-демо: фейковый организатор, без запросов к CherryPlayServer.
+        </p>
+      )}
+      {isLiveDemo && (
+        <p className="account-view-demo-hint">
+          Веб-демо (live): вход email/password через CherryPlayServer (Vite proxy).
         </p>
       )}
 
       {error && <div className="account-view-error">{error}</div>}
 
-      {loading && <div className="account-view-loading">Загрузка…</div>}
+      {loading && !organizer && <div className="account-view-loading">Загрузка…</div>}
 
-      {isAuthenticated() && (organizerInfo || isDemoMode) ? (
+      {authenticated && organizer ? (
         <div className="account-info">
-          <div className="account-view-success">
-            ✓ Вы авторизованы как организатор
-            {isDemoMode ? ' (демо)' : ''}
+          <div className="account-view-success" role="status" aria-live="polite">
+            <span className="account-view-success-mark" aria-hidden="true">
+              ✓
+            </span>
+            <span className="account-view-success-text">
+              Вы авторизованы как организатор
+              {isFixturesDemo ? ' (демо)' : ''}
+            </span>
           </div>
-          <h2>Информация об организаторе</h2>
-          <div style={{ marginBottom: '20px' }}>
-            <p>
-              <strong>Name:</strong> {(organizerInfo ?? getDemoOrganizerDto()).name}
-            </p>
-            <p>
-              <strong>ID:</strong> {(organizerInfo ?? getDemoOrganizerDto()).id}
-            </p>
-            {(organizerInfo ?? getDemoOrganizerDto()).logoUrl && (
-              <p>
-                <strong>Logo:</strong>{' '}
-                <img
-                  src={(organizerInfo ?? getDemoOrganizerDto()).logoUrl!}
-                  alt={(organizerInfo ?? getDemoOrganizerDto()).name}
-                  style={{ maxWidth: '100px', maxHeight: '100px' }}
-                />
-              </p>
-            )}
-            {(organizerInfo ?? getDemoOrganizerDto()).links &&
-              Object.keys((organizerInfo ?? getDemoOrganizerDto()).links!).length > 0 && (
-                <div>
-                  <strong>Links:</strong>
-                  <ul>
-                    {Object.entries((organizerInfo ?? getDemoOrganizerDto()).links!).map(
-                      ([key, value]) => (
-                        <li key={key}>
-                          <a href={value} target="_blank" rel="noopener noreferrer">
-                            {key}
-                          </a>
-                        </li>
-                      ),
-                    )}
-                  </ul>
+
+          <div className="account-disclosure-stack">
+            <section className="account-disclosure-card" aria-label="Информация об организаторе">
+              <Disclosure
+                title="Информация об организаторе"
+                className="account-disclosure"
+                expanded={isOrganizerCardExpanded}
+                onExpandedChange={setIsOrganizerCardExpanded}
+              >
+                <div className="account-view-organizer-details">
+                  <div className="account-view-field">
+                    <span className="account-view-field-label">Имя</span>
+                    <span className="account-view-field-value">{organizer.name}</span>
+                  </div>
+
+                  <div className="account-view-field">
+                    <span className="account-view-field-label">ID</span>
+                    <span className="account-view-field-value account-view-field-value--mono">
+                      {organizer.id}
+                    </span>
+                  </div>
+
+                  {organizer.logoUrl && (
+                    <div className="account-view-field">
+                      <span className="account-view-field-label">Логотип</span>
+                      <div className="account-view-logo-wrap">
+                        <img
+                          src={organizer.logoUrl}
+                          alt={organizer.name}
+                          className="account-view-logo"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {organizer.createdAt ? (
+                    <div className="account-view-field">
+                      <span className="account-view-field-label">Создан</span>
+                      <span className="account-view-field-value">
+                        {new Date(organizer.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
-              )}
-            <p>
-              <strong>Created:</strong>{' '}
-              {new Date((organizerInfo ?? getDemoOrganizerDto()).createdAt).toLocaleDateString()}
-            </p>
+              </Disclosure>
+            </section>
+
+            {!isFixturesDemo && (
+              <section className="account-disclosure-card" aria-label="Смена пароля">
+                <Disclosure
+                  title="Смена пароля"
+                  className="account-disclosure"
+                  expanded={isChangePasswordExpanded}
+                  onExpandedChange={setIsChangePasswordExpanded}
+                >
+                  <ChangePasswordForm
+                    authService={authService}
+                    layout="embedded"
+                    title={null}
+                    onSuccess={handleChangePasswordSuccess}
+                  />
+                </Disclosure>
+              </section>
+            )}
+
+            <MyPartiesList />
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loading}
-            className="account-view-logout-btn"
-          >
-            Выйти
-          </button>
+
+          <div className="account-view-actions">
+            <Button
+              type="button"
+              onClick={handleLogout}
+              loading={loading}
+              className="account-view-logout-btn modal-button"
+              variant="danger"
+              size="sm"
+            >
+              Выйти
+            </Button>
+          </div>
         </div>
       ) : (
-        <AuthForm
-          title="Вход в систему"
-          compact={false}
-          authService={authService}
-          onLoginSuccess={async () => {
-            await loadOrganizerInfo();
-            addNotification({
-              type: 'success',
-              message: 'Успешный вход в систему',
-              duration: 3000,
-            });
-          }}
-        />
+        <>
+          {unauthenticatedPanel === 'forgot' ? (
+            <div className="account-view-password-panel">
+              <ForgotPasswordForm
+                authService={authService}
+                description="Укажите email аккаунта. Если он зарегистрирован, мы отправим инструкции по сбросу пароля. Ссылка из письма откроется в браузере на сайте CherryPlay."
+                onSuccess={handleForgotPasswordSuccess}
+                onBackToLogin={() => setUnauthenticatedPanel('login')}
+              />
+            </div>
+          ) : (
+            <AuthForm
+              title="Вход в систему"
+              compact={false}
+              authService={authService}
+              oauthEnabled={!isDemoMode}
+              onLoginSuccess={() => {
+                void loadOrganizerInfo();
+              }}
+              onForgotPassword={() => setUnauthenticatedPanel('forgot')}
+            />
+          )}
+          <div className="account-disclosure-stack">
+            <MyPartiesList />
+          </div>
+        </>
       )}
     </div>
   );

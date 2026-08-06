@@ -1,0 +1,9 @@
+/**
+ * Aggregate shell primitives entrypoint.
+ * Import this file once at app shell level; it already includes shell-palette.css.
+ */
+@import './shell-palette.css';
+@import '../components/primitives/Button/Button.css';
+@import '../components/primitives/Disclosure/Disclosure.css';
+@import '../components/primitives/Icon/Icon.css';
+@import '../components/primitives/PlaybackControlButton/PlaybackControlButton.css';

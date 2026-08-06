@@ -1,4 +1,4 @@
-import { Track } from './track';
+import type { Track, TrackLoudness } from './track';
 
 /**
  * Действие после окончания трека
@@ -87,16 +87,22 @@ export interface LinkedParty {
 /**
  * Настройки отображения имён треков для вечеринки (локально / в проекте, не Party customizationSettings API).
  */
+export type PartyTrackStripLeadingMode = 'count' | 'untilDelimiter';
+
 export interface PartyTrackDisplaySettings {
-  /** Обрезать заданное число символов с начала имени при превью и при отправке плейлиста на сервер */
   stripLeadingCharsEnabled: boolean;
-  /** Сколько символов (Unicode code points) убрать с начала (при включённой опции) */
+  stripLeadingCharsMode: PartyTrackStripLeadingMode;
   stripLeadingCharsCount: number;
+  stripLeadingCharsDelimiter: string;
 }
+
+export const DEFAULT_PARTY_TRACK_STRIP_DELIMITER = ' ';
 
 export const DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS: PartyTrackDisplaySettings = {
   stripLeadingCharsEnabled: false,
+  stripLeadingCharsMode: 'count',
   stripLeadingCharsCount: 0,
+  stripLeadingCharsDelimiter: DEFAULT_PARTY_TRACK_STRIP_DELIMITER,
 };
 
 /**
@@ -135,6 +141,7 @@ export interface SavedProjectTrack {
   path: string;
   name: string;
   duration?: number;
+  loudness?: TrackLoudness;
 }
 
 /**

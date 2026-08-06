@@ -217,6 +217,19 @@ public static class DomainToEfMappers
         };
     }
 
+    public static PasswordResetTokenEf ToEf(this PasswordResetToken domain)
+    {
+        return new PasswordResetTokenEf
+        {
+            Id = domain.Id,
+            EmailAccountId = domain.EmailAccountId,
+            TokenHash = domain.TokenHash,
+            ExpiresAt = EnsureUtc(domain.ExpiresAt),
+            UsedAt = EnsureUtc(domain.UsedAt),
+            CreatedAt = EnsureUtc(domain.CreatedAt),
+        };
+    }
+
     private static string? SerializeStringList(List<string>? list)
     {
         if (list == null || list.Count == 0) return null;

@@ -1,5 +1,5 @@
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -11,25 +11,29 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
-import { DemoPlayer } from '@shared/components';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
-import { useGlobalShortcuts } from '@shared/shortcuts';
+import { useGlobalShortcuts, usePlayerShortcuts } from '@shared/shortcuts';
 import {
-  LayoutPreset,
-  useAimpStore,
   useAuthStore,
   useLayoutStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { getAimpPartyPresetState, getLayoutPresetFromLayout } from '@shared/utils';
 
+import { HeaderPartyStatus } from './HeaderPartyStatus';
+import { HeaderPlaybackPill } from './HeaderPlaybackPill';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
+import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
+import { WorkspaceMenu } from './WorkspaceMenu';
+
+function layoutEditControlTitle(defaultTitle: string, isLayoutEditMode: boolean): string {
+  return isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : defaultTitle;
+}
 
 function caughtErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -37,15 +41,15 @@ function caughtErrorMessage(error: unknown): string {
   return 'Неизвестная ошибка';
 }
 
-/** Parent directory of a .cherry file path (cross-platform). */
+function confirmDiscardUnsavedChanges(): boolean {
+  return window.confirm('В проекте есть несохранённые изменения. Продолжить и отбросить их?');
+}
+
 function directoryOfProjectFile(filePath: string): string {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
 }
 
-/**
- * Assembles the project state snapshot passed to `serializeProject` (quick save and save-as).
- */
 function projectStateDataForSave(params: {
   name: string;
   items: ProjectItem[];
@@ -105,63 +109,20 @@ export const AppHeader: React.FC = () => {
     getAllTracksInOrder,
   } = useProjectStore();
 
-  const { openModal, addNotification, focusFileInBrowser } = useUIStore();
+  const { openModal, addNotification } = useUIStore();
   const { setLastOpenedPlaylist, enableStreaming, streamingSource } = useSettingsStore();
-  const layout = useLayoutStore((state) => state.layout);
-  const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
+  const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const showHeaderPartyStatus = enableStreaming;
+  const showHeaderPlaybackPill =
+    sessionState.mode === 'session' && streamingSource === 'cherryPlayPlayer';
+  const showHeaderPlaybackPillRow = showHeaderPartyStatus || showHeaderPlaybackPill;
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const organizer = useAuthStore((state) => state.organizer);
-  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
-  const aimpPartyPresetState = getAimpPartyPresetState({
-    sourceSelection: streamingSource,
-    environment: aimpBridgeState.environment,
-    enableStreaming,
-  });
-  const isAimpPresetVisible = aimpPartyPresetState.visible;
-  const { supportsAimpWorkspace, supportsProjectPersistence, usesFixtureFileBrowser } =
-    usePlatformCapabilities();
+  const { supportsProjectPersistence, usesFixtureFileBrowser } = usePlatformCapabilities();
 
   const notifyDemoBlocked = useCallback(() => {
-    addNotification({ type: 'info', message: getPlatformUnavailableMessage() });
+    addNotification({ type: 'warning', message: getPlatformUnavailableMessage() });
   }, [addNotification]);
-  const persistedLayoutPreset = getLayoutPresetFromLayout(layout);
-  const [selectedLayout, setSelectedLayout] = useState<LayoutPreset>(
-    persistedLayoutPreset ?? 'simple',
-  );
-
-  useEffect(() => {
-    if (persistedLayoutPreset && persistedLayoutPreset !== selectedLayout) {
-      setSelectedLayout(persistedLayoutPreset);
-    }
-  }, [persistedLayoutPreset, selectedLayout]);
-
-  // В production не позволяем использовать complex layout
-  useEffect(() => {
-    const isDev = import.meta.env.DEV;
-    if (!isDev && selectedLayout === 'complex') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout('simple');
-        setLayoutPreset('simple');
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedLayout, setLayoutPreset]);
-
-  useEffect(() => {
-    if (!isAimpPresetVisible && persistedLayoutPreset === 'aimp-party') {
-      const timeoutId = setTimeout(() => {
-        setSelectedLayout(aimpPartyPresetState.fallbackPreset);
-        setLayoutPreset(aimpPartyPresetState.fallbackPreset);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [
-    aimpPartyPresetState.fallbackPreset,
-    isAimpPresetVisible,
-    persistedLayoutPreset,
-    setLayoutPreset,
-  ]);
-
   const closeProjectMenu = useCallback(() => setProjectMenuOpen(false), []);
 
   const openSaveAsModal = useCallback(() => {
@@ -173,7 +134,7 @@ export const AppHeader: React.FC = () => {
   const focusProjectMenuItemAt = useCallback((index: number) => {
     const panel = projectMenuPanelRef.current;
     if (!panel) return;
-    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+    const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
     if (items.length === 0) return;
     const i = ((index % items.length) + items.length) % items.length;
     items[i]?.focus();
@@ -212,7 +173,7 @@ export const AppHeader: React.FC = () => {
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       const panel = projectMenuPanelRef.current;
       if (!panel) return;
-      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])]')];
+      const items = [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')];
       if (items.length === 0) return;
       const current = items.indexOf(document.activeElement as HTMLElement);
 
@@ -252,9 +213,11 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleNew = useCallback(() => {
+    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+      return;
+    }
     newProject();
-    addNotification({ type: 'info', message: 'Создан новый проект' });
-  }, [newProject, addNotification]);
+  }, [meta.isDirty, newProject]);
 
   const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
     setIsSaving(true);
@@ -265,26 +228,12 @@ export const AppHeader: React.FC = () => {
     }
   }, []);
 
-  const addSaveSuccessWithOpenFolder = useCallback(
-    (folderToOpen: string, message: string) => {
-      addNotification({
-        type: 'success',
-        message,
-        duration: 8000,
-        action: {
-          label: 'Открыть папку',
-          onAction: () => {
-            void ipcService.openPath(folderToOpen);
-          },
-        },
-      });
-    },
-    [addNotification],
-  );
-
   const handleLoadDemoProject = useCallback(async () => {
+    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+      return;
+    }
     await loadDemoProjectSafe();
-  }, []);
+  }, [meta.isDirty]);
 
   const runSaveAsFromModal = useCallback(
     async (payload: { portable: boolean; projectName: string; targetDirectory: string }) => {
@@ -321,20 +270,15 @@ export const AppHeader: React.FC = () => {
       const projectFile = projectService.serializeProject(stateData);
 
       if (portablePackage) {
-        const { cherryPath, folderPath } = await projectService.savePortableAs(
-          targetDirectory,
-          projectFile,
-          {
-            notifyOnIpcError: false,
-          },
-        );
+        const { cherryPath } = await projectService.savePortableAs(targetDirectory, projectFile, {
+          notifyOnIpcError: false,
+        });
         setName(baseName);
         setFilePath(cherryPath);
         resetDirty();
         setLastOpenedPlaylist(cherryPath);
         setPortableMode(true);
         setSaveAsModalOpen(false);
-        addSaveSuccessWithOpenFolder(folderPath, 'Проект сохранён (переносимый пакет)');
         return;
       }
       const normalizedDir = targetDirectory.replace(/[\\/]+$/, '');
@@ -349,7 +293,6 @@ export const AppHeader: React.FC = () => {
       resetDirty();
       setLastOpenedPlaylist(path);
       setSaveAsModalOpen(false);
-      addSaveSuccessWithOpenFolder(directoryOfProjectFile(path), 'Проект сохранён');
     },
     [
       items,
@@ -364,7 +307,6 @@ export const AppHeader: React.FC = () => {
       setPortableMode,
       resetDirty,
       setLastOpenedPlaylist,
-      addSaveSuccessWithOpenFolder,
       supportsProjectPersistence,
       notifyDemoBlocked,
     ],
@@ -412,7 +354,6 @@ export const AppHeader: React.FC = () => {
           portableMode: settings.portableMode,
         });
         resetDirty();
-        addNotification({ type: 'success', message: 'Проект сохранён' });
       });
     } catch (error) {
       addNotification({
@@ -442,6 +383,10 @@ export const AppHeader: React.FC = () => {
       return;
     }
 
+    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+      return;
+    }
+
     try {
       const path = await ipcService.showOpenFileDialog({
         title: 'Открыть проект',
@@ -459,7 +404,6 @@ export const AppHeader: React.FC = () => {
           linkedParty: linkedPartyFromFile,
         });
         setLastOpenedPlaylist(path);
-        addNotification({ type: 'success', message: 'Проект загружен' });
 
         if (linkedPartyFromFile?.shortCode) {
           partyService
@@ -471,9 +415,7 @@ export const AppHeader: React.FC = () => {
                 url,
               });
             })
-            .catch(() => {
-              // Server unreachable — keep linkedParty without url
-            });
+            .catch(() => {});
         }
       }
     } catch (error) {
@@ -485,6 +427,7 @@ export const AppHeader: React.FC = () => {
     addNotification,
     supportsProjectPersistence,
     notifyDemoBlocked,
+    meta.isDirty,
   ]);
 
   const globalShortcutHandlers = useMemo(
@@ -503,8 +446,6 @@ export const AppHeader: React.FC = () => {
           notifyDemoBlocked();
           return;
         }
-        // With no file path, menu only shows "Сохранить" (not "Сохранить как…") — first-save flow
-        // is handleSave → open save-as modal. Reuse the same path so the shortcut never diverges.
         if (!meta.filePath) {
           void handleSave();
         } else {
@@ -532,7 +473,14 @@ export const AppHeader: React.FC = () => {
     ],
   );
 
-  useGlobalShortcuts(globalShortcutHandlers);
+  useEffect(() => {
+    if (isLayoutEditMode) {
+      setProjectMenuOpen(false);
+    }
+  }, [isLayoutEditMode]);
+
+  useGlobalShortcuts(globalShortcutHandlers, { enabled: !isLayoutEditMode });
+  usePlayerShortcuts({ enabled: !isLayoutEditMode });
 
   const handleExport = () => {
     const allTracks = getAllTracksInOrder();
@@ -552,48 +500,12 @@ export const AppHeader: React.FC = () => {
     openModal('account');
   };
 
-  const handleLayoutChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const preset = e.target.value as LayoutPreset;
-    const isDev = import.meta.env.DEV;
-
-    // В production не позволяем выбирать complex
-    if (preset === 'complex' && !isDev) {
-      return;
-    }
-
-    if (
-      preset === 'simple' ||
-      preset === 'complex' ||
-      preset === 'collections' ||
-      preset === 'collections-vertical' ||
-      preset === 'player' ||
-      (preset === 'party' && enableStreaming) ||
-      (preset === 'aimp-party' && isAimpPresetVisible)
-    ) {
-      setSelectedLayout(preset);
-      setLayoutPreset(preset);
-      const presetNames: Record<LayoutPreset, string> = {
-        simple: 'Простой',
-        complex: 'Сложный',
-        collections: 'С коллекциями',
-        'collections-vertical': 'Коллекции вертикально',
-        player: 'Плеер',
-        party: 'Вечеринка',
-        'aimp-party': 'AIMP + Party',
-      };
-      addNotification({
-        type: 'info',
-        message: `Layout изменён: ${presetNames[preset]}`,
-      });
-    }
-  };
-
   return (
     <div className="app-header">
       <div className="app-header-toolbar">
         <div className="app-header-left">
-          <div className="app-header-actions">
-            <div className="action-group">
+          <div className="app-header-top-row">
+            <div className="app-header-file-cluster">
               <div className="project-menu" ref={projectMenuRef}>
                 <button
                   ref={projectMenuTriggerRef}
@@ -606,10 +518,18 @@ export const AppHeader: React.FC = () => {
                   aria-expanded={projectMenuOpen}
                   aria-controls={projectMenuPanelId}
                   aria-busy={isSaving}
-                  title="Меню проекта (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)"
+                  aria-label="Файл"
+                  disabled={isLayoutEditMode}
+                  title={layoutEditControlTitle(
+                    'Файл (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
+                    isLayoutEditMode,
+                  )}
                 >
                   {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <MoreVertIcon style={{ fontSize: 28 }} aria-hidden />
+                  <InsertDriveFileOutlinedIcon
+                    className="header-button__icon header-button__icon--compact"
+                    aria-hidden
+                  />
                 </button>
                 {projectMenuOpen && (
                   <div
@@ -651,12 +571,13 @@ export const AppHeader: React.FC = () => {
                         className="project-menu__item"
                         role="menuitem"
                         disabled={isSaving}
+                        title="Загружает учебный демо-проект, не настоящую вечеринку"
                         onClick={() => {
                           closeProjectMenu();
                           void handleLoadDemoProject();
                         }}
                       >
-                        Загрузить демо-проект
+                        Учебный демо-проект…
                       </button>
                     )}
                     <button
@@ -664,6 +585,7 @@ export const AppHeader: React.FC = () => {
                       className="project-menu__item"
                       role="menuitem"
                       disabled={isSaving}
+                      title="Экспортирует файлы плейлиста в выбранную папку"
                       onClick={() => {
                         closeProjectMenu();
                         handleExport();
@@ -688,15 +610,12 @@ export const AppHeader: React.FC = () => {
                             aria-label="Сохранение…"
                             role="status"
                           />
-                          Сохранить
+                          Сохранить проект
                         </span>
                       ) : (
-                        'Сохранить'
+                        'Сохранить проект'
                       )}
                     </button>
-                    {/* TODO(tests): no Jest pattern for AppHeader/shortcut gating yet — add coverage for
-                        no filePath (only «Сохранить») vs with filePath (+ «Сохранить как…») and
-                        `globalShortcutHandlers` when a renderer test harness exists. */}
                     {meta.filePath ? (
                       <button
                         type="button"
@@ -714,88 +633,74 @@ export const AppHeader: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="action-group">
-              {enableStreaming && (
-                <button
-                  className="header-button"
-                  onClick={handleAccount}
-                  title={
-                    isAuthenticated
-                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт'
-                  }
-                  style={{
-                    position: 'relative',
-                    color: isAuthenticated ? '#9e9e9e' : undefined,
-                  }}
-                >
-                  <AccountCircleIcon style={{ fontSize: '32px' }} />
-                  {isAuthenticated && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: '#4caf50',
-                        borderRadius: '50%',
-                        border: '1px solid white',
-                      }}
-                      title="Авторизован"
-                    />
-                  )}
-                </button>
-              )}
-              <button className="header-button" onClick={handleSettings} title="Настройки">
-                <SettingsIcon style={{ fontSize: '32px' }} />
+              <button
+                className="header-button"
+                onClick={handleSettings}
+                disabled={isLayoutEditMode}
+                aria-label="Настройки"
+                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
+              >
+                <SettingsIcon className="header-button__icon" aria-hidden />
               </button>
             </div>
+
+            {enableStreaming ? (
+              <div className="app-header-account-cluster">
+                <button
+                  className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
+                  onClick={handleAccount}
+                  disabled={isLayoutEditMode}
+                  aria-label="Аккаунт"
+                  title={layoutEditControlTitle(
+                    isAuthenticated
+                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
+                      : 'Войти в аккаунт',
+                    isLayoutEditMode,
+                  )}
+                >
+                  <AccountCircleIcon className="header-button__icon" aria-hidden />
+                  {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
+                </button>
+              </div>
+            ) : null}
           </div>
 
-          <div className="app-header-project-name">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="project-name-input"
-              placeholder="Название проекта"
-            />
-            {meta.isDirty && (
-              <span className="dirty-indicator" title="Есть несохранённые изменения">
-                *
-              </span>
-            )}
-          </div>
+          <div className="app-header-project-row">
+            <div className="app-header-project-main">
+              <div className="app-header-project-name">
+                <span className="app-header-project-name__eyebrow">Проект</span>
+                <div className="app-header-project-name__row">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="project-name-input"
+                    placeholder="Название проекта"
+                    disabled={isLayoutEditMode}
+                    aria-label="Название проекта"
+                    title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
+                  />
+                  {meta.isDirty && (
+                    <span className="dirty-indicator" title="Есть несохранённые изменения">
+                      *
+                    </span>
+                  )}
+                </div>
+              </div>
 
-          <div className="app-header-layout">
-            <label htmlFor="layout-select" className="app-header-layout__label">
-              Layout:
-            </label>
-            <select
-              id="layout-select"
-              value={selectedLayout}
-              onChange={handleLayoutChange}
-              className="layout-select"
-            >
-              <option value="simple">Простой (Playlist + Browser)</option>
-              {import.meta.env.DEV && <option value="complex">Сложный (с тестовыми зонами)</option>}
-              <option value="collections">С коллекциями (Playlist + Collections + Browser)</option>
-              <option value="collections-vertical">
-                Коллекции вертикально (Playlist + Collections + Browser)
-              </option>
-              <option value="player">Плеер (Player + Browser)</option>
-              {enableStreaming && <option value="party">Вечеринка (Player + Party)</option>}
-              {isAimpPresetVisible && supportsAimpWorkspace && (
-                <option value="aimp-party">AIMP + Party</option>
-              )}
-            </select>
+              {showHeaderPlaybackPillRow ? (
+                <div className="app-header-playback-pill-row">
+                  {showHeaderPartyStatus ? <HeaderPartyStatus disabled={isLayoutEditMode} /> : null}
+                  {showHeaderPlaybackPill ? (
+                    <HeaderPlaybackPill disabled={isLayoutEditMode} />
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            <WorkspaceMenu />
           </div>
         </div>
-
-        <DemoPlayer className="app-header-demo-player" onShowInBrowser={focusFileInBrowser} />
       </div>
 
       <SaveProjectAsModal

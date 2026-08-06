@@ -2,6 +2,11 @@ import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
 import {
+  startDemoLiveMockPlayback,
+  stopDemoLiveMockPlayback,
+} from '@shared/demo/demoLiveMockPlayback';
+import { isDemoLiveMode } from '@shared/platform';
+import {
   usePlayerAudioStore,
   useProjectStore,
   useDemoPlayerStore,
@@ -13,13 +18,11 @@ interface UsePlayerSessionOptions {
   allTracks: Track[];
   isTrackActive: (trackId: string) => boolean;
   onSessionStart?: () => Promise<void> | void;
+  beforeStartSession?: () => Promise<boolean>;
 }
 
-/**
- * Хук для управления сессией (начало/сброс)
- */
 export function usePlayerSession(options: UsePlayerSessionOptions) {
-  const { allTracks, isTrackActive, onSessionStart } = options;
+  const { allTracks, isTrackActive, onSessionStart, beforeStartSession } = options;
 
   const { startSession, resetSession, setCurrentTrack } = useProjectStore();
   const {
@@ -34,23 +37,26 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
       return;
     }
 
-    // Проверяем наличие активных (не отключённых) треков
     const hasActiveTracks = allTracks.some((track) => isTrackActive(track.id));
     if (!hasActiveTracks) {
       return;
     }
 
-    // Начинаем сессию (локальное воспроизведение; авторизация не требуется)
+    if (beforeStartSession) {
+      const canStart = await beforeStartSession();
+      if (!canStart) {
+        return;
+      }
+    }
+
     startSession();
 
-    // Блокируем демо-плеер, если выбран тот же аудио-выход (включая оба «по умолчанию»)
     const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
     const demoDeviceId = useSettingsStore.getState().demoPlayerAudioDeviceId;
     if (playerDeviceId === demoDeviceId) {
       useDemoPlayerStore.getState().setDisabled(true);
     }
 
-    // Вызываем колбэк для начала трансляции, если он предоставлен
     if (onSessionStart) {
       try {
         await onSessionStart();
@@ -59,17 +65,18 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
       }
     }
 
-    // Находим первый активный трек (не проигранный, не отключённый)
     const firstActiveTrack = allTracks.find((track) => isTrackActive(track.id));
 
     if (firstActiveTrack) {
       try {
-        // Загружаем трек в плеер
-        await loadPlayerTrack(firstActiveTrack);
-        // Устанавливаем его как текущий
-        setCurrentTrack(firstActiveTrack.id);
-        // Запускаем воспроизведение
-        await playPlayer();
+        if (isDemoLiveMode()) {
+          startDemoLiveMockPlayback(firstActiveTrack);
+          setCurrentTrack(firstActiveTrack.id);
+        } else {
+          await loadPlayerTrack(firstActiveTrack);
+          setCurrentTrack(firstActiveTrack.id);
+          await playPlayer();
+        }
       } catch (error) {
         logger.error('Failed to start first track playback', error);
       }
@@ -82,13 +89,15 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     setCurrentTrack,
     playPlayer,
     onSessionStart,
+    beforeStartSession,
   ]);
 
   const handleResetSession = useCallback(() => {
-    clearPauseTimer(); // Очищаем таймер паузы при сбросе
+    clearPauseTimer();
+    stopDemoLiveMockPlayback();
     resetSession();
-    pausePlayer(); // Останавливаем плеер при сбросе
-    useDemoPlayerStore.getState().setDisabled(false); // Снимаем блокировку демо-плеера
+    pausePlayer();
+    useDemoPlayerStore.getState().setDisabled(false);
   }, [resetSession, pausePlayer, clearPauseTimer]);
 
   return {

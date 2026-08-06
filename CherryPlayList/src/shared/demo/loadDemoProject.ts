@@ -9,10 +9,6 @@ function demoLoadErrorMessage(error: unknown): string {
 }
 export const DEMO_SAMPLE_PROJECT_PATH = '/demo/sample.cherry';
 
-/**
- * Fetches the static demo project and loads it into the project store.
- * Used by `VITE_LOAD_DEMO_PROJECT=1` and the demo menu action (subtask 04).
- */
 export async function loadDemoProject(): Promise<void> {
   const response = await fetch(DEMO_SAMPLE_PROJECT_URL);
   if (!response.ok) {
@@ -29,11 +25,6 @@ export async function loadDemoProject(): Promise<void> {
   });
 
   useSettingsStore.getState().setLastOpenedPlaylist(DEMO_SAMPLE_PROJECT_PATH);
-
-  useUIStore.getState().addNotification({
-    type: 'success',
-    message: 'Демо-проект загружен',
-  });
 }
 
 export async function loadDemoProjectSafe(): Promise<boolean> {

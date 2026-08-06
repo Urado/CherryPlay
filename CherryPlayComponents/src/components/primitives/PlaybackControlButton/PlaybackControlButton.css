@@ -1,0 +1,50 @@
+.cp-playback-control {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--cp-ui-border);
+  border-radius: 50%;
+  background: var(--bg-secondary, #252525);
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cp-playback-control--sm {
+  width: var(--cp-playback-control-size-sm);
+  height: var(--cp-playback-control-size-sm);
+  min-width: var(--cp-playback-control-size-sm);
+}
+
+.cp-playback-control--md {
+  width: var(--cp-playback-control-size-md);
+  height: var(--cp-playback-control-size-md);
+  min-width: var(--cp-playback-control-size-md);
+}
+
+.cp-playback-control--md.cp-playback-control--emphasis {
+  width: var(--cp-playback-control-size-md-emphasis);
+  height: var(--cp-playback-control-size-md-emphasis);
+  min-width: var(--cp-playback-control-size-md-emphasis);
+}
+
+.cp-playback-control:hover:not(:disabled) {
+  background-color: var(--bg-hover, #323232);
+}
+
+.cp-playback-control:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cp-playback-control--error {
+  color: var(--color-error, var(--cp-accent-danger, #d32f2f));
+}
+
+.cp-playback-control:focus-visible {
+  outline: 2px solid var(--cp-accent-primary);
+  outline-offset: 1px;
+}

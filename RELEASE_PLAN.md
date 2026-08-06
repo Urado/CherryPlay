@@ -35,7 +35,7 @@
 - Полноценная админка платформы (всё, что можно делать вручную — делаем вручную).
 - Брендинг/приватные темы как продаваемая фича — **MVP реализован** (см. [FEATURE_THEME_MONETIZATION.md](./FEATURE_THEME_MONETIZATION.md)); дальнейшее развитие (биллинг и self-service) остаётся вне v1.
 - Custom domains (закладываем совместимую маршрутизацию и модель, реализацию — позже).
-- Email-верификация, сброс пароля и инфраструктура писем (в v1 избегаем зависимости от email‑провайдера).
+- Email-верификация при регистрации (по-прежнему вне v1).
 
 ---
 
@@ -66,7 +66,8 @@
 - JWT:
   - access token для API и SignalR;
   - хранение в вебе через **httpOnly cookie**;
-  - политика обновления токена: допускается простая (без полноценного self‑service reset/verification).
+  - политика обновления токена: простая (без refresh-токенов); после сброса/смены пароля все сессии инвалидируются → повторный вход.
+- Сброс/смена пароля (**shipped** end-to-end): Server (эндпоинты + RuSender) + CherryPlayComponents + Web (`/forgot-password`, `/reset-password`, смена в кабинете) + List (запрос forgot + change-password в Account). Ссылка из письма всегда на Web; после reset/change — инвалидация всех сессий. Email-верификация при регистрации — по-прежнему вне v1 (§2.2).
 - Роли:
   - organizer (владелец данных и write‑доступ);
   - viewer (анонимный, read‑only через public API и Hub).
@@ -84,13 +85,14 @@
   - REST запросы организатора: Bearer JWT;
   - SignalR write‑операции: JWT передаётся при подключении к Hub и валидируется сервером.
 - Хранение токенов: предпочтительно защищённое хранилище ОС (Windows Credentials и аналоги).
-- Истечение токена: допускается "простая" стратегия v1 (достаточный TTL на мероприятие или ручной ре‑логин). Refresh‑токены и self‑service восстановление — позже.
+- Истечение токена: допускается "простая" стратегия v1 (достаточный TTL на мероприятие или ручной ре‑логин). **Refresh‑токены** — позже. Self-service forgot/change-password — shipped (см. §4.1); после сброса/смены — повторный вход.
 
 ### 4.1.2 Логин в CherryPlayWeb (organizer)
 - Веб‑кабинет организатора использует httpOnly cookie (без доступа JS к токенам).
 - Вход: по email+паролю или выбор провайдера (VK, Mail.ru) и переход на `/auth/{provider}/web` (например `/auth/mailru/web`).
 - После авторизации провайдер делает redirect на `/auth/{provider}/callback`, сервер устанавливает httpOnly cookie.
-- Кабинет организатора: метаданные/публикация, без управления эфиром.
+- Кабинет организатора: метаданные/публикация, без управления эфиром; смена пароля — в кабинете.
+- Восстановление пароля (live): `/forgot-password`, `/reset-password?token=` (письмо → Web); детали — [accounts-and-auth.md](docs/integration/accounts-and-auth.md).
 
 ### 4.2 Party Management (Server + Web)
 - Кабинет организатора (минимум):
@@ -145,6 +147,7 @@
 
 ### 6.2 Organizer (authorized)
 - Логин/логаут (email+пароль и OAuth: VK, Mail.ru; Telegram OAuth2 отложен).
+- Сброс пароля (forgot/reset, без auth) и смена пароля (authorized); детали и статусы — [CONTRACTS.md](CONTRACTS.md) §3.2.0a; клиенты — [accounts-and-auth.md](docs/integration/accounts-and-auth.md).
 - Управление профилем организатора (имя, логотип, ссылки).
 - CRUD вечеринок (создать/редактировать метаданные/удалить).
 - Toggle: unlisted ↔ в каталоге.
@@ -165,6 +168,7 @@
 - JWT для REST + SignalR.
 - Web: сессия через httpOnly cookie.
 - Минимальные экраны: login (с выбором провайдера), logout, "мой кабинет".
+- Self-service сброс/смена пароля (Server + RuSender + Components + Web + List) — **доставлено**; email-верификация при регистрации — вне v1.
 
 ### Epic C — Party management (Web + Server)
 - Organizer profile (лого, имя, ссылки).

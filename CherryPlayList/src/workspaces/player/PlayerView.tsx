@@ -1,4 +1,3 @@
-import * as signalR from '@microsoft/signalr';
 import React from 'react';
 
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -26,11 +25,8 @@ interface DragAndDropState {
 }
 
 interface PlayerViewProps {
-  name: string;
-  onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
-  projectedEndTime: number | null;
   hasSelectedItems: boolean;
   canCreateGroup: boolean;
   canRemoveSelectedItems: boolean;
@@ -44,6 +40,9 @@ interface PlayerViewProps {
   onResetSession: () => void;
   onOpenGlobalSettings: () => void;
   onExportTracksToText: () => void;
+  onCalculateLoudness?: () => void;
+  showLoudnessBatchButton?: boolean;
+  isLoudnessBatchScanning?: boolean;
   displayItems: DisplayItem[];
   zoneId: string;
   selectedItemIds: Set<string>;
@@ -79,8 +78,6 @@ interface PlayerViewProps {
   startTrackPlayback: (track: Track) => Promise<void>;
   pausePlayback: () => void;
   onNext?: () => void;
-  connectionState: signalR.HubConnectionState | null;
-  onReconnectClick?: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
 }
@@ -90,11 +87,8 @@ interface PlayerViewProps {
  * Отображает UI плеера, вся логика находится в PlayerViewContainer
  */
 export const PlayerView: React.FC<PlayerViewProps> = ({
-  name,
-  onNameChange,
   allTracksCount,
   totalDuration,
-  projectedEndTime,
   hasSelectedItems,
   canCreateGroup,
   canRemoveSelectedItems,
@@ -108,6 +102,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   onResetSession,
   onOpenGlobalSettings,
   onExportTracksToText,
+  onCalculateLoudness,
+  showLoudnessBatchButton,
+  isLoudnessBatchScanning,
   displayItems,
   zoneId,
   selectedItemIds,
@@ -140,19 +137,14 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   startTrackPlayback,
   pausePlayback,
   onNext,
-  connectionState,
-  onReconnectClick,
   serverTrackIds = null,
   jumpToTrack,
 }) => {
   return (
     <div className="playlist-view player-view">
       <PlayerHeader
-        name={name}
-        onNameChange={onNameChange}
         allTracksCount={allTracksCount}
         totalDuration={totalDuration}
-        projectedEndTime={projectedEndTime}
         hasSelectedItems={hasSelectedItems}
         canCreateGroup={canCreateGroup}
         canRemoveSelectedItems={canRemoveSelectedItems}
@@ -166,8 +158,9 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onResetSession={onResetSession}
         onOpenGlobalSettings={onOpenGlobalSettings}
         onExportTracksToText={onExportTracksToText}
-        connectionState={connectionState}
-        onReconnectClick={onReconnectClick}
+        onCalculateLoudness={onCalculateLoudness}
+        showLoudnessBatchButton={showLoudnessBatchButton}
+        isLoudnessBatchScanning={isLoudnessBatchScanning}
       />
 
       <PlayerTracksList
@@ -207,7 +200,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         jumpToTrack={jumpToTrack}
       />
 
-      <PlayerControls onNext={onNext} />
+      {!isPreparationMode ? <PlayerControls onNext={onNext} /> : null}
     </div>
   );
 };

@@ -12,6 +12,8 @@ const PlayerModule: IWorkspaceModule = {
   type: 'player',
   name: 'Player',
   component: PlayerViewContainer,
+  minWidth: 360,
+  minHeight: 120,
 };
 
 // Register the module

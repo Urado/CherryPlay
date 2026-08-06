@@ -1,3 +1,4 @@
+import { Button, DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
 import { Link } from 'react-router-dom';
 
 import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
@@ -30,12 +31,13 @@ export interface CabinetPartyListProps {
   onToggleCatalog: (party: PartyDto) => void;
   onDeleteConfirm: (partyId: string) => void;
   transitioningPartyId: string | null;
+  transitioningTargetState: PartyLifecycleState | null;
   onLifecycleTransition: (partyId: string, targetState: PartyLifecycleState) => void;
 }
 
 const emptyCreateForm: CreatePartyDto = {
   name: '',
-  partyThemeId: 'basic',
+  partyThemeId: DEFAULT_PARTY_THEME_ID,
   isListedInCatalog: false,
 };
 
@@ -57,6 +59,7 @@ export function CabinetPartyList({
   onToggleCatalog,
   onDeleteConfirm,
   transitioningPartyId,
+  transitioningTargetState,
   onLifecycleTransition,
 }: CabinetPartyListProps) {
   return (
@@ -81,6 +84,7 @@ export function CabinetPartyList({
           <PartyLifecycleControls
             partyLifecycleState={party.partyLifecycleState}
             isTransitioning={transitioningPartyId === party.id}
+            pendingTransition={transitioningPartyId === party.id ? transitioningTargetState : null}
             disabled={
               deletingPartyId === party.id ||
               togglingPartyId === party.id ||
@@ -98,24 +102,27 @@ export function CabinetPartyList({
               />
               В каталоге
             </label>
-            <button
+            <Button
               type="button"
-              className="cabinet-btn cabinet-btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={() => onEdit(party)}
               disabled={expandedPartyId === party.id}
             >
               {expandedPartyId === party.id ? 'Редактирование…' : 'Редактировать'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="cabinet-btn cabinet-btn-sm cabinet-btn-danger"
-              disabled={deletingPartyId === party.id}
+              variant="danger"
+              size="sm"
+              loading={deletingPartyId === party.id}
+              loadingLabel="Удаление…"
               onClick={() =>
                 window.confirm(`Удалить вечеринку «${party.name}»?`) && onDeleteConfirm(party.id)
               }
             >
-              {deletingPartyId === party.id ? 'Удаление…' : 'Удалить'}
-            </button>
+              Удалить
+            </Button>
           </div>
           {expandedPartyId === party.id && editingParty?.id === party.id && (
             <div className="cabinet-party-edit">

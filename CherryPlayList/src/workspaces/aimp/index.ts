@@ -11,6 +11,9 @@ const AimpModule: IWorkspaceModule = {
   type: 'aimp',
   name: 'AIMP',
   component: AimpView,
+  // Same as `player`; also normalized to `player` at lookup time.
+  minWidth: 360,
+  minHeight: 120,
 };
 
 workspaceRegistry.register(AimpModule);

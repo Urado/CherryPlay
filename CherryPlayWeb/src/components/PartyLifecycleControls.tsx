@@ -1,3 +1,5 @@
+import { Button } from '@cherryplay/components';
+
 import { LIFECYCLE_STATUS_LABELS } from '../constants/partyLifecycle';
 import type { PartyLifecycleState } from '../types/api';
 
@@ -6,13 +8,23 @@ import './PartyLifecycleControls.css';
 export interface PartyLifecycleControlsProps {
   partyLifecycleState: PartyLifecycleState;
   isTransitioning?: boolean;
+  pendingTransition?: PartyLifecycleState | null;
   disabled?: boolean;
   onTransition: (targetState: PartyLifecycleState) => void;
+}
+
+function isLoadingForTarget(
+  target: PartyLifecycleState,
+  isTransitioning: boolean,
+  pendingTransition?: PartyLifecycleState | null,
+): boolean {
+  return isTransitioning && pendingTransition === target;
 }
 
 export function PartyLifecycleControls({
   partyLifecycleState,
   isTransitioning = false,
+  pendingTransition = null,
   disabled = false,
   onTransition,
 }: PartyLifecycleControlsProps) {
@@ -29,47 +41,63 @@ export function PartyLifecycleControls({
 
       <div className="cabinet-lifecycle-actions">
         {partyLifecycleState === 'draft' && (
-          <button
+          <Button
             type="button"
-            className="cabinet-btn cabinet-btn-primary cabinet-btn-sm cabinet-lifecycle-action"
+            variant="primary"
+            size="sm"
+            fullWidth
+            className="cabinet-lifecycle-action"
             disabled={isDisabled}
+            loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
             onClick={() => onTransition('ready')}
           >
-            {isTransitioning ? 'Публикация...' : 'Опубликовать'}
-          </button>
+            Опубликовать
+          </Button>
         )}
 
         {partyLifecycleState === 'ready' && (
           <>
-            <button
+            <Button
               type="button"
-              className="cabinet-btn cabinet-btn-sm cabinet-lifecycle-action"
+              variant="secondary"
+              size="sm"
+              fullWidth
+              className="cabinet-lifecycle-action"
               disabled={isDisabled}
+              loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
               onClick={() => onTransition('draft')}
             >
-              {isTransitioning ? 'Сохранение...' : 'Сделать черновиком'}
-            </button>
-            <button
+              Сделать черновиком
+            </Button>
+            <Button
               type="button"
-              className="cabinet-btn cabinet-btn-sm cabinet-lifecycle-action cabinet-lifecycle-action--complete"
+              variant="secondary"
+              size="sm"
+              fullWidth
+              className="cabinet-lifecycle-action cabinet-lifecycle-action--complete"
               disabled={isDisabled}
+              loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
               onClick={() => onTransition('completed')}
             >
-              {isTransitioning ? 'Сохранение...' : 'Завершить'}
-            </button>
+              Завершить
+            </Button>
           </>
         )}
 
         {partyLifecycleState === 'completed' && (
-          <button
+          <Button
             type="button"
-            className="cabinet-btn cabinet-btn-sm cabinet-lifecycle-action"
+            variant="secondary"
+            size="sm"
+            fullWidth
+            className="cabinet-lifecycle-action"
             disabled={isDisabled}
+            loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
             onClick={() => onTransition('ready')}
             title="Вернуть вечеринку в состояние «Готова»"
           >
-            {isTransitioning ? 'Сохранение...' : 'Вернуть'}
-          </button>
+            Вернуть
+          </Button>
         )}
       </div>
     </section>

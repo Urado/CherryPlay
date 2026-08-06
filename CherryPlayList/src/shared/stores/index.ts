@@ -3,6 +3,30 @@ export type { PlayerStatus } from './demoPlayerStore';
 export { useDragDropStore } from './dragDropStore';
 export { useLayoutStore } from './layoutStore';
 export type { LayoutPreset } from './layoutStore';
+export {
+  WORKSPACE_PERSIST_KEY,
+  LEGACY_LAYOUT_PERSIST_KEY,
+  migratePersistedWorkspaceState,
+  createDefaultWorkspacePersistSlice,
+  computeIsWorkspaceDirty,
+  resolveBuiltinLayout,
+  normalizeBuiltinLayoutOverrides,
+} from './layoutStore';
+export type {
+  ActiveWorkspace,
+  BuiltinLayoutOverrides,
+  UserWorkspace,
+  WorkspacePersistSlice,
+  WorkspaceRef,
+  BuiltinWorkspaceId,
+} from '@core/types/workspacePreset';
+export {
+  DEFAULT_BUILTIN_PRESET,
+  UNNAMED_WORKSPACE_NAME,
+  allocateUnnamedWorkspaceName,
+  isUnnamedWorkspaceName,
+  toBuiltinWorkspaceId,
+} from '@core/types/workspacePreset';
 export { useAimpStore } from './aimpStore';
 export { useSettingsStore } from './settingsStore';
 export { useUIStore } from './uiStore';
@@ -17,7 +41,6 @@ export {
   PROJECT_WORKSPACE_ID,
 } from './projectStore';
 
-// Global history store for unified undo/redo
 export {
   useGlobalHistoryStore,
   createMoveDescription,
@@ -25,7 +48,6 @@ export {
 } from './globalHistoryStore';
 export type { CompositeAction, CommandPart } from './globalHistoryStore';
 
-// Project store factory for Collections and other workspaces
 export {
   ensureProjectStore,
   getProjectStore,
@@ -38,7 +60,6 @@ export {
 } from './projectStoreFactory';
 export type { ProjectStoreOptions, ProjectStoreState, ProjectStore } from './projectStoreFactory';
 
-// Shared utility functions for working with ProjectItem
 export {
   findItemRecursive,
   getAllTracksRecursive,
@@ -46,6 +67,7 @@ export {
   getFlatItemList,
   removeItemFromItems,
   updateTrackInItems,
+  updateTrackLoudnessInItems,
   markTrackMissingInItems,
   updateGroupInItems,
   collectAllItemIds,

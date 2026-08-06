@@ -21,12 +21,14 @@ export {
   convertToComponentPlayerItems,
   calculateTotalDuration as calculatePartyTotalDuration,
   countTotalTracks,
+  collectComponentPlaylistTrackIds,
   convertToApiPlayerItem,
   convertToApiPlayerItems,
   calculatePlaylistMetadata,
   convertPlaylistForApi,
   applyPartyTrackDisplayToTrackName,
   applyPartyTrackDisplayToComponentPlaylist,
+  normalizePartyTrackDisplaySettings,
   type PlayerItemForApi,
 } from './partyUtils';
 export {
@@ -93,6 +95,35 @@ export {
   teardownAimpOrganizerSession,
   type AimpOrganizerSessionActions,
 } from './aimpOrganizerSession';
+export {
+  DEFAULT_WORKSPACE_MIN_SIZE,
+  computeMinLayoutSize,
+  computeMinWindowSize,
+  getAllRegisteredWorkspaceTypesWithMins,
+  getMinSizePercentsForContainer,
+  getWorkspaceMinSize,
+  normalizeWorkspaceType,
+} from './layoutWorkspaceMins';
+export type {
+  WindowChromeInsets,
+  WorkspaceMinSize,
+  WorkspaceTypeWithMins,
+} from './layoutWorkspaceMins';
 export { getLayoutPresetFromLayout } from './layoutPreset';
-export { getAimpPartyPresetState } from './aimpPresetVisibility';
+export { getAimpPartyPresetState, isPartyLayoutPresetDiscoverable } from './aimpPresetVisibility';
 export { sanitizeExternalUrl } from './urlSafety';
+export {
+  DEMO_PLAY_FAILURE_MESSAGE,
+  notifyDemoPlayFailureIfNeeded,
+  togglePlayPause,
+  toggleSessionPlayPause,
+} from './togglePlayPause';
+export type { TogglePlayPauseParams } from './togglePlayPause';
+export { copyTextToClipboard } from './copyTextToClipboard';
+export {
+  ANCHOR_PANEL_GAP_PX,
+  ANCHOR_PANEL_Z_INDEX,
+  buildAnchorPanelStyle,
+  resolveAnchorPanelCenterY,
+  resolveAnchorPanelLeft,
+} from './anchorPanelLayout';

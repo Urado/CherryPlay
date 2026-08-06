@@ -1,0 +1,157 @@
+/**
+ * Radical compact row layout for trackItemSizePreset === 'tiny'.
+ * Applied via data-track-item-size on document.documentElement (see useTrackItemSize).
+ * Import this file last among component styles so overrides win over player.css / playlist.css.
+ *
+ * Note: .list-row-* selectors are legacy; most rows use .playlist-item via ListRow.
+ */
+
+/* --- Row shells --- */
+[data-track-item-size='tiny'] .playlist-item,
+[data-track-item-size='tiny'] .file-browser-item,
+[data-track-item-size='tiny'] .list-row {
+  gap: 2px;
+  min-height: 20px;
+  border-radius: 2px;
+}
+
+/* --- Play controls (18px — radical but still tappable) --- */
+[data-track-item-size='tiny'] .playlist-item-play,
+[data-track-item-size='tiny'] .cp-playback-control.playlist-item-play,
+[data-track-item-size='tiny'] .file-browser-item-play,
+[data-track-item-size='tiny'] .cp-playback-control.file-browser-item-play,
+[data-track-item-size='tiny'] .list-row-play,
+[data-track-item-size='tiny'] .cp-button.list-row-play {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+}
+
+/* --- Row icon controls: explicit box beats cp-button--icon-only (32px) --- */
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-action,
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-settings,
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-more,
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-disable,
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-delete,
+[data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-ungroup,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-settings,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-more,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-disable,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-delete,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-ungroup,
+[data-track-item-size='tiny'] .file-browser-item .cp-button--icon-only,
+[data-track-item-size='tiny'] .list-row .cp-button.list-row-checkbox,
+[data-track-item-size='tiny'] .list-row .cp-button.list-row-drag-handle,
+[data-track-item-size='tiny'] .list-row .list-row-action,
+[data-track-item-size='tiny'] .list-row .list-row-delete,
+[data-track-item-size='tiny'] .list-row .list-row-disable,
+[data-track-item-size='tiny'] .list-row .list-row-settings {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-height: 16px;
+  padding: 0;
+  border-radius: 2px;
+}
+
+[data-track-item-size='tiny'] .playlist-item .cp-button--icon-only {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  min-height: 16px;
+}
+
+/* --- Icons inside row controls --- */
+[data-track-item-size='tiny'] .playlist-item .playlist-item-drag-handle .drag-icon,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-checkbox .checkbox-icon,
+[data-track-item-size='tiny'] .list-row .drag-icon,
+[data-track-item-size='tiny'] .list-row .checkbox-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+
+[data-track-item-size='tiny'] .playlist-item .playlist-item-action svg,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-settings svg,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-more svg,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-disable svg,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-delete svg,
+[data-track-item-size='tiny'] .playlist-item .playlist-item-ungroup svg {
+  font-size: 12px !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+[data-track-item-size='tiny'] .playlist-item .player-settings-indicator {
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  font-size: 7px;
+}
+
+/* --- Text columns --- */
+[data-track-item-size='tiny'] .playlist-item-index,
+[data-track-item-size='tiny'] .list-row-index {
+  font-size: 10px;
+  min-width: 20px;
+}
+
+[data-track-item-size='tiny'] .playlist-item-name,
+[data-track-item-size='tiny'] .file-browser-item-name,
+[data-track-item-size='tiny'] .list-row-name {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+[data-track-item-size='tiny'] .playlist-item-duration,
+[data-track-item-size='tiny'] .list-row-duration {
+  font-size: 10px;
+  min-width: 40px;
+}
+
+/* --- Action groups --- */
+[data-track-item-size='tiny'] .playlist-item-actions,
+[data-track-item-size='tiny'] .list-row-actions {
+  gap: 0;
+}
+
+[data-track-item-size='tiny'] .playlist-item.selected,
+[data-track-item-size='tiny'] .file-browser-item.selected,
+[data-track-item-size='tiny'] .list-row.selected {
+  border-width: 1px;
+}
+
+/* --- File browser --- */
+[data-track-item-size='tiny'] .file-browser-item-icon {
+  width: 18px;
+  height: 18px;
+}
+
+[data-track-item-size='tiny'] .file-browser-item-icon .folder-icon,
+[data-track-item-size='tiny'] .file-browser-item-icon .file-icon {
+  font-size: 16px;
+}
+
+/* Single-line info: folders and files share the same row height */
+[data-track-item-size='tiny'] .file-browser-item-info {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 0;
+}
+
+[data-track-item-size='tiny'] .file-browser-item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-track-item-size='tiny'] .file-browser-item-size,
+[data-track-item-size='tiny'] .file-browser-item-duration {
+  flex-shrink: 0;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}

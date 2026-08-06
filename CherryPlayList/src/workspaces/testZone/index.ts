@@ -13,6 +13,8 @@ testZoneTypes.forEach((type) => {
     type,
     name: `Test Zone ${type.slice(-1)}`,
     component: TestZoneView,
+    minWidth: 150,
+    minHeight: 100,
   };
 
   workspaceRegistry.register(TestZoneModule);

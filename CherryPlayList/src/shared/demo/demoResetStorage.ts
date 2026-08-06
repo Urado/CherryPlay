@@ -1,16 +1,19 @@
+import { isDemoLiveMode } from '../platform/demoLiveMode';
 import { electronStorage } from '../storage/electronStorage';
 
-/** Zustand persist keys cleared when entering web demo (AC12). */
+export const DEMO_AUTH_PERSIST_STORAGE_KEY = 'cherryplaylist-auth' as const;
+
 export const DEMO_PERSIST_STORAGE_KEYS = [
-  'cherryplaylist-auth',
+  DEMO_AUTH_PERSIST_STORAGE_KEY,
   'cherryplaylist-settings',
   'cherryplaylist-layout',
+  'cherryplaylist-workspaces',
   'cherryplaylist-project',
 ] as const;
 
-/**
- * Clears persisted Electron session data. Call from bootstrap before entry loads stores.
- */
 export async function resetDemoPersistStorage(): Promise<void> {
-  await Promise.all(DEMO_PERSIST_STORAGE_KEYS.map((key) => electronStorage.removeItem(key)));
+  const keys = isDemoLiveMode()
+    ? DEMO_PERSIST_STORAGE_KEYS.filter((key) => key !== DEMO_AUTH_PERSIST_STORAGE_KEY)
+    : DEMO_PERSIST_STORAGE_KEYS;
+  await Promise.all(keys.map((key) => electronStorage.removeItem(key)));
 }

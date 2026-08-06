@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 
 import { ActionAfterTrack } from '@core/types/project';
 import { useProjectStore } from '@shared/stores';
+import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
+
+export const TRACK_SETTINGS_DROPDOWN_WIDTH = 280;
 
 interface TrackSettingsDropdownProps {
   trackId: string;
@@ -96,28 +99,17 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     {
       value: 'default',
       label: 'По умолчанию',
-      title: `По умолчанию (${defaultActionAfterTrack === 'next' ? 'Сплошное' : defaultActionAfterTrack === 'pauseAndNext' ? 'Пауза между' : 'Пауза после'})`,
+      title: `По умолчанию (${defaultActionAfterTrack === 'next' ? 'Без паузы' : defaultActionAfterTrack === 'pauseAndNext' ? 'Интервал' : 'Пауза'})`,
     },
-    { value: 'pause', label: 'Пауза после', title: 'Пауза после трека' },
-    { value: 'next', label: 'Сплошное', title: 'Сплошное воспроизведение' },
-    { value: 'pauseAndNext', label: 'Пауза между', title: 'Пауза между треками' },
+    { value: 'pause', label: 'Пауза в конце трека', title: 'Пауза в конце трека' },
+    { value: 'next', label: 'Без паузы', title: 'Сразу следующий трек' },
+    { value: 'pauseAndNext', label: 'Интервал', title: 'Интервал между треками' },
   ];
 
-  const gap = 4;
-  const estimatedWidth = 280;
-  let left = anchorRect.right + gap;
-  if (left + estimatedWidth > window.innerWidth) {
-    left = anchorRect.left - estimatedWidth - gap;
-  }
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    left,
-    top: anchorRect.top + anchorRect.height / 2,
-    transform: 'translateY(-50%)',
-    zIndex: 1001,
-    minWidth: 220,
-    maxWidth: 280,
-  };
+  const style = buildAnchorPanelStyle({
+    anchorRect,
+    panelWidth: TRACK_SETTINGS_DROPDOWN_WIDTH,
+  });
 
   const content = (
     <div

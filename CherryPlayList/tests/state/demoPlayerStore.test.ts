@@ -9,6 +9,10 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
   const deviceState = {
     playerAudioDeviceId: null as string | null,
     demoPlayerAudioDeviceId: null as string | null,
+    loudnessNormalizationEnabled: true,
+    loudnessTargetLufs: -18,
+    loudnessCompressionEnabled: false,
+    loudnessQuietGapRangeLu: 15,
   };
 
   const useSettingsStore = Object.assign(
@@ -28,8 +32,8 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
           deviceState.demoPlayerAudioDeviceId = id;
         },
       }),
-      subscribe: (listener: (state: typeof deviceState) => void) => {
-        listener(deviceState);
+      subscribe: (listener: (state: typeof deviceState, prevState: typeof deviceState) => void) => {
+        listener(deviceState, deviceState);
         return () => undefined;
       },
     },
@@ -38,10 +42,12 @@ jest.mock('../../src/shared/stores/settingsStore', () => {
   return { useSettingsStore };
 });
 
+const mockAddNotification = jest.fn();
+
 jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: {
     getState: () => ({
-      addNotification: jest.fn(),
+      addNotification: mockAddNotification,
     }),
   },
 }));
@@ -99,6 +105,16 @@ class MockMediaElementSource {
   disconnect = jest.fn();
 }
 
+class MockDynamicsCompressorNode {
+  threshold = { value: 0 };
+  ratio = { value: 1 };
+  knee = { value: 0 };
+  attack = { value: 0 };
+  release = { value: 0 };
+  connect = jest.fn();
+  disconnect = jest.fn();
+}
+
 class MockAudioContext {
   static instances: MockAudioContext[] = [];
 
@@ -107,6 +123,7 @@ class MockAudioContext {
 
   createGain = jest.fn(() => new MockGainNode());
   createBiquadFilter = jest.fn(() => new MockBiquadFilterNode());
+  createDynamicsCompressor = jest.fn(() => new MockDynamicsCompressorNode());
   createMediaElementSource = jest.fn(() => new MockMediaElementSource());
   resume = jest.fn().mockResolvedValue(undefined);
   close = jest.fn().mockResolvedValue(undefined);
@@ -179,6 +196,7 @@ beforeAll(async () => {
 beforeEach(() => {
   mockedGetAudioFileUrl.mockClear();
   mockedGetAudioFileUrl.mockResolvedValue({ url: 'cherryplay-audio:///mock' });
+  mockAddNotification.mockClear();
 
   const existingAudio = MockAudio.lastInstance();
   if (existingAudio) {
@@ -351,5 +369,37 @@ describe('demoPlayerStore', () => {
     expect(state.status).toBe('error');
     expect(state.error).toBe('blocked');
     expect(audio?.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it('deduplicates error toast notifications for the same message', async () => {
+    const track = createTrack();
+    const store = useDemoPlayerStore.getState();
+    await store.loadTrack(track, 'workspace-1');
+
+    mockAddNotification.mockClear();
+    store.handleError('same error');
+    store.handleError('same error');
+
+    expect(mockAddNotification).toHaveBeenCalledTimes(1);
+    expect(mockAddNotification).toHaveBeenCalledWith({ type: 'error', message: 'same error' });
+  });
+
+  it('resets error toast dedup on clear and allows the same message again', async () => {
+    const track = createTrack();
+    const store = useDemoPlayerStore.getState();
+    await store.loadTrack(track, 'workspace-1');
+
+    store.handleError('repeatable error');
+    mockAddNotification.mockClear();
+
+    store.clear();
+    store.setActiveTrack(track, 'workspace-1');
+    store.handleError('repeatable error');
+
+    expect(mockAddNotification).toHaveBeenCalledTimes(1);
+    expect(mockAddNotification).toHaveBeenCalledWith({
+      type: 'error',
+      message: 'repeatable error',
+    });
   });
 });

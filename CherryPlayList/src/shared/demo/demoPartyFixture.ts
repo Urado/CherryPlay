@@ -1,3 +1,5 @@
+import { DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
+
 import type { LinkedParty } from '@core/types/project';
 
 import type {
@@ -31,7 +33,7 @@ function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
     title: overrides.title ?? overrides.name,
     subtitle: overrides.subtitle,
     shortCode: DEMO_PARTY_SHORT_CODE,
-    partyThemeId: overrides.partyThemeId ?? 'cyberpunk',
+    partyThemeId: overrides.partyThemeId ?? DEFAULT_PARTY_THEME_ID,
     customizationSettings: overrides.customizationSettings ?? {},
     createdAt: overrides.createdAt ?? nowIso,
     hasActiveSession: false,
@@ -109,7 +111,7 @@ export function demoTransitionPartyLifecycle(targetState: PartyLifecycleState): 
 }
 
 export const DEMO_THEME_ACCESS: ThemeAccessDto = {
-  grantedThemeIds: ['cyberpunk', 'basic', 'retro'],
+  grantedThemeIds: [DEFAULT_PARTY_THEME_ID, 'cyberpunk', 'retro'],
   visibleLockedThemes: [],
   contactUrl: 'https://example.com/demo/themes',
 };

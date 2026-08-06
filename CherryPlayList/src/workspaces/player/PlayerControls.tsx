@@ -1,8 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import StopIcon from '@mui/icons-material/Stop';
+import { PlaybackControlButton } from '@cherryplay/components';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import React, { useCallback } from 'react';
@@ -10,6 +6,7 @@ import React, { useCallback } from 'react';
 import { usePlaybackTimeline } from '@shared/hooks/usePlaybackTimeline';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
+import { togglePlayPause } from '@shared/utils/togglePlayPause';
 
 interface PlayerControlsProps {
   onNext?: () => void;
@@ -36,34 +33,27 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
 
   const isPlaying = status === 'playing';
   const isDisabled = !isSessionMode || !currentTrack;
+  const isScrubberDisabled = isDisabled || isSessionMode;
   const isNextDisabled = !isSessionMode || !onNext;
   const resolvedDuration = duration || currentTrack?.duration || 0;
   const timeline = usePlaybackTimeline({
     position: isDisabled ? 0 : position,
     duration: resolvedDuration,
-    disabled: isDisabled,
+    disabled: isScrubberDisabled,
     seek,
   });
-  // Show error if there's a loaded track OR if we're in session mode with an expected track
-  // (handles the case where loadTrack fails before currentTrack is set in the audio store)
   const hasError =
     error !== null && (currentTrack !== null || (isSessionMode && sessionCurrentTrackId !== null));
 
-  const handleToggle = useCallback(async () => {
-    if (isDisabled) {
-      return;
-    }
-
-    if (isPlaying) {
-      pause();
-    } else {
-      try {
-        await play();
-      } catch {
-        // Ошибка уже обработана в store
-      }
-    }
-  }, [isDisabled, isPlaying, play, pause]);
+  const handleToggle = useCallback(() => {
+    void togglePlayPause({
+      hasTrack: currentTrack !== null,
+      isPlaying,
+      blocked: isDisabled,
+      play,
+      pause,
+    });
+  }, [currentTrack, isDisabled, isPlaying, pause, play]);
 
   const handleStop = useCallback(() => {
     if (isDisabled) {
@@ -90,44 +80,53 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
   return (
     <div className="player-controls">
       <div className="player-controls__buttons">
-        <button
-          type="button"
-          className={`player-controls__button player-controls__button--play${hasError ? ' player-controls__button--error' : ''}`}
-          onClick={handleToggle}
-          disabled={isDisabled}
-          title={
-            hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
-          }
-          style={hasError ? { color: 'var(--color-error, #f44336)' } : undefined}
-        >
-          {hasError ? (
-            <ErrorOutlineIcon fontSize="medium" />
-          ) : isPlaying ? (
-            <PauseIcon fontSize="medium" />
-          ) : (
-            <PlayArrowIcon fontSize="medium" />
-          )}
-        </button>
-        <button
-          type="button"
-          className="player-controls__button player-controls__button--stop"
-          onClick={handleStop}
-          disabled={isDisabled}
-          title="Остановить"
-        >
-          <StopIcon fontSize="medium" />
-        </button>
-        <button
-          type="button"
-          className="player-controls__button player-controls__button--next"
-          onClick={handleNext}
-          disabled={isNextDisabled}
-          title="Следующий"
-        >
-          <SkipNextIcon fontSize="medium" />
-        </button>
+        <div className="player-controls__transport">
+          <PlaybackControlButton
+            control={hasError ? 'error' : isPlaying ? 'pause' : 'play'}
+            size="sm"
+            onClick={handleToggle}
+            disabled={isDisabled}
+            title={
+              hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
+            }
+            aria-label={
+              hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
+            }
+          />
+          <PlaybackControlButton
+            control="stop"
+            size="sm"
+            onClick={handleStop}
+            disabled={isDisabled}
+            title="Начать заново"
+            aria-label="Начать заново"
+          />
+          <PlaybackControlButton
+            control="next"
+            size="sm"
+            onClick={handleNext}
+            disabled={isNextDisabled}
+            title="Следующий"
+            aria-label="Следующий"
+          />
+        </div>
+
+        <div className="player-controls__info">
+          <div
+            className="player-controls__track-name"
+            title={currentTrack?.name ?? 'Нет активного трека'}
+          >
+            {currentTrack?.name ?? 'Нет активного трека'}
+          </div>
+          {error ? (
+            <div className="player-controls__error" title={error}>
+              {error}
+            </div>
+          ) : null}
+        </div>
+
         <div className="player-controls__volume">
-          <VolumeDownIcon fontSize="small" />
+          <VolumeDownIcon fontSize="small" className="player-controls__volume-icon" aria-hidden />
           <input
             type="range"
             min={0}
@@ -137,17 +136,13 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
             onChange={handleVolumeChange}
             className="player-controls__volume-slider"
             title={`Громкость: ${Math.round(volume * 100)}%`}
+            aria-label="Громкость"
           />
-          <VolumeUpIcon fontSize="small" />
-          <span className="player-controls__volume-value">{Math.round(volume * 100)}%</span>
+          <VolumeUpIcon fontSize="small" className="player-controls__volume-icon" aria-hidden />
+          <span className="player-controls__volume-value" aria-hidden>
+            {Math.round(volume * 100)}%
+          </span>
         </div>
-      </div>
-
-      <div className="player-controls__info">
-        <div className="player-controls__track-name">
-          {currentTrack?.name ?? 'Нет активного трека'}
-        </div>
-        {error && <div className="player-controls__error">{error}</div>}
       </div>
 
       <div className="player-controls__timeline-row">
@@ -161,8 +156,10 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           onPointerDown={timeline.beginScrub}
           onInput={timeline.handleInput}
           onChange={timeline.handleChange}
-          disabled={isDisabled}
+          disabled={isScrubberDisabled}
           className="player-controls__timeline"
+          aria-label="Позиция воспроизведения"
+          title={isSessionMode ? 'Во время трансляции перемотка отключена' : undefined}
         />
         <span className="player-controls__time player-controls__time--total">
           {formatPlayerTime(resolvedDuration)}

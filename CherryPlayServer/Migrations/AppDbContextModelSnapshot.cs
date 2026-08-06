@@ -502,6 +502,48 @@ namespace CherryPlayServer.Migrations
                     b.ToTable("party_playlists", (string)null);
                 });
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.PasswordResetTokenEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EmailAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("email_account_id");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_password_reset_tokens");
+
+                    b.HasIndex("EmailAccountId")
+                        .HasDatabaseName("ix_password_reset_tokens_email_account_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_password_reset_tokens_token_hash");
+
+                    b.ToTable("password_reset_tokens", (string)null);
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.SessionStateEf", b =>
                 {
                     b.Property<Guid>("PartyId")
@@ -770,6 +812,18 @@ namespace CherryPlayServer.Migrations
                         .HasConstraintName("fk_party_playlists_parties_party_id");
 
                     b.Navigation("Party");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.PasswordResetTokenEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", "EmailAccount")
+                        .WithMany()
+                        .HasForeignKey("EmailAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_password_reset_tokens_email_accounts_email_account_id");
+
+                    b.Navigation("EmailAccount");
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.SessionStateEf", b =>

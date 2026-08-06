@@ -12,7 +12,11 @@ import {
 import { BasicThemeCustomizationEditor } from './basic';
 import { BASIC_THEME_CUSTOMIZATION_OPTION_KEYS } from './basic/palette';
 import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
-import type { PartyThemeId, ThemeCustomizationEditorProps } from './partyThemeTypes';
+import {
+  DEFAULT_PARTY_THEME_ID,
+  type PartyThemeId,
+  type ThemeCustomizationEditorProps,
+} from './partyThemeTypes';
 import { SakuraThemeCustomizationEditor } from './sakura/CustomizationEditor';
 import {
   PartyDisplay as SpringCrossStepPartyDisplay,
@@ -51,6 +55,7 @@ export interface PartyThemeComponents {
   CustomizationEditor?: React.ComponentType<ThemeCustomizationEditorProps>;
 }
 
+export { DEFAULT_PARTY_THEME_ID };
 export type { PartyThemeId, ThemeCustomizationEditorProps };
 
 export interface PartyTheme {
@@ -172,7 +177,7 @@ export function getPartyThemeOrDefault(partyThemeId: string | undefined | null):
   if (partyThemeId && isValidPartyTheme(partyThemeId)) {
     return PARTY_THEME_REGISTRY[partyThemeId];
   }
-  return PARTY_THEME_REGISTRY['cyberpunk'];
+  return PARTY_THEME_REGISTRY[DEFAULT_PARTY_THEME_ID];
 }
 
 export {

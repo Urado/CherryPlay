@@ -1,0 +1,58 @@
+.cp-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  width: var(--cp-icon-size-md);
+  height: var(--cp-icon-size-md);
+}
+
+.cp-icon > svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.cp-icon--sm {
+  width: var(--cp-icon-size-sm);
+  height: var(--cp-icon-size-sm);
+}
+
+.cp-icon--md {
+  width: var(--cp-icon-size-md);
+  height: var(--cp-icon-size-md);
+}
+
+.cp-icon--lg {
+  width: var(--cp-icon-size-lg);
+  height: var(--cp-icon-size-lg);
+}
+
+/* Circular outline: square box so border-radius 50% is a true circle. */
+.cp-icon--circle {
+  box-sizing: border-box;
+  border: 1px solid var(--cp-ui-border);
+  border-radius: 50%;
+  padding: 2px;
+  line-height: 1;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.cp-icon--sm.cp-icon--circle {
+  font-size: 10px;
+}
+
+.cp-icon--md.cp-icon--circle {
+  font-size: 11px;
+}
+
+.cp-icon--lg.cp-icon--circle {
+  font-size: 13px;
+}
+
+.cp-icon--info {
+  color: var(--text-secondary, #9e9e9e);
+  cursor: help;
+}

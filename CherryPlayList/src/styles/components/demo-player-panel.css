@@ -1,0 +1,166 @@
+/**
+ * Demo player panel shell — docked header slot and floating overlay chrome.
+ * Control styles reuse .demo-player from header.css.
+ */
+
+.demo-player-shell-host {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.demo-player-shell-host .demo-player-panel {
+  pointer-events: auto;
+}
+
+.demo-player-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.demo-player-panel--floating {
+  z-index: 200;
+  max-width: 480px;
+  width: min(100%, 480px);
+  min-width: 400px;
+  height: 120px;
+  min-height: 120px;
+  max-height: 120px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--surface-elevated, var(--bg-secondary, #1e1e1e));
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  contain: layout paint;
+}
+
+.demo-player-panel--layout-blocked {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.demo-player-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  flex-shrink: 0;
+  padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--surface-muted, rgba(255, 255, 255, 0.04));
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.demo-player-panel__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.demo-player-panel__grip.cp-button,
+.demo-player-panel__close.cp-button {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  touch-action: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.demo-player-panel__grip.cp-button {
+  cursor: grab;
+}
+
+.demo-player-panel__close.cp-button:hover:not(:disabled) {
+  background: var(--surface-muted, rgba(255, 255, 255, 0.06));
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.demo-player-panel__grip.cp-button:active:not(:disabled) {
+  cursor: grabbing;
+}
+
+.demo-player-panel__grip.cp-button:disabled,
+.demo-player-panel__close.cp-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.demo-player-panel__player {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-player-panel--floating .demo-player-panel__player {
+  padding: 8px 12px 10px;
+  padding-right: 16px;
+  overflow: hidden;
+}
+
+.demo-player-panel--floating .demo-player {
+  flex: 1 1 auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-player-panel--floating .demo-player__info-row {
+  flex-shrink: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.demo-player-panel--floating .demo-player__volume-slider {
+  width: 88px;
+  min-width: 72px;
+  max-width: 96px;
+}
+
+.demo-player-panel__resize-handle {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+
+.demo-player-panel__resize-handle--east {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.demo-player-panel--layout-blocked .demo-player-panel__resize-handle {
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .demo-player-panel--floating {
+    min-width: min(100%, 400px);
+  }
+
+  .demo-player-panel--floating .demo-player__time {
+    min-width: 2.25em;
+  }
+}
+

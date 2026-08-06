@@ -1,27 +1,53 @@
-/**
- * Keyboard Shortcuts Utilities
- *
- * Helper functions for matching key events and formatting shortcuts for display.
- */
-
 import type { KeyBinding } from './shortcutTypes';
 
-/**
- * Check if a keyboard event matches a key binding.
- * Uses event.code for layout-independent matching.
- * Supports both Ctrl (Windows/Linux) and Meta/Cmd (macOS).
- *
- * @param event - The keyboard event to check
- * @param binding - The key binding to match against
- * @returns true if the event matches the binding
- */
+const INTERACTIVE_SELECTOR = [
+  'button',
+  'a',
+  'select',
+  'summary',
+  'option',
+  '[role="button"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="tab"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="link"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="treeitem"]',
+  '[role="row"]',
+  '[role="gridcell"]',
+  '[role="combobox"]',
+  '[role="slider"]',
+  '[role="listbox"]',
+].join(', ');
+
+const PLAYER_SPACE_NATIVE_CONTROL_SELECTOR = [
+  'button',
+  'a',
+  'select',
+  'summary',
+  '[role="menuitem"]',
+  '[role="tab"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="link"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="combobox"]',
+  '[role="slider"]',
+].join(', ');
+
+const PLAYER_SPACE_DIALOG_SELECTOR = '.modal-overlay, [role="dialog"], [aria-modal="true"]';
+
 export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): boolean {
-  // Check the key code
   if (event.code !== binding.code) {
     return false;
   }
 
-  // Check Ctrl/Cmd modifier (support both Ctrl and Meta for cross-platform)
   const eventHasCtrlOrCmd = event.ctrlKey || event.metaKey;
   const bindingRequiresCtrl = binding.ctrlKey === true;
 
@@ -29,13 +55,11 @@ export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): bool
     return false;
   }
 
-  // Check Shift modifier
   const bindingRequiresShift = binding.shiftKey === true;
   if (bindingRequiresShift !== event.shiftKey) {
     return false;
   }
 
-  // Check Alt modifier
   const bindingRequiresAlt = binding.altKey === true;
   if (bindingRequiresAlt !== event.altKey) {
     return false;
@@ -44,32 +68,60 @@ export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): bool
   return true;
 }
 
-/**
- * Check if the event target is an input field where shortcuts should be blocked.
- *
- * @param event - The keyboard event
- * @returns true if the target is an input field
- */
 export function isInputField(event: KeyboardEvent): boolean {
-  const target = event.target as HTMLElement;
+  const target = event.target as HTMLElement | null;
+  if (!target) {
+    return false;
+  }
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 }
 
-/**
- * Detect if the user is on macOS.
- *
- * @returns true if on macOS
- */
+export function isInteractiveElement(event: KeyboardEvent): boolean {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  return target.closest(INTERACTIVE_SELECTOR) !== null;
+}
+
+export function shouldBlockPlayerSpaceShortcut(event: KeyboardEvent): boolean {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  if (isInputField(event)) {
+    return true;
+  }
+  if (target.closest(PLAYER_SPACE_DIALOG_SELECTOR)) {
+    return true;
+  }
+  if (target.closest(PLAYER_SPACE_NATIVE_CONTROL_SELECTOR)) {
+    return true;
+  }
+  const roleButton = target.closest('[role="button"]');
+  if (roleButton && !roleButton.hasAttribute('data-list-row')) {
+    return true;
+  }
+  return false;
+}
+
+export function bindingHasModifier(binding: KeyBinding): boolean {
+  return (
+    binding.ctrlKey === true ||
+    binding.metaKey === true ||
+    binding.altKey === true ||
+    binding.shiftKey === true
+  );
+}
+
+export function isActivationKeyBinding(binding: KeyBinding): boolean {
+  return (binding.code === 'Space' || binding.code === 'Enter') && !bindingHasModifier(binding);
+}
+
 export function isMac(): boolean {
   return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 }
 
-/**
- * Format a key binding for display (e.g., "Ctrl+S" or "Cmd+S" on Mac).
- *
- * @param binding - The key binding to format
- * @returns Human-readable string representation
- */
 export function formatKeyBinding(binding: KeyBinding): string {
   const parts: string[] = [];
 
@@ -85,30 +137,20 @@ export function formatKeyBinding(binding: KeyBinding): string {
     parts.push('Shift');
   }
 
-  // Convert code to readable key name
   parts.push(codeToKeyName(binding.code));
 
   return parts.join('+');
 }
 
-/**
- * Convert a KeyboardEvent.code to a human-readable key name.
- *
- * @param code - The key code (e.g., 'KeyS', 'Delete')
- * @returns Human-readable key name (e.g., 'S', 'Delete')
- */
 function codeToKeyName(code: string): string {
-  // Handle letter keys (KeyA -> A)
   if (code.startsWith('Key')) {
     return code.slice(3);
   }
 
-  // Handle digit keys (Digit1 -> 1)
   if (code.startsWith('Digit')) {
     return code.slice(5);
   }
 
-  // Handle special keys
   const specialKeys: Record<string, string> = {
     Escape: 'Esc',
     Delete: 'Del',
@@ -125,13 +167,6 @@ function codeToKeyName(code: string): string {
   return specialKeys[code] || code;
 }
 
-/**
- * Parse a shortcut string (e.g., "Ctrl+S") into a KeyBinding object.
- * Useful for user input or configuration files.
- *
- * @param shortcutString - The string to parse
- * @returns KeyBinding object or null if invalid
- */
 export function parseShortcutString(shortcutString: string): KeyBinding | null {
   const parts = shortcutString.split('+').map((p) => p.trim().toLowerCase());
 
@@ -161,7 +196,6 @@ export function parseShortcutString(shortcutString: string): KeyBinding | null {
         binding.altKey = true;
         break;
       default:
-        // This is the key
         binding.code = keyNameToCode(part);
         break;
     }
@@ -174,26 +208,17 @@ export function parseShortcutString(shortcutString: string): KeyBinding | null {
   return binding;
 }
 
-/**
- * Convert a key name to KeyboardEvent.code.
- *
- * @param keyName - The key name (e.g., 's', 'delete')
- * @returns The code (e.g., 'KeyS', 'Delete')
- */
 function keyNameToCode(keyName: string): string {
   const normalized = keyName.toUpperCase();
 
-  // Single letter
   if (normalized.length === 1 && normalized >= 'A' && normalized <= 'Z') {
     return `Key${normalized}`;
   }
 
-  // Single digit
   if (normalized.length === 1 && normalized >= '0' && normalized <= '9') {
     return `Digit${normalized}`;
   }
 
-  // Special keys
   const specialCodes: Record<string, string> = {
     ESC: 'Escape',
     ESCAPE: 'Escape',

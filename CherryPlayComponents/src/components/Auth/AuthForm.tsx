@@ -10,15 +10,14 @@ export type AuthMode = 'email' | 'oauth';
 
 export interface AuthFormProps {
   title?: string;
-  /** Optional short text under the title (e.g. "Войдите, чтобы управлять вечеринками"). */
   description?: string;
   compact?: boolean;
   authService: AuthService;
   initialMode?: AuthMode;
-  /** When false, OAuth tab and buttons are hidden. Sessions are not affected. Default true. */
   oauthEnabled?: boolean;
   onLoginSuccess?: () => void;
   onError?: (error: string) => void;
+  onForgotPassword?: () => void;
   className?: string;
 }
 
@@ -31,13 +30,13 @@ export const AuthForm: React.FC<AuthFormProps> = ({
   oauthEnabled = true,
   onLoginSuccess,
   onError,
+  onForgotPassword,
   className = '',
 }) => {
   const effectiveInitialMode = oauthEnabled ? initialMode : 'email';
   const [mode, setMode] = useState<AuthMode>(effectiveInitialMode);
   const [error, setError] = useState<string | null>(null);
 
-  // Derive display mode so we don't need setState in effect when oauth is disabled
   const displayMode: AuthMode = !oauthEnabled && mode === 'oauth' ? 'email' : mode;
 
   const handleError = (errorMessage: string) => {
@@ -92,6 +91,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             error={error}
             onSuccess={handleSuccess}
             onError={handleError}
+            onForgotPassword={onForgotPassword}
             showModeToggle={true}
           />
         )}

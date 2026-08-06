@@ -24,7 +24,7 @@ node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
 
 Options:
 
-- `--docker` — also build Docker images (server and web), same as `.github/workflows/build-images.yml` and `release-and-deploy.yml`.
+- `--docker` — also build Docker images (server and web), same as `.github/workflows/build-images.yml` / `verify-docker-build.yml` and `release-and-deploy.yml`.
 - `--skip-ci` — skip the Components install step (use when you want to rely on existing `node_modules` and not run `npm ci` / `npm install`).
 
 **Note:** The script tries `npm ci` in CherryPlayComponents first; if it fails (e.g. EPERM on Windows when files are locked), it automatically falls back to `npm install` so the full check can complete.
@@ -54,7 +54,7 @@ Use this skill when the user asks to:
 
 ## Scope
 
-CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). The script also runs unit tests for **CherryPlayWeb**, **CherryPlayComponents**, and **CherryPlayList**. CI builds only Docker images (`.github/workflows/build-images.yml` on push/PR; `release-and-deploy.yml` on release). The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
+CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). The script also runs unit tests for **CherryPlayWeb**, **CherryPlayComponents**, and **CherryPlayList**. CI verifies Docker builds on PR (`.github/workflows/verify-docker-build.yml`, no push) and pushes images on merge (`.github/workflows/build-images.yml`); `release-and-deploy.yml` on release. The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
 
 ## Artifacts
 

@@ -1,28 +1,16 @@
 /**
- * SignalR сервис для трансляции состояния воспроизведения
- * Использует @microsoft/signalr для подключения к серверу
- *
- * Включает:
- * - Управление подключением с защитой от race conditions
- * - Автоматическое переподключение
- * - Подписки на события сервера
- * - Интеграцию с stores для автоматической синхронизации состояния
+ * SignalR transport service — hub connection lifecycle and organizer invoke methods.
+ * Publish orchestration (store subscriptions, position ticks) lives in Site Streamer
+ * (`src/shared/streaming/streamingOrchestrator.ts`).
  */
 
 import * as signalR from '@microsoft/signalr';
 
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
-import {
-  mapStoreStatusToWireStatus,
-  type PlaybackStateDto,
-  type PlaybackWireStatus,
-} from '../contracts/playbackState';
-import { useAuthStore, usePlayerAudioStore, useProjectStore } from '../stores';
+import { type PlaybackStateDto } from '../contracts/playbackState';
+import { useAuthStore } from '../stores';
 import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
-import { convertPlaylistForApi } from '../utils/partyUtils';
 import { isTokenExpired } from '../utils/tokenUtils';
-
-import { partyService } from './partyService';
 
 export type { PlaybackStateDto, PlaybackWireStatus } from '../contracts/playbackState';
 
@@ -82,23 +70,17 @@ class SignalRService {
     onReconnectionFailed?: () => void;
   } = {};
 
-  // Подписки на stores
-  private storeUnsubscribers: {
-    audio?: () => void;
-    session?: () => void;
-    items?: () => void;
-  } = {};
-
-  // Состояние для отслеживания изменений
-  private lastTrackId: string | null = null;
-  private lastWireStatus: PlaybackWireStatus = 'idle';
-  private lastDisabledTrackIds: string = '';
-  private lastDisabledGroupIds: string = '';
-
-  // Интервал для обновления позиции
-  private positionUpdateInterval: NodeJS.Timeout | null = null;
+  // Legacy fields retained for reconnect handler registration
   private currentPartyId: string | null = null;
   private currentToken: string | undefined = undefined;
+  private partyReconnectHandler: ((partyId: string) => Promise<void>) | null = null;
+
+  /**
+   * Site Streamer orchestrator registers reconnect restore logic (join + publish + ticks).
+   */
+  setPartyReconnectHandler(handler: ((partyId: string) => Promise<void>) | null): void {
+    this.partyReconnectHandler = handler;
+  }
 
   /**
    * Проверяет, подключен ли сервис
@@ -290,14 +272,9 @@ class SignalRService {
             );
           }
 
-          // Восстанавливаем подписки на stores
-          this.startStoreSubscriptions(this.currentPartyId);
-
-          // Восстанавливаем обновления позиции
-          this.startPositionUpdates(this.currentPartyId);
-
-          // Отправляем текущее состояние
-          this.sendFullStateUpdate(this.currentPartyId);
+          if (this.partyReconnectHandler) {
+            await this.partyReconnectHandler(this.currentPartyId);
+          }
 
           console.log('[SignalR] Party connection restored after reconnect');
         } catch (error) {
@@ -443,9 +420,6 @@ class SignalRService {
    * Отключается от SignalR Hub
    */
   async disconnect(): Promise<void> {
-    this.stopStoreSubscriptions();
-    this.stopPositionUpdates();
-
     await this.cleanupConnection();
     this.currentPartyId = null;
     this.currentToken = undefined;
@@ -727,204 +701,6 @@ class SignalRService {
   removeAllHandlers(): void {
     this.removeAllEventHandlers();
     this.eventHandlers = {};
-  }
-
-  /**
-   * Запускает автоматическую синхронизацию состояния с stores
-   */
-  startStoreSubscriptions(partyId: string): void {
-    if (!this.isServiceConnected()) {
-      console.warn('[SignalR] Cannot start store subscriptions - not connected');
-      return;
-    }
-
-    this.currentPartyId = partyId;
-    this.stopStoreSubscriptions(); // Очищаем предыдущие подписки
-
-    console.log('[SignalR] Starting store subscriptions for party:', partyId);
-
-    // Сбрасываем состояние отслеживания
-    this.lastTrackId = null;
-    this.lastWireStatus = 'idle';
-    this.lastDisabledTrackIds = '';
-    this.lastDisabledGroupIds = '';
-
-    // Подписка на изменения состояния аудио
-    this.storeUnsubscribers.audio = usePlayerAudioStore.subscribe((state) => {
-      const currentTrack = state.currentTrack;
-      const status = state.status;
-
-      const wireStatus = mapStoreStatusToWireStatus(status);
-
-      // Публикуем только смену трека или wire-статуса (loading/buffering не шлём отдельно)
-      if (currentTrack?.id !== this.lastTrackId || wireStatus !== this.lastWireStatus) {
-        console.log('[SignalR] Audio state changed:', {
-          oldTrackId: this.lastTrackId,
-          newTrackId: currentTrack?.id || null,
-          oldWireStatus: this.lastWireStatus,
-          newWireStatus: wireStatus,
-          storeStatus: status,
-        });
-
-        this.lastTrackId = currentTrack?.id || null;
-        this.lastWireStatus = wireStatus;
-
-        this.sendFullStateUpdate(partyId);
-      }
-    });
-
-    // Подписка на изменения состояния сессии
-    this.storeUnsubscribers.session = useProjectStore.subscribe((state) => {
-      const disabledTrackIdsKey = state.sessionState.disabledTrackIds.sort().join(',');
-      const disabledGroupIdsKey = state.sessionState.disabledGroupIds.sort().join(',');
-
-      // Проверяем изменение отключенных треков или групп
-      if (
-        disabledTrackIdsKey !== this.lastDisabledTrackIds ||
-        disabledGroupIdsKey !== this.lastDisabledGroupIds
-      ) {
-        console.log('[SignalR] Session state changed:', {
-          oldDisabledTracks: this.lastDisabledTrackIds,
-          newDisabledTracks: disabledTrackIdsKey,
-          oldDisabledGroups: this.lastDisabledGroupIds,
-          newDisabledGroups: disabledGroupIdsKey,
-        });
-
-        this.lastDisabledTrackIds = disabledTrackIdsKey;
-        this.lastDisabledGroupIds = disabledGroupIdsKey;
-
-        this.sendFullStateUpdate(partyId);
-      }
-    });
-
-    // Подписка на изменения плейлиста (items)
-    // Отправляет обновление плейлиста на сервер при ЛЮБОМ изменении в store
-    // Срабатывает при вызове любых методов: addItem, removeItem, moveItem, createGroup,
-    // ungroupGroup, setGroupName, addItemToGroup, removeItemFromGroup, moveItemInGroup,
-    // updateTrackDuration, removeSelectedItems, moveSelectedItems и т.д.
-    let isInitialCall = true;
-    this.storeUnsubscribers.items = useProjectStore.subscribe((state) => {
-      // Пропускаем первый вызов при инициализации подписки
-      if (isInitialCall) {
-        isInitialCall = false;
-        return;
-      }
-
-      console.log('[SignalR] Playlist changed:', {
-        itemsCount: state.items.length,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Преобразуем плейлист для API и отправляем на сервер через HTTP PUT
-      const playlistForApi = convertPlaylistForApi(state.items, state.meta.partyTrackDisplay);
-      console.log('[SignalR] → Sending PUT request to update playlist:', {
-        partyId,
-        itemsCount: playlistForApi.items.length,
-        timestamp: new Date().toISOString(),
-      });
-      partyService
-        .updatePartyPlaylist(partyId, playlistForApi)
-        .then(() => {
-          console.log('[SignalR] ✓ Playlist updated successfully');
-        })
-        .catch((error) => {
-          console.error('[SignalR] ✗ Failed to update playlist:', error);
-        });
-
-      // Также отправляем обновление состояния воспроизведения
-      this.sendFullStateUpdate(partyId);
-    });
-
-    console.log('[SignalR] Store subscriptions started');
-  }
-
-  /**
-   * Останавливает подписки на stores
-   */
-  stopStoreSubscriptions(): void {
-    if (this.storeUnsubscribers.audio) {
-      this.storeUnsubscribers.audio();
-      this.storeUnsubscribers.audio = undefined;
-    }
-
-    if (this.storeUnsubscribers.session) {
-      this.storeUnsubscribers.session();
-      this.storeUnsubscribers.session = undefined;
-    }
-
-    if (this.storeUnsubscribers.items) {
-      this.storeUnsubscribers.items();
-      this.storeUnsubscribers.items = undefined;
-    }
-
-    console.log('[SignalR] Store subscriptions stopped');
-  }
-
-  /**
-   * Запускает периодическое обновление позиции воспроизведения
-   */
-  startPositionUpdates(partyId: string, intervalMs: number = 1000): void {
-    this.stopPositionUpdates();
-    this.currentPartyId = partyId;
-
-    this.positionUpdateInterval = setInterval(() => {
-      if (!this.isServiceConnected() || !this.currentPartyId) {
-        return;
-      }
-
-      const audioState = usePlayerAudioStore.getState();
-      const currentTrack = audioState.currentTrack;
-      const position = audioState.position;
-
-      if (currentTrack) {
-        this.updatePlaybackPosition(this.currentPartyId, currentTrack.id, position);
-      }
-    }, intervalMs);
-
-    console.log('[SignalR] Position updates started');
-  }
-
-  /**
-   * Останавливает обновление позиции
-   */
-  stopPositionUpdates(): void {
-    if (this.positionUpdateInterval) {
-      clearInterval(this.positionUpdateInterval);
-      this.positionUpdateInterval = null;
-      console.log('[SignalR] Position updates stopped');
-    }
-  }
-
-  /**
-   * Отправляет полное состояние на сервер
-   */
-  sendFullStateUpdate(partyId: string): void {
-    if (!this.isServiceConnected() || !partyId) {
-      console.warn('[SignalR] Cannot send state update - not connected or no partyId', {
-        isConnected: this.isServiceConnected(),
-        partyId,
-      });
-      return;
-    }
-
-    const audioState = usePlayerAudioStore.getState();
-    const projectState = useProjectStore.getState();
-
-    const playbackState: PlaybackStateDto = {
-      currentTrackId: audioState.currentTrack?.id || null,
-      status: mapStoreStatusToWireStatus(audioState.status),
-      position: audioState.position,
-      duration: audioState.duration,
-      volume: audioState.volume,
-      mode: projectState.sessionState.mode,
-      playedTrackIds: [...projectState.sessionState.playedTrackIds],
-      disabledTrackIds: [...projectState.sessionState.disabledTrackIds],
-      disabledGroupIds: [...projectState.sessionState.disabledGroupIds],
-      lastUpdatedAt: new Date().toISOString(),
-    };
-
-    this.notifyStateChanged(partyId);
-    this.updateFullState(partyId, playbackState);
   }
 }
 

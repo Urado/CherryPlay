@@ -35,3 +35,32 @@
   flex-direction: column;
   gap: 16px;
 }
+
+.email-auth-form-forgot {
+  margin-top: -8px;
+  text-align: right;
+}
+
+.email-auth-form-forgot-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-primary, #667eea);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.email-auth-form-forgot-link:hover {
+  opacity: 0.85;
+}
+
+.email-auth-form-forgot-link:focus-visible {
+  outline: 2px solid var(--accent-primary, #667eea);
+  outline-offset: 2px;
+}
+
+.email-auth-form-forgot-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

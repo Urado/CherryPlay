@@ -132,7 +132,7 @@ CherryPlayList/
 
 - Имеет собственную папку в `workspaces/`
 - Содержит `index.ts` - регистрирует модуль в `WorkspaceRegistry` при импорте
-- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`). Браузер файлов реализован отдельно: `FileBrowser` в `components/`, показывается через SourcesPanel при зоне типа `fileBrowser`.
+- Содержит основной компонент (например, `PlaylistView.tsx`, `CollectionView.tsx`). Зона **«Файлы»** (`fileBrowser`): `FileBrowser` в `components/`, показывается через SourcesPanel при зоне типа `fileBrowser`.
 - Использует только `@core/` и `@shared/` для зависимостей
 - Имеет собственную документацию в `README.md`
 
@@ -152,6 +152,10 @@ CherryPlayList/
 - `@app/*` → `src/app/*`
 
 Настроены в `tsconfig.json` и `vite.config.mjs`.
+
+### UI-примитивы и CSS-контракт
+
+Оболочка CherryPlayList (модалки, заголовок, строки списка) использует shell-примитивы из `@cherryplay/components` (`Button`, `IconButton`, `Disclosure` и др.). Подробности API — [CherryPlayComponents/README.md](../CherryPlayComponents/README.md#ui-примитивы-shell); контракт слоёв и импорт CSS — [FULL_DOCUMENTATION.md §9.1.0](./FULL_DOCUMENTATION.md#910-ui-layers-and-migration-contract).
 
 ### Компоненты приложения
 
@@ -205,7 +209,7 @@ CherryPlayList/
 Связь CherryPlayList с **CherryPlayServer** и **CherryPlayWeb** (авторизация, вечеринки, стриминг состояния) описана в разделе документации по интеграции и согласована с планом релиза v1:
 
 - **[Интеграция приложение — сервер — веб](../../docs/integration/README.md)** — обзор подсистем (Accounts & Auth, Party Management, Streaming), роли, ссылки на контракты и БД (общая документация в корне репозитория).
-- **[Оглавление документации](./docs/README.md)** — модули, интеграция, ссылки на корневые документы репозитория.
+- **[Оглавление документации](./docs/README.md)** — модули, интеграция, [веб-демо](./docs/web-demo.md), [рабочие пространства и edit mode layout](./docs/layout-edit-mode.md) (pill, **Рабочие окна**, builtin override / Variant A, auto-save scratch «Без имени»), ссылки на корневые документы репозитория.
 
 ### Хранение данных
 
@@ -227,7 +231,7 @@ CherryPlayList/
 
 - **`authStore`** — токен и организатор
 - **`settingsStore`** — настройки приложения (экспорт, пути, аудиоустройства, горячие клавиши, стриминг и т.д.)
-- **`layoutStore`** — дерево зон интерфейса
+- **`layoutStore`** — рабочие пространства и дерево зон (persist `cherryplaylist-workspaces`: `activeWorkspace`, `userWorkspaces`, `layout`; `isLayoutEditMode` не персистится — см. [layout-edit-mode.md](./docs/layout-edit-mode.md))
 - **`projectStore`** — основной плейлист-проект (треки, группы, сессия, мета, привязка к party в урезанном виде)
 - **`ensureProjectStore`** с `persist: true` — отдельные персистентные проекты по **`workspaceId`** (например коллекции), ключ `cherryplaylist-<workspaceId>`
 

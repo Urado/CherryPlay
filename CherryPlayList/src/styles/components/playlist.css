@@ -8,49 +8,107 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  min-width: 0;
 }
 
 .playlist-header-section {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--ui-border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  flex-shrink: 0;
+  gap: var(--spacing-xs);
+  flex: 0 0 auto;
+  height: auto;
+  min-width: 0;
+  overflow: visible;
+  container-type: inline-size;
 }
 
-.playlist-header-row {
+.playlist-header-toolbar {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  min-width: 0;
+}
+
+.playlist-header-toolbar__primary {
+  display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: var(--spacing-sm);
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.playlist-header-toolbar__primary .playlist-name-input-header {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.playlist-header-toolbar__primary .playlist-stats-header--inline {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.playlist-header-toolbar > .playlist-header-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@container (max-width: 419px) {
+  .playlist-header-toolbar > .playlist-header-actions {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
 }
 
 .playlist-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .playlist-name-input-header {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--ui-border);
   color: var(--text-primary);
-  font-size: var(--font-size-heading);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-heading);
-  padding: var(--spacing-sm) 12px;
+  line-height: var(--line-height-body, 1.35);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 4px;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   outline: none;
   transition: border-color 0.2s;
 }
 
-.playlist-header-action-icon {
+.playlist-header-action-icon,
+.cp-button.playlist-header-action-icon {
   background: transparent;
   border: 1px solid var(--ui-border);
   border-radius: 4px;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 6px;
+  box-sizing: border-box;
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--spacing-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,20 +119,24 @@
   flex-shrink: 0;
 }
 
-.playlist-header-action-icon:hover {
+.playlist-header-action-icon:hover,
+.cp-button.playlist-header-action-icon:hover:not(:disabled) {
   background-color: var(--bg-hover);
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 
-.playlist-header-action-icon.delete-button {
-  border-color: var(--state-error);
-  color: var(--state-error);
+.playlist-header-action-icon.delete-button,
+.cp-button.playlist-header-action-icon.delete-button {
+  border-color: var(--ui-border);
+  color: var(--text-secondary);
 }
 
-.playlist-header-action-icon.delete-button:hover {
-  background-color: var(--state-error);
-  color: var(--text-primary);
+.playlist-header-action-icon.delete-button:hover,
+.cp-button.playlist-header-action-icon.delete-button:hover:not(:disabled) {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: var(--state-error);
+  color: var(--state-error);
 }
 
 .collection-export-wrapper {
@@ -119,12 +181,80 @@
   color: var(--text-disabled);
 }
 
+@container (max-width: 360px) {
+  .playlist-header-actions,
+  .playlist-header-toolbar {
+    gap: 4px;
+  }
+
+  .playlist-name-input-header {
+    padding-inline: 8px;
+  }
+}
+
 .playlist-stats-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
   font-size: var(--font-size-secondary);
+  line-height: 1.25;
   color: var(--text-secondary);
-  gap: 4px;
+  min-width: 0;
+}
+
+.playlist-stats-header--inline {
+  justify-content: flex-start;
+}
+
+.playlist-stats-header__info {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.playlist-stats-header__info > span:not(.playlist-stats-header__sep) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-stats-header__icon {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.playlist-stats-header__sep {
+  opacity: 0.5;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.playlist-stats-header__switch,
+.playback-source-switch--inline {
+  flex-shrink: 0;
+}
+
+.playlist-stats-header__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Player + AIMP embedded: compact single-toolbar headers */
+.aimp-view--embedded .playlist-header-section,
+.player-view .playlist-header-section {
+  gap: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .playlist-actions {
@@ -173,12 +303,46 @@
   min-width: 0;
 }
 
+/* AIMP playlist section toolbar — matches .playlist-tracks horizontal inset */
+.aimp-view__playlist-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--spacing-sm);
+  padding-inline: var(--spacing-sm);
+}
+
+.aimp-view__playlist-toolbar-title {
+  font-weight: 600;
+}
+
+.aimp-view__playlist-banner {
+  margin-bottom: var(--spacing-sm);
+  margin-inline: var(--spacing-sm);
+  padding: 10px;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.aimp-view__playlist-banner--degraded {
+  background: rgba(255, 152, 0, 0.12);
+  border: 1px solid rgba(255, 152, 0, 0.35);
+}
+
+.aimp-view__playlist-banner--info {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* Playlist Item */
 .playlist-item {
   display: flex;
   align-items: center;
-  padding: var(--track-item-padding, 12px);
-  margin-bottom: var(--track-item-margin, 4px);
+  padding: var(--track-item-padding, 8px);
+  margin-bottom: var(--track-item-margin, 2px);
   background-color: var(--bg-tertiary);
   border: 1px solid transparent;
   border-radius: 4px;
@@ -187,7 +351,7 @@
     background-color 0.2s,
     border-color 0.2s;
   gap: var(--spacing-sm);
-  min-height: 44px;
+  min-height: 40px;
 }
 
 /* Чекбокс и первые колонки не сжимаются — всегда видны в party и узких лейаутах */
@@ -197,30 +361,26 @@
   flex-shrink: 0;
 }
 
-.playlist-item-play {
-  background: transparent;
-  border: 1px solid var(--ui-border);
+.playlist-item-play,
+.cp-playback-control.playlist-item-play {
   border-radius: 50%;
   width: 32px;
   height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 32px;
   color: var(--text-secondary);
-  cursor: pointer;
   flex-shrink: 0;
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    color 0.2s;
+  background: transparent;
 }
 
-.playlist-item-play:hover {
+.playlist-item-play:hover,
+.cp-playback-control.playlist-item-play:hover:not(:disabled) {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
+  background-color: transparent;
 }
 
-.playlist-item-play.active {
+.playlist-item-play.active,
+.cp-playback-control.playlist-item-play.active {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
   background-color: rgba(100, 149, 237, 0.15);
@@ -243,19 +403,24 @@
   background-color: var(--bg-hover);
 }
 
-.playlist-item-drag-handle {
-  background: transparent;
-  border: none;
+.playlist-item-drag-handle,
+.cp-button.playlist-item-drag-handle {
   color: var(--text-secondary);
   cursor: grab;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 }
 
-.playlist-item-drag-handle:active {
+.cp-button.playlist-item-checkbox,
+.cp-button.playlist-item-drag-handle {
+  background: transparent;
+  width: auto;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px;
+}
+
+.playlist-item-drag-handle:active,
+.cp-button.playlist-item-drag-handle:active {
   cursor: grabbing;
 }
 
@@ -263,26 +428,21 @@
   font-size: 20px;
 }
 
-.playlist-item-checkbox {
-  background: transparent;
-  border: none;
+.playlist-item-checkbox,
+.cp-button.playlist-item-checkbox {
   color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
   min-width: 28px;
   min-height: 28px;
-  transition: color 0.2s;
 }
 
-.playlist-item-checkbox:hover {
+.playlist-item-checkbox:hover,
+.cp-button.playlist-item-checkbox:hover:not(:disabled) {
   color: var(--accent-primary);
 }
 
-.playlist-item-checkbox.checked {
+.playlist-item-checkbox.checked,
+.cp-button.playlist-item-checkbox.checked {
   color: var(--accent-primary);
 }
 
@@ -337,33 +497,68 @@
   flex-shrink: 0;
 }
 
-.playlist-item-delete {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 4px;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-}
-
-.playlist-item-delete:hover {
-  background-color: var(--state-error);
-  color: var(--text-primary);
-}
-
 .playlist-item-actions {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs, 4px);
   flex-shrink: 0;
   margin-left: auto;
+}
+
+/* Row ActionButton base: transparent fill + resting --ui-border chrome.
+   Opt out via Button/IconButton borderless → .cp-button--borderless.
+   Danger delete: tone="danger" + hoverable={false} + filled="hover" on shared Button. */
+.playlist-item-action:not(.cp-button--tone-danger),
+.cp-button.playlist-item-action:not(.cp-button--tone-danger) {
+  background: transparent;
+  border: 1px solid var(--ui-border, var(--cp-ui-border));
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--cp-button-radius, 8px);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.playlist-item-action:not(.cp-button--borderless):not(.cp-button--no-hover):not(
+    .cp-button--tone-danger
+  ):hover,
+.cp-button.playlist-item-action:not(.cp-button--borderless):not(.cp-button--no-hover):not(
+    .cp-button--tone-danger
+  ):hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+/* Delete row action — resting red icon + border; hover fill via cp-button--fill-hover. */
+.playlist-item-delete,
+.cp-button.playlist-item-delete,
+.cp-button.playlist-item-action.playlist-item-delete {
+  color: var(--text-secondary);
+  border-color: var(--ui-border, var(--cp-ui-border));
+  background: transparent;
+}
+
+.playlist-item-delete:hover:not(:disabled),
+.cp-button.playlist-item-delete:hover:not(:disabled),
+.cp-button.playlist-item-action.playlist-item-delete:hover:not(:disabled) {
+  color: var(--cp-accent-danger, var(--state-error, #d32f2f));
+  border-color: var(--cp-accent-danger, var(--state-error, #d32f2f));
+  background: rgba(220, 53, 69, 0.12);
+}
+
+/* Borderless row actions keep transparent chrome (do not use border:none). */
+.playlist-item-action.cp-button--borderless,
+.cp-button.playlist-item-action.cp-button--borderless {
+  border-color: transparent;
+}
+
+.playlist-item-action.cp-button--borderless:hover:not(:disabled),
+.cp-button.playlist-item-action.cp-button--borderless:hover:not(:disabled) {
+  border-color: transparent;
 }
 
 .drag-insert-line {
@@ -375,9 +570,20 @@
 }
 
 .playlist-hour-divider {
-  height: 3px;
+  /* Scales with track-item size (--track-item-padding / --track-item-margin from useTrackItemSize). */
+  --playlist-hour-divider-height: max(1px, calc(var(--track-item-padding, 8px) * 0.375));
+  --playlist-hour-divider-margin-y: max(2px, var(--track-item-padding, 8px));
+  --playlist-hour-divider-gap: max(8px, calc(var(--track-item-padding, 8px) * 3));
+  --playlist-hour-divider-label-pad-y: max(1px, calc(var(--track-item-padding, 8px) * 0.25));
+  --playlist-hour-divider-label-pad-x: max(4px, calc(var(--track-item-padding, 8px) * 1.25));
+  --playlist-hour-divider-label-font: max(
+    9px,
+    calc(var(--font-size-secondary, 12px) * (0.75 + var(--track-item-padding, 8px) / 32))
+  );
+
+  height: var(--playlist-hour-divider-height);
   background-color: var(--accent-primary);
-  margin: 8px 0;
+  margin: var(--playlist-hour-divider-margin-y) 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -386,7 +592,7 @@
 
 /* Слот списка — одна отсечка; две подряд возможны лишь как редкий крайний случай. */
 .playlist-hour-divider + .playlist-hour-divider {
-  margin-top: 24px;
+  margin-top: var(--playlist-hour-divider-gap);
 }
 
 .playlist-hour-divider--interval {
@@ -416,10 +622,11 @@
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--bg-secondary);
-  padding: 2px 10px;
+  padding: var(--playlist-hour-divider-label-pad-y, 2px) var(--playlist-hour-divider-label-pad-x, 10px);
   color: var(--text-primary);
-  font-size: var(--font-size-secondary);
+  font-size: var(--playlist-hour-divider-label-font, var(--font-size-secondary));
   font-weight: 500;
+  line-height: 1.2;
   white-space: nowrap;
   max-width: min(340px, calc(100% - 12px));
   overflow: hidden;
@@ -461,8 +668,8 @@
 .list-row {
   display: flex;
   align-items: center;
-  padding: var(--track-item-padding, 12px);
-  margin-bottom: var(--track-item-margin, 4px);
+  padding: var(--track-item-padding, 8px);
+  margin-bottom: var(--track-item-margin, 2px);
   background-color: var(--bg-tertiary);
   border: 1px solid transparent;
   border-radius: 4px;
@@ -504,7 +711,8 @@
   box-shadow: 0 0 8px rgba(100, 149, 237, 0.3);
 }
 
-.list-row-play {
+.list-row-play,
+.cp-button.list-row-play {
   background: transparent;
   border: 1px solid var(--ui-border);
   border-radius: 50%;
@@ -522,18 +730,21 @@
     color 0.2s;
 }
 
-.list-row-play:hover {
+.list-row-play:hover,
+.cp-button.list-row-play:hover:not(:disabled) {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 
-.list-row-play.active {
+.list-row-play.active,
+.cp-button.list-row-play.active {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
   background-color: rgba(100, 149, 237, 0.15);
 }
 
-.list-row-drag-handle {
+.list-row-drag-handle,
+.cp-button.list-row-drag-handle {
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -545,7 +756,8 @@
   flex-shrink: 0;
 }
 
-.list-row-drag-handle:active {
+.list-row-drag-handle:active,
+.cp-button.list-row-drag-handle:active {
   cursor: grabbing;
 }
 
@@ -553,7 +765,8 @@
   font-size: 20px;
 }
 
-.list-row-checkbox {
+.list-row-checkbox,
+.cp-button.list-row-checkbox {
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -566,11 +779,13 @@
   transition: color 0.2s;
 }
 
-.list-row-checkbox:hover {
+.list-row-checkbox:hover,
+.cp-button.list-row-checkbox:hover:not(:disabled) {
   color: var(--accent-primary);
 }
 
-.list-row-checkbox.checked {
+.list-row-checkbox.checked,
+.cp-button.list-row-checkbox.checked {
   color: var(--accent-primary);
 }
 
@@ -635,7 +850,8 @@
   cursor: not-allowed;
 }
 
-.list-row-delete {
+.list-row-delete,
+.cp-button.list-row-delete {
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -651,7 +867,8 @@
     color 0.2s;
 }
 
-.list-row-delete:hover {
+.list-row-delete:hover,
+.cp-button.list-row-delete:hover:not(:disabled) {
   background-color: var(--state-error);
   color: var(--text-primary);
 }

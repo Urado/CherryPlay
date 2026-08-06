@@ -13,7 +13,7 @@ interface AimpIpcResponse {
 class AimpService {
   private assertAimpAvailable(): void {
     if (!isPlatformInitialized() || !getPlatformCapabilities().supportsAimpWorkspace) {
-      throw new Error('AIMP integration is only available in the Electron app');
+      throw new Error('AIMP integration is not available on this platform');
     }
   }
 

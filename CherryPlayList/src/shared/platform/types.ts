@@ -21,6 +21,8 @@ export type InvokeChannel =
   | 'fileBrowser:findAudioFilesRecursive'
   | 'audio:getDuration'
   | 'audio:getFileUrl'
+  | 'audio:analyzeLoudness'
+  | 'audio:statAudioFile'
   | 'export:execute'
   | 'export:copyFile'
   | 'export:aimp'
@@ -35,6 +37,7 @@ export type InvokeChannel =
   | 'system:getPath'
   | 'system:openPath'
   | 'system:openExternal'
+  | 'system:setMinimumWindowSize'
   | 'config:getConfigPath'
   | 'config:getServerUrl'
   | 'config:setServerUrl'
@@ -43,6 +46,27 @@ export type InvokeChannel =
   | 'auth:registerCallback';
 
 export type OnChannel = 'project:save-progress';
+
+export type {
+  LoudnessAnalyzeError,
+  LoudnessAnalyzeOk,
+  LoudnessAnalyzeResult,
+} from '../contracts/loudness';
+
+export type AudioFileStat = {
+  mtimeMs: number;
+  size: number;
+};
+
+/**
+ * Minimum window size (client pixels) sent from renderer to the Electron shell.
+ * Renderer computes chrome insets + layout mins; the Electron main process
+ * applies it via `BrowserWindow.setMinimumSize` (handler in Electron subtask).
+ */
+export interface MinimumWindowSize {
+  minWidth: number;
+  minHeight: number;
+}
 
 export interface PlatformAimpApi {
   getState: () => Promise<IPCResponse<AimpBridgeState>>;

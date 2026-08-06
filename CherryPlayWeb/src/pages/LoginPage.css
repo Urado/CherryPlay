@@ -6,6 +6,20 @@
   justify-content: center;
   background: var(--bg-primary);
   padding: 20px;
+  gap: 12px;
+}
+
+.login-page-notice {
+  max-width: 500px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--accent-primary);
+  font-size: 14px;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .login-page-form {
@@ -17,7 +31,6 @@
   border: 1px solid var(--border-color);
 }
 
-/* Уменьшаем белые обводки и подложки на странице авторизации */
 .login-page-form .auth-form-card {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--border-color);
@@ -125,7 +138,6 @@
   font-size: 20px;
 }
 
-/* Иконки OAuth в строке ввода — выравнивание и стиль */
 .oauth-buttons {
   display: flex;
   flex-direction: column;
@@ -144,7 +156,9 @@
   color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
 .oauth-button:hover:not(:disabled) {
@@ -281,4 +295,34 @@
 
 .register-link a:hover {
   text-decoration: underline;
+}
+
+.login-page-form .password-auth-form-title {
+  color: var(--text-primary);
+}
+
+.login-page-form .password-auth-form-description {
+  color: var(--text-secondary);
+}
+
+.login-page-form .password-auth-form-link {
+  color: var(--accent-primary);
+}
+
+.login-page-form .password-auth-form-link:focus-visible {
+  outline-color: var(--accent-primary);
+}
+
+.login-page-form .password-auth-form-success {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.35);
+  color: var(--accent-primary);
+}
+
+.login-page-form .email-auth-form-forgot-link {
+  color: var(--accent-primary);
+}
+
+.login-page-form .email-auth-form-forgot-link:focus-visible {
+  outline-color: var(--accent-primary);
 }

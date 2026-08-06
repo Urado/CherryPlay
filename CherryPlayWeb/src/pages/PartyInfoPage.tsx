@@ -1,8 +1,11 @@
-/**
- * Страница информации о вечеринке (описание, место, дата).
- * Использует тематический компонент PartyInfoDisplay из библиотеки компонентов.
- */
-import { getDefaultTimeZone, PartyInfoDisplay, isValidPartyTheme } from '@cherryplay/components';
+import {
+  Button,
+  ButtonLink,
+  DEFAULT_PARTY_THEME_ID,
+  getDefaultTimeZone,
+  PartyInfoDisplay,
+  isValidPartyTheme,
+} from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
@@ -41,14 +44,16 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
       <div className="party-info-page">
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
-            <button
+            <Button
               type="button"
-              className="party-info-page-back-btn"
+              variant="secondary"
+              size="sm"
+              className="party-info-page-nav-btn"
               onClick={() => navigate(-1)}
               title="Список вечеринок"
             >
               ← Список вечеринок
-            </button>
+            </Button>
           </div>
         </div>
         <p>Загрузка…</p>
@@ -61,45 +66,69 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
       <div className="party-info-page">
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
-            <button
+            <Button
               type="button"
-              className="party-info-page-back-btn"
+              variant="secondary"
+              size="sm"
+              className="party-info-page-nav-btn"
               onClick={() => navigate(-1)}
               title="Список вечеринок"
             >
               ← Список вечеринок
-            </button>
+            </Button>
           </div>
         </div>
         <p className="party-info-error">{error ?? 'Вечеринка не найдена'}</p>
-        <button type="button" onClick={() => navigate(ROUTES.HOME)}>
+        <Button
+          type="button"
+          variant="secondary"
+          className="party-info-page-nav-btn"
+          onClick={() => navigate(ROUTES.HOME)}
+        >
           На главную
-        </button>
+        </Button>
       </div>
     );
   }
 
-  const themeId = isValidPartyTheme(party.partyThemeId) ? party.partyThemeId : 'basic';
+  const themeId = isValidPartyTheme(party.partyThemeId)
+    ? party.partyThemeId
+    : DEFAULT_PARTY_THEME_ID;
 
   return (
     <div className="party-info-page" data-theme={themeId}>
       <div className="party-info-page-header">
         <div className="party-info-page-header-controls">
-          <button
+          <Button
             type="button"
-            className="party-info-page-back-btn"
+            variant="secondary"
+            size="sm"
+            className="party-info-page-nav-btn"
             onClick={() => navigate(-1)}
             title="Список вечеринок"
           >
             ← Список вечеринок
-          </button>
-          <a
+          </Button>
+          <ButtonLink
             href={ROUTES.PARTY_VIEW(shortCode)}
-            className="party-info-page-playlist-btn"
+            onClick={(event) => {
+              if (event.defaultPrevented) return;
+              if (event.button !== 0) return;
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+              const target = event.currentTarget.getAttribute('target');
+              if (target && target.toLowerCase() !== '_self') return;
+
+              event.preventDefault();
+              navigate(ROUTES.PARTY_VIEW(shortCode));
+            }}
+            className="party-info-page-nav-btn party-info-page-playlist-btn"
             title="Плейлист"
+            variant="secondary"
+            size="sm"
           >
             Плейлист
-          </a>
+          </ButtonLink>
         </div>
       </div>
       <PartyInfoDisplay

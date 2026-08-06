@@ -81,11 +81,12 @@ describe('playbackDeviceConflictSync', () => {
   });
 
   describe('syncDemoWithMainPlayer', () => {
-    it('disables demo and pauses it when main player is playing on shared device in session', () => {
+    it('disables demo when main player is playing on shared device in session', () => {
       sessionMode = 'session';
       playerDeviceId = 'shared';
       demoDeviceId = 'shared';
       playerStatus = 'playing';
+      demoStatus = 'playing';
 
       syncDemoWithMainPlayer('shared');
 
@@ -125,7 +126,7 @@ describe('playbackDeviceConflictSync', () => {
 
       syncDemoWithMainPlayer('shared-output');
 
-      expect(mockDemoPause).toHaveBeenCalledTimes(1);
+      expect(mockDemoPause).not.toHaveBeenCalled();
       expect(mockDemoSetDisabled).toHaveBeenCalledWith(true);
     });
   });

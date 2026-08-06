@@ -4,8 +4,13 @@
 
 ## Архитектура
 
-1. **Build Workflow** (`build-images.yml`) - автоматически собирает образы при изменениях в коде
-2. **Release Workflow** (`release-and-deploy.yml`) - собирает образы с тегами версий и деплоит на сервер при создании релиза
+1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
+2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
+3. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
+4. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при создании релиза
+5. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release
+
+При создании GitHub Release (не draft) workflows **4** и **5** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`).
 
 ### Сетевое устройство и Nginx
 
@@ -62,6 +67,10 @@ GitHub Container Registry уже настроен и доступен автом
 | `OAUTH_VK_CLIENT_ID`     | ID приложения VK (для входа через VK)                                                                                              |
 | `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK                                                                                                      |
 | `GHCR_TOKEN`             | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
+| `RUSENDER_API_TOKEN`     | Bearer-токен RuSender API (`rs_ck_v1_…`). **Секрет** — нужен для отправки писем сброса пароля в Prod                               |
+| `RUSENDER_SEND_KEY_ID`   | Числовой `key_id` transactional send key RuSender. **Секрет**                                                                      |
+
+Несекретные настройки почты задаются **дефолтами в** [docker-compose.prod.yml](../docker-compose.prod.yml) (`EMAIL_FROM_ADDRESS=noreply@cherrypashkaparty.ru`, `EMAIL_FROM_NAME=CherryPlay`, `PUBLIC_WEB_BASE_URL=https://cherrypashkaparty.ru`) — на сервере их заводить не обязательно. Переопределение — опционально через `.env.production`. Без `RUSENDER_*` forgot-password в Prod отвечает 503. Полный справочник — [ENV.md](../ENV.md).
 
 Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). В `release-and-deploy.yml` при релизе принудительно выставляется `Database__AutoMigrateOnStartup=true`, чтобы накат миграций происходил автоматически.
 
@@ -118,7 +127,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Полный справочник переменных — в корневом [ENV.md](../ENV.md). Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`, `RUSENDER_API_TOKEN`, `RUSENDER_SEND_KEY_ID`) берутся из GitHub Secrets и подставляются в `.env` на сервере. `EMAIL_FROM_*` и `PUBLIC_WEB_BASE_URL` по умолчанию из [docker-compose.prod.yml](../docker-compose.prod.yml) (действия на сервере не нужны). Полный справочник — [ENV.md](../ENV.md). Опциональный запас `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера
@@ -138,6 +147,15 @@ CORS_ORIGIN_1=https://www.yourdomain.com
 # VK OAuth (для входа через VK)
 OAUTH_VK_CLIENT_ID=your_vk_app_id
 OAUTH_VK_CLIENT_SECRET=your_vk_secure_key
+
+# RuSender tokens — опционально здесь, если не задаёте GitHub Secrets RUSENDER_*
+# RUSENDER_API_TOKEN=rs_ck_v1_your_token
+# RUSENDER_SEND_KEY_ID=12345
+
+# From / public Web URL — опционально (иначе дефолты docker-compose.prod.yml)
+# EMAIL_FROM_ADDRESS=noreply@cherrypashkaparty.ru
+# EMAIL_FROM_NAME=CherryPlay
+# PUBLIC_WEB_BASE_URL=https://cherrypashkaparty.ru
 ```
 
 #### Настройка доступа к GHCR (для приватных репозиториев)
@@ -192,12 +210,24 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
    - Заполните название и описание
    - Нажмите "Publish release"
 
-3. **Автоматический процесс:**
-   - GitHub Actions соберет образы с тегом версии
-   - Образы будут опубликованы в GHCR
-   - Автоматически запустится деплой на сервер
-   - Старые контейнеры будут остановлены
-   - Новые контейнеры будут запущены с новой версией
+3. **Автоматический процесс (два независимых workflow):**
+   - **`release-and-deploy.yml`** (пропускает prerelease): образы с тегом версии → GHCR → деплой на сервер
+   - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release
+
+### Скачать Windows desktop (CherryPlayList)
+
+После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — тег релиза **без** ведущего `v` (CI синхронизирует `CherryPlayList/package.json` с тегом).
+
+URL для **последнего стабильного** (non-prerelease) релиза:
+
+```text
+https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{version}-x64.zip
+```
+
+Пример для тега `v1.2.3`: `…/releases/latest/download/CherryPlayList-1.2.3-x64.zip`.
+
+- `…/releases/latest/…` указывает только на последний **non-prerelease**. Prerelease тоже получает zip-asset, но не через `/latest/`.
+- В опубликованном zip **нет** нативного AIMP bridge (сборка CI без `stage:aimp-plugin`). Полная локальная сборка с AIMP — см. [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md).
 
 ### Откат на предыдущую версию
 
@@ -219,8 +249,11 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 ```
 .github/
   workflows/
-    build-images.yml              # Автоматическая сборка при изменениях
-    release-and-deploy.yml        # Сборка и деплой при релизе
+    tests.yml                     # Server Tests (.NET)
+    verify-docker-build.yml       # Проверка Docker-сборки на PR (без push)
+    build-images.yml              # Build & Push Images → GHCR (push в main/develop)
+    release-and-deploy.yml        # Docker-образы и деплой при релизе
+    release-desktop-windows.yml   # Windows zip CherryPlayList → asset Release
   FIRST_DEPLOY.md                 # Инструкция для первого деплоя
   nginx-cherryplay-https.conf    # Конфиг Nginx для HTTPS (копируется на сервер при деплое)
 scripts/

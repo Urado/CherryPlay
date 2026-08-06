@@ -13,7 +13,12 @@ import { registerExportHandlers } from './ipc/export.js';
 import { registerFileBrowserHandlers } from './ipc/fileBrowser.js';
 import { registerPlaylistHandlers } from './ipc/playlist.js';
 import { registerProjectHandlers } from './ipc/project.js';
-import { registerSystemHandlers } from './ipc/system.js';
+import { registerSettingsBundleHandlers } from './ipc/settingsBundle.js';
+import {
+  registerSystemHandlers,
+  APP_MIN_WINDOW_WIDTH,
+  APP_MIN_WINDOW_HEIGHT,
+} from './ipc/system.js';
 import {
   registerCherryplayAudioProtocolHandler,
   registerCherryplayAudioScheme,
@@ -30,8 +35,10 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    // App-level floor only; the renderer refines this dynamically via
+    // `system:setMinimumWindowSize` using max(appFloor, layout-computed mins).
+    minWidth: APP_MIN_WINDOW_WIDTH,
+    minHeight: APP_MIN_WINDOW_HEIGHT,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -93,6 +100,7 @@ app.whenReady().then(() => {
   registerExportHandlers();
   registerProjectHandlers();
   registerPlaylistHandlers();
+  registerSettingsBundleHandlers();
   registerAuthHandlers(mainWindow);
 
   createWindow();

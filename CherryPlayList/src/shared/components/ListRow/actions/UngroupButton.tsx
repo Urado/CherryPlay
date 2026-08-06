@@ -3,6 +3,8 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * Props for UngroupButton component
  */
@@ -22,27 +24,19 @@ export const UngroupButton: React.FC<UngroupButtonProps> = ({
   onUngroup,
   title = 'Расформировать группу',
 }) => {
-  const { baseClassName, isLocked } = useListRowContext();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isLocked) {
-      onUngroup();
-    }
-  };
+  const { baseClassName } = useListRowContext();
 
   return (
-    <button
-      type="button"
+    <ActionButton
+      onClick={onUngroup}
       className={`${baseClassName}-ungroup`}
-      onClick={handleClick}
-      disabled={isLocked}
       title={title}
       aria-label={title}
-      style={{ visibility: isLocked ? 'hidden' : 'visible' }}
-    >
-      <CallSplitIcon style={{ fontSize: '18px' }} />
-    </button>
+      hideWhenLocked
+      icon={<CallSplitIcon style={{ fontSize: '18px' }} />}
+      variant="ghost"
+      size="sm"
+    />
   );
 };
 

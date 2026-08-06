@@ -14,6 +14,7 @@ import { useAuthStore } from '../stores/authStore';
 import { handleApiResponse } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 import type { PlayerItemForApi } from '../utils/partyUtils';
+import { constantTimeStringEqual } from '../utils/tokenUtils';
 
 export const MAX_SHORT_DESCRIPTION_LENGTH = 200;
 
@@ -34,7 +35,6 @@ export const PREDEFINED_DANCE_TAGS = [
   'Фигурные вальсы',
 ] as const;
 
-/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
 export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
 
 export type PartyLifecycleState = (typeof PARTY_LIFECYCLE_STATES)[number];
@@ -94,6 +94,7 @@ export interface PartyDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  isListedInCatalog?: boolean;
 }
 
 export interface UpdatePartyDto {
@@ -215,10 +216,6 @@ class PartyService {
     return handleApiResponse<PartyDto>(response, 'Failed to create party');
   }
 
-  /**
-   * Список вечеринок организатора. Сервер не возвращает записи в состоянии `draft`
-   * (черновик доступен через {@link getParty}).
-   */
   async getParties(): Promise<PartyDto[]> {
     if (isDemoAuthMode()) {
       return [getDemoPartySnapshot()];
@@ -346,11 +343,6 @@ class PartyService {
     await handleApiResponse<void>(response, 'Failed to delete party');
   }
 
-  /**
-   * Перевод вечеринки в целевое состояние жизненного цикла (POST `/api/parties/{partyId}/lifecycle`).
-   * Идемпотентно, если уже в целевом состоянии. При недопустимом переходе — 409
-   * {@link InvalidPartyLifecycleTransitionError}.
-   */
   async transitionPartyLifecycle(
     partyId: string,
     targetState: PartyLifecycleState,
@@ -397,6 +389,9 @@ class PartyService {
     }
     const config = await getApiConfig();
     const serverUrl = config.serverUrl;
+    if (!serverUrl.trim()) {
+      return `http://localhost:3000/party/${shortCode}`;
+    }
 
     try {
       const url = new URL(serverUrl);
@@ -441,7 +436,10 @@ class PartyService {
       throw new Error('Для получения доступа к темам необходимо войти в аккаунт');
     }
 
-    if (this.themeAccessCacheToken !== token) {
+    if (
+      this.themeAccessCacheToken === null ||
+      !constantTimeStringEqual(this.themeAccessCacheToken, token)
+    ) {
       this.invalidateThemeAccessCache();
       this.themeAccessCacheToken = token;
     }

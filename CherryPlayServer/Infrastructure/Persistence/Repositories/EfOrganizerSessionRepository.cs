@@ -1,14 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Реализация <see cref="IOrganizerSessionRepository"/> для слоя персистентности (EF Core + PostgreSQL).
-/// </summary>
 public class EfOrganizerSessionRepository : IOrganizerSessionRepository
 {
     private readonly AppDbContext _context;
@@ -43,5 +39,12 @@ public class EfOrganizerSessionRepository : IOrganizerSessionRepository
             _context.OrganizerSessions.Remove(ef);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task RemoveAllByOrganizerIdAsync(Guid organizerId)
+    {
+        await _context.OrganizerSessions
+            .Where(e => e.OrganizerId == organizerId)
+            .ExecuteDeleteAsync();
     }
 }

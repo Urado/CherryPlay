@@ -9,6 +9,8 @@ import React from 'react';
 
 import { formatDuration } from '../../utils/durationUtils';
 
+const HEADER_ICON_SIZE = '18px';
+
 /**
  * Props for WorkspaceHeader component
  */
@@ -100,83 +102,102 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
   extraActions,
   extraStats,
 }) => {
+  const showActions = hasSelectedItems || (!hasSelectedItems && itemCount > 0) || extraActions;
+
   return (
     <div className="playlist-header-section">
-      <div className="playlist-header-row">
-        <input
-          type="text"
-          className="playlist-name-input-header"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder={placeholder}
-        />
-        {hasSelectedItems && (
-          <>
-            <button
-              onClick={onDeselectAll}
-              className="playlist-header-action-icon"
-              title="Deselect All"
-            >
-              <ClearIcon style={{ fontSize: '20px' }} />
-            </button>
-            {canCreateGroup && onCreateGroup && (
-              <button
-                onClick={onCreateGroup}
-                className="playlist-header-action-icon"
-                title="Создать группу"
-              >
-                <GroupAddIcon style={{ fontSize: '20px' }} />
-              </button>
+      <div className="playlist-header-toolbar">
+        <div className="playlist-header-toolbar__primary">
+          <input
+            type="text"
+            className="playlist-name-input-header"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder={placeholder}
+          />
+
+          <div className="playlist-stats-header playlist-stats-header--inline">
+            <div className="playlist-stats-header__info">
+              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>{itemCount} треков</span>
+              {itemCount > 0 && (
+                <>
+                  <span className="playlist-stats-header__sep" aria-hidden>
+                    •
+                  </span>
+                  <TimerIcon className="playlist-stats-header__icon" fontSize="inherit" />
+                  <span>{formatDuration(totalDuration)}</span>
+                </>
+              )}
+              {extraStats}
+            </div>
+          </div>
+        </div>
+
+        {showActions ? (
+          <div className="playlist-header-actions">
+            {hasSelectedItems && (
+              <>
+                <button
+                  onClick={onDeselectAll}
+                  className="playlist-header-action-icon"
+                  title="Deselect All"
+                  aria-label="Deselect All"
+                >
+                  <ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />
+                </button>
+                {canCreateGroup && onCreateGroup && (
+                  <button
+                    onClick={onCreateGroup}
+                    className="playlist-header-action-icon"
+                    title="Создать группу"
+                    aria-label="Создать группу"
+                  >
+                    <GroupAddIcon style={{ fontSize: HEADER_ICON_SIZE }} />
+                  </button>
+                )}
+                {onRemoveSelected && (
+                  <button
+                    onClick={onRemoveSelected}
+                    className="playlist-header-action-icon delete-button"
+                    disabled={!canRemoveSelected}
+                    title={
+                      canRemoveSelected
+                        ? `Delete Selected (${selectedCount})`
+                        : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
+                    }
+                    aria-label="Удалить выбранные"
+                  >
+                    <DeleteSweepIcon style={{ fontSize: HEADER_ICON_SIZE }} />
+                  </button>
+                )}
+              </>
             )}
-            {onRemoveSelected && (
-              <button
-                onClick={onRemoveSelected}
-                className="playlist-header-action-icon delete-button"
-                disabled={!canRemoveSelected}
-                title={
-                  canRemoveSelected
-                    ? `Delete Selected (${selectedCount})`
-                    : 'Нельзя удалить проигранные или текущий трек в режиме сессии'
-                }
-              >
-                <DeleteSweepIcon style={{ fontSize: '20px' }} />
-              </button>
+            {!hasSelectedItems && itemCount > 0 && (
+              <>
+                <button
+                  onClick={onSelectAll}
+                  className="playlist-header-action-icon"
+                  title="Select All"
+                  aria-label="Select All"
+                >
+                  <SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />
+                </button>
+                {onClearAll && (
+                  <button
+                    onClick={onClearAll}
+                    className="playlist-header-action-icon delete-button"
+                    title="Удалить всё"
+                    aria-label="Удалить всё"
+                  >
+                    <DeleteForeverIcon style={{ fontSize: HEADER_ICON_SIZE }} />
+                  </button>
+                )}
+              </>
             )}
-          </>
-        )}
-        {!hasSelectedItems && itemCount > 0 && (
-          <>
-            <button
-              onClick={onSelectAll}
-              className="playlist-header-action-icon"
-              title="Select All"
-            >
-              <SelectAllIcon style={{ fontSize: '20px' }} />
-            </button>
-            {onClearAll && (
-              <button
-                onClick={onClearAll}
-                className="playlist-header-action-icon delete-button"
-                title="Удалить всё"
-              >
-                <DeleteForeverIcon style={{ fontSize: '20px' }} />
-              </button>
-            )}
-          </>
-        )}
-        {extraActions}
-      </div>
-      <div className="playlist-stats-header">
-        <ListIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-        <span>{itemCount} треков</span>
-        {itemCount > 0 && (
-          <>
-            <span style={{ margin: '0 8px' }}>•</span>
-            <TimerIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-            <span>{formatDuration(totalDuration)}</span>
-          </>
-        )}
-        {extraStats}
+            {extraActions}
+          </div>
+        ) : null}
       </div>
     </div>
   );

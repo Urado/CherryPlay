@@ -1,12 +1,13 @@
 {
   "name": "cherryplaylist",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Desktop application for creating and managing music playlists",
   "main": "dist-electron/electron/main.mjs",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation concurrently -k \"vite\" \"wait-on http://localhost:5173 && npm run compile:electron && electron .\"",
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation concurrently -k \"vite\" \"wait-on http-get://localhost:5173/src/index.tsx && npm run compile:electron && electron .\"",
     "dev:web": "cross-env VITE_APP_MODE=demo vite",
     "dev:web:project": "cross-env VITE_APP_MODE=demo VITE_LOAD_DEMO_PROJECT=1 vite",
+    "dev:web:live": "cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 vite",
     "dev:capacitor": "cross-env VITE_APP_MODE=capacitor vite",
     "compile:electron": "tsc -p tsconfig.electron.json && node scripts/bundle-preload.mjs && node -e \"const fs=require('fs');const p='dist-electron/electron/main.js';if(fs.existsSync(p)){fs.renameSync(p,'dist-electron/electron/main.mjs')}const pkg='dist-electron/electron/package.json';if(!fs.existsSync(pkg)){fs.writeFileSync(pkg,'{\\\"type\\\":\\\"module\\\"}\\n')}\"",
     "build": "cross-env NODE_OPTIONS=--no-deprecation vite build",
@@ -25,6 +26,7 @@
     "dist": "npm run build:electron && electron-builder",
     "stage:aimp-plugin": "node scripts/stage-aimp-plugin.mjs",
     "dist:win": "npm run build:electron && npm run stage:aimp-plugin && electron-builder --win --x64",
+    "dist:win:ci": "npm run build:electron && electron-builder --win --x64",
     "dist:mac": "npm run build:electron && electron-builder --mac",
     "dist:linux": "npm run build:electron && electron-builder --linux",
     "dist:all": "npm run build:electron && electron-builder --win --mac --linux"
@@ -44,6 +46,7 @@
     "@emotion/styled": "^11.14.1",
     "@microsoft/signalr": "^10.0.0",
     "@mui/icons-material": "^6.0.0",
+    "ffmpeg-static": "^5.2.0",
     "localforage": "^1.10.0",
     "music-metadata": "^11.12.3",
     "react": "^19.0.0",
@@ -68,9 +71,9 @@
     "@vitejs/plugin-react": "^6.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
-    "esbuild": "^0.27.0",
     "electron": "^41.0.0",
     "electron-builder": "^26.0.0",
+    "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -128,6 +131,9 @@
       "output": "release",
       "buildResources": "build"
     },
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**"
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -146,6 +152,14 @@
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
     "extraResources": [
+      {
+        "from": "node_modules/ffmpeg-static",
+        "to": "ffmpeg-static",
+        "filter": [
+          "ffmpeg",
+          "ffmpeg.exe"
+        ]
+      },
       {
         "from": "plugins/example-plugin",
         "to": "plugins/example-plugin",

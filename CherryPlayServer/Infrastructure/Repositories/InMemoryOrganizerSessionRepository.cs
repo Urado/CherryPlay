@@ -25,4 +25,14 @@ public class InMemoryOrganizerSessionRepository : IOrganizerSessionRepository
         _sessions.TryRemove(sessionId, out _);
         return Task.CompletedTask;
     }
+
+    public Task RemoveAllByOrganizerIdAsync(Guid organizerId)
+    {
+        foreach (var id in _sessions.Where(kv => kv.Value.OrganizerId == organizerId).Select(kv => kv.Key).ToList())
+        {
+            _sessions.TryRemove(id, out _);
+        }
+
+        return Task.CompletedTask;
+    }
 }

@@ -1,10 +1,7 @@
-import {
-  createInitialAimpBridgeState,
-  type AimpBridgeState,
-  type AimpSourceSelection,
-} from '../contracts/aimp';
+import { type AimpBridgeState, type AimpSourceSelection } from '../contracts/aimp';
 
 import { DEMO_UNAVAILABLE_MESSAGE, demoUnavailableResponse } from './demoUnavailable';
+import { createDemoAimpBridgeState } from './fixtures/demoAimpBridge';
 import { getDemoConfigPath, getDemoServerUrl, setDemoServerUrl } from './fixtures/demoConfig';
 import {
   DEMO_MUSIC_ROOT,
@@ -19,7 +16,7 @@ const DEMO_DIALOG_FIXTURE_PATH = '/demo/exports/output.cherry';
 const DEMO_OPEN_DIALOG_PATH = DEMO_MUSIC_ROOT;
 
 function createDemoAimpApi(): PlatformAPI['aimp'] {
-  let state = createInitialAimpBridgeState();
+  let state = createDemoAimpBridgeState('cherryPlayPlayer');
 
   const response = (next: AimpBridgeState): IPCResponse<AimpBridgeState> => ({
     success: true,
@@ -29,11 +26,11 @@ function createDemoAimpApi(): PlatformAPI['aimp'] {
   return {
     getState: async () => response(state),
     setSourceSelection: async (sourceSelection: AimpSourceSelection) => {
-      state = { ...state, sourceSelection };
+      state = createDemoAimpBridgeState(sourceSelection, state.liveStreamStarted);
       return response(state);
     },
     setLiveStreamStarted: async (liveStreamStarted: boolean) => {
-      state = { ...state, liveStreamStarted };
+      state = createDemoAimpBridgeState(state.sourceSelection, liveStreamStarted);
       return response(state);
     },
     onStateChanged: () => () => undefined,
@@ -98,6 +95,8 @@ export class WebDemoPlatform implements PlatformAPI {
 
       case 'audio:getDuration':
       case 'audio:getFileUrl':
+      case 'audio:analyzeLoudness':
+      case 'audio:statAudioFile':
         return Promise.resolve(demoUnavailableResponse());
 
       case 'project:save':

@@ -4,39 +4,41 @@ using CherryPlayServer.Core.Models;
 
 namespace CherryPlayServer.Core.Interfaces;
 
-/// <summary>
-/// Service for handling authentication business logic.
-/// Encapsulates email/password and OAuth authentication flows.
-/// </summary>
 public interface IAuthService
 {
-    /// <summary>
-    /// Registers a new organizer with email and password.
-    /// </summary>
     Task<AuthResult> RegisterAsync(string email, string password, string name);
-
-    /// <summary>
-    /// Authenticates an organizer with email and password.
-    /// </summary>
     Task<AuthResult> LoginAsync(string email, string password);
-
-    /// <summary>
-    /// Processes OAuth callback and returns organizer.
-    /// </summary>
     Task<Organizer> ProcessOAuthCallbackAsync(OAuthProvider provider, string code, string redirectUri, string? deviceId = null);
-
-    /// <summary>
-    /// Generates JWT token for organizer.
-    /// </summary>
     Task<string> GenerateTokenAsync(Organizer organizer);
+    Task<ForgotPasswordResult> ForgotPasswordAsync(string email);
+    Task<PasswordMutationResult> ResetPasswordAsync(string token, string newPassword);
+    Task<PasswordMutationResult> ChangePasswordAsync(Guid organizerId, string oldPassword, string newPassword);
 }
 
-/// <summary>
-/// Result of authentication operation.
-/// </summary>
 public record AuthResult(
     bool Success,
     string? Token,
     Organizer? Organizer,
+    string? ErrorMessage
+);
+
+public record ForgotPasswordResult(
+    bool Success,
+    bool ServiceUnavailable,
+    string? Message,
+    string? ErrorMessage
+);
+
+public enum PasswordMutationFailureKind
+{
+    Validation,
+    InvalidToken,
+    Unauthorized,
+    NotAllowed,
+}
+
+public record PasswordMutationResult(
+    bool Success,
+    PasswordMutationFailureKind? FailureKind,
     string? ErrorMessage
 );

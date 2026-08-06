@@ -1,20 +1,6 @@
+import { isDemoLiveMode } from './demoLiveMode';
 import type { AppMode } from './types';
 
-/**
- * Feature flags for gating UI, guards, and stores.
- * Derived from {@link AppMode} — use {@link getPlatformCapabilities()} instead of raw mode checks.
- *
- * | Capability | electron | demo | capacitor (stub) |
- * |------------|----------|------|------------------|
- * | supportsLocalFilePlayback | ✓ | ✗ | ✗ |
- * | supportsNativeFileSystem | ✓ | ✗ | ✗ |
- * | supportsProjectPersistence | ✓ | ✗ | ✗ |
- * | supportsAimpWorkspace | ✓ | ✗ | ✗ |
- * | supportsAudioDeviceSelection | ✓ | ✗ | ✗ |
- * | supportsRealAuth | ✓ | ✗ | ✗ |
- * | simulatesExport | ✗ | ✓ | ✗ |
- * | usesFixtureFileBrowser | ✗ | ✓ | ✗ |
- */
 export interface PlatformCapabilities {
   readonly mode: AppMode;
   readonly supportsLocalFilePlayback: boolean;
@@ -23,6 +9,7 @@ export interface PlatformCapabilities {
   readonly supportsAimpWorkspace: boolean;
   readonly supportsAudioDeviceSelection: boolean;
   readonly supportsRealAuth: boolean;
+  readonly supportsLoudnessAnalysis: boolean;
   readonly simulatesExport: boolean;
   readonly usesFixtureFileBrowser: boolean;
 }
@@ -40,6 +27,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: true,
         supportsRealAuth: true,
+        supportsLoudnessAnalysis: true,
         simulatesExport: false,
         usesFixtureFileBrowser: false,
       };
@@ -49,9 +37,10 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsLocalFilePlayback: false,
         supportsNativeFileSystem: false,
         supportsProjectPersistence: false,
-        supportsAimpWorkspace: false,
+        supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: false,
-        supportsRealAuth: false,
+        supportsRealAuth: isDemoLiveMode(),
+        supportsLoudnessAnalysis: false,
         simulatesExport: true,
         usesFixtureFileBrowser: true,
       };
@@ -64,6 +53,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: false,
         supportsAudioDeviceSelection: false,
         supportsRealAuth: false,
+        supportsLoudnessAnalysis: false,
         simulatesExport: false,
         usesFixtureFileBrowser: false,
       };
@@ -87,7 +77,6 @@ export function getPlatformCapabilities(): PlatformCapabilities {
   return cachedCapabilities;
 }
 
-/** Resets capabilities cache — for unit tests only. */
 export function resetPlatformCapabilitiesForTests(): void {
   cachedCapabilities = null;
 }

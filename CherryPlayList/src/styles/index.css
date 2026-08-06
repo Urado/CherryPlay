@@ -3,8 +3,8 @@
  * Imports all style modules in correct order
  */
 
-/* 1. Shell Palette from CherryPlayComponents (must be first) */
-@import '@cherryplay/components/styles/shell-palette.css';
+/* 1. Shared primitives + shell palette tokens */
+@import '@cherryplay/components/styles/primitives.css';
 
 /* 2. CSS Variables (local overrides if needed) */
 @import url('./variables.css');
@@ -18,6 +18,8 @@
 /* 5. Component styles */
 @import url('./components/app.css');
 @import url('./components/header.css');
+@import url('./components/demo-player-panel.css');
+@import url('./components/demo-player-workspace.css');
 @import url('./components/footer.css');
 @import url('./components/playlist.css');
 @import url('./components/fileBrowser.css');
@@ -26,3 +28,4 @@
 @import url('./components/spinner.css');
 @import url('./components/sources.css');
 @import url('./components/player.css');
+@import url('./components/trackItemSizeTiny.css');

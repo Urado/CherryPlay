@@ -10,6 +10,7 @@ import {
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
   isProjectGroup,
+  isProjectTrack,
   LinkedParty,
   PartyTrackDisplaySettings,
   ProjectGroup,
@@ -21,8 +22,9 @@ import {
   ProjectSettings,
   ProjectTrackSettings,
 } from '@core/types/project';
-import { Track } from '@core/types/track';
+import { LOUDNESS_ALGORITHM_VERSION, Track, type TrackLoudness } from '@core/types/track';
 
+import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/resetPartyWorkspaceForFreshProject';
 import {
   HistoryCommand,
   ItemsState,
@@ -38,6 +40,7 @@ import {
 } from '../commands';
 import { electronStorage } from '../storage/electronStorage';
 import { cloneItem, cloneItems } from '../utils/historyCore';
+import { normalizePartyTrackDisplaySettings } from '../utils/partyUtils';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
 import {
@@ -47,6 +50,7 @@ import {
   getFlatItemList,
   removeItemFromItems,
   updateTrackInItems,
+  updateTrackLoudnessInItems,
   markTrackMissingInItems,
   updateGroupInItems,
   collectAllItemIds,
@@ -55,11 +59,26 @@ import {
   collectItemsById,
   insertIntoGroup,
 } from './projectStoreCore';
-import { registerExternalApplyHandler, registerProjectStore } from './projectStoreFactory';
+import {
+  registerExternalApplyHandler,
+  registerProjectStore,
+  type ProjectStore,
+} from './projectStoreFactory';
 
 type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
 
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
+
+function enqueueLoudnessScanForTracks(tracks: Track[]): void {
+  void import('./settingsStore').then(({ useSettingsStore }) => {
+    if (!useSettingsStore.getState().loudnessNormalizationEnabled) {
+      return;
+    }
+    void import('../services/loudnessService').then(({ loudnessService }) => {
+      void loudnessService.scanTracks(tracks);
+    });
+  });
+}
 
 interface ProjectState {
   name: string;
@@ -117,6 +136,12 @@ interface ProjectState {
   getAllTracksInOrder: (items?: ProjectItem[]) => Track[];
   getItemPath: (itemId: string) => string[];
   updateTrackDuration: (id: string, duration: number) => void;
+  updateTrackLoudness: (trackId: string, loudness: TrackLoudness) => void;
+  updateTrackManualGain: (trackId: string, manualGainDb: number | undefined) => void;
+  updateTrackManualCompression: (
+    trackId: string,
+    manualCompressionStrength: number | undefined,
+  ) => void;
   markTrackAsMissing: (id: string, isMissing?: boolean) => void;
 
   createGroup: (itemIds: string[], name?: string) => string;
@@ -246,6 +271,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+        resetPartyWorkspaceForFreshProject();
       },
 
       loadProject: (data) => {
@@ -345,6 +371,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         }
 
         get().markAsDirty();
+        enqueueLoudnessScanForTracks([newItem]);
       },
 
       addItems: (items, index) => {
@@ -369,6 +396,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         }
 
         get().markAsDirty();
+        enqueueLoudnessScanForTracks(itemsWithIds);
       },
 
       removeItem: (id) => {
@@ -484,6 +512,51 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set((state) => ({
           items: updateTrackInItems(state.items, id, duration),
         }));
+      },
+
+      updateTrackLoudness: (trackId, loudness) => {
+        set((state) => ({
+          items: updateTrackLoudnessInItems(state.items, trackId, loudness),
+        }));
+        get().markAsDirty();
+      },
+
+      updateTrackManualGain: (trackId, manualGainDb) => {
+        const item = get().findItemById(trackId);
+        if (!item || !isProjectTrack(item)) {
+          return;
+        }
+
+        const base: TrackLoudness = item.loudness ?? {
+          status: 'ok',
+          algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
+        };
+        const next: TrackLoudness = { ...base };
+        if (manualGainDb === undefined) {
+          delete next.manualGainDb;
+        } else {
+          next.manualGainDb = manualGainDb;
+        }
+        get().updateTrackLoudness(trackId, next);
+      },
+
+      updateTrackManualCompression: (trackId, manualCompressionStrength) => {
+        const item = get().findItemById(trackId);
+        if (!item || !isProjectTrack(item)) {
+          return;
+        }
+
+        const base: TrackLoudness = item.loudness ?? {
+          status: 'ok',
+          algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
+        };
+        const next: TrackLoudness = { ...base };
+        if (manualCompressionStrength === undefined) {
+          delete next.manualCompressionStrength;
+        } else {
+          next.manualCompressionStrength = Math.min(1, Math.max(0, manualCompressionStrength));
+        }
+        get().updateTrackLoudness(trackId, next);
       },
 
       markTrackAsMissing: (id, isMissing = true) => {
@@ -669,7 +742,10 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
       setGroupName: (groupId, name) => {
         const state = get();
         const group = findItemRecursive(state.items, groupId);
-        const oldName = group && isProjectGroup(group) ? group.name : '';
+        if (!group || !isProjectGroup(group)) {
+          return;
+        }
+        const oldName = group.name;
 
         set((s) => ({
           items: updateGroupInItems(s.items, groupId, (g) => ({
@@ -897,20 +973,15 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         const state = get();
         if (itemIds.length === 0) return;
 
-        // 1. Собираем элементы для перемещения (в порядке itemIds)
         const itemsToMove = collectItemsById(state.items, itemIds);
         if (itemsToMove.length === 0) return;
 
-        // 2. Удаляем элементы из текущих позиций
         let newItems = removeItemsById(state.items, itemIds);
 
-        // 3. Вставляем в целевую позицию
         if (targetParentId === null) {
-          // Вставка в корень
           const safeIndex = Math.min(Math.max(0, targetIndex), newItems.length);
           newItems.splice(safeIndex, 0, ...itemsToMove);
         } else {
-          // Вставка в группу
           newItems = insertIntoGroup(newItems, targetParentId, targetIndex, itemsToMove);
         }
 
@@ -1181,9 +1252,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
                     shortCode: persistedMeta.linkedParty.shortCode,
                   }
                 : null,
-              partyTrackDisplay: persistedMeta.partyTrackDisplay ?? {
-                ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
-              },
+              partyTrackDisplay: normalizePartyTrackDisplaySettings(
+                persistedMeta.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+              ),
               partyThemeId: persistedMeta.partyThemeId,
               partyCustomizationSettings: persistedMeta.partyCustomizationSettings,
             }
@@ -1206,8 +1277,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 );
 
 export function initializeProjectStoreHistory(): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as any);
+  registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as unknown as ProjectStore);
 
   registerExternalApplyHandler((workspaceId, command, mode) => {
     if (workspaceId === PROJECT_WORKSPACE_ID) {

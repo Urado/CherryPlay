@@ -14,11 +14,13 @@ import { ClientOutdatedProvider } from './contexts/ClientOutdatedContext';
 import { AdminOrganizerDetailPage } from './pages/admin/AdminOrganizerDetailPage';
 import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
 import { CabinetPage } from './pages/CabinetPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LoginPage } from './pages/LoginPage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
 import { PartyListPage } from './pages/PartyListPage';
 import { PartyView } from './pages/PartyView';
 import { RegisterPage } from './pages/RegisterPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import '@cherryplay/components/themes/index.css';
 import './App.css';
 
@@ -43,6 +45,8 @@ function App() {
             <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
             <Route path={ROUTES.CABINET} element={<CabinetPage />} />
             <Route
               path={ROUTES.ADMIN_ROOT}

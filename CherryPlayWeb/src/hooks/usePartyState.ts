@@ -4,7 +4,11 @@ import type {
   PartyThemeId,
   CustomizationSettings,
 } from '@cherryplay/components';
-import { isPartyDisplayStatusId, isValidPartyTheme } from '@cherryplay/components';
+import {
+  DEFAULT_PARTY_THEME_ID,
+  isPartyDisplayStatusId,
+  isValidPartyTheme,
+} from '@cherryplay/components';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { partyApiService } from '../services/partyApiService';
@@ -60,7 +64,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const [playlist, setPlaylist] = useState<PartyPlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [themeId, setThemeId] = useState<PartyThemeId>('cyberpunk');
+  const [themeId, setThemeId] = useState<PartyThemeId>(DEFAULT_PARTY_THEME_ID);
   const [customizationSettings, setCustomizationSettings] = useState<
     CustomizationSettings<PartyThemeId>
   >({} as CustomizationSettings<PartyThemeId>);
@@ -76,11 +80,8 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef<PartyPlaylistData | null>(null);
 
-  /** Throttle: last playlist fetch time per party key (shortCode or 'demo'/'') */
   const lastPlaylistFetchAtRef = useRef<Record<string, number>>({});
-  /** Throttle: last party info fetch time per shortCode */
   const lastPartyInfoFetchAtRef = useRef<Record<string, number>>({});
-  /** Party key we are loading for; used to ignore stale responses when user switches party */
   const currentPartyKeyRef = useRef<string>('');
 
   useEffect(() => {

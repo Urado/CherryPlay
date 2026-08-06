@@ -1,7 +1,8 @@
+import type { LoudnessAnalyzeResult } from '../contracts/loudness';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
 import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { getPlatform, isPlatformInitialized } from '../platform/platformContext';
-import type { DirectoryItem, IPCResponse } from '../platform/types';
+import type { AudioFileStat, DirectoryItem, IPCResponse } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
 import { isFileNotFoundError } from '../utils/fileErrors';
 import { logger } from '../utils/logger';
@@ -119,6 +120,22 @@ class IPCService {
     return this.invoke<AudioFileUrl>('audio:getFileUrl', { path }, showNotification);
   }
 
+  async analyzeLoudness(
+    path: string,
+    targetLufs: number,
+    showNotification: boolean = false,
+  ): Promise<LoudnessAnalyzeResult> {
+    return this.invoke<LoudnessAnalyzeResult>(
+      'audio:analyzeLoudness',
+      { path, targetLufs },
+      showNotification,
+    );
+  }
+
+  async statAudioFile(path: string, showNotification: boolean = false): Promise<AudioFileStat> {
+    return this.invoke<AudioFileStat>('audio:statAudioFile', { path }, showNotification);
+  }
+
   async showFolderDialog(options?: {
     title?: string;
     defaultPath?: string;
@@ -151,6 +168,14 @@ class IPCService {
    */
   async openPath(fileOrFolderPath: string): Promise<void> {
     return this.invoke<void>('system:openPath', { path: fileOrFolderPath });
+  }
+
+  /**
+   * Updates the Electron main window minimum size from renderer-computed layout mins.
+   * Silent on failure (no user notification) — it is a background shell hint.
+   */
+  async setMinimumWindowSize(minWidth: number, minHeight: number): Promise<void> {
+    return this.invoke<void>('system:setMinimumWindowSize', { minWidth, minHeight }, false);
   }
 }
 

@@ -9,6 +9,12 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
     private readonly ConcurrentDictionary<Guid, EmailAccount> _accounts = new();
     private readonly ConcurrentDictionary<string, Guid> _emailToId = new(StringComparer.OrdinalIgnoreCase);
 
+    public Task<EmailAccount?> GetByIdAsync(Guid id)
+    {
+        _accounts.TryGetValue(id, out var account);
+        return Task.FromResult(account);
+    }
+
     public Task<EmailAccount?> GetByEmailAsync(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -37,7 +43,6 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
             throw new ArgumentException("Email cannot be empty", nameof(account));
         }
 
-        // Проверка уникальности email
         if (_emailToId.ContainsKey(account.Email))
         {
             throw new InvalidOperationException($"Email {account.Email} is already registered");
@@ -58,7 +63,6 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
 
         var oldAccount = _accounts[account.Id];
 
-        // Если email изменился, обновляем индекс
         if (!string.Equals(oldAccount.Email, account.Email, StringComparison.OrdinalIgnoreCase))
         {
             if (!string.IsNullOrWhiteSpace(oldAccount.Email))
@@ -68,7 +72,6 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
 
             if (!string.IsNullOrWhiteSpace(account.Email))
             {
-                // Проверка уникальности нового email
                 if (_emailToId.ContainsKey(account.Email))
                 {
                     throw new InvalidOperationException($"Email {account.Email} is already registered");

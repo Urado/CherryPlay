@@ -1,8 +1,55 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 
 import type { Track } from '@core/types/track';
-import { ipcService } from '@shared/services/ipcService';
+
+jest.mock('@cherryplay/components', () => {
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  return {
+    PlaybackControlButton: ({
+      children: _children,
+      control: _control,
+      size: _size,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      control?: string;
+      size?: string;
+    }) => ReactActual.createElement('button', { type: 'button', ...props }),
+  };
+});
+
+jest.mock('../../src/shared/utils/togglePlayPause', () => ({
+  DEMO_PLAY_FAILURE_MESSAGE: 'Не удалось начать воспроизведение. Проверьте настройки аудио.',
+  togglePlayPause: async ({
+    hasTrack,
+    isPlaying,
+    blocked,
+    play,
+    pause,
+    onPlayFailure,
+  }: {
+    hasTrack: boolean;
+    isPlaying: boolean;
+    blocked?: boolean;
+    play: () => Promise<void>;
+    pause: () => void;
+    onPlayFailure?: () => void;
+  }) => {
+    if (blocked || !hasTrack) {
+      return;
+    }
+    if (isPlaying) {
+      pause();
+      return;
+    }
+    try {
+      await play();
+    } catch {
+      onPlayFailure?.();
+    }
+  },
+}));
 
 import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
 
@@ -142,7 +189,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать в браузере' });
+    const showButton = screen.getByRole('button', { name: 'Показать в файлах' });
     fireEvent.click(showButton);
 
     expect(onShow).toHaveBeenCalledWith(track.path);
@@ -157,7 +204,7 @@ describe('DemoPlayer component', () => {
 
     render(<DemoPlayer controller={controller} notify={notify} onShowInBrowser={onShow} />);
 
-    const showButton = screen.getByRole('button', { name: 'Показать в браузере' });
+    const showButton = screen.getByRole('button', { name: 'Показать в файлах' });
     fireEvent.click(showButton);
 
     expect(onShow).not.toHaveBeenCalled();
@@ -177,5 +224,44 @@ describe('DemoPlayer component', () => {
     unmount();
 
     expect(controller.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps timeline value when interactionBlocked without playback block', () => {
+    const controller = createController({
+      currentTrack: createTrack(),
+      position: 42,
+      duration: 200,
+      status: 'paused',
+    });
+
+    render(<DemoPlayer controller={controller} interactionBlocked notify={jest.fn()} />);
+
+    const timeline = screen.getByRole('slider', {
+      name: 'Позиция воспроизведения предпросмотра',
+    });
+    expect(timeline).toHaveValue('42');
+    expect(timeline).toBeDisabled();
+  });
+
+  it('does not notify when play rejects and store already reported an error', async () => {
+    const play = jest.fn().mockRejectedValueOnce(new Error('blocked'));
+    mockUseDemoPlayerStore.mockReturnValue(
+      createController({
+        currentTrack: createTrack(),
+        play,
+      }),
+    );
+    Object.assign(mockUseDemoPlayerStore, {
+      getState: () => ({ error: 'engine failed' }),
+    });
+
+    const notify = jest.fn();
+    render(<DemoPlayer notify={notify} />);
+    fireEvent.click(screen.getByTitle('Воспроизвести'));
+
+    await waitFor(() => {
+      expect(play).toHaveBeenCalledTimes(1);
+    });
+    expect(notify).not.toHaveBeenCalled();
   });
 });

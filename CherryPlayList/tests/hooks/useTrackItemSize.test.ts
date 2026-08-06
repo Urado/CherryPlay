@@ -1,9 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 
-import { useTrackItemSize } from '../../src/hooks/useTrackItemSize';
-import { useSettingsStore } from '../../src/state/settingsStore';
+import { useTrackItemSize } from '../../src/shared/hooks/useTrackItemSize';
+import { useSettingsStore } from '../../src/shared/stores/settingsStore';
 
-// Mock document.documentElement.style.setProperty
 const mockSetProperty = jest.fn();
 
 beforeEach(() => {
@@ -20,24 +19,24 @@ describe('useTrackItemSize', () => {
     useSettingsStore.setState({ trackItemSizePreset: 'medium' });
     renderHook(() => useTrackItemSize());
 
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '12px');
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '4px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '8px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '2px');
   });
 
   it('should set CSS variables for small preset', () => {
     useSettingsStore.setState({ trackItemSizePreset: 'small' });
     renderHook(() => useTrackItemSize());
 
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '8px');
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '2px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '5px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '1px');
   });
 
   it('should set CSS variables for large preset', () => {
     useSettingsStore.setState({ trackItemSizePreset: 'large' });
     renderHook(() => useTrackItemSize());
 
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '16px');
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '6px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '12px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '4px');
   });
 
   it('should update CSS variables when preset changes', () => {
@@ -51,7 +50,7 @@ describe('useTrackItemSize', () => {
     });
     rerender();
 
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '8px');
-    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '2px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-padding', '5px');
+    expect(mockSetProperty).toHaveBeenCalledWith('--track-item-margin', '1px');
   });
 });

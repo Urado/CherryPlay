@@ -1,0 +1,227 @@
+# CherryPlay — карта Markdown-документации монорепозитория
+# Используйте этот файл, чтобы быстро найти нужный документ и понять, что относится к проектной документации.
+# Обновляйте при добавлении или перемещении .md файлов.
+
+version: "1.0"
+updated: "2026-06-13"
+summary:
+  total_md_files: 108
+  project_documentation: 82
+  not_project_documentation: 26
+
+# Точки входа — с чего начинать чтение по типу задачи
+entry_points:
+  overview: README.md
+  dev_setup: DEV_SETUP.md
+  quick_start: QUICK_START.md
+  contracts_api: CONTRACTS.md
+  glossary: GLOSSARY.md
+  release_plan: RELEASE_PLAN.md
+  integration: docs/integration/README.md
+  desktop_app: CherryPlayList/docs/README.md
+  desktop_full: CherryPlayList/FULL_DOCUMENTATION.md
+  desktop_technical: CherryPlayList/TECHNICAL.md
+  server: CherryPlayServer/README.md
+  database: CherryPlayServer/DATABASE.md
+  web: CherryPlayWeb/README.md
+  components: CherryPlayComponents/README.md
+  aimp_plugin: CherryPlayAimpPlugin/README.md
+  add_theme: ADDING_THEME.md
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (82 файла)
+# Архитектура, контракты, setup, модули, ops — источник правды для разработки.
+# ─────────────────────────────────────────────────────────────────────────────
+
+project_documentation:
+  monorepo_root:
+    description: "Общая документация монорепозитория — старт, окружение, контракты, планы"
+    hub: README.md
+    files:
+      - path: README.md
+        title: "Обзор монорепозитория и быстрый старт"
+      - path: DEV_SETUP.md
+        title: "Настройка окружения для разработки всего стека"
+      - path: QUICK_START.md
+        title: "Краткий старт"
+      - path: CONTRACTS.md
+        title: "REST API, SignalR и DTO — единый источник контрактов"
+      - path: GLOSSARY.md
+        title: "Глоссарий терминов (shortCode, partyId, organizer, viewer и др.)"
+      - path: ENV.md
+        title: "Переменные окружения (корень)"
+      - path: SCRIPTS.md
+        title: "Скрипты и утилиты репозитория"
+      - path: BACKUP_RESTORE.md
+        title: "Резервное копирование и восстановление"
+      - path: SSH_TUNNEL_PGADMIN.md
+        title: "SSH-туннель для pgAdmin"
+      - path: RELEASE_PLAN.md
+        title: "План релиза v1 — границы MVP, эпики, критерии готовности"
+      - path: TASK_TRACKER.md
+        title: "Трекер задач проекта"
+      - path: ADDING_THEME.md
+        title: "Как добавить PartyTheme"
+      - path: THEMES.md
+        title: "Темы оформления"
+      - path: FEATURE_THEME_MONETIZATION.md
+        title: "Монетизация тем (фича)"
+      - path: android_port_todo.md
+        title: "TODO — порт на Android"
+
+  integration:
+    description: "Интеграция CherryPlayList ↔ CherryPlayServer ↔ CherryPlayWeb"
+    hub: docs/integration/README.md
+    files:
+      - path: docs/integration/README.md
+        title: "Обзор подсистем интеграции"
+      - path: docs/integration/accounts-and-auth.md
+        title: "Аккаунты и авторизация (JWT, OAuth, forgot/reset/change-password, RuSender)"
+      - path: docs/integration/party-management.md
+        title: "Управление вечеринками"
+      - path: docs/integration/streaming.md
+        title: "Стриминг состояния воспроизведения"
+      - path: docs/integration/aimp-streaming.md
+        title: "AIMP как источник стриминга (Windows x64)"
+      - path: docs/integration/data-and-contracts.md
+        title: "Данные и контракты — ссылки на CONTRACTS и DATABASE"
+
+  archive:
+    description: "Устаревшие или исторические документы (могут не соответствовать коду)"
+    hub: docs/archive/README.md
+    files:
+      - path: docs/archive/README.md
+        title: "Описание архива"
+      - path: docs/archive/STREAMING_ARCHITECTURE.md
+        title: "Историческая архитектура стриминга (устарело)"
+
+  cherryplay_server:
+    description: "Backend .NET — API, БД, эксплуатация"
+    hub: CherryPlayServer/README.md
+    files:
+      - path: CherryPlayServer/README.md
+        title: "Запуск сервера, обзор"
+      - path: CherryPlayServer/DATABASE.md
+        title: "Схема БД"
+      - path: CherryPlayServer/OPS.md
+        title: "Операции и деплой сервера"
+      - path: CherryPlayServer/API.md
+        title: "Указатель на разделы CONTRACTS.md"
+
+  cherryplay_web:
+    description: "Web-приложение для зрителей"
+    hub: CherryPlayWeb/README.md
+    files:
+      - path: CherryPlayWeb/README.md
+        title: "Структура, установка, эндпоинты"
+      - path: CherryPlayWeb/ENV.md
+        title: "Переменные окружения веб-приложения"
+      - path: CherryPlayWeb/docs/pages.md
+        title: "Страницы и маршруты"
+
+  cherryplay_list:
+    description: "Desktop Electron — организатор плейлистов"
+    hub: CherryPlayList/docs/README.md
+    files:
+      - path: CherryPlayList/README.md
+        title: "Описание проекта, установка и запуск"
+      - path: CherryPlayList/FULL_DOCUMENTATION.md
+        title: "Полная техническая документация (LLM-oriented)"
+      - path: CherryPlayList/TECHNICAL.md
+        title: "Техническая документация — стек, архитектура, IPC"
+      - path: CherryPlayList/BUILD.md
+        title: "Сборка и релиз"
+      - path: CherryPlayList/QUICK_START_BUILD.md
+        title: "Быстрый старт сборки"
+      - path: CherryPlayList/docs/README.md
+        title: "Оглавление документации CherryPlayList"
+      - path: CherryPlayList/docs/web-demo.md
+        title: "Веб-демо в браузере"
+      - path: CherryPlayList/docs/android-capacitor-brief.md
+        title: "План Android/Capacitor"
+      - path: CherryPlayList/docs/AIMP_E2E_VERIFICATION.md
+        title: "Чеклист E2E AIMP → приложение → сайт"
+      - path: CherryPlayList/docs/integration/README.md
+        title: "Редирект на docs/integration/ в корне"
+
+  cherryplay_list_modules:
+    description: "Модули CherryPlayList — workspaces, systems, stores, services"
+    hub: CherryPlayList/docs/modules/README.md
+    workspaces:
+      - path: CherryPlayList/docs/modules/workspaces/playlist.md
+      - path: CherryPlayList/docs/modules/workspaces/collections.md
+      - path: CherryPlayList/docs/modules/workspaces/file-browser.md
+      - path: CherryPlayList/docs/modules/workspaces/player.md
+      - path: CherryPlayList/docs/modules/workspaces/party.md
+      - path: CherryPlayList/docs/modules/workspaces/aimp.md
+      - path: CherryPlayList/docs/modules/workspaces/test-zone.md
+    systems:
+      - path: CherryPlayList/docs/modules/systems/drag-and-drop.md
+      - path: CherryPlayList/docs/modules/systems/undo-redo.md
+      - path: CherryPlayList/docs/modules/systems/layout-system.md
+      - path: CherryPlayList/docs/modules/systems/storage.md
+      - path: CherryPlayList/docs/modules/systems/storage-architecture.md
+      - path: CherryPlayList/docs/modules/systems/persisted-client-state.md
+      - path: CherryPlayList/docs/modules/systems/demo-player.md
+      - path: CherryPlayList/docs/modules/systems/commands-system.md
+      - path: CherryPlayList/docs/modules/systems/streaming.md
+      - path: CherryPlayList/docs/modules/systems/save-load.md
+    stores:
+      - path: CherryPlayList/docs/modules/stores/project-store.md
+      - path: CherryPlayList/docs/modules/stores/ui-store.md
+      - path: CherryPlayList/docs/modules/stores/settings-store.md
+    services:
+      - path: CherryPlayList/docs/modules/services/export.md
+      - path: CherryPlayList/docs/modules/services/ipc-service.md
+      - path: CherryPlayList/docs/modules/services/project-service.md
+    platform:
+      - path: CherryPlayList/docs/modules/platform/README.md
+    audio:
+      - path: CherryPlayList/docs/modules/audio/playback-layers.md
+      - path: CherryPlayList/docs/modules/audio/loudness-normalization.md
+    hooks_utils:
+      - path: CherryPlayList/docs/modules/hooks-utils/keyboard-shortcuts.md
+
+  cherryplay_components:
+    description: "React-компоненты и темы для отображения плейлистов"
+    hub: CherryPlayComponents/README.md
+    files:
+      - path: CherryPlayComponents/README.md
+        title: "Обзор библиотеки компонентов"
+      - path: CherryPlayComponents/src/themes/README.md
+        title: "Темы компонентов"
+
+  cherryplay_aimp_plugin:
+    description: "Нативный плагин AIMP (Windows x64)"
+    hub: CherryPlayAimpPlugin/README.md
+    files:
+      - path: CherryPlayAimpPlugin/README.md
+        title: "Плагин AIMP — установка и протокол named pipe"
+      - path: CherryPlayAimpPlugin/docs/AIMP_PLAYLIST_PLAYBACK_ANALYSIS.md
+        title: "Анализ воспроизведения плейлиста AIMP"
+
+  ci_cd:
+    description: "Деплой и CI/CD"
+    files:
+      - path: .github/DEPLOYMENT.md
+        title: "Деплой"
+      - path: .github/FIRST_DEPLOY.md
+        title: "Первый деплой"
+
+  code_local_readmes:
+    description: "Локальные README рядом с кодом — краткие заметки по workspace/стилям"
+    files:
+      - path: CherryPlayList/src/workspaces/player/README.md
+      - path: CherryPlayList/src/workspaces/player/REQUIREMENTS.md
+      - path: CherryPlayList/src/workspaces/playlist/README.md
+      - path: CherryPlayList/src/workspaces/collection/README.md
+      - path: CherryPlayList/src/workspaces/party/README.md
+      - path: CherryPlayList/src/workspaces/testZone/README.md
+      - path: CherryPlayList/src/styles/README.md
+
+  planning_notes:
+    description: "Личные TODO и заметки — не официальная документация, но в репозитории"
+    files:
+      - path: pasha_todo.md
+      - path: sonya_todo.md
+      - path: TODOUserLog.MD

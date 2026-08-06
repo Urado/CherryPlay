@@ -127,6 +127,19 @@ public static class EfToDomainMappers
         };
     }
 
+    public static PasswordResetToken ToDomain(this PasswordResetTokenEf ef)
+    {
+        return new PasswordResetToken
+        {
+            Id = ef.Id,
+            EmailAccountId = ef.EmailAccountId,
+            TokenHash = ef.TokenHash,
+            ExpiresAt = ef.ExpiresAt,
+            UsedAt = ef.UsedAt,
+            CreatedAt = ef.CreatedAt,
+        };
+    }
+
     private static List<string>? DeserializeStringList(string? json, ILogger? logger = null)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;

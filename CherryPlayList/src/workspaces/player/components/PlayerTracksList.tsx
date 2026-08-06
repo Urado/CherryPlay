@@ -1,4 +1,3 @@
-import SettingsIcon from '@mui/icons-material/Settings';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
@@ -11,7 +10,9 @@ import {
   EmptyState,
   HourDividerAfterTrackRow,
   HourDividerListBottom,
+  SettingsButton,
 } from '@shared/components';
+import { TrackLoudnessRowControls } from '@shared/components/loudness/TrackLoudnessRowControls';
 import { useSelectionWithModifiers } from '@shared/hooks';
 import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
@@ -162,11 +163,20 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
       settingsActionAfterTrack = trackSettings.actionAfterTrack || null;
     }
 
+    const indicator =
+      hasCustomSettings && settingsActionAfterTrack
+        ? settingsActionAfterTrack === 'pause'
+          ? '⏸'
+          : settingsActionAfterTrack === 'pauseAndNext'
+            ? '⏸⏭'
+            : '⏭'
+        : undefined;
+
     return (
-      <button
-        className="playlist-item-settings"
+      <SettingsButton
+        title={isGroup ? 'Настройки тайминга группы' : 'Настройки тайминга трека'}
+        indicator={indicator}
         onClick={(e) => {
-          e.stopPropagation();
           if (isGroup) {
             handleOpenTrackSettings(item.id);
           } else {
@@ -174,19 +184,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             setTrackSettingsDropdown({ trackId: item.id, anchorRect: rect });
           }
         }}
-        title={isGroup ? 'Настройки группы' : 'Настройки трека'}
-      >
-        <SettingsIcon style={{ fontSize: '18px' }} />
-        {hasCustomSettings && settingsActionAfterTrack && (
-          <span className="player-settings-indicator">
-            {settingsActionAfterTrack === 'pause'
-              ? '⏸'
-              : settingsActionAfterTrack === 'pauseAndNext'
-                ? '⏸⏭'
-                : '⏭'}
-          </span>
-        )}
-      </button>
+      />
     );
   };
 
@@ -228,15 +226,17 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
           const isDraggedItem =
             isItemDragState(playerDrag.draggedItems) &&
             playerDrag.draggedItems.allFlatIndices.has(flatIndex);
-          const isActive = activeTrackId === item.id;
-          const isPlaying = isActive && playerStatus === 'playing';
+          // Demo preview highlight (play button) vs session current track (dividers / isCurrent)
+          const isPreviewActive = activeTrackId === item.id;
+          const isPlaying = isPreviewActive && playerStatus === 'playing';
+          const isCurrentTrack = track?.id === activePlayerTrackId;
 
           const showPlannedEndDividerBeforeActive =
             !isPreparationMode &&
             plannedEndTime !== null &&
             plannedEndDividerPosition === -1 &&
-            isActive &&
-            track !== null;
+            track !== null &&
+            item.id === activePlayerTrackId;
 
           const hasPlannedEndDivider =
             !isPreparationMode &&
@@ -259,8 +259,6 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             isTrackOrGroupDisabled,
             getAllTracksInOrder,
           );
-
-          const isCurrentTrack = track?.id === activePlayerTrackId;
           const isLocked = isItemLocked(
             item,
             isPreparationMode,
@@ -300,7 +298,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                     ? playerDrag.insertPosition
                     : null
                 }
-                isActive={isActive}
+                isActive={isPreviewActive}
                 isPlaying={isPlaying}
                 isPlayed={itemState.isPlayed}
                 isDisabled={itemState.isDisabled}
@@ -343,6 +341,7 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                     : undefined
                 }
                 trackActionsDisabled={!jumpToTrack || item.id === activePlayerTrackId}
+                loudnessControls={track ? <TrackLoudnessRowControls track={track} /> : undefined}
               />
               <HourDividerAfterTrackRow
                 hasPlannedEndDivider={hasPlannedEndDivider}

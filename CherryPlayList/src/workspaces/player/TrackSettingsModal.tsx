@@ -1,11 +1,13 @@
+import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { ActionAfterTrack } from '@core/types/project';
+import { useModalKeyboard } from '@shared/hooks';
 import { useProjectStore, useUIStore } from '@shared/stores';
 
 export const TrackSettingsModal: React.FC = () => {
-  const { closeModal, addNotification, modal, trackSettingsContext } = useUIStore();
+  const { closeModal, modal, trackSettingsContext } = useUIStore();
   const {
     settings,
     setDefaultPauseBetweenTracks,
@@ -104,11 +106,7 @@ export const TrackSettingsModal: React.FC = () => {
     plannedEndTime,
   ]);
 
-  if (modal !== 'trackSettings') {
-    return null;
-  }
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (isGlobal) {
       setDefaultActionAfterTrack(
         localActionAfterTrack === 'default' ? defaultActionAfterTrack : localActionAfterTrack,
@@ -127,18 +125,42 @@ export const TrackSettingsModal: React.FC = () => {
       });
     }
 
-    addNotification({ type: 'success', message: 'Настройки сохранены' });
     closeModal();
-  };
+  }, [
+    closeModal,
+    defaultActionAfterTrack,
+    defaultPauseBetweenTracks,
+    effectivePause,
+    groupId,
+    isGlobal,
+    localActionAfterTrack,
+    localPlannedEndTime,
+    setDefaultActionAfterTrack,
+    setDefaultPauseBetweenTracks,
+    setGroupSettings,
+    setPlannedEndTime,
+    setTrackSettings,
+    trackId,
+  ]);
+
+  const handleCancel = useCallback(() => {
+    closeModal();
+  }, [closeModal]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'trackSettings',
+    onCancel: handleCancel,
+    onPrimary: handleSave,
+  });
+
+  if (modal !== 'trackSettings') {
+    return null;
+  }
 
   const handlePauseInputFocus = () => {
     if (localPauseBetweenTracks === defaultPauseBetweenTracks) {
       setLocalPauseBetweenTracks('');
     }
-  };
-
-  const handleCancel = () => {
-    closeModal();
   };
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -147,15 +169,8 @@ export const TrackSettingsModal: React.FC = () => {
     }
   };
 
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      handleCancel();
-    }
-  };
-
   const getTitle = () => {
-    if (isGlobal) return 'Глобальные настройки';
+    if (isGlobal) return 'Настройки по умолчанию';
     if (groupId) return 'Настройки группы';
     return 'Настройки трека';
   };
@@ -174,9 +189,15 @@ export const TrackSettingsModal: React.FC = () => {
       <div className="modal-content">
         <div className="modal-header">
           <h2 className="modal-title">{getTitle()}</h2>
-          <button className="modal-close" onClick={handleCancel}>
-            <CloseIcon />
-          </button>
+          <IconButton
+            className="modal-close"
+            type="button"
+            onClick={handleCancel}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -195,22 +216,22 @@ export const TrackSettingsModal: React.FC = () => {
               <option value="default">
                 По умолчанию (
                 {defaultActionAfterTrack === 'next'
-                  ? 'Сплошное воспроизведение'
+                  ? 'Без паузы'
                   : defaultActionAfterTrack === 'pauseAndNext'
-                    ? 'Пауза между треками'
-                    : 'Пауза после трека'}
+                    ? 'Интервал между треками'
+                    : 'Пауза в конце трека'}
                 )
               </option>
-              <option value="pause">Пауза после трека</option>
-              <option value="next">Сплошное воспроизведение</option>
-              <option value="pauseAndNext">Пауза между треками</option>
+              <option value="pause">Пауза в конце трека</option>
+              <option value="next">Без паузы</option>
+              <option value="pauseAndNext">Интервал между треками</option>
             </select>
           </div>
 
           {showPauseInput && (
             <div className="settings-group">
               <label className="settings-label" htmlFor="track-settings-pause">
-                Пауза между треками (секунды)
+                Интервал между треками (секунды)
               </label>
               <input
                 type="number"
@@ -234,8 +255,12 @@ export const TrackSettingsModal: React.FC = () => {
 
           {isGlobal && (
             <div className="settings-group">
-              <label className="settings-label" htmlFor="track-settings-planned-end-time">
-                Плановое время окончания
+              <label
+                className="settings-label"
+                htmlFor="track-settings-planned-end-time"
+                title="Красная отметка на таймлайне плейлиста"
+              >
+                Плановое окончание
               </label>
               <div className="settings-planned-end-row">
                 <input
@@ -245,28 +270,30 @@ export const TrackSettingsModal: React.FC = () => {
                   onChange={(e) => setLocalPlannedEndTime(e.target.value)}
                   id="track-settings-planned-end-time"
                 />
-                <button
+                <Button
                   type="button"
-                  className="modal-button secondary settings-planned-end-clear"
+                  className="modal-button settings-planned-end-clear"
                   onClick={() => {
                     setLocalPlannedEndTime('');
                     setPlannedEndTime(null);
                   }}
+                  variant="secondary"
+                  size="sm"
                 >
                   Очистить
-                </button>
+                </Button>
               </div>
             </div>
           )}
         </div>
 
         <div className="modal-footer">
-          <button className="modal-button secondary" onClick={handleCancel}>
+          <Button className="modal-button" onClick={handleCancel} variant="secondary" size="sm">
             Отмена
-          </button>
-          <button className="modal-button primary" onClick={handleSave}>
+          </Button>
+          <Button className="modal-button" onClick={handleSave} variant="primary" size="sm">
             Сохранить
-          </button>
+          </Button>
         </div>
       </div>
     </div>

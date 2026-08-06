@@ -5,6 +5,8 @@ import {
   AUTO_GAIN_NORMALIZATION,
   DEFAULT_EQUALIZER_BANDS,
   DEFAULT_TRACK_GAIN,
+  TRACK_GAIN_LINEAR_MAX,
+  TRACK_GAIN_LINEAR_MIN,
   type EqualizerBands,
   type PlaybackEffects,
 } from './effects';
@@ -25,7 +27,8 @@ export interface WebAudioPlaybackEngineOptions {
 }
 
 /**
- * {@link PlaybackEngine} using Web Audio API: MediaElementSource → track gain → EQ → master gain → destination.
+ * {@link PlaybackEngine} using Web Audio API (EBU order): MediaElementSource → EQ → compressor →
+ * track gain (R128 linear normalize) → master gain → destination.
  *
  * Transport lifecycle (load/play/seek/events) is delegated to {@link MediaElementTransport}.
  */
@@ -38,10 +41,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
   private eqLowNode: BiquadFilterNode | null = null;
   private eqMidNode: BiquadFilterNode | null = null;
   private eqHighNode: BiquadFilterNode | null = null;
+  private compressorNode: DynamicsCompressorNode | null = null;
   private masterGainNode: GainNode | null = null;
   private trackGain = DEFAULT_TRACK_GAIN;
   private equalizerBands: EqualizerBands = DEFAULT_EQUALIZER_BANDS;
   private autoGainEnabled = false;
+  private compressionStrength = 0;
 
   constructor(options: WebAudioPlaybackEngineOptions) {
     this.adapter = options.adapter;
@@ -95,7 +100,7 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       return;
     }
 
-    this.trackGain = clampPlaybackValue(gain, 0, 2);
+    this.trackGain = clampPlaybackValue(gain, TRACK_GAIN_LINEAR_MIN, TRACK_GAIN_LINEAR_MAX);
     this.applyTrackGain();
   }
 
@@ -115,6 +120,16 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
 
     this.autoGainEnabled = enabled;
     this.applyTrackGain();
+  }
+
+  setCompressionStrength(strength: number): void {
+    if (this.transport.isDisposed()) {
+      return;
+    }
+
+    this.compressionStrength = clampPlaybackValue(strength, 0, 1);
+    this.applyCompressionParams();
+    this.applyCompressionRouting();
   }
 
   setOutputDevice(deviceId: string | null): Promise<void> {
@@ -165,14 +180,15 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     eqHighNode.type = 'highshelf';
     eqHighNode.frequency.value = 3200;
 
+    const compressorNode = context.createDynamicsCompressor();
+    compressorNode.attack.value = 0.015;
+    compressorNode.release.value = 1;
+
     const masterGainNode = context.createGain();
 
-    sourceNode.connect(trackGainNode);
-    trackGainNode.connect(eqLowNode);
+    sourceNode.connect(eqLowNode);
     eqLowNode.connect(eqMidNode);
     eqMidNode.connect(eqHighNode);
-    eqHighNode.connect(masterGainNode);
-    masterGainNode.connect(context.destination);
 
     this.audioContext = context;
     this.sourceNode = sourceNode;
@@ -180,7 +196,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     this.eqLowNode = eqLowNode;
     this.eqMidNode = eqMidNode;
     this.eqHighNode = eqHighNode;
+    this.compressorNode = compressorNode;
     this.masterGainNode = masterGainNode;
+
+    this.applyCompressionParams();
+    this.applyCompressionRouting();
+    masterGainNode.connect(context.destination);
 
     this.applyTrackGain();
     this.applyEqualizerBands();
@@ -252,18 +273,55 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     }
   }
 
+  private applyCompressionParams(): void {
+    if (!this.compressorNode) {
+      return;
+    }
+
+    const strength = this.compressionStrength;
+    if (strength <= 0) {
+      return;
+    }
+
+    // EBU Tech 3343 gentle LRA block: low threshold, moderate ratio, long release.
+    this.compressorNode.threshold.value = -45 + strength * 10;
+    this.compressorNode.ratio.value = 1.2 + strength * 0.8;
+    this.compressorNode.knee.value = 30 - strength * 15;
+  }
+
+  private applyCompressionRouting(): void {
+    if (!this.eqHighNode || !this.trackGainNode || !this.masterGainNode) {
+      return;
+    }
+
+    this.eqHighNode.disconnect();
+    this.compressorNode?.disconnect();
+    this.trackGainNode.disconnect();
+
+    if (this.compressionStrength > 0 && this.compressorNode) {
+      this.eqHighNode.connect(this.compressorNode);
+      this.compressorNode.connect(this.trackGainNode);
+    } else {
+      this.eqHighNode.connect(this.trackGainNode);
+    }
+
+    this.trackGainNode.connect(this.masterGainNode);
+  }
+
   private disconnectGraph(): void {
     this.sourceNode?.disconnect();
     this.trackGainNode?.disconnect();
     this.eqLowNode?.disconnect();
     this.eqMidNode?.disconnect();
     this.eqHighNode?.disconnect();
+    this.compressorNode?.disconnect();
     this.masterGainNode?.disconnect();
     this.sourceNode = null;
     this.trackGainNode = null;
     this.eqLowNode = null;
     this.eqMidNode = null;
     this.eqHighNode = null;
+    this.compressorNode = null;
     this.masterGainNode = null;
   }
 }

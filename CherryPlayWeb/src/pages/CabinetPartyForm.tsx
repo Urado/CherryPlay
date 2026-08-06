@@ -1,4 +1,6 @@
 import {
+  Button,
+  DEFAULT_PARTY_THEME_ID,
   convertUtcToLocalDateTime,
   convertLocalDateTimeToUtc,
   getDefaultTimeZone,
@@ -52,7 +54,9 @@ export function CabinetPartyForm({
   const lockedByThemeId = new Map(
     (themeAccess?.visibleLockedThemes ?? []).map((item) => [item.themeId, item]),
   );
-  const selectedThemeId = isEditing ? (editForm.partyThemeId ?? 'basic') : createForm.partyThemeId;
+  const selectedThemeId = isEditing
+    ? (editForm.partyThemeId ?? DEFAULT_PARTY_THEME_ID)
+    : createForm.partyThemeId;
   const selectableThemeOptions = PARTY_THEME_OPTIONS.filter((option) => {
     if (grantedThemes.has(option.value)) return true;
     if (lockedByThemeId.has(option.value)) return true;
@@ -359,9 +363,11 @@ export function CabinetPartyForm({
         <span className="cabinet-form-field-label">Танцевальные теги (макс. {MAX_DANCE_TAGS})</span>
         <div className="cabinet-dance-tags-predefined">
           {PREDEFINED_DANCE_TAGS.map((option) => (
-            <button
+            <Button
               key={option}
               type="button"
+              variant="ghost"
+              size="sm"
               className={`cabinet-tag-btn ${danceTags.includes(option) ? 'cabinet-tag-btn--selected' : ''}`}
               onClick={() => {
                 if (danceTags.includes(option)) {
@@ -373,11 +379,13 @@ export function CabinetPartyForm({
               disabled={!danceTags.includes(option) && danceTags.length >= MAX_DANCE_TAGS}
             >
               {option}
-            </button>
+            </Button>
           ))}
           {!showCustomTagInput ? (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               className="cabinet-tag-btn"
               onClick={() => {
                 if (collapseTimeoutRef.current) {
@@ -390,7 +398,7 @@ export function CabinetPartyForm({
               aria-label="Ввести другой танец"
             >
               Другой танец
-            </button>
+            </Button>
           ) : (
             <div
               ref={customBlockRef}
@@ -424,9 +432,10 @@ export function CabinetPartyForm({
                 aria-label="Поле для ввода другого танца"
                 autoFocus
               />
-              <button
+              <Button
                 type="button"
-                className="cabinet-btn cabinet-btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   addDanceTag(customTagInput);
                   setCustomTagInput('');
@@ -439,7 +448,7 @@ export function CabinetPartyForm({
                 disabled={danceTags.length >= MAX_DANCE_TAGS || !customTagInput.trim()}
               >
                 Добавить
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -478,22 +487,17 @@ export function CabinetPartyForm({
         Показывать в каталоге
       </label>
       <div className="cabinet-form-actions">
-        <button type="button" className="cabinet-btn" onClick={onCancel}>
+        <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
           Отмена
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
-          className="cabinet-btn cabinet-btn-primary"
-          disabled={isEditing ? savingEdit : creating}
+          variant="primary"
+          size="sm"
+          loading={isEditing ? savingEdit : creating}
         >
-          {isEditing
-            ? savingEdit
-              ? 'Сохранение…'
-              : 'Сохранить'
-            : creating
-              ? 'Создание…'
-              : 'Создать'}
-        </button>
+          {isEditing ? 'Сохранить' : 'Создать'}
+        </Button>
       </div>
     </form>
   );

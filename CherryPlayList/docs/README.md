@@ -8,7 +8,8 @@
 
 - **[TECHNICAL.md](../TECHNICAL.md)** — техническая документация: стек, архитектура, структура проекта, IPC, хранение данных, интеграция с сервером и вебом.
 - **[README.md](../README.md)** — описание проекта, основные функции, установка и запуск.
-- **[web-demo.md](web-demo.md)** — веб-демо в браузере (`dev:web`, `dev:web:project`), ограничения режима.
+- **[web-demo.md](web-demo.md)** — веб-демо в браузере: fixtures (`dev:web`, `dev:web:project`) и live (`dev:web:live` / `VITE_DEMO_LIVE`), Vite proxy, Online/сеть, ограничения режима.
+- **[layout-edit-mode.md](layout-edit-mode.md)** — рабочие пространства: pill + ✎ (**«Настроить окна»**), **Рабочие окна** с override (Variant A, **«изменено»**, **«Сбросить к исходному»**), auto-save **Мои**/scratch («Без имени»), добавление/удаление зон.
 - **[android-capacitor-brief.md](android-capacitor-brief.md)** — план Android/Capacitor (этапы 0–6).
 
 ---
@@ -20,10 +21,11 @@
 Подсистемы, связывающие CherryPlayList с CherryPlayServer и CherryPlayWeb (авторизация, вечеринки, стриминг). Общая документация вынесена в корень репозитория.
 
 - **[docs/integration/](../../docs/integration/)** — обзор подсистем (Accounts & Auth, Party Management, Streaming, Data and Contracts, **AIMP как источник стриминга**), роли, ссылки на CONTRACTS, DATABASE и README сервера/веба.
+- **Пароль (Account UX):** forgot-password с экрана Account → письмо / Dev-лог → reset **только в Web**; change-password в Account → **204**, все сессии мертвы → повторный вход. Детали: [accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a.
 
 ### Модули приложения
 
-- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections, File Browser, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player, Commands, Streaming); инфраструктура: **[Platform layer](modules/platform/README.md)** (capabilities, guards).
+- **[modules/README.md](modules/README.md)** — список модулей: Workspaces (Playlist, Collections / **«Подборка»**, File Browser / **«Файлы»**, Player, Party, AIMP, Test Zone) и Systems (Drag and Drop, Undo/Redo, Layout / **Рабочие окна**, **Storage** — см. также [архитектура клиентского хранения](modules/systems/storage-architecture.md) и [что хранится в persist](modules/systems/persisted-client-state.md), Demo Player / **«Предпросмотр (только у вас)»**, Commands, Streaming); инфраструктура: **[Platform layer](modules/platform/README.md)** (capabilities, guards).
 - Документация по каждому модулю — по ссылкам из modules/README.md (workspaces/_.md, systems/_.md, stores/_.md, services/_.md).
 
 ### Проверка и релиз

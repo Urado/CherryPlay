@@ -1,0 +1,14 @@
+.party-editor-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-primary, #ffffff);
+  container-type: inline-size;
+  container-name: party-editor;
+}
+
+.party-editor-view .party-editor-shell {
+  flex: 1;
+  min-height: 0;
+}

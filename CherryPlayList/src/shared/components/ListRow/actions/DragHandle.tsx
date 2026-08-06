@@ -3,28 +3,27 @@ import React from 'react';
 
 import { useListRowContext } from '../ListRowContext';
 
+import { ActionButton } from './ActionButton';
+
 /**
  * DragHandle - Handle for dragging items
  *
  * Hidden when the row is locked.
  */
 export const DragHandle: React.FC = () => {
-  const { baseClassName, isLocked } = useListRowContext();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
+  const { baseClassName } = useListRowContext();
 
   return (
-    <button
-      type="button"
+    <ActionButton
+      onClick={() => undefined}
       className={`${baseClassName}-drag-handle`}
-      onClick={handleClick}
       aria-label="Drag item"
-      style={{ visibility: isLocked ? 'hidden' : 'visible' }}
-    >
-      <DragIndicatorIcon className="drag-icon" />
-    </button>
+      hideWhenLocked
+      icon={<DragIndicatorIcon className="drag-icon" />}
+      variant="ghost"
+      size="sm"
+      borderless
+    />
   );
 };
 

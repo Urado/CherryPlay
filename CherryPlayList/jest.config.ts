@@ -6,7 +6,12 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   roots: ['<rootDir>/tests'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  transform: {
+    '^.+\\.tsx?$': '<rootDir>/tests/transformers/stripImportMeta.cjs',
+  },
   moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.ts',
+    '\\.(jpg|jpeg|png|gif|webp|svg|mp3|wav|flac)$': '<rootDir>/tests/__mocks__/fileMock.ts',
     '^music-metadata$': '<rootDir>/tests/__mocks__/music-metadata.ts',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
@@ -14,19 +19,18 @@ const config: Config = {
     '^@workspaces/(.*)$': '<rootDir>/src/workspaces/$1',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^react$': '<rootDir>/node_modules/react',
+    '^react-dom$': '<rootDir>/node_modules/react-dom',
+    '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
+    '^react/jsx-runtime$': '<rootDir>/node_modules/react/jsx-runtime',
+    '^react/jsx-dev-runtime$': '<rootDir>/node_modules/react/jsx-dev-runtime',
     '^@cherryplay/components$': '<rootDir>/../CherryPlayComponents/src/index.ts',
     '^@cherryplay/components/(.*)$': '<rootDir>/../CherryPlayComponents/src/$1',
-    // Legacy test import paths (pre-refactor src/state, src/hooks, …)
     '^\\.\\./\\.\\./src/state/(.*)$': '<rootDir>/src/shared/stores/$1',
     '^\\.\\./\\.\\./src/components/(.*)$': '<rootDir>/src/shared/components/$1',
     '^\\.\\./\\.\\./src/hooks/(.*)$': '<rootDir>/src/shared/hooks/$1',
     '^\\.\\./\\.\\./src/utils/(.*)$': '<rootDir>/src/shared/utils/$1',
     '^\\.\\./\\.\\./src/types/(.*)$': '<rootDir>/src/core/types/$1',
-  },
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.jest.json',
-    },
   },
 };
 

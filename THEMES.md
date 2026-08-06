@@ -144,7 +144,7 @@ PartyTheme: светлая весенняя палитра, зелёные ак�
 
 ### TypeScript/JavaScript
 
-Тип `PartyThemeId` определён в `CherryPlayComponents/src/themes/index.ts`:
+Тип `PartyThemeId` и константа продукта `DEFAULT_PARTY_THEME_ID` (`'basic'`) определены в `CherryPlayComponents/src/themes/partyThemeTypes.ts` и реэкспортируются из `@cherryplay/components`. Fallback’ы в клиентах (`getPartyThemeOrDefault`, начальное состояние редактора/веба) должны использовать `DEFAULT_PARTY_THEME_ID`, а не литерал `'basic'`.
 
 ```typescript
 type PartyThemeId =
@@ -153,6 +153,8 @@ type PartyThemeId =
   | "art-deco"
   | "basic"
   | "spring-cross-step";
+
+const DEFAULT_PARTY_THEME_ID: PartyThemeId = "basic";
 ```
 
 ### C# (CherryPlayServer)
@@ -161,6 +163,8 @@ Enum `PartyThemeId` определён в `CherryPlayServer/Core/Enums/PartyThem
 
 - `Cyberpunk`, `Sakura`, `ArtDeco`, `Basic`, `SpringCrossStep`
 - Автоматическая JSON сериализация в строки
+
+Продуктовый дефолт сервера — `PartyThemeDefaults.Id` (`PartyThemeId.Basic` / `"basic"`) в `CherryPlayServer/Core/Enums/PartyThemeDefaults.cs`. Это зеркало клиентского `DEFAULT_PARTY_THEME_ID` из `@cherryplay/components`. Используется в инициализаторах `Party` / `CreatePartyDto`, в `ParsePartyThemeIdOrDefault` и как смысловой fallback неизвестных значений в `ToStringValue` (строка `"basic"` при текущем `Id = Basic`).
 
 ## Настройки кастомизации
 
@@ -209,6 +213,8 @@ PartyTheme не поддерживает настройки кастомизац
 PartyTheme не поддерживает настройки кастомизации (редактор темы возвращает `null`).
 
 ## Использование в проектах
+
+PartyTheme — **изолированный** визуальный слой контента вечеринки. Контракт shell-примитивов (`Button`, `cp-button`, импорт `primitives.css`) относится к оболочке приложения (кабинет, модалки, редактор) и **не обязан** распространяться на темы: каждая PartyTheme живёт в своём `data-theme` и своих CSS. Дефолтные кнопки оболочки описаны в [CherryPlayComponents/README.md](CherryPlayComponents/README.md#default-shell-buttons).
 
 ### CherryPlayComponents (React/TypeScript)
 

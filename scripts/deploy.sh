@@ -117,6 +117,11 @@ echo "PGADMIN_PASSWORD=${PGADMIN_PASSWORD:-changeme}" >> .env
 [ -n "$CORS_ORIGIN_2" ] && echo "CORS_ORIGIN_2=$CORS_ORIGIN_2" >> .env
 [ -n "$OAUTH_VK_CLIENT_ID" ] && echo "OAUTH_VK_CLIENT_ID=$OAUTH_VK_CLIENT_ID" >> .env
 [ -n "$OAUTH_VK_CLIENT_SECRET" ] && echo "OAUTH_VK_CLIENT_SECRET=$OAUTH_VK_CLIENT_SECRET" >> .env
+[ -n "$RUSENDER_API_TOKEN" ] && echo "RUSENDER_API_TOKEN=$RUSENDER_API_TOKEN" >> .env
+[ -n "$RUSENDER_SEND_KEY_ID" ] && echo "RUSENDER_SEND_KEY_ID=$RUSENDER_SEND_KEY_ID" >> .env
+[ -n "$EMAIL_FROM_ADDRESS" ] && echo "EMAIL_FROM_ADDRESS=$EMAIL_FROM_ADDRESS" >> .env
+[ -n "$EMAIL_FROM_NAME" ] && echo "EMAIL_FROM_NAME=$EMAIL_FROM_NAME" >> .env
+[ -n "$PUBLIC_WEB_BASE_URL" ] && echo "PUBLIC_WEB_BASE_URL=$PUBLIC_WEB_BASE_URL" >> .env
 
 # Mandatory pre-deploy database backup (before stopping postgres)
 BACKUP_DIR="${BACKUP_DIR:-./backups}"

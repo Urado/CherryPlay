@@ -1,43 +1,114 @@
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
+import type { WorkspaceId } from '@core/types/workspace';
+
 import type { AimpSourceSelection } from '../contracts/aimp';
+import {
+  clampLoudnessQuietGapRangeLu,
+  clampLoudnessTargetLufs,
+  DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
+  DEFAULT_LOUDNESS_TARGET_LUFS,
+  LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU,
+  type LoudnessListeningEnvironment,
+  type LoudnessSettings,
+} from '../contracts/loudness';
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
 import { electronStorage } from '../storage/electronStorage';
+import type { TrackItemSizePreset } from '../types/trackItemSize';
 
-interface SettingsState {
+export type { LoudnessSettings };
+
+interface FileBrowserPathPersistSlice {
+  fileBrowserPath: string;
+  fileBrowserPathsByWorkspaceId: Record<WorkspaceId, string>;
+}
+
+export interface DemoPlayerFloatingPosition {
+  x: number;
+  y: number;
+}
+
+export interface DemoPlayerFloatingSize {
+  width: number;
+  height: number;
+}
+
+interface SettingsState extends FileBrowserPathPersistSlice {
   _hasHydrated: boolean;
   setHasHydrated: (value: boolean) => void;
   exportPath: string;
   exportStrategy: 'copyWithNumberPrefix' | 'aimpPlaylist';
   lastOpenedPlaylist: string;
-  fileBrowserPath: string;
-  trackItemSizePreset: 'small' | 'medium' | 'large';
+  trackItemSizePreset: TrackItemSizePreset;
   hourDividerInterval: number;
   showHourDividers: boolean;
   playerAudioDeviceId: string | null;
   demoPlayerAudioDeviceId: string | null;
+  demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;
+  demoPlayerFloatingSize: DemoPlayerFloatingSize | null;
+  demoPlayerFloatingOpen: boolean;
   keyBindings: CustomKeyBindings;
   enableStreaming: boolean;
   streamingSource: AimpSourceSelection;
+  loudnessNormalizationEnabled: boolean;
+  loudnessTargetLufs: number;
+  loudnessCompressionEnabled: boolean;
+  loudnessQuietGapRangeLu: number;
+  getFileBrowserPathForWorkspace: (workspaceId: WorkspaceId) => string;
+  setFileBrowserPathForWorkspace: (workspaceId: WorkspaceId, path: string) => void;
+  removeFileBrowserPathForWorkspace: (workspaceId: WorkspaceId) => void;
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
+  /**
+   * @deprecated Use {@link setFileBrowserPathForWorkspace} with
+   * `DEFAULT_FILEBROWSER_WORKSPACE_ID`. Remove after subtask 04 when no callers remain.
+   */
   setFileBrowserPath: (path: string) => void;
-  setTrackItemSizePreset: (preset: 'small' | 'medium' | 'large') => void;
+  setTrackItemSizePreset: (preset: TrackItemSizePreset) => void;
   setHourDividerInterval: (interval: number) => void;
   setShowHourDividers: (show: boolean) => void;
   setPlayerAudioDeviceId: (deviceId: string | null) => void;
   setDemoPlayerAudioDeviceId: (deviceId: string | null) => void;
+  setDemoPlayerFloatingPosition: (position: DemoPlayerFloatingPosition | null) => void;
+  setDemoPlayerFloatingSize: (size: DemoPlayerFloatingSize | null) => void;
+  setDemoPlayerFloatingOpen: (open: boolean) => void;
   setKeyBinding: (id: ShortcutId, binding: KeyBinding) => void;
   resetKeyBindings: () => void;
   setEnableStreaming: (enable: boolean) => void;
   setStreamingSource: (source: AimpSourceSelection) => void;
+  setLoudnessNormalizationEnabled: (enabled: boolean) => void;
+  setLoudnessTargetLufs: (targetLufs: number) => void;
+  setLoudnessCompressionEnabled: (enabled: boolean) => void;
+  setLoudnessQuietGapRangeLu: (quietGapRangeLu: number) => void;
+}
+
+export function migrateFileBrowserPathsOnRehydrate(
+  state: Partial<FileBrowserPathPersistSlice>,
+): FileBrowserPathPersistSlice {
+  const legacyPath = state.fileBrowserPath ?? '';
+  const map = { ...(state.fileBrowserPathsByWorkspaceId ?? {}) };
+  const defaultId = DEFAULT_FILEBROWSER_WORKSPACE_ID;
+  const mapEmpty = Object.keys(map).length === 0;
+  const missingDefaultKey = !(defaultId in map);
+
+  if (legacyPath && (mapEmpty || missingDefaultKey)) {
+    map[defaultId] = legacyPath;
+  }
+
+  const defaultPath = defaultId in map ? map[defaultId] : legacyPath;
+
+  return {
+    fileBrowserPathsByWorkspaceId: map,
+    fileBrowserPath: defaultPath ?? '',
+  };
 }
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       _hasHydrated: false,
       setHasHydrated: (value) => set({ _hasHydrated: value }),
 
@@ -45,24 +116,85 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       exportStrategy: 'copyWithNumberPrefix',
       lastOpenedPlaylist: '',
       fileBrowserPath: '',
+      fileBrowserPathsByWorkspaceId: {},
       trackItemSizePreset: 'medium',
       hourDividerInterval: 3600,
       showHourDividers: true,
       playerAudioDeviceId: null,
       demoPlayerAudioDeviceId: null,
+      demoPlayerFloatingPosition: null,
+      demoPlayerFloatingSize: null,
+      demoPlayerFloatingOpen: true,
       keyBindings: {},
       enableStreaming: true,
       streamingSource: 'cherryPlayPlayer',
+      loudnessNormalizationEnabled: true,
+      loudnessTargetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
+      loudnessCompressionEnabled: false,
+      loudnessQuietGapRangeLu: DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
+
+      getFileBrowserPathForWorkspace: (workspaceId) => {
+        const state = get();
+        if (workspaceId in state.fileBrowserPathsByWorkspaceId) {
+          return state.fileBrowserPathsByWorkspaceId[workspaceId];
+        }
+        if (workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID) {
+          return state.fileBrowserPath;
+        }
+        return '';
+      },
+
+      setFileBrowserPathForWorkspace: (workspaceId, path) =>
+        set((state) => {
+          const fileBrowserPathsByWorkspaceId = {
+            ...state.fileBrowserPathsByWorkspaceId,
+            [workspaceId]: path,
+          };
+          if (workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID) {
+            return { fileBrowserPathsByWorkspaceId, fileBrowserPath: path };
+          }
+          return { fileBrowserPathsByWorkspaceId };
+        }),
+
+      removeFileBrowserPathForWorkspace: (workspaceId) =>
+        set((state) => {
+          const inMap = workspaceId in state.fileBrowserPathsByWorkspaceId;
+          const isDefault = workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID;
+          const legacyOnly = isDefault && !inMap && state.fileBrowserPath !== '';
+
+          if (!inMap && !legacyOnly) {
+            return state;
+          }
+
+          if (legacyOnly) {
+            return { fileBrowserPath: '' };
+          }
+
+          const { [workspaceId]: _removed, ...fileBrowserPathsByWorkspaceId } =
+            state.fileBrowserPathsByWorkspaceId;
+          if (isDefault) {
+            return { fileBrowserPathsByWorkspaceId, fileBrowserPath: '' };
+          }
+          return { fileBrowserPathsByWorkspaceId };
+        }),
 
       setExportPath: (path) => set({ exportPath: path }),
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
       setLastOpenedPlaylist: (path) => set({ lastOpenedPlaylist: path }),
-      setFileBrowserPath: (path) => set({ fileBrowserPath: path }),
+
+      /** @deprecated Use setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path). */
+      setFileBrowserPath: (path) => {
+        get().setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path);
+      },
+
       setTrackItemSizePreset: (preset) => set({ trackItemSizePreset: preset }),
       setHourDividerInterval: (interval) => set({ hourDividerInterval: interval }),
       setShowHourDividers: (show) => set({ showHourDividers: show }),
       setPlayerAudioDeviceId: (deviceId) => set({ playerAudioDeviceId: deviceId }),
       setDemoPlayerAudioDeviceId: (deviceId) => set({ demoPlayerAudioDeviceId: deviceId }),
+      setDemoPlayerFloatingPosition: (position) => set({ demoPlayerFloatingPosition: position }),
+      setDemoPlayerFloatingSize: (size) => set({ demoPlayerFloatingSize: size }),
+      setDemoPlayerFloatingOpen: (open) => set({ demoPlayerFloatingOpen: open }),
       setKeyBinding: (id, binding) =>
         set((state) => ({
           keyBindings: { ...state.keyBindings, [id]: binding },
@@ -70,25 +202,69 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
       setStreamingSource: (source) => set({ streamingSource: source }),
+      setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
+      setLoudnessTargetLufs: (targetLufs) =>
+        set({ loudnessTargetLufs: clampLoudnessTargetLufs(targetLufs) }),
+      setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
+      setLoudnessQuietGapRangeLu: (quietGapRangeLu) =>
+        set({ loudnessQuietGapRangeLu: clampLoudnessQuietGapRangeLu(quietGapRangeLu) }),
     }),
     {
       name: 'cherryplaylist-settings',
       storage: electronStorage,
+      version: 1,
+      migrate: (persistedState) => {
+        const state = { ...(persistedState as object) } as Record<string, unknown>;
+        if (typeof state.loudnessQuietGapRangeLu !== 'number') {
+          const environment = state.loudnessListeningEnvironment;
+          if (
+            typeof environment === 'string' &&
+            environment in LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU
+          ) {
+            state.loudnessQuietGapRangeLu =
+              LOUDNESS_LISTENING_ENVIRONMENT_QUIET_GAP_LU[
+                environment as LoudnessListeningEnvironment
+              ];
+          } else {
+            state.loudnessQuietGapRangeLu = DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU;
+          }
+          delete state.loudnessListeningEnvironment;
+        }
+
+        if (typeof state.loudnessTargetLufs !== 'number') {
+          state.loudnessTargetLufs = DEFAULT_LOUDNESS_TARGET_LUFS;
+        } else {
+          state.loudnessTargetLufs = clampLoudnessTargetLufs(state.loudnessTargetLufs);
+        }
+        return state as unknown as SettingsState;
+      },
       partialize: (state) => ({
         exportPath: state.exportPath,
         exportStrategy: state.exportStrategy,
         lastOpenedPlaylist: state.lastOpenedPlaylist,
         fileBrowserPath: state.fileBrowserPath,
+        fileBrowserPathsByWorkspaceId: state.fileBrowserPathsByWorkspaceId,
         trackItemSizePreset: state.trackItemSizePreset,
         hourDividerInterval: state.hourDividerInterval,
         showHourDividers: state.showHourDividers,
         playerAudioDeviceId: state.playerAudioDeviceId,
         demoPlayerAudioDeviceId: state.demoPlayerAudioDeviceId,
+        demoPlayerFloatingPosition: state.demoPlayerFloatingPosition,
+        demoPlayerFloatingSize: state.demoPlayerFloatingSize,
+        demoPlayerFloatingOpen: state.demoPlayerFloatingOpen,
         keyBindings: state.keyBindings,
         enableStreaming: state.enableStreaming,
         streamingSource: state.streamingSource,
+        loudnessNormalizationEnabled: state.loudnessNormalizationEnabled,
+        loudnessTargetLufs: state.loudnessTargetLufs,
+        loudnessCompressionEnabled: state.loudnessCompressionEnabled,
+        loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
       }),
-      onRehydrateStorage: () => (_state, _err) => {
+      onRehydrateStorage: () => (state, _err) => {
+        if (state) {
+          const migrated = migrateFileBrowserPathsOnRehydrate(state);
+          useSettingsStore.setState(migrated);
+        }
         useSettingsStore.getState().setHasHydrated(true);
       },
     },

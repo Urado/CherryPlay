@@ -11,6 +11,8 @@ const CollectionModule: IWorkspaceModule = {
   type: 'collection',
   name: 'Collection',
   component: CollectionView,
+  minWidth: 200,
+  minHeight: 150,
 };
 
 // Register the module

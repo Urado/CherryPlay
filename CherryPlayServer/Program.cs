@@ -8,15 +8,18 @@ using CherryPlayServer.Infrastructure;
 using CherryPlayServer.Infrastructure.Repositories;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Repositories;
+using CherryPlayServer.Infrastructure.Email;
 using CherryPlayServer.Core.Services;
 using CherryPlayServer.Infrastructure.Data;
 using CherryPlayServer.Infrastructure.OAuth;
 using CherryPlayServer.Core.Middleware;
 using CherryPlayServer.Core.Authorization;
 using CherryPlayServer.Core;
+using CherryPlayServer.Core.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +33,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("RuSender", client =>
+{
+    client.BaseAddress = new Uri("https://api.rusender.ru/");
+});
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 if (corsOrigins.Length == 0 && builder.Environment.IsDevelopment())
@@ -57,6 +64,8 @@ if (useInMemoryStorage)
     builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
     builder.Services.AddSingleton<IOAuthAccountRepository, InMemoryOAuthAccountRepository>();
     builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
+    builder.Services.AddSingleton<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
+    builder.Services.AddSingleton<IPasswordResetApplicator, InMemoryPasswordResetApplicator>();
     builder.Services.AddSingleton<IThemeRepository, InMemoryThemeRepository>();
     builder.Services.AddSingleton<IThemePackageRepository, InMemoryThemePackageRepository>();
     builder.Services.AddSingleton<IOrganizerEntitlementRepository, InMemoryOrganizerEntitlementRepository>();
@@ -77,11 +86,39 @@ else
     builder.Services.AddScoped<IOrganizerSessionRepository, EfOrganizerSessionRepository>();
     builder.Services.AddScoped<IOAuthAccountRepository, EfOAuthAccountRepository>();
     builder.Services.AddScoped<IEmailAccountRepository, EfEmailAccountRepository>();
+    builder.Services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
+    builder.Services.AddScoped<IPasswordResetApplicator, EfPasswordResetApplicator>();
     builder.Services.AddScoped<IThemeRepository, EfThemeRepository>();
     builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
     builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
 }
+
+builder.Services.Configure<EmailOptions>(options =>
+{
+    options.RuSenderApiToken = builder.Configuration["RUSENDER_API_TOKEN"];
+    options.RuSenderSendKeyId = builder.Configuration["RUSENDER_SEND_KEY_ID"];
+    options.FromAddress = builder.Configuration["EMAIL_FROM_ADDRESS"];
+    options.FromName = builder.Configuration["EMAIL_FROM_NAME"] ?? "CherryPlay";
+    options.PublicWebBaseUrl = builder.Configuration["PUBLIC_WEB_BASE_URL"];
+});
+
+builder.Services.AddSingleton<IEmailSender>(sp =>
+{
+    var emailOptions = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+    var env = sp.GetRequiredService<IHostEnvironment>();
+    if (emailOptions.IsRuSenderConfigured)
+    {
+        return ActivatorUtilities.CreateInstance<RuSenderEmailSender>(sp);
+    }
+
+    if (env.IsDevelopment())
+    {
+        return ActivatorUtilities.CreateInstance<LoggingEmailSender>(sp);
+    }
+
+    return new UnavailableEmailSender();
+});
 
 builder.Services.AddSingleton<IShortCodeGenerator, ShortCodeGenerator>();
 builder.Services.AddSingleton<IPartyIdValidator, PartyIdValidator>();
@@ -174,7 +211,6 @@ builder.Services.AddHostedService<DataSeederHostedService>();
 
 var app = builder.Build();
 
-// Apply EF migrations at startup only when explicitly enabled.
 var autoMigrateOnStartup = builder.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup");
 if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage") && autoMigrateOnStartup)
 {
@@ -185,7 +221,6 @@ if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage") && autoMigrateOn
     }
 }
 
-// Validate OAuth credentials in production
 if (!app.Environment.IsDevelopment())
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -215,6 +250,13 @@ if (!app.Environment.IsDevelopment())
     else
     {
         logger.LogInformation("OAuth credentials validated successfully");
+    }
+
+    var emailOptions = app.Services.GetRequiredService<IOptions<EmailOptions>>().Value;
+    if (!emailOptions.IsRuSenderConfigured || !emailOptions.HasPublicWebBaseUrl)
+    {
+        logger.LogWarning(
+            "Password-reset mail is not fully configured in production (RUSENDER_API_TOKEN, RUSENDER_SEND_KEY_ID, EMAIL_FROM_ADDRESS, PUBLIC_WEB_BASE_URL). Forgot-password will return 503 for all requests.");
     }
 }
 
@@ -273,4 +315,3 @@ app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
 app.Run();
 
 public partial class Program { }
-

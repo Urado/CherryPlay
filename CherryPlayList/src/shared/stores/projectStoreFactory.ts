@@ -48,6 +48,7 @@ import {
   removeItemFromItems,
   updateTrackInItems,
   markTrackMissingInItems,
+  updateGroupInItems,
   removeItemsById,
   collectItemsById,
   collectAllItemIds,
@@ -119,7 +120,6 @@ export interface ProjectStoreState {
   removeSelectedItems: () => void;
   moveSelectedItems: (toIndex: number) => void;
   selectRange: (fromId: string, toId: string) => void;
-  /** Move items to a specific context (root or inside a group) */
   moveItemsToContext: (
     itemIds: string[],
     targetParentId: string | null,
@@ -549,12 +549,10 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       if (oldName === name) return;
 
       set((s) => ({
-        items: s.items.map((item) => {
-          if (item.id === groupId && isProjectGroup(item)) {
-            return { ...item, name };
-          }
-          return item;
-        }),
+        items: updateGroupInItems(s.items, groupId, (g) => ({
+          ...g,
+          name,
+        })),
       }));
 
       if (!state._skipHistory) {
@@ -737,29 +735,21 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
       const state = get();
       if (itemIds.length === 0) return;
 
-      // 1. Собираем элементы для перемещения (в порядке itemIds)
       const itemsToMove = collectItemsById(state.items, itemIds);
       if (itemsToMove.length === 0) return;
 
-      // 2. Удаляем элементы из текущих позиций
       let newItems = removeItemsById(state.items, itemIds);
 
-      // 3. Вставляем в целевую позицию
       if (targetParentId === null) {
-        // Вставка в корень
         const safeIndex = Math.min(Math.max(0, targetIndex), newItems.length);
         newItems.splice(safeIndex, 0, ...itemsToMove);
       } else {
-        // Вставка в группу
         newItems = insertIntoGroup(newItems, targetParentId, targetIndex, itemsToMove);
       }
 
       set({ items: newItems });
 
       if (!state._skipHistory) {
-        // Для истории используем MoveItemsCommand с информацией о контексте
-        // TODO: создать специализированную команду для moveItemsToContext
-        // Пока используем простое описание
         useGlobalHistoryStore.getState().pushCommand(
           workspaceId,
           new MoveItemsCommand(
@@ -952,10 +942,6 @@ export function ensureProjectStore(options: ProjectStoreOptions): ProjectStore {
   return store;
 }
 
-/**
- * Resolves workspace ID to project store. Player workspace uses the playlist store
- * (same data, different UI zone), so drag-drop and history resolve to the same store.
- */
 function getStoreForWorkspace(workspaceId: WorkspaceId): ProjectStore | undefined {
   const store = projectStores.get(workspaceId);
   if (store) return store;

@@ -10,13 +10,6 @@ import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItem
 import { useItemDragOver } from '../ItemList';
 import { ListRowCompound } from '../ListRow';
 
-/**
- * Склонение слова для русского языка
- * @param count - число
- * @param one - форма для 1 (элемент)
- * @param few - форма для 2-4 (элемента)
- * @param many - форма для 5-20, 0 (элементов)
- */
 function pluralize(count: number, one: string, few: string, many: string): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
@@ -33,114 +26,51 @@ function pluralize(count: number, one: string, few: string, many: string): strin
   return many;
 }
 
-/**
- * Mode for ProjectItemRow display
- * - 'playlist': Basic mode for playlist view (no disable, no settings)
- * - 'player-preparation': Player in preparation mode (has settings, no disable)
- * - 'player-session': Player in session mode (has settings, has disable)
- */
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 
-/**
- * Props for ProjectItemRow component
- */
 export interface ProjectItemRowProps {
-  /** The item to display (track or group) */
   item: ProjectItem;
-  /** Display index (for tracks only, -1 for groups) - used for showing track number */
   index: number;
-  /** Position in the flat list - used for drag-over calculations and DropIndicator */
   listIndex: number;
-  /** Nesting level for groups */
   level?: number;
-  /** Display mode */
   mode: ProjectItemRowMode;
 
-  // Selection state
-  /** Whether the item is selected */
   isSelected: boolean;
-  /** Whether the item is being dragged */
   isDragging: boolean;
-  /** Whether another item is being dragged over this one */
   isDragOver?: boolean;
-  /** Insert position indicator */
   insertPosition?: 'top' | 'bottom' | null;
 
-  // Playback state
-  /** Whether this is the active item in demo player */
   isActive?: boolean;
-  /** Whether the item is currently playing */
   isPlaying?: boolean;
 
-  // Session state (for player modes)
-  /** Whether the track has been played (session mode) */
   isPlayed?: boolean;
-  /** Whether the item is disabled (session mode) */
   isDisabled?: boolean;
-  /** Whether this is the current track in player (session mode) */
   isCurrent?: boolean;
-  /** Whether the item is locked (cannot be dragged/deleted) */
   isLocked?: boolean;
 
-  // Group-specific
-  /** Duration of the group including pauses (for groups only) */
   groupDuration?: number;
-  /** Whether this track is considered a duplicate in the current list (path or filename) */
   isDuplicatePath?: boolean;
   isNotOnServer?: boolean;
 
-  // Callbacks
-  /** Called when selection is toggled */
   onToggleSelect: (id: string, e?: React.MouseEvent) => void;
-  /** Called when item is removed */
   onRemove: (id: string) => void;
-  /** Called when drag starts */
   onDragStart: (e: React.DragEvent, id: string) => void;
-  /** Called during drag over */
   onDragOver: (e: React.DragEvent) => void;
-  /** Called when item is dropped */
   onDrop: (e: React.DragEvent, id: string) => void;
-  /** Called when drag ends */
   onDragEnd: (e: React.DragEvent) => void;
-  /** Called when play is clicked (for tracks) */
   onPlay?: (track: Track) => Promise<void> | void;
-  /** Called when pause is clicked */
   onPause?: () => void;
-  /** Called when disable is toggled (session mode) */
   onToggleDisabled?: (itemId: string) => void;
-  /** Called when group is renamed */
   onRenameGroup?: (groupId: string, newName: string) => void;
-  /** Called when group is ungrouped */
   onUngroupGroup?: (groupId: string) => void;
-  /** Called when settings button is clicked */
   onOpenSettings?: (itemId: string) => void;
-  /**
-   * Called when the track actions menu button (⋮) is clicked.
-   * Provides the anchor DOMRect for dropdown positioning.
-   * The button is always visible for tracks in player modes, but disabled when this is not provided.
-   * This is the extension point for future per-track actions.
-   */
   onTrackActions?: (itemId: string, anchorRect: DOMRect) => void;
-  /**
-   * When true, the track actions button (⋮) is rendered but disabled.
-   * Use this when the button should always occupy space but no actions are available
-   * (e.g. preparation mode, or the track is currently active).
-   */
   trackActionsDisabled?: boolean;
 
-  // Custom content
-  /** Custom settings button (for player modes) */
   settingsButton?: React.ReactNode;
+  loudnessControls?: React.ReactNode;
 }
 
-/**
- * ProjectItemRow - Universal component for displaying tracks and groups
- *
- * Supports three modes:
- * - 'playlist': Basic mode with play, delete buttons
- * - 'player-preparation': Player mode with settings button
- * - 'player-session': Player mode with settings and disable buttons
- */
 export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   item,
   index,
@@ -175,21 +105,19 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   onTrackActions,
   trackActionsDisabled = false,
   settingsButton,
+  loudnessControls,
 }) => {
   const isGroup = isProjectGroup(item);
   const track = isGroup ? null : item;
 
-  // Group name editing state
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Determine what to show based on mode
-  const showPlayButton = mode === 'playlist' || (mode === 'player-preparation' && !isGroup);
+  const showPlayButton = !isGroup;
   const showDisableButton = mode === 'player-session';
   const showSettingsButton = mode !== 'playlist';
 
-  // Handle play click
   const handlePlay = () => {
     if (!track || !onPlay) return;
     const maybePromise = onPlay(track);
@@ -198,17 +126,14 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
     }
   };
 
-  // Handle pause click
   const handlePause = () => {
     onPause?.();
   };
 
-  // Handle toggle disabled
   const handleToggleDisabled = () => {
     onToggleDisabled?.(item.id);
   };
 
-  // Group name editing handlers
   const handleStartEdit = (e: React.MouseEvent) => {
     if (!isGroup || !onRenameGroup || isLocked) return;
     e.stopPropagation();
@@ -223,6 +148,14 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       onRenameGroup(item.id, trimmedName);
     }
     setIsEditingName(false);
+  };
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.track-loudness-popover, .track-loudness-button')) {
+      return;
+    }
+    onToggleSelect(item.id, e);
   };
 
   const handleCancelEdit = () => {
@@ -240,7 +173,6 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
     }
   };
 
-  // Auto-focus input when editing starts
   useEffect(() => {
     if (isEditingName && inputRef.current) {
       inputRef.current.focus();
@@ -248,14 +180,12 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
     }
   }, [isEditingName]);
 
-  // Calculate display values
   const itemCount = isGroup ? getGroupItemCount(item) : 0;
   const groupDisplayName = isGroup
     ? `${item.name} (${itemCount} ${pluralize(itemCount, 'элемент', 'элемента', 'элементов')})`
     : '';
   const trackDisplayName = track?.name || '';
 
-  // Calculate duration
   const displayDuration = isGroup
     ? groupDuration !== undefined && groupDuration > 0
       ? formatTrackDuration(groupDuration)
@@ -267,34 +197,41 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       ? formatTrackDuration(track.duration)
       : undefined;
 
-  // Handle drag events
   const handleDragStart = (e: React.DragEvent) => {
+    if (isEditingName) {
+      e.preventDefault();
+      return;
+    }
     onDragStart(e, item.id);
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    if (isEditingName) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     onDrop(e, item.id);
   };
 
-  // Use hook to update ItemList context drop index when dragging over this item
-  // listIndex is the position in the flat list (used for DropIndicator positioning)
   const { handleDragOver: updateContextDropIndex } = useItemDragOver({
     index: listIndex,
-    disabled: isLocked,
+    disabled: isLocked || isEditingName,
   });
 
-  // Combined drag over handler: updates both ItemList context and calls parent handler
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
-      // Update ItemList context for DropIndicator positioning
+      if (isEditingName) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       updateContextDropIndex(e);
-      // Call parent handler for other drag-over logic
       onDragOver(e);
     },
-    [updateContextDropIndex, onDragOver],
+    [isEditingName, updateContextDropIndex, onDragOver],
   );
 
-  // Render group name content (with editing support)
   const renderGroupNameContent = () => {
     if (isEditingName) {
       return (
@@ -307,6 +244,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
             onBlur={handleSaveName}
             onKeyDown={handleNameKeyDown}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             className="playlist-item-group-name-input"
             style={{
               background: 'var(--bg-tertiary)',
@@ -344,8 +282,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       isCurrent={isCurrent}
       isLocked={isLocked}
       level={level}
-      draggable={!isLocked}
-      onClick={(e) => onToggleSelect(item.id, e)}
+      draggable={!isLocked && !isEditingName}
+      onClick={handleRowClick}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -353,32 +291,26 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       className={isGroup ? 'playlist-item--group' : ''}
       data-item-id={item.id}
     >
-      {/* Play button (for tracks in playlist/preparation mode) */}
       {showPlayButton && track && onPlay && (
         <ListRowCompound.PlayButton onPlay={handlePlay} onPause={handlePause} />
       )}
 
-      {/* Group icon */}
       {isGroup && (
         <div className="playlist-item-group-icon">
           <FolderIcon style={{ fontSize: '20px', color: 'var(--text-secondary)' }} />
         </div>
       )}
 
-      {/* Drag handle */}
       <ListRowCompound.DragHandle />
 
-      {/* Checkbox */}
       <ListRowCompound.Checkbox onToggle={(e) => onToggleSelect(item.id, e)} />
 
-      {/* Index or Ungroup button */}
       {isGroup && onUngroupGroup ? (
         <ListRowCompound.UngroupButton onUngroup={() => onUngroupGroup(item.id)} />
       ) : (
         <ListRowCompound.Index value={index} />
       )}
 
-      {/* Content */}
       <ListRowCompound.Content
         editable={isGroup && !!onRenameGroup && !isLocked}
         onDoubleClick={isGroup ? handleStartEdit : undefined}
@@ -400,6 +332,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         </span>
       )}
 
+      {!isGroup && track && loudnessControls}
+
       {displayDuration && (
         <ListRowCompound.Secondary>
           {isNotOnServer && (
@@ -420,42 +354,38 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         </ListRowCompound.Secondary>
       )}
 
-      {/* Actions */}
       <ListRowCompound.Actions>
-        {/* Settings button (for player modes) */}
         {showSettingsButton &&
           (settingsButton ||
             (onOpenSettings && (
               <ListRowCompound.SettingsButton onClick={() => onOpenSettings(item.id)} />
             )))}
 
-        {/* Disable button (for session mode) */}
         {showDisableButton && onToggleDisabled && (
           <ListRowCompound.DisableButton onToggle={handleToggleDisabled} />
         )}
 
-        {/* Track actions menu button (⋮) — always visible for tracks in player modes.
-            Disabled when no actions are available (trackActionsDisabled=true or onTrackActions not provided).
-            Always occupies the same space so the layout stays stable. */}
         {!isGroup && mode !== 'playlist' && (
-          <button
-            type="button"
-            className="playlist-item-settings playlist-item-actions"
+          <ListRowCompound.ActionButton
+            className="playlist-item-more"
             aria-label="Действия с треком"
-            title={trackActionsDisabled || !onTrackActions ? undefined : 'Действия с треком'}
+            title={
+              trackActionsDisabled || !onTrackActions
+                ? undefined
+                : 'Действия: перейти к треку, удалить и др.'
+            }
             disabled={trackActionsDisabled || !onTrackActions}
             onClick={(e) => {
-              e.stopPropagation();
               if (!trackActionsDisabled && onTrackActions) {
                 onTrackActions(item.id, (e.currentTarget as HTMLElement).getBoundingClientRect());
               }
             }}
-          >
-            <MoreVertIcon style={{ fontSize: '18px' }} />
-          </button>
+            icon={<MoreVertIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
         )}
 
-        {/* Delete button */}
         <ListRowCompound.DeleteButton onClick={() => onRemove(item.id)} />
       </ListRowCompound.Actions>
     </ListRowCompound>

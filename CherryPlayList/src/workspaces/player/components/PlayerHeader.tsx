@@ -1,6 +1,7 @@
-import * as signalR from '@microsoft/signalr';
+import { Button, IconButton } from '@cherryplay/components';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import ListIcon from '@mui/icons-material/List';
 import SelectAllIcon from '@mui/icons-material/SelectAll';
@@ -9,17 +10,11 @@ import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import TimerIcon from '@mui/icons-material/Timer';
 import React from 'react';
 
-import { signalRService } from '@shared/services';
-import { useSettingsStore } from '@shared/stores';
-import { formatTimeFromDuration, formatTimeFromTimestamp } from '@shared/utils';
+import { formatTimeFromDuration } from '@shared/utils';
 
 interface PlayerHeaderProps {
-  name: string;
-  onNameChange: (name: string) => void;
   allTracksCount: number;
   totalDuration: number;
-  /** Прогноз окончания сессии: UNIX epoch в мс (локальные часы, отображение через formatTimeFromTimestamp → hh:mm:ss) */
-  projectedEndTime: number | null;
   hasSelectedItems: boolean;
   canCreateGroup: boolean;
   canRemoveSelectedItems: boolean;
@@ -33,16 +28,16 @@ interface PlayerHeaderProps {
   onResetSession: () => void;
   onOpenGlobalSettings: () => void;
   onExportTracksToText: () => void;
-  connectionState: signalR.HubConnectionState | null;
-  onReconnectClick?: () => void;
+  onCalculateLoudness?: () => void;
+  showLoudnessBatchButton?: boolean;
+  isLoudnessBatchScanning?: boolean;
 }
 
+const HEADER_ICON_SIZE = '18px';
+
 export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
-  name,
-  onNameChange,
   allTracksCount,
   totalDuration,
-  projectedEndTime,
   hasSelectedItems,
   canCreateGroup,
   canRemoveSelectedItems,
@@ -56,181 +51,149 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   onResetSession,
   onOpenGlobalSettings,
   onExportTracksToText,
-  connectionState,
-  onReconnectClick,
+  onCalculateLoudness,
+  showLoudnessBatchButton = false,
+  isLoudnessBatchScanning = false,
 }) => {
-  const { enableStreaming } = useSettingsStore();
-
-  const connectionErrorReason = signalRService.getConnectionErrorReason();
-  const isConnected = connectionState === signalR.HubConnectionState.Connected;
-  const isConnecting =
-    connectionState === signalR.HubConnectionState.Connecting ||
-    connectionState === signalR.HubConnectionState.Reconnecting;
-
-  const isDisconnected = !isConnected && !isConnecting;
-  const canReconnect = isDisconnected && onReconnectClick;
-
-  const getConnectionTooltip = () => {
-    if (isConnected) {
-      return 'Подключено к серверу';
-    }
-    if (isConnecting) {
-      return 'Подключение...';
-    }
-    if (canReconnect) {
-      return connectionErrorReason
-        ? `${connectionErrorReason} Нажмите для переподключения.`
-        : 'Нет соединения с сервером. Нажмите для переподключения.';
-    }
-    if (connectionErrorReason) {
-      return connectionErrorReason;
-    }
-    return 'Неизвестная ошибка';
-  };
-
-  const connectionIndicator = (
-    <div
-      className={`player-connection-indicator ${
-        isConnected
-          ? 'player-connection-indicator--connected'
-          : isConnecting
-            ? 'player-connection-indicator--connecting'
-            : 'player-connection-indicator--disconnected'
-      } ${canReconnect ? 'player-connection-indicator--clickable' : ''}`}
-      title={getConnectionTooltip()}
-      role={canReconnect ? 'button' : undefined}
-      tabIndex={canReconnect ? 0 : undefined}
-      onClick={canReconnect ? onReconnectClick : undefined}
-      onKeyDown={
-        canReconnect
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onReconnectClick?.();
-              }
-            }
-          : undefined
-      }
-    >
-      <span
-        className={`player-connection-dot ${
-          isConnected
-            ? 'player-connection-dot--connected'
-            : isConnecting
-              ? 'player-connection-dot--connecting'
-              : 'player-connection-dot--disconnected'
-        }`}
-      />
-    </div>
-  );
+  const showSelectionActions = hasSelectedItems || (!hasSelectedItems && allTracksCount > 0);
 
   return (
-    <div className="playlist-header-section">
-      <div className="playlist-header-row">
-        <input
-          type="text"
-          className="playlist-name-input-header"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Player"
-        />
-        {enableStreaming && connectionIndicator}
-        {hasSelectedItems && (
-          <>
-            <button
-              onClick={onDeselectAll}
-              className="playlist-header-action-icon"
-              title="Deselect All"
-            >
-              <ClearIcon style={{ fontSize: '20px' }} />
-            </button>
-            {canCreateGroup && (
-              <button
-                onClick={onCreateGroup}
-                className="playlist-header-action-icon"
-                title="Создать группу"
+    <div className="playlist-header-section player-header">
+      <div className="playlist-header-toolbar">
+        <div className="playlist-header-toolbar__primary">
+          <div className="player-session-controls">
+            {isPreparationMode && showLoudnessBatchButton && onCalculateLoudness && (
+              <Button
+                type="button"
+                onClick={onCalculateLoudness}
+                disabled={allTracksCount === 0 || isLoudnessBatchScanning}
+                className="player-session-button player-session-button--loudness"
+                title="Рассчитать нормализацию громкости для всех треков"
+                variant="secondary"
+                size="sm"
+                startIcon={<GraphicEqIcon style={{ fontSize: '18px' }} />}
               >
-                <GroupAddIcon style={{ fontSize: '20px' }} />
-              </button>
+                Рассчитать нормализацию
+              </Button>
             )}
-            <button
-              onClick={onRemoveSelectedItems}
-              className="playlist-header-action-icon delete-button"
-              disabled={!canRemoveSelectedItems}
-              title={
-                canRemoveSelectedItems
-                  ? `Delete Selected (${selectedItemsCount})`
-                  : 'Нельзя удалить проигранные или текущий трек в режиме сессии'
-              }
-            >
-              <DeleteSweepIcon style={{ fontSize: '20px' }} />
-            </button>
-          </>
-        )}
-        {!hasSelectedItems && allTracksCount > 0 && (
-          <button onClick={onSelectAll} className="playlist-header-action-icon" title="Select All">
-            <SelectAllIcon style={{ fontSize: '20px' }} />
-          </button>
-        )}
-      </div>
-      <div className="playlist-stats-header">
-        <ListIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-        <span>{allTracksCount} треков</span>
-        {allTracksCount > 0 && (
-          <>
-            <span style={{ margin: '0 8px' }}>•</span>
-            <TimerIcon style={{ fontSize: '18px', marginRight: '4px' }} />
-            <span title="Суммарная длительность (накопленная по таймлайну сессии): hh:mm:ss">
-              Длительность: {formatTimeFromDuration(totalDuration)}
-            </span>
-            {projectedEndTime !== null && (
-              <>
-                <span style={{ margin: '0 8px' }}>•</span>
-                <span title="Прогноз времени окончания по локальным часам: hh:mm:ss (formatTimeFromTimestamp)">
-                  Окончание: {formatTimeFromTimestamp(projectedEndTime)}
-                </span>
-              </>
+            {isPreparationMode ? (
+              <Button
+                onClick={onStartSession}
+                disabled={allTracksCount === 0 || isLoudnessBatchScanning}
+                className="player-session-button player-session-button--start"
+                title={allTracksCount === 0 ? 'Добавьте треки в плейлист' : undefined}
+                type="button"
+                variant="primary"
+                size="sm"
+              >
+                Начать проигрывание
+              </Button>
+            ) : (
+              <Button
+                onClick={onResetSession}
+                className="player-session-button player-session-button--reset"
+                type="button"
+                variant="secondary"
+                size="sm"
+                title="Завершает сессию вечера, а не только ставит на паузу"
+              >
+                Остановить проигрывание
+              </Button>
             )}
-          </>
-        )}
-      </div>
+          </div>
 
-      <div className="player-header-actions">
-        <div className="player-session-controls">
-          {isPreparationMode ? (
-            <button
-              onClick={onStartSession}
-              disabled={allTracksCount === 0}
-              className="player-session-button player-session-button--start"
-            >
-              Начать сессию
-            </button>
-          ) : (
-            <button
-              onClick={onResetSession}
-              className="player-session-button player-session-button--reset"
-            >
-              Сбросить
-            </button>
-          )}
+          <div className="playlist-stats-header playlist-stats-header--inline">
+            <div className="playlist-stats-header__info">
+              <ListIcon className="playlist-stats-header__icon" fontSize="inherit" />
+              <span>{allTracksCount === 0 ? 'Плейлист пуст' : `${allTracksCount} треков`}</span>
+              {allTracksCount > 0 && (
+                <>
+                  <span className="playlist-stats-header__sep" aria-hidden>
+                    •
+                  </span>
+                  <TimerIcon className="playlist-stats-header__icon" fontSize="inherit" />
+                  <span title="Суммарная длительность (накопленная по таймлайну проигрывания): hh:mm:ss">
+                    {formatTimeFromDuration(totalDuration)}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={onOpenGlobalSettings}
-          className="player-settings-icon"
-          title="Глобальные настройки"
-        >
-          <SettingsIcon style={{ fontSize: '20px' }} />
-        </button>
+        <div className="playlist-header-actions player-header-actions">
+          {showSelectionActions ? (
+            hasSelectedItems ? (
+              <>
+                <IconButton
+                  onClick={onDeselectAll}
+                  className="playlist-header-action-icon"
+                  title="Снять выделение"
+                  aria-label="Снять выделение"
+                  icon={<ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+                  variant="ghost"
+                  size="sm"
+                ></IconButton>
+                {canCreateGroup && (
+                  <IconButton
+                    onClick={onCreateGroup}
+                    className="playlist-header-action-icon"
+                    title="Создать группу"
+                    aria-label="Создать группу"
+                    icon={<GroupAddIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+                    variant="ghost"
+                    size="sm"
+                  ></IconButton>
+                )}
+                <IconButton
+                  onClick={onRemoveSelectedItems}
+                  className="playlist-header-action-icon delete-button"
+                  disabled={!canRemoveSelectedItems}
+                  title={
+                    canRemoveSelectedItems
+                      ? `Удалить выбранные (${selectedItemsCount})`
+                      : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
+                  }
+                  aria-label="Удалить выбранные"
+                  icon={<DeleteSweepIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+                  variant="ghost"
+                  size="sm"
+                ></IconButton>
+              </>
+            ) : (
+              <IconButton
+                onClick={onSelectAll}
+                className="playlist-header-action-icon"
+                title="Выделить все"
+                aria-label="Выделить все"
+                icon={<SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+                variant="ghost"
+                size="sm"
+              ></IconButton>
+            )
+          ) : null}
 
-        <button
-          onClick={onExportTracksToText}
-          className="player-settings-icon"
-          title="Выгрузить треки в текстовый файл"
-          disabled={allTracksCount === 0}
-        >
-          <TextSnippetIcon style={{ fontSize: '20px' }} />
-        </button>
+          <IconButton
+            onClick={onOpenGlobalSettings}
+            className="player-settings-icon"
+            title="Настройки проигрывания"
+            aria-label="Настройки проигрывания"
+            icon={<SettingsIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+            variant="ghost"
+            size="sm"
+          ></IconButton>
+
+          <IconButton
+            onClick={onExportTracksToText}
+            className="player-settings-icon"
+            title="Список треков в файл…"
+            disabled={allTracksCount === 0}
+            aria-label="Список треков в файл"
+            icon={<TextSnippetIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
+            variant="ghost"
+            size="sm"
+          ></IconButton>
+        </div>
       </div>
     </div>
   );

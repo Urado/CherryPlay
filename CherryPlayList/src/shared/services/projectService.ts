@@ -19,6 +19,7 @@ import { Track } from '@core/types/track';
 import { validateProjectFile, validateProjectIntegrity } from '@shared/utils/projectValidation';
 
 import { ipcService } from './ipcService';
+import { normalizeLoadedLoudness } from './loudnessService';
 
 /**
  * Returns the directory portion of a file path (cross-platform, handles both / and \).
@@ -230,6 +231,7 @@ class ProjectService {
             path: item.path,
             name: item.name,
             duration: item.duration,
+            ...(item.loudness !== undefined ? { loudness: item.loudness } : {}),
           };
           savedItems.push(savedTrack);
         } else if (isProjectGroup(item)) {
@@ -309,11 +311,16 @@ class ProjectService {
       }
 
       if (savedItem.type === 'track') {
+        const normalizedLoudness =
+          savedItem.loudness !== undefined
+            ? normalizeLoadedLoudness(savedItem.loudness)
+            : undefined;
         const track: Track = {
           id: savedItem.id,
           path: savedItem.path,
           name: savedItem.name,
           duration: savedItem.duration,
+          ...(normalizedLoudness !== undefined ? { loudness: normalizedLoudness } : {}),
         };
         return track;
       } else if (savedItem.type === 'group') {

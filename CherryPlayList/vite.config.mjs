@@ -36,6 +36,8 @@ export default defineConfig({
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    'process.env.VITE_DEMO_LIVE': JSON.stringify(process.env.VITE_DEMO_LIVE ?? ''),
+    'process.env.VITE_APP_MODE': JSON.stringify(process.env.VITE_APP_MODE ?? ''),
   },
   build: {
     outDir: 'dist',
@@ -44,6 +46,21 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/partyHub': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
   resolve: {
     dedupe: ['react', 'react-dom'],

@@ -1,13 +1,16 @@
 import {
+  Button,
   formatDateInTimeZone,
   getDefaultTimeZone,
+  IconButton,
   sortPartiesByEventDateDesc,
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import LinkIcon from '@mui/icons-material/Link';
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
+import { useModalKeyboard } from '@shared/hooks';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
 import { useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
@@ -47,6 +50,15 @@ export const LinkPartyModal: React.FC = () => {
     }
   }, [modal, loadParties]);
 
+  const handleCancel = useCallback(() => {
+    closeModal();
+  }, [closeModal]);
+
+  const { handleOverlayKeyDown } = useModalKeyboard({
+    enabled: modal === 'linkParty',
+    onCancel: handleCancel,
+  });
+
   if (modal !== 'linkParty') {
     return null;
   }
@@ -62,15 +74,6 @@ export const LinkPartyModal: React.FC = () => {
       if (uploadPlaylist && items.length > 0) {
         const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
-        addNotification({
-          type: 'success',
-          message: `Плейлист привязан к вечеринке «${party.name}» и отправлен на сервер`,
-        });
-      } else {
-        addNotification({
-          type: 'success',
-          message: `Плейлист привязан к вечеринке «${party.name}»`,
-        });
       }
       closeModal();
     } catch (e) {
@@ -83,19 +86,8 @@ export const LinkPartyModal: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    closeModal();
-  };
-
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
       handleCancel();
     }
   };
@@ -111,10 +103,16 @@ export const LinkPartyModal: React.FC = () => {
     >
       <div className="modal-content link-party-modal-content">
         <div className="modal-header">
-          <h2 className="modal-title">Привязать к вечеринке</h2>
-          <button type="button" className="modal-close" onClick={handleCancel} aria-label="Закрыть">
-            <CloseIcon />
-          </button>
+          <h2 className="modal-title">Привязать существующую вечеринку</h2>
+          <IconButton
+            type="button"
+            className="modal-close"
+            onClick={handleCancel}
+            aria-label="Закрыть"
+            icon={<CloseIcon />}
+            variant="ghost"
+            size="md"
+          />
         </div>
 
         <div className="modal-body">
@@ -123,7 +121,8 @@ export const LinkPartyModal: React.FC = () => {
           ) : (
             <>
               <p className="link-party-modal-description">
-                Выберите вечеринку, созданную на сервере, чтобы связать с ней текущий плейлист.
+                Выберите вечеринку, уже созданную на сервере, чтобы привязать её к текущему проекту.
+                Новая вечеринка не создаётся, трансляция не запускается.
               </p>
 
               {loading && (
@@ -162,16 +161,21 @@ export const LinkPartyModal: React.FC = () => {
                             </span>
                           ) : null}
                         </div>
-                        <button
+                        <Button
                           type="button"
-                          className="modal-button primary link-party-modal-link-btn"
+                          className="modal-button link-party-modal-link-btn"
                           onClick={() => handleLink(party)}
                           disabled={linkingId !== null}
-                          aria-label={`Привязать к вечеринке ${party.name}`}
+                          loading={linkingId === party.id}
+                          loadingLabel="Привязка..."
+                          aria-label={`Привязать вечеринку ${party.name}`}
+                          title="Привязать эту вечеринку на сервере к текущему проекту"
+                          variant="primary"
+                          size="sm"
+                          startIcon={<LinkOutlinedIcon fontSize="small" />}
                         >
-                          <LinkIcon fontSize="small" />
-                          {linkingId === party.id ? 'Привязка...' : 'Привязать'}
-                        </button>
+                          Привязать
+                        </Button>
                       </li>
                     ))}
                   </ul>
@@ -182,9 +186,15 @@ export const LinkPartyModal: React.FC = () => {
         </div>
 
         <div className="modal-footer">
-          <button type="button" className="modal-button secondary" onClick={handleCancel}>
+          <Button
+            type="button"
+            className="modal-button"
+            onClick={handleCancel}
+            variant="secondary"
+            size="sm"
+          >
             Отмена
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -28,6 +28,13 @@
   --selected-bg: #3a4a5a;
   --selected-border: #6495ed;
 
+  /* Layout edit mode */
+  --layout-edit-accent: var(--accent-primary);
+  --layout-edit-air-size: 24px;
+  --layout-edit-stroke-color: color-mix(in srgb, var(--layout-edit-accent) 45%, transparent);
+  --layout-edit-surface: color-mix(in srgb, var(--layout-edit-accent) 8%, transparent);
+  --layout-edit-surface-hover: color-mix(in srgb, var(--layout-edit-accent) 22%, transparent);
+
   /* UI Colors */
   --ui-border: #3a3a3a;
   --ui-shadow: rgba(0, 0, 0, 0.3);

@@ -27,10 +27,11 @@
 
 ```bash
 npm run dist          # Текущая платформа
-npm run dist:win      # Windows
+npm run dist:win      # Windows zip + AIMP staging
+npm run dist:win:ci   # Windows zip без AIMP (как GitHub Release)
 npm run dist:mac      # macOS
 npm run dist:linux    # Linux
 npm run dist:all      # Все платформы
 ```
 
-Подробнее: см. `BUILD.md`
+Windows output: `release/CherryPlayList-{version}-x64.zip` (не NSIS). Скачать с Releases — [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробнее: [BUILD.md](BUILD.md).

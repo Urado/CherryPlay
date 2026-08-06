@@ -1,13 +1,8 @@
-import type { Layout, Zone } from '../../core/types/layout';
-import type { LayoutPreset } from '../stores/layoutStore';
+import type { LayoutPreset } from '@core/types/workspacePreset';
 
-function getLayoutZoneSignature(zone: Zone): string {
-  if (zone.type === 'workspace') {
-    return `workspace:${zone.workspaceType}`;
-  }
+import type { Layout } from '../../core/types/layout';
 
-  return `${zone.direction}(${zone.zones.map(getLayoutZoneSignature).join(',')})`;
-}
+import { getLayoutStructureSignature } from './layoutSignature';
 
 const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   simple: 'horizontal(workspace:playlist,workspace:fileBrowser)',
@@ -18,12 +13,11 @@ const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   'collections-vertical':
     'horizontal(workspace:playlist,vertical(workspace:collection,workspace:collection),workspace:fileBrowser)',
   player: 'horizontal(workspace:player,workspace:fileBrowser)',
-  party: 'horizontal(workspace:player,workspace:party)',
-  'aimp-party': 'horizontal(workspace:aimp,workspace:party)',
+  party: 'horizontal(workspace:player,workspace:party-editor,workspace:party-preview)',
 };
 
 export function getLayoutPresetFromLayout(layout: Layout): LayoutPreset | null {
-  const signature = getLayoutZoneSignature(layout.rootZone);
+  const signature = getLayoutStructureSignature(layout.rootZone);
 
   for (const [preset, expectedSignature] of Object.entries(LAYOUT_PRESET_SIGNATURES) as Array<
     [LayoutPreset, string]

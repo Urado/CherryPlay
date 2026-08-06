@@ -42,13 +42,12 @@ interface CollectionViewProps {
 }
 
 export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zoneId: _zoneId }) => {
-  // Create or get store for collection using the new projectStoreFactory
   const collectionStore = ensureProjectStore({
     workspaceId,
     initialName: 'New Collection',
     persist: true,
-    supportsGroups: true, // Collections now support groups
-    maxItems: null, // No limit
+    supportsGroups: true,
+    maxItems: null,
   });
   const collectionStoreRef = useRef(collectionStore);
   const exportMenuRef = useRef<HTMLDivElement | null>(null);
@@ -57,12 +56,10 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     collectionStoreRef.current = collectionStore;
   }, [collectionStore]);
 
-  // Get state from store
   const name = collectionStore((s: ProjectStoreState) => s.name);
   const items = collectionStore((s: ProjectStoreState) => s.items);
   const selectedItemIds = collectionStore((s: ProjectStoreState) => s.selectedItemIds);
 
-  // Get actions from store
   const setName = collectionStore((s: ProjectStoreState) => s.setName);
   const removeItem = collectionStore((s: ProjectStoreState) => s.removeItem);
   const addItems = collectionStore((s: ProjectStoreState) => s.addItems);
@@ -78,14 +75,11 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   const getAllTracksInOrder = collectionStore((s: ProjectStoreState) => s.getAllTracksInOrder);
   const clear = collectionStore((s: ProjectStoreState) => s.clear);
 
-  // Global history for undo/redo
   const undo = useGlobalHistoryStore((s) => s.undo);
   const redo = useGlobalHistoryStore((s) => s.redo);
 
-  // Flatten items for display (supports groups)
   const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
 
-  // Get flat list of tracks for duration loading
   const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
   const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
@@ -104,12 +98,10 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     enabled: getPlatformCapabilities().supportsNativeFileSystem,
   });
 
-  // Use unified playback preview hook
   const { activeTrackId, playerStatus, startPlayback, pausePlayback } = usePlaybackPreview({
     workspaceId,
   });
 
-  // Use unified selection with modifiers hook
   const { handleToggleSelect } = useSelectionWithModifiers({
     toggleSelection: toggleItemSelection,
     selectRange,
@@ -126,7 +118,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     return sanitized.length === 0 ? fallback : sanitized;
   }, [name]);
 
-  // Wrappers for compatibility with useWorkspaceDragAndDrop
   const addTracksWrapper = useCallback(
     (newTracks: Omit<Track, 'id'>[]) => addItems(newTracks),
     [addItems],
@@ -137,7 +128,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     [addItems],
   );
 
-  // Cross-workspace drag-drop executor
   const { executeMove, executeCopy } = useDragDropExecutor();
 
   const handleError = useCallback(
@@ -158,13 +148,11 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     onAddTracksAt: addTracksAtWrapper,
     onTracksAdded: loadDurationsForTracks,
     loadFolderTracks: ipcService.findAudioFilesRecursive.bind(ipcService),
-    // Unified move/copy executors (handles both same-workspace and cross-workspace)
     onMove: executeMove,
     onCopy: executeCopy,
     onError: handleError,
   });
 
-  // Keyboard shortcuts for list operations
   useListShortcuts({
     'list.undo': undo,
     'list.redo': redo,
@@ -179,7 +167,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     [tracks],
   );
 
-  // Check if can create group (need 2+ consecutive selected items at root level)
   const canCreateGroup = useMemo(() => {
     if (selectedItemIds.size < 2) return false;
     const selectedIndices: number[] = [];
@@ -197,7 +184,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     return true;
   }, [selectedItemIds, items]);
 
-  // Handle create group
   const handleCreateGroup = useCallback(() => {
     if (!canCreateGroup) return;
     const selectedIds = Array.from(selectedItemIds);
@@ -209,7 +195,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     }
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
-  // Handle clear all
   const handleClearAll = useCallback(() => {
     if (tracks.length === 0) return;
     clear();
@@ -234,11 +219,8 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
 
   const handleExportAsJSON = useCallback(async () => {
     setExportMenuOpen(false);
-    const saved = await exportCollectionAsJson({ name, tracks });
-    if (saved) {
-      addNotification({ type: 'success', message: 'Коллекция экспортирована в JSON' });
-    }
-  }, [addNotification, name, tracks]);
+    await exportCollectionAsJson({ name, tracks });
+  }, [name, tracks]);
 
   const handleCopyTracks = useCallback(async () => {
     setExportMenuOpen(false);
@@ -249,12 +231,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
     if (!result) {
       return;
     }
-    if (result.failed.length === 0) {
-      addNotification({
-        type: 'success',
-        message: `Треки скопированы в папку: ${result.folderPath}`,
-      });
-    } else {
+    if (result.failed.length > 0) {
       addNotification({
         type: 'warning',
         message: `Скопировано: ${result.successful.length}. Ошибок: ${result.failed.length}`,
@@ -265,26 +242,33 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   const toggleExportMenu = useCallback(() => {
     const tracksLength = tracks.length;
     if (tracksLength === 0) {
-      addNotification({ type: 'warning', message: 'Коллекция пуста' });
+      addNotification({ type: 'warning', message: 'Подборка пуста' });
       return;
     }
     setExportMenuOpen((prev) => !prev);
   }, [addNotification, tracks]);
 
-  // Export button as extra action for WorkspaceHeader
   const exportButton = (
     <div className="collection-export-wrapper" ref={exportMenuRef}>
       <button
+        type="button"
         onClick={toggleExportMenu}
         className="playlist-header-action-icon"
-        title="Экспортировать коллекцию"
+        title="Экспортировать подборку"
+        aria-label="Экспортировать подборку"
+        aria-haspopup="menu"
+        aria-expanded={exportMenuOpen}
       >
         <FileDownloadIcon style={{ fontSize: '20px' }} />
       </button>
       {exportMenuOpen && (
-        <div className="collection-export-menu">
-          <button onClick={handleExportAsJSON}>Экспорт в JSON</button>
-          <button onClick={handleCopyTracks}>Скопировать в папку</button>
+        <div className="collection-export-menu" role="menu" aria-label="Экспорт подборки">
+          <button type="button" role="menuitem" onClick={handleExportAsJSON}>
+            Экспорт в JSON
+          </button>
+          <button type="button" role="menuitem" onClick={handleCopyTracks}>
+            Скопировать в папку
+          </button>
         </div>
       )}
     </div>
@@ -297,7 +281,7 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
         onNameChange={setName}
         itemCount={tracks.length}
         totalDuration={totalDuration}
-        placeholder="Название коллекции"
+        placeholder="Название подборки"
         hasSelectedItems={hasSelectedTracks}
         selectedCount={selectedItemIds.size}
         onSelectAll={selectAll}

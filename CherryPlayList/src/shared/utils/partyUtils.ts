@@ -24,15 +24,52 @@ export interface PlayerItemForApi {
 /**
  * Имя трека для API/превью вечеринки с учётом настроек отображения (графемы Unicode).
  */
+export function normalizePartyTrackDisplaySettings(
+  settings: PartyTrackDisplaySettings,
+): PartyTrackDisplaySettings {
+  const mode = settings.stripLeadingCharsMode === 'untilDelimiter' ? 'untilDelimiter' : 'count';
+  const delimiterRaw = settings.stripLeadingCharsDelimiter;
+  const delimiter =
+    typeof delimiterRaw === 'string' && delimiterRaw.length > 0
+      ? delimiterRaw.slice(0, 1)
+      : DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsDelimiter;
+  const count =
+    Number.isFinite(settings.stripLeadingCharsCount) && settings.stripLeadingCharsCount > 0
+      ? Math.max(0, Math.floor(settings.stripLeadingCharsCount))
+      : 0;
+
+  return {
+    stripLeadingCharsEnabled: Boolean(settings.stripLeadingCharsEnabled),
+    stripLeadingCharsMode: mode,
+    stripLeadingCharsCount: count,
+    stripLeadingCharsDelimiter: delimiter,
+  };
+}
+
 export function applyPartyTrackDisplayToTrackName(
   name: string,
   settings: PartyTrackDisplaySettings = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
 ): string {
-  if (!settings.stripLeadingCharsEnabled || settings.stripLeadingCharsCount <= 0) {
+  const normalized = normalizePartyTrackDisplaySettings(settings);
+  if (!normalized.stripLeadingCharsEnabled) {
+    return name;
+  }
+
+  if (normalized.stripLeadingCharsMode === 'untilDelimiter') {
+    const delimiter = normalized.stripLeadingCharsDelimiter;
+    const index = name.indexOf(delimiter);
+    if (index === -1) {
+      return name;
+    }
+    const rest = name.slice(index + delimiter.length);
+    return rest.length > 0 ? rest : name;
+  }
+
+  if (normalized.stripLeadingCharsCount <= 0) {
     return name;
   }
   const chars = [...name];
-  const n = Math.min(Math.floor(settings.stripLeadingCharsCount), chars.length);
+  const n = Math.min(normalized.stripLeadingCharsCount, chars.length);
   const rest = chars.slice(n).join('');
   return rest.length > 0 ? rest : name;
 }
@@ -122,6 +159,21 @@ export function countTotalTracks(items: ProjectItem[]): number {
     }
   }
   return count;
+}
+
+/** Collects track ids from a component playlist tree (preview / playback helpers). */
+export function collectComponentPlaylistTrackIds(items: ComponentPlayerItem[]): string[] {
+  const ids: string[] = [];
+  for (const item of items) {
+    if (item.type === 'track') {
+      ids.push(item.id);
+      continue;
+    }
+    if (item.type === 'group' && item.items) {
+      ids.push(...collectComponentPlaylistTrackIds(item.items));
+    }
+  }
+  return ids;
 }
 
 /**
