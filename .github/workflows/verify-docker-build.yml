@@ -1,0 +1,59 @@
+name: Verify Docker Build
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'CherryPlayServer/**'
+      - 'CherryPlayWeb/**'
+      - 'CherryPlayComponents/**'
+      - 'CherryPlayServer/Dockerfile'
+      - 'CherryPlayWeb/Dockerfile'
+      - '.github/workflows/verify-docker-build.yml'
+
+jobs:
+  verify-server:
+    name: Verify Server Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./CherryPlayServer
+          file: ./CherryPlayServer/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  verify-web:
+    name: Verify Web Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./CherryPlayWeb/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

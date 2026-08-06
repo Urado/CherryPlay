@@ -4,11 +4,13 @@
 
 ## Архитектура
 
-1. **Build Workflow** (`build-images.yml`) — автоматически собирает образы при изменениях в коде
-2. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при создании релиза
-3. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release
+1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
+2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
+3. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
+4. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при создании релиза
+5. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release
 
-При создании GitHub Release (не draft) workflows **2** и **3** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`).
+При создании GitHub Release (не draft) workflows **4** и **5** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`).
 
 ### Сетевое устройство и Nginx
 
@@ -248,7 +250,9 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{versi
 ```
 .github/
   workflows/
-    build-images.yml              # Автоматическая сборка при изменениях
+    tests.yml                     # Server Tests (.NET)
+    verify-docker-build.yml       # Проверка Docker-сборки на PR (без push)
+    build-images.yml              # Build & Push Images → GHCR (push в main/develop)
     release-and-deploy.yml        # Docker-образы и деплой при релизе
     release-desktop-windows.yml   # Windows zip CherryPlayList → asset Release
   FIRST_DEPLOY.md                 # Инструкция для первого деплоя

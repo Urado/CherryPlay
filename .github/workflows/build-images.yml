@@ -1,4 +1,4 @@
-name: Build Docker Images
+name: Build & Push Images
 
 on:
   push:
@@ -12,16 +12,6 @@ on:
       - 'CherryPlayServer/Dockerfile'
       - 'CherryPlayWeb/Dockerfile'
       - '.github/workflows/build-images.yml'
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - 'CherryPlayServer/**'
-      - 'CherryPlayWeb/**'
-      - 'CherryPlayComponents/**'
-      - 'CherryPlayServer/Dockerfile'
-      - 'CherryPlayWeb/Dockerfile'
 
 env:
   REGISTRY: ghcr.io
@@ -62,7 +52,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ steps.image-name-server.outputs.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=sha,prefix=sha-,format=short
 
       - name: Build and push server image
@@ -111,7 +100,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ steps.image-name-web.outputs.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=sha,prefix=sha-,format=short
 
       - name: Build and push web image
