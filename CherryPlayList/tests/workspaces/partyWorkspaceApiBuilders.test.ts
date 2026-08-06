@@ -1,6 +1,8 @@
 jest.mock('@cherryplay/components', () => ({
   convertLocalDateTimeToUtc: (value: string, tz: string) => `utc:${value}@${tz}`,
   getDefaultTimeZone: () => 'Europe/Moscow',
+  getDefaultCustomizationSettings: () => ({}),
+  DEFAULT_PARTY_THEME_ID: 'basic',
 }));
 
 jest.mock('../../src/workspaces/party/partyWorkspaceUtils', () => ({

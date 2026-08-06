@@ -387,7 +387,6 @@ function normalizeImportedSettings(
 export function applySettingsImport(bundle: SettingsExportBundle): SettingsImportResult {
   const normalizedSettings = normalizeImportedSettings(bundle.settings);
   const settingsFieldCount = Object.keys(normalizedSettings).length;
-  useSettingsStore.setState(normalizedSettings);
 
   prepareLayoutStateForSettingsImport();
 
@@ -432,6 +431,8 @@ export function applySettingsImport(bundle: SettingsExportBundle): SettingsImpor
       });
     }
   }
+
+  useSettingsStore.setState(normalizedSettings);
 
   return {
     settingsFieldCount,

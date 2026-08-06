@@ -6,6 +6,9 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   roots: ['<rootDir>/tests'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  transform: {
+    '^.+\\.tsx?$': '<rootDir>/tests/transformers/stripImportMeta.cjs',
+  },
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.ts',
     '\\.(jpg|jpeg|png|gif|webp|svg|mp3|wav|flac)$': '<rootDir>/tests/__mocks__/fileMock.ts',
@@ -16,7 +19,6 @@ const config: Config = {
     '^@workspaces/(.*)$': '<rootDir>/src/workspaces/$1',
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
-    // Ensure all packages render using the same React instance in Jest.
     '^react$': '<rootDir>/node_modules/react',
     '^react-dom$': '<rootDir>/node_modules/react-dom',
     '^react-dom/client$': '<rootDir>/node_modules/react-dom/client',
@@ -29,11 +31,6 @@ const config: Config = {
     '^\\.\\./\\.\\./src/hooks/(.*)$': '<rootDir>/src/shared/hooks/$1',
     '^\\.\\./\\.\\./src/utils/(.*)$': '<rootDir>/src/shared/utils/$1',
     '^\\.\\./\\.\\./src/types/(.*)$': '<rootDir>/src/core/types/$1',
-  },
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.jest.json',
-    },
   },
 };
 

@@ -1,5 +1,6 @@
 jest.mock('@cherryplay/components', () => ({
   getDefaultCustomizationSettings: () => ({}),
+  DEFAULT_PARTY_THEME_ID: 'basic',
 }));
 
 import {
