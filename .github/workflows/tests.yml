@@ -8,8 +8,6 @@ on:
   push:
     branches:
       - main
-  schedule:
-    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
@@ -73,7 +71,6 @@ jobs:
       needs.fast-tests.result == 'success' &&
       (
         github.event_name == 'push' ||
-        github.event_name == 'schedule' ||
         github.event_name == 'workflow_dispatch' ||
         needs.detect-integrationdb-changes.outputs.should_run == 'true'
       )
