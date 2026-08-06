@@ -93,6 +93,7 @@ Proxy полезен в **live**-режиме (`dev:web:live`). В **fixtures** 
 | `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAudioDeviceSelection`                     | ✗                    | ✗                     |
 | `supportsRealAuth`                                                                                                                        | ✗                    | ✓ (`VITE_DEMO_LIVE=1`) |
 | `supportsAimpWorkspace`                                                                                                                   | ✓ (simulated)        | ✓ (simulated)          |
+| `supportsLoudnessAnalysis`                                                                                                                | ✓ (simulated)        | ✓ (simulated)          |
 
 Для gating в коде используйте `getPlatformCapabilities()`, `isDemoLiveMode()` / `isDemoFixturesMode()` или guards (`guardNativeFileOperation`, `guardPlaybackUnavailable`, `isDemoAuthMode`), **не** `getAppMode() === 'demo'` для feature gating. Косметика демо (баннер, title) может читать `getAppMode()` / live-флаг.
 
@@ -142,6 +143,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 - **Party / auth (live)** — local login/register против сервера; данные вечеринок с API; SignalR при Online ON через proxy. Гостевой URL (`getPartyUrl`) при пустом `serverUrl` (Vite proxy / same-origin) — `http://localhost:3000/party/{shortCode}`; при непустом `VITE_API_URL` — эвристика host + `:5000`→`:3000` (как в Electron).
 - **Загрузка демо-проекта** — меню **Файл** → **«Учебный демо-проект…»** (`title`: «Загружает учебный демо-проект, не настоящую вечеринку») или `npm run dev:web:project` (fixtures; live-флаг выключен). При `meta.isDirty` — confirm перед отбрасыванием изменений (см. [Save/Load](./modules/systems/save-load.md)).
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех без записи файлов на диск; **без** success-toast (модалка закрывается).
+- **Нормализация громкости (simulated)** — `supportsLoudnessAnalysis: true`; Player gear (`TrackSettingsModal` isGlobal) / track controls доступны для UI-работы в `dev:web` / `dev:web:project`. IPC `audio:analyzeLoudness` / `audio:statAudioFile` обслуживает `WebDemoPlatform` через детерминированные профили (`demoLoudnessAnalyzer.ts`), **без** FFmpeg. `sample.cherry` seeded с `track.loudness`. Реальный local playback по-прежнему недоступен. См. [loudness](./modules/audio/loudness-normalization.md), [Platform](./modules/platform/README.md).
 - **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-settings`, `cherryplaylist-workspaces` (включая `builtinLayoutOverrides`), `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Ключ `cherryplaylist-auth`: в **fixtures** тоже очищается; в **live** (`VITE_DEMO_LIVE=1`) **сохраняется**, чтобы сессия переживала F5. Остальные ключи в live по-прежнему сбрасываются — workspace/layout/overrides после полной перезагрузки не восстанавливаются. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
 
 ---
@@ -161,6 +163,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 | **Реальное аудио**         | Превью/демо-плеер — **«Не доступно в демо»**                                                                                                         | То же                                                                                                          |
 | **Коллекции (Collection)** | Экспорт JSON / копирование / импорт — **«Не доступно в демо»**                                                                                       | То же                                                                                                          |
 | **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`, фикстурный плейлист); desktop без изменений                                                         | То же                                                                                                          |
+| **Loudness**               | ✓ UI + simulated scan (фикстуры); без FFmpeg; без реального local playback                                                                           | То же                                                                                                          |
 | **Party**                  | Фикстуры `DEMODK`; без live REST/SignalR                                                                                                             | REST/SignalR к серверу при Online ON                                                                           |
 | **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Local email/password (`/auth/login`); OAuth вне scope                                                          |
 | **Трансляция / Онлайн**    | `enableStreaming` ↔ `networkEnabled`; hub **не** стартует                                                                                            | `enableStreaming` ↔ `networkEnabled`; hub при Online ON + `supportsRealAuth`                                   |
@@ -191,26 +194,28 @@ npm run dev
 1. `cd CherryPlayList && npm run dev:web` — без CherryPlayServer; нет красных ошибок при обходе file browser → плейлист → reorder → undo/redo.
 2. Online ON в Settings — UI **не** утверждает, что сеть принудительно отключена; SignalR **не** поднимается.
 3. DnD / Save / Play-preview — toast **`warning`** **«Не доступно в демо»** где capability блокирует.
-4. `npm run dev:web:project` или меню **Файл** → **«Учебный демо-проект…»** — `sample.cherry`.
-5. Экспорт — модалка закрывается без success-toast; файлы на диск не пишутся.
-6. [Режим редактирования layout](./layout-edit-mode.md) — после F5 workspace / overrides **не** сохраняются (сброс AC12).
+4. `npm run dev:web:project` или меню **Файл** → **«Учебный демо-проект…»** — `sample.cherry` (треки с seeded `track.loudness`).
+5. Player gear / track popover — loudness toggles и scan UI доступны; rescan/session gate возвращают детерминированные профили (без FFmpeg). Local playback по-прежнему **«Не доступно в демо»**.
+6. Экспорт — модалка закрывается без success-toast; файлы на диск не пишутся.
+7. [Режим редактирования layout](./layout-edit-mode.md) — после F5 workspace / overrides **не** сохраняются (сброс AC12).
 
 ### Live
 
-7. Поднять CherryPlayServer на `:5000`, затем `npm run dev:web:live`.
-8. Online ON — SignalR negotiate/connect через proxy (`/partyHub`); local login работает.
-9. Online OFF — hub неактивен; баннеры согласованы с настройкой.
-10. Полная перезагрузка страницы — auth в live сохраняется (AC12 не чистит `cherryplaylist-auth`); workspace/layout/overrides сбрасываются.
+8. Поднять CherryPlayServer на `:5000`, затем `npm run dev:web:live`.
+9. Online ON — SignalR negotiate/connect через proxy (`/partyHub`); local login работает.
+10. Online OFF — hub неактивен; баннеры согласованы с настройкой.
+11. Полная перезагрузка страницы — auth в live сохраняется (AC12 не чистит `cherryplaylist-auth`); workspace/layout/overrides сбрасываются.
 
 ### Electron
 
-11. `npm run dev` — Electron как до введения веб-демо (preload/IPC без изменений от web-demo).
+12. `npm run dev` — Electron как до введения веб-демо (preload/IPC без изменений от web-demo).
 
 ---
 
 ## Для контрибьюторов
 
 - Платформа и capabilities: [Platform layer](./modules/platform/README.md); `isDemoLiveMode` / `isDemoFixturesMode` — `src/shared/platform/demoLiveMode.ts`.
+- Loudness (simulated): [loudness-normalization.md](./modules/audio/loudness-normalization.md); фикстуры — `src/shared/platform/fixtures/demoLoudnessAnalyzer.ts`.
 - Онлайн / `networkEnabled`: [Settings Store](./modules/stores/settings-store.md), [Streaming](./modules/systems/streaming.md), [`onlineNetworkPolicy.ts`](../src/shared/streaming/onlineNetworkPolicy.ts).
 - Vite proxy: `vite.config.mjs` (`server.proxy`); URL сервера в демо: `src/shared/platform/fixtures/demoConfig.ts`.
 - Режим редактирования layout: [layout-edit-mode.md](./layout-edit-mode.md).

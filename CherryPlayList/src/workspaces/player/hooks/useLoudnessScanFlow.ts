@@ -188,17 +188,9 @@ export function useLoudnessScanFlow() {
     [runScan],
   );
 
-  const scanAllTracks = useCallback(
-    async (tracks: Track[]): Promise<void> => {
-      await runScan(tracks, 'Расчёт нормализации громкости');
-    },
-    [runScan],
-  );
-
   return {
     scanState,
     cancelScan,
     ensureSessionGateReady,
-    scanAllTracks,
   };
 }

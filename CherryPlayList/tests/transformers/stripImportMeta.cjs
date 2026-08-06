@@ -26,10 +26,6 @@ module.exports = {
     return tsTransformer.process(stripped, sourcePath, options);
   },
   getCacheKey(sourceText, sourcePath, options) {
-    return tsTransformer.getCacheKey(
-      `strip-import-meta:${sourceText}`,
-      sourcePath,
-      options,
-    );
+    return tsTransformer.getCacheKey(`strip-import-meta:${sourceText}`, sourcePath, options);
   },
 };

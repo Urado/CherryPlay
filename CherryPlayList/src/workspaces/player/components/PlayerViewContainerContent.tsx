@@ -6,7 +6,6 @@ import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { LoudnessScanProgressModal } from '@shared/components/loudness/LoudnessScanProgressModal';
 import { useWorkspaceDragAndDrop, useTrackDuration, useDragDropExecutor } from '@shared/hooks';
-import { getPlatformCapabilities } from '@shared/platform';
 import { fileService, ipcService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
@@ -148,19 +147,9 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const isPreparationMode = mode === 'preparation';
 
-  const { showHourDividers, enableStreaming, loudnessNormalizationEnabled } = useSettingsStore();
-  const { scanState, cancelScan, ensureSessionGateReady, scanAllTracks } = useLoudnessScanFlow();
+  const { showHourDividers, enableStreaming } = useSettingsStore();
+  const { scanState, cancelScan, ensureSessionGateReady } = useLoudnessScanFlow();
 
-  const supportsLoudnessAnalysis = useMemo(() => {
-    try {
-      return getPlatformCapabilities().supportsLoudnessAnalysis;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const showLoudnessBatchButton =
-    isPreparationMode && loudnessNormalizationEnabled && supportsLoudnessAnalysis;
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
       return isTrackOrGroupDisabledUtil(
@@ -263,13 +252,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     isTrackActive,
     beforeStartSession,
   });
-
-  const handleCalculateLoudness = useCallback(() => {
-    if (allTracks.length === 0) {
-      return;
-    }
-    void scanAllTracks(allTracks);
-  }, [allTracks, scanAllTracks]);
 
   const handleResetSession = useCallback(async () => {
     if (enableStreaming && linkedParty) {
@@ -552,9 +534,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         onResetSession={handleResetSession}
         onOpenGlobalSettings={handleOpenGlobalSettings}
         onExportTracksToText={handleExportTracksToText}
-        onCalculateLoudness={handleCalculateLoudness}
-        showLoudnessBatchButton={showLoudnessBatchButton}
-        isLoudnessBatchScanning={scanState.open}
         displayItems={displayItems}
         zoneId={zoneId}
         selectedItemIds={selectedItemIds}

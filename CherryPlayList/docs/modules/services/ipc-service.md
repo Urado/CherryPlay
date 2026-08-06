@@ -41,16 +41,22 @@ CSP в `electron/main.ts` разрешает `cherryplay-audio:` в `default-src
 
 ### Audio: `audio:analyzeLoudness`
 
-Измерение integrated loudness (LUFS) и true peak через FFmpeg `ebur128=peak=true` в main process (`electron/audio/loudnessScanner.ts`). Исходные аудиофайлы **не изменяются**.
+Один IPC-контракт на всех платформах с `supportsLoudnessAnalysis`. Исходные аудиофайлы **не изменяются**.
+
+| Runtime | Реализация |
+| ------- | ---------- |
+| **Electron** | FFmpeg `ebur128=peak=true` в main (`electron/audio/loudnessScanner.ts`) |
+| **Web demo** | Детерминированные фикстуры (`demoLoudnessAnalyzer.ts` via `WebDemoPlatform`) — без FFmpeg |
+| **Capacitor stub** | Capability `false`; канал не используется UI |
 
 **Запрос** (`ipcService.analyzeLoudness(path, targetLufs)`):
 
 | Поле         | Тип      | Обязательно | Описание                                                             |
 | ------------ | -------- | ----------- | -------------------------------------------------------------------- |
-| `path`       | `string` | да          | Абсолютный путь к локальному аудиофайлу                              |
+| `path`       | `string` | да          | Абсолютный путь к локальному аудиофайлу (в demo — путь из фикстур)   |
 | `targetLufs` | `number` | нет         | Целевая громкость; по умолчанию `-18`; допустимый диапазон `-70`…`0` |
 
-**Безопасность:** та же валидация, что у `audio:getDuration` — `validatePath` (anti-traversal), `path.resolve`, `isAudioFile()`, лимит размера файла (`MAX_AUDIO_FILE_BYTES`).
+**Безопасность (Electron):** та же валидация, что у `audio:getDuration` — `validatePath` (anti-traversal), `path.resolve`, `isAudioFile()`, лимит размера файла (`MAX_AUDIO_FILE_BYTES`). В demo — проверка demo-audio path / наличия профиля.
 
 **Ответ (envelope):**
 
@@ -65,11 +71,11 @@ CSP в `electron/main.ts` разрешает `cherryplay-audio:` в `default-src
 - **`status: 'ok'`** — `integratedLufs`, `lraLowLufs` (optional), `lraLu` (optional), `truePeakDb`, `trackGainDb` (с headroom −1 dBTP), `fileMtime`, `algorithmVersion` (`1`)
 - **`status: 'error'`** — `errorMessage` (ошибка скана; IPC envelope при этом `success: true`)
 
-Сканирование в main serializes через внутреннюю очередь (один FFmpeg за раз). Renderer: `loudnessService.scanTrack` → `PlatformAudioAdapter` / `ipcService`.
+Electron: скан в main serializes через внутреннюю очередь (один FFmpeg за раз). Renderer: `loudnessService.scanTrack` → `PlatformAudioAdapter` / `ipcService`. Подробнее: [Нормализация громкости](../audio/loudness-normalization.md), [веб-демо](../../web-demo.md).
 
 ### Audio: `audio:statAudioFile`
 
-Лёгкий `stat` для проверки staleness без полного скана loudness.
+Лёгкий `stat` для проверки staleness без полного скана loudness. Electron — `fs.stat`; web demo — фикстурный `mtimeMs`/`size` из `demoLoudnessAnalyzer` / demo file tree.
 
 **Запрос:** `{ path: string }` — та же path-валидация, что у `audio:analyzeLoudness`.
 

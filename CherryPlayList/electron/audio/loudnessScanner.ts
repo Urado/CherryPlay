@@ -38,9 +38,7 @@ const MIN_TRUE_PEAK_DB = -60;
 const MAX_TRUE_PEAK_DB = 10;
 
 export type AnalyzeLoudnessOptions = {
-  /** When provided, skips an extra fs.stat for mtime (e.g. from IPC validation). */
   fileMtime?: number;
-  /** Used to scale FFmpeg timeout; optional but recommended when known. */
   fileSizeBytes?: number;
 };
 
@@ -57,6 +55,10 @@ function isFiniteInRange(value: number, min: number, max: number): boolean {
   return Number.isFinite(value) && value >= min && value <= max;
 }
 
+function isInsideAsarArchive(filePath: string): boolean {
+  return /(?:^|[/\\])app\.asar[/\\]/.test(filePath);
+}
+
 function parseTpkPeakValues(tpkValues: string): number | null {
   const peaks = tpkValues
     .trim()
@@ -66,9 +68,6 @@ function parseTpkPeakValues(tpkValues: string): number | null {
   return peaks.length > 0 ? Math.max(...peaks) : null;
 }
 
-/**
- * Prefer dBTP (true peak) over dBFS (sample peak) when FFmpeg reports both.
- */
 function parseTruePeakDb(searchText: string): number | null {
   const peakDbtpMatch = searchText.match(/Peak:\s*([-\d.]+)\s+dBTP/i);
   if (peakDbtpMatch) {
@@ -106,9 +105,6 @@ function computeFfmpegTimeoutMs(fileSizeBytes?: number): number {
   );
 }
 
-/**
- * Parse integrated LUFS and true peak from FFmpeg ebur128 stderr (Summary section).
- */
 export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
   const summaryIndex = stderr.lastIndexOf('Summary:');
   const searchText = summaryIndex >= 0 ? stderr.slice(summaryIndex) : stderr;
@@ -161,10 +157,6 @@ export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
   return { integratedLufs, lraLowLufs, lraLu, truePeakDb };
 }
 
-/**
- * Compute per-track gain in dB with −1 dBTP headroom cap.
- * @deprecated Prefer {@link computeAutoGainDb} from contracts — kept for existing imports.
- */
 export function computeTrackGainDb(
   integratedLufs: number,
   truePeakDb: number,
@@ -176,25 +168,27 @@ export function computeTrackGainDb(
 
 function getFfmpegCandidatePaths(): string[] {
   const candidates: string[] = [];
-
-  if (typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0) {
-    candidates.push(ffmpegStaticPath);
-    if (app.isPackaged) {
-      candidates.push(ffmpegStaticPath.replace('app.asar', 'app.asar.unpacked'));
-    }
-  }
+  const staticPath =
+    typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0 ? ffmpegStaticPath : null;
 
   if (app.isPackaged) {
     const executableName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
     candidates.push(path.join(process.resourcesPath, 'ffmpeg-static', executableName));
+
+    if (staticPath) {
+      if (isInsideAsarArchive(staticPath)) {
+        candidates.push(staticPath.replace('app.asar', 'app.asar.unpacked'));
+      } else {
+        candidates.push(staticPath);
+      }
+    }
+  } else if (staticPath) {
+    candidates.push(staticPath);
   }
 
-  return [...new Set(candidates)];
+  return [...new Set(candidates)].filter((candidatePath) => !isInsideAsarArchive(candidatePath));
 }
 
-/**
- * Resolve bundled ffmpeg binary path (dev, asar-unpacked, or extraResources).
- */
 export function resolveFfmpegPath(): string | null {
   return getFfmpegCandidatePaths().find((candidatePath) => fs.existsSync(candidatePath)) ?? null;
 }
@@ -268,9 +262,6 @@ function scanError(message: string): LoudnessScanError {
   return { status: 'error', errorMessage: message };
 }
 
-/**
- * Analyze loudness for a local audio file using FFmpeg ebur128.
- */
 export async function analyzeLoudness(
   filePath: string,
   targetLufs: number = DEFAULT_TARGET_LUFS,

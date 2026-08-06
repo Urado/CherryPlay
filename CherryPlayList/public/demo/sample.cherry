@@ -7,28 +7,68 @@
       "id": "demo-track-1",
       "path": "/demo/music/Artist A/Album One/morning-light.mp3",
       "name": "Morning Light",
-      "duration": 245
+      "duration": 245,
+      "loudness": {
+        "status": "ok",
+        "integratedLufs": -14.2,
+        "lraLowLufs": -22.1,
+        "lraLu": 8.4,
+        "truePeakDb": -1.5,
+        "trackGainDb": -3.8,
+        "fileMtime": 1767268800000,
+        "algorithmVersion": 1
+      }
     },
     {
       "type": "track",
       "id": "demo-track-2",
       "path": "/demo/music/Artist A/Album One/evening-echo.mp3",
       "name": "Evening Echo",
-      "duration": 312
+      "duration": 312,
+      "loudness": {
+        "status": "ok",
+        "integratedLufs": -22.6,
+        "lraLowLufs": -31.5,
+        "lraLu": 11.2,
+        "truePeakDb": -3.4,
+        "trackGainDb": 2.4,
+        "fileMtime": 1767268800000,
+        "algorithmVersion": 1
+      }
     },
     {
       "type": "track",
       "id": "demo-track-3",
       "path": "/demo/music/Artist B/starlight.mp3",
       "name": "Starlight",
-      "duration": 198
+      "duration": 198,
+      "loudness": {
+        "status": "ok",
+        "integratedLufs": -16.8,
+        "lraLowLufs": -24.3,
+        "lraLu": 9.6,
+        "truePeakDb": -0.9,
+        "trackGainDb": -1.2,
+        "fileMtime": 1767268800000,
+        "algorithmVersion": 1
+      }
     },
     {
       "type": "track",
       "id": "demo-track-4",
       "path": "/demo/music/demo-track.mp3",
       "name": "Demo Track",
-      "duration": 180
+      "duration": 180,
+      "loudness": {
+        "status": "ok",
+        "integratedLufs": -19.4,
+        "lraLowLufs": -28.7,
+        "lraLu": 10.0,
+        "truePeakDb": -2.3,
+        "trackGainDb": 1.3,
+        "fileMtime": 1767268800000,
+        "algorithmVersion": 1
+      }
     }
   ],
   "rootItems": ["demo-track-1", "demo-track-2", "demo-track-3", "demo-track-4"],

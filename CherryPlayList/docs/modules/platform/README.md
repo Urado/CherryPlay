@@ -81,7 +81,7 @@ flowchart TB
 | `supportsProjectPersistence`   |    ✓     |        ✗        |       ✗       |        ✗         |
 | `supportsAimpWorkspace`        |    ✓     |  ✓ (simulated)  | ✓ (simulated) |        ✗         |
 | `supportsAudioDeviceSelection` |    ✓     |        ✗        |       ✗       |        ✗         |
-| `supportsLoudnessAnalysis`     |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsLoudnessAnalysis`     |    ✓     |  ✓ (simulated)  | ✓ (simulated) |        ✗         |
 | `supportsRealAuth`             |    ✓     |        ✗        |       ✓       |        ✗         |
 | `simulatesExport`              |    ✗     |        ✓        |       ✓       |        ✗         |
 | `usesFixtureFileBrowser`       |    ✗     |        ✓        |       ✓       |        ✗         |
@@ -89,6 +89,8 @@ flowchart TB
 В mode `demo` флаг `supportsRealAuth` берётся из `isDemoLiveMode()` (`VITE_DEMO_LIVE=1`). Остальные demo-capabilities одинаковы для fixtures и live.
 
 **AIMP** — в Electron: реальный named-pipe bridge; в **web demo** (fixtures и live): `supportsAimpWorkspace === true` с симулированным `WebDemoPlatform.aimp` (фикстурный плейлист/playback, без AIMP.exe). Capacitor stub: `false`.
+
+**Loudness** — в Electron: FFmpeg ebur128; в **web demo**: `supportsLoudnessAnalysis === true` с детерминированными фикстурами (`demoLoudnessAnalyzer`, IPC `audio:analyzeLoudness` / `audio:statAudioFile`), без FFmpeg. Capacitor stub: `false`.
 
 **Capacitor stub:** все capability-флаги `false` (как у неготовых фич), guards показывают «Недоступно на этой платформе». После Etap 0–5 [Android brief](../../android-capacitor-brief.md) флаги включаются по мере появления плагинов — матрицу обновлять вместе с `derivePlatformCapabilities`.
 
@@ -149,6 +151,7 @@ flowchart TB
 | `src/bootstrap.ts`                            | Выбор платформы                           |
 | `src/shared/platform/platformCapabilities.ts` | Матрица capabilities                      |
 | `src/shared/platform/demoLiveMode.ts`         | `isDemoLiveMode` / `isDemoFixturesMode`   |
+| `src/shared/platform/fixtures/demoLoudnessAnalyzer.ts` | Demo simulated `audio:analyzeLoudness` / `audio:statAudioFile` |
 | `src/shared/platform/platformContext.ts`      | Singleton platform + refresh capabilities |
 | `src/shared/platform/capacitorPlatform.ts`    | Stub для Etap 0+                          |
 | `src/shared/hooks/usePlatformCapabilities.ts` | React hook                                |

@@ -4,6 +4,10 @@ import { DEMO_UNAVAILABLE_MESSAGE, demoUnavailableResponse } from './demoUnavail
 import { createDemoAimpBridgeState } from './fixtures/demoAimpBridge';
 import { getDemoConfigPath, getDemoServerUrl, setDemoServerUrl } from './fixtures/demoConfig';
 import {
+  handleDemoAnalyzeLoudness,
+  handleDemoStatAudioFile,
+} from './fixtures/demoLoudnessAnalyzer';
+import {
   DEMO_MUSIC_ROOT,
   findDemoAudioFilesRecursive,
   listDemoDirectory,
@@ -93,10 +97,14 @@ export class WebDemoPlatform implements PlatformAPI {
         });
       }
 
+      case 'audio:analyzeLoudness':
+        return Promise.resolve(handleDemoAnalyzeLoudness(payload));
+
+      case 'audio:statAudioFile':
+        return Promise.resolve(handleDemoStatAudioFile(payload));
+
       case 'audio:getDuration':
       case 'audio:getFileUrl':
-      case 'audio:analyzeLoudness':
-      case 'audio:statAudioFile':
         return Promise.resolve(demoUnavailableResponse());
 
       case 'project:save':

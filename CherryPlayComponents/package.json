@@ -4,6 +4,9 @@
   "description": "Shared React components for CherryPlay playlist display",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc && node scripts/copy-css.mjs",
     "dev": "tsc --watch",

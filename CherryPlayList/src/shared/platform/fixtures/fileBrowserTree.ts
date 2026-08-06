@@ -1,5 +1,6 @@
 import type { DirectoryItem } from '../types';
 
+import { DEMO_AUDIO_EXTENSIONS, DEMO_AUDIO_FILE_MTIME_MS } from './demoAudioExtensions';
 import { DEMO_AUDIO_FILES } from './trackPaths';
 
 export const DEMO_MUSIC_ROOT = '/demo/music';
@@ -41,8 +42,6 @@ const DIRECTORY_CONTENTS: Record<string, DirectoryItem[]> = {
   [CLASSICS_ROCK]: [audioEntry('track1.mp3', CLASSICS_ROCK)],
 };
 
-const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.m4a', '.ogg'];
-
 function normalizePath(path: string): string {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }
@@ -68,7 +67,7 @@ export function statDemoPath(path: string): {
 } | null {
   const key = normalizePath(path);
   if (key === '' || key === '/') {
-    return { size: 0, modified: 0, isDirectory: true };
+    return { size: 0, modified: DEMO_AUDIO_FILE_MTIME_MS, isDirectory: true };
   }
 
   for (const entries of Object.values(DIRECTORY_CONTENTS)) {
@@ -76,7 +75,7 @@ export function statDemoPath(path: string): {
     if (entry) {
       return {
         size: entry.size ?? 0,
-        modified: Date.now(),
+        modified: DEMO_AUDIO_FILE_MTIME_MS,
         isDirectory: entry.isDirectory,
       };
     }
@@ -84,15 +83,15 @@ export function statDemoPath(path: string): {
 
   const knownAudio = DEMO_AUDIO_FILES.find((file) => normalizePath(file.path) === key);
   if (knownAudio) {
-    return { size: knownAudio.size, modified: Date.now(), isDirectory: false };
+    return { size: knownAudio.size, modified: DEMO_AUDIO_FILE_MTIME_MS, isDirectory: false };
   }
 
-  if (AUDIO_EXTENSIONS.some((ext) => key.toLowerCase().endsWith(ext))) {
-    return { size: 4_096, modified: Date.now(), isDirectory: false };
+  if (DEMO_AUDIO_EXTENSIONS.some((ext) => key.toLowerCase().endsWith(ext))) {
+    return { size: 4_096, modified: DEMO_AUDIO_FILE_MTIME_MS, isDirectory: false };
   }
 
   if (DIRECTORY_CONTENTS[key]) {
-    return { size: 0, modified: Date.now(), isDirectory: true };
+    return { size: 0, modified: DEMO_AUDIO_FILE_MTIME_MS, isDirectory: true };
   }
 
   return null;
@@ -106,7 +105,7 @@ export function findDemoAudioFilesRecursive(path: string): string[] {
     for (const item of listDemoDirectory(dirPath)) {
       if (item.isDirectory) {
         walk(item.path);
-      } else if (AUDIO_EXTENSIONS.some((ext) => item.path.toLowerCase().endsWith(ext))) {
+      } else if (DEMO_AUDIO_EXTENSIONS.some((ext) => item.path.toLowerCase().endsWith(ext))) {
         results.push(item.path);
       }
     }

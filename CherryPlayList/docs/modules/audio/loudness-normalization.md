@@ -1,8 +1,8 @@
 # Нормализация громкости (loudness normalization v1)
 
-Недеструктивная нормализация громкости в CherryPlayList (Electron): измерение LUFS в main process, сохранение метаданных в `.cherry`, применение gain и опциональной **адаптивной компрессии** при playback в renderer.
+Недеструктивная нормализация громкости в CherryPlayList: измерение LUFS (Electron — FFmpeg; web demo — детерминированные фикстуры), сохранение метаданных в `.cherry`, применение gain и опциональной **адаптивной компрессии** при playback в renderer.
 
-**Capability gate:** `supportsLoudnessAnalysis` — только Electron. Web demo и Capacitor stub не запускают FFmpeg-скан; UI скана disabled/скрыт, playback-математика (gain, compression strength) **общая** для всех платформ.
+**Capability gate:** `supportsLoudnessAnalysis` — Electron (реальный FFmpeg) и web demo (детерминированные фикстуры без FFmpeg). Capacitor stub: `false`, UI скана disabled/скрыт. Playback-математика (gain, compression strength) **общая** для всех платформ.
 
 См. также: [Playback Engine — слои](./playback-layers.md), [Project Service — track.loudness](../services/project-service.md), [IPC `audio:analyzeLoudness`](../services/ipc-service.md), [Settings Store](../stores/settings-store.md), [Player workspace](../workspaces/player.md), [Platform layer](../platform/README.md), [Android Capacitor brief](../../android-capacitor-brief.md).
 
@@ -12,7 +12,7 @@
 
 | Этап         | Что происходит                                                                                            |
 | ------------ | --------------------------------------------------------------------------------------------------------- |
-| **Scan**     | FFmpeg `ebur128` в main process → integrated LUFS, true peak, LRA, `trackGainDb`                          |
+| **Scan**     | Electron: FFmpeg `ebur128` в main → LUFS / peak / LRA / `trackGainDb`. Web demo: тот же IPC-контракт через `demoLoudnessAnalyzer` (без FFmpeg) |
 | **Persist**  | `track.loudness` в `.cherry` (JSON), без изменения исходных аудиофайлов                                   |
 | **Playback** | `resolveLinearGain` → `setTrackGain`; опционально `resolveCompressionStrength` → `setCompressionStrength` |
 
@@ -31,7 +31,8 @@
 | **Contracts**        | `src/shared/contracts/loudness.ts`                    | **Single source of truth**: `LOUDNESS_ALGORITHM_VERSION`, defaults (`DEFAULT_LOUDNESS_TARGET_LUFS`, `HEADROOM_DB_TP`), `LoudnessSettings`, IPC result types (`LoudnessAnalyzeOk`/`Result`, scanner aliases `LoudnessScan*`) |
 | **Core types**       | `src/core/types/track.ts`                             | `TrackLoudness` — persisted shape; re-export `LOUDNESS_ALGORITHM_VERSION` из contracts                                                                                                                                      |
 | **Scanner (main)**   | `electron/audio/loudnessScanner.ts`                   | FFmpeg ebur128, parse integrated/true peak/LRA low/LRA, `computeTrackGainDb`, serial queue; импорт constants/types из contracts                                                                                             |
-| **IPC**              | `electron/ipc/audio.ts`                               | `audio:analyzeLoudness`, `audio:statAudioFile`                                                                                                                                                                              |
+| **Scanner (demo)**   | `src/shared/platform/fixtures/demoLoudnessAnalyzer.ts` | Детерминированные профили по demo-путям; `handleDemoAnalyzeLoudness` / `handleDemoStatAudioFile` через `WebDemoPlatform.invoke`                                                                                              |
+| **IPC**              | `electron/ipc/audio.ts` (+ demo handlers)             | `audio:analyzeLoudness`, `audio:statAudioFile` — один контракт; Electron → FFmpeg, web demo → fixtures                                                                                                                      |
 | **Service**          | `src/shared/services/loudnessService.ts`              | Scan orchestration: `needsScan`, `scanTrack`/`scanTracks`, `normalizeLoadedLoudness`, `createLoudnessService` — **не** gain math                                                                                            |
 | **Gain math**        | `src/shared/audio/loudnessGain.ts`                    | `getEffectiveGainDb`, `resolveLinearGain` (manual override, clamp)                                                                                                                                                          |
 | **Compression math** | `src/shared/audio/playback/compressionStrength.ts`    | `resolveCompressionStrength`, `resolveQuietPassageLufs`, constants                                                                                                                                                          |
@@ -45,11 +46,11 @@
 
 ```mermaid
 flowchart TB
-  subgraph scan [Scan pipeline — Electron main]
+  subgraph scan [Scan pipeline — Electron or web demo]
     UI[UI / projectStore] --> LS[loudnessService.scanTrack(s)]
     LS --> IPC[IPC audio:analyzeLoudness]
-    IPC --> SC[loudnessScanner.ts]
-    SC --> FF[FFmpeg ebur128]
+    IPC --> SC[loudnessScanner / demoLoudnessAnalyzer]
+    SC --> FF[FFmpeg ebur128 or fixtures]
     FF --> SC
     SC --> IPC
     IPC --> LS
@@ -76,11 +77,12 @@ flowchart TB
 ### ASCII (упрощённо)
 
 ```
-  [Electron main]                    [Renderer]
-  loudnessScanner ──IPC──► loudnessService ──► projectStore ──► .cherry
+  [Electron main | WebDemoPlatform]     [Renderer]
+  loudnessScanner / demoLoudnessAnalyzer
+       ──IPC──► loudnessService ──► projectStore ──► .cherry
        ▲                              │
        │                              ▼
-  ffmpeg ebur128              loadTrack / settings change
+  ffmpeg ebur128 | fixtures   loadTrack / settings change
                                      │
                                      ▼
                          applyLoudnessPlaybackEffects
@@ -91,6 +93,8 @@ flowchart TB
                          WebAudioPlaybackEngine graph
 ```
 
+В **web demo** реальный local playback недоступен (`supportsLocalFilePlayback: false`); scan/UI и seeded metadata в `sample.cherry` нужны для дизайна Settings/Player.
+
 ---
 
 ## 3. Scan pipeline
@@ -100,7 +104,6 @@ flowchart TB
 | Триггер                         | Где                                             | Условие                                                      |
 | ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------ |
 | Добавление трека                | `projectStore` → `enqueueLoudnessScanForTracks` | `loudnessNormalizationEnabled` && `supportsLoudnessAnalysis` |
-| Batch «Рассчитать нормализацию» | `PlayerHeader` + `useLoudnessScanFlow`          | Все треки с `needsScan === true`                             |
 | Session gate                    | `usePlayerSession` + `useLoudnessScanFlow`      | Первые 3 active трека перед стартом сессии                   |
 | Per-track rescan                | `TrackLoudnessRowControls`                      | Кнопка «Сканировать» в popover                               |
 | Stale metadata                  | `needsScan` с `currentMtimeMs`                  | `fileMtime !== mtime` на диске                               |
@@ -231,7 +234,7 @@ Placeholder autogain (`setAutoGainEnabled`) **не** применяется пр
 
 ### Глобальный toggle
 
-`loudnessCompressionEnabled` в `settingsStore` — активен **только** при `loudnessNormalizationEnabled`. UI: «Адаптивная компрессия (LRA и тихие участки, до gain)» в `SettingsModal`.
+`loudnessCompressionEnabled` в `settingsStore` — активен **только** при `loudnessNormalizationEnabled`. UI: «Адаптивная компрессия» в глобальном `TrackSettingsModal` (шестерёнка плеера).
 
 ### Per-track strength (0…1)
 
@@ -289,15 +292,20 @@ Fixed: `attack = 0.015`, `release = 1.0`.
 
 ## 6. Settings и UI
 
-### SettingsModal (`src/app/components/SettingsModal.tsx`)
+### TrackSettingsModal — глобальные настройки (`isGlobal`)
 
-| Поле                     | Store key                      | Default | Примечание                                   |
-| ------------------------ | ------------------------------ | ------- | -------------------------------------------- |
-| Включить нормализацию    | `loudnessNormalizationEnabled` | `true`  | disabled при `!supportsLoudnessAnalysis`     |
-| Целевая громкость (LUFS) | `loudnessTargetLufs`           | `-18`   | number input; disabled если нормализация off |
-| Адаптивная компрессия    | `loudnessCompressionEnabled`   | `false` | disabled если нормализация off               |
+Глобальные loudness-настройки живут в шестерёнке плеера (`onOpenGlobalSettings` → `TrackSettingsModal` с `isGlobal: true`, заголовок «Настройки по умолчанию»). Save/Cancel как у остальных полей модалки; persist через `settingsStore`.
 
-Подробнее: [Settings Store](../stores/settings-store.md).
+| Поле                           | Store key                      | Default | Примечание                                   |
+| ------------------------------ | ------------------------------ | ------- | -------------------------------------------- |
+| Включить нормализацию          | `loudnessNormalizationEnabled` | `true`  | disabled при `!supportsLoudnessAnalysis`     |
+| Целевая громкость (LUFS)       | `loudnessTargetLufs`           | `-18`   | number input; disabled если нормализация off |
+| Адаптивная компрессия          | `loudnessCompressionEnabled`   | `false` | disabled если нормализация off               |
+| Терпимость к провалам громкости | `loudnessQuietGapRangeLu`     | preset  | slider + presets; только при compression on  |
+
+Секция **«Нормализация громкости»** в app `SettingsModal` **удалена** (не дублируется). Экспорт/импорт настроек по-прежнему включает loudness-поля через `settingsExportService`.
+
+Подробнее: [Settings Store](../stores/settings-store.md), [Player](../workspaces/player.md).
 
 ### `TrackLoudnessPopover` (UX)
 
@@ -313,8 +321,8 @@ Fixed: `attack = 0.015`, `release = 1.0`.
 
 | Компонент      | Путь                                       | Назначение                                                                                                                                                                                                          |
 | -------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Batch scan     | `PlayerHeader`                             | «Рассчитать нормализацию» (preparation mode)                                                                                                                                                                        |
-| Progress modal | `LoudnessScanProgressModal`                | Прогресс batch / session gate                                                                                                                                                                                       |
+| Global settings | `TrackSettingsModal` (`isGlobal`)         | Toggle нормализации, target LUFS, compression, quiet-gap                                                                                                                                                            |
+| Progress modal | `LoudnessScanProgressModal`                | Прогресс session gate / scan                                                                                                                                                                                        |
 | Row button     | `TrackLoudnessButton`                      | Иконка ok / pending / error / effective gain dB                                                                                                                                                                     |
 | Popover        | `TrackLoudnessPopover`                     | Слайдер усиления (−30…+30 dB, live apply); аккордеон «Технические данные» (LUFS, peak, LRA, тихие участки, расчётное усиление, % компрессии); подсказки — иконка ⓘ (`InfoOutlined`, native `title` tooltip); rescan |
 | Row wiring     | `TrackLoudnessRowControls`                 | Popover + `updateTrackManualGain` + `applyLoudnessChangeToActivePlayback`; подписка на `projectStore` для актуального `track.loudness`                                                                              |
@@ -354,11 +362,13 @@ Persisted в `.cherry` на каждом `SavedProjectTrack`. Валидация
 
 | Платформа          | Scanner          | Playback gain/compression           | UI scan         |
 | ------------------ | ---------------- | ----------------------------------- | --------------- |
-| **Electron**       | ✓ FFmpeg ebur128 | ✓                                   | ✓               |
-| **Web demo**       | ✗                | ✓ (metadata из `.cherry` если есть) | hidden/disabled |
-| **Capacitor stub** | ✗                | ✓                                   | hidden/disabled |
+| **Electron**       | ✓ FFmpeg ebur128              | ✓                                   | ✓               |
+| **Web demo**       | ✓ simulated (fixture IPC)     | ✓ (фикстуры + metadata в `.cherry`) | ✓               |
+| **Capacitor stub** | ✗                             | ✓                                   | hidden/disabled |
 
-`getPlatformCapabilities().supportsLoudnessAnalysis` — см. [Platform layer](../platform/README.md).
+`getPlatformCapabilities().supportsLoudnessAnalysis` — см. [Platform layer](../platform/README.md). Веб-демо: [web-demo.md](../../web-demo.md).
+
+**Web demo details:** профили в `DEMO_LOUDNESS_PROFILES` покрывают пути `DEMO_AUDIO_FILES`; `public/demo/sample.cherry` seeded с `track.loudness`, согласованным с `analyzeDemoLoudness`. Rescan/session gate вызывают тот же `loudnessService` → IPC, что и Electron.
 
 Renderer-логика (`loudnessService`, `loudnessGain`, `compressionStrength`, `applyPlaybackEffects`) **общая**. На Android/Capacitor меняется только adapter для `analyzeLoudness` (план: `ffmpeg-kit`); метаданные из desktop `.cherry` переносятся без пересчёта, пока `fileMtime` совпадает. См. [Android Capacitor brief](../../android-capacitor-brief.md).
 
@@ -383,9 +393,10 @@ Renderer-логика (`loudnessService`, `loudnessGain`, `compressionStrength`,
 | `src/shared/stores/projectStore.ts`                   | Persist, auto-scan on add, `updateTrackManualGain` |
 | `src/shared/services/projectService.ts`               | Load/save `.cherry`, `normalizeLoadedLoudness`     |
 | `src/shared/utils/loudnessSessionGate.ts`             | Session gate track selection                       |
-| `src/workspaces/player/hooks/useLoudnessScanFlow.ts`  | Batch/gate scan UX                                 |
+| `src/workspaces/player/hooks/useLoudnessScanFlow.ts`  | Gate scan UX                                       |
 | `src/shared/components/loudness/*`                    | Track loudness UI                                  |
-| `src/app/components/SettingsModal.tsx`                | Global loudness settings                           |
+| `src/workspaces/player/TrackSettingsModal.tsx`        | Global loudness settings (`isGlobal`)              |
+| `src/shared/platform/fixtures/demoLoudnessAnalyzer.ts` | Demo simulated analyze/stat IPC |
 | `tests/electron/loudnessScanner.test.ts`              | Scanner unit tests                                 |
 | `tests/shared/services/loudnessService.test.ts`       | Service/orchestration tests                        |
 | `tests/shared/services/compressionStrength.test.ts`   | Compression formula tests                          |
@@ -395,9 +406,8 @@ Renderer-логика (`loudnessService`, `loudnessGain`, `compressionStrength`,
 ## Как проверить
 
 1. Electron: `npm run dev` — добавить трек → auto-scan (иконка pending → ok с gain dB).
-2. Settings → включить адаптивную компрессию → воспроизвести тихий трек с большим gain — слышимое сглаживание динамики (strength > 0).
-3. Player → «Рассчитать нормализацию» — batch scan всех stale треков.
-4. Старт сессии с включённой нормализацией — `LoudnessScanProgressModal` для первых 3 active треков.
-5. Сохранить `.cherry`, перезагрузить — `track.loudness` сохранён; изменить файл на диске → `needsScan` true.
-6. Popover → покрутить слайдер усиления во время playback — gain меняется сразу; «Технические данные» раскрываются по аккордеону.
-7. Web demo — scan UI disabled; playback с unity gain если нет metadata.
+2. Player → шестерёнка («Настройки проигрывания») → включить адаптивную компрессию → воспроизвести тихий трек с большим gain — слышимое сглаживание динамики (strength > 0).
+3. Старт сессии с включённой нормализацией — `LoudnessScanProgressModal` для первых 3 active треков.
+4. Сохранить `.cherry`, перезагрузить — `track.loudness` сохранён; изменить файл на диске → `needsScan` true.
+5. Popover → покрутить слайдер усиления во время playback — gain меняется сразу; «Технические данные» раскрываются по аккордеону.
+6. Web demo (`npm run dev:web` / `dev:web:project`) — Player gear loudness UI доступны; scan возвращает фикстурные профили; `sample.cherry` уже с metadata. Local playback по-прежнему недоступен.

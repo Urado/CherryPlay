@@ -14,7 +14,7 @@ Workspace для автоматического последовательног
 - **PlayerHeader** (`src/workspaces/player/components/PlayerHeader.tsx`) — шапка зоны (статистика, сессия, утилиты)
 - **PlayerControls** (`src/workspaces/player/PlayerControls.tsx`) — панель управления в режиме `session`
 - **TrackSettingsDropdown** (`src/workspaces/player/TrackSettingsDropdown.tsx`) — попап настроек трека (список, применение сразу)
-- **TrackSettingsModal** (`src/workspaces/player/TrackSettingsModal.tsx`) — модалка настроек группы/по умолчанию (Сохранить/Отмена)
+- **TrackSettingsModal** (`src/workspaces/player/TrackSettingsModal.tsx`) — модалка настроек трека/группы/по умолчанию (Сохранить/Отмена); при `isGlobal` — также секция нормализации громкости
 - **playerAudioStore** (`src/shared/stores/playerAudioStore.ts`) — store управления аудио
 - **projectStore** (`src/shared/stores/projectStore.ts`) — главный store проекта (данные плейлиста, группы, настройки, состояние сессии)
 
@@ -119,16 +119,16 @@ Workspace для автоматического последовательног
 
 ### Нормализация громкости (loudness)
 
-Недеструктивная нормализация: измерение LUFS в Electron main, метаданные в `.cherry`, gain и адаптивная компрессия при playback. Подробности — [Нормализация громкости (loudness v1)](../audio/loudness-normalization.md).
+Недеструктивная нормализация: измерение LUFS (Electron — FFmpeg; web demo — фикстуры), метаданные в `.cherry`, gain и адаптивная компрессия при playback. Подробности — [Нормализация громкости (loudness v1)](../audio/loudness-normalization.md). В web demo UI скана доступен (`supportsLoudnessAnalysis`); реальный local playback — нет.
 
 | UI / поведение                  | Где                                                | Описание                                                                                                         |
 | ------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Batch «Рассчитать нормализацию» | `PlayerHeader` (режим подготовки)                  | Скан всех треков, нуждающихся в `needsScan`; прогресс в модалке                                                  |
 | Иконка на строке трека          | `TrackLoudnessButton` / `TrackLoudnessRowControls` | Состояния ok / pending / unscanned / error; popover: слайдер gain (live), аккордеон «Технические данные», rescan |
 | Session gate                    | `usePlayerSession` + `loudnessSessionGate`         | Старт сессии блокируется, пока не готовы первые 3 active трека                                                   |
-| Настройки                       | `SettingsModal`                                    | Вкл/выкл нормализацию, target LUFS, compression                                                                  |
+| Настройки                       | `TrackSettingsModal` (`isGlobal`, шестерёнка)      | Вкл/выкл нормализацию, target LUFS, compression, quiet-gap                                                       |
+| Auto-scan при добавлении        | `projectStore.enqueueLoudnessScanForTracks`        | Когда нормализация включена и есть `supportsLoudnessAnalysis`                                                    |
 
-При выключенной фиче или на платформе без `supportsLoudnessAnalysis` иконки и batch-кнопка скрыты; playback на unity gain.
+При выключенной фиче или на платформе без `supportsLoudnessAnalysis` иконки скрыты / controls disabled; playback на unity gain.
 
 ### Восстановление сессии после перезапуска
 

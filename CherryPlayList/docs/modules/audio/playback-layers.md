@@ -402,7 +402,7 @@ Legacy `HtmlAudioElementEngine` и селектор `implementation: 'html-audio
 | **F3** | Web Audio engine + loading path (Capacitor Stage 1)  | **Done** — `WebAudioPlaybackEngine` + `MediaElementTransport`; Electron: `audio:getFileUrl` → `cherryplay-audio://` streaming |
 | **F4** | Убрать base64/Blob из цепочки загрузки               | **Done** — stores не вызывают IPC; adapter: `getAudioFileUrl`, без base64/Blob/revoke для `filePath`                          |
 | **F5** | Effects layer (EQ / autogain)                        | **Done (v1)** — `PlaybackEffects` + `applyPlaybackEffects` on load                                                            |
-| **F6** | Loudness normalization (scan + playback gain)        | **Done (v1)** — FFmpeg ebur128, `.cherry` metadata, session gate, batch UI                                                    |
+| **F6** | Loudness normalization (scan + playback gain)        | **Done (v1)** — FFmpeg ebur128, `.cherry` metadata, session gate, Player gear settings |
 
 ### Следующие шаги (post-F6)
 
