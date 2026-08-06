@@ -164,7 +164,7 @@ _Связь с учётной записью: email+пароль (таблица
 
 При выдаче нового токена предыдущие неиспользованные для того же `EmailAccountId` инвалидируются (`UsedAt`). Успешный **reset-password** гасит использованный токен; успешный **change-password** также инвалидирует все неиспользованные reset-токены того же `EmailAccount`. После успешного сброса или смены пароля удаляются все `OrganizerSessions` организатора.
 
-Потоки API и политика почты (Dev-лог / Prod 503 при отсутствии конфига / soft-fail 200 при сбое отправки): [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md), [ENV.md](../ENV.md), [OPS.md](OPS.md).
+Потоки API и политика почты (Dev-лог / Prod **503** при отсутствии конфига / soft-fail **200** при сбое отправки с токеном, **остающимся usable** до TTL): [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md), [ENV.md](../ENV.md), [OPS.md](OPS.md).
 
 ---
 

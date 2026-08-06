@@ -145,9 +145,10 @@ npm run build
 - [BACKUP_RESTORE.md](BACKUP_RESTORE.md) — инструкция по backup/restore PostgreSQL (prod и local)
 - [THEMES.md](THEMES.md) — документация по темам оформления
 - [ADDING_THEME.md](ADDING_THEME.md) — инструкция по добавлению новой темы
-- [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) — документация по деплою (GitHub Secrets, автоматический деплой, ручной деплой, откат)
+- [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) — деплой Docker + CI/CD; скачивание Windows desktop zip с GitHub Releases (опубликованный zip пока **без** нативного AIMP bridge)
 - **CherryPlayList:** [docs/README.md](CherryPlayList/docs/README.md) — оглавление документации приложения
   - [QUICK_START_BUILD.md](CherryPlayList/QUICK_START_BUILD.md) — быстрый старт сборки релиза
+  - [BUILD.md](CherryPlayList/BUILD.md) — Windows zip, `dist:win` / `dist:win:ci`, версия из тега
 - **Интеграция (общая):** [docs/integration/](docs/integration/) — подсистемы приложение–сервер–веб (Accounts & Auth, Party Management, Streaming, **AIMP Streaming**, Data and Contracts). AIMP: плагин [CherryPlayAimpPlugin](CherryPlayAimpPlugin/README.md) → named pipe → CherryPlayList (Electron) → SignalR/сайт; см. [aimp-streaming.md](docs/integration/aimp-streaming.md).
 - **CherryPlayServer:** [API.md](CherryPlayServer/API.md) (указатель на CONTRACTS), [OPS.md](CherryPlayServer/OPS.md), [DATABASE.md](CherryPlayServer/DATABASE.md)
 - **CherryPlayWeb:** [README.md](CherryPlayWeb/README.md), [docs/pages.md](CherryPlayWeb/docs/pages.md); переменные окружения — в корневом [ENV.md](ENV.md)

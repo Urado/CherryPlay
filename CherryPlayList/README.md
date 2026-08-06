@@ -143,18 +143,19 @@ npm run build:electron
 npm run dist
 
 # Для конкретной платформы
-npm run dist:win    # Windows
+npm run dist:win    # Windows (с AIMP staging)
+npm run dist:win:ci # Windows без AIMP (как в CI)
 npm run dist:mac    # macOS
 npm run dist:linux  # Linux
 ```
+
+Готовый Windows-артефакт — **`CherryPlayList-{version}-x64.zip`** в `release/`. Готовый zip с GitHub Releases (без AIMP bridge в CI): см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробности сборки — [BUILD.md](BUILD.md).
 
 **Важно:** Перед сборкой добавьте иконки в папку `build/`:
 
 - `build/icon.ico` - для Windows
 - `build/icon.icns` - для macOS
 - `build/icon.png` - для Linux
-
-Подробнее см. [BUILD.md](BUILD.md).
 
 ## Качество кода
 

@@ -36,8 +36,11 @@ npm run dist
 #### Для конкретной платформы:
 
 ```bash
-# Windows
+# Windows (локально, со staging AIMP-плагина — нужен собранный DLL)
 npm run dist:win
+
+# Windows без AIMP staging (тот же путь, что CI)
+npm run dist:win:ci
 
 # macOS
 npm run dist:mac
@@ -49,17 +52,26 @@ npm run dist:linux
 npm run dist:all
 ```
 
+**Windows scripts:**
+
+| Script | Что делает | AIMP bridge |
+| --- | --- | --- |
+| `dist:win` | `build:electron` → `stage:aimp-plugin` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
+| `dist:win:ci` | `build:electron` → `electron-builder --win --x64` | Не стейджится; для GitHub Release |
+
+Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPlayList-{version}-x64.zip`), не NSIS и не portable exe. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
+
 ## Результат сборки
 
 Готовые дистрибутивы будут находиться в папке `release/`:
 
 ### Windows
 
-- `CherryPlayList-{version}-x64.exe` - NSIS установщик (64-bit)
-- `CherryPlayList-{version}-ia32.exe` - NSIS установщик (32-bit)
-- `CherryPlayList-{version}-x64-portable.exe` - Portable версия (64-bit)
+- `CherryPlayList-{version}-x64.zip` — zip-дистрибутив (64-bit)
 
-**Примечание:** Portable версия создается автоматически при сборке для Windows. Команда `npm run dist:win` создает и NSIS установщик, и portable версию.
+Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено). Локальный `dist:win` — для мейнтейнеров с собранным плагином.
+
+Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 
 ### macOS
 
@@ -75,13 +87,15 @@ npm run dist:all
 
 ## Версионирование
 
-Перед сборкой релиза обновите версию в `package.json`:
+Для локальной сборки обновите версию в `package.json` перед `dist:*`:
 
 ```json
 {
   "version": "1.0.1"
 }
 ```
+
+Имя zip берётся из `${version}` electron-builder. В CI (`release-desktop-windows.yml`) версия **синхронизируется с тегом** GitHub Release (ведущий `v` снимается: тег `v1.2.3` → `1.2.3`), чтобы имя asset совпадало с `CherryPlayList-{version}-x64.zip` и URL `…/releases/latest/download/…`.
 
 ## Проверка сборки
 
@@ -122,7 +136,7 @@ electron .
 - Имя приложения
 - Идентификатор приложения
 - Включаемые/исключаемые файлы
-- Параметры установщиков
+- Параметры упаковки (targets: zip, dmg, AppImage и т.д.)
 - И многое другое
 
 Подробнее: https://www.electron.build/

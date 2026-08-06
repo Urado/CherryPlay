@@ -78,7 +78,7 @@
 
 Шаблоны без секретов: [.env.example](.env.example), [.env.development.example](.env.development.example). В Prod задавайте `RUSENDER_*` через **GitHub Secrets** и/или серверный `.env.production` (файл с реальными токенами **не** коммитить).
 
-Домен отправки (напр. `cherrypashkaparty.ru`) должен быть верифицирован в RuSender (**SPF/DKIM**). Пока домен не подтверждён, отправка в Prod будет падать (soft-fail 200) или при отсутствии ключей — 503; см. [OPS.md](CherryPlayServer/OPS.md). Контракты: [CONTRACTS.md](CONTRACTS.md) §3.2.0a.
+Домен отправки (напр. `cherrypashkaparty.ru`) должен быть верифицирован в RuSender (**SPF/DKIM**). Пока домен не подтверждён, отправка в Prod будет падать (soft-fail **200**, токен остаётся usable) или при отсутствии ключей — **503**; см. [OPS.md](CherryPlayServer/OPS.md). Контракты: [CONTRACTS.md](CONTRACTS.md) §3.2.0a.
 
 ---
 
