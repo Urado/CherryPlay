@@ -146,9 +146,6 @@ jobs:
           OAUTH_VK_CLIENT_SECRET: ${{ secrets.OAUTH_VK_CLIENT_SECRET }}
           RUSENDER_API_TOKEN: ${{ secrets.RUSENDER_API_TOKEN }}
           RUSENDER_SEND_KEY_ID: ${{ secrets.RUSENDER_SEND_KEY_ID }}
-          EMAIL_FROM_ADDRESS: ${{ secrets.EMAIL_FROM_ADDRESS }}
-          EMAIL_FROM_NAME: ${{ secrets.EMAIL_FROM_NAME }}
-          PUBLIC_WEB_BASE_URL: ${{ secrets.PUBLIC_WEB_BASE_URL }}
         run: |
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
@@ -171,9 +168,6 @@ jobs:
             export OAUTH_VK_CLIENT_SECRET='$OAUTH_VK_CLIENT_SECRET'
             export RUSENDER_API_TOKEN='$RUSENDER_API_TOKEN'
             export RUSENDER_SEND_KEY_ID='$RUSENDER_SEND_KEY_ID'
-            export EMAIL_FROM_ADDRESS='$EMAIL_FROM_ADDRESS'
-            export EMAIL_FROM_NAME='$EMAIL_FROM_NAME'
-            export PUBLIC_WEB_BASE_URL='$PUBLIC_WEB_BASE_URL'
             ./deploy.sh
           "
 

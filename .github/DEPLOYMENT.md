@@ -67,13 +67,10 @@ GitHub Container Registry уже настроен и доступен автом
 | `OAUTH_VK_CLIENT_ID`     | ID приложения VK (для входа через VK)                                                                                              |
 | `OAUTH_VK_CLIENT_SECRET` | Защищённый ключ приложения VK                                                                                                      |
 | `GHCR_TOKEN`             | PAT с правами `read:packages` (и `write:packages` при сборке). Для публичного репо можно не задавать — используется `GITHUB_TOKEN` |
-| `RUSENDER_API_TOKEN`     | Bearer-токен RuSender API (`rs_ck_v1_…`). **Секрет** — нужен для отправки писем сброса пароля в Prod                                |
+| `RUSENDER_API_TOKEN`     | Bearer-токен RuSender API (`rs_ck_v1_…`). **Секрет** — нужен для отправки писем сброса пароля в Prod                               |
 | `RUSENDER_SEND_KEY_ID`   | Числовой `key_id` transactional send key RuSender. **Секрет**                                                                      |
-| `EMAIL_FROM_ADDRESS`     | From-адрес на верифицированном домене (напр. `noreply@yourdomain.com`). Не секрет по сути, но через Secrets для wiring деплоя; обязателен для password reset |
-| `EMAIL_FROM_NAME`        | Отображаемое имя отправителя (обычно `CherryPlay`). Через Secrets для wiring деплоя                                                |
-| `PUBLIC_WEB_BASE_URL`    | Базовый URL веба для ссылок сброса пароля (предпочтительно HTTPS, напр. `https://yourdomain.com`). Через Secrets для wiring деплоя |
 
-Без `RUSENDER_*`, `EMAIL_FROM_*` и `PUBLIC_WEB_BASE_URL` forgot-password в Prod отвечает 503. Полный справочник — [ENV.md](../ENV.md).
+Несекретные настройки почты задаются **дефолтами в** [docker-compose.prod.yml](../docker-compose.prod.yml) (`EMAIL_FROM_ADDRESS=noreply@cherrypashkaparty.ru`, `EMAIL_FROM_NAME=CherryPlay`, `PUBLIC_WEB_BASE_URL=https://cherrypashkaparty.ru`) — на сервере их заводить не обязательно. Переопределение — опционально через `.env.production`. Без `RUSENDER_*` forgot-password в Prod отвечает 503. Полный справочник — [ENV.md](../ENV.md).
 
 Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). В `release-and-deploy.yml` при релизе принудительно выставляется `Database__AutoMigrateOnStartup=true`, чтобы накат миграций происходил автоматически.
 
@@ -130,7 +127,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`, `RUSENDER_API_TOKEN`, `RUSENDER_SEND_KEY_ID`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`, `PUBLIC_WEB_BASE_URL`) берутся из GitHub Secrets и подставляются в `.env` на сервере. Полный справочник переменных — в корневом [ENV.md](../ENV.md). Если вы деплоите вручную или хотите запас на сервере, создайте `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`, `RUSENDER_API_TOKEN`, `RUSENDER_SEND_KEY_ID`) берутся из GitHub Secrets и подставляются в `.env` на сервере. `EMAIL_FROM_*` и `PUBLIC_WEB_BASE_URL` по умолчанию из [docker-compose.prod.yml](../docker-compose.prod.yml) (действия на сервере не нужны). Полный справочник — [ENV.md](../ENV.md). Опциональный запас `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера
@@ -151,12 +148,14 @@ CORS_ORIGIN_1=https://www.yourdomain.com
 OAUTH_VK_CLIENT_ID=your_vk_app_id
 OAUTH_VK_CLIENT_SECRET=your_vk_secure_key
 
-# RuSender / password reset (иначе forgot-password → 503)
-RUSENDER_API_TOKEN=rs_ck_v1_your_token
-RUSENDER_SEND_KEY_ID=12345
-EMAIL_FROM_ADDRESS=noreply@yourdomain.com
-EMAIL_FROM_NAME=CherryPlay
-PUBLIC_WEB_BASE_URL=https://yourdomain.com
+# RuSender tokens — опционально здесь, если не задаёте GitHub Secrets RUSENDER_*
+# RUSENDER_API_TOKEN=rs_ck_v1_your_token
+# RUSENDER_SEND_KEY_ID=12345
+
+# From / public Web URL — опционально (иначе дефолты docker-compose.prod.yml)
+# EMAIL_FROM_ADDRESS=noreply@cherrypashkaparty.ru
+# EMAIL_FROM_NAME=CherryPlay
+# PUBLIC_WEB_BASE_URL=https://cherrypashkaparty.ru
 ```
 
 #### Настройка доступа к GHCR (для приватных репозиториев)

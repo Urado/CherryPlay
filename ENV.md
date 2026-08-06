@@ -39,9 +39,9 @@
 | **ADMIN_CONTACT_URL**                      | Публичная ссылка для связи с админом по платным темам                        | Backend (`/api/config`, `/api/organizer/me/theme-access`)                                 | `https://vk.com/<owner>`                                        | Укажите реальный URL контакта                                    | Не секрет                          |
 | **RUSENDER_API_TOKEN**                     | Bearer-токен RuSender API (`rs_ck_v1_…`, право `external_mail.send`)         | Backend (forgot-password email)                                                           | Пусто → Dev пишет письмо/ссылку в лог                           | GitHub Secrets / `.env.production`; обязателен для Prod-отправки | **Секрет** — никогда не коммитить  |
 | **RUSENDER_SEND_KEY_ID**                   | Числовой `key_id` transactional send key в пути RuSender                     | Backend                                                                                   | Пусто                                                           | GitHub Secrets / `.env.production`                               | Секрет (идентификатор ключа)       |
-| **EMAIL_FROM_ADDRESS**                     | From-адрес на верифицированном домене (напр. `noreply@cherrypashkaparty.ru`) | Backend                                                                                   | Пусто / пример в `.env.example`                                 | Должен совпадать с доменом в RuSender                            | Не секрет                          |
-| **EMAIL_FROM_NAME**                        | Отображаемое имя отправителя                                                 | Backend                                                                                   | `CherryPlay`                                                    | Обычно `CherryPlay`                                              | Не секрет                          |
-| **PUBLIC_WEB_BASE_URL**                    | Базовый URL CherryPlayWeb для ссылок сброса пароля                           | Backend (`…/reset-password?token=…`)                                                      | `http://localhost:3000`                                         | Предпочтительно **HTTPS**, напр. `https://cherrypashkaparty.ru`  | Не секрет                          |
+| **EMAIL_FROM_ADDRESS**                     | From-адрес на верифицированном домене (напр. `noreply@cherrypashkaparty.ru`) | Backend                                                                                   | Пусто / пример в `.env.example`                                 | Дефолт в `docker-compose.prod.yml`; Secrets не нужны             | Не секрет                          |
+| **EMAIL_FROM_NAME**                        | Отображаемое имя отправителя                                                 | Backend                                                                                   | `CherryPlay`                                                    | Дефолт `CherryPlay` в compose.prod                               | Не секрет                          |
+| **PUBLIC_WEB_BASE_URL**                    | Базовый URL CherryPlayWeb для ссылок сброса пароля                           | Backend (`…/reset-password?token=…`)                                                      | `http://localhost:3000`                                         | Дефолт `https://cherrypashkaparty.ru` в compose.prod             | Не секрет                          |
 
 ---
 
@@ -71,12 +71,12 @@
 
 Полный конфиг отправки: `RUSENDER_API_TOKEN` + `RUSENDER_SEND_KEY_ID` + `EMAIL_FROM_ADDRESS`. Плюс `PUBLIC_WEB_BASE_URL` для ссылки в письме.
 
-| Среда           | Нет / неполный конфиг RuSender или нет `PUBLIC_WEB_BASE_URL`                                                   | Конфиг есть, отправка упала                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **Development** | Dev fallback: письмо/reset URL в **логе** сервера; `POST /auth/forgot-password` → **200** + generic RU message | То же: лог + **200** generic                                                         |
+| Среда           | Нет / неполный конфиг RuSender или нет `PUBLIC_WEB_BASE_URL`                                                   | Конфиг есть, отправка упала                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Development** | Dev fallback: письмо/reset URL в **логе** сервера; `POST /auth/forgot-password` → **200** + generic RU message | То же: лог + **200** generic                                                                              |
 | **Production**  | **503** для **всех** запросов forgot-password **до** lookup email (fail-closed по конфигу)                     | **200** + generic message; токен **остаётся usable** до TTL (soft-fail против email enumeration; не burn) |
 
-Шаблоны без секретов: [.env.example](.env.example), [.env.development.example](.env.development.example). В Prod задавайте `RUSENDER_*` через **GitHub Secrets** и/или серверный `.env.production` (файл с реальными токенами **не** коммитить).
+Шаблоны без секретов: [.env.example](.env.example), [.env.development.example](.env.development.example). В Prod: `RUSENDER_*` — **GitHub Secrets**; `EMAIL_FROM_*` / `PUBLIC_WEB_BASE_URL` — дефолты в [docker-compose.prod.yml](docker-compose.prod.yml) (на сервере ничего править не нужно).
 
 Домен отправки (напр. `cherrypashkaparty.ru`) должен быть верифицирован в RuSender (**SPF/DKIM**). Пока домен не подтверждён, отправка в Prod будет падать (soft-fail **200**, токен остаётся usable) или при отсутствии ключей — **503**; см. [OPS.md](CherryPlayServer/OPS.md). Контракты: [CONTRACTS.md](CONTRACTS.md) §3.2.0a.
 
@@ -97,7 +97,7 @@
 ### Продакшен
 
 - Используйте `**.env.production`** на целевом сервере или передавайте значения через **GitHub Secrets\*\* (рекомендуется для deploy.sh).
-- **deploy.sh** собирает `.env` из `VERSION`, `REGISTRY`, `IMAGE_`_, затем дополняет из `.env.production`, если файл есть, затем переопределяет секретами из CI (JWT*SECRET_KEY, POSTGRES_PASSWORD, CORS_ORIGIN*_, RUSENDER\*\*_, EMAIL_\*\*, PUBLIC_WEB_BASE_URL и т.д.). См. [scripts/deploy.sh](scripts/deploy.sh).
+- **deploy.sh** собирает `.env` из `VERSION`, `REGISTRY`, `IMAGE_*`, затем дополняет из `.env.production`, если файл есть, затем переопределяет секретами из CI (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `CORS_ORIGIN_*`, `RUSENDER_*` и т.д.). См. [scripts/deploy.sh](scripts/deploy.sh).
 - **GitHub Actions** ([release-and-deploy.yml](.github/workflows/release-and-deploy.yml)) передают секреты в шаг деплоя; **GHCR_TOKEN** задаётся в GitHub Secrets (или используется `github.token`) для загрузки образов.
-- Для сброса пароля в Prod дополнительно нужны Secrets / env: **RUSENDER_API_TOKEN**, **RUSENDER_SEND_KEY_ID**, плюс несекретные **EMAIL_FROM_ADDRESS**, **EMAIL_FROM_NAME**, **PUBLIC_WEB_BASE_URL** (HTTPS предпочтителен).
-- **Никогда не коммитьте** реальный `.env.production` с секретами; используйте Secrets и при необходимости несекретный `.env.production` для значений по умолчанию.
+- Для сброса пароля в Prod: Secrets **RUSENDER_API_TOKEN**, **RUSENDER_SEND_KEY_ID**; From и `PUBLIC_WEB_BASE_URL` уже в дефолтах [docker-compose.prod.yml](docker-compose.prod.yml).
+- **Никогда не коммитьте** реальный `.env.production` с токенами; для RuSender используйте GitHub Secrets.

@@ -58,18 +58,18 @@
 
 ### Секреты и ENV
 
-| Переменная             | Где задавать                                                                               | Примечание                                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `RUSENDER_API_TOKEN`   | GitHub Secrets / серверный `.env.production` / локально `.env.development` (debug compose) | Никогда не коммитить                                                                                |
-| `RUSENDER_SEND_KEY_ID` | То же                                                                                      | Numeric send key id из кабинета RuSender                                                            |
-| `EMAIL_FROM_ADDRESS`   | Prod env / `.env.development`                                                              | На верифицированном домене, напр. `noreply@cherrypashkaparty.ru`                                    |
-| `EMAIL_FROM_NAME`      | Prod env                                                                                   | Обычно `CherryPlay`                                                                                 |
-| `PUBLIC_WEB_BASE_URL`  | Prod env / `.env.development`                                                              | База Web для ссылок сброса; в prod предпочтительно **HTTPS** (напр. `https://cherrypashkaparty.ru`) |
+| Переменная             | Где задавать                                                                               | Примечание                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `RUSENDER_API_TOKEN`   | GitHub Secrets / серверный `.env.production` / локально `.env.development` (debug compose) | Никогда не коммитить                          |
+| `RUSENDER_SEND_KEY_ID` | То же                                                                                      | Numeric send key id из кабинета RuSender      |
+| `EMAIL_FROM_ADDRESS`   | Дефолт `docker-compose.prod.yml` / локально `.env.development` (не Secrets)                | `noreply@cherrypashkaparty.ru` в prod compose |
+| `EMAIL_FROM_NAME`      | То же                                                                                      | `CherryPlay`                                  |
+| `PUBLIC_WEB_BASE_URL`  | То же                                                                                      | `https://cherrypashkaparty.ru` в prod compose |
 
 Проброс в контейнер `server`:
 
 - **debug:** `env_file: .env.development` в [docker-compose.debug.yml](../docker-compose.debug.yml);
-- **prod / обычный compose:** переменные в `environment:` из корневого `.env` ([docker-compose.prod.yml](../docker-compose.prod.yml), [docker-compose.yml](../docker-compose.yml)); `deploy.sh` дописывает их в `.env` с сервера / CI.
+- **prod:** дефолты From / `PUBLIC_WEB_BASE_URL` в [docker-compose.prod.yml](../docker-compose.prod.yml); `RUSENDER_*` из CI Secrets (через `deploy.sh` → `.env`). На сервере для почты ничего заводить не обязательно.
 
 Полный справочник: [ENV.md](../ENV.md). Шаблоны без секретов: [.env.example](../.env.example).
 
@@ -87,7 +87,7 @@
 Перед опорой на forgot-password в production проверить:
 
 - домен `cherrypashkaparty.ru` **verified** в RuSender (SPF/DKIM);
-- `PUBLIC_WEB_BASE_URL` задан и предпочтительно **HTTPS** (`https://cherrypashkaparty.ru`), когда TLS доступен.
+- `PUBLIC_WEB_BASE_URL` — дефолт HTTPS в `docker-compose.prod.yml` (`https://cherrypashkaparty.ru`).
 
 Таблица токенов: [DATABASE.md](DATABASE.md) — `PasswordResetTokens`.
 
