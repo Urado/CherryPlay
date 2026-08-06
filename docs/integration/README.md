@@ -12,7 +12,7 @@
 
 | Подсистема                      | Описание                                                                                                                                | Документ                                      |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **Accounts & Auth**             | Роли (organizer/viewer), JWT, вход по email+паролю и OAuth (VK, Mail.ru), хранение токенов в Desktop и Web; OAuth2 для Telegram отложен | [Accounts and Auth](./accounts-and-auth.md)   |
+| **Accounts & Auth**             | Роли (organizer/viewer), JWT, вход по email+паролю и OAuth (VK, Mail.ru), сброс/смена пароля (Server + RuSender + Web/List/Components — shipped), хранение токенов в Desktop и Web; OAuth2 для Telegram и email-верификация при регистрации отложены | [Accounts and Auth](./accounts-and-auth.md)   |
 | **Party Management**            | CRUD вечеринок, каталог, публикация плейлиста, лимиты, кабинет организатора                                                             | [Party Management](./party-management.md)     |
 | **Streaming**                   | Трансляция состояния воспроизведения и плейлиста (SignalR + REST), freeze при потере связи                                              | [Streaming](./streaming.md)                   |
 | **AIMP как источник стриминга** | Windows x64: стриминг из AIMP через named pipe, границы поддержки, протокол, операторский сценарий, troubleshooting                     | [AIMP Streaming](./aimp-streaming.md)         |

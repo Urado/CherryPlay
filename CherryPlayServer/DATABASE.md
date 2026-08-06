@@ -147,6 +147,27 @@ _Связь с учётной записью: email+пароль (таблица
 
 ---
 
+## PasswordResetTokens (токены сброса пароля)
+
+Одноразовые токены для self-service сброса пароля по email. В БД хранится только хеш токена (SHA-256), не plaintext.
+
+| Колонка          | Тип      | Ограничения                                      | Описание                                      |
+| ---------------- | -------- | ------------------------------------------------ | --------------------------------------------- |
+| `Id`             | GUID     | PK                                               | Идентификатор записи.                         |
+| `EmailAccountId` | GUID     | FK → EmailAccounts.Id, NOT NULL, ON DELETE CASCADE | Email-аккаунт, для которого выдан токен.     |
+| `TokenHash`      | string   | UNIQUE, NOT NULL, длина 64 (hex SHA-256)          | Хеш сырого токена из ссылки.                  |
+| `ExpiresAt`      | datetime | NOT NULL                                          | Срок действия (по умолчанию ~1 час).          |
+| `UsedAt`         | datetime | NULL                                             | Когда токен погашен; NULL = ещё не использован. |
+| `CreatedAt`      | datetime | NOT NULL                                          | Время создания.                               |
+
+Индексы: `TokenHash` (UNIQUE), `EmailAccountId`.
+
+При выдаче нового токена предыдущие неиспользованные для того же `EmailAccountId` инвалидируются (`UsedAt`). Успешный **reset-password** гасит использованный токен; успешный **change-password** также инвалидирует все неиспользованные reset-токены того же `EmailAccount`. После успешного сброса или смены пароля удаляются все `OrganizerSessions` организатора.
+
+Потоки API и политика почты (Dev-лог / Prod 503 при отсутствии конфига / soft-fail 200 при сбое отправки): [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md), [ENV.md](../ENV.md), [OPS.md](OPS.md).
+
+---
+
 ## Party (вечеринка)
 
 Метаданные вечеринки и привязка к организатору. shortCode неизменяемый после создания.

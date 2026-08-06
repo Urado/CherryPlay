@@ -110,7 +110,6 @@ public class AuthController : ControllerBase
             return BadRequest($"Unsupported provider: {provider}");
         }
 
-        // Validate state parameter to prevent CSRF attacks
         if (!_oauthStateService.ValidateAndConsumeState(state, provider))
         {
             _logger.LogWarning("Invalid or missing OAuth state parameter for provider: {Provider}", provider);
@@ -145,7 +144,6 @@ public class AuthController : ControllerBase
             return BadRequest($"Unsupported provider: {request.Provider}");
         }
 
-        // Validate state parameter to prevent CSRF attacks
         if (!string.IsNullOrEmpty(request.State) && !_oauthStateService.ValidateAndConsumeState(request.State, request.Provider))
         {
             _logger.LogWarning("Invalid OAuth state parameter for provider: {Provider}", request.Provider);
@@ -235,6 +233,75 @@ public class AuthController : ControllerBase
         return Ok(new AuthExchangeResponse(result.Token!));
     }
 
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Request is required");
+        }
+
+        var result = await _authService.ForgotPasswordAsync(request.Email);
+        if (result.ServiceUnavailable)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, result.ErrorMessage);
+        }
+
+        if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        return Ok(new ForgotPasswordResponse(result.Message ?? AuthConstants.ForgotPasswordGenericMessage));
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Request is required");
+        }
+
+        var result = await _authService.ResetPasswordAsync(request.Token, request.NewPassword);
+        if (!result.Success)
+        {
+            return BadRequest(result.ErrorMessage);
+        }
+
+        Response.Cookies.Delete(AuthConstants.AuthCookieName);
+        return NoContent();
+    }
+
+    [HttpPost("change-password")]
+    [AuthorizeOrganizer]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Request is required");
+        }
+
+        var organizerId = HttpContext.GetOrganizerId();
+        if (!organizerId.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _authService.ChangePasswordAsync(organizerId.Value, request.OldPassword, request.NewPassword);
+        if (!result.Success)
+        {
+            return result.FailureKind switch
+            {
+                PasswordMutationFailureKind.Unauthorized => Unauthorized(result.ErrorMessage),
+                _ => BadRequest(result.ErrorMessage),
+            };
+        }
+
+        Response.Cookies.Delete(AuthConstants.AuthCookieName);
+        return NoContent();
+    }
+
     [HttpPost("logout")]
     [AuthorizeOrganizer]
     public async Task<IActionResult> Logout()
@@ -265,12 +332,9 @@ public class AuthController : ControllerBase
             return false;
         if (forDesktop)
         {
-            // Only allow http://127.0.0.1 with specific ports for security
             if (uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase) &&
                 uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
             {
-                // Allow common ports: 8080, 3000, 5173, 5174 (common dev ports)
-                // Or no port specified (defaults to 80)
                 var port = uri.Port == -1 ? 80 : uri.Port;
                 var allowedPorts = new[] { 80, 8080, 3000, 5173, 5174 };
                 return allowedPorts.Contains(port);
@@ -281,8 +345,6 @@ public class AuthController : ControllerBase
 
     private CookieOptions CreateAuthCookieOptions()
     {
-        // В production всегда используем Secure и SameSite=None для cross-origin запросов
-        // В development используем Lax для локальной разработки
         var isProduction = !Request.HttpContext.RequestServices
             .GetRequiredService<IWebHostEnvironment>().IsDevelopment();
 

@@ -50,6 +50,11 @@ services:
       - EnableSwagger=true
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cherryplay-jwt-secret-minimum-32-characters-long}
+      - RUSENDER_API_TOKEN=${RUSENDER_API_TOKEN:-}
+      - RUSENDER_SEND_KEY_ID=${RUSENDER_SEND_KEY_ID:-}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-CherryPlay}
+      - PUBLIC_WEB_BASE_URL=${PUBLIC_WEB_BASE_URL:-http://localhost:3000}
       - Cors__AllowedOrigins__0=http://localhost:3000
       - Cors__AllowedOrigins__1=http://web:80
       - Cors__AllowedOrigins__2=http://localhost:5173

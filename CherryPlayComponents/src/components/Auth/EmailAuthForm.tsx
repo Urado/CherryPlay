@@ -18,6 +18,7 @@ export interface EmailAuthFormProps {
   onModeChange?: (mode: 'login' | 'register') => void;
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  onForgotPassword?: () => void;
   showModeToggle?: boolean;
 }
 
@@ -29,6 +30,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   onModeChange,
   onSuccess,
   onError,
+  onForgotPassword,
   showModeToggle = true,
 }) => {
   const [emailMode, setEmailMode] = useState<'login' | 'register'>(mode);
@@ -177,6 +179,19 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
             autoComplete="current-password"
             minLength={MIN_PASSWORD_LENGTH}
           />
+
+          {onForgotPassword && (
+            <div className="email-auth-form-forgot">
+              <button
+                type="button"
+                className="email-auth-form-forgot-link"
+                onClick={onForgotPassword}
+                disabled={isLoading}
+              >
+                Забыли пароль?
+              </button>
+            </div>
+          )}
 
           <FormButton
             type="submit"

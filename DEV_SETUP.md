@@ -29,9 +29,19 @@ dotnet run
 - Чтобы запустить сервер с этими переменными:
   - **Вариант 1:** подгрузите их перед запуском, например: `source .env.development` (Bash), затем `cd CherryPlayServer && dotnet run`.
   - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
+  - **Вариант 3 (Docker debug):** `docker compose -f docker-compose.debug.yml up --build` — сервис `server` подключает корневой **`.env.development`** через `env_file` (включая `RUSENDER_*` для проверки писем).
 - Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings\_\_DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
 - По умолчанию (`UseInMemoryStorage=false` в appsettings) — **EF Core + PostgreSQL** (нужна БД: Docker `postgres` или локальный Postgres). Опционально `UseInMemoryStorage=true` — in-memory репозитории без Postgres (данные только в процессе). Dual storage intentional — см. [ARCHITECTURE.md](ARCHITECTURE.md), [CherryPlayServer/README.md](CherryPlayServer/README.md).
+
+#### Forgot password (Dev)
+
+Локальная проверка сброса пароля без RuSender:
+
+1. Задайте в `.env.development` **`PUBLIC_WEB_BASE_URL`** (для Web обычно `http://localhost:3000`). В Development при пустом значении сервер подставляет `http://localhost:3000`.
+2. RuSender в Dev **не обязателен**: при отсутствии конфига (или сбое отправки) полный reset URL пишется в **лог** сервера; клиенту — **200** + generic RU-сообщение.
+3. Откройте URL из лога → `/reset-password?token=…` на Web → новый пароль → вход.
+4. Переменные почты / Prod-политика: [ENV.md](ENV.md). Smoke и домен RuSender: [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md). Контракт: [CONTRACTS.md](CONTRACTS.md) §3.2.0a.
 
 ## 2. CherryPlayWeb
 
@@ -83,9 +93,9 @@ npm run dev
 
 Два режима (подробности: [CherryPlayList/docs/web-demo.md](CherryPlayList/docs/web-demo.md)):
 
-| Команда | Режим | Сервер |
-| ------- | ----- | ------ |
-| `npm run dev:web` | Fixtures — UI без Electron, party/auth на фикстурах | Не нужен |
+| Команда                | Режим                                                     | Сервер                      |
+| ---------------------- | --------------------------------------------------------- | --------------------------- |
+| `npm run dev:web`      | Fixtures — UI без Electron, party/auth на фикстурах       | Не нужен                    |
 | `npm run dev:web:live` | Live — REST/SignalR через Vite proxy (`VITE_DEMO_LIVE=1`) | CherryPlayServer на `:5000` |
 
 ```bash
@@ -99,13 +109,13 @@ npm run dev:web:live
 
 ## Переменные окружения (сводка)
 
-| Переменная     | Проект         | Описание                                                                                                                          |
-| -------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_URL` | CherryPlayWeb  | Базовый URL API сервера (по умолчанию подставляется при сборке; для dev часто задаётся в `.env`). Пример: `http://localhost:5000` |
-| `VITE_API_URL` | CherryPlayList | URL сервера (при сборке; иначе `serverConfig.*.json` или настройки в UI); в web demo — опциональный прямой base (без proxy) |
-| `VITE_APP_MODE` | CherryPlayList | `demo` для веб-демо (`dev:web` / `dev:web:project` / `dev:web:live`); см. [ENV.md](ENV.md), [web-demo.md](CherryPlayList/docs/web-demo.md) |
-| `VITE_DEMO_LIVE` | CherryPlayList | `1` в `dev:web:live` — live REST/SignalR + local login; без флага — fixtures |
-| `VITE_LOAD_DEMO_PROJECT` | CherryPlayList | `1` в `dev:web:project` — автозагрузка `sample.cherry` |
+| Переменная               | Проект         | Описание                                                                                                                                   |
+| ------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `VITE_API_URL`           | CherryPlayWeb  | Базовый URL API сервера (по умолчанию подставляется при сборке; для dev часто задаётся в `.env`). Пример: `http://localhost:5000`          |
+| `VITE_API_URL`           | CherryPlayList | URL сервера (при сборке; иначе `serverConfig.*.json` или настройки в UI); в web demo — опциональный прямой base (без proxy)                |
+| `VITE_APP_MODE`          | CherryPlayList | `demo` для веб-демо (`dev:web` / `dev:web:project` / `dev:web:live`); см. [ENV.md](ENV.md), [web-demo.md](CherryPlayList/docs/web-demo.md) |
+| `VITE_DEMO_LIVE`         | CherryPlayList | `1` в `dev:web:live` — live REST/SignalR + local login; без флага — fixtures                                                               |
+| `VITE_LOAD_DEMO_PROJECT` | CherryPlayList | `1` в `dev:web:project` — автозагрузка `sample.cherry`                                                                                     |
 
 ## Проверка связки
 

@@ -15,7 +15,9 @@
 | `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
 | `/login` | Вход | `LoginPage` |
 | `/register` | Регистрация | `RegisterPage` |
-| `/cabinet` | Кабинет организатора | `CabinetPage` |
+| `/forgot-password` | Запрос сброса пароля (письмо) | `ForgotPasswordPage` |
+| `/reset-password` | Новый пароль по `?token=` из письма | `ResetPasswordPage` |
+| `/cabinet` | Кабинет организатора (в т.ч. смена пароля) | `CabinetPage` |
 | `/admin` | Корневой админ-маршрут (redirect) | `Navigate -> /admin/organizers` |
 | `/admin/organizers` | Список организаторов (admin only) | `AdminOrganizersPage` |
 | `/admin/organizers/:id` | Детальная карточка организатора (admin only) | `AdminOrganizerDetailPage` |
@@ -24,6 +26,7 @@
 - **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
 - **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
+- **ForgotPasswordPage / ResetPasswordPage**: self-service сброс пароля (письмо → токен); контракты и политика почты — [accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a. После успешного reset — редирект на `/login`. Смена пароля (старый + новый) — в кабинете (`CabinetPage`, аккордеон «Аккаунт»), не отдельный маршрут; после успеха клиент разлогинивает и открывает `/login` с notice (см. ниже).
 
 ---
 
@@ -50,6 +53,11 @@
 
 ### CabinetPage / CabinetPartyForm
 
+- Структура: шапка → профиль → два аккордеона на общих классах `.cabinet-accordion` / `.cabinet-accordion-summary` / `.cabinet-accordion-body` (`<details>`).
+- **Мои вечеринки** — открыт по умолчанию (`partiesOpen`, React-controlled через `open` + `onToggle`). CTA «Создать вечеринку» в summary: `preventDefault` / `stopPropagation` + `setPartiesOpen(true)`, чтобы не закрывать панель и при необходимости открыть её.
+- **Аккаунт** — неконтролируемый `<details>`, свёрнут по умолчанию. В теле — `ChangePasswordForm` с `layout="embedded"` (без вложенного details).
+- **API:** `POST /auth/change-password` → **204** (без тела); затем клиент обязан повторно войти (все сессии инвалидированы). Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a.
+- Смена пароля: shared-форма вызывает эндпоинт выше. После успеха: `clearThemeAccessCache()` → `authService.logout()` → `navigate(/login, { replace: true, state: { passwordChanged: true } })`. `LoginPage` показывает «Пароль успешно изменён. Войдите с новым паролем.» и сбрасывает `state` из history.
 - **GET** `/api/organizer/me/theme-access` — получение доступных тем, locked-плиток и `contactUrl`.
 - При выборе темы в форме:
   - доступные темы выбираются напрямую;
@@ -78,7 +86,8 @@
 - `src/pages/PartyListPage.tsx` — каталог/список.
 - `src/pages/PartyView.tsx` — просмотр вечеринки по shortCode.
 - `src/pages/PartyInfoPage.tsx` — информация о вечеринке.
-- `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора.
+- `src/pages/LoginPage.tsx`, `RegisterPage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx` — auth-страницы организатора.
+- `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора (аккордеоны «Мои вечеринки» / «Аккаунт»; смена пароля — в «Аккаунт»).
 - `src/pages/admin/AdminOrganizersPage.tsx`, `src/pages/admin/AdminOrganizerDetailPage.tsx` — админ-раздел.
 - `src/services/partyApiService.ts` — вызовы REST API.
 - `src/services/adminApiService.ts`, `src/services/themeAccessService.ts` — admin и theme-access API.

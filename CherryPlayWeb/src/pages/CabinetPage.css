@@ -1,11 +1,14 @@
-/**
- * Кабинет организатора — тёмная палитра в стиле приложения (каталог, плейлист).
- */
 .cabinet-page {
+  --cabinet-space: 24px;
+  --cabinet-space-sm: 16px;
+  --cabinet-field-bg: rgba(255, 255, 255, 0.09);
+  --cabinet-field-border: rgba(255, 255, 255, 0.28);
+  --cabinet-surface: rgba(255, 255, 255, 0.04);
+
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(160deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-primary);
-  padding: 24px 20px;
+  padding: var(--cabinet-space) 20px 40px;
   box-sizing: border-box;
   position: relative;
 }
@@ -26,23 +29,21 @@
 }
 
 .cabinet-container {
-  max-width: 800px;
+  max-width: 920px;
   margin: 0 auto;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 24px var(--shadow);
+  padding: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cabinet-space);
 }
 
 .cabinet-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  gap: 12px;
+  padding-bottom: var(--cabinet-space-sm);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -50,6 +51,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .logout-button {
@@ -63,90 +65,205 @@
 
 .cabinet-header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
-.organizer-info {
-  margin-bottom: 24px;
+.cabinet-section-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.cabinet-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--cabinet-space-sm);
+  padding: var(--cabinet-space-sm) 0;
 }
 
 .organizer-logo {
-  width: 100px;
-  height: 100px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  border: 2px solid rgba(0, 255, 136, 0.35);
 }
 
-.organizer-info h2 {
-  margin: 0 0 20px 0;
-  font-size: 24px;
+.cabinet-profile-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cabinet-space-sm);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.cabinet-profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cabinet-profile-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.25;
 }
 
 .organizer-links {
-  margin: 20px 0;
-}
-
-.organizer-links h3 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-  color: var(--text-secondary);
-}
-
-.organizer-links ul {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.organizer-links li {
-  margin: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
 }
 
 .organizer-links a {
   color: #00ccff;
   text-decoration: none;
+  font-size: 14px;
 }
 
 .organizer-links a:hover {
   text-decoration: underline;
-  color: #00ff88;
+  color: var(--accent-primary);
 }
 
 .organizer-meta {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+  margin: 0;
   color: var(--text-tertiary);
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.cabinet-parties {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-color);
-}
-
-.cabinet-parties-header {
+.cabinet-accordion {
   display: flex;
+  flex-direction: column;
+  gap: var(--cabinet-space-sm);
+  padding-top: var(--cabinet-space);
+  border-top: 1px solid var(--border-color);
+  border-inline: none;
+  border-bottom: none;
+  background: transparent;
+}
+
+.cabinet-accordion-summary {
+  display: list-item;
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+  color: var(--text-primary);
+  transition: color 0.15s ease;
+}
+
+.cabinet-accordion-summary:hover {
+  color: var(--text-primary);
+}
+
+.cabinet-accordion-summary:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.cabinet-accordion-summary::-webkit-details-marker {
+  color: var(--text-tertiary);
+}
+
+.cabinet-accordion-summary-row {
+  display: inline-flex;
+  width: calc(100% - 1.25em);
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 12px;
+  vertical-align: middle;
 }
 
-.cabinet-parties-header h3 {
-  margin: 0;
-  font-size: 20px;
+.cabinet-accordion-summary .cabinet-section-title {
+  display: inline;
+}
+
+.cp-button.cabinet-create-party-btn {
+  font-weight: 600;
+}
+
+.cabinet-accordion-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cabinet-space-sm);
+  padding: 4px 0 8px;
+}
+
+.cabinet-accordion[open] > .cabinet-accordion-body {
+  animation: cabinet-accordion-reveal 0.18s ease-out;
+}
+
+@keyframes cabinet-accordion-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabinet-accordion[open] > .cabinet-accordion-body {
+    animation: none;
+  }
+
+  .cabinet-accordion-summary {
+    transition: none;
+  }
+}
+
+.cabinet-account-section .form-input {
+  background-color: var(--cabinet-field-bg);
+  border-color: var(--cabinet-field-border);
   color: var(--text-primary);
+}
+
+.cabinet-account-section .form-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
+}
+
+.cabinet-account-section .form-input::placeholder {
+  color: var(--text-disabled);
+}
+
+.cabinet-account-section .form-label {
+  color: var(--text-secondary);
+}
+
+.cabinet-account-section .form-hint {
+  color: var(--text-tertiary);
+}
+
+.cabinet-account-section .password-auth-form-description {
+  color: var(--text-secondary);
+}
+
+.cabinet-account-section .password-auth-form-success {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.35);
+  color: var(--accent-primary);
 }
 
 .cabinet-error {
   padding: 12px;
-  margin-bottom: 16px;
   background: var(--state-error-bg);
   color: var(--state-error-text);
   border: 1px solid rgba(255, 107, 107, 0.4);
@@ -155,9 +272,9 @@
 }
 
 .cabinet-form {
-  padding: 20px;
-  margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: var(--cabinet-space-sm) 18px;
+  margin-bottom: 4px;
+  background: var(--cabinet-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-sizing: border-box;
@@ -165,7 +282,7 @@
 
 .cabinet-form h4 {
   margin: 0 0 12px 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -188,10 +305,10 @@
   max-width: 400px;
   margin-top: 4px;
   padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--cabinet-field-border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cabinet-field-bg);
   color: var(--text-primary);
 }
 
@@ -204,8 +321,8 @@
 .cabinet-form label:not(.cabinet-checkbox) select:focus,
 .cabinet-form label:not(.cabinet-checkbox) textarea:focus {
   outline: none;
-  border-color: rgba(0, 255, 0, 0.5);
-  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
 }
 
 .cabinet-char-count {
@@ -237,7 +354,7 @@
   padding: 6px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cabinet-field-bg);
   color: var(--text-primary);
   font-size: 13px;
   transition:
@@ -295,17 +412,17 @@
   flex: 1;
   min-width: 0;
   padding: 8px 12px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--cabinet-field-border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--cabinet-field-bg);
   color: var(--text-primary);
 }
 
 .cabinet-tag-input:focus {
   outline: none;
-  border-color: rgba(0, 255, 0, 0.5);
-  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
 }
 
 .cabinet-tag-input::placeholder {
@@ -347,7 +464,6 @@
   background: rgba(255, 107, 107, 0.15);
 }
 
-/* Выбор дат — в стиле страницы (тёмная подложка, не белая) */
 .cabinet-form input[type='datetime-local'] {
   color-scheme: dark;
 }
@@ -378,7 +494,7 @@
 }
 
 .cabinet-form label:not(.cabinet-checkbox) select:active {
-  border-color: rgba(0, 255, 0, 0.5);
+  border-color: var(--accent-primary);
 }
 
 .cabinet-checkbox {
@@ -448,7 +564,7 @@
 .cabinet-party-item {
   padding: 14px 16px;
   margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--cabinet-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   transition:
@@ -501,7 +617,7 @@
 }
 
 .cabinet-party-link:hover {
-  color: #00ff88;
+  color: var(--accent-primary);
   text-decoration: underline;
 }
 
@@ -513,7 +629,6 @@
   margin-top: 2px;
 }
 
-/* Чекбокс «В каталоге» в списке вечеринок */
 .cabinet-toggle-label {
   display: flex;
   align-items: center;
@@ -538,4 +653,29 @@
 .cabinet-toggle-label input[type='checkbox']:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .cabinet-page {
+    padding: 16px 14px 32px;
+  }
+
+  .cabinet-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .cabinet-profile {
+    align-items: flex-start;
+  }
+
+  .cabinet-profile-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cabinet-accordion-summary-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
 }

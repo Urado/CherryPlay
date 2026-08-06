@@ -1,4 +1,10 @@
-import { Disclosure, AuthForm, Button } from '@cherryplay/components';
+import {
+  Disclosure,
+  AuthForm,
+  Button,
+  ForgotPasswordForm,
+  ChangePasswordForm,
+} from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
@@ -19,6 +25,8 @@ import { clearAuthSession, setAuthSessionToken } from '@shared/utils/authSession
 
 import { MyPartiesList } from './MyPartiesList';
 
+type UnauthenticatedPanel = 'login' | 'forgot';
+
 export const AccountView: React.FC = () => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const storeOrganizer = useAuthStore((state) => state.organizer);
@@ -28,6 +36,8 @@ export const AccountView: React.FC = () => {
   const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOrganizerCardExpanded, setIsOrganizerCardExpanded] = useState(false);
+  const [isChangePasswordExpanded, setIsChangePasswordExpanded] = useState(false);
+  const [unauthenticatedPanel, setUnauthenticatedPanel] = useState<UnauthenticatedPanel>('login');
   const addNotification = useUIStore((state) => state.addNotification);
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
@@ -111,6 +121,12 @@ export const AccountView: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (authenticated) {
+      setUnauthenticatedPanel('login');
+    }
+  }, [authenticated]);
+
   const handleOAuthExchange = async (code: string, provider: string) => {
     try {
       setLoading(true);
@@ -154,6 +170,27 @@ export const AccountView: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPasswordSuccess = (message: string) => {
+    addNotification({
+      type: 'info',
+      message: `${message} Ссылка для сброса пароля откроется в браузере на сайте CherryPlay.`,
+      duration: 12000,
+    });
+  };
+
+  const handleChangePasswordSuccess = () => {
+    clearAuthSession();
+    setOrganizerInfo(null);
+    setIsChangePasswordExpanded(false);
+    setUnauthenticatedPanel('login');
+    setError(null);
+    addNotification({
+      type: 'success',
+      message: 'Пароль успешно изменён. Войдите снова с новым паролем.',
+      duration: 8000,
+    });
   };
 
   const organizer: OrganizerDto | null =
@@ -252,6 +289,24 @@ export const AccountView: React.FC = () => {
               </Disclosure>
             </section>
 
+            {!isFixturesDemo && (
+              <section className="account-disclosure-card" aria-label="Смена пароля">
+                <Disclosure
+                  title="Смена пароля"
+                  className="account-disclosure"
+                  expanded={isChangePasswordExpanded}
+                  onExpandedChange={setIsChangePasswordExpanded}
+                >
+                  <ChangePasswordForm
+                    authService={authService}
+                    layout="embedded"
+                    title={null}
+                    onSuccess={handleChangePasswordSuccess}
+                  />
+                </Disclosure>
+              </section>
+            )}
+
             <MyPartiesList />
           </div>
 
@@ -270,15 +325,27 @@ export const AccountView: React.FC = () => {
         </div>
       ) : (
         <>
-          <AuthForm
-            title="Вход в систему"
-            compact={false}
-            authService={authService}
-            oauthEnabled={!isDemoMode}
-            onLoginSuccess={() => {
-              void loadOrganizerInfo();
-            }}
-          />
+          {unauthenticatedPanel === 'forgot' ? (
+            <div className="account-view-password-panel">
+              <ForgotPasswordForm
+                authService={authService}
+                description="Укажите email аккаунта. Если он зарегистрирован, мы отправим инструкции по сбросу пароля. Ссылка из письма откроется в браузере на сайте CherryPlay."
+                onSuccess={handleForgotPasswordSuccess}
+                onBackToLogin={() => setUnauthenticatedPanel('login')}
+              />
+            </div>
+          ) : (
+            <AuthForm
+              title="Вход в систему"
+              compact={false}
+              authService={authService}
+              oauthEnabled={!isDemoMode}
+              onLoginSuccess={() => {
+                void loadOrganizerInfo();
+              }}
+              onForgotPassword={() => setUnauthenticatedPanel('forgot')}
+            />
+          )}
           <div className="account-disclosure-stack">
             <MyPartiesList />
           </div>

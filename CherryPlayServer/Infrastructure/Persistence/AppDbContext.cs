@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<EmailAccountEf> EmailAccounts => Set<EmailAccountEf>();
     public DbSet<OAuthAccountEf> OAuthAccounts => Set<OAuthAccountEf>();
     public DbSet<OrganizerSessionEf> OrganizerSessions => Set<OrganizerSessionEf>();
+    public DbSet<PasswordResetTokenEf> PasswordResetTokens => Set<PasswordResetTokenEf>();
     public DbSet<ThemeEf> Themes => Set<ThemeEf>();
     public DbSet<ThemePackageEf> ThemePackages => Set<ThemePackageEf>();
     public DbSet<ThemePackageItemEf> ThemePackageItems => Set<ThemePackageItemEf>();

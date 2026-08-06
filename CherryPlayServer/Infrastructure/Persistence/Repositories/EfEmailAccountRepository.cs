@@ -6,9 +6,6 @@ using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Реализация <see cref="IEmailAccountRepository"/> для слоя персистентности (EF Core + PostgreSQL).
-/// </summary>
 public class EfEmailAccountRepository : IEmailAccountRepository
 {
     private readonly AppDbContext _context;
@@ -16,6 +13,14 @@ public class EfEmailAccountRepository : IEmailAccountRepository
     public EfEmailAccountRepository(AppDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<EmailAccount?> GetByIdAsync(Guid id)
+    {
+        var ef = await _context.EmailAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id);
+        return ef?.ToDomain();
     }
 
     public async Task<EmailAccount?> GetByEmailAsync(string email)

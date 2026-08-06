@@ -3,7 +3,9 @@ import type {
   OrganizerDto,
   AuthExchangeRequest,
   AuthExchangeResponse,
+  ForgotPasswordResponse,
 } from '@cherryplay/components';
+import { AuthHttpError, FORGOT_PASSWORD_GENERIC_SUCCESS } from '@cherryplay/components';
 
 import { getServerUrl } from '../config/serverConfig';
 import {
@@ -20,8 +22,42 @@ import { handleAuthError } from '../utils/authErrorHandler';
 import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
-// Re-export types for backward compatibility
 export type { OrganizerDto, AuthExchangeRequest, AuthExchangeResponse };
+
+async function readResponseErrorMessage(response: Response): Promise<string> {
+  try {
+    const text = await response.text();
+    if (!text) {
+      return '';
+    }
+    try {
+      const json = JSON.parse(text) as {
+        message?: unknown;
+        detail?: unknown;
+        title?: unknown;
+      };
+      if (typeof json.message === 'string' && json.message.trim()) {
+        return json.message;
+      }
+      if (typeof json.detail === 'string' && json.detail.trim()) {
+        return json.detail;
+      }
+      if (typeof json.title === 'string' && json.title.trim()) {
+        return json.title;
+      }
+    } catch {
+      return text;
+    }
+    return text;
+  } catch {
+    return '';
+  }
+}
+
+async function throwAuthHttpError(response: Response): Promise<never> {
+  const message = await readResponseErrorMessage(response);
+  throw new AuthHttpError(response.status, message);
+}
 
 class AuthService implements IAuthService {
   private async getBaseUrl(): Promise<string> {
@@ -111,13 +147,11 @@ class AuthService implements IAuthService {
       throw new Error('No access token available');
     }
 
-    // Проверяем, не истек ли токен перед запросом
     if (isTokenExpired(token)) {
       handleAuthError('Authentication token has expired. Please login again.');
       throw new Error('Authentication token has expired');
     }
 
-    // Сначала проверяем валидность сессии легковесным эндпоинтом
     try {
       const sessionCheckResponse = await apiFetch(`${baseUrl}/api/organizer/session/check`, {
         method: 'GET',
@@ -133,22 +167,18 @@ class AuthService implements IAuthService {
           handleAuthError('Authentication token expired or invalid');
           throw new Error('Authentication token expired or invalid');
         }
-        // Если сервер недоступен (404, 500 и т.д.), не логируем ошибку, просто выбрасываем
         throw new Error('Session check failed');
       }
     } catch (error) {
-      // Если это ошибка аутентификации, обрабатываем её
       if (
-        (error instanceof Error && error.message.includes('expired')) ||
-        error.message.includes('invalid')
+        error instanceof Error &&
+        (error.message.includes('expired') || error.message.includes('invalid'))
       ) {
         throw error;
       }
-      // Для других ошибок (сеть, сервер недоступен) не логируем, просто выбрасываем
       throw new Error('Session check failed');
     }
 
-    // Если сессия валидна, получаем полную информацию об организаторе
     const response = await apiFetch(`${baseUrl}/api/organizer/me`, {
       method: 'GET',
       headers: {
@@ -196,10 +226,8 @@ class AuthService implements IAuthService {
     const data = (await response.json()) as AuthExchangeResponse;
     const token = data.accessToken;
 
-    // Сохраняем токен в store
     setAuthSessionToken(token);
 
-    // Загружаем информацию об организаторе
     try {
       const organizer = await this.getCurrentOrganizer();
       useAuthStore.getState().setOrganizer({ id: organizer.id, name: organizer.name });
@@ -240,10 +268,8 @@ class AuthService implements IAuthService {
     const data = (await response.json()) as AuthExchangeResponse;
     const token = data.accessToken;
 
-    // Сохраняем токен в store
     setAuthSessionToken(token);
 
-    // Загружаем информацию об организаторе
     try {
       const organizer = await this.getCurrentOrganizer();
       useAuthStore.getState().setOrganizer({ id: organizer.id, name: organizer.name });
@@ -252,6 +278,73 @@ class AuthService implements IAuthService {
     }
 
     return token;
+  }
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    if (isDemoAuthMode()) {
+      return { message: FORGOT_PASSWORD_GENERIC_SUCCESS };
+    }
+
+    const baseUrl = await this.getBaseUrl();
+    const response = await apiFetch(`${baseUrl}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      await throwAuthHttpError(response);
+    }
+
+    if (response.status === 204) {
+      return { message: FORGOT_PASSWORD_GENERIC_SUCCESS };
+    }
+
+    try {
+      const data = (await response.json()) as ForgotPasswordResponse;
+      return {
+        message:
+          typeof data.message === 'string' && data.message.trim()
+            ? data.message
+            : FORGOT_PASSWORD_GENERIC_SUCCESS,
+      };
+    } catch {
+      return { message: FORGOT_PASSWORD_GENERIC_SUCCESS };
+    }
+  }
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    if (isDemoAuthMode()) {
+      notifyDemoUnavailable();
+      throw new AuthHttpError(503, 'Смена пароля недоступна в демо-режиме');
+    }
+
+    const baseUrl = await this.getBaseUrl();
+    const token = useAuthStore.getState().accessToken;
+
+    if (!token) {
+      throw new AuthHttpError(401, 'Требуется авторизация');
+    }
+
+    const response = await apiFetch(`${baseUrl}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        oldPassword,
+        newPassword,
+      }),
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      await throwAuthHttpError(response);
+    }
   }
 
   async logout(): Promise<void> {

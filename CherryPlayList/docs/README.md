@@ -21,6 +21,7 @@
 Подсистемы, связывающие CherryPlayList с CherryPlayServer и CherryPlayWeb (авторизация, вечеринки, стриминг). Общая документация вынесена в корень репозитория.
 
 - **[docs/integration/](../../docs/integration/)** — обзор подсистем (Accounts & Auth, Party Management, Streaming, Data and Contracts, **AIMP как источник стриминга**), роли, ссылки на CONTRACTS, DATABASE и README сервера/веба.
+- **Пароль (Account UX):** forgot-password с экрана Account → письмо / Dev-лог → reset **только в Web**; change-password в Account → **204**, все сессии мертвы → повторный вход. Детали: [accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a.
 
 ### Модули приложения
 

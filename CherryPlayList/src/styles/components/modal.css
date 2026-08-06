@@ -730,6 +730,23 @@
   max-width: 420px;
 }
 
+.account-view-password-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.account-view-password-panel .password-auth-form,
+.account-disclosure .password-auth-form {
+  width: 100%;
+  max-width: 420px;
+}
+
+.account-view-password-panel .password-auth-form {
+  margin: 0 auto;
+}
+
 .account-view h2 {
   margin: 0;
 }

@@ -48,6 +48,48 @@
 - **401 Unauthorized** — запрос без токена, с невалидным/истёкшим JWT или с несуществующей сессией. Клиенту следует предложить повторный вход.
 - **403 Forbidden** — токен валиден, но у организатора нет прав на данный ресурс (например, доступ к чужой вечеринке). Подробнее см. [CONTRACTS.md](../CONTRACTS.md) §1.1.
 - **403 admin_only** — доступ к `/api/admin/*` без роли admin.
+- **503** на `POST /auth/forgot-password` — в Production: (1) отсутствие полного конфига почты / `PUBLIC_WEB_BASE_URL` **до** lookup; (2) редкая неожиданная ошибка **после** создания токена (токен **не** гасится, остаётся usable до TTL). Не путать с soft-fail **200** при уже настроенном провайдере, но упавшей **отправке** (anti-enumeration; токен **остаётся usable**, hard-log). См. [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [ENV.md](../ENV.md).
+
+---
+
+## RuSender и сброс пароля (ops)
+
+Транзакционная почта для forgot-password идёт только через **RuSender** (без Western ESP).
+
+### Секреты и ENV
+
+| Переменная             | Где задавать                                                                               | Примечание                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `RUSENDER_API_TOKEN`   | GitHub Secrets / серверный `.env.production` / локально `.env.development` (debug compose) | Никогда не коммитить                                                                                |
+| `RUSENDER_SEND_KEY_ID` | То же                                                                                      | Numeric send key id из кабинета RuSender                                                            |
+| `EMAIL_FROM_ADDRESS`   | Prod env / `.env.development`                                                              | На верифицированном домене, напр. `noreply@cherrypashkaparty.ru`                                    |
+| `EMAIL_FROM_NAME`      | Prod env                                                                                   | Обычно `CherryPlay`                                                                                 |
+| `PUBLIC_WEB_BASE_URL`  | Prod env / `.env.development`                                                              | База Web для ссылок сброса; в prod предпочтительно **HTTPS** (напр. `https://cherrypashkaparty.ru`) |
+
+Проброс в контейнер `server`:
+
+- **debug:** `env_file: .env.development` в [docker-compose.debug.yml](../docker-compose.debug.yml);
+- **prod / обычный compose:** переменные в `environment:` из корневого `.env` ([docker-compose.prod.yml](../docker-compose.prod.yml), [docker-compose.yml](../docker-compose.yml)); `deploy.sh` дописывает их в `.env` с сервера / CI.
+
+Полный справочник: [ENV.md](../ENV.md). Шаблоны без секретов: [.env.example](../.env.example).
+
+### Верификация домена (SPF/DKIM)
+
+1. В кабинете RuSender добавить/подтвердить домен отправки (для CherryPlay — `cherrypashkaparty.ru`).
+2. Выполнить инструкции RuSender по **SPF** и **DKIM** в DNS домена.
+3. Дождаться статуса verified; создать transactional send key и прописать `RUSENDER_SEND_KEY_ID` + API token.
+4. Smoke: `POST /auth/forgot-password` с тестовым зарегистрированным email → письмо со ссылкой на `{PUBLIC_WEB_BASE_URL}/reset-password?token=…`.
+
+Пока домен/ключи не готовы: в Prod без конфига forgot вернёт **503** на все запросы; при конфиге, но сбое отправки — **200** generic, токен **остаётся usable** до TTL (допустимо; мониторить send failures — в логе `token left usable`). Dev без RuSender пишет ссылку в лог.
+
+### Ops follow-up (prod mail)
+
+Перед опорой на forgot-password в production проверить:
+
+- домен `cherrypashkaparty.ru` **verified** в RuSender (SPF/DKIM);
+- `PUBLIC_WEB_BASE_URL` задан и предпочтительно **HTTPS** (`https://cherrypashkaparty.ru`), когда TLS доступен.
+
+Таблица токенов: [DATABASE.md](DATABASE.md) — `PasswordResetTokens`.
 
 ---
 
@@ -55,7 +97,7 @@
 
 Рекомендуется логировать минимум следующие события:
 
-- **Auth:** вход/выход организатора, неуспешные попытки (без паролей/токенов в логе).
+- **Auth:** вход/выход организатора, неуспешные попытки (без паролей/токенов в логе); в Dev — fallback reset URL при forgot-password (в Prod сырой токен/полный URL **не** логировать).
 - **Party:** создание, обновление, удаление вечеринки (идентификатор вечеринки/организатора).
 - **Session:** начало и окончание сессии по вечеринке.
 - **Hub:** подключение/отключение клиентов (viewer/organizer), критические ошибки в обработчиках.

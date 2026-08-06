@@ -59,12 +59,12 @@ flowchart TB
 
 `setPlatform(impl, mode)` обновляет singleton `PlatformAPI` и кэш capabilities (`refreshPlatformCapabilities`).
 
-| Скрипт                  | Runtime                                                                 |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`           | Electron                                                                |
-| `npm run dev:web`       | Web demo fixtures (`demo`, без `VITE_DEMO_LIVE`)                        |
-| `npm run dev:web:live`  | Web demo live (`demo` + `VITE_DEMO_LIVE=1`)                             |
-| `npm run dev:capacitor` | Capacitor stub (`capacitor`), без Electron                              |
+| Скрипт                  | Runtime                                          |
+| ----------------------- | ------------------------------------------------ |
+| `npm run dev`           | Electron                                         |
+| `npm run dev:web`       | Web demo fixtures (`demo`, без `VITE_DEMO_LIVE`) |
+| `npm run dev:web:live`  | Web demo live (`demo` + `VITE_DEMO_LIVE=1`)      |
+| `npm run dev:capacitor` | Capacitor stub (`capacitor`), без Electron       |
 
 В **web demo** URL CherryPlayServer по умолчанию — **пустая строка** (`demoConfig.ts`): REST и SignalR идут на same-origin (`/api`, `/partyHub`) и проксируются Vite на `:5000`. Это актуально для **live** (`dev:web:live`); fixtures не зависят от сервера. См. [веб-демо](../../web-demo.md). **`VITE_API_URL`** — прямой base URL (без proxy, нужен CORS). Live-флаг: `isDemoLiveMode()` / `VITE_DEMO_LIVE=1` (не новый `AppMode`).
 
@@ -74,17 +74,17 @@ flowchart TB
 
 Значения из `derivePlatformCapabilities()` (`src/shared/platform/platformCapabilities.ts`). **Источник истины — код**; таблица для обзора.
 
-| Capability                     | electron | demo (fixtures) | demo (live) | capacitor (stub) |
-| ------------------------------ | :------: | :-------------: | :---------: | :--------------: |
-| `supportsLocalFilePlayback`    |    ✓     |        ✗        |      ✗      |        ✗         |
-| `supportsNativeFileSystem`     |    ✓     |        ✗        |      ✗      |        ✗         |
-| `supportsProjectPersistence`   |    ✓     |        ✗        |      ✗      |        ✗         |
-| `supportsAimpWorkspace`        |    ✓     |   ✓ (simulated) | ✓ (simulated) |        ✗         |
-| `supportsAudioDeviceSelection` |    ✓     |        ✗        |      ✗      |        ✗         |
-| `supportsLoudnessAnalysis`     |    ✓     |        ✗        |      ✗      |        ✗         |
-| `supportsRealAuth`             |    ✓     |        ✗        |      ✓      |        ✗         |
-| `simulatesExport`              |    ✗     |        ✓        |      ✓      |        ✗         |
-| `usesFixtureFileBrowser`       |    ✗     |        ✓        |      ✓      |        ✗         |
+| Capability                     | electron | demo (fixtures) |  demo (live)  | capacitor (stub) |
+| ------------------------------ | :------: | :-------------: | :-----------: | :--------------: |
+| `supportsLocalFilePlayback`    |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsNativeFileSystem`     |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsProjectPersistence`   |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsAimpWorkspace`        |    ✓     |  ✓ (simulated)  | ✓ (simulated) |        ✗         |
+| `supportsAudioDeviceSelection` |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsLoudnessAnalysis`     |    ✓     |        ✗        |       ✗       |        ✗         |
+| `supportsRealAuth`             |    ✓     |        ✗        |       ✓       |        ✗         |
+| `simulatesExport`              |    ✗     |        ✓        |       ✓       |        ✗         |
+| `usesFixtureFileBrowser`       |    ✗     |        ✓        |       ✓       |        ✗         |
 
 В mode `demo` флаг `supportsRealAuth` берётся из `isDemoLiveMode()` (`VITE_DEMO_LIVE=1`). Остальные demo-capabilities одинаковы для fixtures и live.
 
@@ -98,12 +98,12 @@ flowchart TB
 
 ## Правило для контрибьюторов
 
-| Задача                                                                | Использовать                                                                   |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Можно ли воспроизводить файлы, сохранять проект, AIMP, auth, export   | `getPlatformCapabilities()` или guards                                         |
-| Fixtures vs live web demo                                             | `isDemoFixturesMode()` / `isDemoLiveMode()` или `supportsRealAuth`             |
-| React-компонент                                                       | `usePlatformCapabilities()` (тонкая обёртка над singleton)                     |
-| Идентичность runtime, логи, косметика демо (баннер, `document.title`) | `getAppMode()` (+ live-флаг для текста баннера)                                |
+| Задача                                                                | Использовать                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Можно ли воспроизводить файлы, сохранять проект, AIMP, auth, export   | `getPlatformCapabilities()` или guards                             |
+| Fixtures vs live web demo                                             | `isDemoFixturesMode()` / `isDemoLiveMode()` или `supportsRealAuth` |
+| React-компонент                                                       | `usePlatformCapabilities()` (тонкая обёртка над singleton)         |
+| Идентичность runtime, логи, косметика демо (баннер, `document.title`) | `getAppMode()` (+ live-флаг для текста баннера)                    |
 
 **Не** писать `getAppMode() === 'demo'` для feature gating — только capabilities, live helpers или guards.
 

@@ -51,6 +51,11 @@ services:
       - Database__AutoMigrateOnStartup=${DATABASE__AutoMigrateOnStartup:-false}
       - OAUTH_VK_CLIENT_ID=${OAUTH_VK_CLIENT_ID:-}
       - OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET:-}
+      - RUSENDER_API_TOKEN=${RUSENDER_API_TOKEN:-}
+      - RUSENDER_SEND_KEY_ID=${RUSENDER_SEND_KEY_ID:-}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-CherryPlay}
+      - PUBLIC_WEB_BASE_URL=${PUBLIC_WEB_BASE_URL:-}
       - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
       - Cors__AllowedOrigins__1=${CORS_ORIGIN_1:-http://www.cherrypashkaparty.ru}
       - Cors__AllowedOrigins__2=${CORS_ORIGIN_2:-http://web:80}

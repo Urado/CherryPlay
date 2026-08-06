@@ -1,6 +1,8 @@
-# Запуск: docker-compose -f docker-compose.debug.yml up --build
+# Запуск: docker compose -f docker-compose.debug.yml up --build
 # Фронт: http://localhost:3000 (Vite dev), бэкенд: http://localhost:5000, pgAdmin: http://localhost:5050
-# Логи фронта (в т.ч. SignalR): docker-compose -f docker-compose.debug.yml logs -f web
+# Логи фронта (в т.ч. SignalR): docker compose -f docker-compose.debug.yml logs -f web
+# RuSender / password-reset: server подхватывает корневой .env.development (env_file). Без файла compose упадёт при старте server.
+# VERSION из .env.development специально сбрасывается в контейнере — иначе NuGet/dotnet restore падает ('latest' is not a valid version string).
 
 services:
   # PostgreSQL Database (используем тот же что и в production)
@@ -75,7 +77,10 @@ services:
       context: ./CherryPlayServer
       dockerfile: Dockerfile.debug
     container_name: cherryplay-server-debug
+    env_file:
+      - .env.development
     environment:
+      - VERSION=
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=cherryplay_password

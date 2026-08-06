@@ -76,7 +76,7 @@ project_documentation:
       - path: docs/integration/README.md
         title: "Обзор подсистем интеграции"
       - path: docs/integration/accounts-and-auth.md
-        title: "Аккаунты и авторизация (JWT, OAuth)"
+        title: "Аккаунты и авторизация (JWT, OAuth, forgot/reset/change-password, RuSender)"
       - path: docs/integration/party-management.md
         title: "Управление вечеринками"
       - path: docs/integration/streaming.md
