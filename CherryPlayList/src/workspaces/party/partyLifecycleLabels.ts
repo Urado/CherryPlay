@@ -6,7 +6,7 @@ export type PartyLifecycleDisplayLabel =
   | 'Черновик'
   | 'Ждёт начала'
   | 'Идёт'
-  | 'Завершена';
+  | 'В архиве';
 
 export interface ResolvePartyLifecycleDisplayLabelInput {
   linkedParty: { id: string; shortCode: string } | null | undefined;
@@ -17,7 +17,7 @@ export interface ResolvePartyLifecycleDisplayLabelInput {
 export const PARTY_LIFECYCLE_SERVER_BADGE_LABELS: Record<PartyLifecycleState, string> = {
   draft: 'Черновик',
   ready: 'Ждёт начала',
-  completed: 'Завершена',
+  completed: 'В архиве',
 };
 
 export function resolvePartyLifecycleDisplayLabel(
@@ -29,7 +29,7 @@ export function resolvePartyLifecycleDisplayLabel(
 
   const lifecycle = input.partyLifecycleState ?? 'draft';
   if (lifecycle === 'completed') {
-    return 'Завершена';
+    return 'В архиве';
   }
   if (lifecycle === 'ready') {
     return input.sessionMode === 'session' ? 'Идёт' : 'Ждёт начала';

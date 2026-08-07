@@ -142,12 +142,6 @@
   opacity: 0.7;
 }
 
-.player-session-button--loudness {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* Settings icon button */
 .player-settings-icon,
 .cp-button.player-settings-icon {

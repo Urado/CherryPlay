@@ -185,11 +185,11 @@ _Связь с учётной записью: email+пароль (таблица
 | `City`                  | string    | NULL                           | Город.                                                                                    |
 | `EventDateTime`         | datetime  | NULL                           | Дата и время начала мероприятия.                                                          |
 | `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                                                       |
-| `PartyLifecycleState`   | int       | NOT NULL, default 1 (Draft)    | Жизненный цикл: 1 = Draft, 2 = Ready, 3 = Completed. JSON: `draft`, `ready`, `completed`. |
+| `PartyLifecycleState`   | int       | NOT NULL, default 1 (Draft)    | Жизненный цикл: 1 = Draft, 2 = Ready, 3 = Completed. JSON: `draft`, `ready`, `completed`. Application create (`POST /api/parties`) явно выставляет **Ready**; default колонки Draft остаётся для legacy/EF до optional migration. `completed` **не** терминальное: разрешён переход обратно в Ready. |
 | `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                                            |
 | `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор. Продуктовый дефолт сущности — `PartyThemeDefaults.Id` (`basic`); также cyberpunk, sakura, art-deco, spring-cross-step. |
 | `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).                                         |
-| `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге.                                 |
+| `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге. Флаг ортогонален lifecycle; организатор управляет им при Ready и Completed. |
 | `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                                            |
 | `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                                               |
 | `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                                                         |
@@ -254,4 +254,5 @@ _Связь с учётной записью: email+пароль (таблица
 - **OrganizerEntitlements**: удаляются каскадно при удалении организатора, но пакет (`ThemePackage`) удалять при наличии выдач нельзя (`RESTRICT`).
 - **AdminAuditLog**: хранит ссылки на организаторов, пакеты и entitlement для трассировки действий; записи аудита создаются вместе с выдачей/отзывом в одной транзакции.
 - В `AdminAuditLog` удаление ссылочных сущностей переводит внешние ключи в `NULL` (`SET NULL`) для сохранения истории аудита.
-- Каталог: в выборку попадают только вечеринки с `IsListedInCatalog = true`. Лимит «будущих» вечеринок на организатора (например, 2) проверяется при создании/обновлении (по §4.2).
+- Список организатора: `GET /api/parties` (`GetPartiesByOrganizerAsync`) возвращает **все** lifecycle-состояния владельца, включая `draft` (кабинет, **Мои вечеринки**, привязка существующей вечеринки). Публичный каталог по-прежнему без `draft`.
+- Каталог: в публичный список (`GET /api/parties/public/list`, `PublicPartyQueryService`) попадают только вечеринки с `IsListedInCatalog = true` **и** `PartyLifecycleState != Draft` (не `draft`); `Completed` при listed **допускается**. Лимит «будущих» вечеринок на организатора (например, 2) проверяется при создании/обновлении (по §4.2). См. [CONTRACTS.md](../CONTRACTS.md) §2.

@@ -255,7 +255,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Черновик (подключена)
+                  Черновик (legacy)
                 </Button>
                 <Button
                   type="button"
@@ -273,7 +273,7 @@ export const PartyWorkspaceDemoPanel: React.FC<PartyWorkspaceDemoPanelProps> = (
                   variant="secondary"
                   size="sm"
                 >
-                  Завершена
+                  В архиве
                 </Button>
               </div>
             </div>

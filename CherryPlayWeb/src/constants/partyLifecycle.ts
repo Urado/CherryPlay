@@ -1,6 +1,5 @@
 import type { PartyLifecycleState } from '../types/api';
 
-/** Все состояния жизненного цикла (CONTRACTS.md §6.7, snake_case в JSON). */
 export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
 
 export function isPartyLifecycleState(value: unknown): value is PartyLifecycleState {
@@ -9,30 +8,28 @@ export function isPartyLifecycleState(value: unknown): value is PartyLifecycleSt
 
 export const LIFECYCLE_STATUS_LABELS: Record<PartyLifecycleState, string> = {
   draft: 'Черновик',
-  ready: 'Готова',
-  completed: 'Завершена',
+  ready: 'Ждёт начала',
+  completed: 'В архиве',
 };
 
-/** Целевые состояния, в которые разрешён переход из текущего (CONTRACTS §3.4). */
 export function getAllowedLifecycleTargets(from: PartyLifecycleState): PartyLifecycleState[] {
   switch (from) {
     case 'draft':
       return ['ready'];
     case 'ready':
-      return ['draft', 'completed'];
+      return ['completed'];
     case 'completed':
-      return [];
+      return ['ready'];
   }
 }
 
-export function isTerminalLifecycleState(state: PartyLifecycleState): boolean {
-  return state === 'completed';
-}
-
-/** Идемпотентный переход в то же состояние допустим. */
 export function canTransitionLifecycle(
   from: PartyLifecycleState,
   to: PartyLifecycleState,
 ): boolean {
   return from === to || getAllowedLifecycleTargets(from).includes(to);
+}
+
+export function canToggleCatalogVisibility(state: PartyLifecycleState): boolean {
+  return state === 'ready' || state === 'completed';
 }

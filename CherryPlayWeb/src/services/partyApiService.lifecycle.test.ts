@@ -51,31 +51,11 @@ describe('partyApiService.transitionPartyLifecycle', () => {
     );
   });
 
-  it('throws InvalidPartyLifecycleTransitionError for completed → ready (409)', async () => {
+  it('parses 409 invalid_lifecycle_transition payload into InvalidPartyLifecycleTransitionError', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       mockResponse(409, {
         code: 'invalid_lifecycle_transition',
-        detail: 'Нельзя перевести вечеринку из «Завершена» в «Готова».',
-        currentState: 'completed',
-        requestedState: 'ready',
-      }),
-    );
-
-    await expect(
-      partyApiService.transitionPartyLifecycle('party-1', 'ready'),
-    ).rejects.toMatchObject({
-      name: 'InvalidPartyLifecycleTransitionError',
-      code: 'invalid_lifecycle_transition',
-      currentState: 'completed',
-      requestedState: 'ready',
-    });
-  });
-
-  it('throws InvalidPartyLifecycleTransitionError for ready → draft (409)', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      mockResponse(409, {
-        code: 'invalid_lifecycle_transition',
-        detail: 'Нельзя перевести вечеринку из «Готова» в «Черновик».',
+        detail: 'Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».',
         currentState: 'ready',
         requestedState: 'draft',
       }),
@@ -86,23 +66,33 @@ describe('partyApiService.transitionPartyLifecycle', () => {
       .catch((caught) => caught);
 
     expect(error).toBeInstanceOf(InvalidPartyLifecycleTransitionError);
-    expect(error.currentState).toBe('ready');
-    expect(error.requestedState).toBe('draft');
+    expect(error).toMatchObject({
+      name: 'InvalidPartyLifecycleTransitionError',
+      code: 'invalid_lifecycle_transition',
+      currentState: 'ready',
+      requestedState: 'draft',
+      message: 'Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».',
+    });
   });
 
-  it('throws InvalidPartyLifecycleTransitionError for draft → completed without ready (409)', async () => {
+  it('builds 409 message from LIFECYCLE_STATUS_LABELS for draft → completed', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       mockResponse(409, {
         code: 'invalid_lifecycle_transition',
-        detail: 'Нельзя перевести вечеринку из «Черновик» в «Завершена».',
+        detail: 'server-provided detail ignored when states present',
         currentState: 'draft',
         requestedState: 'completed',
       }),
     );
 
-    await expect(
-      partyApiService.transitionPartyLifecycle('party-1', 'completed'),
-    ).rejects.toBeInstanceOf(InvalidPartyLifecycleTransitionError);
+    const error = await partyApiService
+      .transitionPartyLifecycle('party-1', 'completed')
+      .catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(InvalidPartyLifecycleTransitionError);
+    expect(error.message).toBe('Нельзя перевести вечеринку из «Черновик» в «В архиве».');
+    expect(error.currentState).toBe('draft');
+    expect(error.requestedState).toBe('completed');
   });
 
   it('defaults missing lifecycle states to draft in 409 payload', async () => {

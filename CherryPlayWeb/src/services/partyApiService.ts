@@ -89,8 +89,7 @@ async function throwIfInvalidLifecycleTransition(response: Response): Promise<vo
 
 class PartyApiService {
   /**
-   * Список вечеринок текущего организатора (требует авторизации).
-   * Сервер не возвращает вечеринки в состоянии `draft`.
+   * Список вечеринок текущего организатора (требует авторизации), включая `draft`.
    */
   async getMyParties(): Promise<PartyDto[]> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {

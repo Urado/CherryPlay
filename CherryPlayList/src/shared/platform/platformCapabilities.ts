@@ -40,7 +40,7 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
         supportsAimpWorkspace: true,
         supportsAudioDeviceSelection: false,
         supportsRealAuth: isDemoLiveMode(),
-        supportsLoudnessAnalysis: false,
+        supportsLoudnessAnalysis: true,
         simulatesExport: true,
         usesFixtureFileBrowser: true,
       };

@@ -119,6 +119,7 @@ public class PartyService : IPartyService
             ExternalLinkUrl = TrimToNull(dto.ExternalLinkUrl),
             ExternalLinkText = string.IsNullOrWhiteSpace(TrimToNull(dto.ExternalLinkUrl)) ? null : TrimToNull(dto.ExternalLinkText),
             DanceTags = NormalizeDanceTags(dto.DanceTags),
+            PartyLifecycleState = PartyLifecycleState.Ready,
         };
 
         await _partyRepository.AddAsync(party);
@@ -181,12 +182,11 @@ public class PartyService : IPartyService
         _logger.LogDebug("Getting all parties");
 
         var parties = await _partyRepository.GetAllAsync();
-        var visibleParties = parties.Where(p => p.PartyLifecycleState != PartyLifecycleState.Draft).ToList();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 
-        var dtos = new List<PartyDto>(visibleParties.Count);
-        foreach (var party in visibleParties)
+        var dtos = new List<PartyDto>(parties.Count);
+        foreach (var party in parties)
         {
             var hasActiveSession = stateLookup.ContainsKey(party.Id);
             dtos.Add(party.ToDto(hasActiveSession));
@@ -208,15 +208,14 @@ public class PartyService : IPartyService
         _logger.LogDebug("Getting parties for organizer: {OrganizerId}", organizerId);
 
         var parties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
-        var visibleParties = parties.Where(p => p.PartyLifecycleState != PartyLifecycleState.Draft).ToList();
-        _logger.LogDebug("Retrieved {Count} parties from repository for organizer {OrganizerId} ({VisibleCount} visible in list)",
-            parties.Count, organizerId, visibleParties.Count);
+        _logger.LogDebug("Retrieved {Count} parties from repository for organizer {OrganizerId}",
+            parties.Count, organizerId);
 
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
 
-        var dtos = new List<PartyDto>(visibleParties.Count);
-        foreach (var party in visibleParties)
+        var dtos = new List<PartyDto>(parties.Count);
+        foreach (var party in parties)
         {
             var hasActiveSession = stateLookup.ContainsKey(party.Id);
             dtos.Add(party.ToDto(hasActiveSession));
@@ -418,7 +417,7 @@ public class PartyService : IPartyService
         {
             (PartyLifecycleState.Draft, PartyLifecycleState.Ready) => true,
             (PartyLifecycleState.Ready, PartyLifecycleState.Completed) => true,
-            (PartyLifecycleState.Ready, PartyLifecycleState.Draft) => true,
+            (PartyLifecycleState.Completed, PartyLifecycleState.Ready) => true,
             _ => false,
         };
 

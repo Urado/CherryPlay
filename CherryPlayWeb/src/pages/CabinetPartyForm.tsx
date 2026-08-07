@@ -17,6 +17,7 @@ import {
   MAX_EXTERNAL_LINK_TEXT_LENGTH,
   PREDEFINED_DANCE_TAGS,
 } from '../constants/partyCard';
+import { canToggleCatalogVisibility } from '../constants/partyLifecycle';
 import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
 import type { CreatePartyDto, PartyDto, ThemeAccessDto, UpdatePartyDto } from '../types/api';
 
@@ -114,9 +115,19 @@ export function CabinetPartyForm({
     }
   };
 
+  const showCatalogCheckbox =
+    !isEditing ||
+    (editingParty != null && canToggleCatalogVisibility(editingParty.partyLifecycleState));
+
   return (
     <form className="cabinet-form" onSubmit={onSubmit}>
       <h4>{isEditing ? 'Редактировать вечеринку' : 'Новая вечеринка'}</h4>
+      {!isEditing && (
+        <p className="cabinet-form-hint">
+          После создания вечеринка будет в статусе «Ждёт начала». Показ в каталоге — по желанию,
+          отдельно от статуса.
+        </p>
+      )}
       <label>
         Название *
         <input
@@ -470,22 +481,27 @@ export function CabinetPartyForm({
           </div>
         )}
       </div>
-      <label className="cabinet-checkbox">
-        <input
-          type="checkbox"
-          checked={
-            isEditing
-              ? (editForm.isListedInCatalog ?? false)
-              : (createForm.isListedInCatalog ?? false)
-          }
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
-              : setCreateForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
-          }
-        />
-        Показывать в каталоге
-      </label>
+      {showCatalogCheckbox && (
+        <label
+          className="cabinet-checkbox"
+          title="Отдельно от статуса вечеринки: общий каталог или только по ссылке"
+        >
+          <input
+            type="checkbox"
+            checked={
+              isEditing
+                ? (editForm.isListedInCatalog ?? false)
+                : (createForm.isListedInCatalog ?? false)
+            }
+            onChange={(e) =>
+              isEditing
+                ? setEditForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
+                : setCreateForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
+            }
+          />
+          Показывать в каталоге
+        </label>
+      )}
       <div className="cabinet-form-actions">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
           Отмена

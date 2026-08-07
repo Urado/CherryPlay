@@ -140,7 +140,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
     editorPhase != null && shouldShowPartyLifecycleControls(editorPhase, linkedParty);
   const showCatalog = editorPhase != null && shouldShowPartyCatalogVisibilityControl(editorPhase);
   const showCopyUrl =
-    Boolean(linkedParty?.url) && (editorPhase === 'draft-linked' || editorPhase === 'ready');
+    Boolean(linkedParty?.url) &&
+    (editorPhase === 'draft-linked' || editorPhase === 'ready' || editorPhase === 'completed');
   const showGuestAccess = showCatalog || showCopyUrl;
 
   const networkActionsDisabled = !isNetworkEnabledForEditor || serverUnreachable;
@@ -306,7 +307,8 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
   );
 
   const lifecycleState = partyLifecycleState ?? 'draft';
-  const showSecondaryLifecycle = showLifecycle && lifecycleState === 'ready';
+  const showSecondaryLifecycle =
+    showLifecycle && (lifecycleState === 'ready' || lifecycleState === 'completed');
   const showAccentLifecycle = showLifecycle && lifecycleState === 'draft';
 
   const secondaryEditorActions =
@@ -385,9 +387,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({
           onResetAndCreateNew: handleResetAndCreateNewParty,
         }}
         headerActions={
-          editorPhase &&
-          editorPhase !== 'completed' &&
-          (hasSecondaryToolbar || hasAccentToolbar) ? (
+          editorPhase && (hasSecondaryToolbar || hasAccentToolbar) ? (
             <div className="party-editor-shell-header-toolbar">
               {hasAccentToolbar ? (
                 <div className="party-editor-shell-header-toolbar-accent">

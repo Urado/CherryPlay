@@ -1,21 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
+import { LIFECYCLE_STATUS_LABELS } from '../constants/partyLifecycle';
+
 import { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './partyApiErrors';
 
 describe('InvalidPartyLifecycleTransitionError', () => {
   it('exposes code, name, and lifecycle states', () => {
-    const error = new InvalidPartyLifecycleTransitionError(
-      'Нельзя перевести вечеринку из «Завершена» в «Готова».',
-      'completed',
-      'ready',
-    );
+    const currentState = 'ready' as const;
+    const requestedState = 'draft' as const;
+    const message = `Нельзя перевести вечеринку из «${LIFECYCLE_STATUS_LABELS[currentState]}» в «${LIFECYCLE_STATUS_LABELS[requestedState]}».`;
+    const error = new InvalidPartyLifecycleTransitionError(message, currentState, requestedState);
 
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('InvalidPartyLifecycleTransitionError');
     expect(error.code).toBe('invalid_lifecycle_transition');
-    expect(error.message).toBe('Нельзя перевести вечеринку из «Завершена» в «Готова».');
-    expect(error.currentState).toBe('completed');
-    expect(error.requestedState).toBe('ready');
+    expect(error.message).toBe('Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».');
+    expect(error.currentState).toBe('ready');
+    expect(error.requestedState).toBe('draft');
   });
 });
 

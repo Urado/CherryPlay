@@ -44,17 +44,21 @@ public class PartyLifecycleTransitionTests
     }
 
     [Test]
-    public async Task RevertPartyToDraft_FromReady_TransitionsToDraft()
+    public void RevertPartyToDraft_FromReady_ThrowsInvalidPartyLifecycleTransition()
     {
         var organizerId = Guid.NewGuid();
         var partyId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
-        await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Ready);
-        var service = CreateService(organizerId, repository);
-
-        var result = await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Draft);
-
-        Assert.That(result.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Draft));
+        Assert.That(async () =>
+        {
+            await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Ready);
+            var service = CreateService(organizerId, repository);
+            await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Draft);
+        }, Throws.TypeOf<InvalidPartyLifecycleTransitionException>()
+            .With.Property(nameof(InvalidPartyLifecycleTransitionException.CurrentState))
+            .EqualTo(PartyLifecycleState.Ready)
+            .And.Property(nameof(InvalidPartyLifecycleTransitionException.RequestedState))
+            .EqualTo(PartyLifecycleState.Draft));
     }
 
     [Test]
@@ -86,7 +90,7 @@ public class PartyLifecycleTransitionTests
     }
 
     [Test]
-    public async Task RevertPartyToDraft_WhenAlreadyDraft_IsIdempotent()
+    public async Task TransitionToDraft_WhenAlreadyDraft_IsIdempotent()
     {
         var organizerId = Guid.NewGuid();
         var partyId = Guid.NewGuid();
@@ -136,17 +140,19 @@ public class PartyLifecycleTransitionTests
     }
 
     [Test]
-    public void MarkPartyReady_FromCompleted_ThrowsInvalidPartyLifecycleTransition()
+    public async Task MarkPartyReady_FromCompleted_TransitionsToReady()
     {
         var organizerId = Guid.NewGuid();
         var partyId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
-        Assert.That(async () =>
-        {
-            await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Completed);
-            var service = CreateService(organizerId, repository);
-            await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Ready);
-        }, Throws.TypeOf<InvalidPartyLifecycleTransitionException>());
+        await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Completed);
+        var service = CreateService(organizerId, repository);
+
+        var result = await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Ready);
+
+        Assert.That(result.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
+        var saved = await repository.GetByIdAsync(partyId);
+        Assert.That(saved!.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
     }
 
     [Test]

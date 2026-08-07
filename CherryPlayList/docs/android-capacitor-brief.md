@@ -8,7 +8,7 @@
 - **Сценарий:** подготовка кусков и папок на ПК, доработка плейлиста на планшете в процессе сета.
 - **Офлайн-first:** воспроизведение всегда из локального хранилища; Party/стриминг — только показ «что играет» на сайте, слабо связан с playback.
 - **Scope v1:** все workspace **кроме AIMP** (AIMP — только desktop).
-- **Аудио:** `PlaybackEngine` на Web Audio, загрузка по URL/stream; default output; per-track loudness gain и compression уже в renderer/effects; **scanner** (`analyzeLoudness`) — только Electron v1.
+- **Аудио:** `PlaybackEngine` на Web Audio, загрузка по URL/stream; default output; per-track loudness gain и compression уже в renderer/effects; **scanner** (`analyzeLoudness`) — Electron (FFmpeg) и web demo (simulated fixtures); Capacitor stub пока без скана.
 - **Библиотека:** ~500 треков; remap путей проекта с ПК на планшет.
 - **Доставка:** рабочий APK (sideload).
 

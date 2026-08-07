@@ -39,18 +39,16 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   sessionMode,
   slot = 'all',
 }) => {
-  if (partyLifecycleState === 'completed') {
-    return null;
-  }
-
   const isDisabled = disabled || isTransitioning;
   const isHeader = layout === 'header';
   const showAccentPublish =
     partyLifecycleState === 'draft' && (slot === 'all' || slot === 'accent');
   const showSecondaryReady =
     partyLifecycleState === 'ready' && (slot === 'all' || slot === 'secondary');
+  const showSecondaryUnarchive =
+    partyLifecycleState === 'completed' && (slot === 'all' || slot === 'secondary');
 
-  if (!showAccentPublish && !showSecondaryReady) {
+  if (!showAccentPublish && !showSecondaryReady && !showSecondaryUnarchive) {
     return null;
   }
 
@@ -63,41 +61,42 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
           disabled={isDisabled}
           loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
           onClick={() => onTransition('ready')}
-          title="Опубликовать вечеринку на сайте (статус «Ждёт начала»)"
+          title="Снять черновик и перевести в «Ждёт начала». Это не публикация в каталоге."
           variant="primary"
           size="sm"
         >
-          Опубликовать
+          Сделать доступной
         </Button>
       )}
 
       {showSecondaryReady && (
-        <>
-          <Button
-            type="button"
-            className="party-lifecycle-action"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('draft')}
-            title="Вернуть вечеринку в черновик"
-            variant="secondary"
-            size="sm"
-          >
-            Вернуть в черновик
-          </Button>
-          <Button
-            type="button"
-            className="party-lifecycle-action party-lifecycle-action--complete"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('completed')}
-            title="Перевести вечеринку в архив"
-            variant="secondary"
-            size="sm"
-          >
-            В архив
-          </Button>
-        </>
+        <Button
+          type="button"
+          className="party-lifecycle-action party-lifecycle-action--complete"
+          disabled={isDisabled}
+          loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
+          onClick={() => onTransition('completed')}
+          title="Перевести вечеринку в архив"
+          variant="secondary"
+          size="sm"
+        >
+          В архив
+        </Button>
+      )}
+
+      {showSecondaryUnarchive && (
+        <Button
+          type="button"
+          className="party-lifecycle-action"
+          disabled={isDisabled}
+          loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
+          onClick={() => onTransition('ready')}
+          title="Вернуть вечеринку из архива в статус «Ждёт начала»"
+          variant="primary"
+          size="sm"
+        >
+          Вернуть из архива
+        </Button>
       )}
     </>
   );
@@ -107,7 +106,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
       <div
         className="party-lifecycle-actions party-lifecycle-actions--header"
         role="group"
-        aria-label="Подготовка вечеринки"
+        aria-label="Состояние вечеринки"
       >
         {transitionButtons}
       </div>
@@ -122,6 +121,9 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
           {resolvePartyLifecycleServerBadgeLabel(partyLifecycleState, sessionMode)}
         </span>
       </div>
+      <p className="party-lifecycle-hint">
+        Статус на сайте. Каталог («В каталоге» / «По ссылке») настраивается отдельно.
+      </p>
 
       <div className="party-lifecycle-actions">{transitionButtons}</div>
     </section>

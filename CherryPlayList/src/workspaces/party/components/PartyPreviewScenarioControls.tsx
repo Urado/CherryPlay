@@ -47,9 +47,9 @@ interface PartyPreviewScenarioControlsProps {
 }
 
 const LIFECYCLE_PRESETS: { label: string; lifecycle: PartyLifecycleState }[] = [
-  { label: 'Черновик', lifecycle: 'draft' },
+  { label: 'Черновик (legacy)', lifecycle: 'draft' },
   { label: 'Ждёт начала', lifecycle: 'ready' },
-  { label: 'Завершена', lifecycle: 'completed' },
+  { label: 'В архиве', lifecycle: 'completed' },
 ];
 
 const CONNECTION_SCENARIOS: { label: string; scenario: PreviewConnectionScenario }[] = [

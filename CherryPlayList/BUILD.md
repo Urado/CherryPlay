@@ -56,10 +56,16 @@ npm run dist:all
 
 | Script | Что делает | AIMP bridge |
 | --- | --- | --- |
-| `dist:win` | `build:electron` → `stage:aimp-plugin` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
-| `dist:win:ci` | `build:electron` → `electron-builder --win --x64` | Не стейджится; для GitHub Release |
+| `dist:win` | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
+| `dist:win:ci` | `build:electron` → `clean:pack` → `electron-builder --win --x64` | Не стейджится; для GitHub Release |
 
 Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPlayList-{version}-x64.zip`), не NSIS и не portable exe. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
+
+### Packaging hygiene
+
+- Перед `electron-builder` скрипты `dist*` вызывают `npm run clean:pack` (`scripts/clean-pack.mjs`): идемпотентно удаляет типичные outputs electron-builder под `release/` для текущей версии (`win-unpacked` / `linux-unpacked` / `mac*`, zip/dmg/AppImage/deb и т.п.), чтобы не было гонок rename/`ENOENT` на полуудалённом дереве. Весь `release/` целиком не чистится.
+- Запускайте **один** electron-builder за раз; параллельные сборки дают `ENOENT rename electron.exe → CherryPlayList.exe` и сбои `7za`.
+- Для `file:../CherryPlayComponents` electron-builder **не** опирается на npm `"files"` linked-пакета при сборке asar: обрезку дают явные исключения в `CherryPlayList` `build.files` (`src`, nested `node_modules`, scripts, конфиги, тесты). Поле `"files": ["dist"]` в `CherryPlayComponents/package.json` остаётся полезным для `npm pack` / publish, но само по себе Windows pack не сужает.
 
 ## Результат сборки
 
@@ -126,6 +132,14 @@ electron .
 
 - Это нормально для Electron приложений (обычно 100-200 MB)
 - Размер можно уменьшить, исключив ненужные зависимости
+- Если в логе electron-builder много `duplicate dependency references` по `@cherryplay/components` (eslint/vite/react из sibling package на диске) — для asar важны исключения в `CherryPlayList` `build.files`; `"files": ["dist"]` в Components влияет на npm pack/publish, не на обход `file:` junction builder’ом
+
+### Гонки / ENOENT при Windows pack
+
+- Не запускайте два `electron-builder` параллельно
+- `dist:*` сами чистят stale outputs через `clean:pack` (win/mac/linux артефакты текущей версии под `release/`)
+- Если остались зависшие `7za` / `app-builder` — завершите их и перезапустите `dist:win:ci`
+- `ENOENT … entry-*.css` обычно значит, что упаковывали устаревший `dist/` без свежего `build:electron` — используйте `dist:*` скрипты, а не голый electron-builder после старой сборки
 
 ## Дополнительные настройки
 

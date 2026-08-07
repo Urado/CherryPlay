@@ -2,13 +2,14 @@ import { DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
 
 import type { LinkedParty } from '@core/types/project';
 
-import type {
-  CreatePartyDto,
-  PartyDto,
-  PartyLifecycleState,
-  PartyStateDto,
-  ThemeAccessDto,
-  UpdatePartyDto,
+import {
+  InvalidPartyLifecycleTransitionError,
+  type CreatePartyDto,
+  type PartyDto,
+  type PartyLifecycleState,
+  type PartyStateDto,
+  type ThemeAccessDto,
+  type UpdatePartyDto,
 } from '../services/partyService';
 
 export const DEMO_PARTY_ID = '00000000-0000-4000-8000-000000000099';
@@ -20,6 +21,12 @@ export const DEMO_LINKED_PARTY: LinkedParty = {
 };
 
 const nowIso = '2025-06-01T12:00:00.000Z';
+
+const ALLOWED_LIFECYCLE_TRANSITIONS: Record<PartyLifecycleState, readonly PartyLifecycleState[]> = {
+  draft: ['ready'],
+  ready: ['completed'],
+  completed: ['ready'],
+};
 
 let demoPartySnapshot: PartyDto = buildDemoParty({
   name: 'Demo Party',
@@ -37,7 +44,7 @@ function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
     customizationSettings: overrides.customizationSettings ?? {},
     createdAt: overrides.createdAt ?? nowIso,
     hasActiveSession: false,
-    partyLifecycleState: overrides.partyLifecycleState ?? 'draft',
+    partyLifecycleState: overrides.partyLifecycleState ?? 'ready',
     eventDateTime: overrides.eventDateTime,
     eventEndDateTime: overrides.eventEndDateTime,
     description: overrides.description ?? 'Фейковая вечеринка для веб-демо (без CherryPlayServer).',
@@ -49,6 +56,7 @@ function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
     externalLinkUrl: overrides.externalLinkUrl,
     externalLinkText: overrides.externalLinkText,
     danceTags: overrides.danceTags,
+    isListedInCatalog: overrides.isListedInCatalog ?? false,
   };
 }
 
@@ -63,7 +71,7 @@ export function demoCreateParty(data: CreatePartyDto): PartyDto {
     subtitle: data.subtitle,
     partyThemeId: data.partyThemeId,
     customizationSettings: data.customizationSettings as PartyDto['customizationSettings'],
-    partyLifecycleState: 'draft',
+    partyLifecycleState: 'ready',
     description: data.description,
     place: data.place,
     city: data.city,
@@ -73,6 +81,7 @@ export function demoCreateParty(data: CreatePartyDto): PartyDto {
     externalLinkUrl: data.externalLinkUrl,
     externalLinkText: data.externalLinkText,
     danceTags: data.danceTags,
+    isListedInCatalog: data.isListedInCatalog ?? false,
   });
   return getDemoPartySnapshot();
 }
@@ -99,15 +108,31 @@ export function demoUpdateParty(partyId: string, data: UpdatePartyDto): void {
     externalLinkUrl: data.externalLinkUrl ?? demoPartySnapshot.externalLinkUrl,
     externalLinkText: data.externalLinkText ?? demoPartySnapshot.externalLinkText,
     danceTags: data.danceTags ?? demoPartySnapshot.danceTags,
+    isListedInCatalog: data.isListedInCatalog ?? demoPartySnapshot.isListedInCatalog ?? false,
   });
 }
 
-export function demoTransitionPartyLifecycle(targetState: PartyLifecycleState): PartyDto {
+export function demoSetPartyLifecycleState(targetState: PartyLifecycleState): PartyDto {
   demoPartySnapshot = {
     ...demoPartySnapshot,
     partyLifecycleState: targetState,
   };
   return getDemoPartySnapshot();
+}
+
+export function demoTransitionPartyLifecycle(targetState: PartyLifecycleState): PartyDto {
+  const currentState = demoPartySnapshot.partyLifecycleState;
+  if (currentState === targetState) {
+    return getDemoPartySnapshot();
+  }
+  if (!ALLOWED_LIFECYCLE_TRANSITIONS[currentState].includes(targetState)) {
+    throw new InvalidPartyLifecycleTransitionError(
+      `Invalid party lifecycle transition from '${currentState}' to '${targetState}'.`,
+      currentState,
+      targetState,
+    );
+  }
+  return demoSetPartyLifecycleState(targetState);
 }
 
 export const DEMO_THEME_ACCESS: ThemeAccessDto = {

@@ -40,9 +40,6 @@ interface PlayerViewProps {
   onResetSession: () => void;
   onOpenGlobalSettings: () => void;
   onExportTracksToText: () => void;
-  onCalculateLoudness?: () => void;
-  showLoudnessBatchButton?: boolean;
-  isLoudnessBatchScanning?: boolean;
   displayItems: DisplayItem[];
   zoneId: string;
   selectedItemIds: Set<string>;
@@ -102,9 +99,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   onResetSession,
   onOpenGlobalSettings,
   onExportTracksToText,
-  onCalculateLoudness,
-  showLoudnessBatchButton,
-  isLoudnessBatchScanning,
   displayItems,
   zoneId,
   selectedItemIds,
@@ -158,9 +152,6 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         onResetSession={onResetSession}
         onOpenGlobalSettings={onOpenGlobalSettings}
         onExportTracksToText={onExportTracksToText}
-        onCalculateLoudness={onCalculateLoudness}
-        showLoudnessBatchButton={showLoudnessBatchButton}
-        isLoudnessBatchScanning={isLoudnessBatchScanning}
       />
 
       <PlayerTracksList

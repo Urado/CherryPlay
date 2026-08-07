@@ -138,13 +138,13 @@ describe('partyWorkspaceDemoActions', () => {
     expect(usePartyWorkspaceStore.getState().partyVerified).toBe(false);
   });
 
-  it('demoResetToDefault restores DEMODK draft and resets scenario', () => {
+  it('demoResetToDefault restores DEMODK ready and resets scenario', () => {
     demoSetUnlinkedDraft();
     demoSetBlockedOverride('checking');
     setPreviewMockLive();
     demoResetToDefault();
     expect(mockLinkedParty).toEqual(DEMO_LINKED_PARTY);
-    expect(usePartyWorkspaceStore.getState().partyLifecycleState).toBe('draft');
+    expect(usePartyWorkspaceStore.getState().partyLifecycleState).toBe('ready');
     expect(usePartyEditorDemoStore.getState().blockedOverride).toBeNull();
     expect(usePartyPreviewScenarioStore.getState()).toEqual(initialPartyPreviewScenarioState);
   });

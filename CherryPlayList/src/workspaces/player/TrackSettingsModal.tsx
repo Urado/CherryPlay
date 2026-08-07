@@ -1,10 +1,21 @@
-import { Button, IconButton } from '@cherryplay/components';
+import { Button, IconButton, FormInput, InfoIcon } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { ActionAfterTrack } from '@core/types/project';
+import {
+  clampLoudnessQuietGapRangeLu,
+  clampLoudnessTargetLufs,
+  LOUDNESS_QUIET_GAP_PRESETS,
+  MAX_LOUDNESS_QUIET_GAP_RANGE_LU,
+  MAX_TARGET_LUFS,
+  MIN_LOUDNESS_QUIET_GAP_RANGE_LU,
+  MIN_TARGET_LUFS,
+  resolveQuietGapRangePercent,
+} from '@shared/contracts/loudness';
 import { useModalKeyboard } from '@shared/hooks';
-import { useProjectStore, useUIStore } from '@shared/stores';
+import { usePlatformCapabilities } from '@shared/platform';
+import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 
 export const TrackSettingsModal: React.FC = () => {
   const { closeModal, modal, trackSettingsContext } = useUIStore();
@@ -18,6 +29,17 @@ export const TrackSettingsModal: React.FC = () => {
     setGroupSettings,
     setPlannedEndTime,
   } = useProjectStore();
+  const {
+    loudnessNormalizationEnabled,
+    setLoudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    setLoudnessTargetLufs,
+    loudnessCompressionEnabled,
+    setLoudnessCompressionEnabled,
+    loudnessQuietGapRangeLu,
+    setLoudnessQuietGapRangeLu,
+  } = useSettingsStore();
+  const { supportsLoudnessAnalysis } = usePlatformCapabilities();
 
   const { defaultPauseBetweenTracks, defaultActionAfterTrack, plannedEndTime } = settings;
 
@@ -55,6 +77,16 @@ export const TrackSettingsModal: React.FC = () => {
     () => getResolvedSettings().pauseBetweenTracks ?? defaultPauseBetweenTracks,
   );
 
+  const [localLoudnessNormalizationEnabled, setLocalLoudnessNormalizationEnabled] = useState(
+    loudnessNormalizationEnabled,
+  );
+  const [localLoudnessTargetLufs, setLocalLoudnessTargetLufs] = useState(loudnessTargetLufs);
+  const [localLoudnessCompressionEnabled, setLocalLoudnessCompressionEnabled] = useState(
+    loudnessCompressionEnabled,
+  );
+  const [localLoudnessQuietGapRangeLu, setLocalLoudnessQuietGapRangeLu] =
+    useState(loudnessQuietGapRangeLu);
+
   const effectivePause =
     typeof localPauseBetweenTracks === 'number'
       ? localPauseBetweenTracks
@@ -91,6 +123,10 @@ export const TrackSettingsModal: React.FC = () => {
         setLocalPauseBetweenTracks(resolved.pauseBetweenTracks ?? defaultPauseBetweenTracks);
         if (isGlobal) {
           setLocalPlannedEndTime(timestampToTimeString(plannedEndTime));
+          setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+          setLocalLoudnessTargetLufs(loudnessTargetLufs);
+          setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
+          setLocalLoudnessQuietGapRangeLu(loudnessQuietGapRangeLu);
         }
       }, 0);
       return () => clearTimeout(timeoutId);
@@ -104,6 +140,10 @@ export const TrackSettingsModal: React.FC = () => {
     defaultPauseBetweenTracks,
     getResolvedSettings,
     plannedEndTime,
+    loudnessNormalizationEnabled,
+    loudnessTargetLufs,
+    loudnessCompressionEnabled,
+    loudnessQuietGapRangeLu,
   ]);
 
   const handleSave = useCallback(() => {
@@ -113,6 +153,12 @@ export const TrackSettingsModal: React.FC = () => {
       );
       setDefaultPauseBetweenTracks(effectivePause);
       setPlannedEndTime(timeStringToTimestamp(localPlannedEndTime));
+      setLoudnessNormalizationEnabled(localLoudnessNormalizationEnabled);
+      setLoudnessTargetLufs(clampLoudnessTargetLufs(localLoudnessTargetLufs));
+      setLoudnessCompressionEnabled(
+        localLoudnessNormalizationEnabled ? localLoudnessCompressionEnabled : false,
+      );
+      setLoudnessQuietGapRangeLu(clampLoudnessQuietGapRangeLu(localLoudnessQuietGapRangeLu));
     } else if (groupId) {
       setGroupSettings(groupId, {
         actionAfterTrack: localActionAfterTrack === 'default' ? null : localActionAfterTrack,
@@ -134,10 +180,18 @@ export const TrackSettingsModal: React.FC = () => {
     groupId,
     isGlobal,
     localActionAfterTrack,
+    localLoudnessCompressionEnabled,
+    localLoudnessNormalizationEnabled,
+    localLoudnessQuietGapRangeLu,
+    localLoudnessTargetLufs,
     localPlannedEndTime,
     setDefaultActionAfterTrack,
     setDefaultPauseBetweenTracks,
     setGroupSettings,
+    setLoudnessCompressionEnabled,
+    setLoudnessNormalizationEnabled,
+    setLoudnessQuietGapRangeLu,
+    setLoudnessTargetLufs,
     setPlannedEndTime,
     setTrackSettings,
     trackId,
@@ -254,36 +308,212 @@ export const TrackSettingsModal: React.FC = () => {
           )}
 
           {isGlobal && (
-            <div className="settings-group">
-              <label
-                className="settings-label"
-                htmlFor="track-settings-planned-end-time"
-                title="Красная отметка на таймлайне плейлиста"
-              >
-                Плановое окончание
-              </label>
-              <div className="settings-planned-end-row">
-                <input
-                  type="time"
-                  className="settings-input settings-input--planned-end"
-                  value={localPlannedEndTime}
-                  onChange={(e) => setLocalPlannedEndTime(e.target.value)}
-                  id="track-settings-planned-end-time"
-                />
-                <Button
-                  type="button"
-                  className="modal-button settings-planned-end-clear"
-                  onClick={() => {
-                    setLocalPlannedEndTime('');
-                    setPlannedEndTime(null);
-                  }}
-                  variant="secondary"
-                  size="sm"
+            <>
+              <div className="settings-group">
+                <label
+                  className="settings-label"
+                  htmlFor="track-settings-planned-end-time"
+                  title="Красная отметка на таймлайне плейлиста"
                 >
-                  Очистить
-                </Button>
+                  Плановое окончание
+                </label>
+                <div className="settings-planned-end-row">
+                  <input
+                    type="time"
+                    className="settings-input settings-input--planned-end"
+                    value={localPlannedEndTime}
+                    onChange={(e) => setLocalPlannedEndTime(e.target.value)}
+                    id="track-settings-planned-end-time"
+                  />
+                  <Button
+                    type="button"
+                    className="modal-button settings-planned-end-clear"
+                    onClick={() => {
+                      setLocalPlannedEndTime('');
+                      setPlannedEndTime(null);
+                    }}
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Очистить
+                  </Button>
+                </div>
               </div>
-            </div>
+
+              <div
+                className="settings-section-title"
+                style={{ marginTop: 8, marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+              >
+                Нормализация громкости
+              </div>
+
+              <div className="settings-group">
+                <div className="settings-checkbox-group">
+                  <input
+                    type="checkbox"
+                    className="settings-checkbox"
+                    checked={localLoudnessNormalizationEnabled}
+                    onChange={(e) => {
+                      const next = e.target.checked;
+                      setLocalLoudnessNormalizationEnabled(next);
+                      if (!next) {
+                        setLocalLoudnessCompressionEnabled(false);
+                      }
+                    }}
+                    id="track-settings-loudness-normalization"
+                    disabled={!supportsLoudnessAnalysis}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label
+                      className="settings-checkbox-label"
+                      htmlFor="track-settings-loudness-normalization"
+                    >
+                      Включить нормализацию
+                    </label>
+                    <InfoIcon
+                      className="settings-info-icon"
+                      title="Пересчитывает gain под текущую цель LUFS (не меняет файлы)."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <FormInput
+                  label="Целевая громкость (LUFS)"
+                  id="track-settings-loudness-target"
+                  className="settings-input--no-spinner"
+                  type="number"
+                  disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+                  min={MIN_TARGET_LUFS}
+                  max={MAX_TARGET_LUFS}
+                  step={0.5}
+                  value={localLoudnessTargetLufs}
+                  onChange={(e) => {
+                    const next = e.target.valueAsNumber;
+                    if (Number.isFinite(next)) {
+                      setLocalLoudnessTargetLufs(clampLoudnessTargetLufs(next));
+                    }
+                  }}
+                  hint={`Диапазон: ${MIN_TARGET_LUFS}…${MAX_TARGET_LUFS}`}
+                />
+              </div>
+
+              <div className="settings-group">
+                <div className="settings-checkbox-group">
+                  <input
+                    type="checkbox"
+                    className="settings-checkbox"
+                    checked={localLoudnessCompressionEnabled}
+                    onChange={(e) => setLocalLoudnessCompressionEnabled(e.target.checked)}
+                    id="track-settings-loudness-compression"
+                    disabled={!localLoudnessNormalizationEnabled || !supportsLoudnessAnalysis}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label
+                      className="settings-checkbox-label"
+                      htmlFor="track-settings-loudness-compression"
+                    >
+                      Адаптивная компрессия
+                    </label>
+                    <InfoIcon
+                      className="settings-info-icon"
+                      title="Опциональная адаптивная компрессия по LRA и тихим участкам."
+                    />
+                  </div>
+                </div>
+                <div
+                  className="settings-description"
+                  style={{
+                    marginTop: 4,
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary, #9e9e9e)',
+                  }}
+                >
+                  Сила компрессии зависит от LRA и тихих участков трека.
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <div className="settings-quiet-gap__header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <label
+                      className="settings-label"
+                      htmlFor="track-settings-loudness-quiet-gap"
+                      style={{ marginBottom: 0 }}
+                    >
+                      Терпимость к провалам громкости
+                    </label>
+                    <InfoIcon
+                      className="settings-info-icon"
+                      title="Порог (LU), при котором адаптивная компрессия достигает полной силы по тихим участкам. Меньше — агрессивнее; больше — мягче. Не меняет файлы."
+                    />
+                  </div>
+                  <span className="settings-quiet-gap__value">
+                    {localLoudnessQuietGapRangeLu.toFixed(0)} LU
+                  </span>
+                </div>
+                <input
+                  id="track-settings-loudness-quiet-gap"
+                  type="range"
+                  className="settings-quiet-gap__slider"
+                  min={MIN_LOUDNESS_QUIET_GAP_RANGE_LU}
+                  max={MAX_LOUDNESS_QUIET_GAP_RANGE_LU}
+                  step={1}
+                  value={localLoudnessQuietGapRangeLu}
+                  disabled={
+                    !localLoudnessNormalizationEnabled ||
+                    !localLoudnessCompressionEnabled ||
+                    !supportsLoudnessAnalysis
+                  }
+                  onChange={(e) => {
+                    setLocalLoudnessQuietGapRangeLu(
+                      clampLoudnessQuietGapRangeLu(Number(e.target.value)),
+                    );
+                  }}
+                />
+                <div className="settings-quiet-gap__scale">
+                  <div className="settings-quiet-gap__scale-end">
+                    <span className="settings-quiet-gap__scale-value">
+                      {MIN_LOUDNESS_QUIET_GAP_RANGE_LU} LU
+                    </span>
+                    <span className="settings-quiet-gap__scale-hint">агрессивнее</span>
+                  </div>
+                  <div className="settings-quiet-gap__scale-end settings-quiet-gap__scale-end--right">
+                    <span className="settings-quiet-gap__scale-value">
+                      {MAX_LOUDNESS_QUIET_GAP_RANGE_LU} LU
+                    </span>
+                    <span className="settings-quiet-gap__scale-hint">мягче</span>
+                  </div>
+                </div>
+                <div className="settings-quiet-gap__presets">
+                  {LOUDNESS_QUIET_GAP_PRESETS.map((preset) => {
+                    const leftPercent = resolveQuietGapRangePercent(preset.value);
+                    const isActive = localLoudnessQuietGapRangeLu === preset.value;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={`settings-quiet-gap__preset${
+                          isActive ? ' settings-quiet-gap__preset--active' : ''
+                        }`}
+                        style={{ left: `${leftPercent}%` }}
+                        disabled={
+                          !localLoudnessNormalizationEnabled ||
+                          !localLoudnessCompressionEnabled ||
+                          !supportsLoudnessAnalysis
+                        }
+                        onClick={() => setLocalLoudnessQuietGapRangeLu(preset.value)}
+                      >
+                        <span className="settings-quiet-gap__preset-tick" />
+                        <span className="settings-quiet-gap__preset-label">{preset.label}</span>
+                        <span className="settings-quiet-gap__preset-value">{preset.value} LU</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
         </div>
 
