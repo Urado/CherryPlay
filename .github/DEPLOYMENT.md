@@ -6,7 +6,7 @@
 
 1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
 2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
-3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` собирает Windows zip (`dist:win:ci`) и сохраняет artifact (без загрузки в Release)
+3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` собирает Windows zip (`dist:win:ci`), кладёт artifact **`cherryplaylist-win-x64`** (скачать из run → Artifacts) и пишет комментарий в PR со ссылкой. Без загрузки в GitHub Release — для ручного теста до релиза
 4. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
 5. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
 6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release (те же триггеры)
@@ -216,6 +216,12 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
    - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release
 
 ### Скачать Windows desktop (CherryPlayList)
+
+#### Из pull request (до релиза)
+
+На PR с изменениями в List/Components workflow **Verify Desktop Windows** кладёт artifact **`cherryplaylist-win-x64`** и комментирует PR со ссылкой на run. Скачать: PR → Checks / Actions → run → **Artifacts** → `cherryplaylist-win-x64` (внутри zip `CherryPlayList-*-x64.zip`). Retention 14 дней.
+
+#### Из GitHub Release
 
 После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — тег релиза **без** ведущего `v` (CI синхронизирует `CherryPlayList/package.json` с тегом).
 
