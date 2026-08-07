@@ -242,7 +242,7 @@ Placeholder autogain (`setAutoGainEnabled`) **не** применяется пр
 
 | Константа                                     | Значение | Смысл                                              |
 | --------------------------------------------- | -------- | -------------------------------------------------- |
-| `COMPRESSION_QUIET_GAP_RANGE_LU`              | 15       | Полная сила по тихим участкам при gap ≥ 15 LU      |
+| `COMPRESSION_QUIET_GAP_RANGE_LU`              | 15       | Default полной силы по тихим участкам (алиас `DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU`); runtime: `loudnessQuietGapRangeLu` |
 | `COMPRESSION_LRA_MIN_LU`                      | 8        | Ниже — считаем уже сжатым (поп)                    |
 | `COMPRESSION_LRA_RANGE_LU`                    | 10       | Полный `dynamicNeed` при LRA ≥ MIN + 10            |
 | `COMPRESSION_BOOST_GATE_DB`                   | 3        | Доп. усиление strength только при gain выше порога |
@@ -254,14 +254,14 @@ Placeholder autogain (`setAutoGainEnabled`) **не** применяется пр
 
 ```text
 quietGapLu   = targetLufs - quietPassageLufs
-quietNeed    = clamp(quietGapLu / 15, 0, 1)     // 0 если quiet ≥ target
+quietNeed    = clamp(quietGapLu / loudnessQuietGapRangeLu, 0, 1)  // default range 15 LU
 dynamicNeed  = clamp((lraLu - 8) / 10, 0, 1)    // resolveDynamicNeed
 strength     = quietNeed × dynamicNeed
 if gainDb > 3:
   strength   = min(1, strength × (1 + clamp((gainDb - 3) / 12)))
 ```
 
-`gainDb` — effective gain (`getEffectiveGainDb`); **не** входит в произведение как `|gainDb|`. При выключенной compression, `status !== 'ok'`, `quietGap ≤ 0` или неразрешимом `quietPassageLufs` → **0**.
+`loudnessQuietGapRangeLu` — настройка (`LoudnessSettings`, default `DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU = 15`); `resolveQuietGapRangeLu` подставляет её вместо hard-coded `/15`. Константа `COMPRESSION_QUIET_GAP_RANGE_LU` (= 15) — тот же default, не единственный делитель в рантайме. `gainDb` — effective gain (`getEffectiveGainDb`); **не** входит в произведение как `|gainDb|`. При выключенной compression, `status !== 'ok'`, `quietGap ≤ 0` или неразрешимом `quietPassageLufs` → **0**.
 
 ### `resolveQuietPassageLufs` (приоритет fallback)
 

@@ -20,6 +20,13 @@
   color: var(--text-secondary);
 }
 
+.cabinet-lifecycle-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
 .cabinet-lifecycle-badge {
   display: inline-block;
   padding: 4px 10px;

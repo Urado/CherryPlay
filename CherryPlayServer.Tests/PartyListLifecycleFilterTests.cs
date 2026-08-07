@@ -16,7 +16,7 @@ namespace CherryPlayServer.Tests;
 public class PartyListLifecycleFilterTests
 {
     [Test]
-    public async Task GetPartiesByOrganizer_ExcludesDraftParties()
+    public async Task GetPartiesByOrganizer_IncludesDraftParties()
     {
         var organizerId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
@@ -26,9 +26,13 @@ public class PartyListLifecycleFilterTests
 
         var result = await service.GetPartiesByOrganizerAsync();
 
-        Assert.That(result, Has.Count.EqualTo(1));
-        Assert.That(result[0].ShortCode, Is.EqualTo("READY1"));
-        Assert.That(result[0].PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
+        Assert.That(result, Has.Count.EqualTo(2));
+        Assert.That(result.Select(p => p.ShortCode), Is.EquivalentTo(new[] { "DRAFT1", "READY1" }));
+        Assert.That(result.Select(p => p.PartyLifecycleState), Is.EquivalentTo(new[]
+        {
+            PartyLifecycleState.Draft,
+            PartyLifecycleState.Ready,
+        }));
     }
 
     [Test]
@@ -78,7 +82,7 @@ public class PartyListLifecycleFilterTests
     }
 
     [Test]
-    public async Task GetAllPartiesAsync_ExcludesDraftParties()
+    public async Task GetAllPartiesAsync_IncludesDraftParties()
     {
         var organizerId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
@@ -88,8 +92,8 @@ public class PartyListLifecycleFilterTests
 
         var result = await service.GetAllPartiesAsync();
 
-        Assert.That(result, Has.Count.EqualTo(1));
-        Assert.That(result[0].ShortCode, Is.EqualTo("DONE01"));
+        Assert.That(result, Has.Count.EqualTo(2));
+        Assert.That(result.Select(p => p.ShortCode), Is.EquivalentTo(new[] { "DRAFT4", "DONE01" }));
     }
 
     [Test]

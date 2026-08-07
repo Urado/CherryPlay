@@ -2,6 +2,7 @@ import { Button, DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
 import { Link } from 'react-router-dom';
 
 import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
+import { canToggleCatalogVisibility } from '../constants/partyLifecycle';
 import { ROUTES } from '../constants/routes';
 import type {
   CreatePartyDto,
@@ -93,8 +94,11 @@ export function CabinetPartyList({
             onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
           />
           <div className="cabinet-party-actions">
-            {party.partyLifecycleState === 'ready' && (
-              <label className="cabinet-toggle-label">
+            {canToggleCatalogVisibility(party.partyLifecycleState) && (
+              <label
+                className="cabinet-toggle-label"
+                title="Отдельно от статуса вечеринки: показывать в общем каталоге или только по ссылке"
+              >
                 <input
                   type="checkbox"
                   checked={party.isListedInCatalog}

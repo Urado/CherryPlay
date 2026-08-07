@@ -76,6 +76,6 @@ export function demoResetToDefault(): void {
   resetPreviewScenario();
   clearPartyNotFoundProductionFlags(true);
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
-  demoSetPartyLifecycleState('draft');
-  getPartyStore().setPartyLifecycleState('draft');
+  demoSetPartyLifecycleState('ready');
+  getPartyStore().setPartyLifecycleState('ready');
 }

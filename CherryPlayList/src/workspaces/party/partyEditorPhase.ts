@@ -40,8 +40,8 @@ export interface PartyEditorPhaseResult {
 export const PARTY_EDITOR_PHASE_HEADERS: Record<PartyEditorPhase, string> = {
   'draft-unlinked': 'Создание вечеринки',
   'draft-linked': 'Редактирование вечеринки',
-  ready: 'Публикация и настройки',
-  completed: 'Завершённая вечеринка',
+  ready: 'Настройки вечеринки',
+  completed: 'Вечеринка в архиве',
 };
 
 export const PARTY_EDITOR_PHASE_BADGE_LABELS: Partial<

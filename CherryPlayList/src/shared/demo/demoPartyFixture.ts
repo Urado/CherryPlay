@@ -25,7 +25,7 @@ const nowIso = '2025-06-01T12:00:00.000Z';
 const ALLOWED_LIFECYCLE_TRANSITIONS: Record<PartyLifecycleState, readonly PartyLifecycleState[]> = {
   draft: ['ready'],
   ready: ['completed'],
-  completed: [],
+  completed: ['ready'],
 };
 
 let demoPartySnapshot: PartyDto = buildDemoParty({
@@ -44,7 +44,7 @@ function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
     customizationSettings: overrides.customizationSettings ?? {},
     createdAt: overrides.createdAt ?? nowIso,
     hasActiveSession: false,
-    partyLifecycleState: overrides.partyLifecycleState ?? 'draft',
+    partyLifecycleState: overrides.partyLifecycleState ?? 'ready',
     eventDateTime: overrides.eventDateTime,
     eventEndDateTime: overrides.eventEndDateTime,
     description: overrides.description ?? 'Фейковая вечеринка для веб-демо (без CherryPlayServer).',

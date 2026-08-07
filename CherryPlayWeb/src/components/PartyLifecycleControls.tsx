@@ -29,7 +29,10 @@ export function PartyLifecycleControls({
   onTransition,
 }: PartyLifecycleControlsProps) {
   const isDisabled = disabled || isTransitioning;
-  const showActions = partyLifecycleState === 'draft' || partyLifecycleState === 'ready';
+  const showActions =
+    partyLifecycleState === 'draft' ||
+    partyLifecycleState === 'ready' ||
+    partyLifecycleState === 'completed';
 
   return (
     <section className="cabinet-lifecycle" aria-label="Состояние вечеринки">
@@ -39,6 +42,9 @@ export function PartyLifecycleControls({
           {LIFECYCLE_STATUS_LABELS[partyLifecycleState]}
         </span>
       </div>
+      <p className="cabinet-lifecycle-hint">
+        Статус на сайте. Каталог («В каталоге» / по ссылке) настраивается отдельно.
+      </p>
 
       {showActions && (
         <div className="cabinet-lifecycle-actions">
@@ -52,9 +58,9 @@ export function PartyLifecycleControls({
               disabled={isDisabled}
               loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
               onClick={() => onTransition('ready')}
-              title="Опубликовать вечеринку на сайте (статус «Ждёт начала»)"
+              title="Снять черновик и перевести в «Ждёт начала». Это не публикация в каталоге."
             >
-              Опубликовать
+              Сделать доступной
             </Button>
           )}
 
@@ -71,6 +77,22 @@ export function PartyLifecycleControls({
               title="Перевести вечеринку в архив"
             >
               В архив
+            </Button>
+          )}
+
+          {partyLifecycleState === 'completed' && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              fullWidth
+              className="cabinet-lifecycle-action"
+              disabled={isDisabled}
+              loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
+              onClick={() => onTransition('ready')}
+              title="Вернуть вечеринку из архива в статус «Ждёт начала»"
+            >
+              Вернуть из архива
             </Button>
           )}
         </div>

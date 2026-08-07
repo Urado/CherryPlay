@@ -17,6 +17,7 @@ import {
   MAX_EXTERNAL_LINK_TEXT_LENGTH,
   PREDEFINED_DANCE_TAGS,
 } from '../constants/partyCard';
+import { canToggleCatalogVisibility } from '../constants/partyLifecycle';
 import { PARTY_THEME_OPTIONS } from '../constants/partyThemes';
 import type { CreatePartyDto, PartyDto, ThemeAccessDto, UpdatePartyDto } from '../types/api';
 
@@ -114,9 +115,19 @@ export function CabinetPartyForm({
     }
   };
 
+  const showCatalogCheckbox =
+    !isEditing ||
+    (editingParty != null && canToggleCatalogVisibility(editingParty.partyLifecycleState));
+
   return (
     <form className="cabinet-form" onSubmit={onSubmit}>
       <h4>{isEditing ? 'Редактировать вечеринку' : 'Новая вечеринка'}</h4>
+      {!isEditing && (
+        <p className="cabinet-form-hint">
+          После создания вечеринка будет в статусе «Ждёт начала». Показ в каталоге — по желанию,
+          отдельно от статуса.
+        </p>
+      )}
       <label>
         Название *
         <input
@@ -470,8 +481,11 @@ export function CabinetPartyForm({
           </div>
         )}
       </div>
-      {(!isEditing || editingParty.partyLifecycleState === 'ready') && (
-        <label className="cabinet-checkbox">
+      {showCatalogCheckbox && (
+        <label
+          className="cabinet-checkbox"
+          title="Отдельно от статуса вечеринки: общий каталог или только по ссылке"
+        >
           <input
             type="checkbox"
             checked={

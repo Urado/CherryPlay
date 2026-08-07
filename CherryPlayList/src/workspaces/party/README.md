@@ -13,7 +13,7 @@
 
 Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-**Party Editor:** `PartyTrackDisplaySection`, lifecycle (**Опубликовать** только для legacy `draft` / **В архив**; create → сразу `ready`), каталог **«По ссылке»** / **«В каталоге»** только при `ready`, **«Скопировать URL»** при draft-linked/ready, `PartyEditor`, auth, connectivity-баннеры, entitlement.
+**Party Editor:** `PartyTrackDisplaySection`, lifecycle (**Сделать доступной** только для legacy `draft` / **В архив** / **Вернуть из архива**; create → сразу `ready`; `completed` не терминальное), каталог **«По ссылке»** / **«В каталоге»** при `ready` и `completed`, **«Скопировать URL»** при draft-linked/ready/completed, `PartyEditor`, auth, connectivity-баннеры, entitlement.
 
 **Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 

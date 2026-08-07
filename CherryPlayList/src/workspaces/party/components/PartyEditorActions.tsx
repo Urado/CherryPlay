@@ -45,11 +45,13 @@ export function shouldShowPartyLifecycleControls(
   phase: PartyEditorPhase,
   linkedParty: { id: string; shortCode: string } | null | undefined,
 ): boolean {
-  return (phase === 'draft-linked' || phase === 'ready') && linkedParty != null;
+  return (
+    (phase === 'draft-linked' || phase === 'ready' || phase === 'completed') && linkedParty != null
+  );
 }
 
 export function shouldShowPartyCatalogVisibilityControl(phase: PartyEditorPhase): boolean {
-  return phase === 'ready';
+  return phase === 'ready' || phase === 'completed';
 }
 
 export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({

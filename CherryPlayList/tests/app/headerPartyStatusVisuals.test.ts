@@ -12,12 +12,14 @@ describe('resolveHeaderPartyStatusTooltip', () => {
       'Есть на сервере, ещё готовится. Это не «скрыта из каталога» — каталог настраивается отдельно («По ссылке» / «В каталоге»)',
     );
     expect(resolveHeaderPartyStatusTooltip('Ждёт начала')).toBe(
-      'Опубликована для гостей, проигрывание ещё не запущено',
+      'Доступна для гостей, проигрывание ещё не запущено',
     );
     expect(resolveHeaderPartyStatusTooltip('Идёт')).toBe(
       'Сейчас идёт проигрывание; гости видят актуальное состояние',
     );
-    expect(resolveHeaderPartyStatusTooltip('Завершена')).toBe('Вечеринка завершена');
+    expect(resolveHeaderPartyStatusTooltip('В архиве')).toBe(
+      'Вечеринка в архиве; можно вернуть в «Ждёт начала»',
+    );
   });
 
   it('maps нет связи secondary overlay', () => {

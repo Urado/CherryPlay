@@ -140,17 +140,19 @@ public class PartyLifecycleTransitionTests
     }
 
     [Test]
-    public void MarkPartyReady_FromCompleted_ThrowsInvalidPartyLifecycleTransition()
+    public async Task MarkPartyReady_FromCompleted_TransitionsToReady()
     {
         var organizerId = Guid.NewGuid();
         var partyId = Guid.NewGuid();
         var repository = new InMemoryPartyRepository();
-        Assert.That(async () =>
-        {
-            await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Completed);
-            var service = CreateService(organizerId, repository);
-            await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Ready);
-        }, Throws.TypeOf<InvalidPartyLifecycleTransitionException>());
+        await SeedParty(repository, partyId, organizerId, PartyLifecycleState.Completed);
+        var service = CreateService(organizerId, repository);
+
+        var result = await service.TransitionPartyLifecycleAsync(partyId, PartyLifecycleState.Ready);
+
+        Assert.That(result.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
+        var saved = await repository.GetByIdAsync(partyId);
+        Assert.That(saved!.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
     }
 
     [Test]

@@ -100,27 +100,27 @@ describe('partyService.transitionPartyLifecycle', () => {
     );
   });
 
-  it('throws InvalidPartyLifecycleTransitionError on 409 invalid_lifecycle_transition', async () => {
+  it('parses 409 invalid_lifecycle_transition into InvalidPartyLifecycleTransitionError', async () => {
     (global.fetch as jest.Mock).mockResolvedValue(
       mockFetchResponse(
         {
           code: 'invalid_lifecycle_transition',
-          message: 'Нельзя перевести завершённую вечеринку в ready.',
-          currentState: 'completed',
-          requestedState: 'ready',
+          message: 'Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».',
+          currentState: 'ready',
+          requestedState: 'draft',
         },
         { status: 409, ok: false, statusText: 'Conflict' },
       ),
     );
 
-    const error = partyService.transitionPartyLifecycle(PARTY_ID, 'ready');
+    const error = partyService.transitionPartyLifecycle(PARTY_ID, 'draft');
 
     await expect(error).rejects.toMatchObject({
       name: 'InvalidPartyLifecycleTransitionError',
       code: 'invalid_lifecycle_transition',
-      currentState: 'completed',
-      requestedState: 'ready',
-      message: 'Нельзя перевести завершённую вечеринку в ready.',
+      currentState: 'ready',
+      requestedState: 'draft',
+      message: 'Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».',
     });
     await expect(error).rejects.toBeInstanceOf(InvalidPartyLifecycleTransitionError);
   });

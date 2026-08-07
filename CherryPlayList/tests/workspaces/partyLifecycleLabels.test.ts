@@ -43,13 +43,13 @@ describe('resolvePartyLifecycleDisplayLabel', () => {
     ).toBe('Идёт');
   });
 
-  it('returns Завершена for completed', () => {
+  it('returns В архиве for completed', () => {
     expect(
       resolvePartyLifecycleDisplayLabel({
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: 'completed',
       }),
-    ).toBe('Завершена');
+    ).toBe('В архиве');
   });
 });
 
@@ -104,6 +104,6 @@ describe('resolvePartyLifecycleServerBadgeLabel', () => {
     expect(resolvePartyLifecycleServerBadgeLabel('ready')).toBe('Ждёт начала');
     expect(resolvePartyLifecycleServerBadgeLabel('ready', 'session')).toBe('Идёт');
     expect(resolvePartyLifecycleServerBadgeLabel('draft')).toBe('Черновик');
-    expect(resolvePartyLifecycleServerBadgeLabel('completed')).toBe('Завершена');
+    expect(resolvePartyLifecycleServerBadgeLabel('completed')).toBe('В архиве');
   });
 });

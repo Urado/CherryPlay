@@ -12,9 +12,15 @@ import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useModalKeyboard } from '@shared/hooks';
-import { partyService, type PartyDto } from '@shared/services/partyService';
+import {
+  InvalidPartyLifecycleTransitionError,
+  partyService,
+  type PartyDto,
+  type PartyLifecycleState,
+} from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming/useOnlineNetworkPolicy';
+import { PartyLifecycleControls } from '@workspaces/party/components/PartyLifecycleControls';
 import {
   resolvePartyCatalogLabel,
   resolvePartyCatalogToggleHint,
@@ -49,6 +55,8 @@ export const MyPartiesList: React.FC = () => {
   const [bindingId, setBindingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [transitioningId, setTransitioningId] = useState<string | null>(null);
+  const [transitioningTarget, setTransitioningTarget] = useState<PartyLifecycleState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PartyDto | null>(null);
 
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -202,6 +210,35 @@ export const MyPartiesList: React.FC = () => {
     }
   };
 
+  const handleLifecycleTransition = async (party: PartyDto, targetState: PartyLifecycleState) => {
+    if (!networkEnabled) {
+      return;
+    }
+
+    setTransitioningId(party.id);
+    setTransitioningTarget(targetState);
+    try {
+      const updated = await partyService.transitionPartyLifecycle(party.id, targetState);
+      setParties((current) => current.map((item) => (item.id === party.id ? updated : item)));
+      if (linkedParty?.id === party.id) {
+        syncLinkedPartyWorkspaceFields(updated);
+      }
+    } catch (e) {
+      addNotification({
+        type: 'error',
+        message:
+          e instanceof InvalidPartyLifecycleTransitionError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : 'Не удалось изменить статус вечеринки',
+      });
+    } finally {
+      setTransitioningId(null);
+      setTransitioningTarget(null);
+    }
+  };
+
   const networkActionsDisabled = !networkEnabled;
   const showOfflineStub = !networkEnabled;
   const networkDisabledTitle = 'Включите «Онлайн» в настройках';
@@ -245,8 +282,14 @@ export const MyPartiesList: React.FC = () => {
                   {parties.map((party) => {
                     const isLinked = linkedParty?.id === party.id;
                     const isListed = party.isListedInCatalog ?? false;
+                    const canToggleCatalog =
+                      party.partyLifecycleState === 'ready' ||
+                      party.partyLifecycleState === 'completed';
                     const isRowBusy =
-                      bindingId === party.id || deletingId === party.id || togglingId === party.id;
+                      bindingId === party.id ||
+                      deletingId === party.id ||
+                      togglingId === party.id ||
+                      transitioningId === party.id;
 
                     return (
                       <li
@@ -285,24 +328,45 @@ export const MyPartiesList: React.FC = () => {
                         </div>
 
                         <div className="my-parties-panel-item-actions">
-                          <Button
-                            type="button"
-                            className={`my-parties-panel-catalog-toggle-btn${isListed ? ' my-parties-panel-catalog-toggle-btn--listed' : ''}`}
-                            disabled={networkActionsDisabled || isRowBusy}
-                            loading={togglingId === party.id}
-                            aria-pressed={isListed}
-                            aria-label={`Каталог: ${resolvePartyCatalogLabel(isListed)}`}
-                            title={
-                              networkActionsDisabled
-                                ? networkDisabledTitle
-                                : resolvePartyCatalogToggleHint(isListed)
+                          <PartyLifecycleControls
+                            partyLifecycleState={party.partyLifecycleState}
+                            layout="header"
+                            sessionMode={isLinked ? sessionMode : undefined}
+                            isTransitioning={transitioningId === party.id}
+                            pendingTransition={
+                              transitioningId === party.id ? transitioningTarget : null
                             }
-                            onClick={() => void handleToggleListed(party, !isListed)}
-                            variant="secondary"
-                            size="sm"
-                          >
-                            {resolvePartyCatalogLabel(isListed)}
-                          </Button>
+                            disabled={
+                              networkActionsDisabled ||
+                              bindingId === party.id ||
+                              deletingId === party.id ||
+                              togglingId === party.id
+                            }
+                            onTransition={(targetState) =>
+                              void handleLifecycleTransition(party, targetState)
+                            }
+                          />
+
+                          {canToggleCatalog ? (
+                            <Button
+                              type="button"
+                              className={`my-parties-panel-catalog-toggle-btn${isListed ? ' my-parties-panel-catalog-toggle-btn--listed' : ''}`}
+                              disabled={networkActionsDisabled || isRowBusy}
+                              loading={togglingId === party.id}
+                              aria-pressed={isListed}
+                              aria-label={`Каталог: ${resolvePartyCatalogLabel(isListed)}`}
+                              title={
+                                networkActionsDisabled
+                                  ? networkDisabledTitle
+                                  : resolvePartyCatalogToggleHint(isListed)
+                              }
+                              onClick={() => void handleToggleListed(party, !isListed)}
+                              variant="secondary"
+                              size="sm"
+                            >
+                              {resolvePartyCatalogLabel(isListed)}
+                            </Button>
+                          ) : null}
 
                           <Button
                             type="button"

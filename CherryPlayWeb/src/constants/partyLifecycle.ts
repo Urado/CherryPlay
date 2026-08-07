@@ -9,7 +9,7 @@ export function isPartyLifecycleState(value: unknown): value is PartyLifecycleSt
 export const LIFECYCLE_STATUS_LABELS: Record<PartyLifecycleState, string> = {
   draft: 'Черновик',
   ready: 'Ждёт начала',
-  completed: 'Завершена',
+  completed: 'В архиве',
 };
 
 export function getAllowedLifecycleTargets(from: PartyLifecycleState): PartyLifecycleState[] {
@@ -19,12 +19,8 @@ export function getAllowedLifecycleTargets(from: PartyLifecycleState): PartyLife
     case 'ready':
       return ['completed'];
     case 'completed':
-      return [];
+      return ['ready'];
   }
-}
-
-export function isTerminalLifecycleState(state: PartyLifecycleState): boolean {
-  return state === 'completed';
 }
 
 export function canTransitionLifecycle(
@@ -32,4 +28,8 @@ export function canTransitionLifecycle(
   to: PartyLifecycleState,
 ): boolean {
   return from === to || getAllowedLifecycleTargets(from).includes(to);
+}
+
+export function canToggleCatalogVisibility(state: PartyLifecycleState): boolean {
+  return state === 'ready' || state === 'completed';
 }
