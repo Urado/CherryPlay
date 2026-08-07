@@ -72,32 +72,18 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
       )}
 
       {showSecondaryReady && (
-        <>
-          <Button
-            type="button"
-            className="party-lifecycle-action"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('draft')}
-            title="Вернуть вечеринку в черновик"
-            variant="secondary"
-            size="sm"
-          >
-            Вернуть в черновик
-          </Button>
-          <Button
-            type="button"
-            className="party-lifecycle-action party-lifecycle-action--complete"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('completed')}
-            title="Перевести вечеринку в архив"
-            variant="secondary"
-            size="sm"
-          >
-            В архив
-          </Button>
-        </>
+        <Button
+          type="button"
+          className="party-lifecycle-action party-lifecycle-action--complete"
+          disabled={isDisabled}
+          loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
+          onClick={() => onTransition('completed')}
+          title="Перевести вечеринку в архив"
+          variant="secondary"
+          size="sm"
+        >
+          В архив
+        </Button>
       )}
     </>
   );
@@ -107,7 +93,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
       <div
         className="party-lifecycle-actions party-lifecycle-actions--header"
         role="group"
-        aria-label="Подготовка вечеринки"
+        aria-label="Состояние вечеринки"
       >
         {transitionButtons}
       </div>

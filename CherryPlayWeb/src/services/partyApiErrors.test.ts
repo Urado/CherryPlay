@@ -5,7 +5,7 @@ import { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './p
 describe('InvalidPartyLifecycleTransitionError', () => {
   it('exposes code, name, and lifecycle states', () => {
     const error = new InvalidPartyLifecycleTransitionError(
-      'Нельзя перевести вечеринку из «Завершена» в «Готова».',
+      'Нельзя перевести вечеринку из «Завершена» в «Ждёт начала».',
       'completed',
       'ready',
     );
@@ -13,7 +13,7 @@ describe('InvalidPartyLifecycleTransitionError', () => {
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('InvalidPartyLifecycleTransitionError');
     expect(error.code).toBe('invalid_lifecycle_transition');
-    expect(error.message).toBe('Нельзя перевести вечеринку из «Завершена» в «Готова».');
+    expect(error.message).toBe('Нельзя перевести вечеринку из «Завершена» в «Ждёт начала».');
     expect(error.currentState).toBe('completed');
     expect(error.requestedState).toBe('ready');
   });

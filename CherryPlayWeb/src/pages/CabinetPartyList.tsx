@@ -93,15 +93,17 @@ export function CabinetPartyList({
             onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
           />
           <div className="cabinet-party-actions">
-            <label className="cabinet-toggle-label">
-              <input
-                type="checkbox"
-                checked={party.isListedInCatalog}
-                disabled={togglingPartyId === party.id}
-                onChange={() => onToggleCatalog(party)}
-              />
-              В каталоге
-            </label>
+            {party.partyLifecycleState === 'ready' && (
+              <label className="cabinet-toggle-label">
+                <input
+                  type="checkbox"
+                  checked={party.isListedInCatalog}
+                  disabled={togglingPartyId === party.id}
+                  onChange={() => onToggleCatalog(party)}
+                />
+                В каталоге
+              </label>
+            )}
             <Button
               type="button"
               variant="secondary"

@@ -126,7 +126,7 @@ Identity/reset key для автосброса формы и темы — тол
 
 ## View-компоненты
 
-- **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — toolbar по **фазе**: слева **главная** (primary) кнопка фазы, затем вторичные; не больше **4** кнопок в строке; lifecycle (**«Опубликовать»**, **«Вернуть в черновик»**, **«В архив»**), publish **«Обновить на сайте»**, **«Создать»**, **«Привязать существующую…»** (`title`: привязка существующей вечеринки на сервере к проекту — не создаёт новую и не запускает трансляцию); shell phase badge чаще **скрыт** при lifecycle-controls (`hidePhaseBadge={showLifecycle}`), типично виден **Завершена**; **«Скопировать URL»** при `draft-linked` и `ready`; каталог **«По ссылке»** / **«В каталоге»** только при `ready` (`layout="header"`); баннера привязки и ready-phase numbered hint **нет**; **без** `PartyPreview`. Первичный статус — [AppHeader](#шапка-appheader-статус-и-pill).
+- **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — toolbar по **фазе**: слева **главная** (primary) кнопка фазы, затем вторичные; не больше **4** кнопок в строке; lifecycle (**«Опубликовать»** только для legacy `draft`, **«В архив»**), publish **«Обновить на сайте»**, **«Создать»**, **«Привязать существующую…»** (`title`: привязка существующей вечеринки на сервере к проекту — не создаёт новую и не запускает трансляцию); после **Создать** ответ API даёт `ready` (**Ждёт начала**) — шаг **Опубликовать** не нужен; shell phase badge чаще **скрыт** при lifecycle-controls (`hidePhaseBadge={showLifecycle}`), типично виден **Завершена**; **«Скопировать URL»** при `draft-linked` и `ready`; каталог **«По ссылке»** / **«В каталоге»** только при `ready` (`layout="header"`); баннера привязки и ready-phase numbered hint **нет**; **без** `PartyPreview`. Первичный статус — [AppHeader](#шапка-appheader-статус-и-pill).
 - **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — баннеры connectivity (офлайн / unreachable), заголовок (sync/warning badges), [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) через `usePartyPreviewEffectiveState()`, всегда [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"`; **без** track-display и формы.
 
 Стили: `PartyEditorView.css`, `PartyPreviewView.css`; disabled-обёртка — `PartyViewWrapper.css`.
@@ -190,16 +190,16 @@ Identity/reset key для автосброса формы и темы — тол
 
 ## Фаза редактора и действия по фазе
 
-Фаза — [`partyEditorPhase.ts`](../../../src/workspaces/party/partyEditorPhase.ts) (`resolvePartyEditorPhase`):
+Фаза — [`partyEditorPhase.ts`](../../../src/workspaces/party/partyEditorPhase.ts) (`resolvePartyEditorPhase`). После **Создать** сервер возвращает `partyLifecycleState: ready` → фаза `ready` (**Ждёт начала**). Фаза `draft-linked` остаётся только для привязанных legacy-черновиков.
 
 | Фаза             | Условие                 | Действия в toolbar (слева направо; ≤4 в строке)                                                                                       |
 | ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `draft-unlinked` | Нет `meta.linkedParty`  | **«Создать»** (главная), **«Привязать существующую…»**                                                                                |
 | `draft-linked`   | `linkedParty` + `draft` | **«Опубликовать»** (главная), **«Обновить на сайте»**, **«Скопировать URL»**                                                          |
-| `ready`          | `linkedParty` + `ready` | **«Обновить на сайте»** (главная), **«Вернуть в черновик»**, **«В архив»**, каталог; **«Скопировать URL»** (2-я строка при 5 кнопках) |
+| `ready`          | `linkedParty` + `ready` | **«Обновить на сайте»** (главная), **«В архив»**, каталог, **«Скопировать URL»**                                                      |
 | `completed`      | lifecycle `completed`   | Publish/create/link/lifecycle/catalog/URL скрыты; shell badge **Завершена**                                                               |
 
-Lifecycle-кнопки ([`PartyLifecycleControls`](../../../src/workspaces/party/components/PartyLifecycleControls.tsx)): только `draft-linked` и `ready`. В этих фазах shell phase badge **скрыт** (`hidePhaseBadge={showLifecycle}`). В фазе `completed` controls **не** рендерятся — кнопки **«Вернуть»** в UI нет (сервер по-прежнему запрещает `completed` → `ready`); badge **Завершена** обычно виден. Основной статус организатора при **Онлайн** — AppHeader, не shell badge.
+Lifecycle-кнопки ([`PartyLifecycleControls`](../../../src/workspaces/party/components/PartyLifecycleControls.tsx)): только `draft-linked` (**Опубликовать**) и `ready` (**В архив**). Возврата в черновик нет (сервер запрещает `ready` → `draft`, **409**). В этих фазах shell phase badge **скрыт** (`hidePhaseBadge={showLifecycle}`). В фазе `completed` controls **не** рендерятся — кнопки **«Вернуть»** в UI нет (сервер запрещает `completed` → `ready`); badge **Завершена** обычно виден. Основной статус организатора при **Онлайн** — AppHeader, не shell badge.
 
 Метки: [GLOSSARY — lifecycle UI labels](../../../../GLOSSARY.md#cherryplaylist-lifecycle-ui-labels) (`partyLifecycleLabels.ts`).
 
@@ -211,7 +211,7 @@ Lifecycle-кнопки ([`PartyLifecycleControls`](../../../src/workspaces/party
 - Shipped Editor передаёт `layout="header"` — только кнопка (tooltip на hover); строка _«Отдельно от статуса вечеринки на сайте»_ есть лишь в `layout="default"` и в текущем Editor **не** показывается.
 - Состояние в `partyWorkspaceStore.isListedInCatalog`; гидратация при load/connect; persist через `buildUpdatePartyDto` / create builders (`partyWorkspaceApiBuilders.ts`).
 - При `networkEnabled === false` и фазе `ready` — контроль **виден**, disabled; значение из локального/project cache.
-- Создание вечеринки по умолчанию — **«По ссылке»** (`isListedInCatalog: false`), см. [CONTRACTS.md](../../../../CONTRACTS.md).
+- Создание вечеринки по умолчанию — **«По ссылке»** (`isListedInCatalog: false`); опционально `true` при create — сразу **«В каталоге»**. См. [CONTRACTS.md](../../../../CONTRACTS.md) (CreatePartyDto).
 
 Термины: [GLOSSARY.md](../../../../GLOSSARY.md) (**unlisted** / **catalog**, таблица UI). Каталог — **только** Editor (в `ready`) / **Мои вечеринки**; в шапке статус вечеринки каталог **не** показывает.
 

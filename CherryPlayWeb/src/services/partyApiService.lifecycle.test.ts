@@ -55,7 +55,7 @@ describe('partyApiService.transitionPartyLifecycle', () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       mockResponse(409, {
         code: 'invalid_lifecycle_transition',
-        detail: 'Нельзя перевести вечеринку из «Завершена» в «Готова».',
+        detail: 'Нельзя перевести вечеринку из «Завершена» в «Ждёт начала».',
         currentState: 'completed',
         requestedState: 'ready',
       }),
@@ -75,7 +75,7 @@ describe('partyApiService.transitionPartyLifecycle', () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       mockResponse(409, {
         code: 'invalid_lifecycle_transition',
-        detail: 'Нельзя перевести вечеринку из «Готова» в «Черновик».',
+        detail: 'Нельзя перевести вечеринку из «Ждёт начала» в «Черновик».',
         currentState: 'ready',
         requestedState: 'draft',
       }),

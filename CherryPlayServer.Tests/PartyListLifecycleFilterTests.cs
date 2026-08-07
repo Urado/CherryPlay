@@ -62,18 +62,19 @@ public class PartyListLifecycleFilterTests
     }
 
     [Test]
-    public async Task CreateParty_ReturnsDraftLifecycleState()
+    public async Task CreateParty_ReturnsReadyLifecycleState()
     {
         var organizerId = Guid.NewGuid();
         var service = CreatePartyService(organizerId, new InMemoryPartyRepository());
 
         var result = await service.CreatePartyAsync(new CreatePartyDto
         {
-            Name = "New Draft Party",
+            Name = "New Ready Party",
             PartyThemeId = PartyThemeId.Basic,
         });
 
-        Assert.That(result.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Draft));
+        Assert.That(result.PartyLifecycleState, Is.EqualTo(PartyLifecycleState.Ready));
+        Assert.That(result.IsListedInCatalog, Is.False);
     }
 
     [Test]

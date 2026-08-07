@@ -60,7 +60,7 @@ describe('finalizePartyCreation', () => {
     mockCreateParty.mockResolvedValue({
       id: 'party-1',
       shortCode: 'abc123',
-      partyLifecycleState: 'draft',
+      partyLifecycleState: 'ready',
     });
     mockGetPartyUrl.mockResolvedValue('https://example.com/p/abc123');
   });
@@ -80,7 +80,7 @@ describe('finalizePartyCreation', () => {
       url: 'https://example.com/p/abc123',
     });
     expect(store.setPartyVerified).toHaveBeenCalledWith(true);
-    expect(store.setPartyLifecycleState).toHaveBeenCalledWith('draft');
+    expect(store.setPartyLifecycleState).toHaveBeenCalledWith('ready');
     expect(store.setIsListedInCatalog).toHaveBeenCalledWith(false);
     expect(deps.markAsDirty).toHaveBeenCalled();
     expect(deps.addNotification).not.toHaveBeenCalled();

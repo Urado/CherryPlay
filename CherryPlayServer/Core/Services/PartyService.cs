@@ -119,6 +119,7 @@ public class PartyService : IPartyService
             ExternalLinkUrl = TrimToNull(dto.ExternalLinkUrl),
             ExternalLinkText = string.IsNullOrWhiteSpace(TrimToNull(dto.ExternalLinkUrl)) ? null : TrimToNull(dto.ExternalLinkText),
             DanceTags = NormalizeDanceTags(dto.DanceTags),
+            PartyLifecycleState = PartyLifecycleState.Ready,
         };
 
         await _partyRepository.AddAsync(party);
@@ -418,7 +419,6 @@ public class PartyService : IPartyService
         {
             (PartyLifecycleState.Draft, PartyLifecycleState.Ready) => true,
             (PartyLifecycleState.Ready, PartyLifecycleState.Completed) => true,
-            (PartyLifecycleState.Ready, PartyLifecycleState.Draft) => true,
             _ => false,
         };
 

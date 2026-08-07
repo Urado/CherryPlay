@@ -29,6 +29,7 @@ export function PartyLifecycleControls({
   onTransition,
 }: PartyLifecycleControlsProps) {
   const isDisabled = disabled || isTransitioning;
+  const showActions = partyLifecycleState === 'draft' || partyLifecycleState === 'ready';
 
   return (
     <section className="cabinet-lifecycle" aria-label="Состояние вечеринки">
@@ -39,36 +40,25 @@ export function PartyLifecycleControls({
         </span>
       </div>
 
-      <div className="cabinet-lifecycle-actions">
-        {partyLifecycleState === 'draft' && (
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            fullWidth
-            className="cabinet-lifecycle-action"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('ready')}
-          >
-            Опубликовать
-          </Button>
-        )}
-
-        {partyLifecycleState === 'ready' && (
-          <>
+      {showActions && (
+        <div className="cabinet-lifecycle-actions">
+          {partyLifecycleState === 'draft' && (
             <Button
               type="button"
-              variant="secondary"
+              variant="primary"
               size="sm"
               fullWidth
               className="cabinet-lifecycle-action"
               disabled={isDisabled}
-              loading={isLoadingForTarget('draft', isTransitioning, pendingTransition)}
-              onClick={() => onTransition('draft')}
+              loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
+              onClick={() => onTransition('ready')}
+              title="Опубликовать вечеринку на сайте (статус «Ждёт начала»)"
             >
-              Сделать черновиком
+              Опубликовать
             </Button>
+          )}
+
+          {partyLifecycleState === 'ready' && (
             <Button
               type="button"
               variant="secondary"
@@ -78,28 +68,13 @@ export function PartyLifecycleControls({
               disabled={isDisabled}
               loading={isLoadingForTarget('completed', isTransitioning, pendingTransition)}
               onClick={() => onTransition('completed')}
+              title="Перевести вечеринку в архив"
             >
-              Завершить
+              В архив
             </Button>
-          </>
-        )}
-
-        {partyLifecycleState === 'completed' && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            fullWidth
-            className="cabinet-lifecycle-action"
-            disabled={isDisabled}
-            loading={isLoadingForTarget('ready', isTransitioning, pendingTransition)}
-            onClick={() => onTransition('ready')}
-            title="Вернуть вечеринку в состояние «Готова»"
-          >
-            Вернуть
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

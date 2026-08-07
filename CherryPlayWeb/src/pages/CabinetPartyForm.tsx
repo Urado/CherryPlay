@@ -470,22 +470,24 @@ export function CabinetPartyForm({
           </div>
         )}
       </div>
-      <label className="cabinet-checkbox">
-        <input
-          type="checkbox"
-          checked={
-            isEditing
-              ? (editForm.isListedInCatalog ?? false)
-              : (createForm.isListedInCatalog ?? false)
-          }
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
-              : setCreateForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
-          }
-        />
-        Показывать в каталоге
-      </label>
+      {(!isEditing || editingParty.partyLifecycleState === 'ready') && (
+        <label className="cabinet-checkbox">
+          <input
+            type="checkbox"
+            checked={
+              isEditing
+                ? (editForm.isListedInCatalog ?? false)
+                : (createForm.isListedInCatalog ?? false)
+            }
+            onChange={(e) =>
+              isEditing
+                ? setEditForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
+                : setCreateForm((f) => ({ ...f, isListedInCatalog: e.target.checked }))
+            }
+          />
+          Показывать в каталоге
+        </label>
+      )}
       <div className="cabinet-form-actions">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
           Отмена

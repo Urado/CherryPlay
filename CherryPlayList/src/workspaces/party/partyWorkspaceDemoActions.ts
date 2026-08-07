@@ -1,4 +1,4 @@
-import { DEMO_LINKED_PARTY, demoTransitionPartyLifecycle } from '@shared/demo/demoPartyFixture';
+import { DEMO_LINKED_PARTY, demoSetPartyLifecycleState } from '@shared/demo/demoPartyFixture';
 import { getAppMode } from '@shared/platform';
 import { isDemoFixturesMode } from '@shared/platform/demoLiveMode';
 import type { PartyLifecycleState } from '@shared/services/partyService';
@@ -37,7 +37,7 @@ export function demoSetUnlinkedDraft(): void {
   clearEditorDemoOverrides();
   clearPartyNotFoundProductionFlags(false);
   getProjectStore().setLinkedParty(null);
-  demoTransitionPartyLifecycle('draft');
+  demoSetPartyLifecycleState('draft');
   getPartyStore().setPartyLifecycleState(null);
 }
 
@@ -46,7 +46,7 @@ export function demoSetLinkedLifecycle(lifecycle: PartyLifecycleState): void {
   clearEditorDemoOverrides();
   clearPartyNotFoundProductionFlags(true);
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
-  demoTransitionPartyLifecycle(lifecycle);
+  demoSetPartyLifecycleState(lifecycle);
   getPartyStore().setPartyLifecycleState(lifecycle);
 }
 
@@ -76,6 +76,6 @@ export function demoResetToDefault(): void {
   resetPreviewScenario();
   clearPartyNotFoundProductionFlags(true);
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
-  demoTransitionPartyLifecycle('draft');
+  demoSetPartyLifecycleState('draft');
   getPartyStore().setPartyLifecycleState('draft');
 }

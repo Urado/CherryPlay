@@ -19,22 +19,26 @@
 
 ## CRUD вечеринок
 
-- **Создание**: POST `/api/parties` с телом CreatePartyDto → ответ PartyDto (id, shortCode, …).
+- **Создание**: POST `/api/parties` с телом CreatePartyDto → ответ PartyDto с `partyLifecycleState: "ready"` (breaking change относительно прежнего create → `draft`). Поле `isListedInCatalog` опционально: по умолчанию `false` (**По ссылке**); `true` — сразу в каталоге (**В каталоге**), при этом lifecycle всё равно `ready`.
 - **Чтение своей вечеринки**: GET `/api/parties/{partyId}` (только организатор).
 - **Редактирование метаданных**: PUT `/api/parties/{partyId}` (описание, место, город, дата, расписание, флаг «в каталоге» и т.д.).
 - **Удаление**: DELETE `/api/parties/{partyId}`.
-- **Публикация плейлиста**: PUT `/api/parties/{partyId}/playlist` с телом PartyPlaylistDto (перетирает серверную версию).
-- **Жизненный цикл**: POST `/api/parties/{partyId}/lifecycle` с телом `TransitionPartyLifecycleDto` (`partyLifecycleState`: `draft` \| `ready` \| `completed`) → ответ `PartyDto`. Разрешённые переходы: `draft` → `ready`; `ready` → `completed`; `ready` → `draft`. Состояние `completed` терминальное. При недопустимом переходе — **409** `invalid_lifecycle_transition` (поля `currentState`, `requestedState` в теле ошибки).
+- **Публикация плейлиста**: PUT `/api/parties/{partyId}/playlist` с телом PartyPlaylistDto (перетирает серверную версию). Не путать с lifecycle **Опубликовать** (`draft` → `ready`).
+- **Жизненный цикл**: POST `/api/parties/{partyId}/lifecycle` с телом `TransitionPartyLifecycleDto` (`partyLifecycleState`: `draft` \| `ready` \| `completed`) → ответ `PartyDto`. Разрешённые переходы: `draft` → `ready`; `ready` → `completed`. Переход `ready` → `draft` запрещён (**409** `invalid_lifecycle_transition`). Состояние `completed` терминальное. Enum `draft` и существующие черновики сохраняются; `draft` → `ready` (**Опубликовать**) — путь для legacy. Целевой `draft` **не** «вернуть в черновик»: допустим только как идемпотентный no-op, когда вечеринка **уже** `draft`; из `ready` / `completed` → **409**.
 
-Список `GET /api/parties` (кабинет, модальное окно привязки в CherryPlayList) **не содержит** вечеринок в `draft`; черновик доступен по `GET /api/parties/{partyId}`. Публичный каталог (`GET /api/parties/public/list`) также исключает `draft`.
+Список `GET /api/parties` (кабинет, модальное окно привязки в CherryPlayList) **не содержит** вечеринок в `draft`; черновик доступен по `GET /api/parties/{partyId}`. Публичный каталог (`GET /api/parties/public/list`) также исключает `draft` (нужны `isListedInCatalog=true` и не `draft`).
 
 Полная спецификация — в [CONTRACTS.md](../../CONTRACTS.md) §3.4 (REST API вечеринок). Используют: **CherryPlayList** (создание, привязка partyId, Publish, переходы lifecycle); **кабинет в Web** (CRUD, toggle каталога, переходы lifecycle).
+
+### Кабинет Web: lifecycle UI
+
+В кабинете организатора (CherryPlayWeb) те же Sonya-friendly метки и действия, что у List ([GLOSSARY](../../GLOSSARY.md#cherryplaylist-lifecycle-ui-labels)): статус **Черновик** / **Ждёт начала** / **Завершена**; действия **Опубликовать** (только legacy `draft` → `ready`), **В архив** (`ready` → `completed`). Кнопок **«Вернуть»** / return-to-draft нет; `completed` — только badge, без действий.
 
 ## Каталог и публичность
 
 - По умолчанию вечеринка **unlisted** (доступна только по ссылке).
 - Включение в **каталог** — решение организатора (toggle в кабинете).
-- Публичный список вечеринок: GET `/api/parties/public/list` — только вечеринки с флагом «в каталоге».
+- Публичный список вечеринок: GET `/api/parties/public/list` — только с `isListedInCatalog=true` **и** не `draft` (см. `PublicPartyQueryService`, [CONTRACTS.md](../../CONTRACTS.md) §2, [DATABASE.md](../../CherryPlayServer/DATABASE.md)).
 - Антиспам: rate limiting на публичные ручки и Hub; лимиты по вечеринкам (например, ограничение числа «будущих» вечеринок на организатора — по плану §4.2).
 
 ### Карточка вечеринки в каталоге

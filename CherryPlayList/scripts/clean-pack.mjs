@@ -47,7 +47,8 @@ async function removePath(target, attempts = 8) {
     await delay(150 * (attempt + 1));
   }
 
-  const message = lastError instanceof Error ? lastError.message : String(lastError ?? 'unknown error');
+  const message =
+    lastError instanceof Error ? lastError.message : String(lastError ?? 'unknown error');
   throw new Error(`Failed to remove ${resolved}: ${message}`);
 }
 
