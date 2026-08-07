@@ -43,6 +43,23 @@ jobs:
         working-directory: CherryPlayList
         run: npm ci
 
+      - name: Stamp package version with PR number
+        working-directory: CherryPlayList
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "ERROR: pull_request.number is empty"
+            exit 1
+          fi
+          BASE="$(node -p "require('./package.json').version.replace(/[-+].*$/, '')")"
+          VERSION="${BASE}-pr-${PR_NUMBER}"
+          echo "Stamping CherryPlayList version to ${VERSION} (PR test build)"
+          npm version "${VERSION}" --no-git-tag-version --allow-same-version
+          echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
+        id: stamp-version
+
       - name: Build Windows zip (no AIMP staging)
         working-directory: CherryPlayList
         env:
@@ -53,29 +70,28 @@ jobs:
         id: locate-zip
         working-directory: CherryPlayList
         shell: bash
+        env:
+          EXPECTED_VERSION: ${{ steps.stamp-version.outputs.app_version }}
         run: |
           shopt -s nullglob
-          zips=(release/CherryPlayList-*-x64.zip)
-          if [ ${#zips[@]} -eq 0 ]; then
-            echo "ERROR: No CherryPlayList-*-x64.zip found under release/"
+          expected="release/CherryPlayList-${EXPECTED_VERSION}-x64.zip"
+          if [ ! -f "${expected}" ]; then
+            echo "ERROR: Expected zip not found: ${expected}"
             ls -la release/ || true
             exit 1
           fi
-          if [ ${#zips[@]} -gt 1 ]; then
-            echo "ERROR: Multiple matching zips found:"
-            printf '%s\n' "${zips[@]}"
-            exit 1
-          fi
-          ZIP="${zips[0]}"
+          ZIP="${expected}"
           ZIP_NAME="$(basename "${ZIP}")"
+          ARTIFACT_NAME="${ZIP_NAME%.zip}"
           echo "Found ${ZIP}"
           echo "zip_path=CherryPlayList/${ZIP}" >> "$GITHUB_OUTPUT"
           echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Upload Windows zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cherryplaylist-win-x64
+          name: ${{ steps.locate-zip.outputs.artifact_name }}
           path: ${{ steps.locate-zip.outputs.zip_path }}
           retention-days: 14
           if-no-files-found: error
@@ -86,18 +102,20 @@ jobs:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const zipName = '${{ steps.locate-zip.outputs.zip_name }}';
+            const artifactName = '${{ steps.locate-zip.outputs.artifact_name }}';
+            const appVersion = '${{ steps.stamp-version.outputs.app_version }}';
             const marker = '<!-- cherryplaylist-desktop-pr-artifact -->';
             const body = [
               marker,
               '## Desktop build ready for testing',
               '',
-              `Windows zip **\`${zipName}\`** is attached to this workflow run as artifact **\`cherryplaylist-win-x64\`**.`,
+              `PR test build **\`${appVersion}\`** → zip **\`${zipName}\`**, Actions artifact **\`${artifactName}\`**.`,
               '',
               `1. Open the [workflow run](${runUrl})`,
               '2. Scroll to **Artifacts**',
-              '3. Download **cherryplaylist-win-x64** (zip inside)',
+              `3. Download **${artifactName}**`,
               '',
-              '_Retention: 14 days. Same packaging path as release (`dist:win:ci`), not uploaded to GitHub Releases._',
+              '_Retention: 14 days. Version is `{app}-pr-{PR}` (not a release). Prod releases keep plain app version only._',
             ].join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
