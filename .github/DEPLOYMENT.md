@@ -6,11 +6,12 @@
 
 1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
 2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
-3. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
-4. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
-5. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release (те же триггеры)
+3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` собирает Windows zip (`dist:win:ci`) с версией **`{appVersion}-pr-{PR}`** (например `0.6.1-pr-8` → `CherryPlayList-0.6.1-pr-8-x64.zip`), кладёт одноимённый Actions artifact и комментирует PR. Без загрузки в GitHub Release — для ручного теста до релиза. Релизный zip остаётся с чистой версией приложения (`0.6.1`)
+4. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
+5. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
+6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release (те же триггеры)
 
-При публикации GitHub Release (не draft) workflows **4** и **5** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`). Draft → Publish тоже даёт `published`; событие `created` для draft GitHub не шлёт в Actions.
+При публикации GitHub Release (не draft) workflows **5** и **6** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`). Draft → Publish тоже даёт `published`; событие `created` для draft GitHub не шлёт в Actions.
 
 ### Сетевое устройство и Nginx
 
@@ -216,6 +217,12 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 ### Скачать Windows desktop (CherryPlayList)
 
+#### Из pull request (до релиза)
+
+На PR с изменениями в List/Components workflow **Verify Desktop Windows** ставит версию `{package.json}-pr-{номерPR}` и кладёт artifact **`CherryPlayList-{version}-pr-{N}-x64`** (тот же basename, что у zip). Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
+
+#### Из GitHub Release
+
 После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — тег релиза **без** ведущего `v` (CI синхронизирует `CherryPlayList/package.json` с тегом).
 
 URL для **последнего стабильного** (non-prerelease) релиза:
@@ -251,6 +258,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{versi
   workflows/
     tests.yml                     # Server Tests (.NET)
     verify-docker-build.yml       # Проверка Docker-сборки на PR (без push)
+    verify-desktop-windows.yml    # Проверка Windows zip CherryPlayList на PR (artifact)
     build-images.yml              # Build & Push Images → GHCR (push в main/develop)
     release-and-deploy.yml        # Docker-образы и деплой при релизе
     release-desktop-windows.yml   # Windows zip CherryPlayList → asset Release

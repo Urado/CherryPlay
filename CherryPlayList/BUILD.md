@@ -75,7 +75,7 @@ npm run dist:all
 
 - `CherryPlayList-{version}-x64.zip` — zip-дистрибутив (64-bit)
 
-Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено). Локальный `dist:win` — для мейнтейнеров с собранным плагином.
+Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено); имя zip — `CherryPlayList-{version}-x64.zip` (версия из тега). PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — тот же `dist:win:ci`, но версия **`{version}-pr-{PR}`** (например `CherryPlayList-0.6.1-pr-8-x64.zip`); скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
 
 Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 
