@@ -4,6 +4,7 @@
 
 version: "1.0"
 updated: "2026-06-13"
+updated: "2026-08-07"
 summary:
   total_md_files: 108
   project_documentation: 82
@@ -141,6 +142,8 @@ project_documentation:
         title: "План Android/Capacitor"
       - path: CherryPlayList/docs/AIMP_E2E_VERIFICATION.md
         title: "Чеклист E2E AIMP → приложение → сайт"
+      - path: CherryPlayList/docs/party-header-control-ux.md
+        title: "To-be: пульт вечеринки в шапке (зафиксированные UX-решения)"
       - path: CherryPlayList/docs/integration/README.md
         title: "Редирект на docs/integration/ в корне"
 

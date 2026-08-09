@@ -406,6 +406,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
             }
             variant="primary"
             size="sm"
+            data-party-header-guide-target="start-playback"
           >
             {liveStreamButtonLabel}
           </Button>

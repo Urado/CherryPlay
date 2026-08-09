@@ -92,6 +92,7 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
             aria-label={
               hasError ? (error ?? 'Ошибка воспроизведения') : isPlaying ? 'Пауза' : 'Воспроизвести'
             }
+            data-party-header-guide-target="resume-playback"
           />
           <PlaybackControlButton
             control="stop"

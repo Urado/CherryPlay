@@ -64,6 +64,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 type="button"
                 variant="primary"
                 size="sm"
+                data-party-header-guide-target="start-playback"
               >
                 Начать проигрывание
               </Button>

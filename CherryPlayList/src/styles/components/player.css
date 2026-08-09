@@ -127,15 +127,24 @@
   border-color: var(--accent-primary);
 }
 
-.player-session-button--start {
-  background-color: var(--accent-primary);
-  color: var(--text-on-accent, var(--text-primary));
-  border-color: var(--accent-primary);
+.player-session-button--start,
+.cp-button.player-session-button.player-session-button--start {
+  background-color: var(--interactive-primary, var(--accent-primary, #4f8cff));
+  color: var(--text-on-accent, #fff);
+  border-color: var(--interactive-primary, var(--accent-primary, #4f8cff));
 }
 
-.player-session-button--start:not(:disabled):hover {
-  background-color: var(--accent-primary-hover, var(--accent-primary));
-  opacity: 0.9;
+.player-session-button--start:not(:disabled):hover,
+.cp-button.player-session-button.player-session-button--start:not(:disabled):hover {
+  background-color: var(
+    --interactive-primary-hover,
+    var(--accent-primary-hover, var(--interactive-primary, var(--accent-primary, #4f8cff)))
+  );
+  border-color: var(
+    --interactive-primary-hover,
+    var(--accent-primary-hover, var(--interactive-primary, var(--accent-primary, #4f8cff)))
+  );
+  opacity: 0.92;
 }
 
 .player-session-button--reset {
