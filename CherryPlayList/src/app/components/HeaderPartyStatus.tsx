@@ -24,6 +24,8 @@ import {
   runPartyHeaderGuideHighlight,
   waitForPartyHeaderGuideTarget,
 } from '../../workspaces/party/partyHeaderGoToPlayGuide';
+import { PartyProgramEndedReminder } from '../../workspaces/party/PartyProgramEndedReminder';
+import { usePartyProgramEndedStore } from '../../workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '../../workspaces/party/partyWorkspaceStore';
 
 import {
@@ -60,6 +62,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const serverUnreachable = usePartyWorkspaceStore((state) => state.serverUnreachable);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
+  const programEnded = usePartyProgramEndedStore((state) => state.programEnded);
   const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
 
   const ctaRef = useRef<HTMLButtonElement>(null);
@@ -78,6 +81,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     sessionMode,
     serverUnreachable,
     playbackStatus: sessionMode === 'session' ? playbackStatus : null,
+    programEnded: sessionMode === 'session' && programEnded,
   });
 
   const activeStageIndex = resolveHeaderPartyControlActiveStageIndex(status.primary);
@@ -309,6 +313,8 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           <span className="header-party-control__cta-label">{ctaLabel}</span>
         </button>
       </div>
+
+      {status.primary === 'Конец' ? <PartyProgramEndedReminder /> : null}
 
       {panelOpen && guideAnchorRect ? (
         <PartyGoToPlayGuidePanel

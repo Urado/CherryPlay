@@ -15,6 +15,7 @@ export interface HeaderPartyStatusInput {
   sessionMode: ProjectSessionMode;
   serverUnreachable: boolean;
   playbackStatus?: StorePlaybackStatus | null;
+  programEnded?: boolean;
 }
 
 export interface HeaderPartyStatusDisplay {
@@ -52,7 +53,11 @@ export function resolveHeaderPartyStatus(input: HeaderPartyStatusInput): HeaderP
     partyLifecycleState: input.partyLifecycleState,
     sessionMode: input.sessionMode,
   });
-  const primary = resolveHeaderPartyPlaybackOverlay(basePrimary, input.playbackStatus);
+  const primary = resolveHeaderPartyPlaybackOverlay(
+    basePrimary,
+    input.playbackStatus,
+    input.programEnded === true,
+  );
 
   return withUnreachableOverlay({ primary }, input.serverUnreachable);
 }
@@ -60,9 +65,13 @@ export function resolveHeaderPartyStatus(input: HeaderPartyStatusInput): HeaderP
 function resolveHeaderPartyPlaybackOverlay(
   primary: string,
   playbackStatus: StorePlaybackStatus | null | undefined,
+  programEnded: boolean,
 ): string {
   if (primary !== 'Идёт') {
     return primary;
+  }
+  if (programEnded) {
+    return 'Конец';
   }
   if (playbackStatus === 'paused') {
     return 'Пауза';

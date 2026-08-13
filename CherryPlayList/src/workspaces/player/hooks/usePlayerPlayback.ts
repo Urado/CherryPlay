@@ -4,6 +4,19 @@ import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
+import { markPartyProgramEnded } from '@workspaces/party/partyProgramEndedStore';
+import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
+
+function tryMarkPartyProgramEndedFromCherryPlay(): void {
+  const project = useProjectStore.getState();
+  if (project.sessionState.mode !== 'session' || !project.meta.linkedParty) {
+    return;
+  }
+  if (usePartyWorkspaceStore.getState().partyLifecycleState !== 'ready') {
+    return;
+  }
+  markPartyProgramEnded();
+}
 
 interface UsePlayerPlaybackOptions {
   allTracks: Track[];
@@ -17,10 +30,6 @@ interface UsePlayerPlaybackOptions {
   setCurrentTrack: (trackId: string | null) => void;
 }
 
-/**
- * Хук для управления воспроизведением треков
- * Объединяет логику для режимов preparation и session
- */
 export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
   const {
     allTracks,
@@ -34,7 +43,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
   const mode = useProjectStore((state) => state.sessionState.mode);
   const isPreparationMode = mode === 'preparation';
 
-  // Row preview always uses demo player (preparation and session)
   const {
     startPlayback: startTrackPlayback,
     pausePlayback,
@@ -44,7 +52,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     workspaceId: DEFAULT_PLAYER_WORKSPACE_ID,
   });
 
-  // Для режима сессии нужны дополнительные функции из playerAudioStore
   const {
     currentTrack: activePlayerTrack,
     status: playerAudioStatus,
@@ -58,16 +65,13 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
 
   const activePlayerTrackId = activePlayerTrack?.id;
 
-  // Флаг для предотвращения race condition при обработке окончания трека
   const isProcessingTrackEndRef = useRef(false);
 
-  // Используем ref для хранения актуальных значений для callback
   const playerStateRef = useRef({
     status: playerAudioStatus,
     currentTrackId: activePlayerTrackId,
   });
 
-  // Обновляем ref при изменении состояния
   useEffect(() => {
     playerStateRef.current = {
       status: playerAudioStatus,
@@ -75,16 +79,11 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     };
   }, [playerAudioStatus, activePlayerTrackId]);
 
-  /**
-   * Обработчик окончания трека
-   * Исправлена проблема с getState() - используем ref для актуальных значений
-   */
   const handleTrackEnded = useCallback(async () => {
     if (!activePlayerTrackId || isPreparationMode) {
       return;
     }
 
-    // Предотвращаем race condition - если уже обрабатываем окончание, игнорируем
     if (isProcessingTrackEndRef.current) {
       return;
     }
@@ -99,29 +98,24 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
 
       const currentIndex = allTracks.findIndex((t) => t.id === activePlayerTrackId);
 
-      // Помечаем текущий трек как проигранный
       markTrackAsPlayed(activePlayerTrackId);
 
-      // Получаем настройки для текущего трека
       const settings = getEffectiveTrackSettings(activePlayerTrackId);
 
-      // Применяем действие после трека
       if (settings.actionAfterTrack === 'pause') {
-        // Пауза в конце трека — остаёмся на текущем закончившемся треке, без автоперехода
+        if (!getNextActiveTrack()) {
+          tryMarkPartyProgramEndedFromCherryPlay();
+        }
         return;
       } else if (settings.actionAfterTrack === 'pauseAndNext') {
-        // Пауза между треками - ждем время паузы, затем переходим
         const nextTrack = getNextActiveTrack();
         if (nextTrack) {
           const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
           markSkippedDisabledTracks(currentIndex, nextIndex);
           await loadPlayerTrack(nextTrack);
           setCurrentTrack(nextTrack.id);
-          // Запускаем таймер паузы через store
-          // Исправлено: используем ref для актуальных значений вместо getState()
           setPauseTimer(async () => {
             const currentState = playerStateRef.current;
-            // Проверяем, что трек все еще тот же и все еще на паузе
             if (currentState.status === 'paused' && currentState.currentTrackId === nextTrack.id) {
               await playPlayer();
             }
@@ -129,9 +123,9 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
           setCurrentTrack(null);
+          tryMarkPartyProgramEndedFromCherryPlay();
         }
       } else {
-        // Сплошное воспроизведение (next) - сразу переходим к следующему
         const nextTrack = getNextActiveTrack();
         if (nextTrack) {
           const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
@@ -142,6 +136,7 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
           setCurrentTrack(null);
+          tryMarkPartyProgramEndedFromCherryPlay();
         }
       }
     } finally {
@@ -161,18 +156,13 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     setPauseTimer,
   ]);
 
-  /**
-   * Обработчик Next
-   */
   const handleNext = useCallback(async () => {
     if (isPreparationMode || !activePlayerTrackId) {
       return;
     }
 
-    // Очищаем таймер паузы при ручном переходе
     clearPauseTimer();
 
-    // Предотвращаем race condition
     if (isProcessingTrackEndRef.current) {
       return;
     }
@@ -211,7 +201,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     clearPauseTimer,
   ]);
 
-  // Устанавливаем обработчик окончания трека
   useEffect(() => {
     if (!isPreparationMode) {
       setOnTrackEnded(handleTrackEnded);

@@ -803,6 +803,127 @@
   text-overflow: ellipsis;
 }
 
+.header-party-control__reminder {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.header-party-control__reminder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 4px;
+  background-color: var(--bg-primary, var(--bg-secondary));
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.header-party-control__reminder-chip:hover {
+  border-color: var(--interactive-primary, #4f8cff);
+}
+
+.header-party-control__reminder-chip--due {
+  border-color: var(--status-warning, #d4a017);
+  background-color: color-mix(in srgb, var(--status-warning, #d4a017) 16%, var(--bg-primary, var(--bg-secondary)));
+  color: var(--text-primary);
+  animation: header-party-control-reminder-due-pulse 1.6s ease-in-out infinite;
+}
+
+.header-party-control__reminder-chip--due .header-party-control__reminder-time {
+  color: var(--status-warning, #d4a017);
+  font-weight: 700;
+}
+
+@keyframes header-party-control-reminder-due-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-warning, #d4a017) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-warning, #d4a017) 28%, transparent);
+  }
+}
+
+.header-party-control__reminder-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-party-control__reminder-time {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.header-party-control__reminder-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.header-party-control__reminder-dismiss:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover, rgba(127, 127, 127, 0.12));
+}
+
+.header-party-control__reminder-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  box-shadow: 0 8px 24px var(--ui-shadow);
+}
+
+.header-party-control__reminder-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.header-party-control__reminder-menu-item:hover {
+  background-color: var(--bg-hover, rgba(127, 127, 127, 0.12));
+}
+
 .party-go-to-play-guide-panel {
   display: flex;
   flex-direction: column;

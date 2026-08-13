@@ -122,7 +122,7 @@
 
 Сводка lifecycle в [`AppHeader`](CherryPlayList/src/app/components/AppHeader.tsx) — UI-метки (`resolveHeaderPartyStatus` → `resolvePartyLifecycleDisplayLabel`) плюс иконка **i** с native `title` / `aria-label` пояснением (`headerPartyStatusVisuals`). Каталог и SignalR-«лампа готовности» в шапке **не** показываются.
 
-**Видимость:** блок [`HeaderPartyStatus`](CherryPlayList/src/app/components/HeaderPartyStatus.tsx) только при **Онлайн** (`enableStreaming === true`). При выключенном онлайне блок не рендерится.
+**Видимость:** блок [`HeaderPartyStatus`](CherryPlayList/src/app/components/HeaderPartyStatus.tsx) (**пульт вечеринки** / `header-party-control`) только при **Онлайн** (`enableStreaming === true`). При выключенном онлайне блок не рендерится. UX-решения пульта: [party-header-control-ux.md](CherryPlayList/docs/party-header-control-ux.md).
 
 | Условие                             | Primary          | Secondary |
 | ----------------------------------- | ---------------- | --------- |
@@ -131,6 +131,15 @@
 | `linkedParty` + `ready`, не session | **Ждёт начала**  | —         |
 | `linkedParty` + `ready`, session    | **Идёт**         | —         |
 | `linkedParty` + `completed`         | **В архиве**     | —         |
+
+**Overlays поверх «Идёт»** (крупный статус пульта; точка полоски остаётся **Идёт** / этап 3):
+
+| Условие (при базовом **Идёт**) | Primary   |
+| ------------------------------ | --------- |
+| ephemeral `programEnded`       | **Конец** |
+| иначе `playbackStatus === 'paused'` | **Пауза** |
+
+**Конец** побеждает **Пауза**. Состояние `programEnded` + напоминание-таймер — [§7.6](CherryPlayList/docs/party-header-control-ux.md#76-конец-программы--доиграл-последний-трек) (`partyProgramEndedStore`, reminder на пульте; таймер **не** архивирует).
 
 - При `serverUnreachable` primary без изменений; secondary = **нет связи**.
 - Кнопка **«Играть для гостей»** — icon-only (Dashboard); `title` **«Открыть раскладку «Играть для гостей»»** (или **«Раскладка «Играть для гостей» уже открыта»** при no-op) → `setLayoutPreset('party')` (preset display **«Играть для гостей»**); **no-op**, если уже preset `party` / `aimp-party` или в layout уже есть зоны `party-editor` + `party-preview`. В layout edit mode кнопка disabled.
@@ -150,7 +159,7 @@
 |                                  | Онлайн on                                          | Онлайн off                             |
 | -------------------------------- | -------------------------------------------------- | -------------------------------------- |
 | **prep**                         | party-status; pill скрыт                           | ни party-status, ни pill               |
-| **session** (`cherryPlayPlayer`) | party-status (**Идёт** при `ready`) + session pill | party-status скрыт; session pill виден |
+| **session** (`cherryPlayPlayer`) | party-status (**Идёт** / **Пауза** / **Конец** при `ready`) + session pill | party-status скрыт; session pill виден |
 
 ### CherryPlayList: баннер связи в зоне Party
 

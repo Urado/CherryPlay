@@ -2,15 +2,15 @@
 
 Документ фиксирует продуктовые договорённости по редизайну управления вечеринкой в CherryPlayList (обсуждение с экспертной панелью и уточнения Павла, август 2026).
 
-**Статус:** partially as-built (desktop CherryPlayList, август 2026). Крупный статус **Пауза** на пульте — as-built (overlay по `playbackStatus === 'paused'`). Крупный статус **Конец**, `programEnded` и напоминание-таймер (§7.6) — **spec / residual**, ещё не в коде пульта.  
+**Статус:** partially as-built (desktop CherryPlayList, август 2026). Крупный статус **Пауза** на пульте — as-built (overlay по `playbackStatus === 'paused'`). Крупный статус **Конец**, ephemeral `programEnded` и напоминание-таймер (§7.6) — **as-built** на пульте.  
 **Область:** только desktop CherryPlayList. Web-кабинет — позже отдельным редизайном (вне scope).  
-**Связанные документы:** [modules/workspaces/party.md](./modules/workspaces/party.md), [online-mode-ux-synthesis.md](./online-mode-ux-synthesis.md), [GLOSSARY.md](../../GLOSSARY.md).
+**Связанные документы:** [modules/workspaces/party.md](./modules/workspaces/party.md), [online-mode-ux-synthesis.md](./online-mode-ux-synthesis.md), [GLOSSARY.md](../../GLOSSARY.md) ([header party-status](../../GLOSSARY.md#cherryplaylist-header-party-status)).
 
 Термин **pill / таблетка** в этом документе **не используем**. В шапке — **пульт вечеринки** (`HeaderPartyStatus` / `header-party-control`). Не путать с **playback pill** (`HeaderPlaybackPill`) — это отдельный chrome сессии CherryPlay.
 
 **«Мета»** в старых заметках = **название и описание вечеринки** (и связанные поля формы настроек). Дальше пишем по-русски: название / описание / настройки вечеринки.
 
-UI-метки этапов и крупного статуса — **только** по [GLOSSARY — lifecycle](../../GLOSSARY.md#cherryplaylist-lifecycle-ui-labels): **Не создана** / **Ждёт начала** / **Идёт** / **В архиве**. Короткие синонимы (локально / готово / играем / архив) в UI **не используем**. Дополнительно на пульте (крупный статус, не отдельные точки полоски): **Пауза** (as-built); **Конец** (spec — см. §7.6 residual). Legacy **Черновик** на пульте возможен как крупный статус (не точка полоски); happy-path create → сразу **Ждёт начала**.
+UI-метки этапов и крупного статуса — **только** по [GLOSSARY — lifecycle](../../GLOSSARY.md#cherryplaylist-lifecycle-ui-labels): **Не создана** / **Ждёт начала** / **Идёт** / **В архиве**. Короткие синонимы (локально / готово / играем / архив) в UI **не используем**. Дополнительно на пульте (крупный статус, не отдельные точки полоски): **Пауза** и **Конец** (as-built overlays — §7.5 / §7.6). Legacy **Черновик** на пульте возможен как крупный статус (не точка полоски); happy-path create → сразу **Ждёт начала**.
 
 ---
 
@@ -51,7 +51,7 @@ UI-метки этапов и крупного статуса — **только
 | **Ждёт начала** | 2                      | `ready`, нет session (обычный idle)         |
 | **Идёт**        | 3                      | `ready` + session, играет                   |
 | **Пауза**       | **3**                  | session на паузе (ещё не Stop); as-built на пульте      |
-| **Конец**       | **3**                  | доиграл последний трек (spec / residual — §7.6)         |
+| **Конец**       | **3**                  | доиграл последний трек (`programEnded`); as-built — §7.6 |
 | **В архиве**    | 4                      | `completed`                                 |
 
 Legacy **Черновик** в полоске **не показываем** (вне happy-path create; отдельная доработка не в scope этой фиксации).
@@ -120,7 +120,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 
 **Не здесь (холст «Дизайн»):** `themeId`, customization / крутилки, отображение треков.
 
-**Publish** на этой вкладке **нет** — только иконкой на пульте (§4). **«Вернуть из архива»** — только с пульта (§7.6), не в опасной зоне.
+**Publish** на этой вкладке **нет** — только иконкой на пульте (§4). **«Вернуть из архива»** — только с пульта (§7.7), не в опасной зоне.
 
 ### «В архив» — доступность
 
@@ -130,7 +130,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 | **Пауза**                             | Видна, **приглушена** (`archiveQuiet`); не основной сценарий завершения                                   |
 | После **Stop** / idle **Ждёт начала** | Снова можно (кнопка активна, с «точно?»)                                                                  |
 | **Конец** (таймер)                    | Архивация по-прежнему через настройки; таймер сам **не** архивирует                                       |
-| **В архиве**                          | Опасной зоны архива **нет**; возврат — CTA **пульта** (§7.6)                                              |
+| **В архиве**                          | Опасной зоны архива **нет**; возврат — CTA **пульта** (§7.7)                                              |
 
 ---
 
@@ -167,7 +167,7 @@ v1 = **одно окно** с **сворачиваемым боковым мен
 | `ready`, нет session (idle) | 2     | Ждёт начала    | **К игре**                                             | панелька + подсветка Start      |
 | `ready` + live, играет      | 3     | Идёт           | **К остановке**                                        | подсветка Stop / «Выключить онлайн» |
 | session / live на паузе     | **3** | **Пауза**      | **К игре** (подсветка Play / resume)                   | **не** архив с пульта           |
-| последний трек доиграл      | **3** | **Конец**      | **К игре** + напоминание-таймер (residual)             | таймер не архивирует; **не as-built** |
+| последний трек доиграл      | **3** | **Конец**      | **К игре** + напоминание-таймер (as-built)             | таймер не архивирует                  |
 | `completed`                 | 4     | В архиве       | **Вернуть из архива**                                  | confirm → снова **Ждёт начала** |
 
 \* Точка полоски для **Черновик** = 2 (**Ждёт начала**); отдельной точки «Черновик» нет. Draft / legacy в happy-path create **не** описываем подробно.
@@ -268,17 +268,22 @@ CTA ведёт в раздел **«О вечеринке»**. После усп�
 
 ### 7.6. Конец программы = доиграл последний трек
 
-**Статус реализации:** spec / residual — **не as-built** на пульте. В коде пока нет `programEnded` / `clearPartyProgramEnded`, детекции «последний трек доиграл» для CherryPlay+AIMP и напоминания-таймера; крупный статус **Конец** на пульте не выставляется.
+**Статус реализации:** **as-built** на пульте (август 2026).
 
-Продуктовый замысел (когда будет wired):
+Крупный статус **Конец**, точка полоски **3 (Идёт)**. Overlay в `resolveHeaderPartyStatus`: при базовом **Идёт** и `programEnded === true` → **Конец**; **Конец** перекрывает **Пауза** (порядок: `programEnded` → иначе `paused` → иначе **Идёт**).
 
-Крупный статус **Конец**, точка полоски **3 (Идёт)**. Детекция для CherryPlay и AIMP (`programEnded`).
+Эфемерный Zustand [`partyProgramEndedStore.ts`](../src/workspaces/party/partyProgramEndedStore.ts): `programEnded`, видимость/дедлайн напоминания, меню, snooze-шаг. Не персистируется.
 
-Стартует **напоминание-таймер** (сам **не** архивирует). Базовый интервал **20 мин**, snooze **экспоненциально**: 20 → 40 → 80 → … мин.
+**Детекция**
 
-- Если снова Play / добавили треки — **таймер отменить** (`clearPartyProgramEnded`).
-- Таймер можно **просто закрыть** и забыть.
-- По клику на таймер: **ещё подождать** или **отменить**.
+| Источник | Как |
+| -------- | --- |
+| CherryPlay | `usePlayerPlayback` → `handleTrackEnded` → `tryMarkPartyProgramEndedFromCherryPlay` при отсутствии следующего активного трека; только при `session` + `linkedParty` + lifecycle `ready`. **Не** при ручном Skip / `handleNext`. |
+| AIMP | `detectAimpLiveProgramEnded` + эффекты в `usePartyProgramEndedEffects` (хук всегда в `AppHeader`): live on, был `playing`, затем `stopped` на последнем треке у конца длительности (~2 с). |
+
+**Сброс** (`clearPartyProgramEnded`): resume Play (CherryPlay `playing` / AIMP `playing`); добавлены продолжающие треки (CP: незаигранные active; AIMP: рост `trackCount`); Stop session (`sessionMode !== 'session'`); archive / нет `linkedParty`; AIMP live off; fresh project (`resetPartyWorkspaceForFreshProject`).
+
+**Напоминание** ([`PartyProgramEndedReminder.tsx`](../src/workspaces/party/PartyProgramEndedReminder.tsx) на пульте): countdown; dismiss / **X** и меню **«Отменить»** скрывают только reminder (`dismissPartyProgramEndedReminder`) — **не** архивируют и **не** снимают **Конец**; **«Ещё подождать»** — snooze. При `mark`: дедлайн **20 мин** (`20×2^0`). Первое snooze — **40 мин** (`20×2^1`), далее **80**… (`20×2^n` по `snoozeStepIndex`; не повторные 20). Цепочка интервалов: 20 → 40 → 80 → …. При T=0 chip остаётся с urgent-стилем `--due` + pulse; меню открывается **один раз** на этот дедлайн.
 
 ```
 Последний трек доиграл
@@ -292,7 +297,7 @@ CTA ведёт в раздел **«О вечеринке»**. После усп�
    └─────────────────────────┘
 ```
 
-«В архив» — в настройках (опасная зона), не на пульте.
+«В архив» — в настройках (опасная зона), не на пульте. Авто-архивация по таймеру — **вне scope** (§11).
 
 ### 7.7. В архиве
 
@@ -362,8 +367,7 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
 ## 11. Вне scope этой фиксации
 
 - Редизайн Web-кабинета организатора.
-- Авто-архивация по таймеру (сейчас только напоминание — и само напоминание ещё residual, см. §7.6).
-- Крупный статус **Конец** / `programEnded` / reminder на пульте (spec; не as-built).
+- Авто-архивация по таймеру (на пульте только напоминание — само **не** архивирует; см. §7.6 as-built).
 - Показ Черновика **отдельной точкой** в полоске этапов и полная матрица для legacy `draft` (крупный статус + CTA «К настройкам» есть; отдельной точки нет).
 - Старт сессии из пульта шапки.
 - Вариант A (split попап / только-дизайн окно).
@@ -380,3 +384,4 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
 | 2026-08-07 | **Partial as-built:** Party Editor B; пульт (4-stage strip, CTA matrix, Publish/⚙ placeholders as wired); guide «К игре» + 5s edge highlight by `streamingSource`; AIMP labels **«Включить онлайн»** / **«Выключить онлайн»**; **Пауза** overlay from player `paused`. Residual: **Конец** / `programEnded` / reminder snooze (CP+AIMP) |
 | 2026-08-07 | Stage 4 BA: blocking comments нет; финальный consistency pass docs graph (пульт / Online-off / archive surfaces / AIMP labels / no start from header / reminder без auto-archive / variant B) |
 | 2026-08-07 | Docs honesty: §7.6 / status / §11 — **Конец** + `programEnded` + reminder отмечены residual, не as-built на пульте |
+| 2026-08-11 | **As-built §7.6:** `partyProgramEndedStore` + overlay **Конец** (побеждает **Пауза**); reminder chip/menu/snooze 20→40→80…; детекция CP (`handleTrackEnded`) + AIMP (`detectAimpLiveProgramEnded` / `usePartyProgramEndedEffects`); clears на resume / tracks / stop / archive / AIMP live off / fresh project. Residual: auto-archive, Web redesign, draft-точка, старт из пульта |

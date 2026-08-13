@@ -143,7 +143,7 @@ project_documentation:
       - path: CherryPlayList/docs/AIMP_E2E_VERIFICATION.md
         title: "Чеклист E2E AIMP → приложение → сайт"
       - path: CherryPlayList/docs/party-header-control-ux.md
-        title: "To-be: пульт вечеринки в шапке (зафиксированные UX-решения)"
+        title: "Пульт вечеринки в шапке — UX-решения (partially as-built: Пауза/Конец + reminder)"
       - path: CherryPlayList/docs/integration/README.md
         title: "Редирект на docs/integration/ в корне"
 
