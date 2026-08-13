@@ -12,7 +12,14 @@ import { resolveFileBrowserFocusTarget } from '../utils/resolveFileBrowserFocusT
 
 const notificationTimers = new Map<string, NodeJS.Timeout>();
 
-export type ModalType = 'settings' | 'export' | 'trackSettings' | 'account' | 'linkParty' | null;
+export type ModalType =
+  | 'settings'
+  | 'export'
+  | 'trackSettings'
+  | 'account'
+  | 'linkParty'
+  | 'partySettings'
+  | null;
 
 export interface TrackSettingsModalContext {
   trackId: string | null;
@@ -63,6 +70,7 @@ interface UIState {
 
   setActiveSource: (source: 'fileBrowser' | 'playlists' | 'db') => void;
   openModal: (type: ModalType) => void;
+  openPartySettingsModal: () => void;
   closeModal: () => void;
   openTrackSettingsModal: (context: TrackSettingsModalContext) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
@@ -93,8 +101,13 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   openModal: (type) => set({ modal: type }),
 
+  openPartySettingsModal: () => set({ modal: 'partySettings' }),
+
   closeModal: () =>
-    set({ modal: null, trackSettingsContext: { trackId: null, groupId: null, isGlobal: false } }),
+    set({
+      modal: null,
+      trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
+    }),
 
   openTrackSettingsModal: (context) =>
     set({ modal: 'trackSettings', trackSettingsContext: context }),
@@ -203,3 +216,7 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   acknowledgeFileBrowserFocus: () => set({ fileBrowserFocusRequest: null }),
 }));
+
+export function openPartySettingsModal(): void {
+  useUIStore.getState().openPartySettingsModal();
+}

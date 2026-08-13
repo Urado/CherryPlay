@@ -1,5 +1,6 @@
 import { partyService, type CreatePartyDto } from '@shared/services/partyService';
 
+import { markPartyPublishFullySynced } from './partyPublishSync';
 import type { PartyWorkspaceState } from './partyWorkspaceStore';
 import { ERROR_CONNECTION } from './partyWorkspaceUtils';
 
@@ -61,6 +62,7 @@ export async function finalizePartyCreation(
   store.setPartyLifecycleState(party.partyLifecycleState);
   store.setIsListedInCatalog(party.isListedInCatalog ?? createData.isListedInCatalog ?? false);
   deps.markAsDirty();
+  markPartyPublishFullySynced();
 }
 
 export async function handlePartyCreationFailure(

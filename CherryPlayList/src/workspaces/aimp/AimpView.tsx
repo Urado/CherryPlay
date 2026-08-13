@@ -406,7 +406,9 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
             }
             variant="primary"
             size="sm"
-            data-party-header-guide-target="start-playback"
+            data-party-header-guide-target={
+              bridgeState.liveStreamStarted ? 'stop-playback' : 'start-playback'
+            }
           >
             {liveStreamButtonLabel}
           </Button>

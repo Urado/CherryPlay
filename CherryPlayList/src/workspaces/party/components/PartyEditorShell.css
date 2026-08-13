@@ -119,10 +119,12 @@
 }
 
 .party-editor-shell-body {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-secondary, #f5f5f5);
 }
 

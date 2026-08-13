@@ -9,6 +9,7 @@ export interface PartyGoToPlayGuidePanelProps {
   anchorRect: DOMRect;
   showGoButton: boolean;
   startLabel: string;
+  mode?: 'start' | 'stop';
   excludeCloseRef?: React.RefObject<HTMLElement | null>;
   onGo: () => void;
   onClose: () => void;
@@ -18,6 +19,7 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
   anchorRect,
   showGoButton,
   startLabel,
+  mode = 'start',
   excludeCloseRef,
   onGo,
   onClose,
@@ -66,9 +68,14 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
     panelWidth: PARTY_GO_TO_PLAY_GUIDE_PANEL_WIDTH,
   });
 
-  const bodyText = showGoButton
-    ? `Вечеринка готова. Запуск — кнопкой «${startLabel}» на экране проигрывания.`
-    : `Вечеринка готова. Нажмите «${startLabel}».`;
+  const bodyText =
+    mode === 'stop'
+      ? showGoButton
+        ? `Чтобы остановить, нажмите «${startLabel}» на экране проигрывания.`
+        : `Нажмите «${startLabel}».`
+      : showGoButton
+        ? `Вечеринка готова. Запуск — кнопкой «${startLabel}» на экране проигрывания.`
+        : `Вечеринка готова. Нажмите «${startLabel}».`;
 
   return createPortal(
     <div
@@ -76,7 +83,7 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
       className="party-go-to-play-guide-panel"
       style={style}
       role="dialog"
-      aria-label="К игре"
+      aria-label={mode === 'stop' ? 'Остановить' : 'Играть'}
     >
       <p className="party-go-to-play-guide-panel__text">{bodyText}</p>
       {showGoButton ? (

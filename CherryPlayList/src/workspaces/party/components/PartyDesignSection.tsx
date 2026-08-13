@@ -18,6 +18,8 @@ export interface PartyDesignSectionProps {
   defaultExpanded?: boolean;
   lockedThemes?: PartyDesignLockedThemeInfo[];
   visibleThemeIds?: PartyThemeId[] | null;
+  hasThemeAccess?: boolean;
+  networkEnabled?: boolean;
   isThemeAccessLoading?: boolean;
   themeAccessErrorMessage?: string | null;
   showNoAccessibleThemesHint?: boolean;
@@ -33,6 +35,8 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
   defaultExpanded = false,
   lockedThemes = [],
   visibleThemeIds = null,
+  hasThemeAccess = true,
+  networkEnabled = true,
   isThemeAccessLoading = false,
   themeAccessErrorMessage = null,
   showNoAccessibleThemesHint = false,
@@ -48,6 +52,8 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
         readOnly={readOnly}
         lockedThemes={lockedThemes}
         visibleThemeIds={visibleThemeIds}
+        hasThemeAccess={hasThemeAccess}
+        networkEnabled={networkEnabled}
         isThemeAccessLoading={isThemeAccessLoading}
         themeAccessErrorMessage={themeAccessErrorMessage}
         hideSectionLabel

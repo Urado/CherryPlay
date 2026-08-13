@@ -1,5 +1,6 @@
 import { resetPreviewScenario } from './partyPreviewScenarioActions';
 import { clearPartyProgramEnded } from './partyProgramEndedStore';
+import { resetPartySettingsUiState } from './partySettingsUiStore';
 import {
   clearPartyWorkspaceLinkedPartyCheck,
   partyWorkspaceOneShotGuards,
@@ -9,9 +10,9 @@ import { resetPartyWorkspaceState } from './partyWorkspaceStore';
 
 export function resetPartyWorkspaceForFreshProject(): void {
   resetPartyWorkspaceState();
+  resetPartySettingsUiState();
   clearPartyProgramEnded();
   resetPreviewScenario();
-  partyWorkspaceOneShotGuards.themeAccessGuardKey = null;
   partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
   partyWorkspaceOneShotGuards.oauthCallbackRegistered = false;
   clearPartyWorkspaceLinkedPartyCheck();

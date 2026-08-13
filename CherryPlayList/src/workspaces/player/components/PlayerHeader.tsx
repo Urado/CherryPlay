@@ -76,6 +76,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 variant="secondary"
                 size="sm"
                 title="Завершает сессию вечера, а не только ставит на паузу"
+                data-party-header-guide-target="stop-playback"
               >
                 Остановить проигрывание
               </Button>

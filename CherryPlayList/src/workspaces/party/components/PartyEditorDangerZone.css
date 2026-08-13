@@ -1,0 +1,8 @@
+.party-editor-danger-zone__archive--quiet {
+  opacity: 0.72;
+}
+
+.party-editor-danger-zone__archive--blocked {
+  opacity: 0.55;
+  cursor: help;
+}

@@ -183,6 +183,7 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         markSkippedDisabledTracks(currentIndex, allTracks.length);
         stop();
         setCurrentTrack(null);
+        tryMarkPartyProgramEndedFromCherryPlay();
       }
     } finally {
       isProcessingTrackEndRef.current = false;

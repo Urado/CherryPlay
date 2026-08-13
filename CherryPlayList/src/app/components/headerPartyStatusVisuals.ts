@@ -65,12 +65,12 @@ export function resolveHeaderPartyControlCtaLabel(primaryLabel: string): string 
     case 'Черновик':
       return 'К настройкам';
     case 'Ждёт начала':
-      return 'К игре';
+      return 'Играть';
     case 'Идёт':
-      return 'К остановке';
+      return 'Остановить';
     case 'Пауза':
     case 'Конец':
-      return 'К игре';
+      return 'Играть';
     case 'В архиве':
       return 'Вернуть из архива';
     default:

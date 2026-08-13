@@ -31,7 +31,7 @@ export function isOnlinePartyLayoutPreset(preset: LayoutPreset | null | undefine
 
 export function layoutHasOnlinePartyZones(layout: Layout): boolean {
   const types = collectWorkspaceTypes(layout.rootZone);
-  return types.has('party-editor') && types.has('party-preview');
+  return types.has('party-preview');
 }
 
 export function isAlreadyOnOnlinePartyLayout(

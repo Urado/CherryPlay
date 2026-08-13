@@ -12,3 +12,26 @@
   flex: 1;
   min-height: 0;
 }
+
+.party-editor-about-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.party-editor-view-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.party-editor-view-stub__message {
+  margin: 0;
+  color: var(--text-secondary, #666);
+  font-size: 14px;
+  line-height: 1.5;
+}

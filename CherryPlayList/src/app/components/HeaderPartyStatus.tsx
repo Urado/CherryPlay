@@ -2,24 +2,35 @@ import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
+  useAuthStore,
   useLayoutStore,
   usePlayerAudioStore,
   useProjectStore,
   useSettingsStore,
+  openPartySettingsModal,
 } from '@shared/stores';
+import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { PartyGoToPlayGuidePanel } from '../../workspaces/party/PartyGoToPlayGuidePanel';
+import {
+  publishPartyFromHeader,
+  unarchivePartyFromHeader,
+} from '../../workspaces/party/partyHeaderCommands';
 import {
   clearPartyHeaderGuideHighlight,
   findPartyHeaderGuideTarget,
   PARTY_HEADER_GUIDE_HIGHLIGHT_MS,
   PARTY_HEADER_GUIDE_TARGET_RESUME,
+  PARTY_HEADER_GUIDE_TARGET_STOP,
   type PartyHeaderGuideTargetKind,
   resolvePartyHeaderGuideStartLabel,
+  resolvePartyHeaderGuideStopLabel,
   resolvePartyHeaderGuideTargetKind,
   runPartyHeaderGuideHighlight,
   waitForPartyHeaderGuideTarget,
@@ -27,6 +38,8 @@ import {
 import { PartyProgramEndedReminder } from '../../workspaces/party/PartyProgramEndedReminder';
 import { usePartyProgramEndedStore } from '../../workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '../../workspaces/party/partyWorkspaceStore';
+import { resolveHeaderPartyPublishDisabledReason } from '../../workspaces/party/resolveHeaderPartyPublishDisabledReason';
+import { usePartyPublishOutOfSync } from '../../workspaces/party/usePartyPublishOutOfSync';
 
 import {
   HEADER_PARTY_CONTROL_STAGE_LABELS,
@@ -38,8 +51,10 @@ import {
 import { isAlreadyOnOnlinePartyLayout, resolveHeaderPartyStatus } from './resolveHeaderPartyStatus';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 
-const PLACEHOLDER_ACTION_TITLE = 'Скоро будет доступно';
 const GO_TO_PLAY_CTA_TITLE = 'Показать, где начать проигрывание';
+const GO_TO_STOP_CTA_TITLE = 'Показать, где остановить проигрывание';
+const OPEN_ABOUT_CTA_TITLE = 'Открыть раздел «О вечеринке»';
+const UNARCHIVE_CTA_TITLE = 'Вернуть вечеринку из архива';
 
 const STAGE_ICONS: Record<
   HeaderPartyControlStageLabel,
@@ -60,10 +75,20 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
   const serverUnreachable = usePartyWorkspaceStore((state) => state.serverUnreachable);
+  const isPublishing = usePartyWorkspaceStore((state) => state.isPublishing);
+  const isTransitioningLifecycle = usePartyWorkspaceStore(
+    (state) => state.isTransitioningLifecycle,
+  );
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
   const programEnded = usePartyProgramEndedStore((state) => state.programEnded);
   const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
+  const isAuthenticated = useAuthStore(
+    (state) => state.accessToken !== null && state.organizer !== null,
+  );
+  const { networkEnabled } = useOnlineNetworkPolicy();
+  const hasLinkedParty = Boolean(linkedParty);
+  const publishOutOfSync = usePartyPublishOutOfSync(hasLinkedParty);
 
   const ctaRef = useRef<HTMLButtonElement>(null);
   const dismissTimerRef = useRef<number | null>(null);
@@ -86,22 +111,49 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
 
   const activeStageIndex = resolveHeaderPartyControlActiveStageIndex(status.primary);
   const ctaLabel = resolveHeaderPartyControlCtaLabel(status.primary);
-  const isGoToPlayCta = ctaLabel === 'К игре';
-  const ctaEnabled = isGoToPlayCta && !disabled;
+  const isGoToPlayCta = ctaLabel === 'Играть';
+  const isGoToStopCta = ctaLabel === 'Остановить';
+  const isOpenAboutCta = ctaLabel === 'Создать' || ctaLabel === 'К настройкам';
+  const isUnarchiveCta = ctaLabel === 'Вернуть из архива';
+  const ctaEnabled =
+    !disabled && (isGoToPlayCta || isGoToStopCta || isOpenAboutCta || isUnarchiveCta);
   const actionTitle = disabled
     ? LAYOUT_EDIT_DISABLED_TITLE
     : isGoToPlayCta
       ? GO_TO_PLAY_CTA_TITLE
-      : PLACEHOLDER_ACTION_TITLE;
+      : isGoToStopCta
+        ? GO_TO_STOP_CTA_TITLE
+        : isOpenAboutCta
+          ? OPEN_ABOUT_CTA_TITLE
+          : isUnarchiveCta
+            ? UNARCHIVE_CTA_TITLE
+            : OPEN_ABOUT_CTA_TITLE;
 
   const startLabel = resolvePartyHeaderGuideStartLabel(streamingSource);
+  const stopLabel = resolvePartyHeaderGuideStopLabel(streamingSource);
   const targetKind = resolvePartyHeaderGuideTargetKind({
     primaryStatus: status.primary,
     streamingSource,
   });
   const panelStartLabel =
-    targetKind === PARTY_HEADER_GUIDE_TARGET_RESUME ? 'Воспроизвести' : startLabel;
-  const panelOpen = guideOpen && ctaEnabled && guideAnchorRect != null;
+    targetKind === PARTY_HEADER_GUIDE_TARGET_STOP
+      ? stopLabel
+      : targetKind === PARTY_HEADER_GUIDE_TARGET_RESUME
+        ? 'Воспроизвести'
+        : startLabel;
+  const usesGuidePanel = isGoToPlayCta || isGoToStopCta;
+  const panelOpen = guideOpen && usesGuidePanel && ctaEnabled && guideAnchorRect != null;
+
+  const publishDisabledReason = resolveHeaderPartyPublishDisabledReason({
+    isAuthenticated,
+    networkEnabled,
+    hasLinkedParty,
+    partyLifecycleState,
+  });
+  const publishDisabled = disabled || isPublishing || publishDisabledReason != null;
+  const publishTitle = disabled
+    ? LAYOUT_EDIT_DISABLED_TITLE
+    : (publishDisabledReason ?? 'Обновить плейлист и настройки, которые видят гости');
 
   if (ctaEnabled !== ctaEnabledSnapshot) {
     setCtaEnabledSnapshot(ctaEnabled);
@@ -166,15 +218,27 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     scheduleGuideDismiss();
   }, [abortPendingWait, scheduleGuideDismiss]);
 
+  const openPartySettings = useCallback(() => {
+    openPartySettingsModal();
+  }, []);
+
   const handleCtaClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       if (!ctaEnabled) {
         return;
       }
+      if (isOpenAboutCta) {
+        openPartySettings();
+        return;
+      }
+      if (isUnarchiveCta) {
+        void unarchivePartyFromHeader();
+        return;
+      }
       openGuide();
     },
-    [ctaEnabled, openGuide],
+    [ctaEnabled, isOpenAboutCta, isUnarchiveCta, openGuide, openPartySettings],
   );
 
   const handleGo = useCallback(() => {
@@ -206,6 +270,28 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
       scheduleGuideDismiss();
     });
   }, [abortPendingWait, scheduleGuideDismiss, setLayoutPreset]);
+
+  const handlePublishClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (publishDisabled) {
+        return;
+      }
+      void publishPartyFromHeader();
+    },
+    [publishDisabled],
+  );
+
+  const handleSettingsClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (disabled) {
+        return;
+      }
+      openPartySettings();
+    },
+    [disabled, openPartySettings],
+  );
 
   useLayoutEffect(() => {
     targetKindRef.current = targetKind;
@@ -299,19 +385,52 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           <ArrowForwardIcon fontSize="inherit" />
         </span>
 
-        <button
-          ref={ctaRef}
-          type="button"
-          className="header-button header-party-control__cta"
-          disabled={!ctaEnabled}
-          title={actionTitle}
-          aria-label={`${ctaLabel}. ${actionTitle}`}
-          aria-expanded={panelOpen}
-          aria-haspopup="dialog"
-          onClick={handleCtaClick}
-        >
-          <span className="header-party-control__cta-label">{ctaLabel}</span>
-        </button>
+        <div className="header-party-control__actions">
+          <button
+            ref={ctaRef}
+            type="button"
+            className="header-button header-party-control__cta"
+            disabled={!ctaEnabled || (isUnarchiveCta && isTransitioningLifecycle)}
+            title={actionTitle}
+            aria-label={`${ctaLabel}. ${actionTitle}`}
+            aria-expanded={panelOpen}
+            aria-haspopup={usesGuidePanel ? 'dialog' : undefined}
+            onClick={handleCtaClick}
+          >
+            <span className="header-party-control__cta-label">{ctaLabel}</span>
+          </button>
+
+          {hasLinkedParty ? (
+            <>
+              <button
+                type="button"
+                className={[
+                  'header-button header-party-control__icon-button',
+                  publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                disabled={publishDisabled}
+                title={publishTitle}
+                aria-label={`Обновить на сайте. ${publishTitle}`}
+                onClick={handlePublishClick}
+              >
+                <CloudUploadOutlinedIcon fontSize="inherit" />
+              </button>
+
+              <button
+                type="button"
+                className="header-button header-party-control__icon-button"
+                disabled={disabled}
+                title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : 'О вечеринке'}
+                aria-label="Открыть раздел «О вечеринке»"
+                onClick={handleSettingsClick}
+              >
+                <SettingsOutlinedIcon fontSize="inherit" />
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {status.primary === 'Конец' ? <PartyProgramEndedReminder /> : null}
@@ -321,6 +440,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           anchorRect={guideAnchorRect}
           showGoButton={showGoButton}
           startLabel={panelStartLabel}
+          mode={isGoToStopCta ? 'stop' : 'start'}
           excludeCloseRef={ctaRef}
           onGo={handleGo}
           onClose={closeGuide}

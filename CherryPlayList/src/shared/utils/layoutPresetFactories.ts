@@ -6,7 +6,6 @@ import {
   DEFAULT_FILEBROWSER_WORKSPACE_ID,
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
-  PARTY_EDITOR_WORKSPACE_ID,
   PARTY_PREVIEW_WORKSPACE_ID,
   generateWorkspaceId,
 } from '../../core/constants/workspace';
@@ -353,7 +352,6 @@ export function createPlayerLayout(): Layout {
 
 export function createPartyLayout(): Layout {
   const playerZoneId = uuidv4();
-  const partyEditorZoneId = uuidv4();
   const partyPreviewZoneId = uuidv4();
   const rootContainerId = uuidv4();
 
@@ -371,21 +369,14 @@ export function createPartyLayout(): Layout {
           size: 50,
         },
         {
-          id: partyEditorZoneId,
-          type: 'workspace',
-          workspaceId: PARTY_EDITOR_WORKSPACE_ID,
-          workspaceType: 'party-editor',
-          size: 25,
-        },
-        {
           id: partyPreviewZoneId,
           type: 'workspace',
           workspaceId: PARTY_PREVIEW_WORKSPACE_ID,
           workspaceType: 'party-preview',
-          size: 25,
+          size: 50,
         },
       ],
-      sizes: [50, 25, 25],
+      sizes: [50, 50],
     },
     version: 1,
   };

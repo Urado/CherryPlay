@@ -33,13 +33,12 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
 
   const isPlaying = status === 'playing';
   const isDisabled = !isSessionMode || !currentTrack;
-  const isScrubberDisabled = isDisabled || isSessionMode;
   const isNextDisabled = !isSessionMode || !onNext;
   const resolvedDuration = duration || currentTrack?.duration || 0;
   const timeline = usePlaybackTimeline({
     position: isDisabled ? 0 : position,
     duration: resolvedDuration,
-    disabled: isScrubberDisabled,
+    disabled: isDisabled,
     seek,
   });
   const hasError =
@@ -157,10 +156,9 @@ export const PlayerControls: React.FC<PlayerControlsProps> = ({ onNext }) => {
           onPointerDown={timeline.beginScrub}
           onInput={timeline.handleInput}
           onChange={timeline.handleChange}
-          disabled={isScrubberDisabled}
+          disabled={isDisabled}
           className="player-controls__timeline"
           aria-label="Позиция воспроизведения"
-          title={isSessionMode ? 'Во время трансляции перемотка отключена' : undefined}
         />
         <span className="player-controls__time player-controls__time--total">
           {formatPlayerTime(resolvedDuration)}

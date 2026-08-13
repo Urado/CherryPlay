@@ -40,6 +40,8 @@ export interface PartyEditorDesignState {
   themeId: PartyThemeId;
   customizationSettings: Record<string, unknown>;
   lockedThemes: PartyDesignLockedThemeInfo[];
+  hasThemeAccess: boolean;
+  networkEnabled: boolean;
   isThemeAccessLoading: boolean;
   visibleThemeIds: PartyThemeId[] | null;
   themeAccessErrorMessage: string | null;

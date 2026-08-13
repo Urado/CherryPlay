@@ -12,6 +12,6 @@
 | B2  | Залипшее demo-превью                                 | `partyPreviewScenarioStore`, demo mode        | Исправлено |
 | B3  | Тема сбрасывается на Киберпанк при rename / reset    | identity key = `filePath`; hydrate after reset | Исправлено |
 | B4  | Некорректные надписи entitlement (Сакура, Весенний)  | `buildThemeLockInfoMessage` / revoked copy   | Исправлено |
-| B5  | Можно выбрать недоступную тему → ошибка при создании | themeAccess null gate + Create block          | Исправлено |
+| B5  | Можно выбрать недоступную тему → ошибка при создании | Create block только при cached `themeAccess` + locked; при `themeAccess === null` — picker Basic+current (disabled + hint), Create **не** disabled | Исправлено |
 | B6  | Имена групп в плейлисте не переименовываются         | `ProjectItemRow` drag isolation + `setGroupName` | Исправлено |
 | B7  | Иконка темы «Весенний фест» не грузится              | spring-cross-step poster asset bundling       | Исправлено |

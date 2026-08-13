@@ -1,18 +1,23 @@
 export const PARTY_HEADER_GUIDE_TARGET_ATTR = 'data-party-header-guide-target';
 export const PARTY_HEADER_GUIDE_TARGET_START = 'start-playback';
 export const PARTY_HEADER_GUIDE_TARGET_RESUME = 'resume-playback';
+export const PARTY_HEADER_GUIDE_TARGET_STOP = 'stop-playback';
 export const PARTY_HEADER_GUIDE_HIGHLIGHT_CLASS = 'party-header-guide-highlight';
 export const PARTY_HEADER_GUIDE_HIGHLIGHT_MS = 5000;
 export const PARTY_GO_TO_PLAY_GUIDE_PANEL_WIDTH = 280;
 
 export type PartyHeaderGuideTargetKind =
   | typeof PARTY_HEADER_GUIDE_TARGET_START
-  | typeof PARTY_HEADER_GUIDE_TARGET_RESUME;
+  | typeof PARTY_HEADER_GUIDE_TARGET_RESUME
+  | typeof PARTY_HEADER_GUIDE_TARGET_STOP;
 
 export function resolvePartyHeaderGuideTargetKind(input: {
   primaryStatus: string;
   streamingSource: string;
 }): PartyHeaderGuideTargetKind {
+  if (input.primaryStatus === 'Идёт') {
+    return PARTY_HEADER_GUIDE_TARGET_STOP;
+  }
   if (input.streamingSource === 'aimp') {
     return PARTY_HEADER_GUIDE_TARGET_START;
   }
@@ -24,6 +29,10 @@ export function resolvePartyHeaderGuideTargetKind(input: {
 
 export function resolvePartyHeaderGuideStartLabel(streamingSource: string): string {
   return streamingSource === 'aimp' ? 'Включить онлайн' : 'Начать проигрывание';
+}
+
+export function resolvePartyHeaderGuideStopLabel(streamingSource: string): string {
+  return streamingSource === 'aimp' ? 'Выключить онлайн' : 'Остановить проигрывание';
 }
 
 export function findPartyHeaderGuideTarget(kind: PartyHeaderGuideTargetKind): HTMLElement | null {

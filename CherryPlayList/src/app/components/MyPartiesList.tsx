@@ -18,7 +18,15 @@ import {
   type PartyDto,
   type PartyLifecycleState,
 } from '@shared/services/partyService';
-import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
+import {
+  useAimpStore,
+  useAuthStore,
+  useClientOutdatedStore,
+  usePlayerAudioStore,
+  useProjectStore,
+  useSettingsStore,
+  useUIStore,
+} from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming/useOnlineNetworkPolicy';
 import { PartyLifecycleControls } from '@workspaces/party/components/PartyLifecycleControls';
 import {
@@ -26,8 +34,13 @@ import {
   resolvePartyCatalogToggleHint,
 } from '@workspaces/party/partyCatalogLabels';
 import { resolvePartyLifecycleServerBadgeLabel } from '@workspaces/party/partyEditorPhase';
+import { markPartyPublishMetadataSynced } from '@workspaces/party/partyPublishSync';
 import { partyWorkspaceOneShotGuards } from '@workspaces/party/partyWorkspaceReconnectRefs';
 import { resetPartyLinkState, usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
+import {
+  PARTY_ARCHIVE_CONFIRM_MESSAGE,
+  resolvePartyArchiveAvailability,
+} from '@workspaces/party/resolvePartyArchiveAvailability';
 
 function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
   const store = usePartyWorkspaceStore.getState();
@@ -44,6 +57,12 @@ export const MyPartiesList: React.FC = () => {
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
+  const playbackStatus = usePlayerAudioStore((state) => state.status);
+  const streamingSource = useSettingsStore((state) => state.streamingSource);
+  const aimpLiveStreamStarted = useAimpStore((state) => state.bridgeState.liveStreamStarted);
+  const aimpPlaybackStatus = useAimpStore(
+    (state) => state.bridgeState.playbackSnapshot?.status ?? null,
+  );
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const { networkEnabled } = useOnlineNetworkPolicy();
@@ -194,6 +213,7 @@ export const MyPartiesList: React.FC = () => {
       await partyService.updateParty(party.id, { isListedInCatalog: listed });
       if (linkedParty?.id === party.id) {
         usePartyWorkspaceStore.getState().setIsListedInCatalog(listed);
+        markPartyPublishMetadataSynced();
       }
     } catch (e) {
       setParties((current) =>
@@ -213,6 +233,29 @@ export const MyPartiesList: React.FC = () => {
   const handleLifecycleTransition = async (party: PartyDto, targetState: PartyLifecycleState) => {
     if (!networkEnabled) {
       return;
+    }
+
+    if (targetState === 'completed') {
+      const isCurrentLinked = linkedParty?.id === party.id;
+      if (isCurrentLinked) {
+        const availability = resolvePartyArchiveAvailability({
+          partyLifecycleState: party.partyLifecycleState,
+          sessionMode,
+          playbackStatus: sessionMode === 'session' ? playbackStatus : null,
+          aimpLiveStreamStarted,
+          aimpPlaybackStatus,
+          streamingSource,
+        });
+        if (availability.isBlockedByLive) {
+          window.alert(
+            availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив',
+          );
+          return;
+        }
+      }
+      if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
+        return;
+      }
     }
 
     setTransitioningId(party.id);
@@ -332,6 +375,7 @@ export const MyPartiesList: React.FC = () => {
                             partyLifecycleState={party.partyLifecycleState}
                             layout="header"
                             sessionMode={isLinked ? sessionMode : undefined}
+                            hideUnarchive
                             isTransitioning={transitioningId === party.id}
                             pendingTransition={
                               transitioningId === party.id ? transitioningTarget : null

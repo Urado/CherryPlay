@@ -806,12 +806,32 @@
 }
 
 .party-editor-actions {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color, #e0e0e0);
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-sm, 8px);
+  width: 100%;
+}
+
+.party-editor-actions__action,
+.party-editor-actions > .cp-button.party-editor-actions__action {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.party-editor-actions__trailing {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-sm, 8px);
 }
 
 .party-editor-actions--header {

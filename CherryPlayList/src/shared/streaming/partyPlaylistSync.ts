@@ -1,17 +1,4 @@
-/**
- * Site Streamer → Party metadata REST boundary (live playlist sync only).
- *
- * During an active broadcast session, playlist changes trigger PUT via
- * `partyService.updatePartyPlaylist`. Started/stopped by
- * `StreamingOrchestrator.startSourceSubscriptions` / `stopSourceSubscriptions`.
- *
- * Party metadata owns initial publish, explicit Publish, create/update lifecycle,
- * and bind-party flows (`usePartyServerActions`, `LinkPartyModal`) — not this module.
- *
- * Subscribes to `useProjectStore` (CherryPlay Player) or `useAimpStore` (AIMP) so the
- * Streamer can mirror viewer-facing queue changes; orchestrator-owned, not Player UI effects.
- */
-
+import { markPartyPublishPlaylistSynced } from '../../workspaces/party/partyPublishSync';
 import { partyService } from '../services/partyService';
 import { useAimpStore } from '../stores/aimpStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -19,9 +6,6 @@ import { getAimpPlaylistPublishKey } from '../utils/aimpStreamingAdapter';
 
 import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
-/**
- * Sends playlist payload to Party REST API (PUT) for live session sync.
- */
 export async function syncPartyPlaylist(
   partyId: string,
   payload: PlaylistForApiPayload,
@@ -33,14 +17,11 @@ export async function syncPartyPlaylist(
   });
 
   await partyService.updatePartyPlaylist(partyId, payload);
+  markPartyPublishPlaylistSynced(JSON.stringify(payload));
 
   console.log('[PartyPlaylistSync] ✓ Playlist updated successfully');
 }
 
-/**
- * Subscribes to project store item changes and syncs playlist to the server.
- * Skips the initial subscription fire (same as legacy signalRService behavior).
- */
 export function subscribePartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
@@ -68,10 +49,6 @@ export function subscribePartyPlaylistSync(
   });
 }
 
-/**
- * Subscribes to AIMP playlist snapshot revisions and syncs playlist to the server.
- * Uses `getAimpPlaylistPublishKey` so PUT runs only when revision changes.
- */
 export function subscribeAimpPartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,

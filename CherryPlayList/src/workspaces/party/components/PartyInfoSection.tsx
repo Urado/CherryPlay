@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import { PartyEditorAccordion } from './PartyEditorAccordion';
@@ -8,10 +9,14 @@ export interface PartyInfoSectionProps {
   partyName: string;
   partyTitle: string;
   partySubtitle: string;
-  /** Shown as party-name placeholder / empty-name display fallback. */
   projectName?: string;
   readOnly?: boolean;
   defaultExpanded?: boolean;
+  partyUrl?: string | null;
+  showCopyUrl?: boolean;
+  copyUrlDisabled?: boolean;
+  copyUrlTitle?: string;
+  onCopyUrl?: () => void;
   onPartyNameChange: (name: string) => void;
   onPartyTitleChange?: (title: string) => void;
   onPartySubtitleChange?: (subtitle: string) => void;
@@ -24,6 +29,11 @@ export const PartyInfoSection: React.FC<PartyInfoSectionProps> = ({
   projectName = '',
   readOnly = false,
   defaultExpanded = false,
+  partyUrl = null,
+  showCopyUrl = false,
+  copyUrlDisabled = false,
+  copyUrlTitle = 'Скопировать URL вечеринки',
+  onCopyUrl,
   onPartyNameChange,
   onPartyTitleChange,
   onPartySubtitleChange,
@@ -39,6 +49,7 @@ export const PartyInfoSection: React.FC<PartyInfoSectionProps> = ({
       : trimmedProjectName.length > 0
         ? `Если пусто — «${trimmedProjectName}»`
         : 'Если пусто — показывается название';
+  const showUrlCopy = showCopyUrl && Boolean(partyUrl) && Boolean(onCopyUrl);
 
   return (
     <PartyEditorAccordion title="Информация о вечеринке" defaultExpanded={defaultExpanded}>
@@ -57,6 +68,35 @@ export const PartyInfoSection: React.FC<PartyInfoSectionProps> = ({
             />
           </label>
         </div>
+
+        {showUrlCopy ? (
+          <div className="party-editor-section party-editor-url-section">
+            <label className="party-editor-label" htmlFor="party-editor-public-url">
+              URL вечеринки
+            </label>
+            <div className="party-editor-url-group">
+              <input
+                id="party-editor-public-url"
+                type="text"
+                className="party-editor-input party-editor-url-input"
+                value={partyUrl ?? ''}
+                readOnly
+                aria-readonly="true"
+              />
+              <Button
+                type="button"
+                className="party-editor-url-button"
+                onClick={() => void onCopyUrl?.()}
+                variant="secondary"
+                size="sm"
+                disabled={copyUrlDisabled}
+                title={copyUrlTitle}
+              >
+                Скопировать
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="party-editor-section">
           <label className="party-editor-label">
