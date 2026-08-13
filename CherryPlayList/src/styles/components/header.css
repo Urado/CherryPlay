@@ -156,6 +156,7 @@
   justify-content: flex-end;
   gap: 6px;
   min-width: 0;
+  width: 100%;
   justify-self: end;
 }
 
@@ -854,8 +855,9 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
 }
 
 .header-party-control__reminder-chip {
@@ -944,7 +946,8 @@
 .header-party-control__reminder-menu {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 40;
   display: flex;
   flex-direction: column;

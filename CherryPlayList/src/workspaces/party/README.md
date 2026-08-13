@@ -30,7 +30,7 @@ party/
 ├── partyWorkspaceStore.ts           # production: форма, server/theme/lifecycle UI
 ├── partySettingsUiStore.ts          # previewDesignOpen (design panel collapse)
 ├── partyProgramEndedStore.ts        # ephemeral programEnded + reminder
-├── partyHeaderCommands.ts           # publishPartyToSite, unarchivePartyFromHeader
+├── partyHeaderCommands.ts           # publishPartyToSite, archivePartyFromHeader, unarchivePartyFromHeader
 ├── partyPreviewScenarioStore.ts   # preview scenario: sync/detached overrides
 ├── partyPreviewScenarioActions.ts # продуктовые мутации сценария (не demo-gated)
 ├── partyPreviewEffectiveState.ts  # resolvePartyPreviewEffectiveState + usePartyPreviewEffectiveState()

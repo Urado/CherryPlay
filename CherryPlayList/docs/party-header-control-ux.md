@@ -69,7 +69,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 | **Модал «Настройки вечеринки»** (центр экрана) | Одна колонка: **все** поля вечеринки (метаданные, дизайн, track display) на любой фазе; аккордеоны `defaultExpanded`; от фазы зависят только **действия** (Создать / Обновить / архив и т.д.); см. §5–§6 |
 | **Превью (party-preview)**                     | Холст «как видят гости» + боковое меню **«Дизайн»** (тема, track display); nav свёрнут по умолчанию                                                                                                      |
 | **Зона party-editor** (legacy custom layout)   | Stub: «настройки — ⚙ в шапке»; **не** в пресете «Играть для гостей»                                                                                                                                      |
-| **«В архив»**                                  | Кнопка в **конце ряда действий** модала настроек (только `ready`; confirm / blocked / quiet)                                                                                                             |
+| **«В архив» / «Архивировать»**                 | Модал настроек: **«В архив»** в конце ряда действий (`ready`; confirm / blocked / quiet). Пульт при **Конец**: пункт меню chip **«Архивировать»** → `archivePartyFromHeader` (тот же confirm / blockedByLive → `completed`) |
 | **Плеер / AIMP**                               | Старт и остановка проигрывания / трансляции                                                                                                                                                              |
 
 Пульт **не показываем**, если выключена галочка **«Онлайн»** (блок убирается целиком).
@@ -98,7 +98,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 - **Создать** / **К настройкам** → `openPartySettingsModal()` — **без** смены layout.
 - В статусе **Идёт** CTA **«Остановить»** → панелька + подсветка **«Остановить проигрывание»** (AIMP: **«Выключить онлайн»**) — **не** паузу плеера.
 - В статусе **Пауза** / **Конец** (CherryPlay) CTA **«Играть»** → панелька + подсветка `resume-playback` (**«Воспроизвести»** на месте). У **AIMP** нет `resume-playback`: при **Идёт** цель = Stop; при **Конец** / idle Start = **«Включить онлайн»** (`start-playback`) — не «продолжение на месте».
-- **«В архив»** на пульте **нет** — только в модале настроек (§5 / §6), в конце ряда действий.
+- Архив с пульта: при **Конец** пункт меню chip **«Архивировать»** → `archivePartyFromHeader` (confirm / `blockedByLive` / → `completed`; §7.6). Отдельной кнопки **«В архив»** в ряду CTA пульта **нет**; в модале настроек **«В архив»** остаётся (§5 / §6).
 - **«Вернуть из архива»** — CTA пульта с `window.confirm` (`unarchivePartyFromHeader`); в Editor / **Мои вечеринки** unarchive **нет**.
 - Иконки Publish ↑ и ⚙ **скрыты**, пока нет `linkedParty` (primary **Не создана**): нечего обновлять и настраивать отдельно от CTA **«Создать»**. После link (ready / draft / completed) — снова видны.
 - Иконка **«Обновить на сайте»** (Publish ↑): `publishPartyToSite` / `publishPartyFromHeader` (+ refresh theme access); tooltip; disabled + причина при offline / нет link / не авторизован / lifecycle не позволяет (`resolveHeaderPartyPublishDisabledReason` — **не** `serverUnreachable`); подсветка **out-of-sync с сайтом** (`usePartyPublishOutOfSync` / `resolveHeaderPartyPublishHighlight`): ON при linked + lifecycle `ready`/`draft` и локальные плейлист+метаданные ≠ `lastSyncedPublishParts`; OFF когда синхронно, нет link, `completed`, или нет baseline. Baseline после create / publish / `loadPartyMetadata` / Save metadata / catalog toggle / live playlist PUT. **Не** `meta.isDirty`.
@@ -148,7 +148,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 | **Пауза** (CP session `paused` / AIMP live + `paused`)        | `quiet`                                  | Видна, приглушена (`isQuiet`); архив возможен после confirm. **Не** путать с overlay **Пауза** на пульте (AIMP pause overlay на шапке **нет**) |
 | После **Stop** / idle **Ждёт начала** / AIMP live off         | `active`                                 | Активна, с `window.confirm`                                                                                                                    |
 | AIMP live on + status `stopped` (**Конец** программы)         | `active`                                 | **Не** `blockedByLive`; архив с confirm (`resolvePartyArchiveAvailability`; тест `resolvePartyArchiveAvailability.aimpStopped.test.ts`)        |
-| **Конец** (`programEnded`; intended: не `blockedByLive`)      | `active` (если не playing)               | Архивация через кнопку в модале; таймер сам **не** архивирует                                                                                  |
+| **Конец** (`programEnded`; intended: не `blockedByLive`)      | `active` (если не playing)               | Архивация: модал **«В архив»** и/или меню chip **«Архивировать»** (`archivePartyFromHeader`); таймер сам **не** архивирует                     |
 | **В архиве** / не `ready`                                     | `hidden`                                 | Кнопки **нет**; возврат — CTA **пульта** (§7.7)                                                                                                |
 
 ---
@@ -202,7 +202,7 @@ Legacy **Черновик** в полоске **не показываем** (в�
 | `ready` + live, играет      | 3     | Идёт           | **Остановить**                             | подсветка Stop / «Выключить онлайн»  |
 | CP session на паузе         | **3** | **Пауза**      | **Играть** (`resume-playback`)             | **не** архив с пульта                |
 | AIMP live, AIMP на паузе    | **3** | **Идёт** (gap) | **Остановить** → Stop                      | overlay **Пауза** на пульте **нет**  |
-| последний трек доиграл      | **3** | **Конец**      | **Играть** + напоминание-таймер (as-built) | CP: resume; AIMP: Start (нет resume) |
+| последний трек доиграл      | **3** | **Конец**      | пока reminder visible: chip **«Архивировать»** mm:ss [X] **вместо** Играть / ↑ / ⚙; иначе **Играть** + ↑ ⚙ | CP: resume; AIMP: Start (нет resume) |
 | `completed`                 | 4     | В архиве       | **Вернуть из архива**                      | confirm → снова **Ждёт начала**      |
 
 \* Точка полоски для **Черновик** = 2 (**Ждёт начала**); отдельной точки «Черновик» нет. Draft / legacy в happy-path create **не** описываем подробно.
@@ -320,21 +320,25 @@ CTA открывает **модал настроек** (секция **«О ве
 
 **CTA / guide при Конец:** CherryPlay → `resume-playback`; AIMP → `start-playback` (**«Включить онлайн»**), без resume.
 
-**Напоминание** ([`PartyProgramEndedReminder.tsx`](../src/workspaces/party/PartyProgramEndedReminder.tsx) на пульте): countdown; dismiss / **X** и меню **«Скрыть напоминание»** (intended as-built; скрывают только reminder через `dismissPartyProgramEndedReminder`) — **не** архивируют и **не** снимают **Конец**; **«Ещё подождать»** — snooze. При `mark`: дедлайн **20 мин** (`20×2^0`). Первое snooze — **40 мин** (`20×2^1`), далее **80**… (`20×2^n` по `snoozeStepIndex`; не повторные 20). Цепочка интервалов: 20 → 40 → 80 → …. При T=0 chip остаётся с urgent-стилем `--due` + pulse; меню открывается **один раз** на этот дедлайн.
+**Chip «Архивировать»** ([`PartyProgramEndedReminder.tsx`](../src/workspaces/party/PartyProgramEndedReminder.tsx) на пульте): countdown-метка **«Архивировать»** + mm:ss + **[X]** («Скрыть»). Пока reminder visible при **Конец**, chip **заменяет** действия после стрелки (`Играть` / Publish ↑ / ⚙) — тот же ряд: `Конец → [Архивировать mm:ss][X]`. После dismiss / скрытия reminder действия **восстанавливаются**: `Конец → Играть ↑ ⚙`. Меню по клику на chip (порядок): **«Архивировать»** → `archivePartyFromHeader()` (confirm / `blockedByLive` → alert / transition `completed`) · **«Ещё подождать»** (snooze) · **«Скрыть»** (`dismissPartyProgramEndedReminder`). Сам countdown / T=0 **не** архивирует. При `mark`: дедлайн **20 мин** (`20×2^0`). Первое snooze — **40 мин** (`20×2^1`), далее **80**… (`20×2^n` по `snoozeStepIndex`; не повторные 20). Цепочка интервалов: 20 → 40 → 80 → …. При T=0 chip остаётся с urgent-стилем `--due` + pulse; меню открывается **один раз** на этот дедлайн.
 
 ```
 Последний трек доиграл
          │
          ▼
-   ┌─────────────────────────┐
-   │ Напоминание  20:00      │
-   │ (закрыть = ок)          │
-   │ клик → [ Ещё подождать ]│
-   │         [ Скрыть напоминание ]│
-   └─────────────────────────┘
+Пульт (reminder visible):
+  Конец → [Архивировать mm:ss][X]
+             │
+             ▼ клик chip
+        [ Архивировать ]   → archivePartyFromHeader
+        [ Ещё подождать ]
+        [ Скрыть ]
+
+Пульт (reminder скрыт):
+  Конец → [ Играть ]  [↑]  [⚙]
 ```
 
-«В архив» — в настройках (кнопка в **конце ряда действий** модала), не на пульте. Авто-архивация по таймеру — **вне scope** (§11).
+Дубль: **«В архив»** в настройках (кнопка в **конце ряда действий** модала). Авто-архивация по таймеру — **вне scope** (§11).
 
 ### 7.7. В архиве
 
@@ -342,7 +346,7 @@ CTA открывает **модал настроек** (секция **«О ве
 
 CTA пульта = **«Вернуть из архива»** → `window.confirm` → после успеха статус **Ждёт начала**. В модале настроек unarchive **нет**.
 
-Переход **в** архив — осознанный (подтверждение), кнопка **«В архив»** в **конце ряда действий** модала настроек; при live (`blockedByLive`) — клик → alert с пояснением, не `disabled` (§5).
+Переход **в** архив — осознанный (подтверждение): **«В архив»** в **конце ряда действий** модала настроек и/или пункт **«Архивировать»** в меню chip **Конец** (`archivePartyFromHeader`); при live (`blockedByLive`) — клик → alert с пояснением, не `disabled` (§5 / §7.6).
 
 ---
 
@@ -355,7 +359,7 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
 Требования к B:
 
 - статус и следующий шаг — только в **шапке**;
-- архив — глубоко, с «точно?»; при live (`blockedByLive`) — клик → alert с пояснением (кнопка остаётся кликабельной);
+- архив — с «точно?» (модал **«В архив»** и меню chip **«Архивировать»**); при live (`blockedByLive`) — клик → alert с пояснением (кнопка / пункт остаются кликабельными);
 - боковое меню по умолчанию **свёрнуто** на холсте дизайна;
 - в меню **нет** старта/стопа проигрывания.
 
@@ -376,9 +380,10 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
                    Пауза (CP only)    Конец
                      (точка 3)     (точка 3 + таймер)
                            │            │
-                      Stop / …     настройки → архив
-                           ▼
-                     Ждёт начала ──настройки──► В архиве
+                      Stop / …     chip «Архивировать» /
+                           │       настройки «В архив»
+                           ▼            │
+                     Ждёт начала ───────┴───► В архиве
                                          ▲
                          Вернуть (пульт + confirm)
 ```
@@ -404,7 +409,7 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
 ## 11. Вне scope этой фиксации
 
 - Редизайн Web-кабинета организатора.
-- Авто-архивация по таймеру (на пульте только напоминание — само **не** архивирует; см. §7.6 as-built).
+- Авто-архивация по таймеру (T=0 / countdown сами **не** архивируют; архив — только явный пункт меню **«Архивировать»** / модал; см. §7.6 as-built).
 - Показ Черновика **отдельной точкой** в полоске этапов и полная матрица для legacy `draft` (крупный статус + CTA «К настройкам» есть; отдельной точки нет).
 - Старт сессии из пульта шапки.
 - Вариант A (split попап / только-дизайн окно).
@@ -430,3 +435,5 @@ CTA пульта = **«Вернуть из архива»** → `window.confirm`
 | 2026-08-12 | **Modal settings (§5–§6):** `PartySettingsModal` + `openPartySettingsModal`; ⚙/Create/К настройкам без смены layout; Design в `party-preview` (`partySettingsUiStore`); preset `party` = player + preview; `party-editor` stub                                                                                                |
 | 2026-08-13 | **Submit-time network:** Publish / create / lifecycle **не** disabled по `serverUnreachable` (только Online OFF + auth/link/lifecycle); §4 Publish disabled reasons и §10 Offline/auth выровнены с [party.md](./modules/workspaces/party.md)                                                                                  |
 | 2026-08-13 | Docs integrity: overlay **Пауза** = CP `playerAudioStore` only; AIMP без `resume-playback`; Create/К настройкам без layout; §12 помечена исторической; archive wording = конец ряда действий модала                                                                                                                           |
+| 2026-08-13 | **§7.6 chip UI:** метка **«Архивировать»** (не «Напоминание»); при visible reminder chip **заменяет** Играть / ↑ / ⚙; меню тогда: **«Ещё подождать»** / **«Скрыть»**; архив — в настройках (**исторически**; см. строку ниже)                                                                                              |
+| 2026-08-13 | **§7.6 archive from chip:** меню **Архивировать** → **Ещё подождать** → **Скрыть**; первый пункт → `archivePartyFromHeader` (confirm / blockedByLive / → `completed`); модал **«В архив»** сохранён; auto-archive по таймеру — вне scope (§11)                                                                               |

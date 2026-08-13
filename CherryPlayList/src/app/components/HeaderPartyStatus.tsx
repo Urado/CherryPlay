@@ -85,6 +85,8 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
   const programEnded = usePartyProgramEndedStore((state) => state.programEnded);
+  const reminderVisible = usePartyProgramEndedStore((state) => state.reminderVisible);
+  const reminderDeadlineMs = usePartyProgramEndedStore((state) => state.reminderDeadlineMs);
   const setLayoutPreset = useLayoutStore((state) => state.setLayoutPreset);
   const isAuthenticated = useAuthStore(
     (state) => state.accessToken !== null && state.organizer !== null,
@@ -102,6 +104,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const [guideAnchorRect, setGuideAnchorRect] = useState<DOMRect | null>(null);
   const [showGoButton, setShowGoButton] = useState(false);
   const [ctaEnabledSnapshot, setCtaEnabledSnapshot] = useState(false);
+  const [showProgramEndedReminderSnapshot, setShowProgramEndedReminderSnapshot] = useState(false);
 
   const status = resolveHeaderPartyStatus({
     linkedParty,
@@ -145,7 +148,14 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
         ? 'Воспроизвести'
         : startLabel;
   const usesGuidePanel = isGoToPlayCta || isGoToStopCta;
-  const panelOpen = guideOpen && usesGuidePanel && ctaEnabled && guideAnchorRect != null;
+  const showProgramEndedReminder =
+    status.primary === 'Конец' && reminderVisible && reminderDeadlineMs != null;
+  const panelOpen =
+    guideOpen &&
+    usesGuidePanel &&
+    ctaEnabled &&
+    !showProgramEndedReminder &&
+    guideAnchorRect != null;
 
   const publishDisabledReason = resolveHeaderPartyPublishDisabledReason({
     isAuthenticated,
@@ -165,6 +175,15 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   if (ctaEnabled !== ctaEnabledSnapshot) {
     setCtaEnabledSnapshot(ctaEnabled);
     if (!ctaEnabled) {
+      setGuideOpen(false);
+      setGuideAnchorRect(null);
+      setShowGoButton(false);
+    }
+  }
+
+  if (showProgramEndedReminder !== showProgramEndedReminderSnapshot) {
+    setShowProgramEndedReminderSnapshot(showProgramEndedReminder);
+    if (showProgramEndedReminder) {
       setGuideOpen(false);
       setGuideAnchorRect(null);
       setShowGoButton(false);
@@ -335,6 +354,16 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     clearPartyHeaderGuideHighlight();
   }, [abortPendingWait, clearDismissTimer, ctaEnabled]);
 
+  useLayoutEffect(() => {
+    if (!showProgramEndedReminder) {
+      return;
+    }
+    guideActiveRef.current = false;
+    abortPendingWait();
+    clearDismissTimer();
+    clearPartyHeaderGuideHighlight();
+  }, [abortPendingWait, clearDismissTimer, showProgramEndedReminder]);
+
   useEffect(() => {
     return () => {
       guideActiveRef.current = false;
@@ -414,59 +443,63 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
         </span>
 
         <div className="header-party-control__actions">
-          <button
-            ref={ctaRef}
-            type="button"
-            className="header-button header-party-control__cta"
-            disabled={!ctaEnabled || (isUnarchiveCta && isTransitioningLifecycle)}
-            title={actionTitle}
-            aria-label={`${ctaLabel}. ${actionTitle}`}
-            aria-expanded={panelOpen}
-            aria-haspopup={usesGuidePanel ? 'dialog' : undefined}
-            onClick={handleCtaClick}
-          >
-            <span className="header-party-control__cta-label">{ctaLabel}</span>
-          </button>
-
-          {hasLinkedParty ? (
+          {showProgramEndedReminder ? (
+            <PartyProgramEndedReminder />
+          ) : (
             <>
               <button
+                ref={ctaRef}
                 type="button"
-                className={[
-                  'header-button header-party-control__icon-button',
-                  publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
-                  publishDisabledReason && !publishBusy && !publishBlockedByLayout
-                    ? 'header-party-control__icon-button--blocked'
-                    : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                disabled={publishBlockedByLayout || publishBusy}
-                aria-disabled={publishDisabled}
-                aria-busy={publishBusy}
-                title={publishTitle}
-                aria-label={`Обновить на сайте. ${publishTitle}`}
-                onClick={handlePublishClick}
+                className="header-button header-party-control__cta"
+                disabled={!ctaEnabled || (isUnarchiveCta && isTransitioningLifecycle)}
+                title={actionTitle}
+                aria-label={`${ctaLabel}. ${actionTitle}`}
+                aria-expanded={panelOpen}
+                aria-haspopup={usesGuidePanel ? 'dialog' : undefined}
+                onClick={handleCtaClick}
               >
-                <CloudUploadOutlinedIcon fontSize="inherit" />
+                <span className="header-party-control__cta-label">{ctaLabel}</span>
               </button>
 
-              <button
-                type="button"
-                className="header-button header-party-control__icon-button"
-                disabled={disabled}
-                title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : SETTINGS_BUTTON_TITLE}
-                aria-label={SETTINGS_BUTTON_ARIA_LABEL}
-                onClick={handleSettingsClick}
-              >
-                <SettingsOutlinedIcon fontSize="inherit" />
-              </button>
+              {hasLinkedParty ? (
+                <>
+                  <button
+                    type="button"
+                    className={[
+                      'header-button header-party-control__icon-button',
+                      publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
+                      publishDisabledReason && !publishBusy && !publishBlockedByLayout
+                        ? 'header-party-control__icon-button--blocked'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    disabled={publishBlockedByLayout || publishBusy}
+                    aria-disabled={publishDisabled}
+                    aria-busy={publishBusy}
+                    title={publishTitle}
+                    aria-label={`Обновить на сайте. ${publishTitle}`}
+                    onClick={handlePublishClick}
+                  >
+                    <CloudUploadOutlinedIcon fontSize="inherit" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="header-button header-party-control__icon-button"
+                    disabled={disabled}
+                    title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : SETTINGS_BUTTON_TITLE}
+                    aria-label={SETTINGS_BUTTON_ARIA_LABEL}
+                    onClick={handleSettingsClick}
+                  >
+                    <SettingsOutlinedIcon fontSize="inherit" />
+                  </button>
+                </>
+              ) : null}
             </>
-          ) : null}
+          )}
         </div>
       </div>
-
-      {status.primary === 'Конец' ? <PartyProgramEndedReminder /> : null}
 
       {panelOpen && guideAnchorRect ? (
         <PartyGoToPlayGuidePanel

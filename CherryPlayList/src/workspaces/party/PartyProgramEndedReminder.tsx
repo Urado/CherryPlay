@@ -1,6 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import { archivePartyFromHeader } from './partyHeaderCommands';
 import {
   formatPartyProgramEndedReminderCountdown,
   usePartyProgramEndedStore,
@@ -98,15 +99,7 @@ export const PartyProgramEndedReminder: React.FC = () => {
   const countdown = formatPartyProgramEndedReminderCountdown(remainingMs);
 
   return (
-    <div
-      ref={rootRef}
-      className={[
-        'header-party-control__reminder',
-        isDue ? 'header-party-control__reminder--due' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+    <div ref={rootRef} className="header-party-control__reminder">
       <button
         type="button"
         className={[
@@ -117,14 +110,15 @@ export const PartyProgramEndedReminder: React.FC = () => {
           .join(' ')}
         aria-expanded={reminderMenuOpen}
         aria-haspopup="menu"
+        aria-label={isDue ? 'Архивировать. Время вышло' : 'Архивировать. Таймер'}
         title={
           isDue
-            ? 'Напоминание: время вышло — выберите действие'
-            : 'Напоминание: программа закончилась'
+            ? 'Архивировать: время вышло — выберите действие'
+            : 'Архивировать: программа закончилась'
         }
         onClick={() => setReminderMenuOpen(!reminderMenuOpen)}
       >
-        <span className="header-party-control__reminder-label">Напоминание</span>
+        <span className="header-party-control__reminder-label">Архивировать</span>
         <span className="header-party-control__reminder-time" aria-live="polite">
           {countdown}
         </span>
@@ -132,8 +126,8 @@ export const PartyProgramEndedReminder: React.FC = () => {
       <button
         type="button"
         className="header-party-control__reminder-dismiss"
-        title="Закрыть напоминание"
-        aria-label="Закрыть напоминание"
+        title="Скрыть"
+        aria-label="Скрыть"
         onClick={(event) => {
           event.stopPropagation();
           dismissPartyProgramEndedReminder();
@@ -143,6 +137,17 @@ export const PartyProgramEndedReminder: React.FC = () => {
       </button>
       {reminderMenuOpen ? (
         <div className="header-party-control__reminder-menu" role="menu">
+          <button
+            type="button"
+            className="header-party-control__reminder-menu-item"
+            role="menuitem"
+            onClick={() => {
+              setReminderMenuOpen(false);
+              void archivePartyFromHeader();
+            }}
+          >
+            Архивировать
+          </button>
           <button
             type="button"
             className="header-party-control__reminder-menu-item"
@@ -157,7 +162,7 @@ export const PartyProgramEndedReminder: React.FC = () => {
             role="menuitem"
             onClick={() => dismissPartyProgramEndedReminder()}
           >
-            Скрыть напоминание
+            Скрыть
           </button>
         </div>
       ) : null}

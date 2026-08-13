@@ -6,6 +6,7 @@ import {
 import {
   useAimpStore,
   useAuthStore,
+  usePlayerAudioStore,
   useProjectStore,
   useSettingsStore,
   useUIStore,
@@ -19,6 +20,10 @@ import { buildPlaylistForApi, buildUpdatePartyDto } from './partyWorkspaceApiBui
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWorkspaceUtils';
 import { resolveHeaderPartyPublishDisabledReason } from './resolveHeaderPartyPublishDisabledReason';
+import {
+  PARTY_ARCHIVE_CONFIRM_MESSAGE,
+  resolvePartyArchiveAvailability,
+} from './resolvePartyArchiveAvailability';
 
 function getPartyStore() {
   return usePartyWorkspaceStore.getState();
@@ -168,6 +173,95 @@ export async function unarchivePartyFromHeader(): Promise<void> {
     ui.addNotification({
       type: 'error',
       message: error instanceof Error ? error.message : 'Не удалось вернуть вечеринку из архива',
+    });
+  } finally {
+    store.setIsTransitioningLifecycle(false);
+    store.setPendingLifecycleTransition(null);
+  }
+}
+
+export async function archivePartyFromHeader(): Promise<void> {
+  const store = getPartyStore();
+  const ui = useUIStore.getState();
+  const networkEnabled = isNetworkEnabledNow();
+  const isAuth = useAuthStore.getState().isAuthenticated();
+  const linkedParty = useProjectStore.getState().meta.linkedParty;
+
+  if (!networkEnabled) {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Отправить в архив нельзя: включите «Онлайн» в настройках',
+    });
+    return;
+  }
+  if (!isAuth) {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Для смены статуса необходимо войти в аккаунт',
+    });
+    ui.openModal('account');
+    return;
+  }
+  if (!linkedParty) {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Нет привязанной вечеринки',
+    });
+    return;
+  }
+  if (store.isTransitioningLifecycle) {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Смена статуса уже выполняется',
+    });
+    return;
+  }
+
+  const sessionMode = useProjectStore.getState().sessionState.mode;
+  const playbackStatus = usePlayerAudioStore.getState().status;
+  const streamingSource = useSettingsStore.getState().streamingSource;
+  const aimpBridge = useAimpStore.getState().bridgeState;
+  const availability = resolvePartyArchiveAvailability({
+    partyLifecycleState: store.partyLifecycleState,
+    sessionMode,
+    playbackStatus: sessionMode === 'session' ? playbackStatus : null,
+    aimpLiveStreamStarted: aimpBridge.liveStreamStarted,
+    aimpPlaybackStatus: aimpBridge.playbackSnapshot?.status ?? null,
+    streamingSource,
+  });
+
+  if (availability.isBlockedByLive) {
+    window.alert(availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив');
+    return;
+  }
+  if (!availability.canArchive || store.partyLifecycleState !== 'ready') {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Сейчас нельзя отправить вечеринку в архив',
+    });
+    return;
+  }
+  if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
+    return;
+  }
+
+  store.setPendingLifecycleTransition('completed');
+  store.setIsTransitioningLifecycle(true);
+  try {
+    const party = await partyService.transitionPartyLifecycle(linkedParty.id, 'completed');
+    store.setPartyLifecycleState(party.partyLifecycleState);
+  } catch (error) {
+    console.error('Failed to archive party from header:', error);
+    if (error instanceof InvalidPartyLifecycleTransitionError) {
+      ui.addNotification({
+        type: 'error',
+        message: error.message,
+      });
+      return;
+    }
+    ui.addNotification({
+      type: 'error',
+      message: error instanceof Error ? error.message : 'Не удалось отправить вечеринку в архив',
     });
   } finally {
     store.setIsTransitioningLifecycle(false);
