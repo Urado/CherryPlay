@@ -13,6 +13,7 @@ import {
   usePlayerAudioStore,
   useProjectStore,
   useSettingsStore,
+  useUIStore,
   openPartySettingsModal,
 } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
@@ -53,8 +54,10 @@ import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 
 const GO_TO_PLAY_CTA_TITLE = 'Показать, где начать проигрывание';
 const GO_TO_STOP_CTA_TITLE = 'Показать, где остановить проигрывание';
-const OPEN_ABOUT_CTA_TITLE = 'Открыть раздел «О вечеринке»';
+const OPEN_SETTINGS_CTA_TITLE = 'Открыть настройки вечеринки';
 const UNARCHIVE_CTA_TITLE = 'Вернуть вечеринку из архива';
+const SETTINGS_BUTTON_TITLE = 'Настройки вечеринки';
+const SETTINGS_BUTTON_ARIA_LABEL = 'Открыть настройки вечеринки';
 
 const STAGE_ICONS: Record<
   HeaderPartyControlStageLabel,
@@ -124,10 +127,10 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
       : isGoToStopCta
         ? GO_TO_STOP_CTA_TITLE
         : isOpenAboutCta
-          ? OPEN_ABOUT_CTA_TITLE
+          ? OPEN_SETTINGS_CTA_TITLE
           : isUnarchiveCta
             ? UNARCHIVE_CTA_TITLE
-            : OPEN_ABOUT_CTA_TITLE;
+            : OPEN_SETTINGS_CTA_TITLE;
 
   const startLabel = resolvePartyHeaderGuideStartLabel(streamingSource);
   const stopLabel = resolvePartyHeaderGuideStopLabel(streamingSource);
@@ -150,10 +153,14 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     hasLinkedParty,
     partyLifecycleState,
   });
-  const publishDisabled = disabled || isPublishing || publishDisabledReason != null;
-  const publishTitle = disabled
-    ? LAYOUT_EDIT_DISABLED_TITLE
-    : (publishDisabledReason ?? 'Обновить плейлист и настройки, которые видят гости');
+  const publishBusy = isPublishing;
+  const publishBlockedByLayout = disabled;
+  const publishDisabled = publishBlockedByLayout || publishBusy || publishDisabledReason != null;
+  const publishTitle = publishBusy
+    ? 'Обновление на сайте…'
+    : publishBlockedByLayout
+      ? LAYOUT_EDIT_DISABLED_TITLE
+      : (publishDisabledReason ?? 'Обновить плейлист и настройки, которые видят гости');
 
   if (ctaEnabled !== ctaEnabledSnapshot) {
     setCtaEnabledSnapshot(ctaEnabled);
@@ -194,6 +201,17 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
       closeGuide();
     }, PARTY_HEADER_GUIDE_HIGHLIGHT_MS);
   }, [clearDismissTimer, closeGuide]);
+
+  const pauseGuideDismiss = useCallback(() => {
+    clearDismissTimer();
+  }, [clearDismissTimer]);
+
+  const resumeGuideDismiss = useCallback(() => {
+    if (!guideActiveRef.current) {
+      return;
+    }
+    scheduleGuideDismiss();
+  }, [scheduleGuideDismiss]);
 
   const openGuide = useCallback(() => {
     const rect = ctaRef.current?.getBoundingClientRect();
@@ -274,12 +292,22 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const handlePublishClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
-      if (publishDisabled) {
+      if (publishBlockedByLayout || publishBusy) {
+        return;
+      }
+      if (publishDisabledReason) {
+        useUIStore.getState().addNotification({
+          type: 'warning',
+          message: publishDisabledReason,
+        });
+        if (!isAuthenticated) {
+          useUIStore.getState().openModal('account');
+        }
         return;
       }
       void publishPartyFromHeader();
     },
-    [publishDisabled],
+    [isAuthenticated, publishBlockedByLayout, publishBusy, publishDisabledReason],
   );
 
   const handleSettingsClick = useCallback(
@@ -407,10 +435,15 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
                 className={[
                   'header-button header-party-control__icon-button',
                   publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
+                  publishDisabledReason && !publishBusy && !publishBlockedByLayout
+                    ? 'header-party-control__icon-button--blocked'
+                    : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                disabled={publishDisabled}
+                disabled={publishBlockedByLayout || publishBusy}
+                aria-disabled={publishDisabled}
+                aria-busy={publishBusy}
                 title={publishTitle}
                 aria-label={`Обновить на сайте. ${publishTitle}`}
                 onClick={handlePublishClick}
@@ -422,8 +455,8 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
                 type="button"
                 className="header-button header-party-control__icon-button"
                 disabled={disabled}
-                title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : 'О вечеринке'}
-                aria-label="Открыть раздел «О вечеринке»"
+                title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : SETTINGS_BUTTON_TITLE}
+                aria-label={SETTINGS_BUTTON_ARIA_LABEL}
                 onClick={handleSettingsClick}
               >
                 <SettingsOutlinedIcon fontSize="inherit" />
@@ -444,6 +477,8 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           excludeCloseRef={ctaRef}
           onGo={handleGo}
           onClose={closeGuide}
+          onInteractionPause={pauseGuideDismiss}
+          onInteractionResume={resumeGuideDismiss}
         />
       ) : null}
     </div>

@@ -117,13 +117,13 @@ describe('resolvePartyEditorPhase', () => {
 });
 
 describe('shouldShowPartyTrackDisplaySection', () => {
-  it('shows track display for draft-linked and ready', () => {
+  it('shows track display for all editable phases including draft-unlinked', () => {
+    expect(shouldShowPartyTrackDisplaySection('draft-unlinked')).toBe(true);
     expect(shouldShowPartyTrackDisplaySection('draft-linked')).toBe(true);
     expect(shouldShowPartyTrackDisplaySection('ready')).toBe(true);
   });
 
-  it('hides track display for draft-unlinked and completed', () => {
-    expect(shouldShowPartyTrackDisplaySection('draft-unlinked')).toBe(false);
+  it('hides track display for completed and null', () => {
     expect(shouldShowPartyTrackDisplaySection('completed')).toBe(false);
     expect(shouldShowPartyTrackDisplaySection(null)).toBe(false);
   });

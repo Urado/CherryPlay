@@ -1,4 +1,5 @@
 import { Button } from '@cherryplay/components';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import React from 'react';
 
 import type { PartyArchiveAvailability } from '../resolvePartyArchiveAvailability';
@@ -48,20 +49,35 @@ export const PartyEditorDangerZone: React.FC<PartyEditorDangerZoneProps> = ({
     ? ' party-editor-danger-zone__archive--blocked'
     : '';
   const quietClass = availability.isQuiet ? ' party-editor-danger-zone__archive--quiet' : '';
+  const hintText = availability.isBlockedByLive
+    ? (availability.blockedExplanation ?? 'Сейчас идёт эфир — архив недоступен')
+    : availability.isQuiet
+      ? 'Сейчас пауза — архив возможен'
+      : null;
 
   return (
-    <Button
-      type="button"
-      className={`party-editor-danger-zone__archive${quietClass}${blockedClass}`}
-      variant="secondary"
-      size="sm"
-      disabled={controlDisabled}
-      aria-disabled={availability.isBlockedByLive || controlDisabled}
-      loading={isTransitioning}
-      title={title}
-      onClick={handleClick}
-    >
-      В архив
-    </Button>
+    <div className="party-editor-danger-zone">
+      <Button
+        type="button"
+        className={`party-editor-danger-zone__archive${quietClass}${blockedClass}`}
+        variant="secondary"
+        size="sm"
+        disabled={controlDisabled}
+        aria-disabled={availability.isBlockedByLive || controlDisabled}
+        loading={isTransitioning}
+        title={title}
+        onClick={handleClick}
+      >
+        {availability.isBlockedByLive ? (
+          <WarningAmberOutlinedIcon
+            className="party-editor-danger-zone__archive-icon"
+            fontSize="inherit"
+            aria-hidden
+          />
+        ) : null}
+        В архив
+      </Button>
+      {hintText ? <span className="party-editor-danger-zone__hint">{hintText}</span> : null}
+    </div>
   );
 };

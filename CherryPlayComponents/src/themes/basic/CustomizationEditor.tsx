@@ -444,50 +444,6 @@ export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorPro
         </div>
       )}
 
-      {showSaveNamedPalette && (
-        <div className="party-editor-save-palette-row">
-          <label className="party-editor-custom-color-label" htmlFor="basic-save-palette-name">
-            Сохранить как палитру
-          </label>
-          <div className="party-editor-save-palette-controls">
-            <input
-              id="basic-save-palette-name"
-              type="text"
-              value={savePaletteNameDraft}
-              onChange={(e) => setSavePaletteNameDraft(e.target.value)}
-              className="party-editor-input party-editor-save-palette-name"
-              placeholder="Название"
-              maxLength={48}
-              aria-label="Название сохраняемой палитры"
-            />
-            <button
-              type="button"
-              className="party-editor-button party-editor-button-secondary"
-              onClick={handleSaveCurrentPalette}
-              disabled={!savePaletteNameDraft.trim()}
-            >
-              Сохранить
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeUserSavedEntry && (
-        <div className="party-editor-user-saved-palette-row">
-          <button
-            type="button"
-            className="party-editor-button party-editor-button-secondary"
-            onClick={handleResetUserSavedToOriginal}
-            disabled={areBasicCustomPalettesEqual(
-              basicPaletteSettings.customPalette,
-              activeUserSavedEntry.originalPalette,
-            )}
-          >
-            Сбросить к изначальному сохранению
-          </button>
-        </div>
-      )}
-
       {basicPaletteSettings.paletteId === 'custom' && (
         <div className="party-editor-custom-colors">
           {BASIC_CUSTOM_COLOR_FIELDS.map((field) => {
@@ -542,6 +498,50 @@ export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorPro
               </div>
             );
           })}
+        </div>
+      )}
+
+      {activeUserSavedEntry && (
+        <div className="party-editor-user-saved-palette-row">
+          <button
+            type="button"
+            className="party-editor-button party-editor-button-secondary"
+            onClick={handleResetUserSavedToOriginal}
+            disabled={areBasicCustomPalettesEqual(
+              basicPaletteSettings.customPalette,
+              activeUserSavedEntry.originalPalette,
+            )}
+          >
+            Сбросить к изначальному сохранению
+          </button>
+        </div>
+      )}
+
+      {showSaveNamedPalette && (
+        <div className="party-editor-save-palette-row">
+          <label className="party-editor-custom-color-label" htmlFor="basic-save-palette-name">
+            Сохранить как палитру
+          </label>
+          <div className="party-editor-save-palette-controls">
+            <input
+              id="basic-save-palette-name"
+              type="text"
+              value={savePaletteNameDraft}
+              onChange={(e) => setSavePaletteNameDraft(e.target.value)}
+              className="party-editor-input party-editor-save-palette-name"
+              placeholder="Название"
+              maxLength={48}
+              aria-label="Название сохраняемой палитры"
+            />
+            <button
+              type="button"
+              className="party-editor-button party-editor-button-secondary"
+              onClick={handleSaveCurrentPalette}
+              disabled={!savePaletteNameDraft.trim()}
+            >
+              Сохранить
+            </button>
+          </div>
         </div>
       )}
     </div>

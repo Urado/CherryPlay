@@ -3,6 +3,10 @@ import React, { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { useProjectStore, useUIStore } from '@shared/stores';
 import { useStreamingOrchestrator } from '@shared/streaming';
+import {
+  getCurrentPartyPublishSyncParts,
+  markPartyPublishPlaylistSynced,
+} from '@workspaces/party/partyPublishSync';
 
 interface CherryPlayStreamingConnectionValue {
   connectionState: signalR.HubConnectionState | null;
@@ -41,10 +45,15 @@ export const CherryPlayStreamingController: React.FC<CherryPlayStreamingControll
     });
   }, [addNotification]);
 
+  const handlePlaylistSynced = useCallback(() => {
+    markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+  }, []);
+
   const { connectionState, reconnect } = useStreamingOrchestrator({
     partyId: linkedPartyId,
     sessionMode,
     onPartyNotFound: handlePartyNotFound,
+    onPlaylistSynced: handlePlaylistSynced,
   });
 
   const value = useMemo(() => ({ connectionState, reconnect }), [connectionState, reconnect]);

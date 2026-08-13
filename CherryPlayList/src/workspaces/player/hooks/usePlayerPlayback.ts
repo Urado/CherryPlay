@@ -3,11 +3,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
-import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
+import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { markPartyProgramEnded } from '@workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 
 function tryMarkPartyProgramEndedFromCherryPlay(): void {
+  if (useSettingsStore.getState().streamingSource === 'aimp') {
+    return;
+  }
   const project = useProjectStore.getState();
   if (project.sessionState.mode !== 'session' || !project.meta.linkedParty) {
     return;

@@ -159,5 +159,5 @@ function applyPartyNotFoundBlocking(
 }
 
 export function shouldShowPartyTrackDisplaySection(phase: PartyEditorPhase | null): boolean {
-  return phase === 'draft-linked' || phase === 'ready';
+  return phase != null && phase !== 'completed';
 }

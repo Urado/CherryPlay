@@ -157,7 +157,7 @@ export const PartyProgramEndedReminder: React.FC = () => {
             role="menuitem"
             onClick={() => dismissPartyProgramEndedReminder()}
           >
-            Отменить
+            Скрыть напоминание
           </button>
         </div>
       ) : null}

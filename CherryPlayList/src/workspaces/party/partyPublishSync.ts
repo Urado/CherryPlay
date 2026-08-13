@@ -130,6 +130,29 @@ export function markPartyPublishMetadataSynced(metadataSignature?: string): void
   });
 }
 
+export function markPartyPublishCatalogVisibilitySynced(listed: boolean): void {
+  const store = usePartyWorkspaceStore.getState();
+  const previous = store.lastSyncedPublishParts;
+  if (previous == null) {
+    return;
+  }
+
+  let baseline: PartyPublishMetadataSlice;
+  try {
+    baseline = JSON.parse(previous.metadata) as PartyPublishMetadataSlice;
+  } catch {
+    return;
+  }
+
+  store.setLastSyncedPublishParts({
+    playlist: previous.playlist,
+    metadata: buildPartyPublishMetadataSignature({
+      ...baseline,
+      isListedInCatalog: listed,
+    }),
+  });
+}
+
 export function markPartyPublishPlaylistSynced(playlistSignature: string): void {
   const store = usePartyWorkspaceStore.getState();
   const previous = store.lastSyncedPublishParts;

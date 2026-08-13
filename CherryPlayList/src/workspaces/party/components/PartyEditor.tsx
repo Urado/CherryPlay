@@ -13,7 +13,6 @@ import type {
   PartyEditorFieldHandlers,
   PartyEditorFieldValues,
 } from './partyEditorRuntimeTypes';
-import { PartyExtendedFieldsSection } from './PartyExtendedFieldsSection';
 import { PartyInfoSection } from './PartyInfoSection';
 
 import './PartyEditor.css';
@@ -30,6 +29,7 @@ interface PartyEditorProps {
   isBlocked?: boolean;
   aboutActions?: React.ReactNode;
   defaultExpanded?: boolean;
+  designPreviewHint?: React.ReactNode;
   showCopyUrl?: boolean;
   copyUrlDisabled?: boolean;
   copyUrlTitle?: string;
@@ -46,6 +46,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   isBlocked = false,
   aboutActions,
   defaultExpanded = false,
+  designPreviewHint,
   showCopyUrl = false,
   copyUrlDisabled = false,
   copyUrlTitle,
@@ -58,10 +59,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     partySubtitle,
     eventDateTime,
     eventEndDateTime,
-    description,
-    place,
     city,
-    schedule,
     timeZone,
     shortDescription,
     externalLinkUrl,
@@ -75,10 +73,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
     onPartySubtitleChange,
     onEventDateTimeChange,
     onEventEndDateTimeChange,
-    onDescriptionChange,
-    onPlaceChange,
     onCityChange,
-    onScheduleChange,
     onShortDescriptionChange,
     onExternalLinkUrlChange,
     onExternalLinkTextChange,
@@ -103,10 +98,8 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
 
   const isReadOnly = phase === 'completed';
   const showAllSections = section === 'all';
-  const isDraftUnlinked = phase === 'draft-unlinked';
   const showAbout = section === 'about' || showAllSections;
-  const showDesign = section === 'design' || (showAllSections && !isDraftUnlinked);
-  const showExtendedFields = !isDraftUnlinked;
+  const showDesign = section === 'design' || showAllSections;
   const accessibleStyleIds = new Set(
     (visibleThemeIds ?? [])
       .filter((id) => !lockedThemes.some((locked) => locked.themeId === id))
@@ -135,62 +128,51 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             onPartySubtitleChange={onPartySubtitleChange}
           />
 
-          {showExtendedFields ? (
-            <>
-              <PartyCardFieldsSection
-                eventDateTime={eventDateTime}
-                eventEndDateTime={eventEndDateTime}
-                city={city}
-                timeZone={timeZone}
-                shortDescription={shortDescription}
-                externalLinkUrl={externalLinkUrl}
-                externalLinkText={externalLinkText}
-                danceTags={danceTags}
-                readOnly={isReadOnly}
-                defaultExpanded={defaultExpanded}
-                onEventDateTimeChange={onEventDateTimeChange}
-                onEventEndDateTimeChange={onEventEndDateTimeChange}
-                onCityChange={onCityChange}
-                onShortDescriptionChange={onShortDescriptionChange}
-                onExternalLinkUrlChange={onExternalLinkUrlChange}
-                onExternalLinkTextChange={onExternalLinkTextChange}
-                onDanceTagsChange={onDanceTagsChange}
-                onTimeZoneChange={onTimeZoneChange}
-              />
-              <PartyExtendedFieldsSection
-                description={description}
-                place={place}
-                schedule={schedule}
-                readOnly={isReadOnly}
-                defaultExpanded={defaultExpanded}
-                onDescriptionChange={onDescriptionChange}
-                onPlaceChange={onPlaceChange}
-                onScheduleChange={onScheduleChange}
-              />
-            </>
-          ) : null}
+          <PartyCardFieldsSection
+            eventDateTime={eventDateTime}
+            eventEndDateTime={eventEndDateTime}
+            city={city}
+            timeZone={timeZone}
+            shortDescription={shortDescription}
+            externalLinkUrl={externalLinkUrl}
+            externalLinkText={externalLinkText}
+            danceTags={danceTags}
+            readOnly={isReadOnly}
+            defaultExpanded={defaultExpanded}
+            onEventDateTimeChange={onEventDateTimeChange}
+            onEventEndDateTimeChange={onEventEndDateTimeChange}
+            onCityChange={onCityChange}
+            onShortDescriptionChange={onShortDescriptionChange}
+            onExternalLinkUrlChange={onExternalLinkUrlChange}
+            onExternalLinkTextChange={onExternalLinkTextChange}
+            onDanceTagsChange={onDanceTagsChange}
+            onTimeZoneChange={onTimeZoneChange}
+          />
         </>
       ) : null}
 
       {showDesign ? (
-        <PartyDesignSection
-          themeId={themeId}
-          customizationSettings={customizationSettings}
-          onThemeIdChange={onThemeIdChange}
-          onCustomizationSettingsChange={onCustomizationSettingsChange}
-          readOnly={isReadOnly}
-          lockedThemes={lockedThemes}
-          visibleThemeIds={visibleThemeIds}
-          hasThemeAccess={hasThemeAccess}
-          networkEnabled={designNetworkEnabled}
-          isThemeAccessLoading={isThemeAccessLoading}
-          themeAccessErrorMessage={themeAccessErrorMessage}
-          defaultExpanded={defaultExpanded}
-          showNoAccessibleThemesHint={
-            !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0
-          }
-          selectedLockedTheme={selectedLockedTheme}
-        />
+        <>
+          {designPreviewHint}
+          <PartyDesignSection
+            themeId={themeId}
+            customizationSettings={customizationSettings}
+            onThemeIdChange={onThemeIdChange}
+            onCustomizationSettingsChange={onCustomizationSettingsChange}
+            readOnly={isReadOnly}
+            lockedThemes={lockedThemes}
+            visibleThemeIds={visibleThemeIds}
+            hasThemeAccess={hasThemeAccess}
+            networkEnabled={designNetworkEnabled}
+            isThemeAccessLoading={isThemeAccessLoading}
+            themeAccessErrorMessage={themeAccessErrorMessage}
+            defaultExpanded={defaultExpanded}
+            showNoAccessibleThemesHint={
+              !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0
+            }
+            selectedLockedTheme={selectedLockedTheme}
+          />
+        </>
       ) : null}
 
       {showAbout ? (

@@ -3,9 +3,9 @@ import { convertLocalDateTimeToUtc, getDefaultTimeZone } from '@cherryplay/compo
 import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project';
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
 import { CreatePartyDto, type UpdatePartyDto } from '@shared/services/partyService';
-import { convertAimpPlaylistForApi, convertPlaylistForApi } from '@shared/utils';
+import { buildPlaylistForApiPayload } from '@shared/streaming/buildPlaylistForApiPayload';
+import { convertPlaylistForApi } from '@shared/utils';
 
-import { resolvePlaylistSource } from './partyWorkspacePlaylistSource';
 import type { PartyWorkspaceState } from './partyWorkspaceStore';
 import { normalizeCustomizationSettings } from './partyWorkspaceUtils';
 
@@ -73,14 +73,7 @@ export function buildPlaylistForApi(params: {
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
 }) {
-  const { streamingSource, aimpPlaylistSnapshot, items, partyTrackDisplay } = params;
-  if (
-    resolvePlaylistSource({ streamingSource, aimpPlaylistSnapshot }) === 'aimp' &&
-    aimpPlaylistSnapshot
-  ) {
-    return convertAimpPlaylistForApi(aimpPlaylistSnapshot, partyTrackDisplay);
-  }
-  return convertPlaylistForApi(items, partyTrackDisplay);
+  return buildPlaylistForApiPayload(params);
 }
 
 export function buildCreatePartyDto(

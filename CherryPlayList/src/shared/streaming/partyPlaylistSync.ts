@@ -1,4 +1,3 @@
-import { markPartyPublishPlaylistSynced } from '../../workspaces/party/partyPublishSync';
 import { partyService } from '../services/partyService';
 import { useAimpStore } from '../stores/aimpStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -9,6 +8,7 @@ import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 export async function syncPartyPlaylist(
   partyId: string,
   payload: PlaylistForApiPayload,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): Promise<void> {
   console.log('[PartyPlaylistSync] → Sending PUT request to update playlist:', {
     partyId,
@@ -17,7 +17,7 @@ export async function syncPartyPlaylist(
   });
 
   await partyService.updatePartyPlaylist(partyId, payload);
-  markPartyPublishPlaylistSynced(JSON.stringify(payload));
+  onSynced?.(payload);
 
   console.log('[PartyPlaylistSync] ✓ Playlist updated successfully');
 }
@@ -26,6 +26,7 @@ export function subscribePartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let isInitialCall = true;
 
@@ -42,7 +43,7 @@ export function subscribePartyPlaylistSync(
     });
 
     const payload = getPayload();
-    void syncPartyPlaylist(partyId, payload).catch((error) => {
+    void syncPartyPlaylist(partyId, payload, onSynced).catch((error) => {
       console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
     });
     onAfterSync();
@@ -54,6 +55,7 @@ export function subscribeAimpPartyPlaylistSync(
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
   onSyncError?: (error: unknown) => void,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let lastPublishedKey: string | null = null;
 
@@ -70,7 +72,7 @@ export function subscribeAimpPartyPlaylistSync(
     }
 
     const payload = getPayload();
-    syncPartyPlaylist(partyId, payload)
+    syncPartyPlaylist(partyId, payload, onSynced)
       .then(() => {
         lastPublishedKey = publishKey;
         onAfterSync();

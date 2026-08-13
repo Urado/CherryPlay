@@ -34,7 +34,7 @@ import {
   resolvePartyCatalogToggleHint,
 } from '@workspaces/party/partyCatalogLabels';
 import { resolvePartyLifecycleServerBadgeLabel } from '@workspaces/party/partyEditorPhase';
-import { markPartyPublishMetadataSynced } from '@workspaces/party/partyPublishSync';
+import { markPartyPublishCatalogVisibilitySynced } from '@workspaces/party/partyPublishSync';
 import { partyWorkspaceOneShotGuards } from '@workspaces/party/partyWorkspaceReconnectRefs';
 import { resetPartyLinkState, usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 import {
@@ -213,7 +213,7 @@ export const MyPartiesList: React.FC = () => {
       await partyService.updateParty(party.id, { isListedInCatalog: listed });
       if (linkedParty?.id === party.id) {
         usePartyWorkspaceStore.getState().setIsListedInCatalog(listed);
-        markPartyPublishMetadataSynced();
+        markPartyPublishCatalogVisibilitySynced(listed);
       }
     } catch (e) {
       setParties((current) =>

@@ -13,7 +13,6 @@ import { usePartyPreviewEffectiveState } from './partyPreviewEffectiveState';
 import { usePartySettingsUiStore } from './partySettingsUiStore';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
 import './PartyPreviewView.css';
-import '../../app/components/PartySettingsModal.css';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
 import { resolveDisplayPartyName } from './partyWorkspaceUtils';
 

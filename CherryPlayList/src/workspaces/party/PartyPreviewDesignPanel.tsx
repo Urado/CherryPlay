@@ -15,13 +15,6 @@ export const PartyPreviewDesignPanel: React.FC = () => {
 
   return (
     <aside className="party-preview-design-panel">
-      {form.showTrackDisplay ? (
-        <PartyTrackDisplaySection
-          value={form.partyTrackDisplay}
-          onChange={form.setPartyTrackDisplaySettings}
-          defaultExpanded={true}
-        />
-      ) : null}
       {form.editorPhase ? (
         <PartyEditor
           phase={form.editorPhase}
@@ -31,6 +24,13 @@ export const PartyPreviewDesignPanel: React.FC = () => {
           design={form.editorDesign}
           connection={form.editorConnection}
           isBlocked={form.isBlocked}
+          defaultExpanded={true}
+        />
+      ) : null}
+      {form.showTrackDisplay ? (
+        <PartyTrackDisplaySection
+          value={form.partyTrackDisplay}
+          onChange={form.setPartyTrackDisplaySettings}
           defaultExpanded={true}
         />
       ) : null}

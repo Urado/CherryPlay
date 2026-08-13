@@ -3,12 +3,11 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-06-13"
-updated: "2026-08-07"
+updated: "2026-08-13"
 summary:
-  total_md_files: 108
-  project_documentation: 82
-  not_project_documentation: 26
+  total_md_files: 112
+  project_documentation: 84
+  not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
 entry_points:
@@ -30,7 +29,7 @@ entry_points:
   add_theme: ADDING_THEME.md
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (82 файла)
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (84 файла)
 # Архитектура, контракты, setup, модули, ops — источник правды для разработки.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -67,8 +66,6 @@ project_documentation:
         title: "Темы оформления"
       - path: FEATURE_THEME_MONETIZATION.md
         title: "Монетизация тем (фича)"
-      - path: android_port_todo.md
-        title: "TODO — порт на Android"
 
   integration:
     description: "Интеграция CherryPlayList ↔ CherryPlayServer ↔ CherryPlayWeb"
@@ -144,6 +141,12 @@ project_documentation:
         title: "Чеклист E2E AIMP → приложение → сайт"
       - path: CherryPlayList/docs/party-header-control-ux.md
         title: "Пульт вечеринки в шапке — UX as-built (§4–§6 Editor B, §7.5/§7.6 Пауза/Конец; residual §11)"
+      - path: CherryPlayList/docs/online-mode-ux-synthesis.md
+        title: "Синтез UX онлайн-режима (Онлайн vs Party, пульт, checklist backlog)"
+      - path: CherryPlayList/docs/layout-edit-mode.md
+        title: "Режим настройки окон / рабочие пространства"
+      - path: CherryPlayList/docs/sonya-review-feedback.md
+        title: "Заметки ревью UX (Sonya) — feedback, не контракт"
       - path: CherryPlayList/docs/integration/README.md
         title: "Редирект на docs/integration/ в корне"
 
@@ -223,8 +226,12 @@ project_documentation:
       - path: CherryPlayList/src/styles/README.md
 
   planning_notes:
-    description: "Личные TODO и заметки — не официальная документация, но в репозитории"
+    description: "Личные TODO, bug log и заметки — не проектная документация (не источник правды для продукта)"
     files:
-      - path: pasha_todo.md
-      - path: sonya_todo.md
-      - path: TODOUserLog.MD
+      - path: BugLog.MD
+        title: "Личный bug log — planning only, не project docs"
+      - path: docs/archive/personal-todos/pasha_todo.md
+      - path: docs/archive/personal-todos/sonya_todo.md
+      - path: docs/archive/personal-todos/TODOUserLog.MD
+      - path: docs/archive/personal-todos/android_port_todo.md
+        title: "TODO — порт на Android (архив)"

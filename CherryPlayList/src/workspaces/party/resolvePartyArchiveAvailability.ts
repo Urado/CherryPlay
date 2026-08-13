@@ -43,7 +43,9 @@ export function resolvePartyArchiveAvailability(
   }
 
   const isAimpLive = input.streamingSource === 'aimp' && input.aimpLiveStreamStarted === true;
+  const isAimpStopped = isAimpLive && input.aimpPlaybackStatus === 'stopped';
   const isAimpPaused = isAimpLive && input.aimpPlaybackStatus === 'paused';
+  const isAimpPlaying = isAimpLive && !isAimpPaused && !isAimpStopped;
   const isCherryPlayPlaying =
     input.streamingSource !== 'aimp' &&
     input.sessionMode === 'session' &&
@@ -53,7 +55,7 @@ export function resolvePartyArchiveAvailability(
     input.sessionMode === 'session' &&
     input.playbackStatus === 'paused';
 
-  if ((isAimpLive && !isAimpPaused) || isCherryPlayPlaying) {
+  if (isAimpPlaying || isCherryPlayPlaying) {
     return {
       mode: 'blockedByLive',
       showDangerSection: true,

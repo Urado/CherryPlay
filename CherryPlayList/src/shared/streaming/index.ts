@@ -26,6 +26,11 @@ export {
   subscribeAimpPartyPlaylistSync,
 } from './partyPlaylistSync';
 export {
+  buildPlaylistForApiPayload,
+  resolvePlaylistSource,
+  type PartyPlaylistSource,
+} from './buildPlaylistForApiPayload';
+export {
   getOnlineNetworkPolicy,
   isPartyDiscoverabilityEnabled,
   isStreamingHubAllowed,

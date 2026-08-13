@@ -20,8 +20,6 @@ import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWorkspaceUtils';
 import { resolveHeaderPartyPublishDisabledReason } from './resolveHeaderPartyPublishDisabledReason';
 
-export { resolveHeaderPartyPublishDisabledReason } from './resolveHeaderPartyPublishDisabledReason';
-
 function getPartyStore() {
   return usePartyWorkspaceStore.getState();
 }
@@ -97,6 +95,10 @@ export async function publishPartyToSite(): Promise<void> {
     await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
     await refreshPartyThemeAccess(true);
     markPartyPublishFullySynced();
+    ui.addNotification({
+      type: 'success',
+      message: 'Плейлист и настройки обновлены на сайте',
+    });
   } catch (error) {
     console.error('Failed to publish playlist:', error);
     if (isThemeNotEntitledError(error)) {

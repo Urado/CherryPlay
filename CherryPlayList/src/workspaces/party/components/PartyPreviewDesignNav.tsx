@@ -1,3 +1,4 @@
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import React from 'react';
 
 export interface PartyPreviewDesignNavProps {
@@ -12,11 +13,12 @@ export const PartyPreviewDesignNav: React.FC<PartyPreviewDesignNavProps> = ({ op
         type="button"
         className="party-preview-design-nav__toggle"
         aria-expanded={open}
-        aria-label={open ? 'Свернуть панель дизайна' : 'Развернуть панель дизайна'}
-        title={open ? 'Свернуть панель дизайна' : 'Развернуть панель дизайна'}
+        aria-label={open ? 'Свернуть панель дизайна' : 'Открыть дизайн'}
+        title={open ? 'Свернуть панель дизайна' : 'Дизайн'}
         onClick={onToggle}
       >
-        ≡
+        <PaletteOutlinedIcon fontSize="inherit" aria-hidden />
+        <span className="party-preview-design-nav__label">Дизайн</span>
       </button>
     </nav>
   );

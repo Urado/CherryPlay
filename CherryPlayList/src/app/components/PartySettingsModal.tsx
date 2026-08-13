@@ -1,6 +1,6 @@
 import { IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
@@ -31,15 +31,29 @@ const PartySettingsModalOpen: React.FC<PartySettingsModalOpenProps> = ({
   onClose,
   onOpenLinkParty,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const themeEntitlementModal = usePartyWorkspaceStore((state) => state.themeEntitlementModal);
   const setThemeEntitlementModal = usePartyWorkspaceStore(
     (state) => state.setThemeEntitlementModal,
   );
 
-  const { handleOverlayKeyDown } = useModalKeyboard({
+  useModalKeyboard({
     enabled: true,
     onCancel: onClose,
   });
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.focus();
+    return () => {
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   const handleOverlayClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -53,19 +67,14 @@ const PartySettingsModalOpen: React.FC<PartySettingsModalOpenProps> = ({
   return (
     <>
       <PartyWorkspaceRuntimeEphemeralHost />
-      <div
-        className="modal-overlay"
-        onClick={handleOverlayClick}
-        onKeyDown={handleOverlayKeyDown}
-        role="button"
-        tabIndex={0}
-        aria-label="Закрыть окно настроек вечеринки"
-      >
+      <div className="modal-overlay" onClick={handleOverlayClick} role="presentation">
         <div
+          ref={dialogRef}
           className="modal-content party-settings-modal-content"
           role="dialog"
           aria-modal="true"
           aria-labelledby="party-settings-modal-title"
+          tabIndex={-1}
         >
           <div className="modal-header">
             <h2 className="modal-title" id="party-settings-modal-title">

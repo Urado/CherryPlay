@@ -91,6 +91,12 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       </>
     ) : null;
 
+  const designPreviewHint = form.editorPhase ? (
+    <p className="party-settings-design-hint">
+      Оформление удобнее править в превью гостей — кнопка «Дизайн» слева от превью.
+    </p>
+  ) : null;
+
   return (
     <div className="party-settings-content">
       <div className="party-settings-content__body">
@@ -105,6 +111,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
             isBlocked={form.isBlocked}
             aboutActions={aboutActions}
             defaultExpanded={true}
+            designPreviewHint={designPreviewHint}
             showCopyUrl={form.showCopyUrl}
             copyUrlDisabled={
               form.networkActionsDisabled || form.isCreating || form.isSavingMetadata

@@ -10,7 +10,10 @@ import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } fro
 import { copyTextToClipboard, sanitizeExternalUrl } from '@shared/utils';
 
 import { publishPartyToSite } from './partyHeaderCommands';
-import { markPartyPublishMetadataSynced } from './partyPublishSync';
+import {
+  markPartyPublishCatalogVisibilitySynced,
+  markPartyPublishMetadataSynced,
+} from './partyPublishSync';
 import {
   buildCreatePartyDto,
   buildPlaylistForApi,
@@ -102,7 +105,7 @@ export function usePartyServerActions(
       store.setIsTogglingCatalogVisibility(true);
       try {
         await partyService.updateParty(linkedParty.id, { isListedInCatalog: listed });
-        markPartyPublishMetadataSynced();
+        markPartyPublishCatalogVisibilitySynced(listed);
       } catch (error) {
         console.error('Failed to update catalog visibility:', error);
         store.setIsListedInCatalog(previous);

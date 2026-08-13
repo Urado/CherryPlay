@@ -10,6 +10,8 @@
 - **[README.md](../README.md)** — описание проекта, основные функции, установка и запуск.
 - **[web-demo.md](web-demo.md)** — веб-демо в браузере: fixtures (`dev:web`, `dev:web:project`) и live (`dev:web:live` / `VITE_DEMO_LIVE`), Vite proxy, Online/сеть, ограничения режима.
 - **[layout-edit-mode.md](layout-edit-mode.md)** — рабочие пространства: pill + ✎ (**«Настроить окна»**), **Рабочие окна** с override (Variant A, **«изменено»**, **«Сбросить к исходному»**), auto-save **Мои**/scratch («Без имени»), добавление/удаление зон.
+- **[party-header-control-ux.md](party-header-control-ux.md)** — пульт вечеринки в шапке: CTA matrix, модал настроек, overlays **Пауза**/**Конец**, archive/unarchive surfaces (as-built §4–§7; residual §11).
+- **[online-mode-ux-synthesis.md](online-mode-ux-synthesis.md)** — синтез UX онлайн-режима (Онлайн vs Party discoverability, пульт, checklist backlog).
 - **[android-capacitor-brief.md](android-capacitor-brief.md)** — план Android/Capacitor (этапы 0–6).
 
 ---

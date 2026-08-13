@@ -13,7 +13,11 @@ export interface PartyGoToPlayGuidePanelProps {
   excludeCloseRef?: React.RefObject<HTMLElement | null>;
   onGo: () => void;
   onClose: () => void;
+  onInteractionPause?: () => void;
+  onInteractionResume?: () => void;
 }
+
+const GUIDE_TEXT_ID = 'party-go-to-play-guide-text';
 
 export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = ({
   anchorRect,
@@ -23,8 +27,11 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
   excludeCloseRef,
   onGo,
   onClose,
+  onInteractionPause,
+  onInteractionResume,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
+  const goButtonRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   const excludeCloseRefStable = useRef(excludeCloseRef);
 
@@ -63,6 +70,11 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
     };
   }, []);
 
+  useEffect(() => {
+    const focusTarget = showGoButton ? goButtonRef.current : panelRef.current;
+    focusTarget?.focus();
+  }, [showGoButton]);
+
   const style = buildAnchorPanelStyle({
     anchorRect,
     panelWidth: PARTY_GO_TO_PLAY_GUIDE_PANEL_WIDTH,
@@ -84,10 +96,23 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
       style={style}
       role="dialog"
       aria-label={mode === 'stop' ? 'Остановить' : 'Играть'}
+      aria-describedby={GUIDE_TEXT_ID}
+      tabIndex={-1}
+      onMouseEnter={onInteractionPause}
+      onMouseLeave={onInteractionResume}
+      onFocus={onInteractionPause}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          onInteractionResume?.();
+        }
+      }}
     >
-      <p className="party-go-to-play-guide-panel__text">{bodyText}</p>
+      <p id={GUIDE_TEXT_ID} className="party-go-to-play-guide-panel__text">
+        {bodyText}
+      </p>
       {showGoButton ? (
         <button
+          ref={goButtonRef}
           type="button"
           className="header-button party-go-to-play-guide-panel__go"
           onClick={onGo}
