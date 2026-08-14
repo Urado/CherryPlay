@@ -75,7 +75,7 @@ npm run dist:all
 
 - `CherryPlayList-{version}-x64.zip` — zip-дистрибутив (64-bit)
 
-Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено); имя zip — `CherryPlayList-{version}-x64.zip` (версия из тега). PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — тот же `dist:win:ci`, но версия **`{version}-pr-{PR}`** (например `CherryPlayList-0.6.1-pr-8-x64.zip`); скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
+Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено); имя zip — `CherryPlayList-{version}-x64.zip` (версия из `CherryPlayList/package.json` на собранном коммите, не из тега GitHub Release). PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — тот же `dist:win:ci`, но версия **`{version}-pr-{PR}`** (например `CherryPlayList-0.6.1-pr-8-x64.zip`); скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
 
 Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 
@@ -101,7 +101,7 @@ npm run dist:all
 }
 ```
 
-Имя zip берётся из `${version}` electron-builder. В CI (`release-desktop-windows.yml`) версия **синхронизируется с тегом** GitHub Release (ведущий `v` снимается: тег `v1.2.3` → `1.2.3`), чтобы имя asset совпадало с `CherryPlayList-{version}-x64.zip` и URL `…/releases/latest/download/…`.
+Имя zip берётся из `${version}` electron-builder (`CherryPlayList/package.json` на собранном коммите). В CI (`release-desktop-windows.yml`) версия **не** перезаписывается из тега GitHub Release: zip называется по `package.json`, а input `tag` при `workflow_dispatch` — только destination Release для загрузки. Тег сайта/релиза и версия приложения могут различаться. URL: `…/releases/latest/download/CherryPlayList-{appVersion}-x64.zip` (см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md)).
 
 ## Проверка сборки
 

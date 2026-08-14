@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag (e.g. v0.6.1-fix-1)
+        description: Destination GitHub Release tag to attach the zip (e.g. v0.6.1). Build uses the selected branch; zip version comes from CherryPlayList/package.json.
         required: true
         type: string
 
@@ -23,8 +23,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -40,25 +38,6 @@ jobs:
         run: |
           npm ci
           npm run build
-
-      - name: Sync package version from release tag
-        working-directory: CherryPlayList
-        shell: bash
-        env:
-          TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.event.release.tag_name }}
-        run: |
-          VERSION="${TAG_NAME#v}"
-          if [ -z "${VERSION}" ]; then
-            echo "ERROR: Release tag '${TAG_NAME}' produced an empty VERSION after stripping leading v"
-            exit 1
-          fi
-          if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
-            echo "ERROR: VERSION '${VERSION}' (from tag '${TAG_NAME}') is not a valid semver for npm version"
-            echo "Expected form: MAJOR.MINOR.PATCH with optional -prerelease or +build metadata"
-            exit 1
-          fi
-          echo "Syncing CherryPlayList version to ${VERSION} (from tag ${TAG_NAME})"
-          npm version "${VERSION}" --no-git-tag-version --allow-same-version
 
       - name: Install CherryPlayList dependencies
         working-directory: CherryPlayList
@@ -77,18 +56,22 @@ jobs:
           TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.event.release.tag_name }}
         shell: bash
         run: |
-          shopt -s nullglob
-          zips=(release/CherryPlayList-*-x64.zip)
-          if [ ${#zips[@]} -eq 0 ]; then
-            echo "ERROR: No CherryPlayList-*-x64.zip found under release/"
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ -z "${VERSION}" ] || [ "${VERSION}" = "undefined" ] || ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "ERROR: CherryPlayList/package.json version is missing or invalid: '${VERSION}'"
+            exit 1
+          fi
+          if [ -z "${TAG_NAME}" ]; then
+            echo "ERROR: Release tag is empty"
+            exit 1
+          fi
+          ZIP="release/CherryPlayList-${VERSION}-x64.zip"
+          if [ ! -f "${ZIP}" ]; then
+            echo "ERROR: Expected zip not found: ${ZIP}"
             ls -la release/ || true
             exit 1
           fi
-          if [ ${#zips[@]} -gt 1 ]; then
-            echo "ERROR: Multiple matching zips found:"
-            printf '%s\n' "${zips[@]}"
-            exit 1
-          fi
-          ZIP="${zips[0]}"
+          echo "App version (from CherryPlayList/package.json): ${VERSION}"
+          echo "Destination GitHub Release tag: ${TAG_NAME}"
           echo "Uploading ${ZIP} to release ${TAG_NAME}"
           gh release upload "${TAG_NAME}" "${ZIP}" --clobber

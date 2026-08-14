@@ -1,6 +1,6 @@
 {
   "name": "@cherryplay/components",
-  "version": "0.6.1",
+  "version": "0.6.4",
   "description": "Shared React components for CherryPlay playlist display",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
