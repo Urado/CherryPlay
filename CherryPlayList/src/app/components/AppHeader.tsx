@@ -25,6 +25,8 @@ import {
   useUIStore,
 } from '@shared/stores';
 
+import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
+
 import { HeaderPartyStatus } from './HeaderPartyStatus';
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
@@ -81,6 +83,8 @@ function projectStateDataForSave(params: {
 }
 
 export const AppHeader: React.FC = () => {
+  usePartyProgramEndedEffects();
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
   const [saveAsModalKey, setSaveAsModalKey] = useState(0);

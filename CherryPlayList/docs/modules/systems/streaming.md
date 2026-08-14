@@ -34,7 +34,7 @@ Streaming System связывает:
 
 Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: подключают хуки orchestrator и отображают UI, но не владеют SignalR lifecycle.
 
-> **UX:** пользовательские строки — **«Онлайн»**; preset / кнопка шапки **«Играть для гостей»** (`party`). В шапке: **HeaderPartyStatus** (при Онлайн) + **HeaderPlaybackPill** только в session mode; индикатор связи в session pill. См. [GLOSSARY](../../../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
+> **UX:** пользовательские строки — **«Онлайн»**; preset **«Играть для гостей»** (`party`) в **Рабочие окна** (не отдельная кнопка на пульте). В шапке: **HeaderPartyStatus** (пульт при Онлайн) + **HeaderPlaybackPill** только в session mode; индикатор связи в session pill. См. [GLOSSARY](../../../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-пульт), [online-mode-ux-synthesis.md](../../online-mode-ux-synthesis.md).
 
 ## Основные компоненты (клиент CherryPlayList)
 
@@ -109,7 +109,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
    - подписка на `PlaybackBroadcastSource.subscribe`;
    - `subscribePartyPlaylistSync` / `subscribeAimpPartyPlaylistSync`;
    - начальный full-state publish.
-3. В шапке **`HeaderPlaybackPill`** (session + источник CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**. Сводка lifecycle вечеринки — отдельный **`HeaderPartyStatus`** (только при **Онлайн**); см. [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-pill).
+3. В шапке **`HeaderPlaybackPill`** (session + источник CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**. Сводка lifecycle вечеринки — отдельный **`HeaderPartyStatus`** (только при **Онлайн**); см. [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-пульт).
 
 `PlayerViewContainer` **не** вызывает `connect` / `joinPartyAsOrganizer` / store subscriptions напрямую и **не** отображает состояние SignalR.
 

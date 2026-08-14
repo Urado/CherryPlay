@@ -33,6 +33,7 @@ import { DemoPlayerShell } from './components/DemoPlayerShell';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
+import { PartySettingsModal } from './components/PartySettingsModal';
 import { SettingsModal } from './components/SettingsModal';
 import { useWindowMinSize } from './hooks';
 import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
@@ -155,6 +156,7 @@ const App: React.FC = () => {
         <SettingsModal />
         <ExportModal />
         <LinkPartyModal />
+        <PartySettingsModal />
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />

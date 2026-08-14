@@ -8,7 +8,7 @@ import { AimpBroadcastSource } from './AimpBroadcastSource';
 import { isStreamingHubAllowed } from './onlineNetworkPolicy';
 import type { StreamingNetworkPolicySettings } from './onlineNetworkPolicy';
 import { subscribeAimpPartyPlaylistSync, subscribePartyPlaylistSync } from './partyPlaylistSync';
-import type { PlaybackBroadcastSource } from './PlaybackBroadcastSource';
+import type { PlaybackBroadcastSource, PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
 export interface StreamingOrchestratorConfig {
   partyId: string;
@@ -20,6 +20,7 @@ export interface StreamingOrchestratorConfig {
   onConnectError?: (error: unknown) => void;
   onPublishError?: (operation: 'playlistPublish' | 'fullStatePublish', error: unknown) => void;
   onPublishSuccess?: () => void;
+  onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
 }
 
 const RECONNECT_DELAY_MS = 10_000;
@@ -386,6 +387,9 @@ export class StreamingOrchestrator {
         (error) => {
           config.onPublishError?.('playlistPublish', error);
         },
+        (payload) => {
+          config.onPlaylistSynced?.(payload);
+        },
       );
       return;
     }
@@ -395,6 +399,9 @@ export class StreamingOrchestrator {
       () => config.broadcastSource.getPlaylistForApi(),
       () => {
         this.scheduleFullStatePublish(partyId);
+      },
+      (payload) => {
+        config.onPlaylistSynced?.(payload);
       },
     );
   }

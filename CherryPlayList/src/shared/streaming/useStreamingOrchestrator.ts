@@ -6,12 +6,14 @@ import { useSettingsStore } from '../stores';
 
 import { CherryPlayPlayerBroadcastSource } from './CherryPlayPlayerBroadcastSource';
 import { isStreamingHubAllowed, isStreamingNetworkEnabled } from './onlineNetworkPolicy';
+import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 import { streamingOrchestrator } from './streamingOrchestrator';
 
 export interface UseStreamingOrchestratorOptions {
   partyId: string | null;
   sessionMode: 'preparation' | 'session';
   onPartyNotFound?: () => void;
+  onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
 }
 
 export interface UseStreamingOrchestratorResult {
@@ -22,7 +24,7 @@ export interface UseStreamingOrchestratorResult {
 export function useStreamingOrchestrator(
   options: UseStreamingOrchestratorOptions,
 ): UseStreamingOrchestratorResult {
-  const { partyId, sessionMode, onPartyNotFound } = options;
+  const { partyId, sessionMode, onPartyNotFound, onPlaylistSynced } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
 
@@ -31,10 +33,15 @@ export function useStreamingOrchestrator(
   );
   const broadcastSourceRef = useRef(new CherryPlayPlayerBroadcastSource());
   const onPartyNotFoundRef = useRef(onPartyNotFound);
+  const onPlaylistSyncedRef = useRef(onPlaylistSynced);
 
   useEffect(() => {
     onPartyNotFoundRef.current = onPartyNotFound;
   }, [onPartyNotFound]);
+
+  useEffect(() => {
+    onPlaylistSyncedRef.current = onPlaylistSynced;
+  }, [onPlaylistSynced]);
 
   const networkEnabled = isStreamingNetworkEnabled({ enableStreaming });
   const hubAllowed = isStreamingHubAllowed({ enableStreaming });
@@ -59,6 +66,7 @@ export function useStreamingOrchestrator(
       networkSettings: { enableStreaming },
       onConnectionStateChange: setHubConnectionState,
       onPartyNotFound: () => onPartyNotFoundRef.current?.(),
+      onPlaylistSynced: (payload) => onPlaylistSyncedRef.current?.(payload),
     });
 
     return () => {

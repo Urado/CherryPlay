@@ -1,0 +1,171 @@
+.modal-content.party-settings-modal-content {
+  display: flex;
+  flex-direction: column;
+  width: min(750px, calc(100vw - 32px));
+  max-width: min(750px, calc(100vw - 32px));
+  max-height: min(92vh, 960px);
+  container-type: inline-size;
+  container-name: party-settings-modal;
+}
+
+.party-settings-modal-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.party-settings-modal-loading {
+  padding: 24px;
+  color: var(--text-secondary, #666);
+}
+
+.party-settings-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.party-settings-content__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 24px 24px;
+}
+
+.party-settings-content__body .party-editor-about-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.party-settings-content__body .party-catalog-visibility {
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.party-settings-content__body .party-catalog-visibility-options {
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.12));
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.04));
+}
+
+.party-settings-content__body .party-catalog-visibility-option {
+  border-right-color: var(--ui-border, rgba(255, 255, 255, 0.12));
+  color: var(--text-secondary, #9a9a9a);
+}
+
+.party-settings-content__body .party-catalog-visibility-option:hover:not(:disabled) {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary, #f5f5f5);
+}
+
+.party-settings-content__body
+  .party-catalog-visibility-option--selected:not(.party-catalog-visibility-option--listed) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #f5f5f5);
+}
+
+.party-settings-content__body
+  .party-catalog-visibility-option--listed.party-catalog-visibility-option--selected {
+  background: color-mix(in srgb, var(--accent-primary, #4a9eff) 18%, transparent);
+  color: var(--accent-primary, #4a9eff);
+}
+
+.party-settings-content__body
+  .party-catalog-visibility-option--listed.party-catalog-visibility-option--selected:hover:not(
+    :disabled
+  ) {
+  background: color-mix(in srgb, var(--accent-primary, #4a9eff) 24%, transparent);
+  color: var(--accent-primary, #4a9eff);
+}
+
+.party-settings-content__body .party-editor-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-sm, 8px);
+  width: 100%;
+}
+
+.party-settings-content__body .party-editor-actions__action,
+.party-settings-content__body .party-editor-actions > .cp-button.party-editor-actions__action {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.party-settings-content__body .party-editor-actions__trailing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm, 8px);
+  margin-left: auto;
+}
+
+.party-settings-design-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.04));
+  color: var(--text-secondary, #9a9a9a);
+  font-size: var(--font-size-secondary, 12px);
+  line-height: 1.4;
+}
+
+@container party-settings-modal (min-width: 640px) {
+  .party-settings-content__body .party-editor-fields-group__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
+    align-items: start;
+  }
+
+  .party-settings-content__body
+    .party-editor-fields-group__fields
+    .party-editor-section:has(textarea),
+  .party-settings-content__body
+    .party-editor-fields-group__fields
+    .party-editor-section:has(.party-editor-tags-predefined),
+  .party-settings-content__body
+    .party-editor-fields-group__fields
+    .party-editor-section:has(.party-editor-tags-list) {
+    grid-column: 1 / -1;
+  }
+}
+
+@container party-settings-modal (max-width: 720px) {
+  .party-settings-content__body {
+    padding: 12px 14px 16px;
+  }
+
+  .party-settings-content__body .party-editor-actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-content.party-settings-modal-content {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    border-radius: 6px;
+  }
+}
+
+@media (max-height: 700px) {
+  .modal-content.party-settings-modal-content {
+    max-height: calc(100vh - 16px);
+  }
+}

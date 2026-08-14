@@ -5,40 +5,38 @@ import type { PartyEditorPhase } from '../partyEditorPhase';
 
 import './PartyEditor.css';
 
-export type PartyEditorActionSlot = 'all' | 'accent' | 'secondary';
-
 export interface PartyEditorActionsProps {
   phase: PartyEditorPhase;
-  partyName: string;
-  linkedParty?: { id: string; shortCode: string } | null;
   isAuthenticated: boolean;
   isCreating: boolean;
-  isPublishing: boolean;
+  isSaving?: boolean;
   networkDisabled?: boolean;
-  networkOffline?: boolean;
   createBlockedByTheme?: boolean;
   createBlockedByThemeTitle?: string;
+  showSave?: boolean;
+  showMakeReady?: boolean;
+  isMakeReadyLoading?: boolean;
+  secondaryExtra?: React.ReactNode;
   onCreateParty?: () => void;
-  onPublish?: () => void;
   onOpenLinkParty?: () => void;
-  compact?: boolean;
-  slot?: PartyEditorActionSlot;
+  onSaveMetadata?: () => void;
+  onMakeReady?: () => void;
 }
 
 export function getPartyEditorActionVisibility(
   phase: PartyEditorPhase,
   options: {
     isAuthenticated: boolean;
-    hasOnPublish: boolean;
     hasOnOpenLinkParty: boolean;
   },
-): { showPublish: boolean; showCreate: boolean; showLinkParty: boolean } {
-  const showPublish = options.hasOnPublish && (phase === 'draft-linked' || phase === 'ready');
+): { showCreate: boolean; showLinkParty: boolean; showSave: boolean; showMakeReady: boolean } {
   const showCreate = phase === 'draft-unlinked';
   const showLinkParty =
     phase === 'draft-unlinked' && options.hasOnOpenLinkParty && options.isAuthenticated;
+  const showSave = phase === 'draft-linked' || phase === 'ready';
+  const showMakeReady = phase === 'draft-linked';
 
-  return { showPublish, showCreate, showLinkParty };
+  return { showCreate, showLinkParty, showSave, showMakeReady };
 }
 
 export function shouldShowPartyLifecycleControls(
@@ -51,61 +49,60 @@ export function shouldShowPartyLifecycleControls(
 }
 
 export function shouldShowPartyCatalogVisibilityControl(phase: PartyEditorPhase): boolean {
-  return phase === 'ready' || phase === 'completed';
+  return phase === 'draft-unlinked' || phase === 'ready' || phase === 'completed';
 }
 
 export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
   phase,
-  partyName: _partyName,
-  linkedParty: _linkedParty,
   isAuthenticated,
   isCreating,
-  isPublishing,
+  isSaving = false,
   networkDisabled = false,
-  networkOffline = false,
   createBlockedByTheme = false,
   createBlockedByThemeTitle = 'Выберите тему, доступную в вашем тарифе',
+  showSave = false,
+  showMakeReady = false,
+  isMakeReadyLoading = false,
+  secondaryExtra,
   onCreateParty,
-  onPublish,
   onOpenLinkParty,
-  compact = false,
-  slot = 'all',
+  onSaveMetadata,
+  onMakeReady,
 }) => {
-  if (phase === 'completed') {
+  if (phase === 'completed' && !secondaryExtra) {
     return null;
   }
 
-  const { showPublish, showCreate, showLinkParty } = getPartyEditorActionVisibility(phase, {
-    isAuthenticated,
-    hasOnPublish: Boolean(onPublish),
-    hasOnOpenLinkParty: Boolean(onOpenLinkParty),
-  });
+  const { showCreate, showLinkParty } = getPartyEditorActionVisibility(
+    phase === 'completed' ? 'ready' : phase,
+    {
+      isAuthenticated,
+      hasOnOpenLinkParty: Boolean(onOpenLinkParty),
+    },
+  );
 
-  const showAccentCreate = showCreate && (slot === 'all' || slot === 'accent');
-  const showSecondaryLink = showLinkParty && (slot === 'all' || slot === 'secondary');
-  const showAccentPublish =
-    showPublish && phase === 'ready' && (slot === 'all' || slot === 'accent');
-  const showSecondaryPublish =
-    showPublish && phase === 'draft-linked' && (slot === 'all' || slot === 'secondary');
+  const effectiveShowCreate = phase !== 'completed' && showCreate;
+  const effectiveShowLink = phase !== 'completed' && showLinkParty;
+  const effectiveShowSave = phase !== 'completed' && showSave;
+  const effectiveShowMakeReady = phase !== 'completed' && showMakeReady;
 
-  if (!showAccentCreate && !showSecondaryLink && !showAccentPublish && !showSecondaryPublish) {
+  const actionDisabled = isCreating || isSaving || isMakeReadyLoading || networkDisabled;
+
+  const networkDisabledTitle = 'Включите «Онлайн» в настройках';
+
+  const hasPrimaryCluster =
+    effectiveShowCreate || effectiveShowLink || effectiveShowSave || effectiveShowMakeReady;
+  const hasSecondary = Boolean(secondaryExtra);
+
+  if (!hasPrimaryCluster && !hasSecondary) {
     return null;
   }
-
-  const actionDisabled = isCreating || isPublishing || networkDisabled;
-
-  const networkDisabledTitle = networkOffline
-    ? 'Включите «Онлайн» в настройках'
-    : 'Недоступно без подключения к серверу';
 
   return (
-    <div
-      className="party-editor-actions party-editor-actions--header"
-      aria-busy={isCreating || isPublishing}
-      aria-live="polite"
-    >
-      {showAccentCreate && onCreateParty && (
+    <div className="party-editor-actions" aria-busy={isCreating || isSaving} aria-live="polite">
+      {effectiveShowCreate && onCreateParty && (
         <Button
+          className="party-editor-actions__action"
           onClick={onCreateParty}
           disabled={!isAuthenticated || actionDisabled || createBlockedByTheme}
           loading={isCreating}
@@ -123,11 +120,12 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           variant="primary"
           size="sm"
         >
-          {compact ? 'Создать' : 'Новая вечеринка на сервере'}
+          Создать
         </Button>
       )}
-      {showSecondaryLink && onOpenLinkParty && (
+      {effectiveShowLink && onOpenLinkParty && (
         <Button
+          className="party-editor-actions__action"
           onClick={onOpenLinkParty}
           disabled={actionDisabled}
           type="button"
@@ -139,27 +137,47 @@ export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
           variant="secondary"
           size="sm"
         >
-          {compact ? 'Привязать…' : 'Привязать существующую…'}
+          Привязать
         </Button>
       )}
-      {(showAccentPublish || showSecondaryPublish) && onPublish && (
+      {effectiveShowSave && onSaveMetadata && (
         <Button
-          onClick={onPublish}
-          disabled={actionDisabled}
-          loading={isPublishing || isCreating}
-          loadingLabel="Обновление..."
+          className="party-editor-actions__action"
           type="button"
+          onClick={() => void onSaveMetadata()}
+          disabled={actionDisabled}
+          loading={isSaving}
+          loadingLabel="Обновление..."
+          variant="primary"
+          size="sm"
           title={
             networkDisabled
               ? networkDisabledTitle
-              : 'Обновить плейлист и настройки, которые видят гости'
+              : 'Обновить название, описание и другие поля на сервере (без обновления плейлиста)'
           }
-          variant={showAccentPublish ? 'primary' : 'secondary'}
-          size="sm"
         >
-          {compact ? 'Обновить на сайте' : 'Обновить для гостей'}
+          Обновить
         </Button>
       )}
+      {effectiveShowMakeReady && onMakeReady && (
+        <Button
+          className="party-editor-actions__action"
+          type="button"
+          onClick={() => void onMakeReady()}
+          disabled={actionDisabled}
+          loading={isMakeReadyLoading}
+          variant="secondary"
+          size="sm"
+          title={
+            networkDisabled
+              ? networkDisabledTitle
+              : 'Снять черновик и перевести в «Ждёт начала». Это не публикация в каталоге.'
+          }
+        >
+          Сделать доступной
+        </Button>
+      )}
+      {hasSecondary ? <div className="party-editor-actions__trailing">{secondaryExtra}</div> : null}
     </div>
   );
 };

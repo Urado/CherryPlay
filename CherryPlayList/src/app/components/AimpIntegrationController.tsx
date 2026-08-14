@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import {
   useAimpStore,
@@ -10,6 +10,10 @@ import {
 } from '@shared/stores';
 import { useAimpStreamingOrchestrator } from '@shared/streaming';
 import { getAimpAvailability, logger } from '@shared/utils';
+import {
+  getCurrentPartyPublishSyncParts,
+  markPartyPublishPlaylistSynced,
+} from '@workspaces/party/partyPublishSync';
 
 export const AimpIntegrationController: React.FC = () => {
   const initialize = useAimpStore((state) => state.initialize);
@@ -25,9 +29,14 @@ export const AimpIntegrationController: React.FC = () => {
 
   const previousStreamingSourceRef = useRef<typeof streamingSource | null>(null);
 
+  const handlePlaylistSynced = useCallback(() => {
+    markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+  }, []);
+
   useAimpStreamingOrchestrator({
     partyId: linkedPartyId,
     hasHydrated,
+    onPlaylistSynced: handlePlaylistSynced,
   });
 
   useEffect(() => {

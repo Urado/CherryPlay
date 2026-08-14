@@ -192,7 +192,7 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 - **▾** меню workspace (переключение пресетов / пользовательских workspace);
 - переименование проекта;
 - кнопки настроек, экспорта, аккаунта, demo player (floating);
-- **HeaderPartyStatus** (**«Играть для гостей»**) — кнопка `disabled` (как остальные header controls);
+- **пульт вечеринки** (`HeaderPartyStatus` / CTA Create/К настройкам/Играть/Остановить/Вернуть + Publish ↑ + ⚙) — controls `disabled` (как остальные header controls);
 - **HeaderPlaybackPill** — `disabled` / `pointer-events: none`, приглушён;
 - меню **Проект** (принудительно закрывается при входе в режим);
 - **глобальные и player горячие клавиши** (`useGlobalShortcuts` / `usePlayerShortcuts` с `enabled: false`).

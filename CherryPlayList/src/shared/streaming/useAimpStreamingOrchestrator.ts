@@ -7,16 +7,18 @@ import { formatAimpPublishingPathError } from '../utils/aimpPublishingPath';
 
 import { AimpBroadcastSource } from './AimpBroadcastSource';
 import { isStreamingHubAllowed } from './onlineNetworkPolicy';
+import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 import { streamingOrchestrator } from './streamingOrchestrator';
 
 export interface UseAimpStreamingOrchestratorOptions {
   partyId: string | null;
   hasHydrated: boolean;
   onPartyNotFound?: () => void;
+  onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
 }
 
 export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestratorOptions): void {
-  const { partyId, hasHydrated, onPartyNotFound } = options;
+  const { partyId, hasHydrated, onPartyNotFound, onPlaylistSynced } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const bridgeState = useAimpStore((state) => state.bridgeState);
@@ -28,10 +30,15 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
 
   const broadcastSourceRef = useRef(new AimpBroadcastSource());
   const onPartyNotFoundRef = useRef(onPartyNotFound);
+  const onPlaylistSyncedRef = useRef(onPlaylistSynced);
 
   useEffect(() => {
     onPartyNotFoundRef.current = onPartyNotFound;
   }, [onPartyNotFound]);
+
+  useEffect(() => {
+    onPlaylistSyncedRef.current = onPlaylistSynced;
+  }, [onPlaylistSynced]);
 
   const hubAllowed = isStreamingHubAllowed({ enableStreaming });
   const orchestratorActive =
@@ -69,6 +76,7 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
       onPublishSuccess: () => {
         setPublishingPathState('ready');
       },
+      onPlaylistSynced: (payload) => onPlaylistSyncedRef.current?.(payload),
     });
 
     return () => {

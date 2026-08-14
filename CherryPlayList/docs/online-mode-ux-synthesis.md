@@ -63,7 +63,7 @@
 | **Settings** → **«Онлайн»** (`enableStreaming`)      | Глобальный privacy/offline; блокирует SignalR и REST, **не** скрывает Party                 |
 | **WorkspaceMenu**                                      | Пресет **«Играть для гостей»** (`party`) **всегда** в меню **Рабочие окна** (`partyDiscoverabilityEnabled`) |
 | **Party zones**                                        | Всегда в layout; при офлайне — баннер **«Онлайн-функции отключены»** внутри зоны           |
-| **AppHeader**                                          | Верхний ряд: слева меню **«Файл»** (⋮), справа **Account** + **Settings**; нижний ряд: **HeaderPartyStatus** (lifecycle UI labels + **«Играть для гостей»**) при **Онлайн**, **HeaderPlaybackPill** только в session (`cherryPlayPlayer`) |
+| **AppHeader**                                          | Верхний ряд: слева меню **«Файл»** (⋮), справа **Account** + **Settings**; нижний ряд: **пульт вечеринки** (`HeaderPartyStatus`: lifecycle + CTA Create/К настройкам/Играть/Остановить/Вернуть + Publish ↑ + ⚙) при **Онлайн**, **HeaderPlaybackPill** только в session (`cherryPlayPlayer`). Отдельной кнопки **«Играть для гостей»** на пульте **нет** (исторически была; раскладка — **Рабочие окна** / guide **«Перейти»**) |
 | **PlayerHeader**                                       | **«Начать проигрывание»** / **«Остановить проигрывание»**; Stop в controls — **«Начать заново»** |
 | **Settings** → **«Источник проигрывания»**     | `cherryPlayPlayer` \| `aimp`; переключатель в зоне Проигрывание                            |
 
@@ -76,7 +76,7 @@
 - Дефолт при первом запуске — **`collections`** (**«Сборка плейлиста»**), не Party.
 - Доки: [`layout-system.md`](./modules/systems/layout-system.md), [`layout-edit-mode.md`](./layout-edit-mode.md).
 
-**Вывод:** авто-переключение на preset Party по-прежнему **нежелательно**. Явная кнопка **«Играть для гостей»** (см. §2.3) — opt-in на preset `party` с **no-op**, если layout уже party / aimp-party / editor+preview; кастомные workspace без Party-зон остаются first-class. Отдельного переключателя режимов «Сборка / Проигрывание» в шапке **нет**.
+**Вывод:** авто-переключение на preset Party по-прежнему **нежелательно**. Opt-in на preset `party` (**«Играть для гостей»**) — через **Рабочие окна** или guide **«Перейти»** с пульта; **no-op**, если layout уже party / aimp-party / editor+preview; кастомные workspace без Party-зон остаются first-class. Отдельного переключателя режимов «Сборка / Проигрывание» в шапке **нет**.
 
 ### 2.5. Визуальные / сценарные проблемы
 
@@ -131,7 +131,7 @@
   - идёт ли **проигрывание плейлиста**;
   - идёт ли **онлайн / трансляция** (если применимо);
   - состояние **текущей вечerинки** (нет / черновик / готова / завершена / …).
-- **Shipped (2026-08):** при **Онлайн** — read-only lifecycle status (`HeaderPartyStatus`: **Не создана** / **Черновик** / **Ждёт начала** / **Идёт** / **В архиве**; secondary **нет связи** при unreachable) + кнопка **«Играть для гостей»** → `setLayoutPreset('party')` (no-op на уже party-layout); session-only `HeaderPlaybackPill` (без prep / readiness). Copy и матрица видимости: [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill).
+- **Shipped (2026-08):** при **Онлайн** — пульт `HeaderPartyStatus` (4-stage strip + статус + CTA Create/К настройкам/Играть/Остановить/Вернуть + Publish ↑ + ⚙; overlays **Пауза** / **Конец**; secondary **нет связи** при unreachable — баннер/статус, **не** disable Create/Publish/lifecycle; validate-on-submit; Online OFF по-прежнему disables). Theme access: poll 5 мин при online+auth (`loadPartyThemeAccess`); cache on failure; см. [party.md — доступ к темам](./modules/workspaces/party.md#доступ-к-темам-fallback-copy). Раскладка **«Играть для гостей»** — **Рабочие окна** / guide **«Перейти»**, не отдельной кнопкой на пульте. Session-only `HeaderPlaybackPill` (без prep / readiness). Copy: [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-пульт), [party-header-control-ux.md](./party-header-control-ux.md).
 - **Backlog:** подменю быстрых действий по клику на статус (copy link, reconnect, …); **не** авто-переключать layout при старте проигрывания; **не** вводить mode switcher «Сборка / Проигрывание» в шапке.
 
 ### 3.6. Индикатор «готовности к онлайну»
@@ -178,7 +178,7 @@ UI может агрегировать это в один статус («Не �
 
 ### 5.1. Шапка и подменю
 
-- **Сделано (2026-08):** единые lifecycle UI labels + **«Играть для гостей»**; session pill без prep/readiness. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status).
+- **Сделано (2026-08):** единые lifecycle UI labels + пульт в шапке (без отдельной кнопки **«Играть для гостей»** на пульте); session pill без prep/readiness. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party-header-control-ux.md](./party-header-control-ux.md).
 - **Ещё открыто:** точный набор быстрых действий в **подменю** (если появится); checklist готовности — не в header lamp (§3.6 / §8).
 - Где физически в шапке: рядом с именем проекта (текущее) vs отдельный «Онлайн» pill справа — продукт может уточнить.
 
@@ -256,7 +256,7 @@ UI может агрегировать это в один статус («Не �
 
 - [x] Отвязать **видимость Party** от `enableStreaming` (2026-07)
 - [x] Переформулировать **privacy/offline** отдельно от discoverability Party (`networkEnabled` internal, `partyDiscoverabilityEnabled` always on)
-- [x] **Шапка:** **HeaderPartyStatus** (lifecycle labels + **«Играть для гостей»**) при Онлайн; session-only **HeaderPlaybackPill**; **«Мои вечеринки»** — секция в Account. Подменю «Онлайн: статус ▾» с checklist — по-прежнему backlog
+- [x] **Шапка:** **пульт вечеринки** (`HeaderPartyStatus`: lifecycle + CTA matrix; **без** отдельной кнопки **«Играть для гостей»**) при Онлайн; session-only **HeaderPlaybackPill**; **«Мои вечеринки»** — секция в Account. Подменю «Онлайн: статус ▾» с checklist — по-прежнему backlog. Исторически на пульте была кнопка раскладки **«Играть для гостей»** — снята; preset остаётся в **Рабочие окна** / guide **«Перейти»**. См. [party-header-control-ux.md](./party-header-control-ux.md)
 - [ ] Агрегировать **checklist готовности** (party, publish, link, source, session, connection) — не в header lamp; backlog (Editor numbered ready-hint убран)
 - [x] Переименовать **«Начать сессию»** → **«Начать проигрывание»** / **«Остановить проигрывание»**
 - [x] Stop в player controls → **«Начать заново»** (label/a11y; поведение без изменений)
@@ -265,7 +265,7 @@ UI может агрегировать это в один статус («Не �
 - [x] Заглушки Party: offline (`PartyConnectivityBanner`), no auth (есть), server down (in-zone banner, не full replace)
 - [x] Контроль каталога **«В каталоге»** / **«По ссылке»** в Editor (`ready` и `completed`) и **«Мои вечеринки»**
 - [x] Единый контракт клавиатуры модалок (`useModalKeyboard`)
-- [x] UI copy rename (2026-08): меню **Рабочие окна**; preset/zone display names; header **«Играть для гостей»**; `complex`/`test*` скрыты из discoverability
+- [x] UI copy rename (2026-08): меню **Рабочие окна**; preset/zone display names; preset **«Играть для гостей»** (не кнопка пульта); `complex`/`test*` скрыты из discoverability
 - [ ] Учесть **кастомные workspace** — не завязать UX на preset switch _(частично: **«Играть для гостей»** no-op на `party` / `aimp-party` / layout с editor+preview)_
 - [ ] Backlog: локальный плеер под Playlist (`pasha_todo`)
 - [ ] Backlog: модерация пользователей (`pasha_todo`)
@@ -279,7 +279,8 @@ UI может агрегировать это в один статус («Не �
 | 2026-07-04 | Первичный синтез после ревью кода и диалога с Павлом                                                                                                      |
 | 2026-07-04 | **Copy rename (UI):** «Онлайн», «Начать проигрывание», Party actions, layout presets, lifecycle badges — см. [GLOSSARY.md](../../GLOSSARY.md) § UI vs код |
 | 2026-07-08 | **Desktop feedback follow-up:** Party always visible; `networkEnabled`/`partyDiscoverabilityEnabled` split; catalog control; «Мои вечеринки»; modal keyboard contract; Stop → «Начать заново». См. [party.md](./modules/workspaces/party.md) |
-| 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + **«Играть для гостей»** (ранее «К вечеринке»); session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-pill) |
+| 2026-08-02 | **Header party-status:** lifecycle UI labels в шапке + тогдашняя кнопка **«Играть для гостей»** (ранее «К вечеринке»); session-only playback pill. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-header-party-status), [party.md — Шапка](./modules/workspaces/party.md#шапка-appheader-статус-и-пульт) |
+| 2026-08-11 | Пульт as-built без отдельной кнопки **«Играть для гостей»**; CTA/Publish/⚙ + Editor B — [party-header-control-ux.md](./party-header-control-ux.md) |
 | 2026-08-02 | **Party lifecycle visual clarity** *(исторически):* единые метки Editor + header; тогда actions **Опубликовать** / **Вернуть в черновик** / **В архив**; каталог только в `ready`; без баннера привязки и ready numbered hint; archive без **«Вернуть»** в UI. Актуальные UI-метки — в строке 2026-08-05; текущие lifecycle-actions — в строке 2026-08-07 |
 | 2026-08-03 | **Web-demo dual mode:** `networkEnabled` зеркалит `enableStreaming` (fixtures + live); hub только при `supportsRealAuth` (Electron / `VITE_DEMO_LIVE`). См. [web-demo.md](./web-demo.md) |
 | 2026-08-05 | **UI copy rename:** меню **Рабочие окна**; presets **Простая сборка** / **Сборка плейлиста** / **Играть и править** / **Играть для гостей**; зоны **Файлы** (ранее **Источники**) / **Подборка** / **Предпросмотр (только у вас)**; `complex`/`test*` скрыты из discoverability. См. [GLOSSARY](../../GLOSSARY.md#cherryplaylist-рабочие-окна-и-зоны) |

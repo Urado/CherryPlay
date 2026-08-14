@@ -9,7 +9,7 @@
 3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` собирает Windows zip (`dist:win:ci`) с версией **`{appVersion}-pr-{PR}`** (например `0.6.1-pr-8` → `CherryPlayList-0.6.1-pr-8-x64.zip`), кладёт одноимённый Actions artifact и комментирует PR. Без загрузки в GitHub Release — для ручного теста до релиза. Релизный zip остаётся с чистой версией приложения (`0.6.1`)
 4. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
 5. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
-6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в тот же GitHub Release (те же триггеры)
+6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList (имя zip = версия из `CherryPlayList/package.json` на собранном коммите) и загружает его в GitHub Release (те же триггеры; при `workflow_dispatch` тег — только destination Release)
 
 При публикации GitHub Release (не draft) workflows **5** и **6** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`). Draft → Publish тоже даёт `published`; событие `created` для draft GitHub не шлёт в Actions.
 
@@ -213,7 +213,7 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 3. **Автоматический процесс (два независимых workflow):**
    - **`release-and-deploy.yml`** (пропускает prerelease): образы с тегом версии → GHCR → деплой на сервер
-   - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release
+   - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release (версия в имени zip — из `CherryPlayList/package.json`, не из тега)
 
 ### Скачать Windows desktop (CherryPlayList)
 
@@ -223,17 +223,25 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 #### Из GitHub Release
 
-После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — тег релиза **без** ведущего `v` (CI синхронизирует `CherryPlayList/package.json` с тегом).
+После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — поле `version` в `CherryPlayList/package.json` **на собранном коммите**, не тег GitHub Release. Тег релиза (и версия деплоя сайта/сервера) могут отличаться от версии desktop-приложения.
 
 URL для **последнего стабильного** (non-prerelease) релиза:
 
 ```text
-https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{version}-x64.zip
+https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVersion}-x64.zip
 ```
 
-Пример для тега `v1.2.3`: `…/releases/latest/download/CherryPlayList-1.2.3-x64.zip`.
+Пример: в `package.json` версия `0.7.0`, zip лежит на последнем non-prerelease → `…/releases/latest/download/CherryPlayList-0.7.0-x64.zip`. `/latest/` указывает только на последний **non-prerelease**; prerelease тоже получает zip-asset, но не через `/latest/`. В имени файла — версия приложения.
 
-- `…/releases/latest/…` указывает только на последний **non-prerelease**. Prerelease тоже получает zip-asset, но не через `/latest/`.
+Ручной запуск (**Actions → Release Desktop Windows → Run workflow**):
+
+- ветка сборки — выбранная в UI (обычно `main`);
+- input `tag` — существующий GitHub Release (например `v0.6.1`), в который загружается zip;
+- повторная сборка в тот же тег с той же версией `package.json` **заменяет** asset (`gh release upload --clobber`);
+- если версию в `package.json` подняли, загружается новый файл; старый asset с прежним именем может остаться.
+
+Поведение **`release-and-deploy.yml`** не меняется: prerelease по-прежнему пропускает деплой сайта/сервера; desktop-workflow при публикации (включая prerelease, без draft) собирает zip отдельно.
+
 - В опубликованном zip **нет** нативного AIMP bridge (сборка CI без `stage:aimp-plugin`). Полная локальная сборка с AIMP — см. [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md).
 
 ### Откат на предыдущую версию

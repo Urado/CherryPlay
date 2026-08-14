@@ -1,13 +1,12 @@
 import { mapStoreStatusToWireStatus, type PlaybackStateDto } from '../contracts/playbackState';
+import { useAimpStore } from '../stores/aimpStore';
 import { usePlayerAudioStore } from '../stores/playerAudioStore';
 import { useProjectStore } from '../stores/projectStore';
-import { convertPlaylistForApi } from '../utils/partyUtils';
+import { useSettingsStore } from '../stores/settingsStore';
 
+import { buildPlaylistForApiPayload } from './buildPlaylistForApiPayload';
 import type { PlaybackBroadcastSource, PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
-/**
- * CherryPlay Player broadcast adapter.
- */
 export class CherryPlayPlayerBroadcastSource implements PlaybackBroadcastSource {
   readonly sourceId = 'cherryPlayPlayer' as const;
 
@@ -89,7 +88,12 @@ export class CherryPlayPlayerBroadcastSource implements PlaybackBroadcastSource 
 
   getPlaylistForApi(): PlaylistForApiPayload {
     const projectState = useProjectStore.getState();
-    return convertPlaylistForApi(projectState.items, projectState.meta.partyTrackDisplay);
+    return buildPlaylistForApiPayload({
+      streamingSource: useSettingsStore.getState().streamingSource,
+      aimpPlaylistSnapshot: useAimpStore.getState().bridgeState.playlistSnapshot,
+      items: projectState.items,
+      partyTrackDisplay: projectState.meta.partyTrackDisplay,
+    });
   }
 
   isLiveSessionActive(): boolean {

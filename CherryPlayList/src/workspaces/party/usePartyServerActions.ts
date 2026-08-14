@@ -9,6 +9,11 @@ import {
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { copyTextToClipboard, sanitizeExternalUrl } from '@shared/utils';
 
+import { publishPartyToSite } from './partyHeaderCommands';
+import {
+  markPartyPublishCatalogVisibilitySynced,
+  markPartyPublishMetadataSynced,
+} from './partyPublishSync';
 import {
   buildCreatePartyDto,
   buildPlaylistForApi,
@@ -100,6 +105,7 @@ export function usePartyServerActions(
       store.setIsTogglingCatalogVisibility(true);
       try {
         await partyService.updateParty(linkedParty.id, { isListedInCatalog: listed });
+        markPartyPublishCatalogVisibilitySynced(listed);
       } catch (error) {
         console.error('Failed to update catalog visibility:', error);
         store.setIsListedInCatalog(previous);
@@ -162,13 +168,6 @@ export function usePartyServerActions(
       });
       return;
     }
-    if (store.serverUnreachable) {
-      addNotification({
-        type: 'warning',
-        message: 'Создание недоступно: сервер сейчас не отвечает',
-      });
-      return;
-    }
     if (!isAuth) {
       addNotification({
         type: 'warning',
@@ -178,21 +177,7 @@ export function usePartyServerActions(
       openModal('account');
       return;
     }
-    if (store.isThemeAccessLoading) {
-      addNotification({
-        type: 'warning',
-        message: 'Дождитесь проверки доступа к темам',
-      });
-      return;
-    }
-    if (store.themeAccess === null) {
-      addNotification({
-        type: 'warning',
-        message: store.themeAccessErrorMessage ?? 'Дождитесь проверки доступа к темам',
-      });
-      return;
-    }
-    if (!isThemeGranted(store.themeId, store.themeAccess)) {
+    if (store.themeAccess !== null && !isThemeGranted(store.themeId, store.themeAccess)) {
       addNotification({
         type: 'error',
         message: 'У вас нет доступа к выбранной теме. Выберите доступную тему.',
@@ -246,25 +231,22 @@ export function usePartyServerActions(
   ]);
 
   const handlePublish = useCallback(async () => {
+    await publishPartyToSite();
+  }, []);
+
+  const handleSaveMetadata = useCallback(async () => {
     const store = getPartyStore();
     if (!effects.isNetworkEnabled()) {
       addNotification({
         type: 'warning',
-        message: 'Публикация недоступна: включите «Онлайн» в настройках',
-      });
-      return;
-    }
-    if (store.serverUnreachable) {
-      addNotification({
-        type: 'warning',
-        message: 'Публикация недоступна: сервер сейчас не отвечает',
+        message: 'Сохранение недоступно: включите «Онлайн» в настройках',
       });
       return;
     }
     if (!isAuth) {
       addNotification({
         type: 'warning',
-        message: 'Для публикации необходимо войти в аккаунт',
+        message: 'Для сохранения необходимо войти в аккаунт',
         duration: 5000,
       });
       openModal('account');
@@ -272,75 +254,38 @@ export function usePartyServerActions(
     }
 
     const linkedParty = meta.linkedParty;
-    if (linkedParty) {
-      store.setIsPublishing(true);
-      store.setServerError(null);
-      try {
-        const playlistForApi = buildCurrentPlaylistForApi();
-        await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
-        await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
-        await effects.loadThemeAccess(true);
-      } catch (error) {
-        console.error('Failed to publish playlist:', error);
-        if (isThemeNotEntitledError(error)) {
-          await handleThemeNotEntitled(error);
-          return;
-        }
-        addNotification({
-          type: 'error',
-          message: error instanceof Error ? error.message : 'Ошибка публикации',
-        });
-      } finally {
-        store.setIsPublishing(false);
-      }
+    if (!linkedParty) {
+      addNotification({
+        type: 'warning',
+        message: 'Сначала создайте или привяжите вечеринку',
+      });
       return;
     }
 
-    const nameToUse = resolvePartyNameForServer(store, projectName);
-
-    store.setIsCreating(true);
+    store.setIsSavingMetadata(true);
     store.setServerError(null);
-    store.setPartyVerified(false);
     try {
-      const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi(), {
-        partyName: nameToUse,
-      });
-      await finalizePartyCreation(store, createData, {
-        loadThemeAccess: effects.loadThemeAccess,
-        checkPartyExists: effects.checkPartyExists,
-        setLinkedParty,
-        markAsDirty,
-        addNotification,
+      await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
+      await effects.loadThemeAccess(true);
+      markPartyPublishMetadataSynced();
+      addNotification({
+        type: 'success',
+        message: 'Настройки вечеринки сохранены',
       });
     } catch (error) {
-      console.error('Failed to publish:', error);
+      console.error('Failed to save party metadata:', error);
       if (isThemeNotEntitledError(error)) {
         await handleThemeNotEntitled(error);
         return;
       }
-      await handlePartyCreationFailure(
-        store,
-        {
-          addNotification,
-          startReconnectTimer: effects.startReconnectTimer,
-        },
-        error instanceof Error ? error.message : 'Ошибка публикации',
-      );
+      addNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Не удалось сохранить настройки',
+      });
     } finally {
-      store.setIsCreating(false);
+      store.setIsSavingMetadata(false);
     }
-  }, [
-    isAuth,
-    meta.linkedParty,
-    addNotification,
-    openModal,
-    buildCurrentPlaylistForApi,
-    effects,
-    projectName,
-    setLinkedParty,
-    markAsDirty,
-    handleThemeNotEntitled,
-  ]);
+  }, [isAuth, meta.linkedParty, addNotification, openModal, effects, handleThemeNotEntitled]);
 
   const handleCopyUrl = useCallback(async () => {
     const url = meta.linkedParty?.url;
@@ -369,6 +314,7 @@ export function usePartyServerActions(
   return {
     handleCreateParty,
     handlePublish,
+    handleSaveMetadata,
     handleCopyUrl,
     handleCatalogVisibilityChange,
     handleLifecycleTransition,

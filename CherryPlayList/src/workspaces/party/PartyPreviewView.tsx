@@ -6,8 +6,11 @@ import { useProjectStore } from '@shared/stores/projectStore';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
+import { PartyPreviewDesignNav } from './components/PartyPreviewDesignNav';
 import { PartyPreview } from './PartyPreview';
+import { PartyPreviewDesignPanel } from './PartyPreviewDesignPanel';
 import { usePartyPreviewEffectiveState } from './partyPreviewEffectiveState';
+import { usePartySettingsUiStore } from './partySettingsUiStore';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
 import './PartyPreviewView.css';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
@@ -72,6 +75,9 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
     visibleThemeIds,
   });
 
+  const previewDesignOpen = usePartySettingsUiStore((state) => state.previewDesignOpen);
+  const togglePreviewDesignOpen = usePartySettingsUiStore((state) => state.togglePreviewDesignOpen);
+
   const availableThemeSet = useMemo(
     () => (visibleThemeIds ? new Set(visibleThemeIds) : null),
     [visibleThemeIds],
@@ -123,29 +129,37 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
           </span>
         )}
       </div>
-      <div className="party-preview-view-content">
-        <PartyPreview
-          playlist={previewPlaylistData}
-          themeId={effectiveThemeId}
-          customizationSettings={
-            effectiveCustomizationSettings as CustomizationSettings<PartyThemeId>
-          }
-          playbackState={effectivePlaybackState}
-          partyName={displayPartyName}
-          subtitle={partySubtitle.trim() || undefined}
-          previewLifecycleState={previewLifecycleState}
-          previewViewerStatusOverride={previewViewerStatusOverride}
-        />
+      <div className="party-preview-layout">
+        <PartyPreviewDesignNav open={previewDesignOpen} onToggle={togglePreviewDesignOpen} />
+        <div className="party-preview-layout__main">
+          {previewDesignOpen ? <PartyPreviewDesignPanel /> : null}
+          <div className="party-preview-layout__canvas">
+            <div className="party-preview-view-content">
+              <PartyPreview
+                playlist={previewPlaylistData}
+                themeId={effectiveThemeId}
+                customizationSettings={
+                  effectiveCustomizationSettings as CustomizationSettings<PartyThemeId>
+                }
+                playbackState={effectivePlaybackState}
+                partyName={displayPartyName}
+                subtitle={partySubtitle.trim() || undefined}
+                previewLifecycleState={previewLifecycleState}
+                previewViewerStatusOverride={previewViewerStatusOverride}
+              />
+            </div>
+            <PartyWorkspaceDemoPanel
+              mode="preview"
+              previewTrackIds={previewTrackIds}
+              playbackContext={playbackContext}
+              previewThemeId={effectiveThemeId}
+              previewDesignOptions={previewDesignOptions}
+              previewCustomizationSettings={effectiveCustomizationSettings}
+              showDemoReset={showDemoPanel}
+            />
+          </div>
+        </div>
       </div>
-      <PartyWorkspaceDemoPanel
-        mode="preview"
-        previewTrackIds={previewTrackIds}
-        playbackContext={playbackContext}
-        previewThemeId={effectiveThemeId}
-        previewDesignOptions={previewDesignOptions}
-        previewCustomizationSettings={effectiveCustomizationSettings}
-        showDemoReset={showDemoPanel}
-      />
     </div>
   );
 };

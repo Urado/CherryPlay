@@ -7,6 +7,11 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
 
+export type PartyPublishSyncParts = {
+  playlist: string;
+  metadata: string;
+};
+
 export interface ThemeEntitlementModalState {
   message: string;
   safeContactUrl: string | null;
@@ -35,6 +40,7 @@ export interface PartyWorkspaceState {
   isTogglingCatalogVisibility: boolean;
   isCreating: boolean;
   isPublishing: boolean;
+  isSavingMetadata: boolean;
   partyLifecycleState: PartyLifecycleState | null;
   isTransitioningLifecycle: boolean;
   pendingLifecycleTransition: PartyLifecycleState | null;
@@ -48,6 +54,7 @@ export interface PartyWorkspaceState {
   isThemeAccessLoading: boolean;
   themeAccessErrorMessage: string | null;
   themeEntitlementModal: ThemeEntitlementModalState | null;
+  lastSyncedPublishParts: PartyPublishSyncParts | null;
 
   setPartyName: (value: string) => void;
   setPartyTitle: (value: string) => void;
@@ -71,6 +78,7 @@ export interface PartyWorkspaceState {
   setIsTogglingCatalogVisibility: (value: boolean) => void;
   setIsCreating: (value: boolean) => void;
   setIsPublishing: (value: boolean) => void;
+  setIsSavingMetadata: (value: boolean) => void;
   setPartyLifecycleState: (value: PartyLifecycleState | null) => void;
   setIsTransitioningLifecycle: (value: boolean) => void;
   setPendingLifecycleTransition: (value: PartyLifecycleState | null) => void;
@@ -84,6 +92,7 @@ export interface PartyWorkspaceState {
   setIsThemeAccessLoading: (value: boolean) => void;
   setThemeAccessErrorMessage: (value: string | null) => void;
   setThemeEntitlementModal: (value: ThemeEntitlementModalState | null) => void;
+  setLastSyncedPublishParts: (value: PartyPublishSyncParts | null) => void;
   resetPartyWorkspaceState: () => void;
   resetPartyLinkState: () => void;
 }
@@ -115,6 +124,7 @@ const initialPartyWorkspaceState = {
   isTogglingCatalogVisibility: false,
   isCreating: false,
   isPublishing: false,
+  isSavingMetadata: false,
   partyLifecycleState: null as PartyLifecycleState | null,
   isTransitioningLifecycle: false,
   pendingLifecycleTransition: null as PartyLifecycleState | null,
@@ -128,6 +138,7 @@ const initialPartyWorkspaceState = {
   isThemeAccessLoading: false,
   themeAccessErrorMessage: null as string | null,
   themeEntitlementModal: null as ThemeEntitlementModalState | null,
+  lastSyncedPublishParts: null as PartyPublishSyncParts | null,
 };
 
 export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>((set) => ({
@@ -157,6 +168,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
     set({ isTogglingCatalogVisibility }),
   setIsCreating: (isCreating) => set({ isCreating }),
   setIsPublishing: (isPublishing) => set({ isPublishing }),
+  setIsSavingMetadata: (isSavingMetadata) => set({ isSavingMetadata }),
   setPartyLifecycleState: (partyLifecycleState) => set({ partyLifecycleState }),
   setIsTransitioningLifecycle: (isTransitioningLifecycle) => set({ isTransitioningLifecycle }),
   setPendingLifecycleTransition: (pendingLifecycleTransition) =>
@@ -171,6 +183,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setIsThemeAccessLoading: (isThemeAccessLoading) => set({ isThemeAccessLoading }),
   setThemeAccessErrorMessage: (themeAccessErrorMessage) => set({ themeAccessErrorMessage }),
   setThemeEntitlementModal: (themeEntitlementModal) => set({ themeEntitlementModal }),
+  setLastSyncedPublishParts: (lastSyncedPublishParts) => set({ lastSyncedPublishParts }),
   resetPartyWorkspaceState: () =>
     set((state) => ({
       ...initialPartyWorkspaceState,
@@ -190,6 +203,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
       isReconnecting: false,
       isCheckingParty: false,
       lastManualCheckFailed: false,
+      lastSyncedPublishParts: null,
     }),
 }));
 

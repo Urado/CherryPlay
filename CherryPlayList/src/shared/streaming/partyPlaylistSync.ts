@@ -1,17 +1,3 @@
-/**
- * Site Streamer → Party metadata REST boundary (live playlist sync only).
- *
- * During an active broadcast session, playlist changes trigger PUT via
- * `partyService.updatePartyPlaylist`. Started/stopped by
- * `StreamingOrchestrator.startSourceSubscriptions` / `stopSourceSubscriptions`.
- *
- * Party metadata owns initial publish, explicit Publish, create/update lifecycle,
- * and bind-party flows (`usePartyServerActions`, `LinkPartyModal`) — not this module.
- *
- * Subscribes to `useProjectStore` (CherryPlay Player) or `useAimpStore` (AIMP) so the
- * Streamer can mirror viewer-facing queue changes; orchestrator-owned, not Player UI effects.
- */
-
 import { partyService } from '../services/partyService';
 import { useAimpStore } from '../stores/aimpStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -19,12 +5,10 @@ import { getAimpPlaylistPublishKey } from '../utils/aimpStreamingAdapter';
 
 import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
-/**
- * Sends playlist payload to Party REST API (PUT) for live session sync.
- */
 export async function syncPartyPlaylist(
   partyId: string,
   payload: PlaylistForApiPayload,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): Promise<void> {
   console.log('[PartyPlaylistSync] → Sending PUT request to update playlist:', {
     partyId,
@@ -33,18 +17,16 @@ export async function syncPartyPlaylist(
   });
 
   await partyService.updatePartyPlaylist(partyId, payload);
+  onSynced?.(payload);
 
   console.log('[PartyPlaylistSync] ✓ Playlist updated successfully');
 }
 
-/**
- * Subscribes to project store item changes and syncs playlist to the server.
- * Skips the initial subscription fire (same as legacy signalRService behavior).
- */
 export function subscribePartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let isInitialCall = true;
 
@@ -61,22 +43,19 @@ export function subscribePartyPlaylistSync(
     });
 
     const payload = getPayload();
-    void syncPartyPlaylist(partyId, payload).catch((error) => {
+    void syncPartyPlaylist(partyId, payload, onSynced).catch((error) => {
       console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
     });
     onAfterSync();
   });
 }
 
-/**
- * Subscribes to AIMP playlist snapshot revisions and syncs playlist to the server.
- * Uses `getAimpPlaylistPublishKey` so PUT runs only when revision changes.
- */
 export function subscribeAimpPartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
   onSyncError?: (error: unknown) => void,
+  onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let lastPublishedKey: string | null = null;
 
@@ -93,7 +72,7 @@ export function subscribeAimpPartyPlaylistSync(
     }
 
     const payload = getPayload();
-    syncPartyPlaylist(partyId, payload)
+    syncPartyPlaylist(partyId, payload, onSynced)
       .then(() => {
         lastPublishedKey = publishKey;
         onAfterSync();

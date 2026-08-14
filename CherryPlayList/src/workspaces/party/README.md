@@ -1,29 +1,36 @@
 # Party module
 
-Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (stores + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md).
+Два зарегистрированных workspace для онлайн-вечеринки и общая party-подсистема (stores + runtime hook). Подробнее: [docs/modules/workspaces/party.md](../../../docs/modules/workspaces/party.md). UX пульта и настроек: [docs/party-header-control-ux.md](../../../docs/party-header-control-ux.md).
 
 ## Workspaces
 
-| | Party Editor | Party Preview |
-| --- | --- | --- |
-| **ID** | `party-editor-workspace` | `party-preview-workspace` |
-| **Тип** | `party-editor` | `party-preview` |
-| **View** | `PartyEditorView` | `PartyPreviewView` |
+|             | Party Editor             | Party Preview             |
+| ----------- | ------------------------ | ------------------------- |
+| **ID**      | `party-editor-workspace` | `party-preview-workspace` |
+| **Тип**     | `party-editor`           | `party-preview`           |
+| **View**    | `PartyEditorView` (stub) | `PartyPreviewView`        |
 | **Wrapper** | `PartyEditorViewWrapper` | `PartyPreviewViewWrapper` |
 
 Регистрация в `index.ts`. Тип `party` / `party-workspace` не используется.
 
-**Party Editor:** `PartyTrackDisplaySection`, lifecycle (**Сделать доступной** только для legacy `draft` / **В архив** / **Вернуть из архива**; create → сразу `ready`; `completed` не терминальное), каталог **«По ссылке»** / **«В каталоге»** при `ready` и `completed`, **«Скопировать URL»** при draft-linked/ready/completed, `PartyEditor`, auth, connectivity-баннеры, entitlement.
+**Настройки:** центральный модал `PartySettingsModal` (`openPartySettingsModal` из пульта ⚙ / Create / К настройкам). При `draft-unlinked` — только info + видимость + **Создать** / **Привязать**. После link — метаданные (карточка/extended), дизайн, `PartyTrackDisplaySection` (по фазе), Copy URL, каталог, **Обновить** / legacy Make Ready, приглушённая **В архив** (confirm / blockedByLive / quiet). **Нет** в модале: Publish, Unarchive, return-to-draft.
+
+**Design в превью:** `partySettingsUiStore` (`previewDesignOpen`) + `PartyPreviewDesignNav` (≡) / `PartyPreviewDesignPanel` в `PartyPreviewView` (панель свёрнута по умолчанию; без меню секций).
 
 **Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 
+Пресет **«Играть для гостей»**: player + party-preview (без party-editor).
+
 Оба wrapper → `PartyStreamingGate` (runtime provider only). **Нет** gate по `enableStreaming`; офлайн — `PartyConnectivityBanner` внутри view.
 
-## Party subsystem (три store)
+## Party subsystem
 
 ```
 party/
 ├── partyWorkspaceStore.ts           # production: форма, server/theme/lifecycle UI
+├── partySettingsUiStore.ts          # previewDesignOpen (design panel collapse)
+├── partyProgramEndedStore.ts        # ephemeral programEnded + reminder
+├── partyHeaderCommands.ts           # publishPartyToSite, archivePartyFromHeader, unarchivePartyFromHeader
 ├── partyPreviewScenarioStore.ts   # preview scenario: sync/detached overrides
 ├── partyPreviewScenarioActions.ts # продуктовые мутации сценария (не demo-gated)
 ├── partyPreviewEffectiveState.ts  # resolvePartyPreviewEffectiveState + usePartyPreviewEffectiveState()
@@ -33,16 +40,12 @@ party/
 ├── partyWorkspaceUtils.ts
 ├── partyWorkspaceReconnectRefs.ts
 ├── usePartyWorkspace.ts           # usePartyWorkspaceRuntime()
+├── usePartySettingsFormState.ts   # shared form state for modal + preview design
 ├── PartyEditorView.tsx / PartyPreviewView.tsx
+├── PartyPreviewDesignPanel.tsx
 ├── PartyWorkspaceDemoPanel.tsx    # thin UI consumer scenario actions (preview mode)
-├── *ViewWrapper.tsx
-├── index.ts
-└── components/
-    ├── PartyPreviewScenarioControls.tsx  # scenario UI (panel variant in preview)
-    └── PartyEditor, PartyTrackDisplaySection, …
 ```
 
-- **Production store** — форма и онлайн-UI; сбросы `resetPartyWorkspaceState` / `resetPartyLinkState` **не** трогают scenario и editor demo.
 - **Preview scenario store** — локальная симуляция превью; default `isSynchronized: true`; сброс — `resetPreviewScenario()` / кнопка **«Снова как на сайте»** в preview-панели (эквивалент `syncPreviewWithProduction()`).
 - **Editor demo store** — только overlay blocked-reason в demo mode редактора.
 - **`usePartyPreviewEffectiveState()`** — единая точка merge для рендера preview (см. модульную документацию).
@@ -55,7 +58,7 @@ party/
 
 ## Layout
 
-Пресеты `party` и `aimp-party` — три колонки: player или aimp (50%), editor (25%), preview (25%). См. `layoutPresetFactories.ts` (фабрики), `layoutPreset.ts` (сигнатуры).
+Пресет `party` (и `aimp-party`): **player + party-preview** (50/50). Зона `party-editor` — только в кастомных layout. См. `layoutPresetFactories.ts`, `layoutPreset.ts`.
 
 Persist layout **v3**: legacy-зона `party` / `party-workspace` автоматически раскладывается в editor + preview (`migrateLegacyPartyLayout`).
 

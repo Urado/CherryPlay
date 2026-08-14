@@ -62,6 +62,20 @@ function PartyWorkspaceRuntimeHost() {
   return null;
 }
 
+export function useSharedPartyWorkspaceRuntime(): PartyWorkspaceRuntimeValue | null {
+  return useSyncExternalStore(
+    subscribeRuntimeStore,
+    () => runtimeStore.runtime,
+    () => runtimeStore.runtime,
+  );
+}
+
+export function PartyWorkspaceRuntimeEphemeralHost() {
+  const isHost = useIsElectedHost();
+
+  return isHost ? <PartyWorkspaceRuntimeHost /> : null;
+}
+
 function useIsElectedHost(): boolean {
   const providerIdRef = useRef(Symbol('party-workspace-runtime-provider'));
   const [isHost, setIsHost] = useState(false);
@@ -71,7 +85,8 @@ function useIsElectedHost(): boolean {
 
     const updateElection = () => {
       const first = providerRegistry.values().next().value;
-      setIsHost(first === providerId);
+      const nextIsHost = first === providerId;
+      setIsHost((prev) => (prev === nextIsHost ? prev : nextIsHost));
     };
 
     providerRegistry.add(providerId);
@@ -88,11 +103,6 @@ function useIsElectedHost(): boolean {
   return isHost;
 }
 
-/**
- * Shares one `usePartyWorkspaceRuntime` instance when Party Editor and Preview
- * zones are mounted together. The first mounted provider runs the runtime hook;
- * siblings consume the published runtime via context.
- */
 export function PartyWorkspaceRuntimeProvider({ children }: { children: React.ReactNode }) {
   useSyncExternalStore(subscribeRuntimeStore, getRuntimeStoreEpoch, getRuntimeStoreEpoch);
   const isHost = useIsElectedHost();

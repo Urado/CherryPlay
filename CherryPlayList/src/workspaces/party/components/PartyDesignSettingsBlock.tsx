@@ -8,7 +8,11 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { buildThemeLockAriaLabel, buildThemeLockInfoMessage } from '../partyWorkspaceUtils';
+import {
+  buildThemeLockAriaLabel,
+  buildThemeLockInfoMessage,
+  resolveThemePickerHintMessage,
+} from '../partyWorkspaceUtils';
 
 import './PartyEditor.css';
 
@@ -26,6 +30,8 @@ interface PartyDesignSettingsBlockProps {
   readOnly?: boolean;
   lockedThemes?: PartyDesignLockedThemeInfo[];
   visibleThemeIds?: PartyThemeId[] | null;
+  hasThemeAccess?: boolean;
+  networkEnabled?: boolean;
   isThemeAccessLoading?: boolean;
   themeAccessErrorMessage?: string | null;
   allowLockedSelection?: boolean;
@@ -58,6 +64,8 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
   readOnly = false,
   lockedThemes = [],
   visibleThemeIds = null,
+  hasThemeAccess = true,
+  networkEnabled = true,
   isThemeAccessLoading = false,
   themeAccessErrorMessage = null,
   allowLockedSelection = false,
@@ -81,6 +89,14 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
     [lockedThemes],
   );
   const visibleThemeIdSet = visibleThemeIds ? new Set(visibleThemeIds) : null;
+  const themePickerUnavailable = !hasThemeAccess && !isThemeAccessLoading;
+  const themePickerDisabled = readOnly || isThemeAccessLoading || themePickerUnavailable;
+  const pickerHintMessage = resolveThemePickerHintMessage({
+    networkEnabled,
+    hasThemeAccess,
+    isThemeAccessLoading,
+    themeAccessErrorMessage,
+  });
 
   const stylesForDropdown = AVAILABLE_STYLES.filter((style) => {
     if (!visibleThemeIdSet) {
@@ -256,7 +272,7 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
             });
           }}
           aria-expanded={isDropdownOpen}
-          disabled={readOnly || isThemeAccessLoading}
+          disabled={themePickerDisabled}
         >
           <div className="party-editor-dropdown-button-content">
             <div className="party-editor-dropdown-selected">
@@ -288,9 +304,9 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
       {isThemeAccessLoading && (
         <div className="party-editor-theme-access-hint">Проверяем доступные темы...</div>
       )}
-      {themeAccessErrorMessage && (
+      {pickerHintMessage && (
         <div className="party-editor-theme-access-hint party-editor-theme-access-hint--warning">
-          {themeAccessErrorMessage}
+          {pickerHintMessage}
         </div>
       )}
       {renderCustomizationOptions()}

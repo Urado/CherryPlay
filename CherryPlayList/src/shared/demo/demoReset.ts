@@ -9,7 +9,6 @@ import { useProjectStore } from '../stores/projectStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
 import { applyDemoAuthSession } from './demoAuthFixture';
-import { DEMO_LINKED_PARTY } from './demoPartyFixture';
 
 export { DEMO_PERSIST_STORAGE_KEYS, resetDemoPersistStorage } from './demoResetStorage';
 
@@ -20,14 +19,11 @@ export function applyDemoStoreDefaults(): void {
 
   if (isDemoFixturesMode()) {
     applyDemoAuthSession();
-    const project = useProjectStore.getState();
-    project.setLinkedParty(DEMO_LINKED_PARTY);
-    project.setPartyThemeId(DEFAULT_PARTY_THEME_ID);
-  } else {
-    const project = useProjectStore.getState();
-    project.setLinkedParty(null);
-    project.setPartyThemeId(DEFAULT_PARTY_THEME_ID);
   }
+
+  const project = useProjectStore.getState();
+  project.setLinkedParty(null);
+  project.setPartyThemeId(DEFAULT_PARTY_THEME_ID);
 
   useSettingsStore.setState({
     exportPath: '',

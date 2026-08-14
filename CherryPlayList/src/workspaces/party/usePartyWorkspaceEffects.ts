@@ -16,6 +16,8 @@ import { partyService } from '@shared/services/partyService';
 import { useAuthStore, useProjectStore, useUIStore } from '@shared/stores';
 import { setAuthSessionToken } from '@shared/utils/authSession';
 
+import { markPartyPublishFullySynced } from './partyPublishSync';
+import { invalidatePartyThemeAccessLoads, loadPartyThemeAccess } from './partyThemeAccessLoad';
 import {
   clearPartyWorkspaceLinkedPartyCheck,
   partyWorkspaceLinkedPartyCheck,
@@ -30,7 +32,7 @@ import {
   resolveLoadedCustomizationSettings,
   REVOKED_THEME_PACKAGE_CODE,
   REVOKED_THEME_PACKAGE_NAME,
-  THEME_ACCESS_FALLBACK_ERROR,
+  THEME_ACCESS_POLL_INTERVAL_MS,
 } from './partyWorkspaceUtils';
 import { resetPartyWorkspaceForFreshProject } from './resetPartyWorkspaceForFreshProject';
 
@@ -122,35 +124,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
-  const loadThemeAccess = useCallback(
-    async (forceRefresh = false) => {
-      const store = getPartyStore();
-      if (!networkEnabled) {
-        store.setThemeAccess(null);
-        store.setThemeAccessErrorMessage(null);
-        return;
-      }
-      if (!isAuth) {
-        store.setThemeAccess(null);
-        store.setThemeAccessErrorMessage(null);
-        return;
-      }
-
-      store.setIsThemeAccessLoading(true);
-      try {
-        const access = await partyService.getThemeAccess(forceRefresh);
-        store.setThemeAccess(access);
-        store.setThemeAccessErrorMessage(null);
-      } catch (error) {
-        console.warn('Failed to load theme access:', error);
-        store.setThemeAccess(null);
-        store.setThemeAccessErrorMessage(THEME_ACCESS_FALLBACK_ERROR);
-      } finally {
-        store.setIsThemeAccessLoading(false);
-      }
-    },
-    [isAuth, networkEnabled],
-  );
+  const loadThemeAccess = useCallback(async (forceRefresh = false) => {
+    await loadPartyThemeAccess(forceRefresh);
+  }, []);
 
   const handleCustomizationSettingsChange = useCallback(
     (settings: Record<string, unknown>) => {
@@ -227,6 +203,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setEventEndDateTimeTouched(false);
         store.setPartyLifecycleState(party.partyLifecycleState);
         store.setIsListedInCatalog(party.isListedInCatalog ?? false);
+        markPartyPublishFullySynced();
       } catch (error) {
         console.error('Failed to load party metadata:', error);
       }
@@ -550,15 +527,17 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   }, [meta.linkedParty, isAuth, loadPartyMetadata, networkEnabled]);
 
   useEffect(() => {
-    if (!networkEnabled) {
+    if (!networkEnabled || !isAuth) {
+      invalidatePartyThemeAccessLoads();
       return;
     }
-    const guardKey = isAuth ? 'auth' : 'guest';
-    if (partyWorkspaceOneShotGuards.themeAccessGuardKey === guardKey) {
-      return;
-    }
-    partyWorkspaceOneShotGuards.themeAccessGuardKey = guardKey;
     void loadThemeAccess();
+    const intervalId = setInterval(() => {
+      void loadThemeAccess(true);
+    }, THEME_ACCESS_POLL_INTERVAL_MS);
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [isAuth, loadThemeAccess, networkEnabled]);
 
   useEffect(() => {

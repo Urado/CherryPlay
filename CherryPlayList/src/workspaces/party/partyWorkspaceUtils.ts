@@ -11,9 +11,53 @@ import {
 } from '@shared/services/partyService';
 
 export const RECONNECT_INTERVAL_MS = 60_000;
+export const THEME_ACCESS_POLL_INTERVAL_MS = 5 * 60_000;
 export { ERROR_PARTY_NOT_FOUND, ERROR_CONNECTION } from './partyWorkspaceConstants';
-export const THEME_ACCESS_FALLBACK_ERROR =
-  'Не удалось проверить доступ к темам. Доступны только базовая и текущая темы.';
+export const THEME_PICKER_UNAVAILABLE_MESSAGE = 'Выбор недоступен — нет связи с сервером';
+export const THEME_PICKER_ONLINE_OFF_MESSAGE = 'Включите «Онлайн» в настройках';
+
+export function resolveThemeAccessAfterFetchFailure(previousThemeAccess: ThemeAccessDto | null): {
+  themeAccess: ThemeAccessDto | null;
+  themeAccessErrorMessage: string | null;
+} {
+  if (previousThemeAccess) {
+    return {
+      themeAccess: previousThemeAccess,
+      themeAccessErrorMessage: null,
+    };
+  }
+  return {
+    themeAccess: null,
+    themeAccessErrorMessage: THEME_PICKER_UNAVAILABLE_MESSAGE,
+  };
+}
+
+export function resolveThemePickerHintMessage(input: {
+  networkEnabled: boolean;
+  hasThemeAccess: boolean;
+  isThemeAccessLoading: boolean;
+  themeAccessErrorMessage: string | null;
+}): string | null {
+  const themePickerUnavailable = !input.hasThemeAccess && !input.isThemeAccessLoading;
+  if (!input.networkEnabled) {
+    return themePickerUnavailable ? THEME_PICKER_ONLINE_OFF_MESSAGE : null;
+  }
+  return (
+    input.themeAccessErrorMessage ??
+    (themePickerUnavailable ? THEME_PICKER_UNAVAILABLE_MESSAGE : null)
+  );
+}
+
+export function resolveCreateBlockedByTheme(input: {
+  themeAccess: ThemeAccessDto | null;
+  isCurrentThemeLocked: boolean;
+}): { blocked: boolean; title: string | undefined } {
+  const blocked = Boolean(input.themeAccess) && input.isCurrentThemeLocked;
+  return {
+    blocked,
+    title: blocked ? 'Выберите тему, доступную в вашем тарифе' : undefined,
+  };
+}
 
 export function resolveDisplayPartyName(
   partyName: string | null | undefined,

@@ -31,6 +31,7 @@ export { useAimpStore } from './aimpStore';
 export { useSettingsStore } from './settingsStore';
 export { useUIStore } from './uiStore';
 export type { ModalType, Notification, WorkspaceInfo, TrackSettingsModalContext } from './uiStore';
+export { openPartySettingsModal } from './uiStore';
 export { usePlayerAudioStore } from './playerAudioStore';
 export type { PlayerAudioStatus } from './playerAudioStore';
 export { useAuthStore } from './authStore';

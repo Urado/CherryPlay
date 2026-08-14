@@ -13,7 +13,7 @@ const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   'collections-vertical':
     'horizontal(workspace:playlist,vertical(workspace:collection,workspace:collection),workspace:fileBrowser)',
   player: 'horizontal(workspace:player,workspace:fileBrowser)',
-  party: 'horizontal(workspace:player,workspace:party-editor,workspace:party-preview)',
+  party: 'horizontal(workspace:player,workspace:party-preview)',
 };
 
 export function getLayoutPresetFromLayout(layout: Layout): LayoutPreset | null {

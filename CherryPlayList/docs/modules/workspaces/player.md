@@ -36,7 +36,7 @@ Workspace для автоматического последовательног
 - **Ряд 1** (`player-controls__buttons`): transport (Play/Pause, **«Начать заново»**/Stop, Next) | имя трека | громкость — кнопки `size="sm"`.
 - **Ряд 2** (`player-controls__timeline-row`): позиция · timeline · длительность трека.
 
-В режиме **session** ползунок позиции **виден**, но **disabled** (`title` / подсказка: **«Во время трансляции перемотка отключена»**): позиция синхронизируется с эфиром для гостей, ручной seek в сессии недоступен. В **preparation** панель `PlayerControls` не показывается; предпрослушивание и demo timeline — без этого ограничения ([Demo Player](../systems/demo-player.md)).
+В режиме **session** ползунок позиции **включён**, когда есть текущий трек (та же доступность, что у transport Play/Pause/Stop): seek идёт через `playerAudioStore.seek` → `playbackEngine.seek`. Позиция по-прежнему может синхронизироваться с эфиром для гостей при включённом онлайн. В **preparation** панель `PlayerControls` не показывается; предпрослушивание — через [Demo Player](../systems/demo-player.md).
 
 Стили: `src/styles/components/player.css` (`.player-controls*`). Stop останавливает аудио текущего трека; сброс сессии — только кнопка **«Остановить проигрывание»** в `PlayerHeader` (см. [GLOSSARY](../../../../GLOSSARY.md)).
 
@@ -52,7 +52,7 @@ Workspace для автоматического последовательног
 - Автоматическое последовательное воспроизведение треков
 - Группировка треков с настройками на уровне группы
 - Настраиваемые паузы между треками (по умолчанию, на уровне группы/трека)
-- Управление: Play/Pause, **«Начать заново»** (Stop), Next (только в session), перемотка по таймлайну в session **отключена** (см. [Панель управления](#панель-управления)); **Space** (`player.togglePlay`) — play/pause основного плеера в session (вне session — no-op; demo не управляется), в том числе при фокусе на строке списка (`ListRow` / `data-list-row`; активация строки — **Enter**) — см. [Keyboard Shortcuts](../hooks-utils/keyboard-shortcuts.md)
+- Управление: Play/Pause, **«Начать заново»** (Stop), Next (только в session), перемотка по таймлайну в session **доступна** при загруженном треке (см. [Панель управления](#панель-управления)); **Space** (`player.togglePlay`) — play/pause основного плеера в session (вне session — no-op; demo не управляется), в том числе при фокусе на строке списка (`ListRow` / `data-list-row`; активация строки — **Enter**) — см. [Keyboard Shortcuts](../hooks-utils/keyboard-shortcuts.md)
 - Выбор аудиоустройства для вывода звука
 - Отслеживание проигранных треков в режиме сессии
 - Отсечки по времени (интервал из настроек) и отдельные линии конца очереди / плана
@@ -67,7 +67,7 @@ Workspace для автоматического последовательног
 
 ## Сессии и интеграция
 
-> **Термины в UI и в коде:** в интерфейсе — **«Начать проигрывание»** / **«Остановить проигрывание»** (шапка зоны **Проигрывание** / `PlayerHeader`); в controls сессии Stop — **«Начать заново»**; в коде и persist — `session` / `sessionState.mode`. **Next** виден только в режиме `session`. В **AppHeader** при session + CherryPlay — [`HeaderPlaybackPill`](../../../src/app/components/HeaderPlaybackPill.tsx) (трек/transport; **не** старт сессии). Синхронизация состояния с сервером для гостей — настройка **«Онлайн»** (`enableStreaming`). См. [GLOSSARY](../../../../GLOSSARY.md) (термин **session**, таблица UI), [party.md — Шапка](./party.md#шапка-appheader-статус-и-pill).
+> **Термины в UI и в коде:** в интерфейсе — **«Начать проигрывание»** / **«Остановить проигрывание»** (шапка зоны **Проигрывание** / `PlayerHeader`); в controls сессии Stop — **«Начать заново»**; в коде и persist — `session` / `sessionState.mode`. **Next** виден только в режиме `session`. В **AppHeader** при session + CherryPlay — [`HeaderPlaybackPill`](../../../src/app/components/HeaderPlaybackPill.tsx) (трек/transport; **не** старт сессии). Синхронизация состояния с сервером для гостей — настройка **«Онлайн»** (`enableStreaming`). См. [GLOSSARY](../../../../GLOSSARY.md) (термин **session**, таблица UI), [party.md — Шапка](./party.md#шапка-appheader-статус-и-пульт).
 
 **Session** — воспроизведение плейлиста в зоне **Проигрывание**. Запускается кнопкой **«Начать проигрывание»** и **не зависит от авторизации или наличия вечеринки**. При включённом **Онлайн** и подключённой вечеринке состояние session может синхронизироваться с сервером (только состояние — трек, позиция, плейлист; **звук локально** у организатора). Session работает и без вечеринки.
 
@@ -206,7 +206,7 @@ Player может опционально транслировать состоя
 [Streaming System](../systems/streaming.md) (Site Streamer):
 
 - при `enableStreaming`, привязанной вечеринке (`meta.linkedParty`) и `streamingSource === 'cherryPlayPlayer'`:
-  - SignalR lifecycle — **`CherryPlayStreamingController`** + **`useStreamingOrchestrator`**; UI связи в шапке — **`HeaderPlaybackPill`** (только session mode) / **`StreamingConnectionIndicator`** через **`useCherryPlayStreamingConnection`**; сводка lifecycle вечеринки — **`HeaderPartyStatus`** при **Онлайн** (см. [party.md — Шапка](./party.md#шапка-appheader-статус-и-pill));
+  - SignalR lifecycle — **`CherryPlayStreamingController`** + **`useStreamingOrchestrator`**; UI связи в шапке — **`HeaderPlaybackPill`** (только session mode) / **`StreamingConnectionIndicator`** через **`useCherryPlayStreamingConnection`**; сводка lifecycle вечеринки — **`HeaderPartyStatus`** при **Онлайн** (см. [party.md — Шапка](./party.md#шапка-appheader-статус-и-пульт));
   - connect, `StartSession`/`EndSession`, position ticks и full-state publish — **`streamingOrchestrator`** + **`CherryPlayPlayerBroadcastSource`**;
   - live sync плейлиста на сервер — **`partyPlaylistSync`** (REST PUT), не effects в Player UI.
 - `PlayerViewContainer` **не** вызывает `signalRService.connect` / `joinPartyAsOrganizer` напрямую и **не** рендерит индикатор соединения.

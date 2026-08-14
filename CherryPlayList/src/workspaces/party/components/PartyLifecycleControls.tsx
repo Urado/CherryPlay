@@ -19,6 +19,7 @@ export interface PartyLifecycleControlsProps {
   layout?: 'default' | 'header';
   sessionMode?: ProjectSessionMode;
   slot?: PartyLifecycleControlSlot;
+  hideUnarchive?: boolean;
 }
 
 function isLoadingForTarget(
@@ -38,6 +39,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   layout = 'default',
   sessionMode,
   slot = 'all',
+  hideUnarchive = false,
 }) => {
   const isDisabled = disabled || isTransitioning;
   const isHeader = layout === 'header';
@@ -46,7 +48,9 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   const showSecondaryReady =
     partyLifecycleState === 'ready' && (slot === 'all' || slot === 'secondary');
   const showSecondaryUnarchive =
-    partyLifecycleState === 'completed' && (slot === 'all' || slot === 'secondary');
+    !hideUnarchive &&
+    partyLifecycleState === 'completed' &&
+    (slot === 'all' || slot === 'secondary');
 
   if (!showAccentPublish && !showSecondaryReady && !showSecondaryUnarchive) {
     return null;

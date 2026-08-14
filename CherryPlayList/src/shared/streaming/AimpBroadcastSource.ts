@@ -1,15 +1,16 @@
 import type { PlaybackStateDto } from '../contracts/playbackState';
 import { useAimpStore } from '../stores/aimpStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import {
   canAdvanceAimpPlayback,
   canStartAimpLiveStream,
-  convertAimpPlaylistForApi,
   createAimpPlaybackStateDto,
   getAimpEffectiveProgressMs,
   getAimpPlaybackPublishKey,
 } from '../utils/aimpStreamingAdapter';
 
+import { buildPlaylistForApiPayload } from './buildPlaylistForApiPayload';
 import type { PlaybackBroadcastSource, PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
 export interface AimpFrozenStateSnapshot {
@@ -61,8 +62,13 @@ export class AimpBroadcastSource implements PlaybackBroadcastSource {
 
   getPlaylistForApi(): PlaylistForApiPayload {
     const bridgeState = useAimpStore.getState().bridgeState;
-    const partyTrackDisplay = useProjectStore.getState().meta.partyTrackDisplay;
-    return convertAimpPlaylistForApi(bridgeState.playlistSnapshot, partyTrackDisplay);
+    const projectState = useProjectStore.getState();
+    return buildPlaylistForApiPayload({
+      streamingSource: useSettingsStore.getState().streamingSource,
+      aimpPlaylistSnapshot: bridgeState.playlistSnapshot,
+      items: projectState.items,
+      partyTrackDisplay: projectState.meta.partyTrackDisplay,
+    });
   }
 
   isLiveSessionActive(): boolean {
@@ -80,9 +86,6 @@ export class AimpBroadcastSource implements PlaybackBroadcastSource {
     );
   }
 
-  /**
-   * Snapshot for viewers when AIMP live stream started but live publish gates are not met yet.
-   */
   getFrozenStateSnapshot(enableStreaming: boolean): AimpFrozenStateSnapshot | null {
     const { bridgeState, publishingBridgeReady } = useAimpStore.getState();
 
