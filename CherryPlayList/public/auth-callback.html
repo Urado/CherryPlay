@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CherryPlayList — вход</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #1e1e1e;
+        color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        max-width: 420px;
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 16px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #00ff88;
+      }
+      a {
+        color: #00ff88;
+      }
+      p {
+        margin: 0 0 12px;
+        line-height: 1.45;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>CherryPlayList</h1>
+      <p id="status" role="status" aria-live="polite">Возвращаемся в CherryPlayList…</p>
+      <p id="fallback" hidden>
+        Если приложение не открылось, <a id="open-link" href="#">нажмите здесь</a>.
+      </p>
+    </main>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get('code');
+        var status = document.getElementById('status');
+        var fallback = document.getElementById('fallback');
+        var link = document.getElementById('open-link');
+        if (!code) {
+          status.textContent = 'Отсутствует код авторизации в URL.';
+          return;
+        }
+        var deepLink = 'cherryplaylist://auth?code=' + encodeURIComponent(code);
+        if (link) {
+          link.href = deepLink;
+        }
+        if (fallback) {
+          fallback.hidden = false;
+        }
+        window.setTimeout(function () {
+          window.location.href = deepLink;
+        }, 300);
+      })();
+    </script>
+  </body>
+</html>

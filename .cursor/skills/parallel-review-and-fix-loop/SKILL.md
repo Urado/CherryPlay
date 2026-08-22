@@ -1,6 +1,6 @@
 ---
 name: parallel-review-and-fix-loop
-description: Runs three parallel subagent reviews (architecture/SOLID, design clarity/readability/aesthetics, and documentation integrity), then executes a mandatory worker-to-reviewer fix loop when the user asks to fix findings.
+description: Runs four parallel subagent reviews (architecture/SOLID, design clarity/readability/aesthetics, documentation integrity, and test coverage), then executes a mandatory worker-to-reviewer fix loop when the user asks to fix findings.
 ---
 
 # Parallel Review And Fix Loop
@@ -9,12 +9,12 @@ description: Runs three parallel subagent reviews (architecture/SOLID, design cl
 
 Use this skill when the user asks to:
 
-- review some subsystem/feature with two different lenses in parallel, and
+- review some subsystem/feature with multiple lenses in parallel, and
 - then fix everything found with a strict implementation + re-review loop.
 
 This skill standardizes a 2-phase flow:
 
-1. **Parallel review phase** (three subagents at once)
+1. **Parallel review phase** (four subagents at once)
 2. **Fix phase** (`worker-*` -> `code-reviewer` loop until clean)
 
 ---
@@ -26,6 +26,7 @@ Apply when the user intent looks like:
 - "поревьюй X"
 - "оцени SOLID/KISS/DRY"
 - "сделай дизайн ревью / оцени читаемость и красоту"
+- "покрытие тестами / проверь тесты"
 - "поправь всё / fix all findings"
 
 Do not apply for:
@@ -35,9 +36,9 @@ Do not apply for:
 
 ---
 
-## Phase 1: Run Three Reviews In Parallel
+## Phase 1: Run Four Reviews In Parallel
 
-You MUST launch **exactly three** subagents in one parallel call:
+You MUST launch **exactly four** subagents in one parallel call:
 
 1. **Architecture/Code quality review**
    - `subagent_type`: `code-reviewer`
@@ -50,6 +51,10 @@ You MUST launch **exactly three** subagents in one parallel call:
    - `subagent_type`: `worker-documentation`
    - `readonly`: `true`
    - Focus: doc/code consistency, cross-link validity, behavior descriptions, terminology consistency, missing updates in `docs/**` and `CherryPlayList/docs/**`
+4. **Test coverage / test quality review**
+   - `subagent_type`: `explore`
+   - `readonly`: `true` (read-only audit; do not edit files)
+   - Focus: functional path coverage for the reviewed feature across Backend / Web / Desktop (and Components if touched); quality of existing tests; gaps vs acceptance criteria / ticket; flaky or weak assertions
 
 ### Required output format for each reviewer
 
@@ -60,14 +65,22 @@ You MUST launch **exactly three** subagents in one parallel call:
   - concrete fix recommendation
 - explicit "no critical issues" statement if none
 
-### Synthesis after all three complete
+### Extra required output for the test reviewer (4)
+
+- Checklist of functional paths: each marked **Covered** (test file) or **Missing**
+- Layer breakdown: Server / Web / Components / Desktop (List/Electron) as applicable
+- Note runners/patterns (NUnit, Vitest, Jest) and any constraint: do not edit pre-existing tests without user confirmation — prefer NEW test files for gaps
+- Explicit statement if feature-path coverage is complete: `Feature coverage checklist: 100% of mapped paths covered` — or list remaining Missing
+
+### Synthesis after all four complete
 
 Return a concise merged summary:
 
 - top blocking issues first,
 - then medium/low,
 - then strengths (optional, short),
-- keep links to all three subagent runs.
+- keep links to all four subagent runs,
+- call out test coverage gaps separately if any Missing paths remain.
 
 ---
 
@@ -105,8 +118,10 @@ This rule applies to:
    - docs-only -> `worker-documentation`
    - infra/CI -> `worker-ci-cd`
    - native/C++ -> `worker-cpp`
+   - desktop/Electron tests or IPC -> `worker-electron`
+   - test coverage gaps -> matching stack worker(s) (`worker-dotnet` / `worker-frontend` / `worker-electron`); **NEW test files only** unless user explicitly allows editing pre-existing tests
    - mixed scope -> launch multiple workers **in parallel** (e.g. `worker-frontend` + `worker-documentation`), then one `code-reviewer`
-2. Send worker a combined blocking list from all three reviews (or merged suggestions list for follow-up pass).
+2. Send worker a combined blocking list from all four reviews (or merged suggestions list for follow-up pass). Include Missing test paths from the test reviewer when fixing coverage.
 3. After worker finishes, run `code-reviewer` (`subagent_type: code-reviewer`).
 4. If `Critical` or `Warnings` > 0:
    - MUST re-run the same worker with blocking items
@@ -151,8 +166,8 @@ Ask `worker-frontend` (`readonly: true`) to provide:
 Include:
 
 - original user request
-- merged blockers from all three reviews (or suggestions list for follow-up)
-- constraints (scope, no unrelated edits)
+- merged blockers from all four reviews (or suggestions list for follow-up)
+- constraints (scope, no unrelated edits; NEW tests only unless user confirmed editing pre-existing tests)
 - required checks (lint/build/tests where relevant)
 - explicit instruction: **implement all fixes in the worker session; parent agent must not patch files**
 
@@ -176,6 +191,18 @@ Ask `worker-documentation` (`readonly: true`) to provide:
 - missing/weak sections in relevant docs modules
 - concrete edits to fix each issue (paths + brief change intent)
 
+### F) Test coverage review prompt
+
+Ask `explore` (`readonly: true`) to provide:
+
+- `High / Medium / Low` findings for test coverage and test quality
+- exhaustive checklist of functional paths for the reviewed feature/ticket: each **Covered** (file) or **Missing**
+- layer split: Server / Web / Components / Desktop as applicable
+- weak tests (assertions too loose, missing negative paths, flaky timers/async) with concrete fix recommendations
+- runners/patterns note (NUnit / Vitest / Jest)
+- reminder: prefer NEW test files; do not recommend editing pre-existing tests unless user already allowed it
+- closing line: either `Feature coverage checklist: 100% of mapped paths covered` or a Remaining Missing list
+
 ---
 
 ## Required Guardrails
@@ -198,4 +225,5 @@ When done, provide:
 - key fixes implemented (by workers),
 - verification commands/results,
 - final blocker status (`Critical: 0, Warnings: 0`),
+- test coverage status from reviewer 4 (100% mapped paths or remaining gaps),
 - optional follow-ups from `Suggestions` (next pass = workers again, not parent).

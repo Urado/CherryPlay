@@ -1,5 +1,6 @@
 import type {
   AuthService as IAuthService,
+  DesktopAuthCodeResponse,
   ForgotPasswordResponse,
   OrganizerDto,
 } from '@cherryplay/components';
@@ -7,6 +8,11 @@ import { AuthHttpError } from '@cherryplay/components';
 
 import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import { apiFetch } from '../utils/apiFetch';
+import {
+  DESKTOP_CLIENT_HEADER,
+  DESKTOP_CLIENT_VALUE,
+  isDesktopClientMode,
+} from '../utils/desktopClientMode';
 
 async function readAuthErrorMessage(response: Response): Promise<string> {
   try {
@@ -71,11 +77,13 @@ class AuthService implements IAuthService {
     }
   }
 
-  async login(email: string, password: string): Promise<void> {
+  async login(email: string, password: string): Promise<string | void> {
+    const desktopMode = isDesktopClientMode();
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.LOGIN), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(desktopMode ? { [DESKTOP_CLIENT_HEADER]: DESKTOP_CLIENT_VALUE } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -88,13 +96,20 @@ class AuthService implements IAuthService {
     if (!response.ok) {
       await throwAuthHttpError(response);
     }
+
+    if (desktopMode) {
+      const data = (await response.json()) as DesktopAuthCodeResponse;
+      return data.code;
+    }
   }
 
-  async register(email: string, password: string, name: string): Promise<void> {
+  async register(email: string, password: string, name: string): Promise<string | void> {
+    const desktopMode = isDesktopClientMode();
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.REGISTER), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(desktopMode ? { [DESKTOP_CLIENT_HEADER]: DESKTOP_CLIENT_VALUE } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -107,6 +122,11 @@ class AuthService implements IAuthService {
 
     if (!response.ok) {
       await throwAuthHttpError(response);
+    }
+
+    if (desktopMode) {
+      const data = (await response.json()) as DesktopAuthCodeResponse;
+      return data.code;
     }
   }
 
@@ -185,9 +205,36 @@ class AuthService implements IAuthService {
     }
   }
 
+  async issueDesktopAuthCode(): Promise<string> {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.DESKTOP_CODE), {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      await throwAuthHttpError(response);
+    }
+
+    const data = (await response.json()) as DesktopAuthCodeResponse;
+    if (typeof data.code !== 'string' || data.code.trim() === '') {
+      throw new AuthHttpError(response.status, 'Invalid desktop auth code response');
+    }
+    return data.code;
+  }
+
   async startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
-    const authUrl = getApiUrl(API_ENDPOINTS.AUTH.OAUTH_START(provider).replace('/start', '/web'));
-    window.location.href = authUrl;
+    const basePath = API_ENDPOINTS.AUTH.OAUTH_START(provider).replace('/start', '/web');
+    const params = new URLSearchParams();
+    if (isDesktopClientMode()) {
+      params.set('client', 'desktop');
+      const returnTo = new URLSearchParams(window.location.search).get('return_to');
+      if (returnTo) {
+        params.set('return_to', returnTo);
+      }
+    }
+    const query = params.size > 0 ? `?${params.toString()}` : '';
+    window.location.href = getApiUrl(`${basePath}${query}`);
   }
 
   async updateProfile(data: {

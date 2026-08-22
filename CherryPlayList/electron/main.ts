@@ -65,7 +65,11 @@ function createWindow(): void {
 const PROTOCOL = 'cherryplaylist';
 
 // Регистрируем protocol только если приложение не упаковано или в dev режиме
-if (!app.isDefaultProtocolClient(PROTOCOL)) {
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else if (!app.isDefaultProtocolClient(PROTOCOL)) {
   app.setAsDefaultProtocolClient(PROTOCOL);
 }
 

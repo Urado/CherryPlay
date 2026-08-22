@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     CHANGE_PASSWORD: '/auth/change-password',
+    DESKTOP_CODE: '/auth/desktop/code',
     OAUTH_START: (provider: string) => `/auth/${provider}/start`,
     OAUTH_CALLBACK: (provider: string) => `/auth/${provider}/callback`,
   },

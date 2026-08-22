@@ -48,10 +48,13 @@ const VALID_INVOKE_CHANNELS = [
   'system:setMinimumWindowSize',
   'config:getConfigPath',
   'config:getServerUrl',
+  'config:getWebBaseUrl',
   'config:setServerUrl',
   'config:getConfig',
   'auth:openExternal',
   'auth:registerCallback',
+  'auth:cancelCallback',
+  'auth:deliverCallbackUrl',
   'settings:saveBundle',
   'settings:loadBundle',
 ] as const;

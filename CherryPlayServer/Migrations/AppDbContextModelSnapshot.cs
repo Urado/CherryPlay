@@ -83,6 +83,48 @@ namespace CherryPlayServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.DesktopAuthCodeEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("OrganizerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organizer_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_desktop_auth_codes");
+
+                    b.HasIndex("OrganizerId")
+                        .HasDatabaseName("ix_desktop_auth_codes_organizer_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_desktop_auth_codes_token_hash");
+
+                    b.ToTable("desktop_auth_codes", (string)null);
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>
                 {
                     b.Property<Guid>("Id")
@@ -735,6 +777,18 @@ namespace CherryPlayServer.Migrations
                         .HasForeignKey("TargetOrganizerId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_admin_audit_log_organizers_target_organizer_id");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.DesktopAuthCodeEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", "Organizer")
+                        .WithMany()
+                        .HasForeignKey("OrganizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_desktop_auth_codes_organizers_organizer_id");
+
+                    b.Navigation("Organizer");
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>

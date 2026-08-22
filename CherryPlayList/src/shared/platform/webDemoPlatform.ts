@@ -163,6 +163,9 @@ export class WebDemoPlatform implements PlatformAPI {
       case 'config:getServerUrl':
         return Promise.resolve({ success: true, data: getDemoServerUrl() });
 
+      case 'config:getWebBaseUrl':
+        return Promise.resolve({ success: true, data: 'http://localhost:3000' });
+
       case 'config:setServerUrl': {
         const serverUrl =
           typeof payload === 'object' &&
@@ -199,6 +202,15 @@ export class WebDemoPlatform implements PlatformAPI {
       }
 
       case 'auth:registerCallback':
+        return Promise.resolve({
+          success: false,
+          error: DEMO_UNAVAILABLE_MESSAGE,
+        });
+
+      case 'auth:cancelCallback':
+        return Promise.resolve({ success: true });
+
+      case 'auth:deliverCallbackUrl':
         return Promise.resolve({
           success: false,
           error: DEMO_UNAVAILABLE_MESSAGE,

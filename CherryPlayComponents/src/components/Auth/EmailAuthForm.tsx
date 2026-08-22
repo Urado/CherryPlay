@@ -17,6 +17,7 @@ export interface EmailAuthFormProps {
   error?: string | null;
   onModeChange?: (mode: 'login' | 'register') => void;
   onSuccess?: () => void;
+  onDesktopAuthSuccess?: (code: string) => void;
   onError?: (error: string) => void;
   onForgotPassword?: () => void;
   showModeToggle?: boolean;
@@ -29,6 +30,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   error: externalError,
   onModeChange,
   onSuccess,
+  onDesktopAuthSuccess,
   onError,
   onForgotPassword,
   showModeToggle = true,
@@ -72,7 +74,17 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     setLoading(true);
 
     try {
-      await authService.login(email, password);
+      const result = await authService.login(email, password);
+      if (onDesktopAuthSuccess) {
+        if (typeof result === 'string' && result.length > 0) {
+          onDesktopAuthSuccess(result);
+          return;
+        }
+        const err = 'Не удалось получить код для входа в приложение';
+        setError(err);
+        onError?.(err);
+        return;
+      }
       onSuccess?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ошибка при входе';
@@ -118,7 +130,17 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     setLoading(true);
 
     try {
-      await authService.register(email, password, name.trim());
+      const result = await authService.register(email, password, name.trim());
+      if (onDesktopAuthSuccess) {
+        if (typeof result === 'string' && result.length > 0) {
+          onDesktopAuthSuccess(result);
+          return;
+        }
+        const err = 'Не удалось получить код для входа в приложение';
+        setError(err);
+        onError?.(err);
+        return;
+      }
       onSuccess?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ошибка при регистрации';

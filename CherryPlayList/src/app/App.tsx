@@ -23,6 +23,7 @@ import {
 } from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
 
+import { initializeAuthCallbackBootstrap } from './authCallbackBootstrap';
 import { AccountModal } from './components/AccountModal';
 import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
@@ -58,6 +59,8 @@ const App: React.FC = () => {
     initializeServerConfig().catch((error: unknown) => {
       console.warn('Failed to initialize server config:', error);
     });
+
+    initializeAuthCallbackBootstrap();
 
     initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
       isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,

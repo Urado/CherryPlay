@@ -66,6 +66,7 @@ if (useInMemoryStorage)
     builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
     builder.Services.AddSingleton<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
     builder.Services.AddSingleton<IPasswordResetApplicator, InMemoryPasswordResetApplicator>();
+    builder.Services.AddSingleton<IDesktopAuthCodeRepository, InMemoryDesktopAuthCodeRepository>();
     builder.Services.AddSingleton<IThemeRepository, InMemoryThemeRepository>();
     builder.Services.AddSingleton<IThemePackageRepository, InMemoryThemePackageRepository>();
     builder.Services.AddSingleton<IOrganizerEntitlementRepository, InMemoryOrganizerEntitlementRepository>();
@@ -88,6 +89,7 @@ else
     builder.Services.AddScoped<IEmailAccountRepository, EfEmailAccountRepository>();
     builder.Services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
     builder.Services.AddScoped<IPasswordResetApplicator, EfPasswordResetApplicator>();
+    builder.Services.AddScoped<IDesktopAuthCodeRepository, EfDesktopAuthCodeRepository>();
     builder.Services.AddScoped<IThemeRepository, EfThemeRepository>();
     builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
@@ -153,6 +155,7 @@ builder.Services.AddTransient<IOAuthProviderClient>(sp => sp.GetRequiredService<
 
 builder.Services.AddSingleton<IOAuthService, OAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDesktopAuthCodeService, DesktopAuthCodeService>();
 
 builder.Services.AddAuthorization(options =>
 {

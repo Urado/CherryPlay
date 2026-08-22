@@ -54,7 +54,7 @@ public class AuthService : IAuthService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<AuthResult> RegisterAsync(string email, string password, string name)
+    public async Task<AuthResult> RegisterAsync(string email, string password, string name, bool issueToken = true)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(name))
         {
@@ -130,7 +130,11 @@ public class AuthService : IAuthService
             };
             await _emailAccountRepository.AddAsync(emailAccount);
 
-            var token = await GenerateTokenAsync(organizer);
+            string? token = null;
+            if (issueToken)
+            {
+                token = await GenerateTokenAsync(organizer);
+            }
 
             return new AuthResult(
                 Success: true,
@@ -161,7 +165,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<AuthResult> LoginAsync(string email, string password)
+    public async Task<AuthResult> LoginAsync(string email, string password, bool issueToken = true)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
@@ -207,7 +211,11 @@ public class AuthService : IAuthService
             emailAccount.LastUsedAt = DateTime.UtcNow;
             await _emailAccountRepository.UpdateAsync(emailAccount);
 
-            var token = await GenerateTokenAsync(organizer);
+            string? token = null;
+            if (issueToken)
+            {
+                token = await GenerateTokenAsync(organizer);
+            }
 
             return new AuthResult(
                 Success: true,

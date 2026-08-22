@@ -22,6 +22,76 @@
   box-sizing: border-box;
 }
 
+.login-page-checking {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.login-page-checking-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: login-page-spin 0.8s linear infinite;
+}
+
+@keyframes login-page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-page-session-continue-other {
+  margin-top: 12px;
+}
+
+.login-page-error {
+  max-width: 500px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--state-error-bg);
+  color: var(--state-error-text);
+  font-size: 14px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.login-page-session-continue-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.login-page-session-continue-description {
+  margin: 0 0 24px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.login-page-return-fallback {
+  max-width: 500px;
+  width: 100%;
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+  color: var(--text-secondary, #aaa);
+}
+
+.login-page-return-fallback a {
+  color: var(--accent-primary);
+}
+
 .login-page-form {
   max-width: 500px;
   width: 100%;

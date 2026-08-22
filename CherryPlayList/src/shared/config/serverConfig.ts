@@ -1,6 +1,7 @@
 import { getPlatform, isPlatformInitialized } from '../platform';
 
 let cachedServerUrl: string | null = null;
+let cachedWebBaseUrl: string | null = null;
 let warnedEmptyElectronServerUrl = false;
 
 function isConfiguredServerUrl(value: string | null | undefined): value is string {
@@ -49,6 +50,41 @@ async function invokeConfig<T>(channel: string, payload?: object): Promise<T | n
   }
 
   return null;
+}
+
+export async function getWebBaseUrl(): Promise<string> {
+  if (cachedWebBaseUrl !== null) {
+    return cachedWebBaseUrl;
+  }
+
+  if (isPlatformInitialized()) {
+    try {
+      const data = await invokeConfig<string>('config:getWebBaseUrl');
+      if (isConfiguredServerUrl(data)) {
+        cachedWebBaseUrl = data;
+        return data;
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to get web base URL from config file.');
+    }
+  }
+
+  throw new Error(
+    'Web base URL is not configured. Set webBaseUrl in serverConfig.development.json / serverConfig.production.json.',
+  );
+}
+
+export function getWebBaseUrlSync(): string {
+  if (cachedWebBaseUrl !== null) {
+    return cachedWebBaseUrl;
+  }
+
+  throw new Error(
+    'Web base URL is not configured. Load webBaseUrl from server config and restart the application.',
+  );
 }
 
 export async function getServerUrl(): Promise<string> {
@@ -118,6 +154,7 @@ export async function setServerUrl(serverUrl: string): Promise<boolean> {
 
 export function clearServerUrlCache(): void {
   cachedServerUrl = null;
+  cachedWebBaseUrl = null;
 }
 
 export async function getConfigFilePath(): Promise<string | null> {
@@ -138,15 +175,23 @@ export async function initializeServerConfig(): Promise<void> {
   }
 
   try {
-    const data = await invokeConfig<string>('config:getServerUrl');
-    if (isConfiguredServerUrl(data)) {
-      cacheElectronServerUrl(data);
+    const serverUrlData = await invokeConfig<string>('config:getServerUrl');
+    if (isConfiguredServerUrl(serverUrlData)) {
+      cacheElectronServerUrl(serverUrlData);
       const { clearApiConfigCache } = await import('./apiConfig');
       clearApiConfigCache();
     } else {
       cachedServerUrl = null;
     }
+
+    const webBaseUrlData = await invokeConfig<string>('config:getWebBaseUrl');
+    if (isConfiguredServerUrl(webBaseUrlData)) {
+      cachedWebBaseUrl = webBaseUrlData;
+    } else {
+      cachedWebBaseUrl = null;
+    }
   } catch {
     cachedServerUrl = null;
+    cachedWebBaseUrl = null;
   }
 }

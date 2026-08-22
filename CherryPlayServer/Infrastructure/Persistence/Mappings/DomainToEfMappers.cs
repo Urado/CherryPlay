@@ -230,6 +230,19 @@ public static class DomainToEfMappers
         };
     }
 
+    public static DesktopAuthCodeEf ToEf(this DesktopAuthCode domain)
+    {
+        return new DesktopAuthCodeEf
+        {
+            Id = domain.Id,
+            OrganizerId = domain.OrganizerId,
+            TokenHash = domain.TokenHash,
+            ExpiresAt = EnsureUtc(domain.ExpiresAt),
+            UsedAt = EnsureUtc(domain.UsedAt),
+            CreatedAt = EnsureUtc(domain.CreatedAt),
+        };
+    }
+
     private static string? SerializeStringList(List<string>? list)
     {
         if (list == null || list.Count == 0) return null;

@@ -5,6 +5,19 @@ import { app, ipcMain } from 'electron';
 
 interface ServerConfig {
   serverUrl: string;
+  webBaseUrl?: string;
+}
+
+const DEFAULT_WEB_BASE_URL = {
+  development: 'http://localhost:3000',
+  production: 'https://cherrypashkaparty.ru',
+} as const;
+
+function resolveWebBaseUrl(config: ServerConfig | null): string {
+  if (config?.webBaseUrl && typeof config.webBaseUrl === 'string' && config.webBaseUrl.trim()) {
+    return config.webBaseUrl.trim();
+  }
+  return app.isPackaged ? DEFAULT_WEB_BASE_URL.production : DEFAULT_WEB_BASE_URL.development;
 }
 
 /** Config file name: dev vs packaged app. */
@@ -90,6 +103,21 @@ export function registerConfigHandlers(): void {
       return {
         success: true,
         data: config.serverUrl,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  });
+
+  ipcMain.handle('config:getWebBaseUrl', async () => {
+    try {
+      const config = readConfig();
+      return {
+        success: true,
+        data: resolveWebBaseUrl(config),
       };
     } catch (error) {
       return {

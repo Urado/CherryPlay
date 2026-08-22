@@ -1,22 +1,17 @@
 namespace CherryPlayServer.Core.Interfaces;
 
-/// <summary>
-/// Service for storing and validating OAuth state parameters to prevent CSRF attacks.
-/// </summary>
+public record OAuthStateConsumeResult(string? Client, string? ReturnTo = null);
+
 public interface IOAuthStateService
 {
-    /// <summary>
-    /// Generates and stores a state token for OAuth flow.
-    /// </summary>
-    /// <param name="provider">OAuth provider name</param>
-    /// <returns>State token to be sent to OAuth provider</returns>
-    string GenerateAndStoreState(string provider);
+    string GenerateAndStoreState(string provider, string? client = null, string? returnTo = null);
 
-    /// <summary>
-    /// Validates and consumes a state token.
-    /// </summary>
-    /// <param name="state">State token received from OAuth provider</param>
-    /// <param name="expectedProvider">Expected provider name</param>
-    /// <returns>True if state is valid, false otherwise</returns>
     bool ValidateAndConsumeState(string? state, string expectedProvider);
+
+    OAuthStateConsumeResult? ValidateAndConsumeStateWithClient(string? state, string expectedProvider)
+    {
+        return ValidateAndConsumeState(state, expectedProvider)
+            ? new OAuthStateConsumeResult(null)
+            : null;
+    }
 }

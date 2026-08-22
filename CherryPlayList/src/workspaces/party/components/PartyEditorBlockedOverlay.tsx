@@ -1,7 +1,9 @@
-import { AuthForm } from '@cherryplay/components';
+import { AuthForm, AUTH_FORM_TITLE_ID } from '@cherryplay/components';
 import React from 'react';
 
+import { BROWSER_LOGIN_PANEL_TITLE_ID, BrowserLoginPanel } from '@app/components/BrowserLoginPanel';
 import { OnlineUnavailablePanel, Spinner } from '@shared/components';
+import { getAppMode, isDemoLiveMode } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 
 import type { PartyEditorBlockedReason } from '../partyEditorPhase';
@@ -25,22 +27,39 @@ export const PartyEditorBlockedOverlay: React.FC<PartyEditorBlockedOverlayProps>
   onManualReconnect,
   onResetAndCreateNew,
 }) => {
+  const isLiveDemo = isDemoLiveMode() && getAppMode() === 'demo';
+  const authLabelledBy =
+    reason === 'auth'
+      ? isLiveDemo
+        ? AUTH_FORM_TITLE_ID
+        : BROWSER_LOGIN_PANEL_TITLE_ID
+      : undefined;
+
   return (
     <div
       className="party-editor-shell-blocked-overlay"
       role={reason === 'checking' ? 'presentation' : 'dialog'}
       aria-modal={reason === 'checking' ? undefined : true}
       aria-label={reason === 'checking' ? 'Идёт загрузка состояния вечеринки' : undefined}
+      aria-labelledby={authLabelledBy}
     >
       <div className="party-editor-shell-blocked-overlay-content">
-        {reason === 'auth' && (
-          <AuthForm
-            title="Требуется авторизация"
-            description="Для работы с вечеринками необходимо войти в аккаунт"
-            compact={false}
-            authService={authService}
-          />
-        )}
+        {reason === 'auth' &&
+          (isLiveDemo ? (
+            <AuthForm
+              title="Требуется авторизация"
+              titleId={AUTH_FORM_TITLE_ID}
+              description="Для работы с вечеринками необходимо войти в аккаунт"
+              compact={false}
+              authService={authService}
+              oauthEnabled={false}
+            />
+          ) : (
+            <BrowserLoginPanel
+              title="Требуется авторизация"
+              description="Для работы с вечеринками необходимо войти в аккаунт"
+            />
+          ))}
 
         {reason === 'outdated' && (
           <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />

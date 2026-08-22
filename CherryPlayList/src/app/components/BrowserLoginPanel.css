@@ -1,0 +1,78 @@
+.browser-login-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  gap: var(--spacing-md);
+}
+
+.browser-login-panel-title {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-heading);
+  color: var(--text-primary);
+}
+
+.browser-login-panel-description {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.browser-login-panel-error {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: rgba(211, 47, 47, 0.1);
+  color: var(--state-error);
+  border-radius: 4px;
+  border: 1px solid rgba(211, 47, 47, 0.3);
+  font-size: var(--font-size-body);
+}
+
+.browser-login-panel-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  text-align: center;
+}
+
+.browser-login-panel-waiting-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-body);
+  line-height: 1.4;
+}
+
+.browser-login-panel-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.browser-login-panel-button {
+  width: auto;
+  min-width: 200px;
+}
+
+.party-editor-shell-blocked-overlay-content .browser-login-panel,
+.account-view-login-panel .browser-login-panel {
+  flex: 0 1 auto;
+  min-height: auto;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--ui-shadow);
+  box-sizing: border-box;
+}

@@ -115,8 +115,8 @@
 
 | Метод | Путь             | Описание                                                                                                          | Тело                                                | Ответ                                 |
 | ----- | ---------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------- |
-| POST  | `/auth/login`    | Вход по email и паролю. Устанавливает httpOnly cookie (Web) или возвращает JWT в теле (Desktop).                  | `{ email: string, password: string }`               | `{ accessToken: string }` или 401     |
-| POST  | `/auth/register` | Регистрация организатора по email, паролю и имени. Устанавливает httpOnly cookie (Web) или возвращает JWT в теле. | `{ email: string, password: string, name: string }` | `{ accessToken: string }` или 400/409 |
+| POST  | `/auth/login`    | Вход по email и паролю. Web: httpOnly cookie + `{ accessToken }`. Desktop browser SSO (`client=desktop` или заголовок `X-CherryPlay-Client: desktop`): `{ code }` без cookie — см. §3.2.0b. | `{ email: string, password: string }`               | `{ accessToken: string }`, `{ code: string }` или 401     |
+| POST  | `/auth/register` | Регистрация организатора по email, паролю и имени. Web: cookie + `{ accessToken }`. Desktop browser SSO: `{ code }` без cookie — см. §3.2.0b. | `{ email: string, password: string, name: string }` | `{ accessToken: string }`, `{ code: string }` или 400/409 |
 
 #### 3.2.0a Сброс и смена пароля
 
@@ -164,9 +164,76 @@ Self-service восстановление пароля (forgot → email → Web
 
 **Побочные эффекты (reset и change):** обновление BCrypt-хеша в `EmailAccounts`; удаление всех строк `OrganizerSessions` для организатора; погашение неиспользованных `PasswordResetTokens` для аккаунта (при change — все unused; при reset — использованный токен + ранее unused при выдаче нового). TTL токена сброса — ~1 час; в БД хранится только хеш токена (см. [DATABASE.md](CherryPlayServer/DATABASE.md)).
 
-#### 3.2.1 OAuth Login (Desktop)
+#### 3.2.0b Desktop browser SSO
 
-Для CherryPlayList (desktop): универсальный поток логина через любой провайдер.
+Единый поток входа и регистрации для **CherryPlayList (desktop)** через **CherryPlayWeb** в системном браузере. JWT **никогда** не передаётся в URL; в deep link попадает только одноразовый код, который Desktop обменивает на JWT. Inline email/password и прямой OAuth из Desktop UI **не используются** (см. §3.2.1 — legacy).
+
+**Режим desktop-клиента** определяется сервером, если выполнено одно из условий:
+
+- query `client=desktop` на `POST /auth/login` или `POST /auth/register`;
+- заголовок `X-CherryPlay-Client: desktop` на тех же запросах (используется CherryPlayWeb при вызове API из страницы `/login?client=desktop`);
+- OAuth: `client=desktop` в state (CherryPlayWeb передаёт `?client=desktop` и опционально `?return_to=` при старте `/auth/{provider}/web`).
+
+| Метод | Путь                      | Auth | Описание                                                                 | Тело                                      | Ответ                          |
+| ----- | ------------------------- | ---- | ------------------------------------------------------------------------ | ----------------------------------------- | ------------------------------ |
+| POST  | `/auth/desktop/code`      | cookie организатора (`[AuthorizeOrganizer]`) | Выдача одноразового desktop-кода для **уже активной** Web-сессии (session-continue). Тело не требуется. Семантика кода та же, что при desktop login/register (TTL 3 мин, одноразовый, hash-at-rest). | нет / `{}` | `{ code: string }` или **401** |
+| POST  | `/auth/desktop/exchange`  | нет  | Обмен одноразового desktop-кода на JWT. Создаёт сессию как при обычном login. | `{ code: string }`     | `{ accessToken: string }` или 401 |
+
+**Выдача кода (issuance):**
+
+| Событие | Условие | Ответ / redirect |
+| ------- | ------- | ---------------- |
+| Успешный `POST /auth/login` | desktop-клиент | **200** `{ code: string }` — без httpOnly cookie |
+| Успешный `POST /auth/register` | desktop-клиент | **200** `{ code: string }` — без cookie |
+| `GET /auth/{provider}/callback` после OAuth | `client=desktop` в state | **302** на `{PUBLIC_WEB_BASE_URL}/login?client=desktop&code={rawCode}` (+ опциональный allowlist `return_to` из state) — без cookie и без JWT в URL. Если `PUBLIC_WEB_BASE_URL` не задан — **200** HTML «return to app» со ссылкой/auto-redirect только на `code` (`BuildAuthReturnUrl` / `DesktopAuthDeepLinkBase`). Не 302 напрямую на `cherryplaylist://` (часто блокируется браузером). |
+| `POST /auth/desktop/code` | валидная cookie-сессия организатора | **200** `{ code: string }` — cookie не меняется; **401** если сессия отсутствует / невалидна |
+
+**`return_to` (куда вернуть одноразовый код):** query на `/login?client=desktop&return_to=…` (Desktop передаёт при открытии браузера) и на `GET /auth/{provider}/web?client=desktop&return_to=…` (сохраняется в OAuth state). После выдачи кода Web/сервер редиректит через `buildAuthReturnUrl` / `BuildAuthReturnUrl` → `{returnTo}?code={rawCode}` (`code` — URL-encoded; `&code=` если в базе уже есть query).
+
+**Allowlist** (сервер `IsAllowedAuthReturnTo`, клиент `isAllowedAuthReturnTo` / `resolveDesktopAuthReturnTo`):
+
+- `cherryplaylist://auth` (и URL с этим префиксом);
+- `http://localhost|127.0.0.1:5173|5174/auth/callback`.
+
+Невалидный или отсутствующий `return_to` → fallback на константу `DesktopAuthDeepLinkBase` (`cherryplaylist://auth`).
+
+CherryPlayWeb после email login/register / session-continue в desktop-режиме делает redirect через `buildAuthReturnUrl(resolveDesktopAuthReturnTo(return_to), code)`. OAuth callback: сервер при наличии `PUBLIC_WEB_BASE_URL` делает **302** на `/login?client=desktop&code=…` (Web показывает return UI и открывает app return URL); без `PUBLIC_WEB_BASE_URL` — HTML return-page на API. При уже существующей Web-сессии на `/login?client=desktop` код выдаётся только после клика «Войти» через `POST /auth/desktop/code` (см. поток ниже) — **без** auto-redirect и **без** повторного ввода пароля.
+
+**Prod / packaged return URL:** `cherryplaylist://auth?code={rawCode}` (база — `DesktopAuthDeepLinkBase`).
+
+**Dev return URL:** Desktop открывает login **с** `return_to={origin}/auth/callback` (порты Vite **5173** / **5174**). Маршрут CherryPlayList `/auth/callback?code={rawCode}` (только `import.meta.env.DEV`) пересылает код в Electron через IPC — тот же обмен `POST /auth/desktop/exchange`.
+
+**Семантика кода:** TTL **3 минуты** (`AuthConstants.DesktopAuthCodeTtl`); **одноразовый** (`UsedAt` при exchange); в БД хранится только **SHA-256 хеш** сырого кода (таблица `desktop_auth_codes`, см. [DATABASE.md](CherryPlayServer/DATABASE.md)).
+
+**`POST /auth/desktop/exchange` — статусы**
+
+| Условие | Статус | Тело |
+| ------- | ------ | ---- |
+| Код валиден, не истёк, не использован | **200** | `{ accessToken: string }` |
+| Пустой `code` | **400** | plain: `Code is required` |
+| Код отсутствует / невалиден / истёк / уже использован | **401** | plain RU: «Код авторизации недействителен или устарел» |
+| Rate limit | **429** | Общая auth-политика |
+
+**Поток (Desktop, happy path):**
+
+1. Пользователь нажимает **«Войти через браузер»** в CherryPlayList → системный браузер открывает `{webBaseUrl}/login?client=desktop&return_to=…` (конфиг Desktop: `webBaseUrl` в `serverConfig.*.json`; dev: `http://localhost:3000`, prod: `https://cherrypashkaparty.ru`; должен совпадать с `PUBLIC_WEB_BASE_URL` на сервере). В **DEV** Desktop всегда передаёт `return_to={origin}/auth/callback`; в prod/packaged — `return_to=cherryplaylist://auth`.
+2. На Web (`/login?client=desktop`) CherryPlayWeb проверяет cookie-сессию (`checkAuth`). Ветки:
+   - **Сессия есть (session-continue):** панель подтверждения с кнопкой **«Войти»** — **без** формы email/пароль/OAuth и **без** auto-redirect / auto-issue на загрузке. По клику — `POST /auth/desktop/code` (`credentials: 'include'`) → **200** `{ code }` → `buildAuthReturnUrl` по allowlisted `return_to`. При **401** / ошибке выдачи — сообщение об ошибке и fallback на `AuthForm`.
+   - **Сессии нет:** обычная `AuthForm` (email+пароль или OAuth VK / Mail.ru); флаги `client=desktop` и `return_to` сохраняются при навигации login ↔ register и при старте OAuth (`/auth/{provider}/web`).
+3. После успеха (session-continue, login/register или OAuth callback) одноразовый `code` возвращается через `buildAuthReturnUrl` / `BuildAuthReturnUrl` (prod deep link или DEV `/auth/callback`). JWT в URL **не** передаётся.
+4. Desktop вызывает `POST /auth/desktop/exchange` с `{ code }`, сохраняет JWT, загружает профиль организатора.
+
+Не-desktop `/login` (без `client=desktop`) не меняется: `AuthForm` → кабинет.
+
+Forgot/change password в Desktop **без изменений** (forgot → email → Web; change — в приложении с JWT).
+
+**CP-038 (consent):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. Регистрация через `/login?client=desktop` использует ту же Web-валидацию, что и обычный Web register, до появления CP-038.
+
+#### 3.2.1 OAuth Login (Desktop) — legacy
+
+**Не используется новым UI CherryPlayList** (с CP-065 — browser SSO, §3.2.0b). Эндпоинты остаются для обратной совместимости.
+
+Универсальный поток логина через провайдера **напрямую из Desktop** (без Web).
 
 | Метод | Путь                     | Описание                                                                                                                                                                                                                                         | Тело                                 | Ответ                             |
 | ----- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ | --------------------------------- |
@@ -188,8 +255,8 @@ Self-service восстановление пароля (forgot → email → Web
 
 | Метод | Путь                        | Описание                                                                                                                                                                                                                                                       | Тело           | Ответ                                |
 | ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------------------------------ |
-| GET   | `/auth/{provider}/web`      | Начало логина через провайдер для веба. `{provider}` = `vk` или `mailru`. Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). После успешной авторизации провайдер делает redirect с `code`. | —              | Redirect на провайдер                |
-| GET   | `/auth/{provider}/callback` | Callback от провайдера с `code`. Сервер обменивает `code` на JWT и устанавливает httpOnly cookie, затем делает redirect в кабинет организатора.                                                                                                                | `code` (query) | Redirect в кабинет + httpOnly cookie |
+| GET   | `/auth/{provider}/web`      | Начало логина через провайдер для веба. `{provider}` = `vk` или `mailru`. Опционально `?client=desktop` и `?return_to=` — режим browser SSO для CherryPlayList (`return_to` в state, allowlist §3.2.0b). Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). | —              | Redirect на провайдер                |
+| GET   | `/auth/{provider}/callback` | Callback от провайдера с `code`. Web: JWT + httpOnly cookie → redirect `/cabinet`. Desktop browser SSO (`client=desktop` в state): одноразовый desktop-код → **302** на `{PUBLIC_WEB_BASE_URL}/login?client=desktop&code=…` (или HTML return-page fallback; §3.2.0b).                                                                                                                | `code` (query) | Redirect в кабинет + cookie **или** Web/HTML return-page с desktop-кодом |
 | POST  | `/auth/logout`              | Выход организатора. Удаляет httpOnly cookie (Web) или инвалидирует токен (Desktop). Требует авторизации.                                                                                                                                                       | —              | 204                                  |
 
 **Поток (Web):**

@@ -168,6 +168,27 @@ _Связь с учётной записью: email+пароль (таблица
 
 ---
 
+## DesktopAuthCodes (одноразовые коды browser SSO для Desktop)
+
+Коды для возврата из CherryPlayWeb в CherryPlayList после успешного login/register/OAuth в режиме `client=desktop`, а также при session-continue через **`POST /auth/desktop/code`** (та же таблица). В БД хранится только хеш (SHA-256), не plaintext. Сырой код передаётся в return URL (`cherryplaylist://auth?code=…` или DEV `/auth/callback?code=…`) и обменивается на JWT через `POST /auth/desktop/exchange`.
+
+| Колонка       | Тип      | Ограничения                                      | Описание                                      |
+| ------------- | -------- | ------------------------------------------------ | --------------------------------------------- |
+| `Id`          | GUID     | PK                                               | Идентификатор записи.                         |
+| `OrganizerId` | GUID     | FK → Organizers.Id, NOT NULL, ON DELETE CASCADE  | Организатор, для которого выдан код.          |
+| `TokenHash`   | string   | UNIQUE, NOT NULL, длина 64 (hex SHA-256)         | Хеш сырого кода из deep link.                 |
+| `ExpiresAt`   | datetime | NOT NULL                                         | Срок действия (TTL **3 минуты**).             |
+| `UsedAt`      | datetime | NULL                                             | Когда код погашен при exchange; NULL = не использован. |
+| `CreatedAt`   | datetime | NOT NULL                                         | Время создания.                               |
+
+Индексы: `TokenHash` (UNIQUE), `OrganizerId`.
+
+При exchange: поиск по хешу, проверка `ExpiresAt` и `UsedAt`, атомарная пометка `UsedAt`, выдача JWT (новая сессия). Повторный exchange или просроченный код → **401**. Несколько активных кодов на одного организатора допустимы (каждый login/register/OAuth выдаёт новую строку).
+
+Поток и контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.0b, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md).
+
+---
+
 ## Party (вечеринка)
 
 Метаданные вечеринки и привязка к организатору. shortCode неизменяемый после создания.

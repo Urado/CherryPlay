@@ -41,7 +41,7 @@
 | **RUSENDER_SEND_KEY_ID**                   | Числовой `key_id` transactional send key в пути RuSender                     | Backend                                                                                   | Пусто                                                           | GitHub Secrets / `.env.production`                               | Секрет (идентификатор ключа)       |
 | **EMAIL_FROM_ADDRESS**                     | From-адрес на верифицированном домене (напр. `noreply@cherrypashkaparty.ru`) | Backend                                                                                   | Пусто / пример в `.env.example`                                 | Дефолт в `docker-compose.prod.yml`; Secrets не нужны             | Не секрет                          |
 | **EMAIL_FROM_NAME**                        | Отображаемое имя отправителя                                                 | Backend                                                                                   | `CherryPlay`                                                    | Дефолт `CherryPlay` в compose.prod                               | Не секрет                          |
-| **PUBLIC_WEB_BASE_URL**                    | Базовый URL CherryPlayWeb для ссылок сброса пароля                           | Backend (`…/reset-password?token=…`)                                                      | `http://localhost:3000`                                         | Дефолт `https://cherrypashkaparty.ru` в compose.prod             | Не секрет                          |
+| **PUBLIC_WEB_BASE_URL**                    | Базовый URL CherryPlayWeb для ссылок сброса пароля; также база Web URL для Desktop browser SSO | Backend (`…/reset-password?token=…`); Desktop `webBaseUrl` должен совпадать | `http://localhost:3000`                                         | Дефолт `https://cherrypashkaparty.ru` в compose.prod             | Не секрет                          |
 
 ---
 
@@ -63,7 +63,7 @@
 | **ADMIN_CONTACT_URL**                                      | `Environment["ADMIN_CONTACT_URL"]` или `Admin:ContactUrl` (используется в `GET /api/config` и `GET /api/organizer/me/theme-access`) |
 | **RUSENDER_API_TOKEN**, **RUSENDER_SEND_KEY_ID**           | `Configuration["RUSENDER_API_TOKEN"]`, `Configuration["RUSENDER_SEND_KEY_ID"]` → `EmailOptions`                                     |
 | **EMAIL_FROM_ADDRESS**, **EMAIL_FROM_NAME**                | `Configuration["EMAIL_FROM_ADDRESS"]`, `Configuration["EMAIL_FROM_NAME"]` (default имени — `CherryPlay`)                            |
-| **PUBLIC_WEB_BASE_URL**                                    | `Configuration["PUBLIC_WEB_BASE_URL"]` — база для `{PUBLIC_WEB_BASE_URL}/reset-password?token=…`                                    |
+| **PUBLIC_WEB_BASE_URL**                                    | `Configuration["PUBLIC_WEB_BASE_URL"]` — база для `{PUBLIC_WEB_BASE_URL}/reset-password?token=…`; также база Web URL для Desktop browser SSO |
 
 ---
 

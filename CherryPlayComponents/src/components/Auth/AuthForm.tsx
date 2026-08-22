@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import type { AuthService } from '../../types/auth';
+import { ErrorMessage } from '../UI';
 
 import { EmailAuthForm } from './EmailAuthForm';
 import { OAuthButtons } from './OAuthButtons';
@@ -8,14 +9,18 @@ import './AuthForm.css';
 
 export type AuthMode = 'email' | 'oauth';
 
+export const AUTH_FORM_TITLE_ID = 'auth-form-title';
+
 export interface AuthFormProps {
   title?: string;
+  titleId?: string;
   description?: string;
   compact?: boolean;
   authService: AuthService;
   initialMode?: AuthMode;
   oauthEnabled?: boolean;
   onLoginSuccess?: () => void;
+  onDesktopAuthSuccess?: (code: string) => void;
   onError?: (error: string) => void;
   onForgotPassword?: () => void;
   className?: string;
@@ -23,12 +28,14 @@ export interface AuthFormProps {
 
 export const AuthForm: React.FC<AuthFormProps> = ({
   title = 'Требуется авторизация',
+  titleId = AUTH_FORM_TITLE_ID,
   description,
   compact = false,
   authService,
   initialMode = 'email',
   oauthEnabled = true,
   onLoginSuccess,
+  onDesktopAuthSuccess,
   onError,
   onForgotPassword,
   className = '',
@@ -49,15 +56,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({
     onLoginSuccess?.();
   };
 
+  const handleDesktopAuthSuccess = (code: string) => {
+    setError(null);
+    onDesktopAuthSuccess?.(code);
+  };
+
   return (
     <div
       className={`auth-form-container ${compact ? 'auth-form-container--compact' : ''} ${className}`.trim()}
     >
       <div className="auth-form-card">
-        {title && <h2 className="auth-form-title">{title}</h2>}
+        {title && (
+          <h2 id={titleId} className="auth-form-title">
+            {title}
+          </h2>
+        )}
         {description && <p className="auth-form-description">{description}</p>}
-
-        {error && <div className="auth-form-error">{error}</div>}
 
         <div className="auth-form-tabs">
           <button
@@ -90,6 +104,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             authService={authService}
             error={error}
             onSuccess={handleSuccess}
+            onDesktopAuthSuccess={onDesktopAuthSuccess ? handleDesktopAuthSuccess : undefined}
             onError={handleError}
             onForgotPassword={onForgotPassword}
             showModeToggle={true}
@@ -97,7 +112,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({
         )}
 
         {oauthEnabled && displayMode === 'oauth' && (
-          <OAuthButtons authService={authService} onError={handleError} />
+          <>
+            {error ? <ErrorMessage message={error} /> : null}
+            <OAuthButtons authService={authService} onError={handleError} />
+          </>
         )}
       </div>
     </div>

@@ -54,6 +54,12 @@ export default defineConfig({
       '/auth': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        bypass(req) {
+          const url = req.url ?? '';
+          if (url === '/auth/callback' || url.startsWith('/auth/callback?')) {
+            return '/auth-callback.html';
+          }
+        },
       },
       '/partyHub': {
         target: 'http://localhost:5000',

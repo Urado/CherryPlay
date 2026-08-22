@@ -86,7 +86,18 @@ npm run dev
 ### Настройка URL сервера в CherryPlayList
 
 - **Через приложение**: Настройки → указать адрес сервера (например, `http://localhost:5000`)
-- **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например: `{ "serverUrl": "http://localhost:5000" }`
+- **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например:
+
+```json
+{
+  "serverUrl": "http://localhost:5000",
+  "webBaseUrl": "http://localhost:3000"
+}
+```
+
+- **`serverUrl`** — базовый URL CherryPlayServer (API, SignalR).
+- **`webBaseUrl`** — базовый URL CherryPlayWeb для browser SSO (Desktop открывает `{webBaseUrl}/login?client=desktop&return_to=…`). Dev: `http://localhost:3000`; prod: `https://cherrypashkaparty.ru`. Должен совпадать с **`PUBLIC_WEB_BASE_URL`** на сервере ([ENV.md](ENV.md)). Подробнее: [accounts-and-auth.md](docs/integration/accounts-and-auth.md) — «Логин в CherryPlayList».
+- В **DEV** Desktop передаёт `return_to={origin}/auth/callback` (Vite **5173**/**5174**). После успеха Web редиректит на `/auth/callback?code=…`; страница пересылает одноразовый код в Electron через IPC, затем `POST /auth/desktop/exchange`. См. [accounts-and-auth.md](docs/integration/accounts-and-auth.md) и [CONTRACTS.md](CONTRACTS.md) §3.2.0b.
 - **Через переменную окружения**: при сборке/запуске задать `VITE_API_URL=http://localhost:5000`
 
 ### Веб-демо в браузере

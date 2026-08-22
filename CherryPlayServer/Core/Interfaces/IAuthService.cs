@@ -6,8 +6,8 @@ namespace CherryPlayServer.Core.Interfaces;
 
 public interface IAuthService
 {
-    Task<AuthResult> RegisterAsync(string email, string password, string name);
-    Task<AuthResult> LoginAsync(string email, string password);
+    Task<AuthResult> RegisterAsync(string email, string password, string name, bool issueToken = true);
+    Task<AuthResult> LoginAsync(string email, string password, bool issueToken = true);
     Task<Organizer> ProcessOAuthCallbackAsync(OAuthProvider provider, string code, string redirectUri, string? deviceId = null);
     Task<string> GenerateTokenAsync(Organizer organizer);
     Task<ForgotPasswordResult> ForgotPasswordAsync(string email);

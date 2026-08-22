@@ -21,6 +21,55 @@ export interface AuthExchangeResponse {
   accessToken: string;
 }
 
+export interface DesktopAuthCodeResponse {
+  code: string;
+}
+
+export interface DesktopAuthExchangeRequest {
+  code: string;
+}
+
+export const DESKTOP_AUTH_DEEP_LINK_BASE = 'cherryplaylist://auth';
+
+export function buildAuthReturnUrl(returnTo: string, code: string): string {
+  const base = returnTo.trim();
+  const joiner = base.includes('?') ? '&' : '?';
+  return `${base}${joiner}code=${encodeURIComponent(code)}`;
+}
+
+export function buildDesktopAuthDeepLink(code: string): string {
+  return buildAuthReturnUrl(DESKTOP_AUTH_DEEP_LINK_BASE, code);
+}
+
+export function isAllowedAuthReturnTo(value: string | null | undefined): boolean {
+  if (!value?.trim()) {
+    return false;
+  }
+  const trimmed = value.trim();
+  if (trimmed.startsWith(`${DESKTOP_AUTH_DEEP_LINK_BASE}`)) {
+    return true;
+  }
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:') {
+      return false;
+    }
+    const hostOk = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    const pathOk = url.pathname === '/auth/callback';
+    const port = url.port ? Number(url.port) : 80;
+    return hostOk && pathOk && [5173, 5174].includes(port);
+  } catch {
+    return false;
+  }
+}
+
+export function resolveDesktopAuthReturnTo(value: string | null | undefined): string {
+  if (isAllowedAuthReturnTo(value)) {
+    return value!.trim();
+  }
+  return DESKTOP_AUTH_DEEP_LINK_BASE;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -105,17 +154,14 @@ export interface AuthService {
   exchangeCode?(code: string, provider: string, deviceId?: string): Promise<string>;
 }
 
-/** Host must throw AuthHttpError (status) on HTTP failure when status is known. */
 export type ForgotPasswordAuthService = {
   forgotPassword: NonNullable<AuthService['forgotPassword']>;
 };
 
-/** Host must throw AuthHttpError (status) on HTTP failure when status is known. */
 export type ResetPasswordAuthService = {
   resetPassword: NonNullable<AuthService['resetPassword']>;
 };
 
-/** Host must throw AuthHttpError (status) on HTTP failure when status is known. */
 export type ChangePasswordAuthService = {
   changePassword: NonNullable<AuthService['changePassword']>;
 };
