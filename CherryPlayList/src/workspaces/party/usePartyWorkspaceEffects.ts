@@ -10,11 +10,8 @@ import {
 } from '@cherryplay/components';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { getPlatform, getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
-import { authService } from '@shared/services/authService';
 import { partyService } from '@shared/services/partyService';
-import { useAuthStore, useProjectStore, useUIStore } from '@shared/stores';
-import { setAuthSessionToken } from '@shared/utils/authSession';
+import { useProjectStore } from '@shared/stores';
 
 import { markPartyPublishFullySynced } from './partyPublishSync';
 import { invalidatePartyThemeAccessLoads, loadPartyThemeAccess } from './partyThemeAccessLoad';
@@ -50,67 +47,6 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
 
   const themeId = usePartyWorkspaceStore((state) => state.themeId);
   const themeAccess = usePartyWorkspaceStore((state) => state.themeAccess);
-
-  const { addNotification } = useUIStore((state) => ({
-    addNotification: state.addNotification,
-  }));
-  const authStore = useAuthStore();
-
-  useEffect(() => {
-    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth || isAuth) {
-      return;
-    }
-    if (partyWorkspaceOneShotGuards.oauthCallbackRegistered) {
-      return;
-    }
-    partyWorkspaceOneShotGuards.oauthCallbackRegistered = true;
-
-    let isMounted = true;
-
-    const registerCallback = async () => {
-      try {
-        const result = (await getPlatform().invoke('auth:registerCallback')) as
-          | { success: true; data: { code: string; provider: string } }
-          | { success: false; error: string };
-
-        if (isMounted && result.success && result.data) {
-          const { code, provider } = result.data;
-          try {
-            const deviceId = `desktop-${Date.now()}`;
-            const token = await authService.exchangeCode(code, provider, deviceId);
-            setAuthSessionToken(token);
-
-            const organizerInfo = await authService.getCurrentOrganizer();
-            authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
-          } catch (error) {
-            addNotification({
-              type: 'error',
-              message: error instanceof Error ? error.message : 'Ошибка при входе',
-              duration: 5000,
-            });
-          }
-        }
-      } catch (error) {
-        if (isMounted && error instanceof Error && !error.message.includes('timeout')) {
-          console.error('Error handling OAuth callback:', error);
-        }
-      }
-    };
-
-    void registerCallback();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isAuth, authStore, addNotification]);
-
-  const prevIsAuthRef = useRef(isAuth);
-  useEffect(() => {
-    if (prevIsAuthRef.current && !isAuth) {
-      partyWorkspaceOneShotGuards.oauthCallbackRegistered = false;
-    }
-    prevIsAuthRef.current = isAuth;
-  }, [isAuth]);
 
   const handleThemeChange = useCallback(
     (newThemeId: PartyThemeId) => {

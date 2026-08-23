@@ -9,7 +9,6 @@ export const partyWorkspaceReconnectRefs = {
 
 export const partyWorkspaceOneShotGuards = {
   loadedPartyMetadataId: null as string | null,
-  oauthCallbackRegistered: false,
 };
 
 export const partyWorkspaceLinkedPartyCheck = {

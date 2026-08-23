@@ -14,7 +14,6 @@ export function resetPartyWorkspaceForFreshProject(): void {
   clearPartyProgramEnded();
   resetPreviewScenario();
   partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
-  partyWorkspaceOneShotGuards.oauthCallbackRegistered = false;
   clearPartyWorkspaceLinkedPartyCheck();
   partyWorkspaceReconnectRefs.linkedParty = null;
   partyWorkspaceReconnectRefs.cancelled = true;
