@@ -13,7 +13,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
 
     public Task<EmailAccount?> GetByIdAsync(Guid id)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             _accounts.TryGetValue(id, out var account);
@@ -30,7 +30,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
             return Task.FromResult<EmailAccount?>(null);
         }
 
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             if (_emailToId.TryGetValue(email, out var id) && _accounts.TryGetValue(id, out var account))
@@ -53,7 +53,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
             return null;
         }
 
-        var tx = InMemoryLegalConsentUnitOfWork.Current
+        var tx = InMemoryUnitOfWorkScope.Current
             ?? throw new InvalidOperationException("GetByEmailForUpdateAsync requires an active transaction.");
 
         if (tx.HeldEmailLocks.Add(email))
@@ -68,7 +68,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
 
     public Task<EmailAccount?> GetByOrganizerIdAsync(Guid organizerId)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             var account = _accounts.Values.FirstOrDefault(a => a.OrganizerId == organizerId);
@@ -96,7 +96,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
             throw new ArgumentException("Email cannot be empty", nameof(account));
         }
 
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             return TryAddImmediateAsync(account);
@@ -153,7 +153,7 @@ public class InMemoryEmailAccountRepository : IEmailAccountRepository
 
     public Task DeleteAsync(Guid id)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             if (_accounts.TryRemove(id, out var account) && !string.IsNullOrWhiteSpace(account.Email))

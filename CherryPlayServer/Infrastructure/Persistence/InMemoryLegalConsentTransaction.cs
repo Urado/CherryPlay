@@ -13,7 +13,12 @@ internal sealed class InMemoryLegalConsentTransaction
     public HashSet<Guid> ConsentRemoves { get; } = new();
 
     public Dictionary<Guid, Organizer> OrganizerAdds { get; } = new();
+    public Dictionary<Guid, Organizer> OrganizerUpdates { get; } = new();
+    public Dictionary<Guid, Organizer> OrganizerUpdatePrevious { get; } = new();
     public HashSet<Guid> OrganizerRemoves { get; } = new();
+
+    public Dictionary<Guid, OrganizerSession> SessionAdds { get; } = new();
+    public HashSet<Guid> SessionRemoves { get; } = new();
 
     public Dictionary<Guid, EmailAccount> EmailAdds { get; } = new();
     public Dictionary<string, Guid> EmailIndexAdds { get; } = new(StringComparer.OrdinalIgnoreCase);

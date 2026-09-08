@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   ORGANIZER: {
     ME: '/api/organizer/me',
     PROFILE: '/api/organizer/profile',
+    ACCOUNT: '/api/organizer/account',
     SESSION_CHECK: '/api/organizer/session/check',
     THEME_ACCESS: '/api/organizer/me/theme-access',
   },

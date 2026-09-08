@@ -876,6 +876,17 @@
   font-size: var(--font-size-secondary);
 }
 
+.account-view-privacy-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary, #aaa);
+}
+
+.account-view-privacy-link {
+  width: 100%;
+}
+
 .account-view-logo-wrap {
   margin-top: var(--spacing-xs);
 }

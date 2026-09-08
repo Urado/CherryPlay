@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
@@ -27,7 +26,7 @@ public class EfPartyRepository : IPartyRepository
         var ef = await _context.Parties
             .AsNoTracking()
             .Include(e => e.Playlist)
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         return ef?.ToDomain(_logger);
     }
 
@@ -36,7 +35,7 @@ public class EfPartyRepository : IPartyRepository
         var ef = await _context.Parties
             .AsNoTracking()
             .Include(e => e.Playlist)
-            .FirstOrDefaultAsync(e => e.ShortCode == shortCode);
+            .FirstOrDefaultAsync(e => e.ShortCode == shortCode && !e.IsDeleted);
         return ef?.ToDomain(_logger);
     }
 
@@ -45,6 +44,7 @@ public class EfPartyRepository : IPartyRepository
         var list = await _context.Parties
             .AsNoTracking()
             .Include(e => e.Playlist)
+            .Where(e => !e.IsDeleted)
             .OrderBy(e => e.CreatedAt)
             .ToListAsync();
         return list.Select(e => e.ToDomain(_logger)).ToList();
@@ -55,7 +55,7 @@ public class EfPartyRepository : IPartyRepository
         var list = await _context.Parties
             .AsNoTracking()
             .Include(e => e.Playlist)
-            .Where(e => e.OrganizerId == organizerId)
+            .Where(e => e.OrganizerId == organizerId && !e.IsDeleted)
             .OrderBy(e => e.CreatedAt)
             .ToListAsync();
         return list.Select(e => e.ToDomain(_logger)).ToList();
@@ -88,7 +88,7 @@ public class EfPartyRepository : IPartyRepository
     {
         var ef = await _context.Parties
             .Include(e => e.Playlist)
-            .FirstOrDefaultAsync(e => e.Id == party.Id);
+            .FirstOrDefaultAsync(e => e.Id == party.Id && !e.IsDeleted);
         if (ef == null)
             return;
 
@@ -111,8 +111,7 @@ public class EfPartyRepository : IPartyRepository
     public async Task DeleteAsync(Guid id)
     {
         var ef = await _context.Parties
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         if (ef == null)
             return;
         ef.IsDeleted = true;
@@ -124,6 +123,7 @@ public class EfPartyRepository : IPartyRepository
         var ef = await _context.Parties
             .AsNoTracking()
             .Include(e => e.Playlist)
+            .Where(e => !e.IsDeleted)
             .FirstOrDefaultAsync();
         return ef?.ToDomain(_logger);
     }

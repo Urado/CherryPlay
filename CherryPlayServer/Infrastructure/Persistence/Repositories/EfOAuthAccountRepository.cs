@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 

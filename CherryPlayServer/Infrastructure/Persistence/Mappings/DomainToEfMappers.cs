@@ -202,6 +202,7 @@ public static class DomainToEfMappers
 
     public static void ApplyTo(this OAuthAccount domain, OAuthAccountEf ef)
     {
+        ef.ProviderUserId = domain.ProviderUserId;
         ef.ProviderUserName = domain.ProviderUserName;
         ef.ProviderUserAvatarUrl = domain.ProviderUserAvatarUrl;
         ef.LastUsedAt = domain.LastUsedAt;

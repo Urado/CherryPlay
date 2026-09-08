@@ -6,10 +6,12 @@ import { OnlineUnavailablePanel } from '@shared/components';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
 import {
   getAppMode,
+  getPlatform,
   getPlatformCapabilities,
   isDemoFixturesMode,
   isDemoLiveMode,
 } from '@shared/platform';
+import { getWebBaseUrl } from '@shared/config/serverConfig';
 import { authService } from '@shared/services/authService';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
@@ -106,6 +108,23 @@ export const AccountView: React.FC = () => {
       message: 'Пароль успешно изменён. Войдите снова с новым паролем.',
       duration: 8000,
     });
+  };
+
+  const openAccountPrivacyOnWeb = async () => {
+    try {
+      const webBaseUrl = await getWebBaseUrl();
+      const url = `${webBaseUrl.replace(/\/$/, '')}/cabinet#account`;
+      await getPlatform().invoke('auth:openExternal', { url });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Не удалось открыть сайт';
+      setError(errorMessage);
+      addNotification({
+        type: 'error',
+        message: errorMessage,
+        duration: 5000,
+      });
+    }
   };
 
   const organizer: OrganizerDto | null =
@@ -230,6 +249,25 @@ export const AccountView: React.FC = () => {
                     onSuccess={handleChangePasswordSuccess}
                   />
                 </Disclosure>
+              </section>
+            )}
+
+            {!isFixturesDemo && (
+              <section className="account-disclosure-card" aria-label="Конфиденциальность">
+                <p className="account-view-privacy-hint">
+                  Удаление аккаунта и управление согласиями — на сайте.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="account-view-privacy-link"
+                  onClick={() => {
+                    void openAccountPrivacyOnWeb();
+                  }}
+                >
+                  Управление аккаунтом и конфиденциальностью — на сайте
+                </Button>
               </section>
             )}
 

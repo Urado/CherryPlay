@@ -130,6 +130,14 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+if (useInMemoryStorage)
+{
+    builder.Services.AddSingleton<IAppUnitOfWork, InMemoryAppUnitOfWork>();
+}
+else
+{
+    builder.Services.AddScoped<IAppUnitOfWork, EfAppUnitOfWork>();
+}
 builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();

@@ -17,7 +17,7 @@ public class InMemoryOAuthAccountRepository : IOAuthAccountRepository
     public Task<OAuthAccount?> GetByProviderUserIdAsync(OAuthProvider provider, string providerUserId)
     {
         var key = (provider, providerUserId);
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             if (_providerIndex.TryGetValue(key, out var accountId) &&
@@ -38,7 +38,7 @@ public class InMemoryOAuthAccountRepository : IOAuthAccountRepository
         CancellationToken cancellationToken = default)
     {
         var key = (provider, providerUserId);
-        var tx = InMemoryLegalConsentUnitOfWork.Current
+        var tx = InMemoryUnitOfWorkScope.Current
             ?? throw new InvalidOperationException(
                 "GetByProviderUserIdForUpdateAsync requires an active transaction.");
 
@@ -54,7 +54,7 @@ public class InMemoryOAuthAccountRepository : IOAuthAccountRepository
 
     public Task<List<OAuthAccount>> GetByOrganizerIdAsync(Guid organizerId)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         IEnumerable<OAuthAccount> source = tx is null
             ? _accounts.Values
             : VisibleAccounts(tx);
@@ -79,7 +79,7 @@ public class InMemoryOAuthAccountRepository : IOAuthAccountRepository
     public Task<bool> TryAddAsync(OAuthAccount account)
     {
         var key = (account.Provider, account.ProviderUserId);
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             return TryAddImmediateAsync(account, key);
@@ -100,15 +100,24 @@ public class InMemoryOAuthAccountRepository : IOAuthAccountRepository
 
     public Task UpdateAsync(OAuthAccount account)
     {
-        var key = (account.Provider, account.ProviderUserId);
-        _accounts.AddOrUpdate(account.Id, account, (key, oldValue) => account);
-        _providerIndex[key] = account.Id;
+        var newKey = (account.Provider, account.ProviderUserId);
+        if (_accounts.TryGetValue(account.Id, out var existing))
+        {
+            var oldKey = (existing.Provider, existing.ProviderUserId);
+            if (!oldKey.Equals(newKey))
+            {
+                _providerIndex.TryRemove(oldKey, out _);
+            }
+        }
+
+        _accounts.AddOrUpdate(account.Id, account, (_, _) => account);
+        _providerIndex[newKey] = account.Id;
         return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Guid id)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             if (_accounts.TryRemove(id, out var account))

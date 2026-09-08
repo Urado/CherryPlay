@@ -319,6 +319,7 @@ DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md)
 | GET   | `/api/organizer/session/check` | Лёгкая проверка валидности сессии (без тела ответа). В CherryPlayList вызывается **до** `/api/organizer/me`, чтобы при недоступности сервера не спамить консоль 404 от тяжёлого эндпоинта. | —                    | 200 (OK) или 401           |
 | GET   | `/api/organizer/me`            | Получить профиль текущего организатора.                                                                                                                                                    | —                    | `OrganizerDto` или 401     |
 | PATCH | `/api/organizer/profile`       | Обновить профиль организатора (имя, логотип, ссылки).                                                                                                                                      | `UpdateOrganizerDto` | `OrganizerDto` или 401/400 |
+| DELETE | `/api/organizer/account`      | Удаление аккаунта текущего организатора (CP-040): soft-delete, отзыв активных согласий (best-effort), revoke всех сессий, удаление email/OAuth identity, имя → «Удалённый пользователь». Вечеринки **не** удаляются. | — | **204** или 401 |
 
 **OrganizerDto**
 

@@ -1,17 +1,25 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   ChangePasswordForm,
   DEFAULT_PARTY_THEME_ID,
+  REQUIRED_CONSENT_DOCUMENTS,
   type OrganizerDto,
 } from '@cherryplay/components';
 import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
-import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
+import { PRIVACY_CONTACT_EMAIL } from '../constants/legalContacts';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { clearThemeAccessCache, useThemeAccess } from '../hooks/useThemeAccess';
+import { deleteOrganizerAccount } from '../services/accountApiService';
 import { authService } from '../services/authService';
+import {
+  createConsentEvents,
+  listConsentEvents,
+  type ConsentEventDto,
+} from '../services/consentEventsService';
 import { partyApiService } from '../services/partyApiService';
 import type { CreatePartyDto, PartyDto, PartyLifecycleState, UpdatePartyDto } from '../types/api';
 import { extractApiErrorMessage } from '../utils/apiErrorHandler';
@@ -68,6 +76,14 @@ export function CabinetPage() {
   const [themeSelectionError, setThemeSelectionError] = useState<string | null>(null);
   const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
   const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
+  const [accountOpen, setAccountOpen] = useState(() => location.hash === '#account');
+  const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [privacyError, setPrivacyError] = useState<string | null>(null);
+  const [consentEvents, setConsentEvents] = useState<ConsentEventDto[] | null>(null);
+  const [consentUnavailable, setConsentUnavailable] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const accountSectionRef = useRef<HTMLDetailsElement>(null);
   const { data: themeAccess, error: themeAccessError } = useThemeAccess(
     !!organizer,
     organizer?.id ?? null,
@@ -87,6 +103,24 @@ export function CabinetPage() {
   }, []);
 
   useEffect(() => {
+    if (location.hash === '#account') {
+      setAccountOpen(true);
+      accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [location.hash]);
+
+  const loadConsentEvents = useCallback(async () => {
+    try {
+      const events = await listConsentEvents();
+      setConsentEvents(events);
+      setConsentUnavailable(false);
+    } catch {
+      setConsentEvents(null);
+      setConsentUnavailable(true);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadOrganizer = async () => {
       try {
         const currentOrganizer = (await authService.checkAuth()) as OrganizerWithRole | null;
@@ -98,6 +132,7 @@ export function CabinetPage() {
         setLoading(false);
         await ensureConsents();
         await loadParties();
+        await loadConsentEvents();
       } catch (err) {
         console.error('[CabinetPage] Error checking auth:', err);
         navigate(ROUTES.LOGIN);
@@ -105,12 +140,74 @@ export function CabinetPage() {
     };
 
     loadOrganizer();
-  }, [navigate, loadParties, ensureConsents]);
+  }, [navigate, loadParties, ensureConsents, loadConsentEvents]);
 
   const handleLogout = async () => {
     await authService.logout();
     clearThemeAccessCache();
     navigate(ROUTES.LOGIN);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirmStep) {
+      setDeleteConfirmStep(true);
+      setPrivacyError(null);
+      return;
+    }
+
+    setDeletingAccount(true);
+    setPrivacyError(null);
+    try {
+      await deleteOrganizerAccount();
+      clearThemeAccessCache();
+      await authService.logout();
+      navigate(ROUTES.LOGIN, { replace: true, state: { accountDeleted: true } });
+    } catch (e) {
+      setPrivacyError(extractApiErrorMessage(e, 'Не удалось удалить аккаунт'));
+      setDeletingAccount(false);
+      setDeleteConfirmStep(false);
+    }
+  };
+
+  const handleWithdrawConsents = async () => {
+    if (!consentEvents) {
+      return;
+    }
+
+    const activeGrants = REQUIRED_CONSENT_DOCUMENTS.filter((doc) => {
+      const latest = consentEvents
+        .filter((event) => event.legalDocumentVersionId === doc.versionId)
+        .sort((a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime())[0];
+      return latest?.decision === 'grant';
+    });
+
+    if (activeGrants.length === 0) {
+      setPrivacyError('Нет активных согласий для отзыва.');
+      return;
+    }
+
+    setWithdrawing(true);
+    setPrivacyError(null);
+    try {
+      await createConsentEvents(
+        activeGrants.map((doc) => ({
+          id: crypto.randomUUID(),
+          legalDocumentVersionId: doc.versionId,
+          documentHash: doc.contentHash,
+          decision: 'withdraw' as const,
+        })),
+      );
+      await loadConsentEvents();
+    } catch (e) {
+      setPrivacyError(
+        extractApiErrorMessage(
+          e,
+          `Не удалось отозвать согласие. Напишите на ${PRIVACY_CONTACT_EMAIL}`,
+        ),
+      );
+    } finally {
+      setWithdrawing(false);
+    }
   };
 
   const handleChangePasswordSuccess = () => {
@@ -445,8 +542,12 @@ export function CabinetPage() {
         </details>
 
         <details
+          ref={accountSectionRef}
+          id="account"
           className="cabinet-accordion cabinet-account-section"
           aria-labelledby="cabinet-account-heading"
+          open={accountOpen}
+          onToggle={(event) => setAccountOpen((event.target as HTMLDetailsElement).open)}
         >
           <summary className="cabinet-accordion-summary">
             <h2 id="cabinet-account-heading" className="cabinet-section-title">
@@ -459,6 +560,92 @@ export function CabinetPage() {
               onSuccess={handleChangePasswordSuccess}
               layout="embedded"
             />
+
+            <section className="cabinet-privacy" aria-labelledby="cabinet-privacy-heading">
+              <h3 id="cabinet-privacy-heading" className="cabinet-privacy-title">
+                Конфиденциальность
+              </h3>
+              <p className="cabinet-privacy-text">
+                Запросы субъекта ПДн (доступ, уточнение, отзыв, уничтожение) — через{' '}
+                <Link to={ROUTES.LEGAL}>реквизиты и контакты</Link> или письмо на{' '}
+                {PRIVACY_CONTACT_EMAIL}.
+              </p>
+
+              {consentUnavailable && (
+                <p className="cabinet-privacy-text cabinet-privacy-text--muted">
+                  Журнал согласий сейчас недоступен на сервере. Отзыв — через privacy-канал.
+                </p>
+              )}
+
+              {consentEvents && (
+                <div className="cabinet-privacy-consents">
+                  <p className="cabinet-privacy-text">Принятые документы (последнее решение):</p>
+                  <ul className="cabinet-privacy-list">
+                    {REQUIRED_CONSENT_DOCUMENTS.map((doc) => {
+                      const latest = consentEvents
+                        .filter((event) => event.legalDocumentVersionId === doc.versionId)
+                        .sort(
+                          (a, b) =>
+                            new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime(),
+                        )[0];
+                      return (
+                        <li key={doc.versionId}>
+                          {doc.title}: {latest?.decision ?? 'нет записи'}
+                          {latest ? ` (${new Date(latest.eventAt).toLocaleDateString()})` : ''}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    loading={withdrawing}
+                    disabled={withdrawing || deletingAccount}
+                    onClick={() => void handleWithdrawConsents()}
+                  >
+                    Отозвать активные согласия
+                  </Button>
+                </div>
+              )}
+
+              {privacyError && <p className="cabinet-privacy-error">{privacyError}</p>}
+
+              <div className="cabinet-privacy-delete">
+                <p className="cabinet-privacy-text">
+                  Удаление аккаунта обезличивает профиль; вечеринки могут остаться в каталоге без
+                  ваших контактов. Вход станет невозможен.
+                </p>
+                {deleteConfirmStep && (
+                  <p className="cabinet-privacy-warning">
+                    Подтвердите ещё раз: удаление необратимо.
+                  </p>
+                )}
+                <div className="cabinet-privacy-delete-actions">
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    loading={deletingAccount}
+                    disabled={deletingAccount}
+                    onClick={() => void handleDeleteAccount()}
+                  >
+                    {deleteConfirmStep ? 'Удалить навсегда' : 'Удалить аккаунт'}
+                  </Button>
+                  {deleteConfirmStep && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={deletingAccount}
+                      onClick={() => setDeleteConfirmStep(false)}
+                    >
+                      Отмена
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
         </details>
       </div>

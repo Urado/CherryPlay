@@ -39,7 +39,7 @@ public class AdminController : ControllerBase
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
-        var organizers = _db.Organizers.AsNoTracking().AsQueryable();
+        var organizers = _db.Organizers.AsNoTracking().Where(x => !x.IsDeleted);
         if (!string.IsNullOrWhiteSpace(query))
         {
             var q = $"%{query.Trim()}%";
@@ -114,7 +114,8 @@ public class AdminController : ControllerBase
     [HttpGet("organizers/{id:guid}")]
     public async Task<ActionResult<AdminOrganizerDetailDto>> GetOrganizer(Guid id)
     {
-        var organizer = await _db.Organizers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var organizer = await _db.Organizers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         if (organizer == null) return NotFound(new { code = "organizer_not_found", message = "Organizer not found" });
 
         var email = await _db.EmailAccounts.AsNoTracking()
@@ -199,7 +200,8 @@ public class AdminController : ControllerBase
     [HttpPost("organizers/{id:guid}/entitlements")]
     public async Task<ActionResult<EntitlementDto>> Grant(Guid id, [FromBody] GrantEntitlementRequest body)
     {
-        var organizer = await _db.Organizers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var organizer = await _db.Organizers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         if (organizer == null) return NotFound(new { code = "organizer_not_found", message = "Organizer not found" });
         var package = await _db.ThemePackages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == body.PackageId && x.IsActive);
         if (package == null) return NotFound(new { code = "package_not_found", message = "Package not found" });

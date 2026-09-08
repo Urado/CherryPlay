@@ -13,7 +13,7 @@ public class InMemoryConsentEventRepository : IConsentEventRepository
         Guid subjectId,
         CancellationToken cancellationToken = default)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         IEnumerable<ConsentEvent> source = tx is null
             ? _events.Values
             : VisibleEvents(tx);
@@ -27,7 +27,7 @@ public class InMemoryConsentEventRepository : IConsentEventRepository
 
     public Task<ConsentEvent?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             _events.TryGetValue(id, out var consentEvent);
@@ -39,7 +39,7 @@ public class InMemoryConsentEventRepository : IConsentEventRepository
 
     public Task<bool> TryAddAsync(ConsentEvent consentEvent, CancellationToken cancellationToken = default)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             return Task.FromResult(_events.TryAdd(consentEvent.Id, consentEvent));
@@ -54,7 +54,7 @@ public class InMemoryConsentEventRepository : IConsentEventRepository
     {
         ArgumentNullException.ThrowIfNull(events);
 
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             return TryAddBatchImmediateAsync(events);
@@ -79,7 +79,7 @@ public class InMemoryConsentEventRepository : IConsentEventRepository
 
     public Task<bool> TryRemoveAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var tx = InMemoryLegalConsentUnitOfWork.Current;
+        var tx = InMemoryUnitOfWorkScope.Current;
         if (tx is null)
         {
             return Task.FromResult(_events.TryRemove(id, out _));

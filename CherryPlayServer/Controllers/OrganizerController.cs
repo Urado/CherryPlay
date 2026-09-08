@@ -67,4 +67,21 @@ public class OrganizerController : ControllerBase
             return StatusCode(500, "An error occurred while updating organizer profile");
         }
     }
+
+    [HttpDelete("account")]
+    [AuthorizeOrganizer]
+    public async Task<IActionResult> DeleteAccount(CancellationToken cancellationToken)
+    {
+        var organizerId = HttpContext.RequireOrganizerId();
+        try
+        {
+            await _organizerService.DeleteAccountAsync(organizerId, cancellationToken);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting organizer account: {OrganizerId}", organizerId);
+            return StatusCode(500, "An error occurred while deleting the account");
+        }
+    }
 }
