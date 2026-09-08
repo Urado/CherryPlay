@@ -28,5 +28,9 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        // Soft-delete: hide deleted organizers/parties by default. Use IgnoreQueryFilters
+        // (or repository GetByIdAsync(..., includeDeleted: true)) when historical rows are needed.
+        modelBuilder.Entity<OrganizerEf>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<PartyEf>().HasQueryFilter(e => !e.IsDeleted);
     }
 }

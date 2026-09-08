@@ -36,11 +36,11 @@
 | `DefaultCustomizationSettings` | JSON        | NULL                                                         | Настройки оформления по умолчанию (override на уровне party). |
 | `CreatedAt`                    | datetime    | NOT NULL                                                     | Дата создания.                                                |
 | `UpdatedAt`                    | datetime    | NULL                                                         | Дата последнего обновления.                                   |
-| `IsDeleted`                    | boolean     | NOT NULL, default false                                      | Soft delete (скрытие из выборок).                             |
+| `IsDeleted`                    | boolean     | NOT NULL, default false                                      | Soft delete (скрытие из выборок). Self-service delete (`DELETE /api/organizer/account`) ставит флаг и scrub (`OrganizerAccountScrub`): `Name` → «Удалённый пользователь»; `LogoUrl`/`Links`/`TimeZone`/`DefaultCustomizationSettings`/`DefaultPartyThemeId` → null; `Role` → `organizer`. Email/OAuth/sessions — hard-delete. Вечеринки остаются (`RESTRICT`). |
 
 Индекс: `IsDeleted` (global query filter).
 
-_Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам._
+_Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам. Транзакция self-service delete — через `IAppUnitOfWork` (`EfAppUnitOfWork` / `InMemoryAppUnitOfWork`); отзыв согласий — отдельно, best-effort через consent API (см. Legal consent выше и [CONTRACTS.md](../CONTRACTS.md) §3.3)._
 
 ---
 
@@ -273,7 +273,7 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## Связи и политика удаления
 
-- **Organizer** — владелец многих **Party**. FK `Party.OrganizerId` использует `RESTRICT`; soft-delete организатора не удаляет вечеринки физически.
+- **Organizer** — владелец многих **Party**. FK `Party.OrganizerId` использует `RESTRICT`; soft-delete организатора (в т.ч. self-service `DELETE /api/organizer/account`: `IsDeleted` + полный scrub профиля — см. колонку `IsDeleted`) не удаляет вечеринки физически. EmailAccounts / OAuthAccounts / OrganizerSessions при self-service delete удаляются hard-delete в той же `IAppUnitOfWork`-транзакции.
 - **Party** — хранится «навсегда» до удаления организатором; в v1 без автоархивации. При удалении вечеринки удаляются связанные **PartyPlaylist** и **SessionState**.
 - **ThemePackages** ↔ **Themes**: связь many-to-many через **ThemePackageItems**. Удаление пакета каскадно удаляет его элементы (`ThemePackageItems`), удаление темы ограничено (`RESTRICT`), если она входит в пакет.
 - **OrganizerEntitlements**: удаляются каскадно при удалении организатора, но пакет (`ThemePackage`) удалять при наличии выдач нельзя (`RESTRICT`).

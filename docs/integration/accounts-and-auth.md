@@ -122,6 +122,7 @@ CherryPlayList «Войти через браузер»
 - В кабинете v1: метаданные вечеринок и публикация; **управления эфиром (сессией) нет** — только в CherryPlayList.
 - **Восстановление пароля (Web, live):** маршруты `/forgot-password` (запрос письма) и `/reset-password?token=` (новый пароль → редирект на `/login`). Ссылка «Забыли пароль?» с экрана логина.
 - **Смена пароля (Web, live):** в кабинете, аккордеон «Аккаунт» (свёрнут по умолчанию) — `POST /auth/change-password`; после успеха — немедленный logout и `/login` с notice (`state.passwordChanged`). UI кабинета: [pages.md](../../CherryPlayWeb/docs/pages.md).
+- **Удаление аккаунта (CP-040, Web):** `DELETE /api/organizer/account` — scrub профиля (`IsDeleted`, имя → «Удалённый пользователь», `logoUrl`/`links` null), hard-delete email/OAuth/sessions; вечеринки остаются. Consent withdraw — best-effort вне App UoW. UI: кабинет → «Аккаунт» / `#account` (подтверждение → `deleteOrganizerAccount` → client logout → `/login` с `state.accountDeleted`). **List:** только CTA на Web `/cabinet#account`, без in-app delete. Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.3.
 
 ### Регистрация email + legal consent (Web)
 
@@ -146,5 +147,5 @@ CherryPlayList «Войти через браузер»
 Детали эндпоинтов логина, обмена токенов и профиля организатора — в [CONTRACTS.md](../../CONTRACTS.md):
 - **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`; legacy `POST /auth/register`), **Web primary register + consent** (`POST /api/organizers` → `POST /auth/login`, §3.2.3), **Desktop browser SSO** (`POST /auth/desktop/code` для session-continue, `POST /auth/desktop/exchange`, query `return_to` / `buildAuthReturnUrl`, §3.2.0b), сброс/смена пароля (`POST /auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`), OAuth 2.0 VK и Mail.ru для Web (`/auth/{provider}/web`, `/auth/{provider}/callback` с `client=desktop` и `return_to` для Desktop; live OAuth без consent events — gap), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange`, §3.2.1), logout. OAuth2 для Telegram отложен.
 - **Legal consent:** §3.2.3 — resource REST, InMemory-only мутации, write-path gate `403 consent_required`, Web re-consent modal, `LegalConsentException` → 400/409/403.
-- **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
+- **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`, `DELETE /api/organizer/account`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
 - **Защита write-методов:** CONTRACTS §2–3 (REST и SignalR требуют JWT).

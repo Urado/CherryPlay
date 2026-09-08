@@ -67,8 +67,10 @@
 
 - Структура: шапка → профиль → два аккордеона на общих классах `.cabinet-accordion` / `.cabinet-accordion-summary` / `.cabinet-accordion-body` (`<details>`).
 - **Мои вечеринки** — открыт по умолчанию (`partiesOpen`, React-controlled через `open` + `onToggle`). CTA «Создать вечеринку» в summary: `preventDefault` / `stopPropagation` + `setPartiesOpen(true)`, чтобы не закрывать панель и при необходимости открыть её.
-- **Аккаунт** — неконтролируемый `<details>`, свёрнут по умолчанию. В теле — `ChangePasswordForm` с `layout="embedded"` (без вложенного details).
-- **API:** `POST /auth/change-password` → **204** (без тела); затем клиент обязан повторно войти (все сессии инвалидированы). Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a.
+- **Аккаунт** — controlled `<details>` (`accountOpen`); свёрнут по умолчанию. Hash `#account` открывает панель и скроллит к ней (`location.hash === '#account'`). В теле — `ChangePasswordForm` (`layout="embedded"`) и блок **Конфиденциальность**.
+- **Конфиденциальность:** ссылка на реквизиты + `PRIVACY_CONTACT_EMAIL` (`VITE_PRIVACY_CONTACT` или default из legal/operator). Список последних решений по required consents (`GET /api/consent-events`); кнопка «Отозвать активные согласия» → `POST /api/consent-events` (withdraw). При недоступном журнале — muted hint (отзыв через privacy-канал).
+- **Удаление аккаунта:** двухшаговое подтверждение → `deleteOrganizerAccount()` (`DELETE /api/organizer/account`) → `clearThemeAccessCache()` → `authService.logout()` → `navigate(/login, { replace: true, state: { accountDeleted: true } })`. `LoginPage` показывает «Аккаунт удалён. Вход с прежними данными больше невозможен.» и сбрасывает `state` из history. Cookie сам DELETE не чистит.
+- **API смена пароля:** `POST /auth/change-password` → **204** (без тела); затем клиент обязан повторно войти (все сессии инвалидированы). Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a. Удаление аккаунта: [CONTRACTS.md](../../CONTRACTS.md) §3.3.
 - Смена пароля: shared-форма вызывает эндпоинт выше. После успеха: `clearThemeAccessCache()` → `authService.logout()` → `navigate(/login, { replace: true, state: { passwordChanged: true } })`. `LoginPage` показывает «Пароль успешно изменён. Войдите с новым паролем.» и сбрасывает `state` из history.
 - **GET** `/api/organizer/me/theme-access` — получение доступных тем, locked-плиток и `contactUrl`.
 - При выборе темы в форме:
@@ -100,7 +102,9 @@
 - `src/pages/PartyInfoPage.tsx` — информация о вечеринке.
 - `src/pages/LoginPage.tsx`, `RegisterPage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx` — auth-страницы организатора.
 - `src/pages/LegalDocumentPage.tsx`, `LegalOperatorPage.tsx` — мок legal routes; контент — `src/content/legal/`.
-- `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора (аккордеоны «Мои вечеринки» / «Аккаунт»; смена пароля — в «Аккаунт»).
+- `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора (аккордеоны «Мои вечеринки» / «Аккаунт»; смена пароля, privacy/withdraw, удаление аккаунта — в «Аккаунт» / `#account`).
+- `src/services/accountApiService.ts` — `deleteOrganizerAccount` (`DELETE /api/organizer/account`).
+- `src/constants/legalContacts.ts` — `PRIVACY_CONTACT_EMAIL` / `SUPPORT_CONTACT_EMAIL` (`VITE_PRIVACY_CONTACT`, `VITE_SUPPORT_CONTACT`).
 - `src/pages/admin/AdminOrganizersPage.tsx`, `src/pages/admin/AdminOrganizerDetailPage.tsx` — админ-раздел.
 - `src/services/partyApiService.ts` — вызовы REST API.
 - `src/services/adminApiService.ts`, `src/services/themeAccessService.ts` — admin и theme-access API.

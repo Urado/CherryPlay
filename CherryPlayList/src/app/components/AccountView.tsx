@@ -3,6 +3,7 @@ import type { OrganizerDto } from '@cherryplay/components';
 import React, { useEffect, useState } from 'react';
 
 import { OnlineUnavailablePanel } from '@shared/components';
+import { getWebBaseUrl } from '@shared/config/serverConfig';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
 import {
   getAppMode,
@@ -11,7 +12,6 @@ import {
   isDemoFixturesMode,
   isDemoLiveMode,
 } from '@shared/platform';
-import { getWebBaseUrl } from '@shared/config/serverConfig';
 import { authService } from '@shared/services/authService';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
@@ -116,8 +116,7 @@ export const AccountView: React.FC = () => {
       const url = `${webBaseUrl.replace(/\/$/, '')}/cabinet#account`;
       await getPlatform().invoke('auth:openExternal', { url });
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Не удалось открыть сайт';
+      const errorMessage = err instanceof Error ? err.message : 'Не удалось открыть сайт';
       setError(errorMessage);
       addNotification({
         type: 'error',
@@ -255,19 +254,21 @@ export const AccountView: React.FC = () => {
             {!isFixturesDemo && (
               <section className="account-disclosure-card" aria-label="Конфиденциальность">
                 <p className="account-view-privacy-hint">
-                  Удаление аккаунта и управление согласиями — на сайте.
+                  Удаление аккаунта и согласия — в кабинете на сайте.
                 </p>
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
                   className="account-view-privacy-link"
+                  aria-label="Открыть управление аккаунтом на сайте в браузере"
                   onClick={() => {
                     void openAccountPrivacyOnWeb();
                   }}
                 >
-                  Управление аккаунтом и конфиденциальностью — на сайте
+                  Открыть кабинет на сайте
                 </Button>
+                <p className="account-view-privacy-external">Откроется в браузере</p>
               </section>
             )}
 

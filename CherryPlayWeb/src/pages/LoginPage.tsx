@@ -19,7 +19,10 @@ import {
 } from '../utils/desktopClientMode';
 import './LoginPage.css';
 
-type LoginLocationState = { passwordChanged?: boolean } | null;
+type LoginLocationState = {
+  passwordChanged?: boolean;
+  accountDeleted?: boolean;
+} | null;
 type DesktopSessionView = 'checking' | 'continue' | 'form';
 
 const DESKTOP_SESSION_PROBE_TIMEOUT_MS = 10000;
@@ -46,6 +49,9 @@ export function LoginPage() {
   const { ensureConsents } = useConsentGate();
   const [passwordChangedNotice] = useState(
     () => (location.state as LoginLocationState)?.passwordChanged === true,
+  );
+  const [accountDeletedNotice] = useState(
+    () => (location.state as LoginLocationState)?.accountDeleted === true,
   );
   const [returningToApp, setReturningToApp] = useState(false);
   const [pendingDesktopCode, setPendingDesktopCode] = useState<string | null>(null);
@@ -118,10 +124,12 @@ export function LoginPage() {
   }, [desktopMode, desktopCodeFromUrl]);
 
   useEffect(() => {
-    if (!passwordChangedNotice) return;
-    if (!(location.state as LoginLocationState)?.passwordChanged) return;
+    const state = location.state as LoginLocationState;
+    const shouldClearPassword = passwordChangedNotice && state?.passwordChanged;
+    const shouldClearDeleted = accountDeletedNotice && state?.accountDeleted;
+    if (!shouldClearPassword && !shouldClearDeleted) return;
     navigate(location.pathname, { replace: true });
-  }, [location.pathname, location.state, navigate, passwordChangedNotice]);
+  }, [accountDeletedNotice, location.pathname, location.state, navigate, passwordChangedNotice]);
 
   const handleLoginSuccess = async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -252,6 +260,11 @@ export function LoginPage() {
         {passwordChangedNotice && (
           <div className="login-page-notice" role="status" aria-live="polite">
             Пароль успешно изменён. Войдите снова с новым паролем.
+          </div>
+        )}
+        {accountDeletedNotice && (
+          <div className="login-page-notice" role="status" aria-live="polite">
+            Аккаунт удалён. Вход с прежними данными больше невозможен.
           </div>
         )}
         {sessionContinueError && (

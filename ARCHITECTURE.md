@@ -54,6 +54,8 @@ This is an **intentional** dual path — not a half-migration. Prod always uses 
 
 **Legal consent (CP-066):** mutations go through `ILegalConsentUnitOfWork`. With InMemory — `InMemoryLegalConsentUnitOfWork` (ambient transaction staging; email/OAuth `ForUpdate`; EF side uses advisory locks when those repos are used). With EF mode — `UnsupportedLegalConsentUnitOfWork` until an EF-backed UoW and consent tables exist. Consent event / legal document version storage is InMemory-only for now (no public `GET` legal-documents catalog). Contracts: [CONTRACTS.md](CONTRACTS.md) §3.2.3.
 
+**App unit of work / account delete (CP-040):** organizer account deletion runs in `IAppUnitOfWork` (`EfAppUnitOfWork` / `InMemoryAppUnitOfWork`): soft-delete organizer (`IsDeleted`) + profile scrub, hard-delete email/OAuth identities and sessions; parties remain. Consent withdraw is best-effort **outside** that UoW. Contract: [CONTRACTS.md](CONTRACTS.md) §3.3; schema notes: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
+
 ## Key entry points
 
 | Piece | Path / doc |

@@ -47,6 +47,9 @@ public sealed class EfAppUnitOfWork : IAppUnitOfWork
 
         try
         {
+            // Idempotent flush: EF repos currently SaveChanges inside each mutation;
+            // calling again before Commit covers any pending tracked changes safely.
+            await _context.SaveChangesAsync(cancellationToken);
             await _transaction.CommitAsync(cancellationToken);
         }
         finally

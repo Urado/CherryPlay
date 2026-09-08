@@ -101,10 +101,7 @@ public class OrganizerService : IOrganizerService
                 await _unitOfWork.OAuthAccounts.DeleteAsync(oauth.Id);
             }
 
-            organizer.Name = OrganizerDisplayNames.Deleted;
-            organizer.LogoUrl = null;
-            organizer.Links = null;
-            organizer.UpdatedAt = DateTime.UtcNow;
+            OrganizerAccountScrub.Apply(organizer);
             await _unitOfWork.Organizers.UpdateAsync(organizer);
             await _unitOfWork.Organizers.DeleteAsync(organizerId);
 

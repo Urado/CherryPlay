@@ -21,9 +21,9 @@
   max-width: min(420px, calc(100vw - 32px));
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 184, 77, 0.55);
+  border: 1px solid color-mix(in srgb, var(--state-warning, #ff9800) 55%, transparent);
   background: rgba(48, 32, 12, 0.96);
-  color: #ffd79a;
+  color: var(--state-warning, #ff9800);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   font-size: 14px;
 }
@@ -310,13 +310,18 @@
 .cabinet-privacy-warning {
   margin: 0;
   font-size: 14px;
-  color: #ffd79a;
+  color: var(--state-warning, #ff9800);
 }
 
 .cabinet-privacy-delete {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 8px;
+  padding: 14px 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--state-error, #d32f2f) 40%, transparent);
+  background: color-mix(in srgb, var(--state-error, #d32f2f) 8%, transparent);
 }
 
 .cabinet-privacy-delete-actions {

@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   ChangePasswordForm,
@@ -8,9 +6,12 @@ import {
   type OrganizerDto,
 } from '@cherryplay/components';
 import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { ROUTES } from '../constants/routes';
+import { ConfirmActionDialog } from '../components/ConfirmActionDialog';
 import { PRIVACY_CONTACT_EMAIL } from '../constants/legalContacts';
+import { ROUTES } from '../constants/routes';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { clearThemeAccessCache, useThemeAccess } from '../hooks/useThemeAccess';
 import { deleteOrganizerAccount } from '../services/accountApiService';
@@ -23,6 +24,7 @@ import {
 import { partyApiService } from '../services/partyApiService';
 import type { CreatePartyDto, PartyDto, PartyLifecycleState, UpdatePartyDto } from '../types/api';
 import { extractApiErrorMessage } from '../utils/apiErrorHandler';
+import { formatConsentDecisionLabel } from '../utils/consentDecisionLabel';
 import { sanitizeExternalUrl } from '../utils/urlSafety';
 
 import { CabinetPartyForm } from './CabinetPartyForm';
@@ -77,13 +79,16 @@ export function CabinetPage() {
   const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
   const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(() => location.hash === '#account');
-  const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
   const [consentEvents, setConsentEvents] = useState<ConsentEventDto[] | null>(null);
   const [consentUnavailable, setConsentUnavailable] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const accountSectionRef = useRef<HTMLDetailsElement>(null);
+  const deleteAccountDescId = useId();
+  const deleteAccountWarningId = useId();
   const { data: themeAccess, error: themeAccessError } = useThemeAccess(
     !!organizer,
     organizer?.id ?? null,
@@ -149,12 +154,6 @@ export function CabinetPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!deleteConfirmStep) {
-      setDeleteConfirmStep(true);
-      setPrivacyError(null);
-      return;
-    }
-
     setDeletingAccount(true);
     setPrivacyError(null);
     try {
@@ -165,11 +164,11 @@ export function CabinetPage() {
     } catch (e) {
       setPrivacyError(extractApiErrorMessage(e, 'Не удалось удалить аккаунт'));
       setDeletingAccount(false);
-      setDeleteConfirmStep(false);
+      setDeleteDialogOpen(false);
     }
   };
 
-  const handleWithdrawConsents = async () => {
+  const openWithdrawDialog = () => {
     if (!consentEvents) {
       return;
     }
@@ -186,6 +185,28 @@ export function CabinetPage() {
       return;
     }
 
+    setPrivacyError(null);
+    setWithdrawDialogOpen(true);
+  };
+
+  const handleWithdrawConsents = async () => {
+    if (!consentEvents) {
+      return;
+    }
+
+    const activeGrants = REQUIRED_CONSENT_DOCUMENTS.filter((doc) => {
+      const latest = consentEvents
+        .filter((event) => event.legalDocumentVersionId === doc.versionId)
+        .sort((a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime())[0];
+      return latest?.decision === 'grant';
+    });
+
+    if (activeGrants.length === 0) {
+      setPrivacyError('Нет активных согласий для отзыва.');
+      setWithdrawDialogOpen(false);
+      return;
+    }
+
     setWithdrawing(true);
     setPrivacyError(null);
     try {
@@ -198,6 +219,7 @@ export function CabinetPage() {
         })),
       );
       await loadConsentEvents();
+      setWithdrawDialogOpen(false);
     } catch (e) {
       setPrivacyError(
         extractApiErrorMessage(
@@ -205,6 +227,7 @@ export function CabinetPage() {
           `Не удалось отозвать согласие. Напишите на ${PRIVACY_CONTACT_EMAIL}`,
         ),
       );
+      setWithdrawDialogOpen(false);
     } finally {
       setWithdrawing(false);
     }
@@ -568,7 +591,7 @@ export function CabinetPage() {
               <p className="cabinet-privacy-text">
                 Запросы субъекта ПДн (доступ, уточнение, отзыв, уничтожение) — через{' '}
                 <Link to={ROUTES.LEGAL}>реквизиты и контакты</Link> или письмо на{' '}
-                {PRIVACY_CONTACT_EMAIL}.
+                <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`}>{PRIVACY_CONTACT_EMAIL}</a>.
               </p>
 
               {consentUnavailable && (
@@ -585,12 +608,11 @@ export function CabinetPage() {
                       const latest = consentEvents
                         .filter((event) => event.legalDocumentVersionId === doc.versionId)
                         .sort(
-                          (a, b) =>
-                            new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime(),
+                          (a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime(),
                         )[0];
                       return (
                         <li key={doc.versionId}>
-                          {doc.title}: {latest?.decision ?? 'нет записи'}
+                          {doc.title}: {formatConsentDecisionLabel(latest?.decision)}
                           {latest ? ` (${new Date(latest.eventAt).toLocaleDateString()})` : ''}
                         </li>
                       );
@@ -602,23 +624,32 @@ export function CabinetPage() {
                     size="sm"
                     loading={withdrawing}
                     disabled={withdrawing || deletingAccount}
-                    onClick={() => void handleWithdrawConsents()}
+                    onClick={openWithdrawDialog}
                   >
                     Отозвать активные согласия
                   </Button>
                 </div>
               )}
 
-              {privacyError && <p className="cabinet-privacy-error">{privacyError}</p>}
+              {privacyError && (
+                <p className="cabinet-privacy-error" role="alert">
+                  {privacyError}
+                </p>
+              )}
 
               <div className="cabinet-privacy-delete">
-                <p className="cabinet-privacy-text">
+                <p id={deleteAccountDescId} className="cabinet-privacy-text">
                   Удаление аккаунта обезличивает профиль; вечеринки могут остаться в каталоге без
                   ваших контактов. Вход станет невозможен.
                 </p>
-                {deleteConfirmStep && (
-                  <p className="cabinet-privacy-warning">
-                    Подтвердите ещё раз: удаление необратимо.
+                {deleteDialogOpen && (
+                  <p
+                    id={deleteAccountWarningId}
+                    className="cabinet-privacy-warning"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Подтвердите удаление в диалоге: действие необратимо.
                   </p>
                 )}
                 <div className="cabinet-privacy-delete-actions">
@@ -628,27 +659,57 @@ export function CabinetPage() {
                     size="sm"
                     loading={deletingAccount}
                     disabled={deletingAccount}
-                    onClick={() => void handleDeleteAccount()}
+                    aria-describedby={
+                      deleteDialogOpen
+                        ? `${deleteAccountDescId} ${deleteAccountWarningId}`
+                        : deleteAccountDescId
+                    }
+                    onClick={() => {
+                      setPrivacyError(null);
+                      setDeleteDialogOpen(true);
+                    }}
                   >
-                    {deleteConfirmStep ? 'Удалить навсегда' : 'Удалить аккаунт'}
+                    Удалить аккаунт
                   </Button>
-                  {deleteConfirmStep && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled={deletingAccount}
-                      onClick={() => setDeleteConfirmStep(false)}
-                    >
-                      Отмена
-                    </Button>
-                  )}
                 </div>
               </div>
             </section>
           </div>
         </details>
       </div>
+
+      <ConfirmActionDialog
+        open={deleteDialogOpen}
+        title="Удалить аккаунт?"
+        description="Профиль будет обезличен, вход станет невозможен. Вечеринки могут остаться в каталоге без ваших контактов. Это действие необратимо."
+        confirmLabel="Удалить навсегда"
+        confirming={deletingAccount}
+        onCancel={() => {
+          if (!deletingAccount) {
+            setDeleteDialogOpen(false);
+          }
+        }}
+        onConfirm={() => {
+          void handleDeleteAccount();
+        }}
+      />
+
+      <ConfirmActionDialog
+        open={withdrawDialogOpen}
+        title="Отозвать согласия?"
+        description="После отзыва может потребоваться заново принять документы, чтобы пользоваться сервисом. Запросы по ПДн по-прежнему можно направить на privacy-контакт."
+        confirmLabel="Отозвать"
+        confirmVariant="secondary"
+        confirming={withdrawing}
+        onCancel={() => {
+          if (!withdrawing) {
+            setWithdrawDialogOpen(false);
+          }
+        }}
+        onConfirm={() => {
+          void handleWithdrawConsents();
+        }}
+      />
     </div>
   );
 }

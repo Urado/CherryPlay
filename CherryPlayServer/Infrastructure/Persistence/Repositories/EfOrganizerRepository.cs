@@ -18,9 +18,10 @@ public class EfOrganizerRepository : IOrganizerRepository
     public async Task<Organizer?> GetByIdAsync(Guid id, bool includeDeleted = false)
     {
         var query = _context.Organizers.AsNoTracking().Where(e => e.Id == id);
-        if (!includeDeleted)
+        if (includeDeleted)
         {
-            query = query.Where(e => !e.IsDeleted);
+            // Global soft-delete filter hides IsDeleted rows; opt in explicitly.
+            query = query.IgnoreQueryFilters().Where(e => e.Id == id);
         }
 
         var ef = await query.FirstOrDefaultAsync();
@@ -31,11 +32,15 @@ public class EfOrganizerRepository : IOrganizerRepository
         Guid id,
         CancellationToken cancellationToken = default)
     {
+        // IgnoreQueryFilters: EF would otherwise wrap FromSql FOR UPDATE as a subquery
+        // and append the soft-delete filter — PostgreSQL rejects FOR UPDATE in subqueries.
+        // Soft-delete stays in SQL (is_deleted = FALSE) so deleted rows are not locked.
         var ef = await _context.Organizers
             .FromSqlInterpolated($@"
                 SELECT * FROM organizers
                 WHERE id = {id} AND is_deleted = FALSE
                 FOR UPDATE")
+            .IgnoreQueryFilters()
             .AsTracking()
             .FirstOrDefaultAsync(cancellationToken);
         return ef?.ToDomain();

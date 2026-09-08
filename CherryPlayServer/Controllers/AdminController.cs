@@ -172,9 +172,11 @@ public class AdminController : ControllerBase
             .Concat(revokeByEntitlement.Values)
             .Distinct()
             .ToList();
+        // Historical grant/revoke actor names must survive soft-delete of that admin.
         var adminNames = adminIds.Count == 0
             ? new Dictionary<Guid, string>()
             : await _db.Organizers.AsNoTracking()
+                .IgnoreQueryFilters()
                 .Where(x => adminIds.Contains(x.Id))
                 .ToDictionaryAsync(x => x.Id, x => x.Name);
 
