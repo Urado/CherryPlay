@@ -48,9 +48,11 @@ CherryPlayServer supports **two storage modes** behind the same repository inter
 | Mode | When | Behavior |
 |------|------|----------|
 | **EF Core + PostgreSQL** (`UseInMemoryStorage=false`) | **Production** and normal local/Docker with DB | `AppDbContext` + EF repositories; migrations on startup when enabled. Schema: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md) |
-| **In-memory repositories** (`UseInMemoryStorage=true`) | Local/dev or tests **without** PostgreSQL | Singleton in-memory repos; same domain/API/SignalR surface; data is process-local and non-durable |
+| **In-memory repositories** (`UseInMemoryStorage=true`) | Local/dev or tests **without** PostgreSQL | Singleton in-memory repos; same domain/API/SignalR surface; data is process-local and non-durable. Compose: `docker-compose.inmemory.yml` |
 
 This is an **intentional** dual path — not a half-migration. Prod always uses PostgreSQL. Details and run notes: [CherryPlayServer/README.md](CherryPlayServer/README.md).
+
+**Legal consent (CP-066):** mutations go through `ILegalConsentUnitOfWork`. With InMemory — `InMemoryLegalConsentUnitOfWork` (ambient transaction staging; email/OAuth `ForUpdate`; EF side uses advisory locks when those repos are used). With EF mode — `UnsupportedLegalConsentUnitOfWork` until an EF-backed UoW and consent tables exist. Consent event / legal document version storage is InMemory-only for now (no public `GET` legal-documents catalog). Contracts: [CONTRACTS.md](CONTRACTS.md) §3.2.3.
 
 ## Key entry points
 

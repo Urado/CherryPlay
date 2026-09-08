@@ -227,7 +227,7 @@ CherryPlayWeb после email login/register / session-continue в desktop-ре
 
 Forgot/change password в Desktop **без изменений** (forgot → email → Web; change — в приложении с JWT).
 
-**CP-038 (consent):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. Регистрация через `/login?client=desktop` использует ту же Web-валидацию, что и обычный Web register, до появления CP-038.
+**Consent UI (Web):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. Серверный resource API согласия — §3.2.3 (CP-066). Legacy `POST /auth/register` пока **без** поля `consents` (см. таблицу §3.2.0).
 
 #### 3.2.1 OAuth Login (Desktop) — legacy
 
@@ -272,6 +272,28 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 - `mailru` — Mail.ru OAuth 2.0
 
 **Отложено:** OAuth2 для Telegram (планируется в последующих версиях).
+
+#### 3.2.3 Legal consent (resource REST, CP-066)
+
+Строгий resource REST (noun URI): регистрация организатора / OAuth-аккаунта и append-only журнал согласий. **Нет** публичного каталога `GET /api/legal-documents` — клиент уже знает `legalDocumentVersionId` + `documentHash` и передаёт их в теле; сервер валидирует active-версию и hash.
+
+**Хранение (важно):** мутации (`POST` organizers / oauth/accounts / consent-events) работают при `UseInMemoryStorage=true` через `InMemoryLegalConsentUnitOfWork` (ambient staging + `ForUpdate` на email/OAuth; в EF-репозиториях — `pg_advisory_xact_lock`). При `UseInMemoryStorage=false` зарегистрирован `UnsupportedLegalConsentUnitOfWork` — мутации недоступны, пока нет EF-backed UoW/репозиториев consent. Таблиц consent в PostgreSQL пока нет — см. [DATABASE.md](CherryPlayServer/DATABASE.md). Запуск без Postgres: `docker compose -f docker-compose.inmemory.yml up --build`.
+
+| Метод | Путь | Auth | Описание | Тело | Ответ |
+| ----- | ---- | ---- | -------- | ---- | ----- |
+| POST | `/api/organizers` | нет | Регистрация по email+паролю с обязательными grants. Идемпотентный replay: тот же email + те же consent `id`/payload → **201** с существующим организатором. | `RegisterOrganizerRequest` | **201** `RegisterOrganizerResponse` + `Location: /api/organizers/{id}` |
+| POST | `/api/oauth/accounts` | нет | Создание OAuth-привязки (+ организатор при первом входе) с обязательными grants. Stub: `providerUserId = "{provider}:{code}"`. Идемпотентный replay при том же provider subject + тех же consents. | `CreateOAuthAccountRequest` | **201** `CreateOAuthAccountResponse` + `Location: /api/oauth/accounts/{id}` (`id` = **organizerId**) |
+| GET | `/api/consent-events` | JWT organizer | Список consent events текущего организатора (append-only). | — | **200** `ConsentEventDto[]` |
+| POST | `/api/consent-events` | JWT organizer | Пакетное добавление событий. `ConsentInputDto.id` — **client UUID = idempotency key**: тот же id + тот же payload → тот же результат; конфликт payload → conflict. | `CreateConsentEventsRequest` | **201** `ConsentEventDto[]` + `Location` на первый id (или коллекцию) |
+| GET | `/api/organizers/{id}/consent-events` | JWT organizer | То же, что list, но `id` должен совпадать с организатором из токена; иначе **403**. | — | **200** `ConsentEventDto[]` |
+
+**Обязательные документы при register / oauth create:** active `pd_consent_text` и `terms` с `decision: "grant"` и верным hash. Типы: `pd_consent_text`, `terms`, `privacy_policy`, `cookie_policy`. Решения: `grant` \| `withdraw` \| `deny`. Статусы версии: `draft` \| `active` \| `retired`.
+
+**Ошибки домена:** `LegalConsentFailureKind.Validation` (нет/неверные consents, неверный hash/версия, пустой OAuth code) и `Conflict` (email занят, OAuth уже связан с другими consents, conflict id события). Целевые HTTP по rest-api: **400** / **409**. Пустое тело → **400**.
+
+**InMemory seed (dev/tests):** active `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, hash `pd-consent-hash-v1`), `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, hash `terms-hash-v1`); retired sample — `cccccccc-cccc-cccc-cccc-cccccccccccc`.
+
+DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### 3.3 Profile (профиль организатора)
 
@@ -671,6 +693,23 @@ _Примечание:_ в текущей реализации веб может
 
 - `grantedByAdminId`/`grantedByAdminName` и `revokedByAdminId` восстанавливаются по последним audit-записям `grant_package`/`revoke_package` для entitlement.
 - Поля админа могут быть `null` для legacy-записей (например, если исторический аудит отсутствует).
+
+### 6.9 DTO Legal consent (CP-066)
+
+| DTO / enum | Поля / значения |
+| ---------- | --------------- |
+| `ConsentInputDto` | `id` (client UUID), `legalDocumentVersionId`, `documentHash`, `decision` |
+| `ConsentEventDto` | `id`, `legalDocumentVersionId`, `documentHash`, `decision`, `eventAt` |
+| `CreateConsentEventsRequest` | `events: ConsentInputDto[]` |
+| `RegisterOrganizerRequest` | `email`, `password`, `name`, `consents: ConsentInputDto[]` |
+| `RegisterOrganizerResponse` | `id`, `email`, `name` |
+| `CreateOAuthAccountRequest` | `provider` (`OAuthProvider`), `code`, `consents: ConsentInputDto[]` |
+| `CreateOAuthAccountResponse` | `id` (organizerId), `email`, `providerSubject` |
+| `ConsentDecision` | `"grant"` \| `"withdraw"` \| `"deny"` |
+| `LegalDocumentType` | `"pd_consent_text"` \| `"terms"` \| `"privacy_policy"` \| `"cookie_policy"` |
+| `LegalDocumentVersionStatus` | `"draft"` \| `"active"` \| `"retired"` |
+
+Эндпоинты — §3.2.3. JSON enum — string (camel/`snake` как в таблице).
 
 ---
 

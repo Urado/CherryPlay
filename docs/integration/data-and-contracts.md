@@ -21,7 +21,8 @@
 | Что | Документ |
 |-----|----------|
 | **REST API** (Public и Organizer), **SignalR** (методы и события), **DTO** (PartyPlaylistDto, PlaybackStateDto, PublicPartyDto, PartyDto, CreatePartyDto, PartyStateDto и т.д.) | [CONTRACTS.md](../../CONTRACTS.md) |
-| **Схема БД**: Organizer, Party, PartyPlaylist, SessionState; связи и политика удаления | [CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md) |
+| **Legal consent** (`POST /api/organizers`, `/api/oauth/accounts`, consent-events; InMemory gate) | [CONTRACTS.md](../../CONTRACTS.md) §3.2.3, §6.9 |
+| **Схема БД**: Organizer, Party, PartyPlaylist, SessionState; связи и политика удаления (consent tables — пока нет, InMemory-only) | [CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md) |
 | **Версионирование и обратная совместимость** (ломающие изменения, shortCode и маршруты) | [CONTRACTS.md](../../CONTRACTS.md) §10 |
 | **Реализация сервера**: запуск, эндпоинты, Hub, хранилище | [CherryPlayServer/README.md](../../CherryPlayServer/README.md); навигация по контрактам — [CherryPlayServer/API.md](../../CherryPlayServer/API.md) |
 | **Реализация веб-клиента**: структура, API, настройка | [CherryPlayWeb/README.md](../../CherryPlayWeb/README.md) |

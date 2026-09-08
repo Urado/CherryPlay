@@ -289,7 +289,7 @@ docker-compose -f docker-compose.debug.yml down
 docker compose -f docker-compose.inmemory.yml up --build
 ```
 
-Сервер с `UseInMemoryStorage=true`: Postgres/migrate не нужны; данные сбрасываются при рестарте контейнера. API: http://localhost:5000, Web: http://localhost:3000.
+Сервер с `UseInMemoryStorage=true`: Postgres/migrate не нужны; данные сбрасываются при рестарте контейнера. API: http://localhost:5000, Web: http://localhost:3000. В этом режиме доступны мутации **legal consent** (CP-066); при EF — пока unsupported UoW — см. [CONTRACTS.md](CONTRACTS.md) §3.2.3.
 
 **Особенности debug режима:**
 

@@ -15,6 +15,10 @@
 
 Флаг `UseInMemoryStorage=true` в конфигурации (`Program.cs`) подключает in-memory реализации тех же репозиториев **без** PostgreSQL: удобно для локальной разработки и тестов без БД. Данные не персистятся между процессами. Это **намеренный** dual path за едиными интерфейсами репозиториев, а не незавершённая миграция. Обзор: [ARCHITECTURE.md](../ARCHITECTURE.md); запуск: [README.md](README.md).
 
+### Legal consent (CP-066) — пока вне EF
+
+Таблиц **consent events** / **legal document versions** в PostgreSQL и миграциях **пока нет**. Журнал согласий и версии документов живут в InMemory-репозиториях; мутации регистраций/consent — через `ILegalConsentUnitOfWork` только при `UseInMemoryStorage=true` (`UnsupportedLegalConsentUnitOfWork` при EF). Не изобретать схему здесь — контракт API: [CONTRACTS.md](../CONTRACTS.md) §3.2.3.
+
 ---
 
 ## Organizer (организатор)

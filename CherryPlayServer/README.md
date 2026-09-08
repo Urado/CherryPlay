@@ -3,7 +3,8 @@
 Сервер для трансляции состояния плейлиста с использованием SignalR и персистентного хранилища PostgreSQL.
 
 > **Персистентность:** В production данные (организаторы, вечеринки, плейлисты, состояние сессии) хранятся в **PostgreSQL** через EF Core. Схема БД, миграции и настройка — в [DATABASE.md](DATABASE.md).  
-> **Dual storage (intentional):** `UseInMemoryStorage=true` переключает те же интерфейсы репозиториев на in-memory реализации (без Postgres; данные только в процессе) — для локальной разработки/тестов. Флаг читается в `Program.cs`. Обзор: корневой [ARCHITECTURE.md](../ARCHITECTURE.md).
+> **Dual storage (intentional):** `UseInMemoryStorage=true` переключает те же интерфейсы репозиториев на in-memory реализации (без Postgres; данные только в процессе) — для локальной разработки/тестов. Флаг читается в `Program.cs`. Обзор: корневой [ARCHITECTURE.md](../ARCHITECTURE.md).  
+> **Legal consent (CP-066):** мутации требуют InMemory UoW (`UseInMemoryStorage=true`); при EF — `UnsupportedLegalConsentUnitOfWork`. Контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.3; схема consent в Postgres пока отсутствует — [DATABASE.md](DATABASE.md).
 
 ## Требования
 
@@ -18,6 +19,7 @@ dotnet run
 Сервер будет доступен по адресу http://localhost:5000
 
 - **Health:** `GET /api/health` — проверка доступности (см. [OPS.md](OPS.md)).
+- **InMemory без Postgres (compose):** из корня репозитория — `docker compose -f docker-compose.inmemory.yml up --build` (см. корневой [README.md](../README.md), [DEV_SETUP.md](../DEV_SETUP.md)).
 
 ## API Endpoints
 

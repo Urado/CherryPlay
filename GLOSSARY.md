@@ -14,6 +14,16 @@
 
 ---
 
+## Legal consent (CP-066)
+
+| Термин | Описание |
+| ------ | -------- |
+| **consent event** | Append-only факт согласия/отказа по версии документа. `id` задаёт клиент (UUID = ключ идемпотентности). API: `/api/consent-events` — [CONTRACTS.md](CONTRACTS.md) §3.2.3. |
+| **legal document version** | Версия юридического текста (`legalDocumentVersionId` + `documentHash`). Публичного каталога GET нет — клиент передаёт id+hash сам. Пока InMemory-only. |
+| **ConsentDecision** | `"grant"` \| `"withdraw"` \| `"deny"`. |
+
+---
+
 ## Идентификаторы вечеринки
 
 | Термин        | Описание                                                                                                                                                                                    |
