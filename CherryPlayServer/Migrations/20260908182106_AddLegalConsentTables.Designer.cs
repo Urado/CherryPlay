@@ -3,6 +3,7 @@ using System;
 using CherryPlayServer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CherryPlayServer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260908182106_AddLegalConsentTables")]
+    partial class AddLegalConsentTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,19 +282,19 @@ namespace CherryPlayServer.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            ContentHash = "f4c9dcba9ed36f7cfe1087c1e2dc7535008df71cd3ad95bced47f6278092de46",
+                            ContentHash = "pd-consent-hash-v1",
                             DocumentType = "pd_consent_text",
-                            DocumentVersion = "1.0",
-                            EffectiveFrom = new DateTime(2026, 9, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentVersion = "v1",
+                            EffectiveFrom = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "active"
                         },
                         new
                         {
                             Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            ContentHash = "889f4423294937c7b0a40fbdb2c6d10dc69d3e44c0ed19338b6a22bacb6ab018",
+                            ContentHash = "terms-hash-v1",
                             DocumentType = "terms",
-                            DocumentVersion = "1.0",
-                            EffectiveFrom = new DateTime(2026, 9, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DocumentVersion = "v1",
+                            EffectiveFrom = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Status = "active"
                         },
                         new

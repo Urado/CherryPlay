@@ -1,4 +1,4 @@
-using System.Threading.RateLimiting;
+﻿using System.Threading.RateLimiting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Linq;
@@ -71,6 +71,8 @@ if (useInMemoryStorage)
     builder.Services.AddSingleton<IThemePackageRepository, InMemoryThemePackageRepository>();
     builder.Services.AddSingleton<IOrganizerEntitlementRepository, InMemoryOrganizerEntitlementRepository>();
     builder.Services.AddSingleton<IAdminAuditLogRepository, InMemoryAdminAuditLogRepository>();
+    builder.Services.AddSingleton<ILegalDocumentVersionRepository, InMemoryLegalDocumentVersionRepository>();
+    builder.Services.AddSingleton<IConsentEventRepository, InMemoryConsentEventRepository>();
 }
 else
 {
@@ -94,6 +96,8 @@ else
     builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
     builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
+    builder.Services.AddScoped<ILegalDocumentVersionRepository, EfLegalDocumentVersionRepository>();
+    builder.Services.AddScoped<IConsentEventRepository, EfConsentEventRepository>();
 }
 
 builder.Services.Configure<EmailOptions>(options =>
@@ -153,8 +157,6 @@ builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
 
-builder.Services.AddSingleton<ILegalDocumentVersionRepository, InMemoryLegalDocumentVersionRepository>();
-builder.Services.AddSingleton<IConsentEventRepository, InMemoryConsentEventRepository>();
 builder.Services.Configure<ConsentGateOptions>(options => options.Enabled = useInMemoryStorage);
 if (useInMemoryStorage)
 {
@@ -167,7 +169,7 @@ if (useInMemoryStorage)
 }
 else
 {
-    builder.Services.AddSingleton<ILegalConsentUnitOfWork, UnsupportedLegalConsentUnitOfWork>();
+    builder.Services.AddScoped<ILegalConsentUnitOfWork, EfLegalConsentUnitOfWork>();
 }
 builder.Services.AddScoped<ILegalDocumentsService, LegalDocumentsService>();
 builder.Services.AddScoped<IOrganizersService, OrganizersService>();

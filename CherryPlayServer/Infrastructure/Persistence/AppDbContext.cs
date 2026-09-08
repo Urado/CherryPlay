@@ -24,6 +24,8 @@ public class AppDbContext : DbContext
     public DbSet<ThemePackageItemEf> ThemePackageItems => Set<ThemePackageItemEf>();
     public DbSet<OrganizerEntitlementEf> OrganizerEntitlements => Set<OrganizerEntitlementEf>();
     public DbSet<AdminAuditLogEf> AdminAuditLogs => Set<AdminAuditLogEf>();
+    public DbSet<LegalDocumentVersionEf> LegalDocumentVersions => Set<LegalDocumentVersionEf>();
+    public DbSet<ConsentEventEf> ConsentEvents => Set<ConsentEventEf>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

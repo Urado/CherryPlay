@@ -244,6 +244,27 @@ public static class DomainToEfMappers
         };
     }
 
+    public static ConsentEventEf ToEf(this ConsentEvent domain)
+    {
+        return new ConsentEventEf
+        {
+            Id = domain.Id,
+            SubjectId = domain.SubjectId,
+            LegalDocumentVersionId = domain.LegalDocumentVersionId,
+            DocumentHash = domain.DocumentHash,
+            Decision = ToConsentDecisionDb(domain.Decision),
+            EventAt = domain.EventAt.ToUniversalTime(),
+        };
+    }
+
+    private static string ToConsentDecisionDb(ConsentDecision value) => value switch
+    {
+        ConsentDecision.Grant => "grant",
+        ConsentDecision.Withdraw => "withdraw",
+        ConsentDecision.Deny => "deny",
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown consent decision"),
+    };
+
     private static string? SerializeStringList(List<string>? list)
     {
         if (list == null || list.Count == 0) return null;
