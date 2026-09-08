@@ -15,6 +15,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
+import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
@@ -95,6 +96,7 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
 
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
   const { partyInfoPageEnabled } = useAppConfig();
+  const { ensureConsents } = useConsentGate();
   void partyInfoPageEnabled;
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,6 +134,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       try {
         const currentOrganizer = await authService.checkAuth();
         setOrganizer(currentOrganizer);
+        if (currentOrganizer) {
+          await ensureConsents();
+        }
       } catch (err) {
         devLog('[PartyListPage] Auth check failed (non-critical):', err);
         setOrganizer(null);
@@ -140,7 +145,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
       }
     };
     checkAuth();
-  }, []);
+  }, [ensureConsents]);
 
   const handleRetry = () => {
     loadParties();

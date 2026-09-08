@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
+import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
 
 type OrganizerWithRole = OrganizerDto & { role?: 'organizer' | 'admin' };
 
 export function useRequireAdmin() {
   const navigate = useNavigate();
+  const { ensureConsents } = useConsentGate();
   const [checking, setChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -37,6 +39,7 @@ export function useRequireAdmin() {
         }
 
         setIsAdmin(true);
+        await ensureConsents();
       } catch {
         if (cancelled) return;
         setIsAdmin(false);
@@ -53,7 +56,7 @@ export function useRequireAdmin() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, ensureConsents]);
 
   return { checking, isAdmin };
 }

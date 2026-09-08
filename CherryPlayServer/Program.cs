@@ -147,6 +147,7 @@ builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
 
 builder.Services.AddSingleton<ILegalDocumentVersionRepository, InMemoryLegalDocumentVersionRepository>();
 builder.Services.AddSingleton<IConsentEventRepository, InMemoryConsentEventRepository>();
+builder.Services.Configure<ConsentGateOptions>(options => options.Enabled = useInMemoryStorage);
 if (useInMemoryStorage)
 {
     builder.Services.AddSingleton<ILegalConsentUnitOfWork>(sp => new InMemoryLegalConsentUnitOfWork(
@@ -331,6 +332,7 @@ app.UseMiddleware<ClientVersionMiddleware>();
 app.UseMiddleware<JwtAuthenticationMiddleware>();
 
 app.UseAuthorization();
+app.UseMiddleware<ConsentGateMiddleware>();
 
 app.MapControllers();
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");

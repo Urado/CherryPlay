@@ -15,7 +15,7 @@ public class LegalConsentExceptionHandlerTests
     [Test]
     public async Task TryHandleAsync_Validation_Returns400WithDetail()
     {
-        var (statusCode, problem, logLevel) = await HandleAsync(
+        var (statusCode, problem, logLevel) = await HandleProblemAsync(
             new LegalConsentException(LegalConsentFailureKind.Validation, "Consents are required."));
 
         Assert.That(statusCode, Is.EqualTo((int)HttpStatusCode.BadRequest));
@@ -27,7 +27,7 @@ public class LegalConsentExceptionHandlerTests
     [Test]
     public async Task TryHandleAsync_Conflict_Returns409WithDetail()
     {
-        var (statusCode, problem, logLevel) = await HandleAsync(
+        var (statusCode, problem, logLevel) = await HandleProblemAsync(
             new LegalConsentException(LegalConsentFailureKind.Conflict, "Email is already registered."));
 
         Assert.That(statusCode, Is.EqualTo((int)HttpStatusCode.Conflict));
@@ -36,7 +36,46 @@ public class LegalConsentExceptionHandlerTests
         Assert.That(logLevel, Is.EqualTo(LogLevel.Warning));
     }
 
-    private static async Task<(int StatusCode, ProblemDetails Problem, LogLevel LogLevel)> HandleAsync(
+    [Test]
+    public async Task TryHandleAsync_ConsentRequired_Returns403WithCodeAndMissing()
+    {
+        var missingIds = new[]
+        {
+            Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+        };
+
+        var (statusCode, json, logLevel) = await HandleRawAsync(
+            new LegalConsentException(
+                LegalConsentFailureKind.ConsentRequired,
+                "Consent required",
+                missingIds));
+
+        Assert.That(statusCode, Is.EqualTo((int)HttpStatusCode.Forbidden));
+        Assert.That(logLevel, Is.EqualTo(LogLevel.Warning));
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        Assert.That(root.GetProperty("code").GetString(), Is.EqualTo("consent_required"));
+        Assert.That(root.GetProperty("message").GetString(), Is.EqualTo("Consent required"));
+        var missing = root.GetProperty("missing").EnumerateArray().Select(e => e.GetString()).ToArray();
+        Assert.That(missing, Is.EquivalentTo(missingIds.Select(id => id.ToString())));
+    }
+
+    private static async Task<(int StatusCode, ProblemDetails Problem, LogLevel LogLevel)> HandleProblemAsync(
+        LegalConsentException exception)
+    {
+        var (statusCode, json, logLevel) = await HandleRawAsync(exception);
+        var problem = JsonSerializer.Deserialize<ProblemDetails>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.That(problem, Is.Not.Null);
+        return (statusCode, problem!, logLevel);
+    }
+
+    private static async Task<(int StatusCode, string Json, LogLevel LogLevel)> HandleRawAsync(
         LegalConsentException exception)
     {
         var logger = new CapturingLogger();
@@ -50,14 +89,9 @@ public class LegalConsentExceptionHandlerTests
         context.Response.Body.Seek(0, SeekOrigin.Begin);
         using var reader = new StreamReader(context.Response.Body);
         var json = await reader.ReadToEndAsync();
-        var problem = JsonSerializer.Deserialize<ProblemDetails>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
 
-        Assert.That(problem, Is.Not.Null);
         Assert.That(logger.LastLevel, Is.Not.Null);
-        return (context.Response.StatusCode, problem!, logger.LastLevel!.Value);
+        return (context.Response.StatusCode, json, logger.LastLevel!.Value);
     }
 
     private sealed class CapturingLogger : ILogger<GlobalExceptionHandler>

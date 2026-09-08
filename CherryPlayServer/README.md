@@ -21,7 +21,7 @@ dotnet run
 - **Health:** `GET /api/health` — проверка доступности (см. [OPS.md](OPS.md)).
 - **InMemory без Postgres (compose):** из корня репозитория — `docker compose -f docker-compose.inmemory.yml up --build` (см. корневой [README.md](../README.md), [DEV_SETUP.md](../DEV_SETUP.md)).
 - **DataSeeder:** `DataSeederHostedService` сидит данные **только** если `UseInMemoryStorage=true`; при EF seed пропускается.
-- **Demo Admin (InMemory only):** `t@t.ru` / `123456` (роль admin + seed grants ПДн/Terms). **Legacy без согласий:** `legacy@t.ru` / `123456` (fixture для CP-044). В PostgreSQL/EF-режиме этих аккаунтов из seeder нет.
+- **Demo Admin (InMemory only):** `t@t.ru` / `123456` (роль admin + seed grants ПДн/Terms — re-consent gate не показывается). **Legacy без согласий:** `legacy@t.ru` / `123456` (smoke CP-044: Web-модалка / desktop SSO до deep-link). В PostgreSQL/EF-режиме этих аккаунтов из seeder нет.
 
 ## API Endpoints
 

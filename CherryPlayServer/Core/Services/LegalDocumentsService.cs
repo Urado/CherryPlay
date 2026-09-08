@@ -89,4 +89,31 @@ public class LegalDocumentsService : ILegalDocumentsService
 
         return latest is not null && latest.Decision == ConsentDecision.Grant;
     }
+
+    public async Task<IReadOnlyList<Guid>> GetMissingRequiredGrantsAsync(
+        Guid subjectId,
+        CancellationToken cancellationToken = default)
+    {
+        var required = await GetRequiredActiveAsync(cancellationToken);
+        if (required.Count == 0)
+        {
+            return [];
+        }
+
+        var events = await _consentEvents.ListBySubjectAsync(subjectId, cancellationToken);
+        var grantedVersionIds = events
+            .GroupBy(e => e.LegalDocumentVersionId)
+            .Where(g =>
+            {
+                var latest = g.OrderByDescending(e => e.EventAt).First();
+                return latest.Decision == ConsentDecision.Grant;
+            })
+            .Select(g => g.Key)
+            .ToHashSet();
+
+        return required
+            .Where(v => !grantedVersionIds.Contains(v.Id))
+            .Select(v => v.Id)
+            .ToList();
+    }
 }

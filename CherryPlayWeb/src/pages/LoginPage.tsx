@@ -11,6 +11,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
+import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
 import {
   isDesktopClientQueryValue,
@@ -42,6 +43,7 @@ export function LoginPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { oauthEnabled } = useAppConfig();
+  const { ensureConsents } = useConsentGate();
   const [passwordChangedNotice] = useState(
     () => (location.state as LoginLocationState)?.passwordChanged === true,
   );
@@ -124,22 +126,43 @@ export function LoginPage() {
   const handleLoginSuccess = async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const organizer = await authService.checkAuth?.();
-    if (organizer) {
-      navigate(ROUTES.CABINET);
+    if (!organizer) {
+      return;
     }
+    const consentResult = await ensureConsents();
+    if (consentResult === 'logout') {
+      return;
+    }
+    navigate(ROUTES.CABINET);
   };
 
-  const handleDesktopAuthSuccess = (code: string) => {
-    setReturningToApp(true);
+  const handleDesktopAuthSuccess = async (code: string) => {
+    const consentResult = await ensureConsents();
+    if (consentResult !== 'ok') {
+      // Missing grants must be resolved on Web before deep-link return; logout/error stay here.
+      return;
+    }
     setPendingDesktopCode(code);
+    setReturningToApp(true);
   };
 
   const handleSessionContinue = async () => {
     setIssuingDesktopCode(true);
     setSessionContinueError(null);
     try {
+      const consentResult = await ensureConsents();
+      if (consentResult === 'logout') {
+        return;
+      }
+      if (consentResult !== 'ok') {
+        setSessionContinueError(
+          'Не удалось проверить согласия. Обновите страницу или войдите снова.',
+        );
+        return;
+      }
       const code = await authService.issueDesktopAuthCode();
-      handleDesktopAuthSuccess(code);
+      setPendingDesktopCode(code);
+      setReturningToApp(true);
     } catch (error) {
       const message = getAuthErrorMessage(error).trim();
       setSessionContinueError(message || 'Не удалось продолжить вход. Войдите снова через форму.');
@@ -167,10 +190,13 @@ export function LoginPage() {
   if (desktopMode && desktopSessionView === 'checking') {
     return (
       <div className="login-page">
-        <div className="login-page-checking" role="status" aria-live="polite">
-          <div className="login-page-checking-spinner" aria-hidden="true" />
-          <div className="login-page-notice">Проверяем сессию…</div>
+        <div className="login-page-body">
+          <div className="login-page-checking" role="status" aria-live="polite">
+            <div className="login-page-checking-spinner" aria-hidden="true" />
+            <div className="login-page-notice">Проверяем сессию…</div>
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -178,36 +204,44 @@ export function LoginPage() {
   if (desktopMode && desktopSessionView === 'continue') {
     return (
       <div className="login-page">
-        <div className="login-page-session-continue login-page-form">
-          <h1 className="login-page-session-continue-title">Вход в CherryPlayList</h1>
-          <p className="login-page-session-continue-description">
-            Вы уже вошли в CherryPlay. Нажмите «Войти», чтобы открыть приложение.
-          </p>
-          <FormButton
-            type="button"
-            fullWidth
-            loading={issuingDesktopCode}
-            disabled={issuingDesktopCode}
-            onClick={() => {
-              void handleSessionContinue();
-            }}
-          >
-            Войти
-          </FormButton>
-          <FormButton
-            type="button"
-            fullWidth
-            variant="outline"
-            disabled={issuingDesktopCode}
-            className="login-page-session-continue-other"
-            onClick={() => {
-              setSessionContinueError(null);
-              setDesktopSessionView('form');
-            }}
-          >
-            Войти другим аккаунтом
-          </FormButton>
+        <div className="login-page-body">
+          {sessionContinueError && (
+            <div className="login-page-error" role="alert">
+              {sessionContinueError}
+            </div>
+          )}
+          <div className="login-page-session-continue login-page-form">
+            <h1 className="login-page-session-continue-title">Вход в CherryPlayList</h1>
+            <p className="login-page-session-continue-description">
+              Вы уже вошли в CherryPlay. Нажмите «Войти», чтобы открыть приложение.
+            </p>
+            <FormButton
+              type="button"
+              fullWidth
+              loading={issuingDesktopCode}
+              disabled={issuingDesktopCode}
+              onClick={() => {
+                void handleSessionContinue();
+              }}
+            >
+              Войти
+            </FormButton>
+            <FormButton
+              type="button"
+              fullWidth
+              variant="outline"
+              disabled={issuingDesktopCode}
+              className="login-page-session-continue-other"
+              onClick={() => {
+                setSessionContinueError(null);
+                setDesktopSessionView('form');
+              }}
+            >
+              Войти другим аккаунтом
+            </FormButton>
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -231,7 +265,13 @@ export function LoginPage() {
           authService={authService}
           oauthEnabled={oauthEnabled}
           onLoginSuccess={handleLoginSuccess}
-          onDesktopAuthSuccess={desktopMode ? handleDesktopAuthSuccess : undefined}
+          onDesktopAuthSuccess={
+            desktopMode
+              ? (code) => {
+                  void handleDesktopAuthSuccess(code);
+                }
+              : undefined
+          }
           onForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
           className="login-page-form"
         />

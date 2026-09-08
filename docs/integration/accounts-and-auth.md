@@ -129,7 +129,8 @@ CherryPlayList «Войти через браузер»
 2. **API sequence:** `POST /api/organizers` (email, password, name, `consents`) → при успехе `POST /auth/login` (cookie). Legacy `POST /auth/register` без consents не используется Web-формой.
 3. **Хранение:** consent-мутации требуют `UseInMemoryStorage=true` (`InMemoryLegalConsentUnitOfWork`). При EF — `UnsupportedLegalConsentUnitOfWork` (мутации недоступны; таблиц consent в Postgres нет).
 4. **OAuth gap:** live `/auth/{provider}/web` → callback **не** пишет consent events; consent-aware stub — `POST /api/oauth/accounts` (UI не подключён).
-5. Контракт и HTTP 400/409: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3. Страницы legal / RegisterPage: [pages.md](../../CherryPlayWeb/docs/pages.md).
+5. **Re-consent (CP-044):** после входа Web сравнивает `GET /api/consent-events` с deploy-config; при missing — блокирующая модалка → `POST /api/consent-events`. Write без grants → `403 consent_required` (+ `missing[]`); клиент открывает ту же модалку. **Desktop SSO:** deep-link только после успешного grant на Web (`ensureConsents`); List UI gate не дублирует.
+6. Контракт, gate и HTTP 400/403/409: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3. Страницы / ConsentGate: [pages.md](../../CherryPlayWeb/docs/pages.md).
 
 ## Связь с модулями приложения
 
@@ -144,6 +145,6 @@ CherryPlayList «Войти через браузер»
 
 Детали эндпоинтов логина, обмена токенов и профиля организатора — в [CONTRACTS.md](../../CONTRACTS.md):
 - **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`; legacy `POST /auth/register`), **Web primary register + consent** (`POST /api/organizers` → `POST /auth/login`, §3.2.3), **Desktop browser SSO** (`POST /auth/desktop/code` для session-continue, `POST /auth/desktop/exchange`, query `return_to` / `buildAuthReturnUrl`, §3.2.0b), сброс/смена пароля (`POST /auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`), OAuth 2.0 VK и Mail.ru для Web (`/auth/{provider}/web`, `/auth/{provider}/callback` с `client=desktop` и `return_to` для Desktop; live OAuth без consent events — gap), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange`, §3.2.1), logout. OAuth2 для Telegram отложен.
-- **Legal consent:** §3.2.3 — resource REST, InMemory-only мутации, `LegalConsentException` → 400/409.
+- **Legal consent:** §3.2.3 — resource REST, InMemory-only мутации, write-path gate `403 consent_required`, Web re-consent modal, `LegalConsentException` → 400/409/403.
 - **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
 - **Защита write-методов:** CONTRACTS §2–3 (REST и SignalR требуют JWT).

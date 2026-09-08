@@ -21,6 +21,7 @@
 | **consent event** | Append-only факт согласия/отказа по версии документа. `id` задаёт клиент (UUID = ключ идемпотентности). API: `/api/consent-events` — [CONTRACTS.md](CONTRACTS.md) §3.2.3. |
 | **legal document version** | Версия юридического текста (`legalDocumentVersionId` + `documentHash`). Публичного каталога GET нет — клиент передаёт id+hash сам. Пока InMemory-only. Клиентский folder/label контента — `1.0`; InMemory seed поле `documentVersion` — `v1`; API матчит **id + hash**, не строку label. |
 | **ConsentDecision** | `"grant"` \| `"withdraw"` \| `"deny"`. |
+| **consent gate / re-consent** | Нет grant на active required → write **403** `consent_required` + `missing[]` (InMemory). Web: `ConsentGateProvider` (proactive после login + reactive 403). Desktop SSO ждёт grant на Web до deep-link. |
 
 ---
 

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
+import { useConsentGate } from '../contexts/ConsentGateContext';
 import { clearThemeAccessCache, useThemeAccess } from '../hooks/useThemeAccess';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
@@ -45,6 +46,7 @@ function mergePartiesWithLocalDrafts(current: PartyDto[], fromServer: PartyDto[]
 export function CabinetPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { ensureConsents } = useConsentGate();
   const [organizer, setOrganizer] = useState<OrganizerWithRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [parties, setParties] = useState<PartyDto[]>([]);
@@ -94,6 +96,7 @@ export function CabinetPage() {
         }
         setOrganizer(currentOrganizer);
         setLoading(false);
+        await ensureConsents();
         await loadParties();
       } catch (err) {
         console.error('[CabinetPage] Error checking auth:', err);
@@ -102,7 +105,7 @@ export function CabinetPage() {
     };
 
     loadOrganizer();
-  }, [navigate, loadParties]);
+  }, [navigate, loadParties, ensureConsents]);
 
   const handleLogout = async () => {
     await authService.logout();

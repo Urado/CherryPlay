@@ -38,6 +38,8 @@ export const API_ENDPOINTS = {
 
   ORGANIZERS: '/api/organizers',
 
+  CONSENT_EVENTS: '/api/consent-events',
+
   ADMIN: {
     ORGANIZERS: '/api/admin/organizers',
     ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,

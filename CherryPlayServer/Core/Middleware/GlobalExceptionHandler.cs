@@ -25,9 +25,35 @@ public class GlobalExceptionHandler : IExceptionHandler
         string title;
         var logLevel = LogLevel.Error;
 
-        if (exception is LegalConsentException legalConsentException)
+        if (exception is LegalConsentException legalConsentException
+            && legalConsentException.Kind == LegalConsentFailureKind.ConsentRequired)
         {
-            (statusCode, title, logLevel) = MapLegalConsent(legalConsentException.Kind);
+            _logger.LogWarning(exception, "Unhandled exception occurred");
+
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            httpContext.Response.ContentType = "application/json";
+
+            var body = new
+            {
+                code = "consent_required",
+                message = "Consent required",
+                missing = (legalConsentException.Missing ?? Array.Empty<Guid>())
+                    .Select(id => id.ToString())
+                    .ToArray()
+            };
+
+            var consentJson = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            await httpContext.Response.WriteAsync(consentJson, cancellationToken);
+            return true;
+        }
+
+        if (exception is LegalConsentException legalConsent)
+        {
+            (statusCode, title, logLevel) = MapLegalConsent(legalConsent.Kind);
         }
         else if (exception is UnauthorizedAccessException)
         {

@@ -30,6 +30,17 @@ vi.mock('../contexts/AppConfigContext', () => ({
   }),
 }));
 
+const ensureConsentsMock = vi.fn();
+
+vi.mock('../contexts/ConsentGateContext', () => ({
+  useConsentGate: () => ({
+    isOpen: false,
+    ensureConsents: (...args: unknown[]) => ensureConsentsMock(...args),
+    openWithMissing: vi.fn(),
+  }),
+  useConsentGateOpen: () => false,
+}));
+
 vi.mock('@cherryplay/components', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@cherryplay/components')>();
   return {
@@ -100,6 +111,8 @@ describe('LoginPage desktop SSO', () => {
   beforeEach(() => {
     checkAuthMock.mockReset();
     issueDesktopAuthCodeMock.mockReset();
+    ensureConsentsMock.mockReset();
+    ensureConsentsMock.mockResolvedValue('ok');
     sessionStorage.clear();
     vi.useRealTimers();
   });
@@ -156,6 +169,7 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByRole('button', { name: 'Войти' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Войти другим аккаунтом' })).toBeTruthy();
     expect(screen.queryByTestId('auth-form')).toBeNull();
+    expect(screen.getByRole('navigation', { name: 'Юридические документы' })).toBeTruthy();
   });
 
   it('falls back to form when checkAuth returns null', async () => {
@@ -248,10 +262,68 @@ describe('LoginPage desktop SSO', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'trigger-desktop-success' }));
 
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
+    expect(ensureConsentsMock).toHaveBeenCalledTimes(1);
     const fallback = screen.getByRole('link', {
       name: 'нажмите здесь, чтобы вернуться в CherryPlayList',
     });
     expect(fallback.getAttribute('href')).toContain('code=form-success-code');
   });
 
+  it('does not return to app until ensureConsents resolves ok', async () => {
+    checkAuthMock.mockResolvedValue(null);
+    let resolveConsents!: (value: 'ok' | 'logout' | 'error') => void;
+    ensureConsentsMock.mockImplementation(
+      () =>
+        new Promise<'ok' | 'logout' | 'error'>((resolve) => {
+          resolveConsents = resolve;
+        }),
+    );
+
+    renderLogin('/login?client=desktop');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'trigger-desktop-success' }));
+
+    expect(screen.queryByText('Возвращаемся в приложение…')).toBeNull();
+    expect(screen.getByTestId('auth-form')).toBeTruthy();
+
+    await act(async () => {
+      resolveConsents('ok');
+    });
+
+    expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
+  });
+
+  it('stays on login when ensureConsents returns logout', async () => {
+    checkAuthMock.mockResolvedValue(null);
+    ensureConsentsMock.mockResolvedValue('logout');
+
+    renderLogin('/login?client=desktop');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'trigger-desktop-success' }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByText('Возвращаемся в приложение…')).toBeNull();
+    expect(screen.getByTestId('auth-form')).toBeTruthy();
+  });
+
+  it('runs ensureConsents before issuing desktop code on session continue', async () => {
+    checkAuthMock.mockResolvedValue({ id: '1', name: 'Org', createdAt: '2020-01-01' });
+    issueDesktopAuthCodeMock.mockResolvedValue('session-continue-code');
+    const assign = vi.fn();
+    vi.stubGlobal('location', {
+      ...window.location,
+      assign,
+    });
+
+    renderLogin('/login?client=desktop');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Войти' }));
+
+    expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
+    expect(ensureConsentsMock).toHaveBeenCalledTimes(1);
+    expect(issueDesktopAuthCodeMock).toHaveBeenCalledTimes(1);
+  });
 });

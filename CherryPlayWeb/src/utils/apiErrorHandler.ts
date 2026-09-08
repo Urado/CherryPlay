@@ -85,10 +85,18 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
 }
 
 /**
- * Проверяет статус ответа и обрабатывает специфичные ошибки авторизации
+ * Проверяет, стоит ли трактовать HTTP-ответ как logout-worthy auth error.
+ * 403 `consent_required` — нет: ConsentGate открывается через apiFetch notifier.
+ * Callers that redirect/logout on auth failure should use this helper (pass `code` from body).
  */
-export function isAuthError(status: number): boolean {
-  return status === 401 || status === 403;
+export function isAuthError(status: number, code?: string): boolean {
+  if (status === 401) {
+    return true;
+  }
+  if (status === 403 && code === 'consent_required') {
+    return false;
+  }
+  return status === 403;
 }
 
 export function extractApiErrorMessage(error: unknown, fallbackMessage: string): string {

@@ -1,0 +1,121 @@
+.consent-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.consent-gate-modal {
+  width: min(480px, 100%);
+  padding: 24px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color: #f5f5f5;
+  text-align: left;
+}
+
+.consent-gate-modal h2 {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.consent-gate-modal > p {
+  margin: 0 0 20px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.consent-gate-modal .legal-consent-checkbox {
+  accent-color: #4caf7a;
+}
+
+.consent-gate-modal .legal-consent-link {
+  color: #4caf7a;
+}
+
+.consent-gate-modal .legal-consent-checkbox:focus-visible,
+.consent-gate-modal .legal-consent-link:focus-visible {
+  outline: 2px solid #4caf7a;
+  outline-offset: 2px;
+}
+
+.consent-gate-error {
+  margin: 12px 0 0;
+  color: #ff8a80;
+  font-size: 0.9rem;
+}
+
+.consent-gate-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.consent-gate-primary,
+.consent-gate-secondary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consent-gate-primary {
+  border: none;
+  background: #4caf7a;
+  color: #0b1a12;
+}
+
+.consent-gate-primary:hover:not(:disabled) {
+  background: #3d9a68;
+}
+
+.consent-gate-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.consent-gate-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #f5f5f5;
+}
+
+.consent-gate-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.consent-gate-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.consent-gate-tertiary {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-gate-tertiary:hover {
+  color: #fff;
+}
+
+.consent-gate-primary:focus-visible,
+.consent-gate-secondary:focus-visible,
+.consent-gate-tertiary:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
