@@ -1,5 +1,6 @@
 import type {
   AuthService as IAuthService,
+  ConsentInput,
   OrganizerDto,
   AuthExchangeRequest,
   AuthExchangeResponse,
@@ -310,7 +311,12 @@ class AuthService implements IAuthService {
     return token;
   }
 
-  async register(email: string, password: string, name: string): Promise<string> {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+    _consents: ConsentInput[],
+  ): Promise<string> {
     if (isDemoAuthMode()) {
       applyDemoAuthSession();
       useAuthStore

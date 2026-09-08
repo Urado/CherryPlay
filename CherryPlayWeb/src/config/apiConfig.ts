@@ -36,6 +36,8 @@ export const API_ENDPOINTS = {
     THEME_ACCESS: '/api/organizer/me/theme-access',
   },
 
+  ORGANIZERS: '/api/organizers',
+
   ADMIN: {
     ORGANIZERS: '/api/admin/organizers',
     ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,

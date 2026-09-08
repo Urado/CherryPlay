@@ -1,5 +1,6 @@
 import type {
   AuthService as IAuthService,
+  ConsentInput,
   DesktopAuthCodeResponse,
   ForgotPasswordResponse,
   OrganizerDto,
@@ -103,31 +104,51 @@ class AuthService implements IAuthService {
     }
   }
 
-  async register(email: string, password: string, name: string): Promise<string | void> {
-    const desktopMode = isDesktopClientMode();
-    const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.REGISTER), {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+    consents: ConsentInput[],
+  ): Promise<string | void> {
+    const createResponse = await apiFetch(getApiUrl(API_ENDPOINTS.ORGANIZERS), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(desktopMode ? { [DESKTOP_CLIENT_HEADER]: DESKTOP_CLIENT_VALUE } : {}),
       },
       credentials: 'include',
       body: JSON.stringify({
         email,
         password,
         name,
+        consents,
       }),
       cache: 'no-cache',
     });
 
-    if (!response.ok) {
-      await throwAuthHttpError(response);
+    if (!createResponse.ok) {
+      if (createResponse.status === 409) {
+        const message = await readAuthErrorMessage(createResponse);
+        const looksLikeEmailConflict =
+          !message.trim() ||
+          /email/i.test(message) ||
+          /already registered/i.test(message) ||
+          /уже зарегистрирован/i.test(message);
+        throw new AuthHttpError(
+          409,
+          looksLikeEmailConflict ? 'Этот email уже зарегистрирован' : message,
+        );
+      }
+      if (createResponse.status === 400) {
+        const message = await readAuthErrorMessage(createResponse);
+        throw new AuthHttpError(
+          400,
+          message || 'Не удалось зарегистрироваться: проверьте согласия и данные формы',
+        );
+      }
+      await throwAuthHttpError(createResponse);
     }
 
-    if (desktopMode) {
-      const data = (await response.json()) as DesktopAuthCodeResponse;
-      return data.code;
-    }
+    return this.login(email, password);
   }
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse | void> {

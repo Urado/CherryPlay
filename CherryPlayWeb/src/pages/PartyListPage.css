@@ -1,8 +1,18 @@
 .party-list-page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-primary);
-  padding: 20px;
+  padding: 20px 20px 0;
+  box-sizing: border-box;
+}
+
+.party-list-page .site-footer {
+  margin-top: auto;
+  margin-left: -20px;
+  margin-right: -20px;
+  width: calc(100% + 40px);
 }
 
 .party-list-container {

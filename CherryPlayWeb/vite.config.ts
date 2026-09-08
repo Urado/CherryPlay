@@ -1,3 +1,4 @@
+import { realpathSync } from 'fs';
 import path from 'path';
 
 import react from '@vitejs/plugin-react';
@@ -5,11 +6,14 @@ import { defineConfig } from 'vite';
 
 import { readWebClientVersion } from './scripts/readWebClientVersion.mjs';
 
-const cherryPlayComponentsSrc = path.resolve(__dirname, '../CherryPlayComponents/src');
-const repoRoot = path.resolve(__dirname, '..');
-const clientVersion = readWebClientVersion(__dirname);
+// Union mounts CherryPlay via junction; pin Vite to the real path so fs.allow matches.
+const projectRoot = realpathSync.native(__dirname);
+const repoRoot = path.resolve(projectRoot, '..');
+const cherryPlayComponentsSrc = path.resolve(repoRoot, 'CherryPlayComponents/src');
+const clientVersion = readWebClientVersion(projectRoot);
 
 export default defineConfig({
+  root: projectRoot,
   envDir: repoRoot,
   define: {
     __APP_VERSION__: JSON.stringify(clientVersion),
@@ -27,7 +31,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@cherryplay/components': cherryPlayComponentsSrc,
-      '@cherryplay/themes': path.resolve(__dirname, '../CherryPlayComponents/src/themes'),
+      '@cherryplay/themes': path.resolve(cherryPlayComponentsSrc, 'themes'),
     },
   },
   optimizeDeps: {
@@ -35,6 +39,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: {
+      allow: [projectRoot, repoRoot],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

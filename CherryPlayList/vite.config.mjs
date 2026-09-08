@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, realpathSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,7 +7,9 @@ import { defineConfig } from 'vite';
 import eslint from 'vite-plugin-eslint';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf-8'));
+// Union mounts CherryPlay via junction; pin Vite to the real path so fs.allow matches.
+const projectRoot = realpathSync.native(__dirname);
+const pkg = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf-8'));
 
 // https://vitejs.dev/config/
 const isDev = process.env.NODE_ENV === 'development';
@@ -23,6 +25,7 @@ const eslintPlugin = eslint({
 });
 
 export default defineConfig({
+  root: projectRoot,
   plugins: [react(), ...(shouldLint ? [eslintPlugin] : [])],
   base: './',
   optimizeDeps: {
@@ -46,6 +49,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    fs: {
+      allow: [projectRoot, path.resolve(projectRoot, '..')],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -71,15 +77,15 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@core': path.resolve(__dirname, './src/core'),
-      '@shared': path.resolve(__dirname, './src/shared'),
-      '@workspaces': path.resolve(__dirname, './src/workspaces'),
-      '@app': path.resolve(__dirname, './src/app'),
-      '@cherryplay/components': path.resolve(__dirname, '../CherryPlayComponents/src'),
-      react: path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
-      'react/jsx-runtime': path.resolve(__dirname, './node_modules/react/jsx-runtime'),
+      '@': path.resolve(projectRoot, './src'),
+      '@core': path.resolve(projectRoot, './src/core'),
+      '@shared': path.resolve(projectRoot, './src/shared'),
+      '@workspaces': path.resolve(projectRoot, './src/workspaces'),
+      '@app': path.resolve(projectRoot, './src/app'),
+      '@cherryplay/components': path.resolve(projectRoot, '../CherryPlayComponents/src'),
+      react: path.resolve(projectRoot, './node_modules/react'),
+      'react-dom': path.resolve(projectRoot, './node_modules/react-dom'),
+      'react/jsx-runtime': path.resolve(projectRoot, './node_modules/react/jsx-runtime'),
     },
   },
 });

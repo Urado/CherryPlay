@@ -227,7 +227,7 @@ CherryPlayWeb после email login/register / session-continue в desktop-ре
 
 Forgot/change password в Desktop **без изменений** (forgot → email → Web; change — в приложении с JWT).
 
-**Consent UI (Web):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. Серверный resource API согласия — §3.2.3 (CP-066). Legacy `POST /auth/register` пока **без** поля `consents` (см. таблицу §3.2.0).
+**Consent UI (Web):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. **Primary Web email register:** `POST /api/organizers` (+ `consents`) → `POST /auth/login` (cookie) — §3.2.3. Legacy `POST /auth/register` **без** `consents` (таблица §3.2.0) — не основной путь Web-формы.
 
 #### 3.2.1 OAuth Login (Desktop) — legacy
 
@@ -264,7 +264,9 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 1. Пользователь выбирает провайдера (VK или Mail.ru) на странице логина и открывает `/auth/{provider}/web` (например `/auth/vk/web`).
 2. Сервер перенаправляет на страницу авторизации провайдера.
 3. После авторизации провайдер делает redirect на `/auth/{provider}/callback?code=...`.
-4. Сервер обменивает `code` на JWT, устанавливает httpOnly cookie, делает redirect в кабинет.
+4. Сервер обменивает `code` на JWT (`GetOrCreateOrganizer…`), устанавливает httpOnly cookie, делает redirect в кабинет.
+
+**Consent gap:** этот live OAuth-путь **не** записывает consent events. Consent-aware создание OAuth-аккаунта — `POST /api/oauth/accounts` (§3.2.3); Web UI пока не вызывает его.
 
 **Поддерживаемые OAuth-провайдеры в v1:**
 
@@ -275,9 +277,18 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 
 #### 3.2.3 Legal consent (resource REST, CP-066)
 
-Строгий resource REST (noun URI): регистрация организатора / OAuth-аккаунта и append-only журнал согласий. **Нет** публичного каталога `GET /api/legal-documents` — клиент уже знает `legalDocumentVersionId` + `documentHash` и передаёт их в теле; сервер валидирует active-версию и hash.
+Строгий resource REST (noun URI): регистрация организатора / OAuth-аккаунта и append-only журнал согласий. **Нет** публичного каталога `GET /api/legal-documents` — клиент знает `legalDocumentVersionId` + `documentHash` (deploy-time registry) и передаёт их в теле; сервер валидирует active-версию и hash.
 
-**Хранение (важно):** мутации (`POST` organizers / oauth/accounts / consent-events) работают при `UseInMemoryStorage=true` через `InMemoryLegalConsentUnitOfWork` (ambient staging + `ForUpdate` на email/OAuth; в EF-репозиториях — `pg_advisory_xact_lock`). При `UseInMemoryStorage=false` зарегистрирован `UnsupportedLegalConsentUnitOfWork` — мутации недоступны, пока нет EF-backed UoW/репозиториев consent. Таблиц consent в PostgreSQL пока нет — см. [DATABASE.md](CherryPlayServer/DATABASE.md). Запуск без Postgres: `docker compose -f docker-compose.inmemory.yml up --build`.
+**Web email register (primary):** CherryPlayWeb → `POST /api/organizers` (тело с `consents`) → при **201** → `POST /auth/login` (httpOnly cookie / desktop `{ code }`). Legacy `POST /auth/register` (§3.2.0) **без** `consents` — совместимость, не путь Web-формы с чекбоксами.
+
+**OAuth Web (product gap):** live поток `/auth/{provider}/web` → callback → `GetOrCreateOrganizer…` **не** пишет consent events. Consent-aware resource — `POST /api/oauth/accounts` (stub); UI пока не вызывает его — gap до проводки.
+
+**Хранение (важно):**
+
+- Мутации (`POST` organizers / oauth/accounts / consent-events) работают при `UseInMemoryStorage=true` через `InMemoryLegalConsentUnitOfWork` (ambient staging + `ForUpdate` на email/OAuth).
+- При `UseInMemoryStorage=false` — `UnsupportedLegalConsentUnitOfWork`: consent-мутации недоступны (EF-backed consent UoW/репозиториев нет). Таблиц consent в PostgreSQL **нет** — [DATABASE.md](CherryPlayServer/DATABASE.md).
+- EF `*ForUpdate*` вызывает `pg_advisory_xact_lock` — **подготовка** к concurrency на email/OAuth row paths, **не** рабочий consent UoW.
+- Без Postgres: `docker compose -f docker-compose.inmemory.yml up --build`.
 
 | Метод | Путь | Auth | Описание | Тело | Ответ |
 | ----- | ---- | ---- | -------- | ---- | ----- |
@@ -289,11 +300,11 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 
 **Обязательные документы при register / oauth create:** active `pd_consent_text` и `terms` с `decision: "grant"` и верным hash. Типы: `pd_consent_text`, `terms`, `privacy_policy`, `cookie_policy`. Решения: `grant` \| `withdraw` \| `deny`. Статусы версии: `draft` \| `active` \| `retired`.
 
-**Ошибки домена:** `LegalConsentFailureKind.Validation` (нет/неверные consents, неверный hash/версия, пустой OAuth code) и `Conflict` (email занят, OAuth уже связан с другими consents, conflict id события). Целевые HTTP по rest-api: **400** / **409**. Пустое тело → **400**.
+**Ошибки домена → HTTP (`GlobalExceptionHandler`):** `LegalConsentException` с `LegalConsentFailureKind.Validation` → **400**; `Conflict` → **409** (ProblemDetails). Validation: нет/неверные consents, неверный hash/версия, пустой OAuth code. Conflict: email занят, OAuth уже связан с другими consents, conflict id события. Пустое тело → **400**.
 
-**InMemory seed (dev/tests):** active `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, hash `pd-consent-hash-v1`), `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, hash `terms-hash-v1`); retired sample — `cccccccc-cccc-cccc-cccc-cccccccccccc`.
+**InMemory seed (dev/tests):** active `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, hash `pd-consent-hash-v1`), `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, hash `terms-hash-v1`); retired sample — `cccccccc-cccc-cccc-cccc-cccccccccccc`. Поле seed `documentVersion` = `v1`; клиентский label/folder контента — `1.0` — API сверяет **id + hash**, не строку label.
 
-DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md).
+DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md). Интеграционный обзор: [docs/integration/accounts-and-auth.md](docs/integration/accounts-and-auth.md).
 
 ### 3.3 Profile (профиль организатора)
 

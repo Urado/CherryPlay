@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { authService } from '../services/authService';
@@ -475,6 +476,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           </div>
         )}
       </div>
+      <SiteFooter />
     </div>
   );
 };

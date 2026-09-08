@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react'
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { usePartyState } from '../hooks/usePartyState';
@@ -534,6 +535,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           />
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 };

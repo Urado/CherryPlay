@@ -3,6 +3,10 @@ import * as path from 'path';
 
 import { app, ipcMain } from 'electron';
 
+function getDevProjectRoot(): string {
+  return fs.realpathSync.native(process.cwd());
+}
+
 interface ServerConfig {
   serverUrl: string;
   webBaseUrl?: string;
@@ -27,7 +31,7 @@ const CONFIG_FILE = {
 } as const;
 
 function getConfigPath(): string {
-  const root = app.isPackaged ? app.getAppPath() : process.cwd();
+  const root = app.isPackaged ? app.getAppPath() : getDevProjectRoot();
   const fileName = app.isPackaged ? CONFIG_FILE.production : CONFIG_FILE.development;
   return path.join(root, fileName);
 }

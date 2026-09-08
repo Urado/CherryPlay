@@ -2,6 +2,7 @@ import { EmailAuthForm } from '@cherryplay/components';
 import { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { authService } from '../services/authService';
 import { isDesktopClientQueryValue } from '../utils/desktopClientMode';
@@ -45,21 +46,24 @@ export function RegisterPage() {
 
   return (
     <div className="register-page">
-      <div className="register-container">
-        <h1>Регистрация</h1>
-        <p className="register-subtitle">Создайте аккаунт организатора</p>
-        <EmailAuthForm
-          mode="register"
-          authService={authService}
-          onSuccess={() => {
-            void handleRegisterSuccess();
-          }}
-          showModeToggle={false}
-        />
-        <div className="login-link">
-          Уже есть аккаунт? <Link to={ROUTES.LOGIN}>Войти</Link>
+      <div className="register-page-body">
+        <div className="register-container">
+          <h1>Регистрация</h1>
+          <p className="register-subtitle">Создайте аккаунт организатора</p>
+          <EmailAuthForm
+            mode="register"
+            authService={authService}
+            onSuccess={() => {
+              void handleRegisterSuccess();
+            }}
+            showModeToggle={false}
+          />
+          <div className="login-link">
+            Уже есть аккаунт? <Link to={ROUTES.LOGIN}>Войти</Link>
+          </div>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

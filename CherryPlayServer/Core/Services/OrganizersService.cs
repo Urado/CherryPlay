@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Exceptions;
@@ -8,6 +9,10 @@ namespace CherryPlayServer.Core.Services;
 
 public class OrganizersService : IOrganizersService
 {
+    private static readonly Regex EmailFormatRegex = new(
+        @"^[^\s@]+@[^\s@]+\.[^\s@]+$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private readonly ILegalConsentUnitOfWork _unitOfWork;
     private readonly ILegalDocumentsService _legalDocuments;
     private readonly IPasswordHasher _passwordHasher;
@@ -30,13 +35,46 @@ public class OrganizersService : IOrganizersService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Email)
+            || string.IsNullOrWhiteSpace(request.Password)
+            || string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                "Email, password and name are required");
+        }
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (!EmailFormatRegex.IsMatch(email))
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                "Invalid email format");
+        }
+
+        if (request.Password.Length < AuthConstants.MinPasswordLength)
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                $"Password must be at least {AuthConstants.MinPasswordLength} characters long");
+        }
+
+        var trimmedName = request.Name.Trim();
+        if (string.IsNullOrEmpty(trimmedName) || trimmedName.Length > AuthConstants.MaxOrganizerNameLength)
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                "Name is required and must not exceed " + AuthConstants.MaxOrganizerNameLength + " characters");
+        }
+
         await _legalDocuments.EnsureRequiredActiveGrantsAsync(request.Consents, cancellationToken);
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
         {
             var existingAccount = await _unitOfWork.EmailAccounts.GetByEmailForUpdateAsync(
-                request.Email,
+                email,
                 cancellationToken);
 
             if (existingAccount is not null)
@@ -50,7 +88,7 @@ public class OrganizersService : IOrganizersService
                         ?? throw new LegalConsentException(LegalConsentFailureKind.Conflict, "Organizer not found.");
                     var replay = new RegisterOrganizerResponse(
                         existingOrganizer.Id,
-                        request.Email,
+                        email,
                         existingOrganizer.Name);
                     await _unitOfWork.CommitAsync(cancellationToken);
                     return replay;
@@ -65,7 +103,7 @@ public class OrganizersService : IOrganizersService
             var organizer = new Organizer
             {
                 Id = organizerId,
-                Name = request.Name,
+                Name = trimmedName,
                 CreatedAt = DateTime.UtcNow
             };
             await _unitOfWork.Organizers.AddAsync(organizer);
@@ -74,7 +112,7 @@ public class OrganizersService : IOrganizersService
             {
                 Id = Guid.NewGuid(),
                 OrganizerId = organizer.Id,
-                Email = request.Email,
+                Email = email,
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
                 CreatedAt = DateTime.UtcNow
             };
@@ -88,7 +126,7 @@ public class OrganizersService : IOrganizersService
 
             await _consentEvents.AppendAsync(organizer.Id, request.Consents, cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
-            return new RegisterOrganizerResponse(organizer.Id, request.Email, organizer.Name);
+            return new RegisterOrganizerResponse(organizer.Id, email, organizer.Name);
         }
         catch
         {

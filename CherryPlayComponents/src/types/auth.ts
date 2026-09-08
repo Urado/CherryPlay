@@ -1,3 +1,5 @@
+import type { ConsentInput } from '../constants/legalDocuments';
+
 export interface OrganizerDto {
   id: string;
   name: string;
@@ -79,6 +81,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name: string;
+  consents: ConsentInput[];
 }
 
 export interface ForgotPasswordRequest {
@@ -143,7 +146,12 @@ export function getAuthErrorMessage(error: unknown): string {
 
 export interface AuthService {
   login(email: string, password: string): Promise<string | void>;
-  register(email: string, password: string, name: string): Promise<string | void>;
+  register(
+    email: string,
+    password: string,
+    name: string,
+    consents: ConsentInput[],
+  ): Promise<string | void>;
   forgotPassword?(email: string): Promise<ForgotPasswordResponse | void>;
   resetPassword?(token: string, newPassword: string): Promise<void>;
   changePassword?(oldPassword: string, newPassword: string): Promise<void>;

@@ -60,7 +60,7 @@ function getPluginsBasePaths(): string[] {
         path.join(path.dirname(process.execPath), 'plugins'),
         path.join(process.resourcesPath, 'plugins'),
       ]
-    : [path.join(process.cwd(), 'plugins'), path.join(app.getAppPath(), 'plugins')];
+    : [path.join(fs.realpathSync.native(process.cwd()), 'plugins'), path.join(app.getAppPath(), 'plugins')];
 
   return [...new Set(pluginsBasePaths)];
 }

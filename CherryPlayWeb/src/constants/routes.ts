@@ -10,4 +10,13 @@ export const ROUTES = {
   ADMIN_ROOT: '/admin',
   ADMIN_ORGANIZERS: '/admin/organizers',
   ADMIN_ORGANIZER_DETAIL: (organizerId: string) => `/admin/organizers/${organizerId}`,
+  PRIVACY: '/privacy',
+  PRIVACY_ARCHIVE: (version: string) => `/privacy/v/${version}`,
+  CONSENT: '/consent',
+  CONSENT_ARCHIVE: (version: string) => `/consent/v/${version}`,
+  TERMS: '/terms',
+  TERMS_ARCHIVE: (version: string) => `/terms/v/${version}`,
+  COOKIES: '/cookies',
+  COOKIES_ARCHIVE: (version: string) => `/cookies/v/${version}`,
+  LEGAL: '/legal',
 } as const;

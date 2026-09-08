@@ -123,6 +123,14 @@ CherryPlayList «Войти через браузер»
 - **Восстановление пароля (Web, live):** маршруты `/forgot-password` (запрос письма) и `/reset-password?token=` (новый пароль → редирект на `/login`). Ссылка «Забыли пароль?» с экрана логина.
 - **Смена пароля (Web, live):** в кабинете, аккордеон «Аккаунт» (свёрнут по умолчанию) — `POST /auth/change-password`; после успеха — немедленный logout и `/login` с notice (`state.passwordChanged`). UI кабинета: [pages.md](../../CherryPlayWeb/docs/pages.md).
 
+### Регистрация email + legal consent (Web)
+
+1. **UI:** `/register` — `EmailAuthForm` с чекбоксами обязательных согласий (`pd_consent_text`, `terms`). Deploy-time `versionId` + `contentHash` в `@cherryplay/components` (`legalDocuments.ts`); **нет** `GET` каталога документов.
+2. **API sequence:** `POST /api/organizers` (email, password, name, `consents`) → при успехе `POST /auth/login` (cookie). Legacy `POST /auth/register` без consents не используется Web-формой.
+3. **Хранение:** consent-мутации требуют `UseInMemoryStorage=true` (`InMemoryLegalConsentUnitOfWork`). При EF — `UnsupportedLegalConsentUnitOfWork` (мутации недоступны; таблиц consent в Postgres нет).
+4. **OAuth gap:** live `/auth/{provider}/web` → callback **не** пишет consent events; consent-aware stub — `POST /api/oauth/accounts` (UI не подключён).
+5. Контракт и HTTP 400/409: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3. Страницы legal / RegisterPage: [pages.md](../../CherryPlayWeb/docs/pages.md).
+
 ## Связь с модулями приложения
 
 - **Party workspace** — создание вечеринки и Publish требуют авторизованного организатора; вызовы идут через `partyService` с токеном.
@@ -135,6 +143,7 @@ CherryPlayList «Войти через браузер»
 ## Контракты
 
 Детали эндпоинтов логина, обмена токенов и профиля организатора — в [CONTRACTS.md](../../CONTRACTS.md):
-- **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`, `POST /auth/register`), **Desktop browser SSO** (`POST /auth/desktop/code` для session-continue, `POST /auth/desktop/exchange`, query `return_to` / `buildAuthReturnUrl`, §3.2.0b), сброс/смена пароля (`POST /auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`), OAuth 2.0 VK и Mail.ru для Web (`/auth/{provider}/web`, `/auth/{provider}/callback` с `client=desktop` и `return_to` для Desktop), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange`, §3.2.1), logout. OAuth2 для Telegram отложен.
+- **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`; legacy `POST /auth/register`), **Web primary register + consent** (`POST /api/organizers` → `POST /auth/login`, §3.2.3), **Desktop browser SSO** (`POST /auth/desktop/code` для session-continue, `POST /auth/desktop/exchange`, query `return_to` / `buildAuthReturnUrl`, §3.2.0b), сброс/смена пароля (`POST /auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`), OAuth 2.0 VK и Mail.ru для Web (`/auth/{provider}/web`, `/auth/{provider}/callback` с `client=desktop` и `return_to` для Desktop; live OAuth без consent events — gap), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange`, §3.2.1), logout. OAuth2 для Telegram отложен.
+- **Legal consent:** §3.2.3 — resource REST, InMemory-only мутации, `LegalConsentException` → 400/409.
 - **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
 - **Защита write-методов:** CONTRACTS §2–3 (REST и SignalR требуют JWT).

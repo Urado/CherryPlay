@@ -6,9 +6,15 @@ namespace CherryPlayServer.Infrastructure.Data;
 
 public class DataSeeder : IDataSeeder
 {
+    private static readonly Guid PdConsentVersionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid TermsVersionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private const string PdConsentHash = "pd-consent-hash-v1";
+    private const string TermsHash = "terms-hash-v1";
+
     private readonly IPartyRepository _partyRepository;
     private readonly IOrganizerRepository _organizerRepository;
     private readonly IEmailAccountRepository _emailAccountRepository;
+    private readonly IConsentEventRepository _consentEventRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IThemeRepository _themeRepository;
     private readonly IThemePackageRepository _themePackageRepository;
@@ -17,6 +23,7 @@ public class DataSeeder : IDataSeeder
         IPartyRepository partyRepository,
         IOrganizerRepository organizerRepository,
         IEmailAccountRepository emailAccountRepository,
+        IConsentEventRepository consentEventRepository,
         IPasswordHasher passwordHasher,
         IThemeRepository themeRepository,
         IThemePackageRepository themePackageRepository)
@@ -24,6 +31,7 @@ public class DataSeeder : IDataSeeder
         _partyRepository = partyRepository;
         _organizerRepository = organizerRepository;
         _emailAccountRepository = emailAccountRepository;
+        _consentEventRepository = consentEventRepository;
         _passwordHasher = passwordHasher;
         _themeRepository = themeRepository;
         _themePackageRepository = themePackageRepository;
@@ -43,6 +51,7 @@ public class DataSeeder : IDataSeeder
             {
                 Id = Guid.NewGuid(),
                 Name = "Test User",
+                Role = OrganizerRole.Admin,
                 CreatedAt = DateTime.UtcNow
             };
             await _organizerRepository.AddAsync(testOrganizer);
@@ -62,7 +71,17 @@ public class DataSeeder : IDataSeeder
         else
         {
             demoOrganizerId = existingTestAccount.OrganizerId;
+            var existingOrganizer = await _organizerRepository.GetByIdAsync(demoOrganizerId);
+            if (existingOrganizer is not null && existingOrganizer.Role != OrganizerRole.Admin)
+            {
+                existingOrganizer.Role = OrganizerRole.Admin;
+                await _organizerRepository.UpdateAsync(existingOrganizer);
+            }
         }
+
+        await EnsureActiveGrantsAsync(demoOrganizerId);
+
+        await EnsureLegacyOrganizerWithoutConsentsAsync();
 
         var existingParties = await _partyRepository.GetAllAsync();
         if (existingParties.Any()) return;
@@ -354,6 +373,71 @@ public class DataSeeder : IDataSeeder
         await _partyRepository.AddAsync(sakuraParty);
         await _partyRepository.AddAsync(artDecoParty);
         await _partyRepository.AddAsync(basicParty);
+    }
+
+    private async Task EnsureLegacyOrganizerWithoutConsentsAsync()
+    {
+        const string legacyEmail = "legacy@t.ru";
+        var existing = await _emailAccountRepository.GetByEmailAsync(legacyEmail);
+        if (existing is not null)
+        {
+            return;
+        }
+
+        var organizer = new Organizer
+        {
+            Id = Guid.NewGuid(),
+            Name = "Legacy User",
+            Role = OrganizerRole.Organizer,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _organizerRepository.AddAsync(organizer);
+
+        await _emailAccountRepository.AddAsync(new EmailAccount
+        {
+            Id = Guid.NewGuid(),
+            OrganizerId = organizer.Id,
+            Email = legacyEmail,
+            PasswordHash = _passwordHasher.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow,
+            LastUsedAt = DateTime.UtcNow
+        });
+    }
+
+    private async Task EnsureActiveGrantsAsync(Guid subjectId)
+    {
+        var existing = await _consentEventRepository.ListBySubjectAsync(subjectId);
+        var hasPd = existing.Any(e =>
+            e.LegalDocumentVersionId == PdConsentVersionId && e.Decision == ConsentDecision.Grant);
+        var hasTerms = existing.Any(e =>
+            e.LegalDocumentVersionId == TermsVersionId && e.Decision == ConsentDecision.Grant);
+
+        var now = DateTimeOffset.UtcNow;
+        if (!hasPd)
+        {
+            await _consentEventRepository.TryAddAsync(new ConsentEvent
+            {
+                Id = Guid.NewGuid(),
+                SubjectId = subjectId,
+                LegalDocumentVersionId = PdConsentVersionId,
+                DocumentHash = PdConsentHash,
+                Decision = ConsentDecision.Grant,
+                EventAt = now
+            });
+        }
+
+        if (!hasTerms)
+        {
+            await _consentEventRepository.TryAddAsync(new ConsentEvent
+            {
+                Id = Guid.NewGuid(),
+                SubjectId = subjectId,
+                LegalDocumentVersionId = TermsVersionId,
+                DocumentHash = TermsHash,
+                Decision = ConsentDecision.Grant,
+                EventAt = now
+            });
+        }
     }
 
     private async Task SeedThemeMonetizationAsync()

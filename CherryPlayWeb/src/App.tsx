@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
+import { CookieNotice } from './components/CookieNotice';
 import { ROUTES } from './constants/routes';
 import { AppConfigProvider } from './contexts/AppConfigContext';
 import { ClientOutdatedProvider } from './contexts/ClientOutdatedContext';
@@ -15,6 +16,8 @@ import { AdminOrganizerDetailPage } from './pages/admin/AdminOrganizerDetailPage
 import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
 import { CabinetPage } from './pages/CabinetPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { LegalDocumentPage } from './pages/LegalDocumentPage';
+import { LegalOperatorPage } from './pages/LegalOperatorPage';
 import { LoginPage } from './pages/LoginPage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
 import { PartyListPage } from './pages/PartyListPage';
@@ -54,8 +57,18 @@ function App() {
             />
             <Route path={ROUTES.ADMIN_ORGANIZERS} element={<AdminOrganizersPage />} />
             <Route path="/admin/organizers/:id" element={<AdminOrganizerDetailPage />} />
+            <Route path={ROUTES.PRIVACY} element={<LegalDocumentPage docKey="privacy" />} />
+            <Route path="/privacy/v/:version" element={<LegalDocumentPage docKey="privacy" />} />
+            <Route path={ROUTES.CONSENT} element={<LegalDocumentPage docKey="consent" />} />
+            <Route path="/consent/v/:version" element={<LegalDocumentPage docKey="consent" />} />
+            <Route path={ROUTES.TERMS} element={<LegalDocumentPage docKey="terms" />} />
+            <Route path="/terms/v/:version" element={<LegalDocumentPage docKey="terms" />} />
+            <Route path={ROUTES.COOKIES} element={<LegalDocumentPage docKey="cookies" />} />
+            <Route path="/cookies/v/:version" element={<LegalDocumentPage docKey="cookies" />} />
+            <Route path={ROUTES.LEGAL} element={<LegalOperatorPage />} />
             <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
           </Routes>
+          <CookieNotice />
         </AppConfigProvider>
       </ClientOutdatedProvider>
     </BrowserRouter>

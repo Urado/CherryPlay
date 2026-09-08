@@ -91,10 +91,6 @@ function renderLogin(path: string) {
         Routes,
         null,
         createElement(Route, { path: '/login', element: createElement(LoginPage) }),
-        createElement(Route, {
-          path: '/register',
-          element: createElement('div', { 'data-testid': 'register-route' }, 'register'),
-        }),
       ),
     ),
   );
@@ -121,9 +117,6 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByTestId('auth-form')).toBeTruthy();
     expect(screen.queryByText('Проверяем сессию…')).toBeNull();
     expect(screen.queryByText('Возвращаемся в приложение…')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Зарегистрироваться' }).getAttribute('href')).toBe(
-      '/register',
-    );
   });
 
   it('shows returningToApp notice when desktop and code in URL', async () => {
@@ -261,16 +254,4 @@ describe('LoginPage desktop SSO', () => {
     expect(fallback.getAttribute('href')).toContain('code=form-success-code');
   });
 
-  it('preserves client and return_to on register link', async () => {
-    checkAuthMock.mockResolvedValue(null);
-    const returnTo = 'http://localhost:5173/auth/callback';
-
-    renderLogin(`/login?client=desktop&return_to=${encodeURIComponent(returnTo)}`);
-
-    const link = await screen.findByRole('link', { name: 'Зарегистрироваться' });
-    const href = link.getAttribute('href') ?? '';
-    expect(href).toContain('/register?');
-    expect(href).toContain('client=desktop');
-    expect(href).toContain(encodeURIComponent(returnTo));
-  });
 });

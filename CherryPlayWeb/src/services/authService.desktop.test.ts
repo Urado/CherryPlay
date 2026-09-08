@@ -54,14 +54,29 @@ describe('authService desktop', () => {
 
     it('attaches desktop header and returns code on register in desktop mode', async () => {
       setDesktopClientMode(true);
-      vi.mocked(apiFetch).mockResolvedValueOnce(mockJsonResponse(200, { code: 'desk-reg' }));
+      vi.mocked(apiFetch)
+        .mockResolvedValueOnce(mockJsonResponse(201, { id: 'o1', email: 'a@b.c', name: 'Name' }))
+        .mockResolvedValueOnce(mockJsonResponse(200, { code: 'desk-reg' }));
 
-      const code = await authService.register('a@b.c', 'secret', 'Name');
+      const code = await authService.register('a@b.c', 'secret', 'Name', [
+        {
+          id: '00000000-0000-4000-8000-000000000099',
+          legalDocumentVersionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          documentHash: 'pd-consent-hash-v1',
+          decision: 'grant',
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000098',
+          legalDocumentVersionId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+          documentHash: 'terms-hash-v1',
+          decision: 'grant',
+        },
+      ]);
 
       expect(code).toBe('desk-reg');
-      const init = vi.mocked(apiFetch).mock.calls[0]?.[1];
-      const headers = init?.headers as Record<string, string>;
-      expect(headers[DESKTOP_CLIENT_HEADER]).toBe(DESKTOP_CLIENT_VALUE);
+      expect(String(vi.mocked(apiFetch).mock.calls[0]?.[0])).toContain('/api/organizers');
+      const loginHeaders = vi.mocked(apiFetch).mock.calls[1]?.[1]?.headers as Record<string, string>;
+      expect(loginHeaders[DESKTOP_CLIENT_HEADER]).toBe(DESKTOP_CLIENT_VALUE);
     });
 
     it('omits desktop header and does not return code when not desktop', async () => {
@@ -74,15 +89,30 @@ describe('authService desktop', () => {
       const loginHeaders = vi.mocked(apiFetch).mock.calls[0]?.[1]?.headers as Record<string, string>;
       expect(loginHeaders[DESKTOP_CLIENT_HEADER]).toBeUndefined();
 
-      vi.mocked(apiFetch).mockResolvedValueOnce(mockJsonResponse(200, { code: 'ignored' }));
-      const registerResult = await authService.register('a@b.c', 'secret', 'Name');
+      vi.mocked(apiFetch)
+        .mockResolvedValueOnce(mockJsonResponse(201, { id: 'o1', email: 'a@b.c', name: 'Name' }))
+        .mockResolvedValueOnce(mockJsonResponse(200, { accessToken: 'tok' }));
+      const registerResult = await authService.register('a@b.c', 'secret', 'Name', [
+        {
+          id: '00000000-0000-4000-8000-000000000097',
+          legalDocumentVersionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+          documentHash: 'pd-consent-hash-v1',
+          decision: 'grant',
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000096',
+          legalDocumentVersionId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+          documentHash: 'terms-hash-v1',
+          decision: 'grant',
+        },
+      ]);
       expect(registerResult).toBeUndefined();
 
-      const registerHeaders = vi.mocked(apiFetch).mock.calls[1]?.[1]?.headers as Record<
+      const loginCallHeaders = vi.mocked(apiFetch).mock.calls[2]?.[1]?.headers as Record<
         string,
         string
       >;
-      expect(registerHeaders[DESKTOP_CLIENT_HEADER]).toBeUndefined();
+      expect(loginCallHeaders[DESKTOP_CLIENT_HEADER]).toBeUndefined();
     });
   });
 

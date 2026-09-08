@@ -6,8 +6,9 @@ import {
   resolveDesktopAuthReturnTo,
 } from '@cherryplay/components';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { authService } from '../services/authService';
@@ -157,16 +158,6 @@ export function LoginPage() {
     return () => window.clearTimeout(timeoutId);
   }, [returningToApp, pendingDesktopCode, returnTo]);
 
-  const registerParams = new URLSearchParams();
-  if (desktopMode) {
-    registerParams.set('client', 'desktop');
-  }
-  if (searchParams.get('return_to')) {
-    registerParams.set('return_to', searchParams.get('return_to')!);
-  }
-  const registerHref =
-    registerParams.size > 0 ? `${ROUTES.REGISTER}?${registerParams.toString()}` : ROUTES.REGISTER;
-
   if (returningToApp && pendingDesktopCode) {
     return (
       <DesktopReturnToAppNotice returnUrl={buildAuthReturnUrl(returnTo, pendingDesktopCode)} />
@@ -223,29 +214,29 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
-      {passwordChangedNotice && (
-        <div className="login-page-notice" role="status" aria-live="polite">
-          Пароль успешно изменён. Войдите снова с новым паролем.
-        </div>
-      )}
-      {sessionContinueError && (
-        <div className="login-page-error" role="alert">
-          {sessionContinueError}
-        </div>
-      )}
-      <AuthForm
-        title="Вход в систему"
-        description="Войдите, чтобы управлять вечеринками"
-        authService={authService}
-        oauthEnabled={oauthEnabled}
-        onLoginSuccess={handleLoginSuccess}
-        onDesktopAuthSuccess={desktopMode ? handleDesktopAuthSuccess : undefined}
-        onForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
-        className="login-page-form"
-      />
-      <div className="register-link">
-        Нет аккаунта? <Link to={registerHref}>Зарегистрироваться</Link>
+      <div className="login-page-body">
+        {passwordChangedNotice && (
+          <div className="login-page-notice" role="status" aria-live="polite">
+            Пароль успешно изменён. Войдите снова с новым паролем.
+          </div>
+        )}
+        {sessionContinueError && (
+          <div className="login-page-error" role="alert">
+            {sessionContinueError}
+          </div>
+        )}
+        <AuthForm
+          title="Вход в систему"
+          description="Войдите, чтобы управлять вечеринками"
+          authService={authService}
+          oauthEnabled={oauthEnabled}
+          onLoginSuccess={handleLoginSuccess}
+          onDesktopAuthSuccess={desktopMode ? handleDesktopAuthSuccess : undefined}
+          onForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
+          className="login-page-form"
+        />
       </div>
+      <SiteFooter />
     </div>
   );
 }

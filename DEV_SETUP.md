@@ -34,6 +34,7 @@ dotnet run
 - Hub: **http://localhost:5000/partyHub**
 - По умолчанию (`UseInMemoryStorage=false` в appsettings) — **EF Core + PostgreSQL** (нужна БД: Docker `postgres` или локальный Postgres). Опционально `UseInMemoryStorage=true` — in-memory репозитории без Postgres (данные только в процессе). Dual storage intentional — см. [ARCHITECTURE.md](ARCHITECTURE.md), [CherryPlayServer/README.md](CherryPlayServer/README.md).
 - **Без Postgres (Docker):** `docker compose -f docker-compose.inmemory.yml up --build` — `UseInMemoryStorage=true`, API `:5000`, Web `:3000`. Нужен для проверки **legal consent** мутаций (`POST /api/organizers`, `/api/oauth/accounts`, `/api/consent-events`) — при EF-режиме UoW ещё unsupported; см. [CONTRACTS.md](CONTRACTS.md) §3.2.3.
+- **DataSeeder:** `DataSeederHostedService` запускает seed **только** при `UseInMemoryStorage=true` (при EF — skip). Demo Admin (InMemory only): email **`t@t.ru`**, пароль **`123456`** (роль admin + демо-вечеринки + grants ПДн/Terms). Legacy без согласий: **`legacy@t.ru`** / **`123456`** (для будущего CP-044 re-consent). Подробнее: [CherryPlayServer/README.md](CherryPlayServer/README.md).
 
 #### Forgot password (Dev)
 

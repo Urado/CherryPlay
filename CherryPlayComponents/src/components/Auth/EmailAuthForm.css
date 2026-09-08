@@ -64,3 +64,10 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.email-auth-form-consent-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary, #666);
+}

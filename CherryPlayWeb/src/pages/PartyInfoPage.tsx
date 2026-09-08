@@ -9,6 +9,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { partyApiService } from '../services/partyApiService';
@@ -144,6 +145,7 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
           customizationSettings: party.customizationSettings,
         }}
       />
+      <SiteFooter />
     </div>
   );
 }

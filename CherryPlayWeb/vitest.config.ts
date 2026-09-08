@@ -1,19 +1,23 @@
+import { realpathSync } from 'fs';
 import path from 'path';
 
 import { defineConfig } from 'vitest/config';
 
 import { readWebClientVersion } from './scripts/readWebClientVersion.mjs';
 
-const clientVersion = readWebClientVersion(__dirname);
+const projectRoot = realpathSync.native(__dirname);
+const cherryPlayComponentsSrc = path.resolve(projectRoot, '../CherryPlayComponents/src');
+const clientVersion = readWebClientVersion(projectRoot);
 
 export default defineConfig({
+  root: projectRoot,
   define: {
     __APP_VERSION__: JSON.stringify(clientVersion),
   },
   resolve: {
     alias: {
-      '@cherryplay/components': path.resolve(__dirname, '../CherryPlayComponents/src'),
-      '@cherryplay/themes': path.resolve(__dirname, '../CherryPlayComponents/src/themes'),
+      '@cherryplay/components': cherryPlayComponentsSrc,
+      '@cherryplay/themes': path.resolve(cherryPlayComponentsSrc, 'themes'),
     },
   },
   test: {
