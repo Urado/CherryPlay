@@ -6,8 +6,13 @@ namespace CherryPlayServer.Core.Interfaces;
 public interface IOAuthAccountRepository
 {
     Task<OAuthAccount?> GetByProviderUserIdAsync(OAuthProvider provider, string providerUserId);
+    Task<OAuthAccount?> GetByProviderUserIdForUpdateAsync(
+        OAuthProvider provider,
+        string providerUserId,
+        CancellationToken cancellationToken = default);
     Task<List<OAuthAccount>> GetByOrganizerIdAsync(Guid organizerId);
     Task<OAuthAccount> AddAsync(OAuthAccount account);
+    Task<bool> TryAddAsync(OAuthAccount account);
     Task UpdateAsync(OAuthAccount account);
     Task DeleteAsync(Guid id);
 }

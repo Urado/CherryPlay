@@ -145,6 +145,26 @@ builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
 
+builder.Services.AddSingleton<ILegalDocumentVersionRepository, InMemoryLegalDocumentVersionRepository>();
+builder.Services.AddSingleton<IConsentEventRepository, InMemoryConsentEventRepository>();
+if (useInMemoryStorage)
+{
+    builder.Services.AddSingleton<ILegalConsentUnitOfWork>(sp => new InMemoryLegalConsentUnitOfWork(
+        sp.GetRequiredService<IOrganizerRepository>(),
+        sp.GetRequiredService<IEmailAccountRepository>(),
+        sp.GetRequiredService<IOAuthAccountRepository>(),
+        sp.GetRequiredService<IConsentEventRepository>(),
+        sp.GetRequiredService<ILegalDocumentVersionRepository>()));
+}
+else
+{
+    builder.Services.AddSingleton<ILegalConsentUnitOfWork, UnsupportedLegalConsentUnitOfWork>();
+}
+builder.Services.AddScoped<ILegalDocumentsService, LegalDocumentsService>();
+builder.Services.AddScoped<IOrganizersService, OrganizersService>();
+builder.Services.AddScoped<IOAuthAccountsService, OAuthAccountsService>();
+builder.Services.AddScoped<IConsentEventsService, ConsentEventsService>();
+
 builder.Services.AddTransient<VkOAuthClient>();
 builder.Services.AddTransient<MailRuOAuthClient>();
 builder.Services.AddTransient<TelegramOAuthClient>();

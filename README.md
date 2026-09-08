@@ -178,6 +178,7 @@ CherryPlay/
 ├── SCRIPTS.md             # Скрипты для сборки компонентов
 ├── docker-compose.yml     # Docker Compose для production
 ├── docker-compose.debug.yml  # Docker Compose для отладки
+├── docker-compose.inmemory.yml  # Docker Compose без Postgres (UseInMemoryStorage)
 └── README.md              # Этот файл
 ```
 
@@ -281,6 +282,14 @@ docker-compose -f docker-compose.debug.yml logs -f server
 # Остановка debug контейнеров
 docker-compose -f docker-compose.debug.yml down
 ```
+
+### In-memory (без PostgreSQL)
+
+```bash
+docker compose -f docker-compose.inmemory.yml up --build
+```
+
+Сервер с `UseInMemoryStorage=true`: Postgres/migrate не нужны; данные сбрасываются при рестарте контейнера. API: http://localhost:5000, Web: http://localhost:3000.
 
 **Особенности debug режима:**
 

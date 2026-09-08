@@ -298,10 +298,17 @@ internal sealed class UnusedOAuthAccountRepository : IOAuthAccountRepository
     public Task<OAuthAccount?> GetByProviderUserIdAsync(OAuthProvider provider, string providerUserId) =>
         Task.FromResult<OAuthAccount?>(null);
 
+    public Task<OAuthAccount?> GetByProviderUserIdForUpdateAsync(
+        OAuthProvider provider,
+        string providerUserId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<OAuthAccount?>(null);
+
     public Task<List<OAuthAccount>> GetByOrganizerIdAsync(Guid organizerId) =>
         Task.FromResult(new List<OAuthAccount>());
 
     public Task<OAuthAccount> AddAsync(OAuthAccount account) => Task.FromResult(account);
+    public Task<bool> TryAddAsync(OAuthAccount account) => Task.FromResult(true);
     public Task UpdateAsync(OAuthAccount account) => Task.CompletedTask;
     public Task DeleteAsync(Guid id) => Task.CompletedTask;
 }

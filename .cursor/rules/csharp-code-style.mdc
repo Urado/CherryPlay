@@ -1,0 +1,51 @@
+---
+description: C# code style — one type per file, naming, file layout (CherryPlay server/tests)
+globs: CherryPlay/**/*.cs
+alwaysApply: false
+---
+
+# C# code style (CherryPlay)
+
+## Three layers (server)
+
+Keep CherryPlayServer as **Controller → Service → Repository**:
+
+| Layer | Lives in | Responsibility |
+| --- | --- | --- |
+| **Controllers** | `Controllers/` | HTTP only: bind/validate input shape, auth attributes, map to/from DTOs, status codes. **No** business rules, **no** DbContext/EF. |
+| **Services** | `Core/Services/` (+ `Core/Interfaces/` for ports) | Business logic, invariants, orchestration, transactions across repos. Return domain/result types — not `IActionResult`. |
+| **Repositories** | `Infrastructure/Repositories/` (+ EF under `Infrastructure/Persistence/`) | Persistence only: load/save entities. **No** product rules (e.g. which document types are “required”). |
+
+- Controllers depend on **services** (or narrow application ports), not on repositories directly (except rare read-only admin escapes — prefer avoid).
+- Services depend on **repository interfaces** in `Core/Interfaces/`; implementations in Infrastructure.
+- Naming: `IFooRepository` / `InMemoryFooRepository` / `EfFooRepository` — avoid parallel names like Store/Registry for the same persistence port.
+- Domain rules that look like “policy” (required consent types, one-active-per-type publish) belong in **services** (or a dedicated domain service), not in repository filters — unless the rule is a pure storage constraint documented as such.
+
+## One type per file
+
+- **One** `class`, `struct`, `enum`, or `interface` per `.cs` file (file name = type name).
+- **Exception:** `record` DTOs and small request/response types may share a file when they belong to one API surface (e.g. `LegalDtos.cs`, `AuthResult` next to its interface only if the interface is alone — prefer split when a second class appears).
+- **Not allowed:** helper `static` class + test harness + stub in one file; nested private classes in production code — extract to own file.
+- Test doubles (`*Stub`, `*Harness`, `*TestFactory`) — each in its own file under `CherryPlayServer.Tests/`.
+
+```csharp
+// ❌ LegalConsentTestHelper.cs — helper + harness + stub
+internal static class LegalConsentTestHelper { }
+internal sealed class LegalOAuthHarness { }
+
+// ✅ LegalConsentTestHelper.cs + LegalOAuthHarness.cs
+```
+
+## Namespaces
+
+- `file-scoped namespace` matching folder layer: `CherryPlayServer.Core.*`, `Infrastructure.*`, etc.
+
+## Usings
+
+- No blank line between every `using`; single block at top.
+
+## When adding types
+
+- New interface → new file under `Core/Interfaces/`.
+- New EF entity + configuration → separate files in `Persistence/Entities` and `Configurations/`.
+- Implementation of an interface → dedicated class file (no “hidden” second interface on an existing class unless it is the single implementation and registered explicitly in DI).

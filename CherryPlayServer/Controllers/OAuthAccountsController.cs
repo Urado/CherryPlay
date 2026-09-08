@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Models;
 
 namespace CherryPlayServer.Controllers;
@@ -7,20 +8,24 @@ namespace CherryPlayServer.Controllers;
 [Route("api/oauth/accounts")]
 public class OAuthAccountsController : ControllerBase
 {
+    private readonly IOAuthAccountsService _oauthAccountsService;
+
+    public OAuthAccountsController(IOAuthAccountsService oauthAccountsService)
+    {
+        _oauthAccountsService = oauthAccountsService ?? throw new ArgumentNullException(nameof(oauthAccountsService));
+    }
+
     [HttpPost]
-    public ActionResult<CreateOAuthAccountResponse> Create([FromBody] CreateOAuthAccountRequest request)
+    public async Task<ActionResult<CreateOAuthAccountResponse>> Create(
+        [FromBody] CreateOAuthAccountRequest request,
+        CancellationToken cancellationToken)
     {
         if (request == null)
         {
             return BadRequest("Request body cannot be null");
         }
 
-        var id = Guid.NewGuid();
-        var response = new CreateOAuthAccountResponse(
-            id,
-            string.Empty,
-            $"{request.Provider}:stub");
-
-        return Created($"/api/oauth/accounts/{id}", response);
+        var response = await _oauthAccountsService.CreateAsync(request, cancellationToken);
+        return Created($"/api/oauth/accounts/{response.Id}", response);
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Extensions;
+using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Models;
 
 namespace CherryPlayServer.Controllers;
@@ -9,26 +10,36 @@ namespace CherryPlayServer.Controllers;
 [Route("api/organizers")]
 public class OrganizersController : ControllerBase
 {
+    private readonly IOrganizersService _organizersService;
+    private readonly IConsentEventsService _consentEventsService;
+
+    public OrganizersController(
+        IOrganizersService organizersService,
+        IConsentEventsService consentEventsService)
+    {
+        _organizersService = organizersService ?? throw new ArgumentNullException(nameof(organizersService));
+        _consentEventsService = consentEventsService ?? throw new ArgumentNullException(nameof(consentEventsService));
+    }
+
     [HttpPost]
-    public ActionResult<RegisterOrganizerResponse> Register([FromBody] RegisterOrganizerRequest request)
+    public async Task<ActionResult<RegisterOrganizerResponse>> Register(
+        [FromBody] RegisterOrganizerRequest request,
+        CancellationToken cancellationToken)
     {
         if (request == null)
         {
             return BadRequest("Request body cannot be null");
         }
 
-        var id = Guid.NewGuid();
-        var response = new RegisterOrganizerResponse(
-            id,
-            request.Email ?? string.Empty,
-            request.Name ?? string.Empty);
-
-        return Created($"/api/organizers/{id}", response);
+        var response = await _organizersService.RegisterAsync(request, cancellationToken);
+        return Created($"/api/organizers/{response.Id}", response);
     }
 
     [HttpGet("{id:guid}/consent-events")]
     [AuthorizeOrganizer]
-    public ActionResult<List<ConsentEventDto>> GetConsentEvents(Guid id)
+    public async Task<ActionResult<IReadOnlyList<ConsentEventDto>>> GetConsentEvents(
+        Guid id,
+        CancellationToken cancellationToken)
     {
         var organizerId = HttpContext.RequireOrganizerId();
         if (id != organizerId)
@@ -36,6 +47,7 @@ public class OrganizersController : ControllerBase
             return Forbid();
         }
 
-        return Ok(new List<ConsentEventDto>());
+        var events = await _consentEventsService.ListAsync(id, cancellationToken);
+        return Ok(events);
     }
 }
