@@ -6,11 +6,6 @@ namespace CherryPlayServer.Infrastructure.Persistence.Configurations;
 
 public class LegalDocumentVersionEfConfiguration : IEntityTypeConfiguration<LegalDocumentVersionEf>
 {
-    /// <summary>Matches ACTIVE v1.0 frontmatter / legal-registry.generated.json.</summary>
-    private static readonly DateTime SeedActiveEffectiveFrom = DateTime.SpecifyKind(
-        new DateTime(2026, 9, 1, 0, 0, 0),
-        DateTimeKind.Utc);
-
     private static readonly DateTime SeedRetiredEffectiveFrom = DateTime.SpecifyKind(
         DateTime.UnixEpoch,
         DateTimeKind.Utc);
@@ -19,11 +14,18 @@ public class LegalDocumentVersionEfConfiguration : IEntityTypeConfiguration<Lega
         new DateTime(2024, 1, 1, 0, 0, 0),
         DateTimeKind.Utc);
 
-    // Keep in sync with scripts/publish-legal.mjs output for ACTIVE v1.0 (LF-normalized SHA-256).
     private const string PdConsentHashV1 =
-        "f4c9dcba9ed36f7cfe1087c1e2dc7535008df71cd3ad95bced47f6278092de46";
+        "4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc";
     private const string TermsHashV1 =
-        "889f4423294937c7b0a40fbdb2c6d10dc69d3e44c0ed19338b6a22bacb6ab018";
+        "63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44";
+    private const string PdConsentDocumentVersionV1 = "1.0";
+    private const string TermsDocumentVersionV1 = "1.0";
+    private static readonly DateTime PdConsentEffectiveFromV1 = DateTime.SpecifyKind(
+        new DateTime(2026, 9, 1, 0, 0, 0),
+        DateTimeKind.Utc);
+    private static readonly DateTime TermsEffectiveFromV1 = DateTime.SpecifyKind(
+        new DateTime(2026, 9, 1, 0, 0, 0),
+        DateTimeKind.Utc);
 
     public void Configure(EntityTypeBuilder<LegalDocumentVersionEf> builder)
     {
@@ -56,9 +58,9 @@ public class LegalDocumentVersionEfConfiguration : IEntityTypeConfiguration<Lega
             {
                 Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
                 DocumentType = "pd_consent_text",
-                DocumentVersion = "1.0",
+                DocumentVersion = PdConsentDocumentVersionV1,
                 ContentHash = PdConsentHashV1,
-                EffectiveFrom = SeedActiveEffectiveFrom,
+                EffectiveFrom = PdConsentEffectiveFromV1,
                 EffectiveTo = null,
                 Status = "active",
             },
@@ -66,9 +68,9 @@ public class LegalDocumentVersionEfConfiguration : IEntityTypeConfiguration<Lega
             {
                 Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
                 DocumentType = "terms",
-                DocumentVersion = "1.0",
+                DocumentVersion = TermsDocumentVersionV1,
                 ContentHash = TermsHashV1,
-                EffectiveFrom = SeedActiveEffectiveFrom,
+                EffectiveFrom = TermsEffectiveFromV1,
                 EffectiveTo = null,
                 Status = "active",
             },

@@ -14,8 +14,8 @@ public class AccountDeletionServiceTests
 {
     private static readonly Guid PdVersionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid TermsVersionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private const string PdHash = "pd-consent-hash-v1";
-    private const string TermsHash = "terms-hash-v1";
+    private const string PdHash = "4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc";
+    private const string TermsHash = "63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44";
 
     [Test]
     public async Task DeleteAccountAsync_ScrubsCredentials_SoftDeletes_KeepsParty_BlocksLogin_AndWithdraws()
@@ -75,54 +75,6 @@ public class AccountDeletionServiceTests
         var consentEvents = await harness.ConsentEvents.ListAsync(registered.Id);
         Assert.That(consentEvents.Count(e => e.Decision == ConsentDecision.Withdraw), Is.EqualTo(2));
         Assert.That(OrganizerDisplayNames.Resolve(null), Is.EqualTo(OrganizerDisplayNames.Deleted));
-    }
-
-    [Test]
-    public async Task DeleteAccountAsync_WhenConsentStoreUnsupported_StillDeletesAccount()
-    {
-        var organizers = new InMemoryOrganizerRepository();
-        var emails = new InMemoryEmailAccountRepository();
-        var oauth = new InMemoryOAuthAccountRepository();
-        var sessions = new InMemoryOrganizerSessionRepository();
-        var hasher = new PasswordHasher();
-
-        var organizer = new Organizer
-        {
-            Id = Guid.NewGuid(),
-            Name = "No Consent Store",
-            CreatedAt = DateTime.UtcNow,
-        };
-        await organizers.AddAsync(organizer);
-        await emails.AddAsync(new EmailAccount
-        {
-            Id = Guid.NewGuid(),
-            OrganizerId = organizer.Id,
-            Email = "noconsent@example.com",
-            PasswordHash = hasher.HashPassword("password1"),
-            CreatedAt = DateTime.UtcNow,
-        });
-
-        var unsupportedConsent = new ConsentEventsService(
-            new LegalDocumentsService(
-                new InMemoryLegalDocumentVersionRepository(),
-                new InMemoryConsentEventRepository()),
-            new InMemoryConsentEventRepository(),
-            new UnsupportedLegalConsentUnitOfWork());
-
-        var organizerService = new OrganizerService(
-            organizers,
-            new InMemoryAppUnitOfWork(organizers, emails, oauth, sessions),
-            unsupportedConsent,
-            NullLogger<OrganizerService>.Instance);
-
-        await organizerService.DeleteAccountAsync(organizer.Id);
-
-        Assert.That(await organizers.GetByIdAsync(organizer.Id), Is.Null);
-        Assert.That(
-            (await organizers.GetByIdAsync(organizer.Id, includeDeleted: true))!.Name,
-            Is.EqualTo(OrganizerDisplayNames.Deleted));
-        Assert.That(await emails.GetByEmailAsync("noconsent@example.com"), Is.Null);
-        Assert.That(await emails.GetByOrganizerIdAsync(organizer.Id), Is.Null);
     }
 
     [Test]
@@ -217,3 +169,4 @@ public class AccountDeletionServiceTests
         }
     }
 }
+

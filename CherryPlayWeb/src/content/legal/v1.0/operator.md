@@ -1,11 +1,3 @@
----
-title: Реквизиты и контакты
-operatorName: CherryPlay (оператор — физлицо; ФИО уточняется в CP-036)
-generalContact: support@cherrypashkaparty.ru
-privacyContact: privacy@cherrypashkaparty.ru
-subjectRequestChannel: privacy@cherrypashkaparty.ru — запросы субъекта персональных данных (доступ, уточнение, отзыв согласия, уничтожение)
----
-
 ## Канал запросов субъекта ПДн
 
 По вопросам обработки персональных данных пишите на **privacy@cherrypashkaparty.ru**. Общие вопросы сервиса — **support@cherrypashkaparty.ru**.

@@ -7,6 +7,13 @@ namespace CherryPlayServer.Infrastructure.Repositories;
 
 public class InMemoryLegalDocumentVersionRepository : ILegalDocumentVersionRepository
 {
+    private const string PdConsentDocumentVersionV1 = "1.0";
+    private const string PdConsentHashV1 =
+        "4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc";
+    private const string TermsDocumentVersionV1 = "1.0";
+    private const string TermsHashV1 =
+        "63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44";
+
     private readonly ConcurrentDictionary<Guid, LegalDocumentVersionInfo> _versions = new();
 
     public InMemoryLegalDocumentVersionRepository()
@@ -14,14 +21,14 @@ public class InMemoryLegalDocumentVersionRepository : ILegalDocumentVersionRepos
         Seed(
             Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             LegalDocumentType.PdConsentText,
-            "v1",
-            "pd-consent-hash-v1",
+            PdConsentDocumentVersionV1,
+            PdConsentHashV1,
             LegalDocumentVersionStatus.Active);
         Seed(
             Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
             LegalDocumentType.Terms,
-            "v1",
-            "terms-hash-v1",
+            TermsDocumentVersionV1,
+            TermsHashV1,
             LegalDocumentVersionStatus.Active);
         Seed(
             Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),

@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CherryPlayServer\CherryPlayServer.csproj" />
+    <ProjectReference Include="..\tools\CherryPlay.LegalPublish\CherryPlay.LegalPublish.csproj" />
   </ItemGroup>
 
 </Project>

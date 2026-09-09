@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { AuthHttpError } from '@cherryplay/components';
+import { AuthHttpError, LEGAL_PD_CONSENT, LEGAL_TERMS } from '@cherryplay/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiFetch } from '../utils/apiFetch';
@@ -61,14 +61,14 @@ describe('authService desktop', () => {
       const code = await authService.register('a@b.c', 'secret', 'Name', [
         {
           id: '00000000-0000-4000-8000-000000000099',
-          legalDocumentVersionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-          documentHash: 'pd-consent-hash-v1',
+          legalDocumentVersionId: LEGAL_PD_CONSENT.versionId,
+          documentHash: LEGAL_PD_CONSENT.contentHash,
           decision: 'grant',
         },
         {
           id: '00000000-0000-4000-8000-000000000098',
-          legalDocumentVersionId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-          documentHash: 'terms-hash-v1',
+          legalDocumentVersionId: LEGAL_TERMS.versionId,
+          documentHash: LEGAL_TERMS.contentHash,
           decision: 'grant',
         },
       ]);
@@ -95,14 +95,14 @@ describe('authService desktop', () => {
       const registerResult = await authService.register('a@b.c', 'secret', 'Name', [
         {
           id: '00000000-0000-4000-8000-000000000097',
-          legalDocumentVersionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-          documentHash: 'pd-consent-hash-v1',
+          legalDocumentVersionId: LEGAL_PD_CONSENT.versionId,
+          documentHash: LEGAL_PD_CONSENT.contentHash,
           decision: 'grant',
         },
         {
           id: '00000000-0000-4000-8000-000000000096',
-          legalDocumentVersionId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-          documentHash: 'terms-hash-v1',
+          legalDocumentVersionId: LEGAL_TERMS.versionId,
+          documentHash: LEGAL_TERMS.contentHash,
           decision: 'grant',
         },
       ]);

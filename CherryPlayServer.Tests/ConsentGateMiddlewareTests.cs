@@ -12,8 +12,8 @@ public class ConsentGateMiddlewareTests
 {
     private static readonly Guid PdVersionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid TermsVersionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    private const string PdHash = "pd-consent-hash-v1";
-    private const string TermsHash = "terms-hash-v1";
+    private const string PdHash = "4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc";
+    private const string TermsHash = "63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

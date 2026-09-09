@@ -1,0 +1,23 @@
+---
+description: Legal markdown is plain text; metadata lives in manifest.json
+globs: CherryPlayWeb/src/content/legal/**/*
+alwaysApply: false
+---
+
+# Legal content pack
+
+## Plain markdown only
+
+Files under `CherryPlayWeb/src/content/legal/v*/**:
+
+- `*.md` — **только текст документа** (без YAML frontmatter `---`).
+- `manifest.json` — метаданные пака: `documentVersion`, `effectiveFrom`, список документов (`file`, `type`, `versionId`, `currentPath`, `title`) и блок `operator`.
+
+`operator.md` тоже без YAML; контакты оператора — в `manifest.operator`.
+
+## Hash / publish
+
+- Хеш = SHA-256 от всего `.md` после trim + LF (`tools/CherryPlay.LegalPublish`).
+- Публикация для фронта: `dotnet run --project tools/CherryPlay.LegalPublish -- <version>` → `legal-registry.generated.json`.
+- В БД registry (`legal_document_versions`) — **только через EF-миграцию** (обновить `HasData`, `dotnet ef migrations add`). Tool не патчит C# seed.
+- Не добавляй frontmatter обратно в legal `.md`.
