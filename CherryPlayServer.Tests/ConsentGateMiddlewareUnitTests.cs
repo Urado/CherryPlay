@@ -1,10 +1,8 @@
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Middleware;
 using CherryPlayServer.Core.Models;
-using CherryPlayServer.Core.Options;
 using CherryPlayServer.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 
 namespace CherryPlayServer.Tests;
 
@@ -12,30 +10,11 @@ namespace CherryPlayServer.Tests;
 public class ConsentGateMiddlewareUnitTests
 {
     [Test]
-    public async Task InvokeAsync_WhenGateDisabled_DoesNotQueryLegalDocs_AndCallsNext()
+    public async Task InvokeAsync_AdminPrefix_IsExempt()
     {
         var legalDocs = new ThrowingLegalDocumentsService();
         var nextCalled = false;
-        var middleware = CreateMiddleware(enabled: false, _ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-
-        var context = CreateMutatingContext("/api/organizer/profile");
-
-        await middleware.InvokeAsync(context, legalDocs);
-
-        Assert.That(nextCalled, Is.True);
-        Assert.That(legalDocs.GetMissingCalls, Is.EqualTo(0));
-    }
-
-    [Test]
-    public async Task InvokeAsync_AdminPrefix_IsExempt_EvenWhenEnabled()
-    {
-        var legalDocs = new ThrowingLegalDocumentsService();
-        var nextCalled = false;
-        var middleware = CreateMiddleware(enabled: true, _ =>
+        var middleware = new ConsentGateMiddleware(_ =>
         {
             nextCalled = true;
             return Task.CompletedTask;
@@ -50,11 +29,11 @@ public class ConsentGateMiddlewareUnitTests
     }
 
     [Test]
-    public async Task InvokeAsync_WhenEnabledAndMissingGrants_ThrowsConsentRequired()
+    public async Task InvokeAsync_WhenMissingGrants_ThrowsConsentRequired()
     {
         var missing = new[] { Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") };
         var legalDocs = new StubLegalDocumentsService(missing);
-        var middleware = CreateMiddleware(enabled: true, _ => Task.CompletedTask);
+        var middleware = new ConsentGateMiddleware(_ => Task.CompletedTask);
         var context = CreateMutatingContext("/api/organizer/profile");
 
         var ex = Assert.ThrowsAsync<CherryPlayServer.Core.Exceptions.LegalConsentException>(
@@ -65,8 +44,27 @@ public class ConsentGateMiddlewareUnitTests
         Assert.That(legalDocs.GetMissingCalls, Is.EqualTo(1));
     }
 
-    private static ConsentGateMiddleware CreateMiddleware(bool enabled, RequestDelegate next) =>
-        new(next, Options.Create(new ConsentGateOptions { Enabled = enabled }));
+    [Test]
+    public async Task InvokeAsync_GetRequest_DoesNotEnforce()
+    {
+        var legalDocs = new ThrowingLegalDocumentsService();
+        var nextCalled = false;
+        var middleware = new ConsentGateMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+
+        var context = new DefaultHttpContext();
+        context.Request.Method = HttpMethods.Get;
+        context.Request.Path = "/api/organizer/profile";
+        context.Items["OrganizerId"] = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        await middleware.InvokeAsync(context, legalDocs);
+
+        Assert.That(nextCalled, Is.True);
+        Assert.That(legalDocs.GetMissingCalls, Is.EqualTo(0));
+    }
 
     private static DefaultHttpContext CreateMutatingContext(string path)
     {
@@ -107,7 +105,7 @@ public class ConsentGateMiddlewareUnitTests
             CancellationToken cancellationToken = default)
         {
             GetMissingCalls++;
-            throw new InvalidOperationException("Should not be called when gate is disabled/exempt.");
+            throw new InvalidOperationException("Should not be called when gate is exempt.");
         }
     }
 

@@ -2,8 +2,6 @@ using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Core.Options;
-using Microsoft.Extensions.Options;
 
 namespace CherryPlayServer.Core.Middleware;
 
@@ -25,19 +23,15 @@ public class ConsentGateMiddleware
     ];
 
     private readonly RequestDelegate _next;
-    private readonly ConsentGateOptions _options;
 
-    public ConsentGateMiddleware(RequestDelegate next, IOptions<ConsentGateOptions> options)
+    public ConsentGateMiddleware(RequestDelegate next)
     {
-        _next = next;
-        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _next = next ?? throw new ArgumentNullException(nameof(next));
     }
 
     public async Task InvokeAsync(HttpContext context, ILegalDocumentsService legalDocuments)
     {
-        // Fail-open when consent storage is unsupported (EF / UnsupportedLegalConsentUnitOfWork):
-        // otherwise InMemory required docs would 403 every write with no grant path.
-        if (_options.Enabled && ShouldEnforce(context))
+        if (ShouldEnforce(context))
         {
             var organizerId = context.GetOrganizerId();
             if (organizerId.HasValue)

@@ -157,7 +157,6 @@ builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
 
-builder.Services.Configure<ConsentGateOptions>(options => options.Enabled = useInMemoryStorage);
 if (useInMemoryStorage)
 {
     builder.Services.AddSingleton<ILegalConsentUnitOfWork>(sp => new InMemoryLegalConsentUnitOfWork(
