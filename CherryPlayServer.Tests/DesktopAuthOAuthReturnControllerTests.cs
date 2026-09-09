@@ -14,101 +14,103 @@ namespace CherryPlayServer.Tests;
 public class DesktopAuthOAuthReturnControllerTests
 {
     [Test]
-    public async Task WebCallback_WithPublicWebBaseUrl_RedirectsToLoginWithCodeOnly()
+    public async Task WebCallback_WithPublicWebBaseUrl_RedirectsToOAuthCompleteWithProviderAndCode()
     {
-        var organizerId = Guid.NewGuid();
         var desktopCodes = new StubDesktopAuthCodeService();
         var controller = CreateController(
-            organizerId,
             desktopCodes,
             new OAuthStateConsumeResult(AuthConstants.DesktopClientValue),
             configuration: BuildConfig(("PUBLIC_WEB_BASE_URL", "https://web.example")));
 
-        var action = await controller.WebCallback("vk", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("vk", "oauth-code", "state"));
 
         Assert.That(action, Is.TypeOf<RedirectResult>());
         var redirect = (RedirectResult)action;
         Assert.That(
             redirect.Url,
-            Is.EqualTo("https://web.example/login?client=desktop&code=issued-code"));
+            Is.EqualTo("https://web.example/oauth/complete?provider=vk&code=oauth-code&client=desktop"));
         Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
+        Assert.That(desktopCodes.IssueCount, Is.EqualTo(0));
     }
 
     [Test]
-    public async Task WebCallback_WithAllowedReturnTo_IncludesReturnToOnWebLogin()
+    public async Task WebCallback_WithAllowedReturnTo_IncludesReturnToOnOAuthComplete()
     {
         var returnTo = "http://localhost:5173/auth/callback";
         var desktopCodes = new StubDesktopAuthCodeService();
         var controller = CreateController(
-            Guid.NewGuid(),
             desktopCodes,
             new OAuthStateConsumeResult(AuthConstants.DesktopClientValue, returnTo),
             configuration: BuildConfig(("PUBLIC_WEB_BASE_URL", "http://localhost:3000")));
 
-        var action = await controller.WebCallback("mailru", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("mailru", "oauth-code", "state"));
 
         Assert.That(action, Is.TypeOf<RedirectResult>());
         var redirect = (RedirectResult)action;
         Assert.That(
             redirect.Url,
             Is.EqualTo(
-                "http://localhost:3000/login?client=desktop&code=issued-code&return_to=" +
+                "http://localhost:3000/oauth/complete?provider=mailru&code=oauth-code&client=desktop&return_to=" +
                 Uri.EscapeDataString(returnTo)));
     }
 
     [Test]
-    public async Task WebCallback_WithDisallowedReturnTo_OmitsReturnToAndUsesDeepLinkInHtmlFallback()
+    public async Task WebCallback_WithDisallowedReturnTo_OmitsReturnToOnOAuthComplete()
     {
         var desktopCodes = new StubDesktopAuthCodeService();
         var controller = CreateController(
-            Guid.NewGuid(),
             desktopCodes,
-            new OAuthStateConsumeResult(AuthConstants.DesktopClientValue, "https://evil.example/steal"));
+            new OAuthStateConsumeResult(AuthConstants.DesktopClientValue, "https://evil.example/steal"),
+            configuration: BuildConfig(("PUBLIC_WEB_BASE_URL", "https://web.example")));
 
-        var action = await controller.WebCallback("vk", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("vk", "oauth-code", "state"));
 
-        Assert.That(action, Is.TypeOf<ContentResult>());
-        var content = (ContentResult)action;
-        Assert.That(content.Content, Does.Contain($"{AuthConstants.DesktopAuthDeepLinkBase}?code=issued-code"));
-        Assert.That(content.Content, Does.Not.Contain("evil.example"));
-        Assert.That(content.Content, Does.Not.Contain("accessToken"));
-        Assert.That(content.Content, Does.Not.Contain("jwt"));
+        Assert.That(action, Is.TypeOf<RedirectResult>());
+        var redirect = (RedirectResult)action;
+        Assert.That(
+            redirect.Url,
+            Is.EqualTo("https://web.example/oauth/complete?provider=vk&code=oauth-code&client=desktop"));
+        Assert.That(redirect.Url, Does.Not.Contain("evil.example"));
+        Assert.That(redirect.Url, Does.Not.Contain("return_to"));
     }
 
     [Test]
-    public async Task WebCallback_WithoutPublicWebBase_ReturnsHtmlWithAllowedHttpReturnTo()
+    public async Task WebCallback_WithoutPublicWebBase_RedirectsToRelativeOAuthComplete()
     {
         var returnTo = "http://127.0.0.1:5174/auth/callback";
         var desktopCodes = new StubDesktopAuthCodeService();
         var controller = CreateController(
-            Guid.NewGuid(),
             desktopCodes,
             new OAuthStateConsumeResult(AuthConstants.DesktopClientValue, returnTo));
 
-        var action = await controller.WebCallback("vk", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("vk", "oauth-code", "state"));
 
-        Assert.That(action, Is.TypeOf<ContentResult>());
-        var content = (ContentResult)action;
-        Assert.That(content.ContentType, Does.StartWith("text/html"));
-        Assert.That(content.Content, Does.Contain($"{returnTo}?code=issued-code"));
-        Assert.That(content.Content, Does.Contain("нажмите здесь"));
+        Assert.That(action, Is.TypeOf<RedirectResult>());
+        var redirect = (RedirectResult)action;
+        Assert.That(
+            redirect.Url,
+            Is.EqualTo(
+                "/oauth/complete?provider=vk&code=oauth-code&client=desktop&return_to=" +
+                Uri.EscapeDataString(returnTo)));
     }
 
     [Test]
-    public async Task WebCallback_NonDesktopState_SetsCookieAndRedirectsCabinet()
+    public async Task WebCallback_NonDesktopState_RedirectsToOAuthCompleteWithoutClient()
     {
         var desktopCodes = new StubDesktopAuthCodeService();
         var controller = CreateController(
-            Guid.NewGuid(),
             desktopCodes,
-            new OAuthStateConsumeResult(null));
+            new OAuthStateConsumeResult(null),
+            configuration: BuildConfig(("PUBLIC_WEB_BASE_URL", "https://web.example")));
 
-        var action = await controller.WebCallback("vk", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("vk", "oauth-code", "state"));
 
         Assert.That(action, Is.TypeOf<RedirectResult>());
-        Assert.That(((RedirectResult)action).Url, Is.EqualTo("/cabinet"));
+        Assert.That(
+            ((RedirectResult)action).Url,
+            Is.EqualTo("https://web.example/oauth/complete?provider=vk&code=oauth-code"));
         Assert.That(desktopCodes.IssueCount, Is.EqualTo(0));
-        Assert.That(controller.Response.Headers.SetCookie.Count, Is.GreaterThan(0));
+        Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
     }
 
     [Test]
@@ -170,13 +172,12 @@ public class DesktopAuthOAuthReturnControllerTests
     }
 
     private static AuthController CreateController(
-        Guid organizerId,
         StubDesktopAuthCodeService desktopCodes,
         OAuthStateConsumeResult consumeResult,
         IConfiguration? configuration = null)
     {
         return AuthControllerTestFactory.Create(
-            new StubAuthService(organizerId),
+            new StubAuthService(Guid.NewGuid()),
             desktopAuthCodeService: desktopCodes,
             oauthStateService: new ConfigurableOAuthStateService { ConsumeResult = consumeResult },
             configuration: configuration,

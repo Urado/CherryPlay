@@ -10,6 +10,8 @@ public class InMemoryOrganizerRepository : IOrganizerRepository
     private readonly ConcurrentDictionary<Guid, Organizer> _organizers = new();
     private readonly ConcurrentDictionary<Guid, byte> _softDeleted = new();
 
+    public int Count => _organizers.Count(pair => !_softDeleted.ContainsKey(pair.Key));
+
     public Task<Organizer?> GetByIdAsync(Guid id, bool includeDeleted = false)
     {
         var organizer = Resolve(id);

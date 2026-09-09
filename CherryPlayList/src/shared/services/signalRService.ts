@@ -9,7 +9,7 @@ import * as signalR from '@microsoft/signalr';
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
 import { type PlaybackStateDto } from '../contracts/playbackState';
 import { useAuthStore } from '../stores';
-import { handleAuthError, isAuthError } from '../utils/authErrorHandler';
+import { handleAuthError, isAuthError, SESSION_EXPIRED_USER_MESSAGE } from '../utils/authErrorHandler';
 import { isTokenExpired } from '../utils/tokenUtils';
 
 export type { PlaybackStateDto, PlaybackWireStatus } from '../contracts/playbackState';
@@ -135,8 +135,8 @@ class SignalRService {
     // Проверяем, не истек ли токен
     if (authToken && isTokenExpired(authToken)) {
       console.warn('[SignalR] Token expired, clearing auth');
-      handleAuthError('Authentication token has expired. Please login again.');
-      throw new Error('Authentication token has expired');
+      handleAuthError('Authentication token has expired');
+      throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
     // Сохраняем токен для возможного переподключения
@@ -245,7 +245,7 @@ class SignalRService {
       const currentToken = useAuthStore.getState().accessToken || this.currentToken;
       if (currentToken && isTokenExpired(currentToken)) {
         console.warn('[SignalR] Token expired during reconnect, clearing auth');
-        handleAuthError('Authentication token has expired. Please login again.');
+        handleAuthError('Authentication token has expired');
         await this.disconnect();
         return;
       }
@@ -520,9 +520,8 @@ class SignalRService {
     }
 
     if (isTokenExpired(token)) {
-      const error = new Error('Authentication token has expired');
-      handleAuthError(error);
-      throw error;
+      handleAuthError('Authentication token has expired');
+      throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
     console.log('[SignalR] Starting session:', { partyId });

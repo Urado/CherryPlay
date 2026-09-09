@@ -13,7 +13,7 @@ namespace CherryPlayServer.Tests;
 public class DesktopAuthRegisterQueryTests
 {
     [Test]
-    public async Task Register_WithDesktopQueryParam_ReturnsCodeOnlyWithoutCookie()
+    public async Task Register_WithDesktopQueryParam_ReturnsCodeAndSetsCookie()
     {
         var organizerId = Guid.NewGuid();
         var auth = new RegisterFlowStubAuthService(organizerId);
@@ -31,9 +31,9 @@ public class DesktopAuthRegisterQueryTests
         Assert.That(action, Is.TypeOf<OkObjectResult>());
         var body = (DesktopAuthCodeResponse)((OkObjectResult)action).Value!;
         Assert.That(body.Code, Is.EqualTo("desktop-code"));
-        Assert.That(auth.LastRegisterIssueToken, Is.False);
+        Assert.That(auth.LastRegisterIssueToken, Is.True);
         Assert.That(desktopCodes.LastOrganizerId, Is.EqualTo(organizerId));
-        Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
+        Assert.That(controller.Response.Headers.SetCookie.Count, Is.GreaterThan(0));
     }
 
     [Test]

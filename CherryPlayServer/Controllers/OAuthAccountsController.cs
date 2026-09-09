@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using CherryPlayServer.Core;
+using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Models;
 
@@ -16,6 +19,7 @@ public class OAuthAccountsController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<CreateOAuthAccountResponse>> Create(
         [FromBody] CreateOAuthAccountRequest request,
         CancellationToken cancellationToken)
@@ -26,6 +30,10 @@ public class OAuthAccountsController : ControllerBase
         }
 
         var response = await _oauthAccountsService.CreateAsync(request, cancellationToken);
+        Response.Cookies.Append(
+            AuthConstants.AuthCookieName,
+            response.AccessToken,
+            Request.CreateAuthCookieOptions());
         return Created($"/api/oauth/accounts/{response.Id}", response);
     }
 }

@@ -115,8 +115,8 @@
 
 | Метод | Путь             | Описание                                                                                                          | Тело                                                | Ответ                                 |
 | ----- | ---------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------- |
-| POST  | `/auth/login`    | Вход по email и паролю. Web: httpOnly cookie + `{ accessToken }`. Desktop browser SSO (`client=desktop` или заголовок `X-CherryPlay-Client: desktop`): `{ code }` без cookie — см. §3.2.0b. | `{ email: string, password: string }`               | `{ accessToken: string }`, `{ code: string }` или 401     |
-| POST  | `/auth/register` | Регистрация организатора по email, паролю и имени. Web: cookie + `{ accessToken }`. Desktop browser SSO: `{ code }` без cookie — см. §3.2.0b. | `{ email: string, password: string, name: string }` | `{ accessToken: string }`, `{ code: string }` или 400/409 |
+| POST  | `/auth/login`    | Вход по email и паролю. Web: httpOnly cookie + `{ accessToken }`. Desktop browser SSO (`client=desktop` или заголовок `X-CherryPlay-Client: desktop`): httpOnly cookie + `{ code }` — см. §3.2.0b. | `{ email: string, password: string }`               | `{ accessToken: string }`, `{ code: string }` или 401     |
+| POST  | `/auth/register` | Регистрация организатора по email, паролю и имени. Web: cookie + `{ accessToken }`. Desktop browser SSO: cookie + `{ code }` — см. §3.2.0b. | `{ email: string, password: string, name: string }` | `{ accessToken: string }`, `{ code: string }` или 400/409 |
 
 #### 3.2.0a Сброс и смена пароля
 
@@ -183,9 +183,9 @@ Self-service восстановление пароля (forgot → email → Web
 
 | Событие | Условие | Ответ / redirect |
 | ------- | ------- | ---------------- |
-| Успешный `POST /auth/login` | desktop-клиент | **200** `{ code: string }` — без httpOnly cookie |
-| Успешный `POST /auth/register` | desktop-клиент | **200** `{ code: string }` — без cookie |
-| `GET /auth/{provider}/callback` после OAuth | `client=desktop` в state | **302** на `{PUBLIC_WEB_BASE_URL}/login?client=desktop&code={rawCode}` (+ опциональный allowlist `return_to` из state) — без cookie и без JWT в URL. Если `PUBLIC_WEB_BASE_URL` не задан — **200** HTML «return to app» со ссылкой/auto-redirect только на `code` (`BuildAuthReturnUrl` / `DesktopAuthDeepLinkBase`). Не 302 напрямую на `cherryplaylist://` (часто блокируется браузером). |
+| Успешный `POST /auth/login` | desktop-клиент | **200** `{ code: string }` + httpOnly cookie (нужна для `ensureConsents` до deep link) |
+| Успешный `POST /auth/register` | desktop-клиент | **200** `{ code: string }` + httpOnly cookie |
+| `GET /auth/{provider}/callback` после OAuth | любой client (в т.ч. `desktop` в state) | **Только** validate/consume state → **302** на SPA `/oauth/complete?provider&code` (+ `client=desktop` и allowlist `return_to` из state). **Нет** exchange, cookie, JWT и desktop-кода на callback. Код для List выдаёт Web после `POST /api/oauth/accounts` → `POST /auth/desktop/code` (§3.2.2–§3.2.3). |
 | `POST /auth/desktop/code` | валидная cookie-сессия организатора | **200** `{ code: string }` — cookie не меняется; **401** если сессия отсутствует / невалидна |
 
 **`return_to` (куда вернуть одноразовый код):** query на `/login?client=desktop&return_to=…` (Desktop передаёт при открытии браузера) и на `GET /auth/{provider}/web?client=desktop&return_to=…` (сохраняется в OAuth state). После выдачи кода Web/сервер редиректит через `buildAuthReturnUrl` / `BuildAuthReturnUrl` → `{returnTo}?code={rawCode}` (`code` — URL-encoded; `&code=` если в базе уже есть query).
@@ -197,7 +197,7 @@ Self-service восстановление пароля (forgot → email → Web
 
 Невалидный или отсутствующий `return_to` → fallback на константу `DesktopAuthDeepLinkBase` (`cherryplaylist://auth`).
 
-CherryPlayWeb после email login/register / session-continue в desktop-режиме делает redirect через `buildAuthReturnUrl(resolveDesktopAuthReturnTo(return_to), code)`. OAuth callback: сервер при наличии `PUBLIC_WEB_BASE_URL` делает **302** на `/login?client=desktop&code=…` (Web показывает return UI и открывает app return URL); без `PUBLIC_WEB_BASE_URL` — HTML return-page на API. При уже существующей Web-сессии на `/login?client=desktop` код выдаётся только после клика «Войти» через `POST /auth/desktop/code` (см. поток ниже) — **без** auto-redirect и **без** повторного ввода пароля.
+CherryPlayWeb после email login/register в desktop-режиме: cookie + `{ code }` → `ensureConsents` → redirect через `buildAuthReturnUrl(resolveDesktopAuthReturnTo(return_to), code)`. OAuth: callback → `/oauth/complete` → `POST /api/oauth/accounts` (cookie) → `ensureConsents` → `POST /auth/desktop/code` → return UI / deep link. При уже существующей Web-сессии на `/login?client=desktop` код выдаётся только после клика «Войти» через `POST /auth/desktop/code` — **без** auto-redirect и **без** повторного ввода пароля.
 
 **Prod / packaged return URL:** `cherryplaylist://auth?code={rawCode}` (база — `DesktopAuthDeepLinkBase`).
 
@@ -220,14 +220,14 @@ CherryPlayWeb после email login/register / session-continue в desktop-ре
 2. На Web (`/login?client=desktop`) CherryPlayWeb проверяет cookie-сессию (`checkAuth`). Ветки:
    - **Сессия есть (session-continue):** панель подтверждения с кнопкой **«Войти»** — **без** формы email/пароль/OAuth и **без** auto-redirect / auto-issue на загрузке. По клику — `POST /auth/desktop/code` (`credentials: 'include'`) → **200** `{ code }` → `buildAuthReturnUrl` по allowlisted `return_to`. При **401** / ошибке выдачи — сообщение об ошибке и fallback на `AuthForm`.
    - **Сессии нет:** обычная `AuthForm` (email+пароль или OAuth VK / Mail.ru); флаги `client=desktop` и `return_to` сохраняются при навигации login ↔ register и при старте OAuth (`/auth/{provider}/web`).
-3. После успеха (session-continue, login/register или OAuth callback) одноразовый `code` возвращается через `buildAuthReturnUrl` / `BuildAuthReturnUrl` (prod deep link или DEV `/auth/callback`). JWT в URL **не** передаётся.
+3. После успеха (session-continue, login/register или OAuth через `/oauth/complete`) одноразовый `code` возвращается через `buildAuthReturnUrl` (prod deep link или DEV `/auth/callback`). JWT в URL **не** передаётся.
 4. Desktop вызывает `POST /auth/desktop/exchange` с `{ code }`, сохраняет JWT, загружает профиль организатора.
 
 Не-desktop `/login` (без `client=desktop`) не меняется: `AuthForm` → кабинет.
 
 Forgot/change password в Desktop **без изменений** (forgot → email → Web; change — в приложении с JWT).
 
-**Consent UI (Web):** юридические чекбоксы при регистрации живут только на Web-форме; Desktop их не дублирует. **Primary Web email register:** `POST /api/organizers` (+ `consents`) → `POST /auth/login` (cookie) — §3.2.3. Legacy `POST /auth/register` **без** `consents` (таблица §3.2.0) — не основной путь Web-формы.
+**Consent UI (Web):** юридические чекбоксы при email register и на OAuth-вкладке / `OAuthCompletePage`; Desktop их не дублирует. **Primary Web email register:** `POST /api/organizers` (+ `consents`) → `POST /auth/login` (cookie) — §3.2.3. **OAuth one-shot:** §3.2.2–§3.2.3. Legacy `POST /auth/register` **без** `consents` — не основной путь Web-формы.
 
 #### 3.2.1 OAuth Login (Desktop) — legacy
 
@@ -238,35 +238,33 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 | Метод | Путь                     | Описание                                                                                                                                                                                                                                         | Тело                                 | Ответ                             |
 | ----- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ | --------------------------------- |
 | GET   | `/auth/{provider}/start` | Начало логина через выбранный провайдер. `{provider}` = `vk` или `mailru`. Допустимый redirect задаётся сервером (только `cherryplaylist://auth` или `http://127.0.0.1`). После успешной авторизации провайдер делает redirect обратно с `code`. | —                                    | Redirect на провайдер             |
-| POST  | `/auth/exchange`         | Обмен одноразового `code` от провайдера на JWT токен. Сервер определяет провайдера по `provider` в теле запроса или по `state` из redirect (если провайдер передаёт его).                                                                        | `{ code: string, provider: string }` | `{ accessToken: string }` или 401 |
+| POST  | `/auth/exchange`         | Обмен `code` на JWT для **существующего** OAuth subject. **Новый** subject → **400** (`LegalConsentException`): регистрация только через `POST /api/oauth/accounts` (+ consents). | `{ code, provider, … }` | `{ accessToken }` или 400/401 |
 
-**Поток (Desktop):**
+**Поток (Desktop, legacy):**
 
 1. Пользователь выбирает провайдера (VK или Mail.ru) в UI приложения.
-2. Приложение открывает браузер на `GET /auth/{provider}/start` (например `/auth/vk/start`).
+2. Приложение открывает браузер на `GET /auth/{provider}/start`.
 3. Сервер перенаправляет на страницу авторизации провайдера.
-4. После авторизации провайдер делает redirect с `code` (и опционально `state` с информацией о провайдере) в query параметре.
-5. Приложение извлекает `code` и вызывает `POST /auth/exchange` с телом `{ code, provider }` (провайдер определяется из выбора пользователя или из `state`).
-6. Сервер валидирует `code` у провайдера, создаёт/находит организатора, возвращает `{ accessToken }` (JWT).
+4. После авторизации провайдер делает redirect с `code` (и опционально `state`).
+5. Приложение вызывает `POST /auth/exchange` с `{ code, provider }`.
+6. Сервер обменивает `code` у провайдера: существующий subject → JWT; **новый** subject отклоняется (one-shot API — §3.2.3). То же ограничение для legacy `POST /auth/vkid/exchange`.
 
 #### 3.2.2 OAuth Login (Web)
 
-Для CherryPlayWeb (кабинет организатора): логин через любой провайдер с установкой httpOnly cookie.
+Для CherryPlayWeb: старт у провайдера → callback **без** сессии → SPA one-shot (`/oauth/complete` + `POST /api/oauth/accounts`).
 
 | Метод | Путь                        | Описание                                                                                                                                                                                                                                                       | Тело           | Ответ                                |
 | ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ------------------------------------ |
-| GET   | `/auth/{provider}/web`      | Начало логина через провайдер для веба. `{provider}` = `vk` или `mailru`. Опционально `?client=desktop` и `?return_to=` — режим browser SSO для CherryPlayList (`return_to` в state, allowlist §3.2.0b). Сервер перенаправляет на OAuth страницу провайдера с `redirect_uri` на сервер (например `/auth/{provider}/callback`). | —              | Redirect на провайдер                |
-| GET   | `/auth/{provider}/callback` | Callback от провайдера с `code`. Web: JWT + httpOnly cookie → redirect `/cabinet`. Desktop browser SSO (`client=desktop` в state): одноразовый desktop-код → **302** на `{PUBLIC_WEB_BASE_URL}/login?client=desktop&code=…` (или HTML return-page fallback; §3.2.0b).                                                                                                                | `code` (query) | Redirect в кабинет + cookie **или** Web/HTML return-page с desktop-кодом |
+| GET   | `/auth/{provider}/web`      | Начало логина через провайдер. `{provider}` = `vk` или `mailru`. Опционально `?client=desktop` и `?return_to=` — browser SSO для CherryPlayList (`return_to` в state, allowlist §3.2.0b). Redirect на OAuth провайдера с `redirect_uri` на `/auth/{provider}/callback`. | —              | Redirect на провайдер                |
+| GET   | `/auth/{provider}/callback` | Callback: validate/consume `state` **только** → **302** на `{PUBLIC_WEB_BASE_URL}/oauth/complete?provider&code` (без базы — относительный `/oauth/complete…`). При desktop state: + `client=desktop` и allowlist `return_to`. **Нет** token exchange, cookie, create organizer. | `code`, `state` (query) | Redirect на SPA `/oauth/complete` |
 | POST  | `/auth/logout`              | Выход организатора. Удаляет httpOnly cookie (Web) или инвалидирует токен (Desktop). Требует авторизации.                                                                                                                                                       | —              | 204                                  |
 
-**Поток (Web):**
+**Поток (Web / Desktop SSO):**
 
-1. Пользователь выбирает провайдера (VK или Mail.ru) на странице логина и открывает `/auth/{provider}/web` (например `/auth/vk/web`).
-2. Сервер перенаправляет на страницу авторизации провайдера.
-3. После авторизации провайдер делает redirect на `/auth/{provider}/callback?code=...`.
-4. Сервер обменивает `code` на JWT (`GetOrCreateOrganizer…`), устанавливает httpOnly cookie, делает redirect в кабинет.
-
-**Consent gap:** этот live OAuth-путь **не** записывает consent events. Consent-aware создание OAuth-аккаунта — `POST /api/oauth/accounts` (§3.2.3); Web UI пока не вызывает его.
+1. Пользователь выбирает провайдера (VK или Mail.ru); UI показывает `LegalConsentBlock` на OAuth-вкладке (pending consents в storage) и открывает `/auth/{provider}/web`.
+2. Сервер перенаправляет на авторизацию провайдера.
+3. Провайдер → `/auth/{provider}/callback?code=…&state=…` → сервер проверяет state → redirect `/oauth/complete?provider&code` (+ desktop query).
+4. `OAuthCompletePage`: `POST /api/oauth/accounts` с `consents` (из pending storage или с формы) → **201** + httpOnly cookie (`accessToken` в теле) → `ensureConsents` → кабинет **или** (desktop) `POST /auth/desktop/code` → deep link. Детали resource API — §3.2.3.
 
 **Поддерживаемые OAuth-провайдеры в v1:**
 
@@ -277,36 +275,37 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 
 #### 3.2.3 Legal consent (resource REST, CP-066)
 
-Строгий resource REST (noun URI): регистрация организатора / OAuth-аккаунта и append-only журнал согласий. **Нет** публичного каталога `GET /api/legal-documents` — клиент знает `legalDocumentVersionId` + `documentHash` (deploy-time registry) и передаёт их в теле; сервер валидирует active-версию и hash.
+Строгий resource REST (noun URI): регистрация организатора / OAuth one-shot и append-only журнал согласий. **Нет** публичного каталога `GET /api/legal-documents` — клиент знает `legalDocumentVersionId` + `documentHash` (deploy-time registry `legal-registry.generated.json`) и передаёт их в теле; сервер валидирует active-версию и hash.
 
 **Web email register (primary):** CherryPlayWeb → `POST /api/organizers` (тело с `consents`) → при **201** → `POST /auth/login` (httpOnly cookie / desktop `{ code }`). Legacy `POST /auth/register` (§3.2.0) **без** `consents` — совместимость, не путь Web-формы с чекбоксами.
 
-**OAuth Web (product gap):** live поток `/auth/{provider}/web` → callback → `GetOrCreateOrganizer…` **не** пишет consent events. Consent-aware resource — `POST /api/oauth/accounts` (stub); UI пока не вызывает его — gap до проводки.
+**OAuth one-shot (gap closed):** `GET /auth/{provider}/callback` не создаёт subject (§3.2.2). Реальный exchange — `POST /api/oauth/accounts`: **новый** subject требует `consents[]` атомарно с созданием organizer + OAuth link + consent events; **существующий** subject → login/session **без** обязательного replay consents. Ответ: `accessToken` + Set-Cookie. Web: `LegalConsentBlock` на OAuth-вкладке + `OAuthCompletePage`. Legacy `POST /auth/exchange` / `vkid/exchange` — только существующий subject (§3.2.1).
 
-**Хранение (важно):**
+**`OAUTH_REDIRECT_BASE_URL`:** один canonical callback для start (`GET /auth/{provider}/web`) и one-shot exchange (`POST /api/oauth/accounts`): `{base}/auth/{provider}/callback` (`provider` всегда lowercase). Если env не задан — fallback `Scheme://Host` текущего запроса. Клиентский `redirectUri` принимается только если **точно** равен canonical; иначе **400**.
 
-- Мутации (`POST` organizers / oauth/accounts / consent-events) работают при `UseInMemoryStorage=true` через `InMemoryLegalConsentUnitOfWork` (ambient staging + `ForUpdate` на email/OAuth).
-- При `UseInMemoryStorage=false` — `UnsupportedLegalConsentUnitOfWork`: consent-мутации недоступны (EF-backed consent UoW/репозиториев нет). Таблиц consent в PostgreSQL **нет** — [DATABASE.md](CherryPlayServer/DATABASE.md).
-- EF `*ForUpdate*` вызывает `pg_advisory_xact_lock` — **подготовка** к concurrency на email/OAuth row paths, **не** рабочий consent UoW.
-- Без Postgres: `docker compose -f docker-compose.inmemory.yml up --build`.
+**Хранение:**
+
+- Dual UoW: `UseInMemoryStorage=true` → `InMemoryLegalConsentUnitOfWork`; `false` → `EfLegalConsentUnitOfWork`. **`UnsupportedLegalConsentUnitOfWork` удалён.**
+- Postgres: таблицы `legal_document_versions`, `consent_events` (миграции, напр. `20260908182106_AddLegalConsentTables`) — [DATABASE.md](CherryPlayServer/DATABASE.md).
+- Без Postgres (dev): `docker compose -f docker-compose.inmemory.yml up --build`.
 
 | Метод | Путь | Auth | Описание | Тело | Ответ |
 | ----- | ---- | ---- | -------- | ---- | ----- |
 | POST | `/api/organizers` | нет | Регистрация по email+паролю с обязательными grants. Идемпотентный replay: тот же email + те же consent `id`/payload → **201** с существующим организатором. | `RegisterOrganizerRequest` | **201** `RegisterOrganizerResponse` + `Location: /api/organizers/{id}` |
-| POST | `/api/oauth/accounts` | нет | Создание OAuth-привязки (+ организатор при первом входе) с обязательными grants. Stub: `providerUserId = "{provider}:{code}"`. Идемпотентный replay при том же provider subject + тех же consents. | `CreateOAuthAccountRequest` | **201** `CreateOAuthAccountResponse` + `Location: /api/oauth/accounts/{id}` (`id` = **organizerId**) |
+| POST | `/api/oauth/accounts` | нет | Реальный OAuth exchange. Новый subject: обязательные grants атомарно. Существующий: обновление `LastUsedAt` / профиля, login без replay consents. | `CreateOAuthAccountRequest` | **201** `CreateOAuthAccountResponse` (`accessToken`) + cookie + `Location: /api/oauth/accounts/{id}` (`id` = **organizerId**) |
 | GET | `/api/consent-events` | JWT organizer | Список consent events текущего организатора (append-only). | — | **200** `ConsentEventDto[]` |
 | POST | `/api/consent-events` | JWT organizer | Пакетное добавление событий. `ConsentInputDto.id` — **client UUID = idempotency key**: тот же id + тот же payload → тот же результат; конфликт payload → conflict. | `CreateConsentEventsRequest` | **201** `ConsentEventDto[]` + `Location` на первый id (или коллекцию) |
 | GET | `/api/organizers/{id}/consent-events` | JWT organizer | То же, что list, но `id` должен совпадать с организатором из токена; иначе **403**. | — | **200** `ConsentEventDto[]` |
 
-**Обязательные документы при register / oauth create:** active `pd_consent_text` и `terms` с `decision: "grant"` и верным hash. Типы: `pd_consent_text`, `terms`, `privacy_policy`, `cookie_policy`. Решения: `grant` \| `withdraw` \| `deny`. Статусы версии: `draft` \| `active` \| `retired`.
+**Обязательные документы при register / oauth create (новый subject):** active `pd_consent_text` и `terms` с `decision: "grant"` и верным hash. Типы: `pd_consent_text`, `terms`, `privacy_policy`, `cookie_policy`. Решения: `grant` \| `withdraw` \| `deny`. Статусы версии: `draft` \| `active` \| `retired`.
 
-**Ошибки домена → HTTP (`GlobalExceptionHandler`):** `LegalConsentException` с `LegalConsentFailureKind.Validation` → **400**; `Conflict` → **409** (ProblemDetails). Validation: нет/неверные consents, неверный hash/версия, пустой OAuth code. Conflict: email занят, OAuth уже связан с другими consents, conflict id события. Пустое тело → **400**.
+**Ошибки домена → HTTP (`GlobalExceptionHandler`):** `LegalConsentException` с `LegalConsentFailureKind.Validation` → **400**; `Conflict` → **409**; `ConsentRequired` → **403** (ProblemDetails / JSON gate). Validation: нет/неверные consents (новый OAuth/email), неверный hash/версия, пустой OAuth code, non-canonical `redirectUri`, soft-deleted OAuth organizer, new subject на legacy exchange. Conflict: email занят, OAuth link race, conflict id события. Пустое тело → **400**.
 
-**Write-path consent gate (`ConsentGateMiddleware`):** активен **только** при `UseInMemoryStorage=true` (consent UoW работает). При EF/`UnsupportedLegalConsentUnitOfWork` gate **fail-open** — иначе permanent 403 без пути grant. После JWT, для организатора с identity на **POST/PUT/PATCH/DELETE**. Без grant на все active required → **403** `{ "code": "consent_required", "message": "Consent required", "missing": ["<versionId>", ...] }`. Exempt (prefix): `/api/consent-events`, `/api/admin` (admin API без personal grants), `/auth/` (login/logout/oauth). GET не гейтится. Seed `legacy@t.ru` без consents — write блокируется до `POST /api/consent-events`. **SignalR / PartyHub** — out of scope MVP (hub-level check later); HTTP write-path only.
+**Write-path consent gate (`ConsentGateMiddleware`):** **всегда включён** (нет `ConsentGateOptions`, не зависит от `UseInMemoryStorage`). После JWT, для организатора с identity на **POST/PUT/PATCH/DELETE**. Без grant на все active required → **403** `{ "code": "consent_required", "message": "Consent required", "missing": ["<versionId>", ...] }`. Exempt (prefix): `/api/consent-events`, `/api/admin`, `/auth/` (и exact `/auth`). GET не гейтится. Seed `legacy@t.ru` без consents — write блокируется до `POST /api/consent-events`. **SignalR / PartyHub** — out of scope MVP; HTTP write-path only.
 
-**Re-consent UI (Web, CP-044):** `ConsentGateProvider` в App shell. Proactive: после auth `GET /api/consent-events` + сравнение с deploy-config `REQUIRED_CONSENT_DOCUMENTS` → блокирующая модалка (`LegalConsentBlock`) → `POST /api/consent-events`. Reactive: `apiFetch` на `403` + `code: "consent_required"` открывает ту же модалку. Cookie-notice скрыт, пока gate open. **Desktop browser SSO:** deep-link в CherryPlayList **только после** `ensureConsents() === 'ok'` (login code и session-continue); List своей модалки не имеет.
+**Re-consent UI (Web, CP-044):** `ConsentGateProvider` в App shell. Proactive: после auth `GET /api/consent-events` + сравнение с deploy-config `REQUIRED_CONSENT_DOCUMENTS` → блокирующая модалка (`LegalConsentBlock`) → `POST /api/consent-events`. Reactive: `apiFetch` на `403` + `code: "consent_required"` открывает ту же модалку. Cookie-notice скрыт, пока gate open. **Desktop browser SSO:** deep-link в CherryPlayList **только после** `ensureConsents() === 'ok'`; List своей модалки не имеет.
 
-**InMemory seed (dev/tests):** active `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, hash `pd-consent-hash-v1`), `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, hash `terms-hash-v1`); retired sample — `cccccccc-cccc-cccc-cccc-cccccccccccc`. Поле seed `documentVersion` = `v1`; клиентский label/folder контента — `1.0` — API сверяет **id + hash**, не строку label.
+**Seed (active, InMemory + EF HasData / registry):** `documentVersion` label = **`1.0`** (не `v1`). Active hashes (SHA-256 из `legal-registry.generated.json`): `aaaaaaaa-…` (`pd_consent_text`) `4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc`; `bbbbbbbb-…` (`terms`) `63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44`. Retired sample `cccccccc-…` может хранить placeholder hash `pd-consent-hash-v1`. API матчит **id + hash**, не строку label.
 
 DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md). Интеграционный обзор: [docs/integration/accounts-and-auth.md](docs/integration/accounts-and-auth.md).
 
@@ -719,8 +718,8 @@ _Примечание:_ в текущей реализации веб может
 | `CreateConsentEventsRequest` | `events: ConsentInputDto[]` |
 | `RegisterOrganizerRequest` | `email`, `password`, `name`, `consents: ConsentInputDto[]` |
 | `RegisterOrganizerResponse` | `id`, `email`, `name` |
-| `CreateOAuthAccountRequest` | `provider` (`OAuthProvider`), `code`, `consents: ConsentInputDto[]` |
-| `CreateOAuthAccountResponse` | `id` (organizerId), `email`, `providerSubject` |
+| `CreateOAuthAccountRequest` | `provider` (`OAuthProvider`), `code`, `consents: ConsentInputDto[]`, опц. `redirectUri` (только = canonical `{OAUTH_REDIRECT_BASE_URL\|Scheme://Host}/auth/{provider}/callback`), опц. `deviceId` |
+| `CreateOAuthAccountResponse` | `id` (organizerId), `email`, `providerSubject`, `accessToken` |
 | `ConsentDecision` | `"grant"` \| `"withdraw"` \| `"deny"` |
 | `LegalDocumentType` | `"pd_consent_text"` \| `"terms"` \| `"privacy_policy"` \| `"cookie_policy"` |
 | `LegalDocumentVersionStatus` | `"draft"` \| `"active"` \| `"retired"` |

@@ -3,10 +3,6 @@ using System.Text;
 
 namespace CherryPlay.LegalPublish;
 
-/// <summary>
-/// Canonical hash of a clean legal .md file: trim BOM/ends, LF newlines, UTF-8, SHA-256 lowercase hex.
-/// Files must not contain YAML frontmatter.
-/// </summary>
 public static class LegalContentHasher
 {
     public const string AlgorithmId = "sha256-lf-text";

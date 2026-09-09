@@ -9,7 +9,6 @@ import {
   buildRequiredConsentInputs,
 } from './legalDocuments';
 
-/** SHA-256 hashes from legal-registry.generated.json (CherryPlay.LegalPublish). */
 const EXPECTED_PD_CONSENT_HASH =
   '4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc';
 const EXPECTED_TERMS_HASH =

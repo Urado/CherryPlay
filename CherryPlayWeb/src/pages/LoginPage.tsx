@@ -145,9 +145,15 @@ export function LoginPage() {
   };
 
   const handleDesktopAuthSuccess = async (code: string) => {
+    setSessionContinueError(null);
     const consentResult = await ensureConsents();
+    if (consentResult === 'logout') {
+      return;
+    }
     if (consentResult !== 'ok') {
-      // Missing grants must be resolved on Web before deep-link return; logout/error stay here.
+      setSessionContinueError(
+        'Не удалось подтвердить согласия. Обновите страницу или войдите снова.',
+      );
       return;
     }
     setPendingDesktopCode(code);

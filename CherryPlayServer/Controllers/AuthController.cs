@@ -2,10 +2,9 @@ using System.Web;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
@@ -103,14 +102,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("{provider}/callback")]
-    public async Task<IActionResult> WebCallback(string provider, [FromQuery] string? code, [FromQuery] string? state)
+    public IActionResult WebCallback(string provider, [FromQuery] string? code, [FromQuery] string? state)
     {
         if (string.IsNullOrEmpty(code))
         {
             return BadRequest("Authorization code is missing");
         }
 
-        if (!Enum.TryParse<OAuthProvider>(provider, true, out var oauthProvider))
+        if (!Enum.TryParse<OAuthProvider>(provider, true, out _))
         {
             return BadRequest($"Unsupported provider: {provider}");
         }
@@ -122,26 +121,30 @@ public class AuthController : ControllerBase
             return Redirect($"/login?error={HttpUtility.UrlEncode("Invalid authentication state. Please try again.")}");
         }
 
-        try
+        var query = new List<string>
         {
-            var redirectUri = GetWebRedirectUri(provider);
-            var organizer = await _authService.ProcessOAuthCallbackAsync(oauthProvider, code, redirectUri);
+            $"provider={Uri.EscapeDataString(provider)}",
+            $"code={Uri.EscapeDataString(code)}",
+        };
 
-            if (IsDesktopClientMode(stateResult.Client))
+        if (IsDesktopClientMode(stateResult.Client))
+        {
+            query.Add($"client={Uri.EscapeDataString(AuthConstants.DesktopClientValue)}");
+            var allowedReturnTo = ResolveDesktopReturnTo(stateResult.ReturnTo);
+            if (!string.IsNullOrWhiteSpace(allowedReturnTo))
             {
-                var desktopCode = await _desktopAuthCodeService.IssueCodeAsync(organizer.Id);
-                return BuildDesktopOAuthReturnResult(desktopCode, stateResult.ReturnTo);
+                query.Add($"return_to={Uri.EscapeDataString(allowedReturnTo)}");
             }
+        }
 
-            var token = await _authService.GenerateTokenAsync(organizer);
-            Response.Cookies.Append(AuthConstants.AuthCookieName, token, CreateAuthCookieOptions());
-            return Redirect("/cabinet");
-        }
-        catch (Exception ex)
+        var completePath = $"/oauth/complete?{string.Join("&", query)}";
+        var publicWebBaseUrl = ResolvePublicWebBaseUrl();
+        if (!string.IsNullOrWhiteSpace(publicWebBaseUrl))
         {
-            _logger.LogError(ex, "Error processing OAuth callback for provider: {Provider}", provider);
-            return Redirect($"/login?error={HttpUtility.UrlEncode("Authentication failed")}");
+            return Redirect($"{publicWebBaseUrl}{completePath}");
         }
+
+        return Redirect(completePath);
     }
 
     [HttpPost("exchange")]
@@ -171,6 +174,10 @@ public class AuthController : ControllerBase
 
             return Ok(new AuthExchangeResponse(token));
         }
+        catch (LegalConsentException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error exchanging code for provider: {Provider}", request.Provider);
@@ -194,8 +201,12 @@ public class AuthController : ControllerBase
 
             var organizer = await _authService.ProcessOAuthCallbackAsync(OAuthProvider.Vk, request.Code, redirectUri, request.DeviceId);
             var token = await _authService.GenerateTokenAsync(organizer);
-            Response.Cookies.Append(AuthConstants.AuthCookieName, token, CreateAuthCookieOptions());
+            Response.Cookies.Append(AuthConstants.AuthCookieName, token, Request.CreateAuthCookieOptions());
             return Ok(new AuthExchangeResponse(token));
+        }
+        catch (LegalConsentException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -248,7 +259,7 @@ public class AuthController : ControllerBase
             request.Email,
             request.Password,
             request.Name,
-            issueToken: !isDesktopClient);
+            issueToken: true);
 
         if (!result.Success)
         {
@@ -259,13 +270,14 @@ public class AuthController : ControllerBase
             return BadRequest(result.ErrorMessage);
         }
 
+        Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token!, Request.CreateAuthCookieOptions());
+
         if (isDesktopClient)
         {
             var code = await _desktopAuthCodeService.IssueCodeAsync(result.Organizer!.Id);
             return Ok(new DesktopAuthCodeResponse(code));
         }
 
-        Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token!, CreateAuthCookieOptions());
         return Ok(new AuthExchangeResponse(result.Token!));
     }
 
@@ -281,12 +293,14 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(
             request.Email,
             request.Password,
-            issueToken: !isDesktopClient);
+            issueToken: true);
 
         if (!result.Success)
         {
             return Unauthorized(result.ErrorMessage ?? AuthConstants.InvalidCredentialsMessage);
         }
+
+        Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token!, Request.CreateAuthCookieOptions());
 
         if (isDesktopClient)
         {
@@ -294,7 +308,6 @@ public class AuthController : ControllerBase
             return Ok(new DesktopAuthCodeResponse(code));
         }
 
-        Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token!, CreateAuthCookieOptions());
         return Ok(new AuthExchangeResponse(result.Token!));
     }
 
@@ -414,68 +427,10 @@ public class AuthController : ControllerBase
         return IsAllowedAuthReturnTo(returnTo) ? returnTo.Trim() : null;
     }
 
-    private static string BuildAuthReturnUrl(string returnToBase, string rawCode)
-    {
-        var baseUrl = returnToBase.Trim();
-        var joiner = baseUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
-        return $"{baseUrl}{joiner}code={Uri.EscapeDataString(rawCode)}";
-    }
-
-    private IActionResult BuildDesktopOAuthReturnResult(string rawCode, string? stateReturnTo)
-    {
-        var allowedReturnTo = ResolveDesktopReturnTo(stateReturnTo);
-        var appReturnUrl = BuildAuthReturnUrl(
-            allowedReturnTo ?? AuthConstants.DesktopAuthDeepLinkBase,
-            rawCode);
-
-        var publicWebBaseUrl = ResolvePublicWebBaseUrl();
-        if (!string.IsNullOrWhiteSpace(publicWebBaseUrl))
-        {
-            var loginUrl = BuildWebDesktopReturnLoginUrl(publicWebBaseUrl, rawCode, allowedReturnTo);
-            return Redirect(loginUrl);
-        }
-
-        return Content(BuildDesktopReturnToAppHtml(appReturnUrl), "text/html; charset=utf-8");
-    }
-
     private string? ResolvePublicWebBaseUrl()
     {
         var value = _configuration["PUBLIC_WEB_BASE_URL"];
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim().TrimEnd('/');
-    }
-
-    private static string BuildWebDesktopReturnLoginUrl(string publicWebBaseUrl, string rawCode, string? allowedReturnTo)
-    {
-        var query = new List<string>
-        {
-            $"client={Uri.EscapeDataString(AuthConstants.DesktopClientValue)}",
-            $"code={Uri.EscapeDataString(rawCode)}",
-        };
-        if (!string.IsNullOrWhiteSpace(allowedReturnTo))
-        {
-            query.Add($"return_to={Uri.EscapeDataString(allowedReturnTo)}");
-        }
-
-        return $"{publicWebBaseUrl}/login?{string.Join("&", query)}";
-    }
-
-    private static string BuildDesktopReturnToAppHtml(string appReturnUrl)
-    {
-        var href = HttpUtility.HtmlAttributeEncode(appReturnUrl);
-        var jsUrl = "\"" + HttpUtility.JavaScriptStringEncode(appReturnUrl) + "\"";
-        return
-            "<!DOCTYPE html><html lang=\"ru\"><head><meta charset=\"utf-8\"/>" +
-            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>" +
-            "<title>CherryPlay</title>" +
-            "<meta http-equiv=\"refresh\" content=\"0;url=" + href + "\"/>" +
-            "</head><body>" +
-            "<p>Возвращаемся в приложение…</p>" +
-            "<p>Если приложение не открылось автоматически, " +
-            "<a href=\"" + href + "\">нажмите здесь, чтобы вернуться в CherryPlayList</a>.</p>" +
-            "<script>window.setTimeout(function(){window.location.replace(" +
-            jsUrl +
-            ");},300);</script>" +
-            "</body></html>";
     }
 
     private static bool IsAllowedAuthReturnTo(string returnTo)
@@ -512,12 +467,8 @@ public class AuthController : ControllerBase
         return port is 5173 or 5174;
     }
 
-    private string GetWebRedirectUri(string provider)
-    {
-        var baseUrl = _configuration["OAUTH_REDIRECT_BASE_URL"] ??
-                     $"{Request.Scheme}://{Request.Host}";
-        return $"{baseUrl}/auth/{provider}/callback";
-    }
+    private string GetWebRedirectUri(string provider) =>
+        OAuthRedirectUri.BuildCanonical(provider, _configuration, Request);
 
     private static bool IsAllowedRedirectUri(string redirectUri, bool forDesktop)
     {
@@ -537,19 +488,5 @@ public class AuthController : ControllerBase
             }
         }
         return false;
-    }
-
-    private CookieOptions CreateAuthCookieOptions()
-    {
-        var isProduction = !Request.HttpContext.RequestServices
-            .GetRequiredService<IWebHostEnvironment>().IsDevelopment();
-
-        return new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = isProduction || Request.IsHttps,
-            SameSite = (isProduction && Request.IsHttps) ? SameSiteMode.None : SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddDays(AuthConstants.TokenLifetimeDays)
-        };
     }
 }

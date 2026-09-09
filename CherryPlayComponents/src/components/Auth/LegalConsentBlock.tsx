@@ -11,7 +11,6 @@ export interface LegalConsentBlockProps {
   disabled?: boolean;
 }
 
-/** Compact Habr-style consents: checkbox + label text; document link is adjacent (not nested). */
 export const LegalConsentBlock: React.FC<LegalConsentBlockProps> = ({
   pdConsentAccepted,
   termsAccepted,

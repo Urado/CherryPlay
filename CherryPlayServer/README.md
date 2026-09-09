@@ -4,7 +4,7 @@
 
 > **Персистентность:** В production данные (организаторы, вечеринки, плейлисты, состояние сессии) хранятся в **PostgreSQL** через EF Core. Схема БД, миграции и настройка — в [DATABASE.md](DATABASE.md).  
 > **Dual storage (intentional):** `UseInMemoryStorage=true` переключает те же интерфейсы репозиториев на in-memory реализации (без Postgres; данные только в процессе) — для локальной разработки/тестов. Флаг читается в `Program.cs`. Обзор: корневой [ARCHITECTURE.md](../ARCHITECTURE.md).  
-> **Legal consent (CP-066):** мутации требуют InMemory UoW (`UseInMemoryStorage=true`); при EF — `UnsupportedLegalConsentUnitOfWork` (advisory locks в EF `*ForUpdate*` — prep, не consent UoW). Контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.3; схема consent в Postgres пока отсутствует — [DATABASE.md](DATABASE.md).
+> **Legal consent (CP-066):** dual UoW — InMemory / `EfLegalConsentUnitOfWork`; Postgres tables `legal_document_versions`, `consent_events`. `ConsentGateMiddleware` always on. OAuth one-shot: `POST /api/oauth/accounts`. Контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.3; схема: [DATABASE.md](DATABASE.md).
 
 ## Требования
 

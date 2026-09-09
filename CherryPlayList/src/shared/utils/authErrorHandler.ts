@@ -2,49 +2,56 @@ import { useUIStore } from '../stores/uiStore';
 
 import { clearAuthSession } from './authSession';
 
-/**
- * Обрабатывает ошибку аутентификации (401)
- * Очищает токен, закрывает модалку аккаунта и показывает уведомление пользователю
- */
+export const SESSION_EXPIRED_USER_MESSAGE = 'Сессия устарела. Войдите ещё раз.';
+
 export function handleAuthError(error?: Error | string): void {
-  const errorMessage =
+  const technicalMessage =
     typeof error === 'string'
       ? error
       : error instanceof Error
         ? error.message
-        : 'Authentication token expired or invalid. Please login again.';
+        : SESSION_EXPIRED_USER_MESSAGE;
 
-  // Очищаем токен
   clearAuthSession();
 
-  // Закрываем модалку аккаунта, чтобы UI визуально обновился
   const uiStore = useUIStore.getState();
-  if (uiStore.modal === 'account') {
-    uiStore.closeModal();
-  }
+  uiStore.closeModal();
 
-  // Показываем уведомление пользователю
   uiStore.addNotification({
     type: 'error',
-    message: errorMessage,
+    message: SESSION_EXPIRED_USER_MESSAGE,
     duration: 8000,
   });
 
-  console.warn('[AuthErrorHandler] Authentication error:', errorMessage);
+  console.warn('[AuthErrorHandler] Authentication error:', technicalMessage);
 }
 
-/**
- * Проверяет, является ли ошибка ошибкой аутентификации
- */
-export function isAuthError(error: unknown): boolean {
+export function isSessionExpiredError(error: unknown): boolean {
+  if (typeof error === 'string') {
+    return error.includes(SESSION_EXPIRED_USER_MESSAGE);
+  }
   if (error instanceof Error) {
+    return error.message.includes(SESSION_EXPIRED_USER_MESSAGE);
+  }
+  return false;
+}
+
+export function isAuthErrorMessage(error: unknown): boolean {
+  if (isSessionExpiredError(error)) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message;
     return (
-      error.message.includes('401') ||
-      error.message.includes('Authentication') ||
-      error.message.includes('Unauthorized') ||
-      error.message.includes('token expired') ||
-      error.message.includes('token invalid')
+      message.includes('401') ||
+      message.includes('Authentication') ||
+      message.includes('Unauthorized') ||
+      message.includes('token expired') ||
+      message.includes('token invalid') ||
+      message.includes('Session check failed')
     );
   }
   return false;
 }
+
+export { isAuthErrorMessage as isAuthError };

@@ -68,7 +68,6 @@ public class ConsentGateMiddleware
             }
         }
 
-        // Exact /auth (no trailing slash) — keep auth surface usable without grants.
         if (path.Equals("/auth", StringComparison.OrdinalIgnoreCase))
         {
             return false;

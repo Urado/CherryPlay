@@ -7,6 +7,7 @@ import {
   type PartyLifecycleState,
 } from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
+import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 import { copyTextToClipboard, sanitizeExternalUrl } from '@shared/utils';
 
 import { publishPartyToSite } from './partyHeaderCommands';
@@ -109,6 +110,9 @@ export function usePartyServerActions(
       } catch (error) {
         console.error('Failed to update catalog visibility:', error);
         store.setIsListedInCatalog(previous);
+        if (isSessionExpiredError(error)) {
+          return;
+        }
         addNotification({
           type: 'error',
           message:
@@ -140,6 +144,9 @@ export function usePartyServerActions(
         store.setPartyLifecycleState(party.partyLifecycleState);
       } catch (error) {
         console.error('Failed to transition party lifecycle:', error);
+        if (isSessionExpiredError(error)) {
+          return;
+        }
         if (error instanceof InvalidPartyLifecycleTransitionError) {
           addNotification({
             type: 'error',
@@ -203,6 +210,9 @@ export function usePartyServerActions(
       });
     } catch (error) {
       console.error('Failed to create party:', error);
+      if (isSessionExpiredError(error)) {
+        return;
+      }
       if (isThemeNotEntitledError(error)) {
         await handleThemeNotEntitled(error);
         return;
@@ -274,6 +284,9 @@ export function usePartyServerActions(
       });
     } catch (error) {
       console.error('Failed to save party metadata:', error);
+      if (isSessionExpiredError(error)) {
+        return;
+      }
       if (isThemeNotEntitledError(error)) {
         await handleThemeNotEntitled(error);
         return;

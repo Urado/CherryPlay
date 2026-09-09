@@ -80,9 +80,10 @@
 3. **На Web (`/login?client=desktop`):** проверка cookie-сессии. Ветки:
    - **Уже вошёл (session-continue):** панель с кнопкой **«Войти»** — без формы пароля/OAuth и **без** auto-redirect на загрузке. Клик → `POST /auth/desktop/code` (cookie) → `{ code }` → `buildAuthReturnUrl(resolveDesktopAuthReturnTo(return_to), code)`. При **401** / ошибке выдачи — сообщение и fallback на `AuthForm`.
    - **Нет сессии:** логин или регистрация (email+пароль или OAuth VK/Mail.ru). Флаги `client=desktop` и `return_to` сохраняются при переходе login ↔ register и при старте OAuth; API login/register отправляет заголовок `X-CherryPlay-Client: desktop`.
-4. **После успеха:** Web (email/session-continue) или сервер (OAuth) возвращает одноразовый код (не JWT):
-   - **Email / session-continue:** Web return UI → `buildAuthReturnUrl(resolveDesktopAuthReturnTo(return_to), code)`.
-   - **OAuth:** сервер при `PUBLIC_WEB_BASE_URL` — **302** на `/login?client=desktop&code=…` (+ allowlist `return_to`); без базы — HTML return-page. Не 302 напрямую на `cherryplaylist://`.
+4. **После успеха:** Web возвращает одноразовый код (не JWT в URL):
+   - **Email login/register (desktop):** `POST /auth/login|register` с `X-CherryPlay-Client: desktop` → httpOnly cookie + `{ code }` → `ensureConsents` → return UI / deep link.
+   - **Session-continue:** cookie уже есть → `ensureConsents` → `POST /auth/desktop/code` → return UI.
+   - **OAuth:** callback → `/oauth/complete` → `POST /api/oauth/accounts` (cookie) → `ensureConsents` → `POST /auth/desktop/code` → return UI / deep link. Не 302 напрямую на `cherryplaylist://`.
    - **Prod / packaged app open:** `cherryplaylist://auth?code={rawCode}`;
    - **Dev:** `http://localhost:5173|5174/auth/callback?code={rawCode}` → IPC в Electron → тот же `POST /auth/desktop/exchange`.
 5. **Desktop:** `POST /auth/desktop/exchange` с `{ code }` → `{ accessToken }`; сохранение JWT, загрузка организатора, auto-login.
@@ -94,16 +95,18 @@ CherryPlayList «Войти через браузер»
        │
        ├─ Web session OK → «Войти» → POST /auth/desktop/code → { code }
        │                    (401 / error → AuthForm)
-       └─ no session → login/register/OAuth → server issues { code }
+       └─ no session → login/register
+            или OAuth → /oauth/complete → POST /api/oauth/accounts
+                 → POST /auth/desktop/code → { code }
 → buildAuthReturnUrl(return_to, code)
 → POST /auth/desktop/exchange → JWT → auto-login
 ```
 
 Контракт API (включая `POST /auth/desktop/code`, `return_to` / allowlist) и return URL: [CONTRACTS.md](../../CONTRACTS.md) §3.2.0b. Таблица кодов: [DATABASE.md](../../CherryPlayServer/DATABASE.md) — `DesktopAuthCodes` (новых таблиц для session-continue нет).
 
-**Legacy:** прямой OAuth из Desktop (`GET /auth/{provider}/start`, `POST /auth/exchange`) описан в CONTRACTS §3.2.1; новый UI его не вызывает.
+**Legacy:** прямой OAuth из Desktop (`GET /auth/{provider}/start`, `POST /auth/exchange`) описан в CONTRACTS §3.2.1; новый UI его не вызывает. Legacy exchange допускает только **существующий** OAuth subject; новый — `POST /api/oauth/accounts`.
 
-**CP-038:** согласие при регистрации — только на Web-форме; Desktop не дублирует чекбоксы.
+**CP-038 / OAuth consents:** чекбоксы на Web (email register, OAuth tab, `OAuthCompletePage`); Desktop не дублирует.
 
 ### Прочее (без изменений)
 
@@ -117,8 +120,8 @@ CherryPlayList «Войти через браузер»
 По плану §4.1.2:
 
 - Кабинет организатора использует **httpOnly cookie**.
-- Пользователь выбирает провайдера (VK или Mail.ru) на странице логина и переходит на `/auth/{provider}/web` (например `/auth/mailru/web`). Либо входит по email+пароль.
-- После авторизации провайдер делает redirect на `/auth/{provider}/callback`, сервер устанавливает httpOnly cookie.
+- Пользователь выбирает провайдера (VK или Mail.ru) на странице логина (`LegalConsentBlock` на OAuth-вкладке) и переходит на `/auth/{provider}/web`. Либо входит по email+пароль.
+- Callback: validate state → redirect `/oauth/complete?provider&code` → `POST /api/oauth/accounts` → httpOnly cookie → кабинет (desktop: затем `POST /auth/desktop/code`).
 - В кабинете v1: метаданные вечеринок и публикация; **управления эфиром (сессией) нет** — только в CherryPlayList.
 - **Восстановление пароля (Web, live):** маршруты `/forgot-password` (запрос письма) и `/reset-password?token=` (новый пароль → редирект на `/login`). Ссылка «Забыли пароль?» с экрана логина.
 - **Смена пароля (Web, live):** в кабинете, аккордеон «Аккаунт» (свёрнут по умолчанию) — `POST /auth/change-password`; после успеха — немедленный logout и `/login` с notice (`state.passwordChanged`). UI кабинета: [pages.md](../../CherryPlayWeb/docs/pages.md).
@@ -126,11 +129,11 @@ CherryPlayList «Войти через браузер»
 
 ### Регистрация email + legal consent (Web)
 
-1. **UI:** `/register` — `EmailAuthForm` с чекбоксами обязательных согласий (`pd_consent_text`, `terms`). Deploy-time `versionId` + `contentHash` в `@cherryplay/components` (`legalDocuments.ts`); **нет** `GET` каталога документов.
+1. **UI:** `/register` — `EmailAuthForm` с чекбоксами обязательных согласий (`pd_consent_text`, `terms`). Deploy-time `versionId` + `contentHash` в `@cherryplay/components` (`legal-registry.generated.json` / `legalDocuments.ts`); **нет** `GET` каталога документов.
 2. **API sequence:** `POST /api/organizers` (email, password, name, `consents`) → при успехе `POST /auth/login` (cookie). Legacy `POST /auth/register` без consents не используется Web-формой.
-3. **Хранение:** consent-мутации требуют `UseInMemoryStorage=true` (`InMemoryLegalConsentUnitOfWork`). При EF — `UnsupportedLegalConsentUnitOfWork` (мутации недоступны; таблиц consent в Postgres нет).
-4. **OAuth gap:** live `/auth/{provider}/web` → callback **не** пишет consent events; consent-aware stub — `POST /api/oauth/accounts` (UI не подключён).
-5. **Re-consent (CP-044):** после входа Web сравнивает `GET /api/consent-events` с deploy-config; при missing — блокирующая модалка → `POST /api/consent-events`. Write без grants → `403 consent_required` (+ `missing[]`); клиент открывает ту же модалку. **Desktop SSO:** deep-link только после успешного grant на Web (`ensureConsents`); List UI gate не дублирует.
+3. **Хранение:** dual UoW — `InMemoryLegalConsentUnitOfWork` / `EfLegalConsentUnitOfWork`; Postgres: `legal_document_versions`, `consent_events` ([DATABASE.md](../../CherryPlayServer/DATABASE.md)).
+4. **OAuth one-shot:** callback → `/oauth/complete` → `POST /api/oauth/accounts` (реальный exchange; новый subject — атомарные consents; существующий — login без replay). UI: OAuth tab + `OAuthCompletePage`.
+5. **Re-consent (CP-044):** после входа Web сравнивает `GET /api/consent-events` с deploy-config; при missing — блокирующая модалка → `POST /api/consent-events`. Write без grants → `403 consent_required` (+ `missing[]`); gate **always on**. **Desktop SSO:** deep-link только после `ensureConsents`; List UI gate не дублирует.
 6. Контракт, gate и HTTP 400/403/409: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3. Страницы / ConsentGate: [pages.md](../../CherryPlayWeb/docs/pages.md).
 
 ## Связь с модулями приложения
@@ -145,7 +148,7 @@ CherryPlayList «Войти через браузер»
 ## Контракты
 
 Детали эндпоинтов логина, обмена токенов и профиля организатора — в [CONTRACTS.md](../../CONTRACTS.md):
-- **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`; legacy `POST /auth/register`), **Web primary register + consent** (`POST /api/organizers` → `POST /auth/login`, §3.2.3), **Desktop browser SSO** (`POST /auth/desktop/code` для session-continue, `POST /auth/desktop/exchange`, query `return_to` / `buildAuthReturnUrl`, §3.2.0b), сброс/смена пароля (`POST /auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`), OAuth 2.0 VK и Mail.ru для Web (`/auth/{provider}/web`, `/auth/{provider}/callback` с `client=desktop` и `return_to` для Desktop; live OAuth без consent events — gap), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange`, §3.2.1), logout. OAuth2 для Telegram отложен.
-- **Legal consent:** §3.2.3 — resource REST, InMemory-only мутации, write-path gate `403 consent_required`, Web re-consent modal, `LegalConsentException` → 400/409/403.
+- **Auth (логин/логаут/пароль):** §3.2 — вход по email+пароль (`POST /auth/login`; legacy `POST /auth/register`), **Web primary register + consent** (`POST /api/organizers` → `POST /auth/login`, §3.2.3), **Desktop browser SSO** (`POST /auth/desktop/code`, `POST /auth/desktop/exchange`, `return_to`, §3.2.0b), сброс/смена пароля, OAuth one-shot Web (`/auth/{provider}/web` → callback → `/oauth/complete` → `POST /api/oauth/accounts`), legacy Desktop OAuth (`/auth/{provider}/start`, `/auth/exchange` — только existing subject, §3.2.1), logout. OAuth2 для Telegram отложен.
+- **Legal consent:** §3.2.3 — resource REST, dual UoW (InMemory/EF), always-on write-path gate `403 consent_required`, Web re-consent modal, `LegalConsentException` → 400/409/403.
 - **Profile:** §3.3 — управление профилем организатора (`GET /api/organizer/session/check`, `GET /api/organizer/me`, `PATCH /api/organizer/profile`, `DELETE /api/organizer/account`). В CherryPlayList перед вызовом `/me` выполняется лёгкая проверка сессии через `session/check`, чтобы при недоступности сервера не засорять консоль.
 - **Защита write-методов:** CONTRACTS §2–3 (REST и SignalR требуют JWT).

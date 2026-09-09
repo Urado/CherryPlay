@@ -1,5 +1,6 @@
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
 using CherryPlayServer.Core.Options;
@@ -508,7 +509,15 @@ public class AuthService : IAuthService
             userInfo = await _oauthService.ExchangeCodeAsync(provider, code, redirectUri);
         }
 
-        return await GetOrCreateOrganizerFromOAuthUserInfoAsync(provider, userInfo);
+        var organizer = await TryGetOrganizerFromOAuthUserInfoAsync(provider, userInfo);
+        if (organizer is null)
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                "New OAuth subjects must complete registration via POST /api/oauth/accounts with consents.");
+        }
+
+        return organizer;
     }
 
     public async Task<string> GenerateTokenAsync(Organizer organizer)
@@ -577,39 +586,18 @@ public class AuthService : IAuthService
         );
     }
 
-    private async Task<Organizer> GetOrCreateOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)
+    private async Task<Organizer?> TryGetOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)
     {
         var existingAccount = await _oauthAccountRepository.GetByProviderUserIdAsync(provider, userInfo.ProviderUserId);
-        if (existingAccount != null)
+        if (existingAccount is null)
         {
-            existingAccount.LastUsedAt = DateTime.UtcNow;
-            existingAccount.ProviderUserName = userInfo.ProviderUserName;
-            existingAccount.ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl;
-            await _oauthAccountRepository.UpdateAsync(existingAccount);
-            var organizer = await _organizerRepository.GetByIdAsync(existingAccount.OrganizerId);
-            if (organizer != null)
-                return organizer;
+            return null;
         }
 
-        var newOrganizer = new Organizer
-        {
-            Id = Guid.NewGuid(),
-            Name = userInfo.ProviderUserName ?? $"User from {provider}",
-            CreatedAt = DateTime.UtcNow
-        };
-        await _organizerRepository.AddAsync(newOrganizer);
-        var newAccount = new OAuthAccount
-        {
-            Id = Guid.NewGuid(),
-            OrganizerId = newOrganizer.Id,
-            Provider = provider,
-            ProviderUserId = userInfo.ProviderUserId,
-            ProviderUserName = userInfo.ProviderUserName,
-            ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl,
-            CreatedAt = DateTime.UtcNow,
-            LastUsedAt = DateTime.UtcNow
-        };
-        await _oauthAccountRepository.AddAsync(newAccount);
-        return newOrganizer;
+        existingAccount.LastUsedAt = DateTime.UtcNow;
+        existingAccount.ProviderUserName = userInfo.ProviderUserName;
+        existingAccount.ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl;
+        await _oauthAccountRepository.UpdateAsync(existingAccount);
+        return await _organizerRepository.GetByIdAsync(existingAccount.OrganizerId);
     }
 }

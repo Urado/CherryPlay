@@ -5,7 +5,6 @@ namespace CherryPlayServer.Tests;
 
 public class LegalContentHasherTests
 {
-    // Trim drops trailing newline vs pre-trim hash of the same LF string.
     private const string KnownFixtureHash =
         "28bc6770e58b2d90ce9405edb39e6e1ee5f368b81c174b3e6dc2767a553ca335";
 

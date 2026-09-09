@@ -6,7 +6,6 @@ import privacyMd from './v1.0/privacy.md?raw';
 import termsMd from './v1.0/terms.md?raw';
 import packManifest from './v1.0/manifest.json';
 
-/** Current published legal pack (folder name = version). */
 export const LEGAL_CONTENT_VERSION = packManifest.documentVersion;
 
 export type LegalDocKey = 'privacy' | 'consent' | 'terms' | 'cookies';
@@ -16,7 +15,6 @@ export interface LegalDocumentContent {
   title: string;
   documentVersion: string;
   effectiveFrom: string;
-  /** Body paragraphs from plain markdown (mocks until CP-036). */
   paragraphs: string[];
 }
 

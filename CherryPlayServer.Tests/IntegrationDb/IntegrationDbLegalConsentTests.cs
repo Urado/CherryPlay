@@ -9,10 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CherryPlayServer.Tests.IntegrationDb;
-
-/// <summary>
-/// EF + Postgres IntegrationDb: register/consent/delete + legal document seed/rollout.
-/// </summary>
 [TestFixture]
 [NonParallelizable]
 [Category("IntegrationDb")]
@@ -369,8 +365,6 @@ public sealed class IntegrationDbLegalConsentTests
                 await db1.ConsentEvents.CountAsync(e => e.SubjectId == organizerId && e.Decision == "grant"),
                 Is.EqualTo(2));
         }
-
-        // App stopped. Simulate LegalPublish → HasData migration: retire v1, insert new active versions.
         var newPdId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
         var newTermsId = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
         const string newPdHash = "rollout-pd-hash-v2";

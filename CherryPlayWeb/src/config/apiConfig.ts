@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     DESKTOP_CODE: '/auth/desktop/code',
     OAUTH_START: (provider: string) => `/auth/${provider}/start`,
     OAUTH_CALLBACK: (provider: string) => `/auth/${provider}/callback`,
+    OAUTH_ACCOUNTS: '/api/oauth/accounts',
   },
 
   ORGANIZER: {

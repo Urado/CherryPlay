@@ -1,6 +1,8 @@
 import type {
   AuthService as IAuthService,
   ConsentInput,
+  CreateOAuthAccountRequest,
+  CreateOAuthAccountResponse,
   DesktopAuthCodeResponse,
   ForgotPasswordResponse,
   OrganizerDto,
@@ -256,6 +258,32 @@ class AuthService implements IAuthService {
     }
     const query = params.size > 0 ? `?${params.toString()}` : '';
     window.location.href = getApiUrl(`${basePath}${query}`);
+  }
+
+  async createOAuthAccount(
+    request: CreateOAuthAccountRequest,
+  ): Promise<CreateOAuthAccountResponse> {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.AUTH.OAUTH_ACCOUNTS), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider: request.provider,
+        code: request.code,
+        consents: request.consents,
+        ...(request.redirectUri ? { redirectUri: request.redirectUri } : {}),
+        ...(request.deviceId ? { deviceId: request.deviceId } : {}),
+      }),
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      await throwAuthHttpError(response);
+    }
+
+    return response.json() as Promise<CreateOAuthAccountResponse>;
   }
 
   async updateProfile(data: {

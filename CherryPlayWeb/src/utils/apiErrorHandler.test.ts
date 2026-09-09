@@ -8,14 +8,19 @@ describe('isAuthError', () => {
     expect(isAuthError(401, 'anything')).toBe(true);
   });
 
+  it('does not treat 403 consent_required as logout-worthy (gate via apiFetch)', () => {
+    expect(isAuthError(403, 'consent_required')).toBe(false);
+  });
+
+  it('does not treat business 403 codes as logout-worthy', () => {
+    expect(isAuthError(403, 'theme_not_entitled')).toBe(false);
+    expect(isAuthError(403, 'theme_not_visible')).toBe(false);
+    expect(isAuthError(403, 'admin_only')).toBe(false);
+  });
+
   it('treats generic 403 as logout-worthy auth error', () => {
     expect(isAuthError(403)).toBe(true);
     expect(isAuthError(403, 'forbidden')).toBe(true);
-    expect(isAuthError(403, 'theme_not_entitled')).toBe(true);
-  });
-
-  it('does not treat 403 consent_required as logout-worthy (gate via apiFetch)', () => {
-    expect(isAuthError(403, 'consent_required')).toBe(false);
   });
 
   it('ignores other statuses', () => {

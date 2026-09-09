@@ -93,10 +93,18 @@ export function isAuthError(status: number, code?: string): boolean {
   if (status === 401) {
     return true;
   }
-  if (status === 403 && code === 'consent_required') {
+  if (status !== 403) {
     return false;
   }
-  return status === 403;
+  if (
+    code === 'consent_required' ||
+    code === 'theme_not_entitled' ||
+    code === 'theme_not_visible' ||
+    code === 'admin_only'
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function extractApiErrorMessage(error: unknown, fallbackMessage: string): string {

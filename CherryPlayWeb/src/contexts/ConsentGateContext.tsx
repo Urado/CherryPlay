@@ -34,7 +34,6 @@ export type EnsureConsentsResult = 'ok' | 'logout' | 'error';
 
 interface ConsentGateContextValue {
   isOpen: boolean;
-  /** Resolves when grants are satisfied, user logs out from the gate, or the check fails open. */
   ensureConsents: () => Promise<EnsureConsentsResult>;
   openWithMissing: (missing?: string[]) => void;
 }
@@ -259,7 +258,6 @@ export function ConsentGateProvider({ children }: { children: ReactNode }) {
         gateWaitersRef.current.push(resolve);
       });
     } catch {
-      // Proactive check fail-open; write-path 403 will open the gate reactively.
       return 'error';
     }
   }, [openWithMissing]);

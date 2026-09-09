@@ -12,6 +12,8 @@ export interface OrganizerDto {
   updatedAt?: string | null;
 }
 
+export type OAuthProviderId = 'telegram' | 'vk' | 'mailru';
+
 export interface AuthExchangeRequest {
   code: string;
   provider: string;
@@ -20,6 +22,21 @@ export interface AuthExchangeRequest {
 }
 
 export interface AuthExchangeResponse {
+  accessToken: string;
+}
+
+export interface CreateOAuthAccountRequest {
+  provider: OAuthProviderId;
+  code: string;
+  consents: ConsentInput[];
+  redirectUri?: string;
+  deviceId?: string;
+}
+
+export interface CreateOAuthAccountResponse {
+  id: string;
+  email: string;
+  providerSubject: string;
   accessToken: string;
 }
 
@@ -102,7 +119,6 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-/** Structured auth failure for Web/List hosts: throw with HTTP `status` (+ `message`). Password forms map by status. */
 export class AuthHttpError extends Error {
   readonly status: number;
 
@@ -158,7 +174,8 @@ export interface AuthService {
   checkAuth?(): Promise<OrganizerDto | null>;
   getCurrentOrganizer?(): Promise<OrganizerDto>;
   logout?(): Promise<void>;
-  startOAuthFlow?(provider: 'telegram' | 'vk' | 'mailru'): Promise<void>;
+  startOAuthFlow?(provider: OAuthProviderId): Promise<void>;
+  createOAuthAccount?(request: CreateOAuthAccountRequest): Promise<CreateOAuthAccountResponse>;
   exchangeCode?(code: string, provider: string, deviceId?: string): Promise<string>;
 }
 

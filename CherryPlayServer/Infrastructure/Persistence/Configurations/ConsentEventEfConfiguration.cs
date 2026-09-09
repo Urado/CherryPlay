@@ -18,7 +18,6 @@ public class ConsentEventEfConfiguration : IEntityTypeConfiguration<ConsentEvent
         builder.Property(e => e.Decision).IsRequired().HasMaxLength(32);
         builder.Property(e => e.EventAt).IsRequired();
 
-        // No query filter: soft-deleted organizers must retain proof-of-consent rows.
         builder.HasOne<OrganizerEf>()
             .WithMany()
             .HasForeignKey(e => e.SubjectId)

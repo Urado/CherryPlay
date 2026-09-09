@@ -7,13 +7,14 @@ using CherryPlayServer.Core.Models;
 using CherryPlayServer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace CherryPlayServer.Tests;
 
 public class DesktopAuthControllerTests
 {
     [Test]
-    public async Task Login_WithDesktopHeader_ReturnsCodeOnlyWithoutCookie()
+    public async Task Login_WithDesktopHeader_ReturnsCodeAndSetsCookie()
     {
         var organizerId = Guid.NewGuid();
         var auth = new DesktopFlowStubAuthService(organizerId);
@@ -31,13 +32,13 @@ public class DesktopAuthControllerTests
         Assert.That(action, Is.TypeOf<OkObjectResult>());
         var body = (DesktopAuthCodeResponse)((OkObjectResult)action).Value!;
         Assert.That(body.Code, Is.EqualTo("desktop-code"));
-        Assert.That(auth.LastLoginIssueToken, Is.False);
+        Assert.That(auth.LastLoginIssueToken, Is.True);
         Assert.That(desktopCodes.LastOrganizerId, Is.EqualTo(organizerId));
-        Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
+        Assert.That(controller.Response.Headers.SetCookie.Count, Is.GreaterThan(0));
     }
 
     [Test]
-    public async Task Login_WithDesktopQueryParam_ReturnsCodeOnlyWithoutCookie()
+    public async Task Login_WithDesktopQueryParam_ReturnsCodeAndSetsCookie()
     {
         var organizerId = Guid.NewGuid();
         var auth = new DesktopFlowStubAuthService(organizerId);
@@ -55,12 +56,12 @@ public class DesktopAuthControllerTests
         Assert.That(action, Is.TypeOf<OkObjectResult>());
         var body = (DesktopAuthCodeResponse)((OkObjectResult)action).Value!;
         Assert.That(body.Code, Is.EqualTo("desktop-code"));
-        Assert.That(auth.LastLoginIssueToken, Is.False);
-        Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
+        Assert.That(auth.LastLoginIssueToken, Is.True);
+        Assert.That(controller.Response.Headers.SetCookie.Count, Is.GreaterThan(0));
     }
 
     [Test]
-    public async Task Register_WithDesktopHeader_ReturnsCodeOnlyWithoutCookie()
+    public async Task Register_WithDesktopHeader_ReturnsCodeAndSetsCookie()
     {
         var organizerId = Guid.NewGuid();
         var auth = new DesktopFlowStubAuthService(organizerId);
@@ -78,9 +79,9 @@ public class DesktopAuthControllerTests
         Assert.That(action, Is.TypeOf<OkObjectResult>());
         var body = (DesktopAuthCodeResponse)((OkObjectResult)action).Value!;
         Assert.That(body.Code, Is.EqualTo("desktop-code"));
-        Assert.That(auth.LastRegisterIssueToken, Is.False);
+        Assert.That(auth.LastRegisterIssueToken, Is.True);
         Assert.That(desktopCodes.LastOrganizerId, Is.EqualTo(organizerId));
-        Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
+        Assert.That(controller.Response.Headers.SetCookie.Count, Is.GreaterThan(0));
     }
 
     [Test]
@@ -102,7 +103,7 @@ public class DesktopAuthControllerTests
     }
 
     [Test]
-    public async Task WebCallback_WithDesktopState_ReturnsHtmlReturnPageWithoutCookie()
+    public async Task WebCallback_WithDesktopState_RedirectsToOAuthCompleteWithoutCookie()
     {
         var organizerId = Guid.NewGuid();
         var auth = new DesktopFlowStubAuthService(organizerId);
@@ -115,20 +116,25 @@ public class DesktopAuthControllerTests
             auth,
             desktopAuthCodeService: desktopCodes,
             oauthStateService: oauthState,
+            configuration: new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["PUBLIC_WEB_BASE_URL"] = "https://web.example",
+                })
+                .Build(),
             configureHttpContext: ctx =>
             {
                 ctx.Request.Scheme = "https";
                 ctx.Request.Host = new HostString("localhost");
             });
 
-        var action = await controller.WebCallback("vk", "oauth-code", "state");
+        var action = await Task.FromResult(controller.WebCallback("vk", "oauth-code", "state"));
 
-        Assert.That(action, Is.TypeOf<ContentResult>());
-        var content = (ContentResult)action;
-        Assert.That(content.ContentType, Does.StartWith("text/html"));
-        Assert.That(content.Content, Does.Contain($"{AuthConstants.DesktopAuthDeepLinkBase}?code=desktop-code"));
-        Assert.That(content.Content, Does.Contain("Возвращаемся в приложение"));
-        Assert.That(desktopCodes.LastOrganizerId, Is.EqualTo(organizerId));
+        Assert.That(action, Is.TypeOf<RedirectResult>());
+        Assert.That(
+            ((RedirectResult)action).Url,
+            Is.EqualTo("https://web.example/oauth/complete?provider=vk&code=oauth-code&client=desktop"));
+        Assert.That(desktopCodes.IssueCount, Is.EqualTo(0));
         Assert.That(controller.Response.Headers.SetCookie.Count, Is.EqualTo(0));
     }
 

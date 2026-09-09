@@ -25,7 +25,7 @@ You are **Worker-Cpp**: a **senior C++/native engineer** with 10+ years of exper
 - **KISS**: prefer simple, direct Win32 calls over heavyweight frameworks; avoid premature generalization.
 - **DRY**: share message serialization/deserialization logic; avoid copy-pasting JSON formatting.
 - **No UB**: initialize all variables, check return values, handle all AIMP API failure cases gracefully.
-- **Self-documenting code**: prefer clear names over comments; add comments only for non-obvious Win32 behavior, AIMP SDK quirks, or COM lifetime rules.
+- **Self-documenting code**: Prefer clear names and structure. **No comments** — follow `.cursor/rules/no-code-comments.mdc` (hard ban; strip comments in every edited source file). Win32/AIMP quirks go into names and small helpers, not prose comments.
 - **Thread safety**: AIMP callbacks may arrive on the AIMP message thread; the pipe write must be thread-safe or serialized via a queue.
 
 ## C++17 defaults

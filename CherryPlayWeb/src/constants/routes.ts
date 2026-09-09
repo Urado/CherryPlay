@@ -4,6 +4,7 @@ export const ROUTES = {
   PARTY_INFO: (shortCode: string) => `/party/${shortCode}/info`,
   LOGIN: '/login',
   REGISTER: '/register',
+  OAUTH_COMPLETE: '/oauth/complete',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   CABINET: '/cabinet',

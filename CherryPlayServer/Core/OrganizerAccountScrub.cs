@@ -3,9 +3,6 @@ using CherryPlayServer.Core.Enums;
 
 namespace CherryPlayServer.Core;
 
-/// <summary>
-/// PII / privilege scrub applied before soft-delete on account deletion.
-/// </summary>
 public static class OrganizerAccountScrub
 {
     public static void Apply(Organizer organizer)

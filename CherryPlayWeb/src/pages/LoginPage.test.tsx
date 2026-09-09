@@ -309,6 +309,23 @@ describe('LoginPage desktop SSO', () => {
     expect(screen.getByTestId('auth-form')).toBeTruthy();
   });
 
+  it('shows error when ensureConsents returns error after desktop form success', async () => {
+    checkAuthMock.mockResolvedValue(null);
+    ensureConsentsMock.mockResolvedValue('error');
+
+    renderLogin('/login?client=desktop');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'trigger-desktop-success' }));
+
+    expect(
+      await screen.findByText(
+        'Не удалось подтвердить согласия. Обновите страницу или войдите снова.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Возвращаемся в приложение…')).toBeNull();
+    expect(screen.getByTestId('auth-form')).toBeTruthy();
+  });
+
   it('runs ensureConsents before issuing desktop code on session continue', async () => {
     checkAuthMock.mockResolvedValue({ id: '1', name: 'Org', createdAt: '2020-01-01' });
     issueDesktopAuthCodeMock.mockResolvedValue('session-continue-code');

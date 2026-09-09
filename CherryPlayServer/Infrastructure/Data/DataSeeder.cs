@@ -8,7 +8,6 @@ public class DataSeeder : IDataSeeder
 {
     private static readonly Guid PdConsentVersionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid TermsVersionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-    // Keep in sync with tools/CherryPlay.LegalPublish / legal-registry.generated.json (ACTIVE v1.0).
     private const string PdConsentHash =
         "4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc";
     private const string TermsHash =

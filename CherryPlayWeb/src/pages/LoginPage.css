@@ -412,6 +412,7 @@
   outline-color: var(--accent-primary);
 }
 
-.login-page-form .email-auth-form-consent-hint {
+.login-page-form .email-auth-form-consent-hint,
+.login-page-form .oauth-consent-hint {
   color: var(--text-secondary);
 }

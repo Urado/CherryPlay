@@ -15,9 +15,40 @@
 
 Флаг `UseInMemoryStorage=true` в конфигурации (`Program.cs`) подключает in-memory реализации тех же репозиториев **без** PostgreSQL: удобно для локальной разработки и тестов без БД. Данные не персистятся между процессами. Это **намеренный** dual path за едиными интерфейсами репозиториев, а не незавершённая миграция. Обзор: [ARCHITECTURE.md](../ARCHITECTURE.md); запуск: [README.md](README.md).
 
-### Legal consent (CP-066) — пока вне EF
+### Legal consent (CP-066)
 
-Таблиц **consent events** / **legal document versions** в PostgreSQL и миграциях **пока нет**. Журнал согласий и версии документов живут в InMemory-репозиториях; мутации регистраций/consent — через `ILegalConsentUnitOfWork` только при `UseInMemoryStorage=true` (`UnsupportedLegalConsentUnitOfWork` при EF). Не изобретать схему здесь — контракт API: [CONTRACTS.md](../CONTRACTS.md) §3.2.3.
+Dual UoW: `UseInMemoryStorage=true` → `InMemoryLegalConsentUnitOfWork`; `false` → `EfLegalConsentUnitOfWork` (таблицы ниже). Контракт API: [CONTRACTS.md](../CONTRACTS.md) §3.2.3. Миграция: `Migrations/20260908182106_AddLegalConsentTables.cs` (+ последующий sync registry).
+
+#### legal_document_versions
+
+Каталог версий юридических текстов (seed через EF `HasData` / InMemory seed; active hashes из `legal-registry.generated.json`).
+
+| Колонка | Тип | Ограничения | Описание |
+| ------- | --- | ----------- | -------- |
+| `id` | uuid | PK | Идентификатор версии (`legalDocumentVersionId`). |
+| `document_type` | string(64) | NOT NULL, CHECK IN (`pd_consent_text`,`terms`,`privacy_policy`,`cookie_policy`) | Тип документа. |
+| `document_version` | string(64) | NOT NULL; UNIQUE с `document_type` | Label версии (active seed: **`1.0`**). |
+| `content_hash` | string(256) | NOT NULL | SHA-256 содержимого (клиент передаёт тот же hash). |
+| `effective_from` | timestamptz | NOT NULL | Начало действия. |
+| `effective_to` | timestamptz | NULL | Конец действия (retired). |
+| `status` | string(32) | NOT NULL, CHECK IN (`draft`,`active`,`retired`) | Статус; partial unique index — не более одной `active` на `document_type`. |
+
+**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44`). Retired sample `cccccccc-…` может оставлять placeholder hash.
+
+#### consent_events
+
+Append-only журнал решений субъекта (организатора). Soft-deleted organizers сохраняют строки (без query filter на этой таблице).
+
+| Колонка | Тип | Ограничения | Описание |
+| ------- | --- | ----------- | -------- |
+| `id` | uuid | PK | Client UUID = ключ идемпотентности. |
+| `subject_id` | uuid | FK → `organizers.id`, RESTRICT | Организатор. |
+| `legal_document_version_id` | uuid | FK → `legal_document_versions.id`, RESTRICT | Версия документа. |
+| `document_hash` | string(256) | NOT NULL | Hash на момент события. |
+| `decision` | string(32) | NOT NULL, CHECK IN (`grant`,`withdraw`,`deny`) | Решение. |
+| `event_at` | timestamptz | NOT NULL | Время события. |
+
+Индексы: `(subject_id, event_at)`, `(subject_id, legal_document_version_id)`, FK на version.
 
 ---
 
@@ -143,11 +174,11 @@ _Связь с учётной записью: email+пароль (таблица
 
 **Уникальность:** `(Provider, ProviderUserId)` — уникальная комбинация (один аккаунт провайдера может быть привязан только к одному организатору).
 
-**Поток создания:**
+**Поток создания (OAuth one-shot):**
 
-1. При первом входе через провайдера создаётся запись `OAuthAccounts` и (если организатора ещё нет) запись `Organizer`.
-2. При последующих входах через тот же провайдер находится существующая привязка, обновляется `LastUsedAt` и возвращается JWT для существующего организатора.
-3. Если организатор уже авторизован, можно добавить дополнительную привязку к другому провайдеру (например, войти через VK, затем привязать Mail.ru).
+1. `GET /auth/{provider}/callback` только валидирует state и редиректит SPA на `/oauth/complete` (без create).
+2. `POST /api/oauth/accounts`: реальный exchange у провайдера. **Новый** subject → `Organizer` + `OAuthAccounts` + consent events атомарно (обязательные grants). **Существующий** → обновление `LastUsedAt` / профиля провайдера, login без replay consents.
+3. Ответ: JWT (`accessToken`) + httpOnly cookie. Контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.3.
 
 ---
 

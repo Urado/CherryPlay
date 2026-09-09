@@ -31,7 +31,6 @@ function createConsentId(): string {
   });
 }
 
-/** Latest event per versionId must be grant for each REQUIRED_CONSENT_DOCUMENTS entry. */
 export function computeMissingRequiredVersionIds(events: ConsentEventDto[]): string[] {
   const missing: string[] = [];
 
@@ -48,7 +47,6 @@ export function computeMissingRequiredVersionIds(events: ConsentEventDto[]): str
   return missing;
 }
 
-/** Grant payloads for required docs; optionally only for `missing` version ids. */
 export class ConsentDocumentsOutdatedError extends Error {
   constructor(message = 'Версии согласий на сервере не совпадают с клиентом. Обновите страницу.') {
     super(message);
@@ -56,11 +54,6 @@ export class ConsentDocumentsOutdatedError extends Error {
   }
 }
 
-/**
- * Build grant payloads.
- * - `missing` omitted/undefined → all REQUIRED_CONSENT_DOCUMENTS (proactive path).
- * - `missing` provided → only intersecting docs; empty intersection → throw (no silent fallback).
- */
 export function buildConsentInputsForMissing(
   missing?: string[],
   createId: () => string = createConsentId,

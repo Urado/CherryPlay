@@ -20,6 +20,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LegalDocumentPage } from './pages/LegalDocumentPage';
 import { LegalOperatorPage } from './pages/LegalOperatorPage';
 import { LoginPage } from './pages/LoginPage';
+import { OAuthCompletePage } from './pages/OAuthCompletePage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
 import { PartyListPage } from './pages/PartyListPage';
 import { PartyView } from './pages/PartyView';
@@ -48,6 +49,7 @@ function AppShell() {
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.OAUTH_COMPLETE} element={<OAuthCompletePage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
         <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />

@@ -16,7 +16,6 @@ export interface ConfirmActionDialogProps {
   onCancel: () => void;
 }
 
-/** Esc cancels; backdrop click does not. While open, `#root` is inert (ConsentGate pattern). */
 export function ConfirmActionDialog({
   open,
   title,
@@ -103,7 +102,6 @@ export function ConfirmActionDialog({
     }
   };
 
-  // Backdrop is the dialog surface; clicks outside the panel are ignored (non-dismiss).
   const ignoreBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       event.preventDefault();

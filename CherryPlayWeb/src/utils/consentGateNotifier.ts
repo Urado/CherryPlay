@@ -12,7 +12,6 @@ export function getConsentGateMissing(): string[] | undefined {
   return pendingMissing;
 }
 
-/** Opens (or refreshes) the consent gate; used by apiFetch on 403 consent_required. */
 export function notifyConsentRequired(missing?: string[]): void {
   isOpen = true;
   pendingMissing = missing;
@@ -36,7 +35,6 @@ export function subscribeConsentRequired(listener: ConsentGateListener): () => v
   };
 }
 
-/** Сброс состояния для unit-тестов. */
 export function resetConsentGateNotifier(): void {
   isOpen = false;
   pendingMissing = undefined;

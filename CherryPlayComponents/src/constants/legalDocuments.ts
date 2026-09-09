@@ -109,7 +109,6 @@ for (const type of REQUIRED_REGISTRY_TYPES) {
   }
 }
 
-/** Deploy-time registry from CherryPlay.LegalPublish (InMemory seed ids/hashes). No GET catalog. */
 export const LEGAL_PD_CONSENT: LegalDocumentDeployConfig =
   buildDeployConfigFromRegistry('pd_consent_text');
 
@@ -121,7 +120,6 @@ export const LEGAL_PRIVACY: LegalDocumentDeployConfig =
 export const LEGAL_COOKIES: LegalDocumentDeployConfig =
   buildDeployConfigFromRegistry('cookie_policy');
 
-/** Documents that must be granted at email/OAuth registration. */
 export const REQUIRED_CONSENT_DOCUMENTS: readonly LegalDocumentDeployConfig[] = [
   LEGAL_PD_CONSENT,
   LEGAL_TERMS,
@@ -142,7 +140,6 @@ function createConsentId(): string {
   });
 }
 
-/** Build grant payloads for required docs (client UUID = idempotency). */
 export function buildRequiredConsentInputs(
   createId: () => string = createConsentId,
 ): ConsentInput[] {

@@ -19,7 +19,8 @@ import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
 import { getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch } from '../utils/apiFetch';
-import { handleAuthError } from '../utils/authErrorHandler';
+import { handleAuthError, SESSION_EXPIRED_USER_MESSAGE } from '../utils/authErrorHandler';
+import { isSessionAuthError } from '../utils/apiErrorHandler';
 import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
@@ -221,8 +222,8 @@ class AuthService implements IAuthService {
     }
 
     if (isTokenExpired(token)) {
-      handleAuthError('Authentication token has expired. Please login again.');
-      throw new Error('Authentication token has expired');
+      handleAuthError('Authentication token has expired');
+      throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
     try {
@@ -236,17 +237,14 @@ class AuthService implements IAuthService {
       });
 
       if (!sessionCheckResponse.ok) {
-        if (sessionCheckResponse.status === 401) {
-          handleAuthError('Authentication token expired or invalid');
-          throw new Error('Authentication token expired or invalid');
+        if (isSessionAuthError(sessionCheckResponse.status)) {
+          handleAuthError(`Session check HTTP ${sessionCheckResponse.status}`);
+          throw new Error(SESSION_EXPIRED_USER_MESSAGE);
         }
         throw new Error('Session check failed');
       }
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message.includes('expired') || error.message.includes('invalid'))
-      ) {
+      if (error instanceof Error && error.message === SESSION_EXPIRED_USER_MESSAGE) {
         throw error;
       }
       throw new Error('Session check failed');
@@ -262,9 +260,9 @@ class AuthService implements IAuthService {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        handleAuthError('Authentication token expired or invalid');
-        throw new Error('Authentication token expired or invalid');
+      if (isSessionAuthError(response.status)) {
+        handleAuthError(`Organizer me HTTP ${response.status}`);
+        throw new Error(SESSION_EXPIRED_USER_MESSAGE);
       }
       const errorText = await response.text();
       throw new Error(`Failed to get organizer: ${errorText}`);

@@ -12,6 +12,7 @@ import {
   useUIStore,
 } from '@shared/stores';
 import { getOnlineNetworkPolicy } from '@shared/streaming';
+import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 import { sanitizeExternalUrl } from '@shared/utils';
 
 import { markPartyPublishFullySynced } from './partyPublishSync';
@@ -106,6 +107,9 @@ export async function publishPartyToSite(): Promise<void> {
     });
   } catch (error) {
     console.error('Failed to publish playlist:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (isThemeNotEntitledError(error)) {
       await handleThemeNotEntitled(error);
       return;
@@ -163,6 +167,9 @@ export async function unarchivePartyFromHeader(): Promise<void> {
     store.setPartyLifecycleState(party.partyLifecycleState);
   } catch (error) {
     console.error('Failed to unarchive party from header:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (error instanceof InvalidPartyLifecycleTransitionError) {
       ui.addNotification({
         type: 'error',
@@ -252,6 +259,9 @@ export async function archivePartyFromHeader(): Promise<void> {
     store.setPartyLifecycleState(party.partyLifecycleState);
   } catch (error) {
     console.error('Failed to archive party from header:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (error instanceof InvalidPartyLifecycleTransitionError) {
       ui.addNotification({
         type: 'error',
