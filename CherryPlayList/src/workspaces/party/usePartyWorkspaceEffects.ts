@@ -10,11 +10,13 @@ import {
 } from '@cherryplay/components';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { isDefinitivePartyExistenceError } from '@shared/services/partyExistenceErrors';
 import { partyService } from '@shared/services/partyService';
 import { useProjectStore } from '@shared/stores';
 
 import { markPartyPublishFullySynced } from './partyPublishSync';
 import { invalidatePartyThemeAccessLoads, loadPartyThemeAccess } from './partyThemeAccessLoad';
+import { resolveUnlinkedThemeAccessReconnectAction } from './partyThemeAccessReconnect';
 import {
   clearPartyWorkspaceLinkedPartyCheck,
   partyWorkspaceLinkedPartyCheck,
@@ -60,10 +62,6 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
-  const loadThemeAccess = useCallback(async (forceRefresh = false) => {
-    await loadPartyThemeAccess(forceRefresh);
-  }, []);
-
   const handleCustomizationSettingsChange = useCallback(
     (settings: Record<string, unknown>) => {
       const store = getPartyStore();
@@ -82,6 +80,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
       clearInterval(partyWorkspaceReconnectRefs.intervalId);
       partyWorkspaceReconnectRefs.intervalId = null;
     }
+  }, []);
+
+  const loadThemeAccessCore = useCallback(async (forceRefresh = false) => {
+    return loadPartyThemeAccess(forceRefresh);
   }, []);
 
   const loadPartyMetadata = useCallback(
@@ -150,7 +152,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   const restoreAfterReconnect = useCallback(
     async (linkedParty: { id: string; shortCode: string }) => {
       if (!networkEnabled) {
-        return;
+        return 'skipped' as const;
       }
       const store = getPartyStore();
       try {
@@ -158,7 +160,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setPartyVerified(exists);
         if (!exists) {
           store.setServerError(ERROR_PARTY_NOT_FOUND);
-          return;
+          return 'skipped' as const;
         }
         store.setServerError(null);
 
@@ -166,16 +168,22 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         setLinkedParty({ ...linkedParty, url });
 
         if (isAuth) {
-          await loadThemeAccess(true);
+          const themeResult = await loadThemeAccessCore(true);
           await loadPartyMetadata(linkedParty.id);
+          return themeResult;
         }
+        return 'ok' as const;
       } catch (error) {
         console.error('Failed to restore after reconnect:', error);
         store.setServerError(ERROR_CONNECTION);
         store.setPartyVerified(false);
+        if (isDefinitivePartyExistenceError(error)) {
+          return 'skipped' as const;
+        }
+        return 'unreachable' as const;
       }
     },
-    [isAuth, loadPartyMetadata, loadThemeAccess, networkEnabled, setLinkedParty],
+    [isAuth, loadPartyMetadata, loadThemeAccessCore, networkEnabled, setLinkedParty],
   );
 
   const startReconnectTimer = useCallback(
@@ -202,10 +210,16 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
               if (!partyWorkspaceReconnectRefs.cancelled) store.setLastManualCheckFailed(false);
               const activeLinkedParty = partyWorkspaceReconnectRefs.linkedParty;
               if (activeLinkedParty) {
-                await restoreAfterReconnect(activeLinkedParty);
+                const themeResult = await restoreAfterReconnect(activeLinkedParty);
+                if (themeResult === 'unreachable' && !partyWorkspaceReconnectRefs.cancelled) {
+                  startReconnectTimer(activeLinkedParty);
+                }
               } else {
                 if (isAuth) {
-                  await loadThemeAccess(true);
+                  const themeResult = await loadThemeAccessCore(true);
+                  if (themeResult === 'unreachable' && !partyWorkspaceReconnectRefs.cancelled) {
+                    startReconnectTimer(null);
+                  }
                 }
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setServerError(null);
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setPartyVerified(false);
@@ -219,7 +233,28 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         })();
       }, RECONNECT_INTERVAL_MS);
     },
-    [networkEnabled, stopReconnectTimer, restoreAfterReconnect, isAuth, loadThemeAccess],
+    [networkEnabled, stopReconnectTimer, restoreAfterReconnect, isAuth, loadThemeAccessCore],
+  );
+
+  const loadThemeAccess = useCallback(
+    async (forceRefresh = false) => {
+      const result = await loadThemeAccessCore(forceRefresh);
+      const action = resolveUnlinkedThemeAccessReconnectAction({
+        result,
+        hasLinkedParty: useProjectStore.getState().meta.linkedParty != null,
+      });
+      if (action === 'start') {
+        startReconnectTimer(null);
+      } else if (action === 'clear') {
+        const store = getPartyStore();
+        stopReconnectTimer();
+        store.setServerUnreachable(false);
+        store.setServerError(null);
+        store.setLastManualCheckFailed(false);
+      }
+      return result;
+    },
+    [loadThemeAccessCore, startReconnectTimer, stopReconnectTimer],
   );
 
   const checkPartyExists = useCallback(
@@ -241,7 +276,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         console.error('Failed to check party existence:', error);
         store.setServerError(ERROR_CONNECTION);
         store.setPartyVerified(false);
-        return false;
+        throw error;
       } finally {
         store.setIsCheckingParty(false);
       }
@@ -263,7 +298,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setServerUnreachable(false);
         store.setLastManualCheckFailed(false);
         if (linkedParty) {
-          await restoreAfterReconnect(linkedParty);
+          const themeResult = await restoreAfterReconnect(linkedParty);
+          if (themeResult === 'unreachable') {
+            startReconnectTimer(linkedParty);
+          }
         } else {
           if (isAuth) {
             await loadThemeAccess(true);
@@ -283,6 +321,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     meta.linkedParty,
     networkEnabled,
     stopReconnectTimer,
+    startReconnectTimer,
     restoreAfterReconnect,
     isAuth,
     loadThemeAccess,
@@ -291,7 +330,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   const handleRetry = useCallback(async () => {
     const store = getPartyStore();
     if (meta.linkedParty) {
-      await checkPartyExists(meta.linkedParty.id);
+      try {
+        await checkPartyExists(meta.linkedParty.id);
+      } catch {
+        // ERROR_CONNECTION / partyVerified already set by checkPartyExists
+      }
     } else {
       store.setServerError(null);
       store.setPartyVerified(false);
@@ -413,10 +456,14 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
           if (!exists) {
             store.setServerError(ERROR_PARTY_NOT_FOUND);
           }
-        } catch {
+        } catch (error) {
           if (seq !== partyWorkspaceLinkedPartyCheck.seq) return;
-          store.setServerUnreachable(true);
           store.setPartyVerified(false);
+          store.setServerError(ERROR_CONNECTION);
+          if (isDefinitivePartyExistenceError(error)) {
+            return;
+          }
+          store.setServerUnreachable(true);
           startReconnectTimer(linkedParty);
         } finally {
           if (seq === partyWorkspaceLinkedPartyCheck.seq) {

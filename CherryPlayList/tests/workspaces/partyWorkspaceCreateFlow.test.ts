@@ -10,6 +10,10 @@ jest.mock('../../src/shared/services/partyService', () => ({
   },
 }));
 
+jest.mock('../../src/workspaces/party/partyPublishSync', () => ({
+  markPartyPublishFullySynced: jest.fn(),
+}));
+
 jest.mock('../../src/workspaces/party/partyWorkspaceUtils', () => ({
   ERROR_CONNECTION: 'Ошибка соединения с сервером',
 }));
@@ -90,6 +94,21 @@ describe('finalizePartyCreation', () => {
     const store = createMockStore();
     const deps = createFinalizeDeps();
     deps.checkPartyExists.mockResolvedValue(false);
+
+    await finalizePartyCreation(store, createData, deps);
+
+    expect(deps.setLinkedParty).not.toHaveBeenCalled();
+    expect(store.setPartyVerified).not.toHaveBeenCalled();
+    expect(deps.addNotification).toHaveBeenCalledWith({
+      type: 'error',
+      message: 'Вечеринка создана, но не найдена на сервере',
+    });
+  });
+
+  it('returns early when party existence check throws (network)', async () => {
+    const store = createMockStore();
+    const deps = createFinalizeDeps();
+    deps.checkPartyExists.mockRejectedValue(new Error('Failed to fetch'));
 
     await finalizePartyCreation(store, createData, deps);
 

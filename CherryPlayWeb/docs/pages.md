@@ -58,10 +58,14 @@
 - **GET** `/api/parties/public/{shortCode}/playlist` — плейлист (`PartyPlaylistDto`).
 - При наличии эндпоинта состояния: **GET** `/api/parties/public/{shortCode}/state` — сохранённое состояние (если реализовано на сервере).
 - **SignalR** `partyHub`:
-  - **invoke:** `JoinPartyAsViewer(shortCode)` или `JoinPartyAsViewerWithState(shortCode)` — подключение к группе и при необходимости получение полного состояния.
-  - **on:** `OnSessionStarted`, `OnSessionEnded`, `OnFullStateUpdated`, `OnPlaybackPositionUpdated`, `OnStateChanged`, `OnPlaylistChanged`, `Error`.
+  - **invoke:** `JoinPartyAsViewer(shortCode)` или `JoinPartyAsViewerWithState(shortCode)` — подключение к группе и при необходимости получение полного состояния; при restore — `RequestFullState`.
+  - **on:** `OnSessionStarted`, `OnSessionEnded`, `OnConnectionStatusChanged`, `OnFullStateUpdated`, `OnPlaybackPositionUpdated`, `OnStateChanged`, `OnPlaylistChanged`, `Error`.
 
-При потере связи (freeze): блок «сейчас играет» скрывается; плейлист и пометки проигранных остаются (данные уже получены через API/SignalR).
+**Freeze / now-playing** (CONTRACTS §4, [streaming.md](../../docs/integration/streaming.md), `src/utils/partyViewReconnect.ts`):
+
+- **Обрыв организатора** (`OnConnectionStatusChanged(false)` / grace → `organizer_offline`): now-playing **удерживается ~60 с** (`DISCONNECT_FREEZE_MS`), затем скрывается; плейлист и пометки проигранных остаются.
+- **`server_unreachable`** (зритель потерял API/hub): блок «сейчас играет» **скрывается сразу** (даже если organizer-offline freeze ещё активен); плейлист и пометки остаются.
+- **Restore:** `OnConnectionStatusChanged(true)` сбрасывает freeze-таймер и запрашивает full state; также сброс при `OnSessionStarted` / `RequestFullState`. Плейлист из full state — только из **`PartyStateDto`** (`RequestFullState` / `JoinPartyAsViewerWithState`); `OnFullStateUpdated` несёт `PlaybackStateDto` (playback, без playlist).
 
 ### CabinetPage / CabinetPartyForm
 

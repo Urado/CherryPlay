@@ -7,6 +7,8 @@ import { resolveThemeAccessAfterFetchFailure } from './partyWorkspaceUtils';
 
 let themeAccessLoadGeneration = 0;
 
+export type ThemeAccessLoadResult = 'ok' | 'skipped' | 'failed' | 'unreachable';
+
 function getPartyStore() {
   return usePartyWorkspaceStore.getState();
 }
@@ -34,10 +36,10 @@ export function shouldShowThemeAccessLoading(themeAccess: ThemeAccessDto | null)
   return themeAccess === null;
 }
 
-export async function loadPartyThemeAccess(forceRefresh = false): Promise<void> {
+export async function loadPartyThemeAccess(forceRefresh = false): Promise<ThemeAccessLoadResult> {
   if (!isThemeAccessSessionActive()) {
     invalidatePartyThemeAccessLoads();
-    return;
+    return 'skipped';
   }
 
   const store = getPartyStore();
@@ -53,21 +55,41 @@ export async function loadPartyThemeAccess(forceRefresh = false): Promise<void> 
       if (generation === themeAccessLoadGeneration) {
         invalidatePartyThemeAccessLoads();
       }
-      return;
+      return 'skipped';
     }
     store.setThemeAccess(access);
     store.setThemeAccessErrorMessage(null);
+    return 'ok';
   } catch (error) {
     console.warn('Failed to load theme access:', error);
     if (generation !== themeAccessLoadGeneration || !isThemeAccessSessionActive()) {
       if (generation === themeAccessLoadGeneration) {
         invalidatePartyThemeAccessLoads();
       }
-      return;
+      return 'skipped';
     }
     const resolution = resolveThemeAccessAfterFetchFailure(store.themeAccess);
     store.setThemeAccess(resolution.themeAccess);
     store.setThemeAccessErrorMessage(resolution.themeAccessErrorMessage);
+
+    try {
+      const reachable = await partyService.checkServerReachable();
+      if (generation !== themeAccessLoadGeneration || !isThemeAccessSessionActive()) {
+        return 'skipped';
+      }
+      if (!reachable) {
+        store.setServerUnreachable(true);
+        return 'unreachable';
+      }
+    } catch {
+      if (generation !== themeAccessLoadGeneration || !isThemeAccessSessionActive()) {
+        return 'skipped';
+      }
+      store.setServerUnreachable(true);
+      return 'unreachable';
+    }
+
+    return 'failed';
   } finally {
     if (showLoading && generation === themeAccessLoadGeneration) {
       getPartyStore().setIsThemeAccessLoading(false);

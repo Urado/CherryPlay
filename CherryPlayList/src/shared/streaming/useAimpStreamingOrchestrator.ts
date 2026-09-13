@@ -3,7 +3,10 @@ import { useEffect, useRef } from 'react';
 
 import { useSettingsStore } from '../stores';
 import { useAimpStore } from '../stores/aimpStore';
-import { formatAimpPublishingPathError } from '../utils/aimpPublishingPath';
+import {
+  formatAimpPublishingPathError,
+  shouldApplyAimpDisconnectedPublishingError,
+} from '../utils/aimpPublishingPath';
 
 import { AimpBroadcastSource } from './AimpBroadcastSource';
 import { isStreamingHubAllowed } from './onlineNetworkPolicy';
@@ -61,6 +64,15 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
           setPublishingPathState('connecting');
         } else if (state === signalR.HubConnectionState.Connected) {
           setPublishingPathState('ready');
+        } else if (state === signalR.HubConnectionState.Disconnected) {
+          const currentStatus = useAimpStore.getState().publishingPath.status;
+          if (!shouldApplyAimpDisconnectedPublishingError(currentStatus)) {
+            return;
+          }
+          setPublishingPathState(
+            'error',
+            formatAimpPublishingPathError('verifyPartyExists', new Error('disconnected')),
+          );
         }
       },
       onPartyNotFound: () => {

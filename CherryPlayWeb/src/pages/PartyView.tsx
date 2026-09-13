@@ -17,11 +17,15 @@ import { useSignalR } from '../hooks/useSignalR';
 import { signalRService } from '../services/signalRService';
 import type { PartyDisplayStatusId, PlaybackStateDto, PlayerItemDto } from '../types/api';
 import { devLog, devWarn } from '../utils/logger';
+import {
+  applyOrganizerConnectionStatusChanged,
+  resolveShowPlayerByStatus,
+} from '../utils/partyViewReconnect';
 import { playbackStateFromDto } from '../utils/playbackState';
+import { playlistDataFromDto } from '../utils/playlistDataFromDto';
 import { resolveCurrentTrackIdFromPlaylist } from '../utils/trackKey';
 import './PartyView.css';
 
-const DISCONNECT_FREEZE_MS = 60_000;
 const SESSION_END_GRACE_MS = 1500;
 
 function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
@@ -35,19 +39,6 @@ function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
     }
   }
   return null;
-}
-
-function hasCachedSessionPlayback(
-  playbackState: PlaybackState | null,
-  isSessionActive: boolean,
-): boolean {
-  if (!playbackState) {
-    return false;
-  }
-  if (playbackState.currentTrackId) {
-    return true;
-  }
-  return isSessionActive || playbackState.mode === 'session';
 }
 
 interface PartyViewProps {
@@ -78,6 +69,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     partyDisplayStatus,
     apiReachable,
     loadPlaylist,
+    setPlaylist,
     setPlaybackState,
     setIsSessionActive,
     setPartyDisplayStatus,
@@ -147,6 +139,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
             });
           }
         }
+        if (state.playlist) {
+          const playlistData = playlistDataFromDto(state.playlist);
+          setPlaylist(playlistData);
+          playlistRef.current = playlistData;
+        }
         setIsSessionActive(state.isSessionActive);
         setPartyDisplayStatus(state.partyDisplayStatus);
       }
@@ -156,7 +153,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
         err instanceof Error ? err.message : err,
       );
     }
-  }, [shortCode, clearSessionTimers, setPlaybackState, setIsSessionActive, setPartyDisplayStatus]);
+  }, [
+    shortCode,
+    clearSessionTimers,
+    setPlaybackState,
+    setPlaylist,
+    setIsSessionActive,
+    setPartyDisplayStatus,
+  ]);
 
   const signalR = useSignalR({
     shortCode,
@@ -274,25 +278,34 @@ export const PartyView: React.FC<PartyViewProps> = ({
     onConnectionStatusChanged: useCallback(
       (_partyId: string, isOnline: boolean) => {
         devLog('[PartyView] Connection status changed:', _partyId, isOnline);
-        if (!isOnline) {
-          if (sessionEndGraceTimerRef.current !== null) {
-            clearTimeout(sessionEndGraceTimerRef.current);
-            sessionEndGraceTimerRef.current = null;
-          }
-          setIsSessionActive(false);
-          setIsDisconnectFreezeActive(true);
-          if (disconnectFreezeTimerRef.current !== null) {
-            clearTimeout(disconnectFreezeTimerRef.current);
-            disconnectFreezeTimerRef.current = null;
-          }
-          disconnectFreezeTimerRef.current = setTimeout(() => {
-            disconnectFreezeTimerRef.current = null;
-            setPlaybackState(null);
-            setIsDisconnectFreezeActive(false);
-          }, DISCONNECT_FREEZE_MS);
-        }
+        applyOrganizerConnectionStatusChanged({
+          isOnline,
+          clearSessionTimers,
+          setIsSessionActive,
+          setIsDisconnectFreezeActive,
+          setPlaybackState: (state) => setPlaybackState(state),
+          clearOfflineTimers: () => {
+            if (sessionEndGraceTimerRef.current !== null) {
+              clearTimeout(sessionEndGraceTimerRef.current);
+              sessionEndGraceTimerRef.current = null;
+            }
+            if (disconnectFreezeTimerRef.current !== null) {
+              clearTimeout(disconnectFreezeTimerRef.current);
+              disconnectFreezeTimerRef.current = null;
+            }
+          },
+          scheduleDisconnectFreeze: (fn, ms) => {
+            disconnectFreezeTimerRef.current = setTimeout(() => {
+              disconnectFreezeTimerRef.current = null;
+              fn();
+            }, ms);
+          },
+          onOrganizerOnline: () => {
+            void requestFullState();
+          },
+        });
       },
-      [setIsSessionActive, setPlaybackState],
+      [clearSessionTimers, setIsSessionActive, setPlaybackState, requestFullState],
     ),
     onPartyDisplayStatusChanged: useCallback(
       (_partyId: string, status: PartyDisplayStatusId) => {
@@ -426,13 +439,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
     [partyDisplayStatus, signalR.connectionStatus, apiReachable, isDemo, playlist, playbackState],
   );
 
-  const showPlayerByStatus =
-    viewerStatus.id === 'live' ||
-    viewerStatus.id === 'organizer_offline' ||
-    viewerStatus.id === 'program_ended' ||
-    (isDisconnectFreezeActive && playbackState != null) ||
-    (viewerStatus.id === 'server_unreachable' &&
-      hasCachedSessionPlayback(playbackState, isSessionActive));
+  const showPlayerByStatus = resolveShowPlayerByStatus({
+    viewerStatusId: viewerStatus.id,
+    isDisconnectFreezeActive,
+    playbackState,
+  });
 
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(() => {
     const pl = playlist || { items: [], totalDuration: 0, totalTracks: 0 };

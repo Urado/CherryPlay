@@ -39,11 +39,20 @@ export async function finalizePartyCreation(
     return;
   }
 
-  const exists = await deps.checkPartyExists(party.id);
-  if (!exists) {
+  let exists: boolean;
+  try {
+    exists = await deps.checkPartyExists(party.id);
+  } catch {
     deps.addNotification({
       type: 'error',
       message: 'Вечеринка создана, но сервер недоступен',
+    });
+    return;
+  }
+  if (!exists) {
+    deps.addNotification({
+      type: 'error',
+      message: 'Вечеринка создана, но не найдена на сервере',
     });
     return;
   }

@@ -52,6 +52,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 - **`useStreamingOrchestrator`** — React-хук для источника **CherryPlay** (`streamingSource === 'cherryPlayPlayer'`):
   - активен при `enableStreaming`, `streamingSource === 'cherryPlayPlayer'`, `linkedParty`;
   - вызывается в **`CherryPlayStreamingController`** (`src/app/components/CherryPlayStreamingController.tsx`); `connectionState` + `reconnect` отдаются через **`useCherryPlayStreamingConnection`**;
+  - прокидывает `onConnectError` / `onPublishError` в UI (`addNotification`) — **паритет с AIMP только по connect/publish errors**; `onReconnectionFailed` — **только CherryPlay path** ([`cherryPlayStreamingErrors.ts`](../../../src/shared/streaming/cherryPlayStreamingErrors.ts) → `addNotification`);
   - **не** вызывает `signalRService.connect` напрямую.
 
 - **`useAimpStreamingOrchestrator`** — React-хук для **AIMP**:
@@ -65,6 +66,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 - **`partyPlaylistSync`** — граница **Streamer → Party REST** (live sync):
   - `subscribePartyPlaylistSync` / `subscribeAimpPartyPlaylistSync` — PUT `partyService.updatePartyPlaylist` при изменении плейлиста во время эфира;
+  - ошибки PUT: `onSyncError` → `onPublishError('playlistPublish')` → UI (не console-only);
   - **не** заменяет initial publish и explicit Publish из Party workspace.
 
 - **`onlineNetworkPolicy`** — внутренние helpers (`isStreamingNetworkEnabled`, `isPartyDiscoverabilityEnabled`, `getOnlineNetworkPolicy`):
@@ -131,7 +133,8 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 ### 4. Обработка разрыва связи и переподключения
 
 - `signalRService` обновляет `connectionState`; orchestrator планирует reconnect (`RECONNECT_DELAY_MS`).
-- `onPartyNotFound` — очистка `linkedParty`, уведомление пользователю.
+- HTTP 404 existence-check: SignalR не поднимается; `onPartyNotFound` показывает toast, но **`linkedParty` не очищается**. Явная отвязка / recovery-сценарии — продуктовая задача CP-069. Сетевые сбои, таймауты, 5xx тоже не отвязывают party; orchestrator ставит Disconnected и планирует повторный `connectAndSubscribe`.
+- Исчерпание SignalR auto-reconnect (CherryPlay): `onReconnectionFailed` → toast (warning) через [`cherryPlayStreamingErrors.ts`](../../../src/shared/streaming/cherryPlayStreamingErrors.ts) с CTA «Переподключить»; параллельно orchestrator продолжает отложенные полные reconnect-попытки, пока streaming `running`.
 - `HeaderPlaybackPill` / `StreamingConnectionIndicator` вызывают `reconnect` из `useCherryPlayStreamingConnection`; таймеры reconnect — в orchestrator.
 - Зрители CherryPlayWeb: `OnConnectionStatusChanged`, freeze, см. [docs/integration/streaming.md](../../../../docs/integration/streaming.md).
 

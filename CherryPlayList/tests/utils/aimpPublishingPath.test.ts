@@ -1,5 +1,6 @@
 import {
   formatAimpPublishingPathError,
+  shouldApplyAimpDisconnectedPublishingError,
   startAimpPublishingBridge,
 } from '../../src/shared/utils/aimpPublishingPath';
 
@@ -14,6 +15,20 @@ describe('startAimpPublishingBridge', () => {
     expect(result).toEqual({
       status: 'error',
       error: formatAimpPublishingPathError('checkPartyExists'),
+    });
+  });
+
+  test('reports a verify error when party existence check throws (network)', async () => {
+    const networkError = new Error('Failed to fetch');
+    const result = await startAimpPublishingBridge('party-1', {
+      checkPartyExists: jest.fn().mockRejectedValue(networkError),
+      connect: jest.fn().mockResolvedValue(undefined),
+      joinPartyAsOrganizer: jest.fn().mockResolvedValue(undefined),
+    });
+
+    expect(result).toEqual({
+      status: 'error',
+      error: formatAimpPublishingPathError('verifyPartyExists', networkError),
     });
   });
 
@@ -56,5 +71,17 @@ describe('startAimpPublishingBridge', () => {
       status: 'ready',
       error: null,
     });
+  });
+});
+
+describe('shouldApplyAimpDisconnectedPublishingError', () => {
+  test('does not overwrite an existing specific publishing error', () => {
+    expect(shouldApplyAimpDisconnectedPublishingError('error')).toBe(false);
+  });
+
+  test('applies generic disconnected error when not already in error', () => {
+    expect(shouldApplyAimpDisconnectedPublishingError('connecting')).toBe(true);
+    expect(shouldApplyAimpDisconnectedPublishingError('ready')).toBe(true);
+    expect(shouldApplyAimpDisconnectedPublishingError('idle')).toBe(true);
   });
 });

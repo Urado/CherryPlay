@@ -26,6 +26,17 @@ export {
   subscribeAimpPartyPlaylistSync,
 } from './partyPlaylistSync';
 export {
+  CHERRYPLAY_RECONNECTION_FAILED_MESSAGE,
+  CHERRYPLAY_RECONNECT_ACTION_LABEL,
+  createCherryPlayStreamingErrorHandlers,
+  formatCherryPlayConnectError,
+  formatCherryPlayPublishError,
+  mapCherryPlayStreamingErrorPhrase,
+  type CherryPlayPublishOperation,
+  type CherryPlayStreamingNotify,
+  type CherryPlayStreamingErrorHandlerOptions,
+} from './cherryPlayStreamingErrors';
+export {
   buildPlaylistForApiPayload,
   resolvePlaylistSource,
   type PartyPlaylistSource,

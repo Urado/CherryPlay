@@ -26,6 +26,7 @@ export function subscribePartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
+  onSyncError?: (error: unknown) => void,
   onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let isInitialCall = true;
@@ -43,10 +44,14 @@ export function subscribePartyPlaylistSync(
     });
 
     const payload = getPayload();
-    void syncPartyPlaylist(partyId, payload, onSynced).catch((error) => {
-      console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
-    });
-    onAfterSync();
+    void syncPartyPlaylist(partyId, payload, onSynced)
+      .then(() => {
+        onAfterSync();
+      })
+      .catch((error) => {
+        console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
+        onSyncError?.(error);
+      });
   });
 }
 

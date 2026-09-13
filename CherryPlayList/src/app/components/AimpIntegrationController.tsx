@@ -33,9 +33,18 @@ export const AimpIntegrationController: React.FC = () => {
     markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
   }, []);
 
+  const handlePartyNotFound = useCallback(() => {
+    addNotification({
+      type: 'warning',
+      message: 'Подключённая вечеринка не найдена на сервере. Связь с проектом сохранена.',
+      duration: 5000,
+    });
+  }, [addNotification]);
+
   useAimpStreamingOrchestrator({
     partyId: linkedPartyId,
     hasHydrated,
+    onPartyNotFound: handlePartyNotFound,
     onPlaylistSynced: handlePlaylistSynced,
   });
 

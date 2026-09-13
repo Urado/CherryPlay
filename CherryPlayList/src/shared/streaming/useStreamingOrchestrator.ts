@@ -14,6 +14,10 @@ export interface UseStreamingOrchestratorOptions {
   sessionMode: 'preparation' | 'session';
   onPartyNotFound?: () => void;
   onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
+  onConnectError?: (error: unknown) => void;
+  onPublishError?: (operation: 'playlistPublish' | 'fullStatePublish', error: unknown) => void;
+  onPublishSuccess?: () => void;
+  onReconnectionFailed?: () => void;
 }
 
 export interface UseStreamingOrchestratorResult {
@@ -24,7 +28,16 @@ export interface UseStreamingOrchestratorResult {
 export function useStreamingOrchestrator(
   options: UseStreamingOrchestratorOptions,
 ): UseStreamingOrchestratorResult {
-  const { partyId, sessionMode, onPartyNotFound, onPlaylistSynced } = options;
+  const {
+    partyId,
+    sessionMode,
+    onPartyNotFound,
+    onPlaylistSynced,
+    onConnectError,
+    onPublishError,
+    onPublishSuccess,
+    onReconnectionFailed,
+  } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
 
@@ -34,6 +47,10 @@ export function useStreamingOrchestrator(
   const broadcastSourceRef = useRef(new CherryPlayPlayerBroadcastSource());
   const onPartyNotFoundRef = useRef(onPartyNotFound);
   const onPlaylistSyncedRef = useRef(onPlaylistSynced);
+  const onConnectErrorRef = useRef(onConnectError);
+  const onPublishErrorRef = useRef(onPublishError);
+  const onPublishSuccessRef = useRef(onPublishSuccess);
+  const onReconnectionFailedRef = useRef(onReconnectionFailed);
 
   useEffect(() => {
     onPartyNotFoundRef.current = onPartyNotFound;
@@ -42,6 +59,22 @@ export function useStreamingOrchestrator(
   useEffect(() => {
     onPlaylistSyncedRef.current = onPlaylistSynced;
   }, [onPlaylistSynced]);
+
+  useEffect(() => {
+    onConnectErrorRef.current = onConnectError;
+  }, [onConnectError]);
+
+  useEffect(() => {
+    onPublishErrorRef.current = onPublishError;
+  }, [onPublishError]);
+
+  useEffect(() => {
+    onPublishSuccessRef.current = onPublishSuccess;
+  }, [onPublishSuccess]);
+
+  useEffect(() => {
+    onReconnectionFailedRef.current = onReconnectionFailed;
+  }, [onReconnectionFailed]);
 
   const networkEnabled = isStreamingNetworkEnabled({ enableStreaming });
   const hubAllowed = isStreamingHubAllowed({ enableStreaming });
@@ -67,6 +100,10 @@ export function useStreamingOrchestrator(
       onConnectionStateChange: setHubConnectionState,
       onPartyNotFound: () => onPartyNotFoundRef.current?.(),
       onPlaylistSynced: (payload) => onPlaylistSyncedRef.current?.(payload),
+      onConnectError: (error) => onConnectErrorRef.current?.(error),
+      onPublishError: (operation, error) => onPublishErrorRef.current?.(operation, error),
+      onPublishSuccess: () => onPublishSuccessRef.current?.(),
+      onReconnectionFailed: () => onReconnectionFailedRef.current?.(),
     });
 
     return () => {

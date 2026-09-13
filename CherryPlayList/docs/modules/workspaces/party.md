@@ -32,8 +32,9 @@
 | [`partyWorkspaceDemoActions.ts`](../../../src/workspaces/party/partyWorkspaceDemoActions.ts)     | Demo-оркестрация (editor fixtures, `demoResetToDefault`, link/project manipulation); защищена `guardDemoMode()`. Preview-сценарий делегирует в `partyPreviewScenarioActions`.                                                     |
 | [`usePartyWorkspace.ts`](../../../src/workspaces/party/usePartyWorkspace.ts)                     | `usePartyWorkspaceRuntime()` — эффекты, обработчики, derived (`previewPlaylistData`, `playbackState`, темы). Без импортов scenario store.                                                                                         |
 | [`partyWorkspaceReconnectRefs.ts`](../../../src/workspaces/party/partyWorkspaceReconnectRefs.ts) | Module-level reconnect timer и mount-count (один интервал на сессию при нескольких зонах)                                                                                                                                         |
-| [`partyThemeAccessLoad.ts`](../../../src/workspaces/party/partyThemeAccessLoad.ts)               | `loadPartyThemeAccess` / `invalidatePartyThemeAccessLoads` — fetch entitlement, post-await generation guard; при сбое — keep cache (`resolveThemeAccessAfterFetchFailure`); loading-flash только при `themeAccess === null`       |
-| [`partyWorkspaceUtils.ts`](../../../src/workspaces/party/partyWorkspaceUtils.ts)                 | Константы и нормализация (в т.ч. `RECONNECT_INTERVAL_MS`, `THEME_ACCESS_POLL_INTERVAL_MS`, `THEME_PICKER_UNAVAILABLE_MESSAGE`, `THEME_PICKER_ONLINE_OFF_MESSAGE`); `resolveCreateBlockedByTheme`, `resolveThemePickerHintMessage` |
+| [`partyThemeAccessLoad.ts`](../../../src/workspaces/party/partyThemeAccessLoad.ts)               | `loadPartyThemeAccess` / `invalidatePartyThemeAccessLoads` — fetch entitlement, post-await generation guard; возвращает `ThemeAccessLoadResult` (`ok` \| `skipped` \| `failed` \| `unreachable`); при сбое fetch — keep cache (`resolveThemeAccessAfterFetchFailure`), затем health → при недоступности `serverUnreachable` + `unreachable`; loading-flash только при `themeAccess === null` |
+| [`partyThemeAccessReconnect.ts`](../../../src/workspaces/party/partyThemeAccessReconnect.ts)     | `resolveUnlinkedThemeAccessReconnectAction` — по `ThemeAccessLoadResult` для unlinked draft: `unreachable` → start reconnect, `ok` → clear; linked party → `none`                                                                                                                                                                                                              |
+| [`partyWorkspaceUtils.ts`](../../../src/workspaces/party/partyWorkspaceUtils.ts)                 | Константы и нормализация (в т.ч. `RECONNECT_INTERVAL_MS`, `THEME_ACCESS_POLL_INTERVAL_MS`, `THEME_PICKER_UNAVAILABLE_MESSAGE`, `THEME_PICKER_ONLINE_OFF_MESSAGE`); `resolveCreateBlockedByTheme`, `resolveThemePickerHintMessage`                                                                                                                                               |
 
 **Границы состояния:**
 
@@ -283,12 +284,14 @@ MVP-действия (список `GET /api/parties` — **включая** `dr
 
 ### Проверка доступности
 
-`partyService.checkServerReachable()` — HEAD к `/api/parties`, таймаут 5 с; `true` при статусе < 500.
+`partyService.checkServerReachable()` — **GET** `/api/health`, таймаут 5 с; `true` при `response.ok`.
 
 ### Поведение при недоступном сервере
 
 - **PartyEditor** — баннер `PartyConnectivityBanner` (`unreachable`) **внутри** shell; форма и фазовые действия остаются видимыми. Сетевые кнопки disabled **только** при Online OFF; при unreachable кнопки активны, ошибка — на submit.
+- Тот же баннер показывается в **модале настроек вечеринки** (`PartySettingsContent` / Create flow), чтобы cold-start без сайта не был «немым».
 - Интервал **60 с** (`RECONNECT_INTERVAL_MS` в `partyWorkspaceUtils`) и кнопка «Проверить сейчас» — через общий reconnect в `partyWorkspaceReconnectRefs` (не дублируется при двух зонах).
+- **Unlinked cold start:** если при Online ON загрузка theme access падает и `/api/health` недоступен — ставится `serverUnreachable` и стартует reconnect timer с `linkedParty=null`. По успешному health tick — refetch theme access и снятие баннера (create снова доступен без рестарта приложения).
 - **PartyPreview** — тот же баннер при `serverUnreachable`; при восстановлении сервера preview подхватывает актуальные данные из runtime.
 
 Полноэкранный `OnlineUnavailablePanel` в Editor **не** используется для обычной потери связи (остаётся для blocked-фаз: auth, outdated client и т.п.).

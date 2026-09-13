@@ -1,22 +1,17 @@
-/**
- * SignalR transport service — hub connection lifecycle and organizer invoke methods.
- * Publish orchestration (store subscriptions, position ticks) lives in Site Streamer
- * (`src/shared/streaming/streamingOrchestrator.ts`).
- */
-
 import * as signalR from '@microsoft/signalr';
 
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
 import { type PlaybackStateDto } from '../contracts/playbackState';
 import { useAuthStore } from '../stores';
-import { handleAuthError, isAuthError, SESSION_EXPIRED_USER_MESSAGE } from '../utils/authErrorHandler';
+import {
+  handleAuthError,
+  isAuthError,
+  SESSION_EXPIRED_USER_MESSAGE,
+} from '../utils/authErrorHandler';
 import { isTokenExpired } from '../utils/tokenUtils';
 
 export type { PlaybackStateDto, PlaybackWireStatus } from '../contracts/playbackState';
 
-/**
- * Константы событий SignalR Hub
- */
 const SignalREvents = {
   OnSessionStarted: 'OnSessionStarted',
   OnSessionEnded: 'OnSessionEnded',
@@ -27,9 +22,6 @@ const SignalREvents = {
   Error: 'Error',
 } as const;
 
-/**
- * Типы для обработчиков событий
- */
 export type SessionStartedHandler = (partyId: string) => void;
 export type SessionEndedHandler = (partyId: string) => void;
 export type FullStateUpdatedHandler = (partyId: string, state: PlaybackStateDto) => void;
@@ -42,9 +34,6 @@ export type StateChangedHandler = (partyId: string) => void;
 export type PlaylistChangedHandler = (partyId: string) => void;
 export type ErrorHandler = (error: Error) => void;
 
-/**
- * Конфигурация переподключения
- */
 interface ReconnectConfig {
   maxAttempts: number;
   delayMs: number;
@@ -58,7 +47,7 @@ class SignalRService {
     delayMs: 3000,
   };
 
-  // Обработчики событий для возможности отписки
+  
   private eventHandlers: {
     onSessionStarted?: SessionStartedHandler;
     onSessionEnded?: SessionEndedHandler;
@@ -70,37 +59,29 @@ class SignalRService {
     onReconnectionFailed?: () => void;
   } = {};
 
-  // Legacy fields retained for reconnect handler registration
+  
   private currentPartyId: string | null = null;
   private currentToken: string | undefined = undefined;
   private partyReconnectHandler: ((partyId: string) => Promise<void>) | null = null;
 
-  /**
-   * Site Streamer orchestrator registers reconnect restore logic (join + publish + ticks).
-   */
+  
   setPartyReconnectHandler(handler: ((partyId: string) => Promise<void>) | null): void {
     this.partyReconnectHandler = handler;
   }
 
-  /**
-   * Проверяет, подключен ли сервис
-   */
+  
   isServiceConnected(): boolean {
     return (
       this.connection !== null && this.connection.state === signalR.HubConnectionState.Connected
     );
   }
 
-  /**
-   * Получает текущее состояние подключения
-   */
+  
   getConnectionState(): signalR.HubConnectionState | null {
     return this.connection?.state ?? null;
   }
 
-  /**
-   * Получает человекочитаемую причину отсутствия соединения
-   */
+  
   getConnectionErrorReason(): string | null {
     if (!this.currentPartyId) {
       return 'Нет вечеринки';
@@ -122,30 +103,28 @@ class SignalRService {
       return 'Ошибка соединения';
     }
 
-    return null; // Соединение установлено или неизвестная ошибка
+    return null; 
   }
 
-  /**
-   * Подключается к SignalR Hub
-   */
+  
   async connect(token?: string): Promise<void> {
-    // Получаем токен из authStore, если не передан явно
+    
     const authToken = token || useAuthStore.getState().accessToken;
 
-    // Проверяем, не истек ли токен
+    
     if (authToken && isTokenExpired(authToken)) {
       console.warn('[SignalR] Token expired, clearing auth');
       handleAuthError('Authentication token has expired');
       throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
-    // Сохраняем токен для возможного переподключения
+    
     if (authToken) {
       this.currentToken = authToken;
     }
-    // Защита от race conditions
+    
     if (this.isConnecting) {
-      // Ждем завершения текущего подключения
+      
       while (this.isConnecting) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
@@ -161,24 +140,24 @@ class SignalRService {
     this.isConnecting = true;
 
     try {
-      // Очищаем старое соединение, если есть
+      
       if (this.connection) {
         await this.cleanupConnection();
       }
 
-      // При каждом connect запрашиваем актуальный URL (важно для ручного реконнекта)
+      
       clearApiConfigCache();
       const config = await getApiConfig();
 
       console.log('[SignalR] Starting connection to:', config.signalRUrl);
 
-      // Настройка опций подключения с передачей токена через accessTokenFactory
-      // SignalR автоматически добавит токен в query string (?access_token=...) для WebSocket
-      // или в заголовок Authorization для HTTP транспортов (Long Polling, Server-Sent Events)
+      
+      
+      
       const connectionOptions: signalR.IHttpConnectionOptions = {};
       if (authToken) {
-        // Используем функцию, чтобы всегда получать актуальный токен
-        // SignalR вызывает эту функцию при каждом подключении/переподключении
+        
+        
         connectionOptions.accessTokenFactory = () => {
           const currentToken = useAuthStore.getState().accessToken || authToken;
           return Promise.resolve(currentToken || '');
@@ -199,15 +178,15 @@ class SignalRService {
             if (this.eventHandlers.onReconnectionFailed) {
               this.eventHandlers.onReconnectionFailed();
             }
-            return null; // Остановить попытки переподключения
+            return null; 
           },
         })
         .build();
 
-      // Устанавливаем обработчики событий подключения
+      
       this.setupConnectionHandlers();
 
-      // Устанавливаем обработчики событий Hub
+      
       this.setupHubEventHandlers();
 
       await this.connection.start();
@@ -221,9 +200,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Устанавливает обработчики событий подключения
-   */
+  
   private setupConnectionHandlers(): void {
     if (!this.connection) return;
 
@@ -241,7 +218,7 @@ class SignalRService {
     this.connection.onreconnected(async (connectionId) => {
       console.log('[SignalR] Reconnected with connection ID:', connectionId);
 
-      // Проверяем токен при переподключении
+      
       const currentToken = useAuthStore.getState().accessToken || this.currentToken;
       if (currentToken && isTokenExpired(currentToken)) {
         console.warn('[SignalR] Token expired during reconnect, clearing auth');
@@ -250,20 +227,20 @@ class SignalRService {
         return;
       }
 
-      // Обновляем токен для переподключения
+      
       if (currentToken) {
         this.currentToken = currentToken;
       }
 
-      // Восстанавливаем обработчики событий Hub (они могли быть потеряны при переподключении)
+      
       this.setupHubEventHandlers();
 
-      // Восстанавливаем подписки и состояние после переподключения
+      
       if (this.currentPartyId) {
         try {
           console.log('[SignalR] Restoring party connection after reconnect:', this.currentPartyId);
 
-          // Переподключаемся к вечеринке как организатор (без повторного connect)
+          
           if (this.connection && this.isServiceConnected() && this.currentToken) {
             await this.invokeWithLogging(
               'JoinPartyAsOrganizer',
@@ -284,14 +261,11 @@ class SignalRService {
     });
   }
 
-  /**
-   * Устанавливает обработчики событий Hub
-   * При повторном вызове удаляет старые обработчики перед установкой новых
-   */
+  
   private setupHubEventHandlers(): void {
     if (!this.connection) return;
 
-    // Удаляем старые обработчики перед установкой новых (чтобы избежать дублирования)
+    
     Object.values(SignalREvents).forEach((eventName) => {
       this.connection!.off(eventName);
     });
@@ -387,12 +361,10 @@ class SignalRService {
     }
   }
 
-  /**
-   * Очищает соединение и все обработчики
-   */
+  
   private async cleanupConnection(): Promise<void> {
     if (this.connection) {
-      // Удаляем все обработчики событий
+      
       this.removeAllEventHandlers();
 
       try {
@@ -405,9 +377,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Удаляет все обработчики событий Hub
-   */
+  
   private removeAllEventHandlers(): void {
     if (!this.connection) return;
 
@@ -416,9 +386,7 @@ class SignalRService {
     });
   }
 
-  /**
-   * Отключается от SignalR Hub
-   */
+  
   async disconnect(): Promise<void> {
     await this.cleanupConnection();
     this.currentPartyId = null;
@@ -427,9 +395,7 @@ class SignalRService {
     console.log('[SignalR] Disconnected');
   }
 
-  /**
-   * Вспомогательный метод для логирования вызовов сервера
-   */
+  
   private async invokeWithLogging<T>(methodName: string, ...args: unknown[]): Promise<T> {
     if (!this.connection) {
       throw new Error('SignalR connection is null');
@@ -460,11 +426,9 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подключается к вечеринке как организатор
-   */
+  
   async joinPartyAsOrganizer(partyId: string, token?: string): Promise<void> {
-    // Получаем токен из authStore, если не передан явно
+    
     const authToken = token || useAuthStore.getState().accessToken;
 
     if (!authToken) {
@@ -491,7 +455,7 @@ class SignalRService {
       console.log('[SignalR] Successfully joined party as organizer');
     } catch (error) {
       console.error('[SignalR] Failed to join party as organizer:', error);
-      // Если ошибка авторизации, обрабатываем её
+      
       if (isAuthError(error)) {
         handleAuthError(error instanceof Error ? error : String(error));
       }
@@ -499,9 +463,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Запускает сессию трансляции
-   */
+  
   async startSession(partyId: string): Promise<void> {
     if (!this.isServiceConnected()) {
       throw new Error('SignalR connection not established');
@@ -511,7 +473,7 @@ class SignalRService {
       throw new Error('SignalR connection is null');
     }
 
-    // Проверяем токен перед началом сессии
+    
     const token = useAuthStore.getState().accessToken || this.currentToken;
     if (!token) {
       const error = new Error('Authentication token is required to start session');
@@ -538,12 +500,10 @@ class SignalRService {
     }
   }
 
-  /**
-   * Завершает сессию трансляции
-   */
+  
   async endSession(partyId: string): Promise<void> {
     if (!this.isServiceConnected() || !this.connection) {
-      return; // Тихая ошибка, чтобы не прерывать очистку
+      return; 
     }
 
     try {
@@ -554,10 +514,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Сбрасывает состояние воспроизведения на сервере (организатор).
-   * Сервер очищает состояние и рассылает PlaybackStateReset зрителям.
-   */
+  
   async resetPlaybackState(partyId: string): Promise<void> {
     if (!this.isServiceConnected() || !this.connection) {
       throw new Error('Нет подключения к серверу');
@@ -567,12 +524,10 @@ class SignalRService {
     console.log('[SignalR] Playback state reset');
   }
 
-  /**
-   * Обновляет позицию воспроизведения
-   */
+  
   async updatePlaybackPosition(partyId: string, trackId: string, position: number): Promise<void> {
     if (!this.isServiceConnected() || !this.connection) {
-      return; // Тихая ошибка, чтобы не прерывать воспроизведение
+      return; 
     }
 
     try {
@@ -582,9 +537,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Уведомляет об изменении состояния
-   */
+  
   async notifyStateChanged(partyId: string): Promise<void> {
     try {
       await this.notifyStateChangedOrThrow(partyId);
@@ -601,9 +554,7 @@ class SignalRService {
     await this.invokeWithLogging('NotifyStateChanged', partyId);
   }
 
-  /**
-   * Обновляет полное состояние воспроизведения
-   */
+  
   async updateFullState(partyId: string, state: PlaybackStateDto): Promise<void> {
     try {
       await this.updateFullStateOrThrow(partyId, state);
@@ -620,9 +571,7 @@ class SignalRService {
     await this.invokeWithLogging('UpdateFullState', partyId, state);
   }
 
-  /**
-   * Подписывается на событие начала сессии
-   */
+  
   onSessionStarted(handler: SessionStartedHandler): void {
     this.eventHandlers.onSessionStarted = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -630,9 +579,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие окончания сессии
-   */
+  
   onSessionEnded(handler: SessionEndedHandler): void {
     this.eventHandlers.onSessionEnded = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -640,9 +587,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие обновления полного состояния
-   */
+  
   onFullStateUpdated(handler: FullStateUpdatedHandler): void {
     this.eventHandlers.onFullStateUpdated = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -650,9 +595,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие обновления позиции воспроизведения
-   */
+  
   onPlaybackPositionUpdated(handler: PlaybackPositionUpdatedHandler): void {
     this.eventHandlers.onPlaybackPositionUpdated = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -660,9 +603,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие изменения состояния
-   */
+  
   onStateChanged(handler: StateChangedHandler): void {
     this.eventHandlers.onStateChanged = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -670,9 +611,7 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие изменения плейлиста
-   */
+  
   onPlaylistChanged(handler: PlaylistChangedHandler): void {
     this.eventHandlers.onPlaylistChanged = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -680,23 +619,17 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на ошибки
-   */
+  
   onError(handler: ErrorHandler): void {
     this.eventHandlers.onError = handler;
   }
 
-  /**
-   * Подписывается на событие неудачного переподключения
-   */
-  onReconnectionFailed(handler: () => void): void {
-    this.eventHandlers.onReconnectionFailed = handler;
+  
+  onReconnectionFailed(handler: (() => void) | null | undefined): void {
+    this.eventHandlers.onReconnectionFailed = handler ?? undefined;
   }
 
-  /**
-   * Отписывается от всех событий
-   */
+  
   removeAllHandlers(): void {
     this.removeAllEventHandlers();
     this.eventHandlers = {};

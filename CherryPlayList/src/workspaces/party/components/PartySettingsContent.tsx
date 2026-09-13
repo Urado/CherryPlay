@@ -4,6 +4,7 @@ import type { PartyWorkspaceRuntimeValue } from '../partyWorkspaceRuntimeContext
 import { usePartySettingsFormState } from '../usePartySettingsFormState';
 
 import { PartyCatalogVisibilityControl } from './PartyCatalogVisibilityControl';
+import { PartyConnectivityBanner } from './PartyConnectivityBanner';
 import { PartyEditor } from './PartyEditor';
 import { PartyEditorActions } from './PartyEditorActions';
 import { PartyEditorDangerZone } from './PartyEditorDangerZone';
@@ -19,6 +20,20 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   onOpenLinkParty,
 }) => {
   const form = usePartySettingsFormState(runtime);
+
+  const connectivityBanner = !form.isNetworkEnabledForEditor ? (
+    <PartyConnectivityBanner
+      kind="offline"
+      offlineHint="Включите «Онлайн» в настройках приложения (шестерёнка), а не здесь. Локальное редактирование полей вечеринки доступно."
+    />
+  ) : runtime.serverUnreachable ? (
+    <PartyConnectivityBanner
+      kind="unreachable"
+      isReconnecting={runtime.isReconnecting}
+      lastManualCheckFailed={runtime.lastManualCheckFailed}
+      onManualReconnect={runtime.handleManualReconnect}
+    />
+  ) : null;
 
   const archiveZone = form.archiveAvailability.showDangerSection ? (
     <PartyEditorDangerZone
@@ -99,6 +114,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
 
   return (
     <div className="party-settings-content">
+      {connectivityBanner}
       <div className="party-settings-content__body">
         {form.editorPhase ? (
           <PartyEditor
