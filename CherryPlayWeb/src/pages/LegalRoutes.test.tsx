@@ -6,8 +6,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ROUTES } from '../constants/routes';
-import { LegalDocumentPage } from '../pages/LegalDocumentPage';
-import { LegalOperatorPage } from '../pages/LegalOperatorPage';
+
+import { LegalDocumentPage } from './LegalDocumentPage';
+import { LegalOperatorPage } from './LegalOperatorPage';
 
 function renderPath(path: string) {
   return render(

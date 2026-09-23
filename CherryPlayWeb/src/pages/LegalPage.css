@@ -53,6 +53,41 @@
   color: var(--text-primary);
 }
 
+.legal-page-body h2 {
+  margin: 28px 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.legal-page-body h3 {
+  margin: 22px 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.legal-page-body ul,
+.legal-page-body ol {
+  margin: 0 0 16px;
+  padding-left: 1.35em;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.legal-page-body li {
+  margin: 0 0 6px;
+}
+
+.legal-page-body a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .legal-operator-dl {
   margin: 24px 0 0;
   display: grid;

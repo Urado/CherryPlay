@@ -33,7 +33,7 @@ Dual UoW: `UseInMemoryStorage=true` → `InMemoryLegalConsentUnitOfWork`; `false
 | `effective_to` | timestamptz | NULL | Конец действия (retired). |
 | `status` | string(32) | NOT NULL, CHECK IN (`draft`,`active`,`retired`) | Статус; partial unique index — не более одной `active` на `document_type`. |
 
-**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399`). Retired sample `cccccccc-…` может оставлять placeholder hash.
+**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d`). Retired sample `cccccccc-…` может оставлять placeholder hash.
 
 #### consent_events
 
@@ -198,6 +198,8 @@ _Связь с учётной записью: email+пароль (таблица
 Индексы: `TokenHash` (UNIQUE), `EmailAccountId`.
 
 При выдаче нового токена предыдущие неиспользованные для того же `EmailAccountId` инвалидируются (`UsedAt`). Успешный **reset-password** гасит использованный токен; успешный **change-password** также инвалидирует все неиспользованные reset-токены того же `EmailAccount`. После успешного сброса или смены пароля удаляются все `OrganizerSessions` организатора.
+
+Автоочистка (фоновый job, раз в час = `PasswordResetTokenRetentionCleanupInterval`): использованные или просроченные строки удаляются не позднее **30 дней** после `UsedAt` или `ExpiresAt`. Константа `PasswordResetTokenRecordRetention` = 30d − interval (чтобы worst-case retention + interval ≤ 30 дней). Условие удаления: `(UsedAt != null && UsedAt <= now - retention) OR (UsedAt == null && ExpiresAt <= now - retention)`. Действующие неиспользованные токены (`UsedAt == null && ExpiresAt > now`) не удаляются. Usability TTL остаётся ~1 час (`PasswordResetTokenTtl`).
 
 Потоки API и политика почты (Dev-лог / Prod **503** при отсутствии конфига / soft-fail **200** при сбое отправки с токеном, **остающимся usable** до TTL): [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md), [ENV.md](../ENV.md), [OPS.md](OPS.md).
 

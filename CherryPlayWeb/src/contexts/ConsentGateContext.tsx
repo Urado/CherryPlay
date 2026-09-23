@@ -44,13 +44,13 @@ const ConsentGateContext = createContext<ConsentGateContextValue>({
   openWithMissing: () => undefined,
 });
 
-function ConsentGateOverlay({
+const ConsentGateOverlay = ({
   missing,
   onClose,
 }: {
   missing: string[] | undefined;
   onClose: (reason: 'granted' | 'logout') => void;
-}) {
+}) => {
   const navigate = useNavigate();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [pdConsentAccepted, setPdConsentAccepted] = useState(false);
@@ -206,6 +206,7 @@ function ConsentGateOverlay({
             to={ROUTES.LEGAL}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Реквизиты и контакты (откроется в новой вкладке)"
           >
             Реквизиты и контакты
           </Link>
@@ -213,9 +214,9 @@ function ConsentGateOverlay({
       </div>
     </div>
   );
-}
+};
 
-export function ConsentGateProvider({ children }: { children: ReactNode }) {
+export const ConsentGateProvider = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(isConsentGateOpen());
   const [missing, setMissing] = useState<string[] | undefined>(undefined);
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -302,7 +303,7 @@ export function ConsentGateProvider({ children }: { children: ReactNode }) {
       {open ? <ConsentGateOverlay missing={missing} onClose={closeGate} /> : null}
     </ConsentGateContext.Provider>
   );
-}
+};
 
 export function useConsentGate(): ConsentGateContextValue {
   return useContext(ConsentGateContext);

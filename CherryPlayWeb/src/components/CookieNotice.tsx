@@ -15,7 +15,7 @@ function readDismissed(): boolean {
   }
 }
 
-export function CookieNotice() {
+export const CookieNotice = () => {
   const [dismissed, setDismissed] = useState(readDismissed);
 
   useEffect(() => {
@@ -41,12 +41,11 @@ export function CookieNotice() {
   return (
     <div className="cookie-notice" role="region" aria-label="Уведомление о cookie">
       <p className="cookie-notice-text">
-        Используем необходимые cookie для входа.{' '}
-        <Link to={ROUTES.COOKIES}>Политика cookie</Link>
+        Используем необходимые cookie для входа. <Link to={ROUTES.COOKIES}>Политика cookie</Link>
       </p>
       <button type="button" className="cookie-notice-dismiss" onClick={dismiss}>
         Понятно
       </button>
     </div>
   );
-}
+};

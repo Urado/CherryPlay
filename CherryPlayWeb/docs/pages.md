@@ -21,15 +21,15 @@
 | `/admin` | Корневой админ-маршрут (redirect) | `Navigate -> /admin/organizers` |
 | `/admin/organizers` | Список организаторов (admin only) | `AdminOrganizersPage` |
 | `/admin/organizers/:id` | Детальная карточка организатора (admin only) | `AdminOrganizerDetailPage` |
-| `/privacy` | Политика ПДн (мок) | `LegalDocumentPage` (`privacy`) |
+| `/privacy` | Политика ПДн | `LegalDocumentPage` (`privacy`) |
 | `/privacy/v/:version` | Архив версии политики | `LegalDocumentPage` |
-| `/consent` | Согласие на обработку ПДн (мок) | `LegalDocumentPage` (`consent`) |
+| `/consent` | Согласие на обработку ПДн | `LegalDocumentPage` (`consent`) |
 | `/consent/v/:version` | Архив версии согласия | `LegalDocumentPage` |
-| `/terms` | Пользовательское соглашение (мок) | `LegalDocumentPage` (`terms`) |
+| `/terms` | Пользовательское соглашение | `LegalDocumentPage` (`terms`) |
 | `/terms/v/:version` | Архив версии terms | `LegalDocumentPage` |
-| `/cookies` | Политика cookie (мок) | `LegalDocumentPage` (`cookies`) |
+| `/cookies` | Политика cookie | `LegalDocumentPage` (`cookies`) |
 | `/cookies/v/:version` | Архив версии cookies | `LegalDocumentPage` |
-| `/legal` | Реквизиты / оператор (мок) | `LegalOperatorPage` |
+| `/legal` | Реквизиты / оператор | `LegalOperatorPage` |
 
 - **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
 - **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
@@ -37,7 +37,7 @@
 - **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
 - **RegisterPage:** `EmailAuthForm` mode `register` + legal checkboxes; API — `POST /api/organizers` (+ consents) → `POST /auth/login` ([accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.3). При `?client=desktop` — **replace-redirect** на `/login?client=desktop` (сохраняет `return_to` / `next`); отдельной desktop-регистрации на `/register` нет.
 - **LoginPage / ConsentGate:** после auth (и до desktop deep-link) — `ensureConsents()`; при missing grants — глобальная модалка `ConsentGateProvider` (`LegalConsentBlock` → `POST /api/consent-events`). Session-continue (`client=desktop`) — тот же shell, что у формы логина (`login-page-body` + `SiteFooter`). Cookie-notice скрыт, пока gate open. Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3.
-- **LegalDocumentPage / LegalOperatorPage:** мок-тексты из `src/content/legal/` (folder `v1.0`, label `documentVersion` `1.0`); архивы `/…/v/:version`. Ссылки из footer / consent UI. Deploy-time id+hash для API — в Components; серверный seed label `v1` — см. GLOSSARY / CONTRACTS §3.2.3.
+- **LegalDocumentPage / LegalOperatorPage:** тексты из `src/content/legal/` (folder `v1.0`, label `documentVersion` `1.0`); архивы `/…/v/:version`. Ссылки из footer / consent UI. Deploy-time id+hash для API — в Components; серверный seed — см. GLOSSARY / CONTRACTS §3.2.3.
 - **ForgotPasswordPage / ResetPasswordPage**: self-service сброс пароля (письмо → токен); контракты и политика почты — [accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.0a. После успешного reset — редирект на `/login`. Смена пароля (старый + новый) — в кабинете (`CabinetPage`, аккордеон «Аккаунт»), не отдельный маршрут; после успеха клиент разлогинивает и открывает `/login` с notice (см. ниже).
 
 ---
@@ -105,7 +105,7 @@
 - `src/pages/PartyView.tsx` — просмотр вечеринки по shortCode.
 - `src/pages/PartyInfoPage.tsx` — информация о вечеринке.
 - `src/pages/LoginPage.tsx`, `RegisterPage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx` — auth-страницы организатора.
-- `src/pages/LegalDocumentPage.tsx`, `LegalOperatorPage.tsx` — мок legal routes; контент — `src/content/legal/`.
+- `src/pages/LegalDocumentPage.tsx`, `LegalOperatorPage.tsx` — legal routes; контент — `src/content/legal/`.
 - `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора (аккордеоны «Мои вечеринки» / «Аккаунт»; смена пароля, privacy/withdraw, удаление аккаунта — в «Аккаунт» / `#account`).
 - `src/services/accountApiService.ts` — `deleteOrganizerAccount` (`DELETE /api/organizer/account`).
 - `src/constants/legalContacts.ts` — `PRIVACY_CONTACT_EMAIL` / `SUPPORT_CONTACT_EMAIL` (`VITE_PRIVACY_CONTACT`, `VITE_SUPPORT_CONTACT`).

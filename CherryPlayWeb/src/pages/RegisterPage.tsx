@@ -8,7 +8,7 @@ import { authService } from '../services/authService';
 import { isDesktopClientQueryValue } from '../utils/desktopClientMode';
 import './RegisterPage.css';
 
-export function RegisterPage() {
+export const RegisterPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const desktopMode = isDesktopClientQueryValue(searchParams.get('client'));
@@ -66,4 +66,4 @@ export function RegisterPage() {
       <SiteFooter />
     </div>
   );
-}
+};

@@ -63,8 +63,7 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@cherryplay/components')>();
   return {
     ...actual,
-    ChangePasswordForm: () =>
-      React.createElement('div', { 'data-testid': 'change-password-form' }),
+    ChangePasswordForm: () => React.createElement('div', { 'data-testid': 'change-password-form' }),
     Button: React.forwardRef<
       HTMLButtonElement,
       {
@@ -79,7 +78,7 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
         'aria-describedby'?: string;
         'aria-label'?: string;
       }
-    >(function MockButton({ children, onClick, disabled, loading, ...rest }, ref) {
+    >(({ children, onClick, disabled, loading, ...rest }, ref) => {
       return React.createElement(
         'button',
         {
@@ -95,14 +94,14 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function LoginProbe() {
+const LoginProbe = () => {
   const location = useLocation();
   const state = location.state as { accountDeleted?: boolean } | null;
   return createElement('div', {
     'data-testid': 'login-probe',
     'data-account-deleted': state?.accountDeleted === true ? 'true' : 'false',
   });
-}
+};
 
 function ensureAppRoot(): HTMLElement {
   let root = document.getElementById('root');

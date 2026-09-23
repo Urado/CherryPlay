@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 
 import { SiteFooter } from '../components/SiteFooter';
-import { LEGAL_OPERATOR_CONTENT } from '../content/legal/documents';
 import { ROUTES } from '../constants/routes';
+import { LEGAL_OPERATOR_CONTENT } from '../content/legal/documents';
+import { linkifyLegalText } from './linkifyLegalText';
 import './LegalPage.css';
 
-export function LegalOperatorPage() {
+export const LegalOperatorPage = () => {
   const content = LEGAL_OPERATOR_CONTENT;
 
   return (
@@ -17,7 +18,7 @@ export function LegalOperatorPage() {
         <h1>{content.title}</h1>
         <div className="legal-page-body">
           {content.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p key={index}>{linkifyLegalText(paragraph)}</p>
           ))}
           <dl className="legal-operator-dl">
             <dt>Оператор</dt>
@@ -38,4 +39,4 @@ export function LegalOperatorPage() {
       <SiteFooter />
     </div>
   );
-}
+};

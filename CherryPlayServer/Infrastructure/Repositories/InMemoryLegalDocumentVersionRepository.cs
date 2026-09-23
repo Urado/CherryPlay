@@ -9,10 +9,10 @@ public class InMemoryLegalDocumentVersionRepository : ILegalDocumentVersionRepos
 {
     private const string PdConsentDocumentVersionV1 = "1.0";
     private const string PdConsentHashV1 =
-        "2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3";
+        "1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f";
     private const string TermsDocumentVersionV1 = "1.0";
     private const string TermsHashV1 =
-        "6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399";
+        "c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d";
 
     private readonly ConcurrentDictionary<Guid, LegalDocumentVersionInfo> _versions = new();
 

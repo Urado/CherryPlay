@@ -58,4 +58,14 @@ public class EfPasswordResetTokenRepository : IPasswordResetTokenRepository
             .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.UsedAt, (DateTime?)null));
         return rows > 0;
     }
+
+    public async Task<int> DeleteStaleAsync(DateTime utcNow, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        var cutoff = utcNow - retention;
+        return await _context.PasswordResetTokens
+            .Where(e =>
+                (e.UsedAt != null && e.UsedAt <= cutoff)
+                || (e.UsedAt == null && e.ExpiresAt <= cutoff))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

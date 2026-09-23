@@ -7,6 +7,9 @@ public static class AuthConstants
     public const int TokenLifetimeDays = 30;
     public static readonly TimeSpan JwtClockSkew = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan PasswordResetTokenTtl = TimeSpan.FromHours(1);
+    public static readonly TimeSpan PasswordResetTokenRetentionCleanupInterval = TimeSpan.FromHours(1);
+    public static readonly TimeSpan PasswordResetTokenRecordRetention =
+        TimeSpan.FromDays(30) - PasswordResetTokenRetentionCleanupInterval;
     public static readonly TimeSpan DesktopAuthCodeTtl = TimeSpan.FromMinutes(3);
     public const string DesktopAuthCodeInvalidMessage =
         "Код авторизации недействителен или устарел";

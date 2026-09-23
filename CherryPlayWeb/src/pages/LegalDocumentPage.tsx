@@ -1,11 +1,10 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 
 import { SiteFooter } from '../components/SiteFooter';
-import {
-  resolveLegalDocument,
-  type LegalDocKey,
-} from '../content/legal/documents';
 import { ROUTES } from '../constants/routes';
+import { resolveLegalDocument, type LegalDocKey } from '../content/legal/documents';
+import type { LegalBlock } from '../content/legal/parseLegalMarkdown';
+import { linkifyLegalText } from './linkifyLegalText';
 import './LegalPage.css';
 
 const VALID_KEYS: LegalDocKey[] = ['privacy', 'consent', 'terms', 'cookies'];
@@ -14,7 +13,29 @@ function isLegalDocKey(value: string | undefined): value is LegalDocKey {
   return !!value && (VALID_KEYS as string[]).includes(value);
 }
 
-export function LegalDocumentPage({ docKey }: { docKey?: LegalDocKey }) {
+function renderBlock(block: LegalBlock, index: number) {
+  switch (block.type) {
+    case 'heading': {
+      const Tag = block.level === 2 ? 'h2' : 'h3';
+      return <Tag key={index}>{linkifyLegalText(block.text)}</Tag>;
+    }
+    case 'list': {
+      const ListTag = block.ordered ? 'ol' : 'ul';
+      return (
+        <ListTag key={index}>
+          {block.items.map((item, itemIndex) => (
+            <li key={itemIndex}>{linkifyLegalText(item)}</li>
+          ))}
+        </ListTag>
+      );
+    }
+    case 'paragraph':
+    default:
+      return <p key={index}>{linkifyLegalText(block.text)}</p>;
+  }
+}
+
+export const LegalDocumentPage = ({ docKey }: { docKey?: LegalDocKey }) => {
   const params = useParams<{ docKey?: string; version?: string }>();
   const key = docKey ?? (isLegalDocKey(params.docKey) ? params.docKey : undefined);
   const version = params.version;
@@ -67,13 +88,9 @@ export function LegalDocumentPage({ docKey }: { docKey?: LegalDocKey }) {
             </>
           )}
         </p>
-        <div className="legal-page-body">
-          {doc.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-        </div>
+        <div className="legal-page-body">{doc.blocks.map(renderBlock)}</div>
       </main>
       <SiteFooter />
     </div>
   );
-}
+};

@@ -71,28 +71,28 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function GateControls() {
+const GateControls = () => {
   const { openWithMissing } = useConsentGate();
   return (
     <button type="button" onClick={() => openWithMissing()}>
       Open gate
     </button>
   );
-}
+};
 
-function OpenWithUnknownMissing() {
+const OpenWithUnknownMissing = () => {
   const { openWithMissing } = useConsentGate();
   return (
     <button type="button" onClick={() => openWithMissing(['ffffffff-ffff-ffff-ffff-ffffffffffff'])}>
       Open unknown
     </button>
   );
-}
+};
 
-function CookieWithGateFlag() {
+const CookieWithGateFlag = () => {
   const open = useConsentGateOpen();
   return open ? null : <CookieNotice />;
-}
+};
 
 function renderGateApp() {
   return render(
@@ -105,7 +105,7 @@ function renderGateApp() {
   );
 }
 
-function EnsureConsentsButton() {
+const EnsureConsentsButton = () => {
   const { ensureConsents } = useConsentGate();
   const [result, setResult] = useState<string>('pending');
   return (
@@ -119,7 +119,7 @@ function EnsureConsentsButton() {
       <span data-testid="ensure-result">{result}</span>
     </button>
   );
-}
+};
 
 describe('ConsentGateProvider', () => {
   beforeEach(() => {

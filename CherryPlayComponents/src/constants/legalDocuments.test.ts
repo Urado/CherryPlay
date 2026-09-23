@@ -9,14 +9,10 @@ import {
   buildRequiredConsentInputs,
 } from './legalDocuments';
 
-const EXPECTED_PD_CONSENT_HASH =
-  '2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3';
-const EXPECTED_TERMS_HASH =
-  '6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399';
-const EXPECTED_PRIVACY_HASH =
-  '1cf23d3e1f2e245962520306bd5cb5b0c0e0b6ab32631c47866cc50f611fe49d';
-const EXPECTED_COOKIES_HASH =
-  'b83b193ee6d38cf862e66aec8c8c50c049d31b5e31751deef4b2c101866938e7';
+const EXPECTED_PD_CONSENT_HASH = '1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f';
+const EXPECTED_TERMS_HASH = 'c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d';
+const EXPECTED_PRIVACY_HASH = '284f16561a4144c980a30d1dae93a86e59155cbd8c41edd9372b3002fae03439';
+const EXPECTED_COOKIES_HASH = '27746265179e4bfcdbf54cfd0413045563bf44725b7a22c46115f8d49a8a7904';
 
 describe('legalDocuments', () => {
   it('loads deploy config hashes/versionIds from generated registry', () => {

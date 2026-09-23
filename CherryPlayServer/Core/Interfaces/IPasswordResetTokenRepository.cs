@@ -9,4 +9,5 @@ public interface IPasswordResetTokenRepository
     Task InvalidateUnusedByEmailAccountIdAsync(Guid emailAccountId);
     Task<bool> TryMarkUsedAsync(Guid tokenId);
     Task<bool> TryUnmarkUsedAsync(Guid tokenId);
+    Task<int> DeleteStaleAsync(DateTime utcNow, TimeSpan retention, CancellationToken cancellationToken = default);
 }

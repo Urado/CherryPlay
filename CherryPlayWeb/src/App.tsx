@@ -29,7 +29,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import '@cherryplay/components/themes/index.css';
 import './App.css';
 
-function CatalogOrRedirect() {
+const CatalogOrRedirect = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const partyFromQuery = searchParams.get('party');
@@ -37,9 +37,9 @@ function CatalogOrRedirect() {
     return <Navigate to={ROUTES.PARTY_VIEW(partyFromQuery)} replace />;
   }
   return <PartyListPage onPartySelect={(shortCode) => navigate(ROUTES.PARTY_VIEW(shortCode))} />;
-}
+};
 
-function AppShell() {
+const AppShell = () => {
   const consentGateOpen = useConsentGateOpen();
 
   return (
@@ -74,9 +74,9 @@ function AppShell() {
       {consentGateOpen ? null : <CookieNotice />}
     </>
   );
-}
+};
 
-function App() {
+const App = () => {
   return (
     <BrowserRouter>
       <ClientOutdatedProvider>
@@ -88,13 +88,13 @@ function App() {
       </ClientOutdatedProvider>
     </BrowserRouter>
   );
-}
+};
 
-function PartyViewByRoute() {
+const PartyViewByRoute = () => {
   const shortCode = useParams<{ shortCode: string }>().shortCode;
   const navigate = useNavigate();
   if (!shortCode) return <Navigate to="/" replace />;
   return <PartyView shortCode={shortCode} onBackToList={() => navigate(ROUTES.HOME)} />;
-}
+};
 
 export default App;

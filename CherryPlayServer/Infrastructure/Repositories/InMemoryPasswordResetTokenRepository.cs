@@ -63,6 +63,29 @@ public class InMemoryPasswordResetTokenRepository : IPasswordResetTokenRepositor
         return Task.FromResult(true);
     }
 
+    public Task<int> DeleteStaleAsync(DateTime utcNow, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var cutoff = utcNow - retention;
+        var staleIds = _tokens.Values
+            .Where(t =>
+                (t.UsedAt != null && t.UsedAt <= cutoff)
+                || (t.UsedAt == null && t.ExpiresAt <= cutoff))
+            .Select(t => t.Id)
+            .ToArray();
+
+        var deleted = 0;
+        foreach (var id in staleIds)
+        {
+            if (_tokens.TryRemove(id, out _))
+            {
+                deleted++;
+            }
+        }
+
+        return Task.FromResult(deleted);
+    }
+
     private static PasswordResetToken Clone(PasswordResetToken token)
     {
         return new PasswordResetToken

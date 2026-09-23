@@ -24,7 +24,7 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function LoginRouteProbe() {
+const LoginRouteProbe = () => {
   const location = useLocation();
   return createElement(
     'div',
@@ -35,7 +35,7 @@ function LoginRouteProbe() {
     },
     'login',
   );
-}
+};
 
 function renderRegister(path: string) {
   return render(

@@ -30,9 +30,9 @@ describe('SiteFooter', () => {
     });
     expect(consent.getAttribute('href')).toBe('/consent');
 
-    expect(screen.getByRole('link', { name: 'Пользовательское соглашение' }).getAttribute('href')).toBe(
-      '/terms',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Пользовательское соглашение' }).getAttribute('href'),
+    ).toBe('/terms');
     expect(screen.getByRole('link', { name: 'Политика cookie' }).getAttribute('href')).toBe(
       '/cookies',
     );

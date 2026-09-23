@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import './SiteFooter.css';
 
-export function SiteFooter() {
+export const SiteFooter = () => {
   return (
     <footer className="site-footer" role="contentinfo">
       <nav className="site-footer-nav" aria-label="Юридические документы">
@@ -15,4 +15,4 @@ export function SiteFooter() {
       </nav>
     </footer>
   );
-}
+};

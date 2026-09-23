@@ -241,6 +241,7 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IDataSeeder, DataSeeder>();
 builder.Services.AddHostedService<DataSeederHostedService>();
+builder.Services.AddHostedService<PasswordResetTokenRetentionCleanupHostedService>();
 
 var app = builder.Build();
 

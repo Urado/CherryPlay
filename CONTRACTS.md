@@ -162,7 +162,7 @@ Self-service восстановление пароля (forgot → email → Web
 | Новый пароль слишком короткий | **400** |
 | Rate limit | **429** |
 
-**Побочные эффекты (reset и change):** обновление BCrypt-хеша в `EmailAccounts`; удаление всех строк `OrganizerSessions` для организатора; погашение неиспользованных `PasswordResetTokens` для аккаунта (при change — все unused; при reset — использованный токен + ранее unused при выдаче нового). TTL токена сброса — ~1 час; в БД хранится только хеш токена (см. [DATABASE.md](CherryPlayServer/DATABASE.md)).
+**Побочные эффекты (reset и change):** обновление BCrypt-хеша в `EmailAccounts`; удаление всех строк `OrganizerSessions` для организатора; погашение неиспользованных `PasswordResetTokens` для аккаунта (при change — все unused; при reset — использованный токен + ранее unused при выдаче нового). TTL токена сброса — ~1 час; в БД хранится только хеш токена (см. [DATABASE.md](CherryPlayServer/DATABASE.md)). Использованные и просроченные строки reset-token дополнительно удаляются фоновым job в срок ≤30 дней (`PasswordResetTokenRecordRetention`; см. [DATABASE.md](CherryPlayServer/DATABASE.md)).
 
 #### 3.2.0b Desktop browser SSO
 
@@ -305,7 +305,7 @@ Forgot/change password в Desktop **без изменений** (forgot → emai
 
 **Re-consent UI (Web, CP-044):** `ConsentGateProvider` в App shell. Proactive: после auth `GET /api/consent-events` + сравнение с deploy-config `REQUIRED_CONSENT_DOCUMENTS` → блокирующая модалка (`LegalConsentBlock`) → `POST /api/consent-events`. Reactive: `apiFetch` на `403` + `code: "consent_required"` открывает ту же модалку. Cookie-notice скрыт, пока gate open. **Desktop browser SSO:** deep-link в CherryPlayList **только после** `ensureConsents() === 'ok'`; List своей модалки не имеет.
 
-**Seed (active, InMemory + EF HasData / registry):** `documentVersion` label = **`1.0`** (не `v1`). Active hashes (SHA-256 из `legal-registry.generated.json`): `aaaaaaaa-…` (`pd_consent_text`) `4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc`; `bbbbbbbb-…` (`terms`) `63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44`. Retired sample `cccccccc-…` может хранить placeholder hash `pd-consent-hash-v1`. API матчит **id + hash**, не строку label.
+**Seed (active, InMemory + EF HasData / registry):** `documentVersion` label = **`1.0`** (не `v1`). Active hashes (SHA-256 из `legal-registry.generated.json`): `aaaaaaaa-…` (`pd_consent_text`) `1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f`; `bbbbbbbb-…` (`terms`) `c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d`. Retired sample `cccccccc-…` может хранить placeholder hash `pd-consent-hash-v1`. API матчит **id + hash**, не строку label.
 
 DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md). Интеграционный обзор: [docs/integration/accounts-and-auth.md](docs/integration/accounts-and-auth.md).
 
@@ -739,7 +739,7 @@ _Примечание:_ в текущей реализации веб может
 - **Health endpoint:** GET `/api/health` — проверка доступности сервиса.
 - **Логи:** auth, create/update party, start/end session, подключение к Hub.
 - **Rate limiting:** на публичные ручки и Hub; лимиты по вечеринкам (антиспам каталога).
-- **Бэкап БД:** минимум еженедельный + инструкция восстановления.
+- **Бэкап БД:** Postgres self-hosted на VM Cloud.ru (не DBaaS); регулярные бэкапы пока не ведутся; обязательные pre-deploy dumps (`scripts/deploy.sh`), retention по числу файлов (последние 10). При введении регулярных бэкапов — retention ≤30 дней; после restore — повторно применить удаление/очистку. Инструкция: [BACKUP_RESTORE.md](BACKUP_RESTORE.md), [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md).
 
 Эндпоинты и формат логов задаются при реализации Epic G.
 
