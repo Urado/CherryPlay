@@ -43,13 +43,13 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function LocationStateProbe() {
+const LocationStateProbe = () => {
   const location = useLocation();
   return createElement('div', {
     'data-testid': 'location-state',
     'data-has-state': location.state == null ? 'null' : 'set',
   });
-}
+};
 
 function renderLoginWithState(state: { accountDeleted?: boolean; passwordChanged?: boolean }) {
   return render(

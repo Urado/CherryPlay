@@ -38,12 +38,12 @@ describe('authService register with consents', () => {
   it('POSTs /api/organizers then /auth/login', async () => {
     const consents = buildRequiredConsentInputs(() => '00000000-0000-4000-8000-000000000001');
     vi.mocked(apiFetch)
-      .mockResolvedValueOnce(
-        mockJsonResponse(201, { id: 'org-1', email: 'a@b.c', name: 'Name' }),
-      )
+      .mockResolvedValueOnce(mockJsonResponse(201, { id: 'org-1', email: 'a@b.c', name: 'Name' }))
       .mockResolvedValueOnce(mockJsonResponse(200, { accessToken: 'tok' }));
 
-    await expect(authService.register('a@b.c', 'secret1', 'Name', consents)).resolves.toBeUndefined();
+    await expect(
+      authService.register('a@b.c', 'secret1', 'Name', consents),
+    ).resolves.toBeUndefined();
 
     expect(vi.mocked(apiFetch).mock.calls).toHaveLength(2);
     expect(String(vi.mocked(apiFetch).mock.calls[0]?.[0])).toContain('/api/organizers');

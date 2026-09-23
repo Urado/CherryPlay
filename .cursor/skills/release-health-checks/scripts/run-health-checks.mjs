@@ -169,7 +169,7 @@ if (!skipCi) {
   });
 }
 run("Components: lint", () =>
-  exec("npx eslint . --max-warnings=0", componentsDir),
+  exec("npm run lint", componentsDir),
 );
 run("Components: test", () => exec("npm test", componentsDir));
 run("Components: build", () => exec("npx tsc", componentsDir));

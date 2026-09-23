@@ -53,7 +53,7 @@ function mergePartiesWithLocalDrafts(current: PartyDto[], fromServer: PartyDto[]
   return [...localDrafts, ...sortPartiesByEventDateDesc(fromServer)];
 }
 
-export function CabinetPage() {
+export const CabinetPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { ensureConsents } = useConsentGate();
@@ -712,4 +712,4 @@ export function CabinetPage() {
       />
     </div>
   );
-}
+};

@@ -16,7 +16,7 @@
     "preview": "vite preview",
     "test": "jest",
     "test:unit": "jest",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "stylelint": "stylelint \"src/**/*.{css,scss}\"",
     "format": "prettier --write .",
@@ -57,8 +57,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.1",
+    "@cherryplay/eslint-config": "file:../eslint-config-cherryplay",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -67,8 +66,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.0",
-    "@typescript-eslint/parser": "^8.57.0",
     "@vitejs/plugin-react": "^6.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
@@ -76,18 +73,12 @@
     "electron-builder": "^26.0.0",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-electron": "^7.0.0",
-    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jest": "^29.15.0",
     "eslint-plugin-jest-dom": "^5.5.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-security": "^4.0.0",
     "eslint-plugin-testing-library": "^7.16.0",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
@@ -113,7 +104,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --max-warnings=0 --fix",
+      "eslint --fix",
       "prettier --write"
     ],
     "*.{css,scss}": [

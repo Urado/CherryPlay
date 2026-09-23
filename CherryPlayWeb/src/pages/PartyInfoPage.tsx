@@ -16,7 +16,7 @@ import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyDto } from '../types/api';
 import './PartyInfoPage.css';
 
-function PartyInfoContent({ shortCode }: { shortCode: string }) {
+const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
   const navigate = useNavigate();
   const [party, setParty] = useState<PublicPartyDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,9 +148,9 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
       <SiteFooter />
     </div>
   );
-}
+};
 
-export function PartyInfoPage() {
+export const PartyInfoPage = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const { partyInfoPageEnabled } = useAppConfig();
 
@@ -167,4 +167,4 @@ export function PartyInfoPage() {
   }
 
   return <PartyInfoContent key={shortCode} shortCode={shortCode} />;
-}
+};

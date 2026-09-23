@@ -36,7 +36,7 @@ export interface CabinetPartyFormProps {
   onCancel: () => void;
 }
 
-export function CabinetPartyForm({
+export const CabinetPartyForm = ({
   editingParty,
   editForm,
   createForm,
@@ -49,7 +49,7 @@ export function CabinetPartyForm({
   onSelectLockedTheme,
   onSubmit,
   onCancel,
-}: CabinetPartyFormProps) {
+}: CabinetPartyFormProps) => {
   const isEditing = !!editingParty;
   const grantedThemes = new Set(themeAccess?.grantedThemeIds ?? []);
   const lockedByThemeId = new Map(
@@ -517,4 +517,4 @@ export function CabinetPartyForm({
       </div>
     </form>
   );
-}
+};

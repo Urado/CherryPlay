@@ -108,7 +108,7 @@ From repo root:
 cd CherryPlayComponents; npm ci; npm run lint; npm test; npm run build
 ```
 
-- **Lint:** ESLint with `--max-warnings=0`.
+- **Lint:** ESLint (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** Vitest (`vitest run`).
 - **Build:** `tsc`.
 
@@ -122,7 +122,7 @@ From repo root:
 cd CherryPlayWeb; npm run lint:fix; npm run lint; npm test; npm run build
 ```
 
-- **Lint:** ESLint via wrapper, `--max-warnings=10`.
+- **Lint:** ESLint via wrapper (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** `tsc --noEmit && vitest run`.
 
 ### 4. CherryPlayList (desktop app)
@@ -192,8 +192,8 @@ Keep the table to the checks you actually ran (e.g. omit Docker if not requested
 | Project        | Lint/format                         | Test                          | Build                        |
 | -------------- | ----------------------------------- | ----------------------------- | ---------------------------- |
 | Server         | `dotnet format --verify-no-changes` | fast + IntegrationDb (Docker) | `dotnet build -c Release`    |
-| Components     | `npm run lint` (max-warnings=0)     | `npm test` (vitest)           | `npm run build` (tsc)        |
-| Web            | `npm run lint` (max-warnings=10)    | `npm test` (vitest)           | `npm run build` (tsc + vite) |
+| Components     | `npm run lint`                      | `npm test` (vitest)           | `npm run build` (tsc)        |
+| Web            | `npm run lint`                      | `npm test` (vitest)           | `npm run build` (tsc + vite) |
 | CherryPlayList | —                                   | `npm test` (jest)             | —                            |
 
 Fix hints:

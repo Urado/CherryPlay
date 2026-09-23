@@ -16,7 +16,7 @@ export interface ConfirmActionDialogProps {
   onCancel: () => void;
 }
 
-export function ConfirmActionDialog({
+export const ConfirmActionDialog = ({
   open,
   title,
   description,
@@ -26,7 +26,7 @@ export function ConfirmActionDialog({
   confirmVariant = 'danger',
   onConfirm,
   onCancel,
-}: ConfirmActionDialogProps) {
+}: ConfirmActionDialogProps) => {
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -154,4 +154,4 @@ export function ConfirmActionDialog({
     </div>,
     document.body,
   );
-}
+};

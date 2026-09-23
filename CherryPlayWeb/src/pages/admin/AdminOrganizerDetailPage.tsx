@@ -15,7 +15,7 @@ function isActiveEntitlement(entitlement: EntitlementDto): boolean {
   return new Date(entitlement.expiresAt).getTime() > Date.now();
 }
 
-export function AdminOrganizerDetailPage() {
+export const AdminOrganizerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { checking, isAdmin } = useRequireAdmin();
   const loadRequestIdRef = useRef(0);
@@ -373,4 +373,4 @@ export function AdminOrganizerDetailPage() {
       )}
     </div>
   );
-}
+};

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PartyStateDto } from '../types/api';
+
 import {
   DISCONNECT_FREEZE_MS,
   applyOrganizerConnectionStatusChanged,

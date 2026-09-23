@@ -7,7 +7,7 @@ interface ThemeLockedTileProps {
   contactUrl: string;
 }
 
-export function ThemeLockedTile({ themeName, lockedTheme, contactUrl }: ThemeLockedTileProps) {
+export const ThemeLockedTile = ({ themeName, lockedTheme, contactUrl }: ThemeLockedTileProps) => {
   const safeContactUrl = sanitizeExternalUrl(contactUrl);
 
   return (
@@ -30,4 +30,4 @@ export function ThemeLockedTile({ themeName, lockedTheme, contactUrl }: ThemeLoc
       </div>
     </div>
   );
-}
+};

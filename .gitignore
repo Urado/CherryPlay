@@ -105,3 +105,14 @@ _ReSharper*/
 __pycache__/
 *.pyc
 
+# Depwire (legacy local cache — safe to delete)
+.depwire/
+depwire-output.json
+
+# Graph plugins (code-graph-indexer + slnmap)
+.code-graph/
+**/.code-graph/
+slnmap.db
+slnmap.db-*
+.tmp/slnmap-graph.html
+

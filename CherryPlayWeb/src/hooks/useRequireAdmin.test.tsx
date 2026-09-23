@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConsentGateProvider } from '../contexts/ConsentGateContext';
+
 import { useRequireAdmin } from './useRequireAdmin';
 
 const checkAuthMock = vi.fn();
@@ -32,15 +33,15 @@ vi.mock('../contexts/ConsentGateContext', async () => {
   };
 });
 
-function Probe({
+const Probe = ({
   onResult,
 }: {
   onResult: (value: { checking: boolean; isAdmin: boolean }) => void;
-}) {
+}) => {
   const value = useRequireAdmin();
   onResult(value);
   return null;
-}
+};
 
 describe('useRequireAdmin', () => {
   beforeEach(() => {

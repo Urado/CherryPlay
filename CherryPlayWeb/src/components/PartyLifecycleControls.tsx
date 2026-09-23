@@ -21,13 +21,13 @@ function isLoadingForTarget(
   return isTransitioning && pendingTransition === target;
 }
 
-export function PartyLifecycleControls({
+export const PartyLifecycleControls = ({
   partyLifecycleState,
   isTransitioning = false,
   pendingTransition = null,
   disabled = false,
   onTransition,
-}: PartyLifecycleControlsProps) {
+}: PartyLifecycleControlsProps) => {
   const isDisabled = disabled || isTransitioning;
   const showActions =
     partyLifecycleState === 'draft' ||
@@ -99,4 +99,4 @@ export function PartyLifecycleControls({
       )}
     </section>
   );
-}
+};

@@ -44,12 +44,12 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   return (
     <div className="connection-status-container">
       <div className={`connection-status connection-status--${status}`} title={getStatusTitle()}>
-        <span className={`connection-status-dot connection-status-dot--${status}`}></span>
+        <span className={`connection-status-dot connection-status-dot--${status}`} />
         <span className="connection-status-text">{getStatusText()}</span>
       </div>
       {showSessionIndicator && status === 'connected' && isSessionActive && (
         <div className="connection-status-streaming" title="Трансляция идёт">
-          <span className="connection-status-streaming-dot"></span>
+          <span className="connection-status-streaming-dot" />
           <span className="connection-status-streaming-text">В эфире</span>
         </div>
       )}

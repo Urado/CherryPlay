@@ -100,14 +100,14 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function LocationProbe() {
+const LocationProbe = () => {
   const location = useLocation();
   return createElement('div', {
     'data-testid': 'location',
     'data-path': location.pathname,
     'data-search': location.search,
   });
-}
+};
 
 function renderComplete(path: string) {
   return render(

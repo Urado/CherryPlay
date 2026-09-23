@@ -17,7 +17,7 @@ const defaultState: AppConfigState = {
 
 const AppConfigContext = createContext<AppConfigState | null>(null);
 
-export function AppConfigProvider({ children }: { children: ReactNode }) {
+export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<AppConfigState>(defaultState);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => state, [state]);
 
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>;
-}
+};
 
 export function useAppConfig(): AppConfigState {
   const ctx = useContext(AppConfigContext);

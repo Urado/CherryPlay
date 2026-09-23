@@ -42,7 +42,7 @@ const emptyCreateForm: CreatePartyDto = {
   isListedInCatalog: false,
 };
 
-export function CabinetPartyList({
+export const CabinetPartyList = ({
   parties,
   togglingPartyId,
   deletingPartyId,
@@ -62,7 +62,7 @@ export function CabinetPartyList({
   transitioningPartyId,
   transitioningTargetState,
   onLifecycleTransition,
-}: CabinetPartyListProps) {
+}: CabinetPartyListProps) => {
   return (
     <ul className="cabinet-party-list">
       {parties.map((party) => (
@@ -152,4 +152,4 @@ export function CabinetPartyList({
       ))}
     </ul>
   );
-}
+};

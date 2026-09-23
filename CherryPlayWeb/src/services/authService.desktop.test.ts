@@ -75,7 +75,10 @@ describe('authService desktop', () => {
 
       expect(code).toBe('desk-reg');
       expect(String(vi.mocked(apiFetch).mock.calls[0]?.[0])).toContain('/api/organizers');
-      const loginHeaders = vi.mocked(apiFetch).mock.calls[1]?.[1]?.headers as Record<string, string>;
+      const loginHeaders = vi.mocked(apiFetch).mock.calls[1]?.[1]?.headers as Record<
+        string,
+        string
+      >;
       expect(loginHeaders[DESKTOP_CLIENT_HEADER]).toBe(DESKTOP_CLIENT_VALUE);
     });
 
@@ -86,7 +89,10 @@ describe('authService desktop', () => {
       const loginResult = await authService.login('a@b.c', 'secret');
       expect(loginResult).toBeUndefined();
 
-      const loginHeaders = vi.mocked(apiFetch).mock.calls[0]?.[1]?.headers as Record<string, string>;
+      const loginHeaders = vi.mocked(apiFetch).mock.calls[0]?.[1]?.headers as Record<
+        string,
+        string
+      >;
       expect(loginHeaders[DESKTOP_CLIENT_HEADER]).toBeUndefined();
 
       vi.mocked(apiFetch)
@@ -134,9 +140,7 @@ describe('authService desktop', () => {
     });
 
     it('throws AuthHttpError on 401', async () => {
-      vi.mocked(apiFetch).mockResolvedValueOnce(
-        mockJsonResponse(401, { message: 'Unauthorized' }),
-      );
+      vi.mocked(apiFetch).mockResolvedValueOnce(mockJsonResponse(401, { message: 'Unauthorized' }));
 
       try {
         await authService.issueDesktopAuthCode();

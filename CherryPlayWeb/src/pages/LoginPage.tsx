@@ -27,7 +27,7 @@ type DesktopSessionView = 'checking' | 'continue' | 'form';
 
 const DESKTOP_SESSION_PROBE_TIMEOUT_MS = 10000;
 
-function DesktopReturnToAppNotice({ returnUrl }: { returnUrl: string }) {
+const DesktopReturnToAppNotice = ({ returnUrl }: { returnUrl: string }) => {
   return (
     <div className="login-page">
       <div className="login-page-notice" role="status" aria-live="polite">
@@ -39,9 +39,9 @@ function DesktopReturnToAppNotice({ returnUrl }: { returnUrl: string }) {
       </p>
     </div>
   );
-}
+};
 
-export function LoginPage() {
+export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -298,4 +298,4 @@ export function LoginPage() {
       <SiteFooter />
     </div>
   );
-}
+};

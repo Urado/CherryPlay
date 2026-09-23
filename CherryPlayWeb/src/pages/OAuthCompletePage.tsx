@@ -31,7 +31,7 @@ function isOAuthCompleteProviderId(value: string | null): value is OAuthComplete
   return value !== null && (OAUTH_COMPLETE_PROVIDERS as readonly string[]).includes(value);
 }
 
-export function OAuthCompletePage() {
+export const OAuthCompletePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { ensureConsents } = useConsentGate();
@@ -298,4 +298,4 @@ export function OAuthCompletePage() {
       <SiteFooter />
     </div>
   );
-}
+};

@@ -32,8 +32,8 @@
       "@cherryplay/components": ["../CherryPlayComponents/src/index.ts"],
       "@cherryplay/components/*": ["../CherryPlayComponents/src/*"]
     },
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node", "jest"]
   },
-  "include": ["src"],
+  "include": ["src", "tests", "jest.setup.ts", "jest.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

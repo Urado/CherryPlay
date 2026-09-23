@@ -1,0 +1,5 @@
+{
+  "name": "cherryplay",
+  "private": true,
+  "description": "Workspace root for code-graph-indexer (Web + List + Components). Not an app package."
+}

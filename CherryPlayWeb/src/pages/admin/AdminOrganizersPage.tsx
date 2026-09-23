@@ -35,7 +35,7 @@ function getOrganizerContactLabel(item: AdminOrganizerListItemDto): string {
   return 'Нет контакта';
 }
 
-export function AdminOrganizersPage() {
+export const AdminOrganizersPage = () => {
   const { checking, isAdmin } = useRequireAdmin();
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
@@ -164,4 +164,4 @@ export function AdminOrganizersPage() {
       </div>
     </div>
   );
-}
+};

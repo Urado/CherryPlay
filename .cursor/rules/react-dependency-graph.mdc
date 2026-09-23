@@ -1,0 +1,25 @@
+---
+description: React/TS code style for Web, List, Components (imports, exports, arrows, JSX)
+globs: CherryPlay/CherryPlayWeb/**/*.{ts,tsx}, CherryPlay/CherryPlayList/**/*.{ts,tsx}, CherryPlay/CherryPlayComponents/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# React code style (CherryPlay)
+
+## Imports
+
+- Prefer **direct** module paths: `from './CookieNotice'`, not deep barrels (`from './components'`) for app-internal code.
+- Barrels (`index.ts`) only for **package public API** (e.g. `@cherryplay/components`).
+- Do not add shim re-export files (`src/types/X.ts` → `export … from '../core/types/X'`) unless something still imports the shim.
+- One canonical import path per module (pick `@core/...` **or** relative — do not mix for the same file).
+- Dynamic `import()` only for intentional code-splitting; otherwise use static imports.
+
+## Components & exports
+
+- Prefer **arrow functions** for components, hooks, and helpers (not `function` declarations):
+  - named: `export const CookieNotice = () => { ... }`
+  - default (also fine — common React style): `export default () => { ... }` or `const CookieNotice = () => { ... }; export default CookieNotice`
+- File name ≈ component name. Local import/JSX name should match the file/symbol (`CookieNotice`) — avoid rename-on-import unless required for a clash.
+- Render statically: `<Foo />`, not `registry[name]`, not `createElement(map[x])` for normal UI.
+- New pages/components must be imported from a parent that is already part of the UI tree (`main`/`App`, router, or an existing screen).
+- Do not leave unused named exports next to live ones; remove or stop exporting.
