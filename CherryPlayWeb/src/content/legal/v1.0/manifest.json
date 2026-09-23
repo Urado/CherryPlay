@@ -1,6 +1,6 @@
 {
   "documentVersion": "1.0",
-  "effectiveFrom": "2026-09-01",
+  "effectiveFrom": "2026-09-21",
   "documents": [
     {
       "file": "consent.md",
@@ -34,9 +34,9 @@
   "operator": {
     "file": "operator.md",
     "title": "Реквизиты и контакты",
-    "operatorName": "CherryPlay (оператор — физлицо; ФИО уточняется в CP-036)",
-    "generalContact": "support@cherrypashkaparty.ru",
-    "privacyContact": "privacy@cherrypashkaparty.ru",
-    "subjectRequestChannel": "privacy@cherrypashkaparty.ru — запросы субъекта персональных данных (доступ, уточнение, отзыв согласия, уничтожение)"
+    "operatorName": "Калёнов Павел Андреевич",
+    "generalContact": "samurai-94@mail.ru",
+    "privacyContact": "samurai-94@mail.ru",
+    "subjectRequestChannel": "samurai-94@mail.ru — запросы субъекта персональных данных (доступ, уточнение, отзыв согласия, уничтожение)"
   }
 }

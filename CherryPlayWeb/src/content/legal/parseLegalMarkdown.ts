@@ -1,5 +1,4 @@
 export function markdownBodyToParagraphs(body: string): string[] {
-
   return body
 
     .replace(/^\uFEFF/, '')
@@ -11,6 +10,4 @@ export function markdownBodyToParagraphs(body: string): string[] {
     .map((block) => block.replace(/\s*\n\s*/g, ' ').trim())
 
     .filter(Boolean);
-
 }
-

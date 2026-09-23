@@ -33,7 +33,7 @@ Dual UoW: `UseInMemoryStorage=true` → `InMemoryLegalConsentUnitOfWork`; `false
 | `effective_to` | timestamptz | NULL | Конец действия (retired). |
 | `status` | string(32) | NOT NULL, CHECK IN (`draft`,`active`,`retired`) | Статус; partial unique index — не более одной `active` на `document_type`. |
 
-**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44`). Retired sample `cccccccc-…` может оставлять placeholder hash.
+**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399`). Retired sample `cccccccc-…` может оставлять placeholder hash.
 
 #### consent_events
 

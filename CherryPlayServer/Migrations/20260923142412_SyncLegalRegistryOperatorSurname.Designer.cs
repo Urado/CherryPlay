@@ -3,6 +3,7 @@ using System;
 using CherryPlayServer.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CherryPlayServer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923142412_SyncLegalRegistryOperatorSurname")]
+    partial class SyncLegalRegistryOperatorSurname
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,7 +282,7 @@ namespace CherryPlayServer.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            ContentHash = "2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3",
+                            ContentHash = "f6345d2b09fd150ede840c186389f1e96e13a3e76a93c01b67cff2f0752c5b89",
                             DocumentType = "pd_consent_text",
                             DocumentVersion = "1.0",
                             EffectiveFrom = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -288,7 +291,7 @@ namespace CherryPlayServer.Migrations
                         new
                         {
                             Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            ContentHash = "6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399",
+                            ContentHash = "4acaf5e4607948123abde3048ef1994c4ddbd04e80544a309c61cda67b5c1e67",
                             DocumentType = "terms",
                             DocumentVersion = "1.0",
                             EffectiveFrom = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),

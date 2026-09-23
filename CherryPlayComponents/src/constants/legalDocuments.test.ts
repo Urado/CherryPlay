@@ -10,13 +10,13 @@ import {
 } from './legalDocuments';
 
 const EXPECTED_PD_CONSENT_HASH =
-  '4fb5ee6b4636828a5f72c3b1091721e02c53c93160db5449e80348f24e0f84bc';
+  '2cdeb1176caf020a42e92e302f016d8dbe4a81dc89838218b92ce655bb6d14a3';
 const EXPECTED_TERMS_HASH =
-  '63446e6df641cb350ba24e197390c03f76ded704bfe12e692eeeb62c84e14b44';
+  '6dffebc1d8cbd1b32d0f21ae2b438a58917e52c06612255049e6f00174c6d399';
 const EXPECTED_PRIVACY_HASH =
-  '57ce7ce6e9a9a82abae86b89c1a9424fac7d76c4313811b8a36416fdc6dd0ebd';
+  '1cf23d3e1f2e245962520306bd5cb5b0c0e0b6ab32631c47866cc50f611fe49d';
 const EXPECTED_COOKIES_HASH =
-  '7332f3751240a8c6431a3f5d006740ff252caf486953b7a5d3029ff1627868bc';
+  'b83b193ee6d38cf862e66aec8c8c50c049d31b5e31751deef4b2c101866938e7';
 
 describe('legalDocuments', () => {
   it('loads deploy config hashes/versionIds from generated registry', () => {

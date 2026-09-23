@@ -1,10 +1,10 @@
 import { markdownBodyToParagraphs } from './parseLegalMarkdown';
-import cookiesMd from './v1.0/cookies.md?raw';
 import consentMd from './v1.0/consent.md?raw';
+import cookiesMd from './v1.0/cookies.md?raw';
+import packManifest from './v1.0/manifest.json';
 import operatorMd from './v1.0/operator.md?raw';
 import privacyMd from './v1.0/privacy.md?raw';
 import termsMd from './v1.0/terms.md?raw';
-import packManifest from './v1.0/manifest.json';
 
 export const LEGAL_CONTENT_VERSION = packManifest.documentVersion;
 
