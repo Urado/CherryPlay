@@ -23,6 +23,7 @@ import {
   registerCherryplayAudioProtocolHandler,
   registerCherryplayAudioScheme,
 } from './protocol/cherryplayAudio.js';
+import { getDevProjectRoot } from './utils/projectRoot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,13 +31,16 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+const iconDirectory = app.isPackaged
+  ? path.join(process.resourcesPath, 'icons')
+  : path.join(getDevProjectRoot(), 'build');
+const windowIcon = path.join(iconDirectory, process.platform === 'win32' ? 'icon.ico' : 'icon.png');
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    // App-level floor only; the renderer refines this dynamically via
-    // `system:setMinimumWindowSize` using max(appFloor, layout-computed mins).
+    icon: windowIcon,
     minWidth: APP_MIN_WINDOW_WIDTH,
     minHeight: APP_MIN_WINDOW_HEIGHT,
     webPreferences: {
@@ -61,10 +65,8 @@ function createWindow(): void {
   });
 }
 
-// Регистрация custom URL scheme для OAuth callback
 const PROTOCOL = 'cherryplaylist';
 
-// Регистрируем protocol только если приложение не упаковано или в dev режиме
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
     app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
@@ -76,6 +78,7 @@ if (process.defaultApp) {
 registerCherryplayAudioScheme();
 
 app.whenReady().then(() => {
+  app.dock?.setIcon(path.join(iconDirectory, 'icon.png'));
   registerCherryplayAudioProtocolHandler();
 
   Menu.setApplicationMenu(null);
@@ -116,26 +119,21 @@ app.whenReady().then(() => {
   });
 });
 
-// Обработка OAuth callback через custom URL scheme
-// macOS
 app.on('open-url', (event, url) => {
   event.preventDefault();
   handleOAuthCallback(url, mainWindow);
 });
 
-// Windows/Linux - обрабатываем аргументы командной строки
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, commandLine) => {
-    // Обрабатываем URL из второго экземпляра
     const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
     if (url) {
       handleOAuthCallback(url, mainWindow);
     }
-    // Фокусируемся на главном окне
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -143,7 +141,6 @@ if (!gotTheLock) {
   });
 }
 
-// Обрабатываем URL при запуске приложения (Windows/Linux)
 if (process.platform !== 'darwin') {
   const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
   if (url) {

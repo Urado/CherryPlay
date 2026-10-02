@@ -151,11 +151,13 @@ npm run dist:linux  # Linux
 
 Готовый Windows-артефакт — **`CherryPlayList-{version}-x64.zip`** в `release/`. Готовый zip с GitHub Releases (без AIMP bridge в CI): см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробности сборки — [BUILD.md](BUILD.md).
 
-**Важно:** Перед сборкой добавьте иконки в папку `build/`:
+Иконки CherryPashka включены в папку `build/`:
 
 - `build/icon.ico` - для Windows
 - `build/icon.icns` - для macOS
 - `build/icon.png` - для Linux
+
+Общий PNG-мастер и обновление всех desktop/web форматов описаны в [build/README.md](build/README.md).
 
 ## Качество кода
 

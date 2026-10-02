@@ -36,6 +36,8 @@ npm run dev
 
 ## Настройка
 
+Иконка сайта — утверждённая черепашка CherryPashka. `index.html` подключает `public/favicon.ico`, PNG 32/192 px и `apple-touch-icon.png` 180 px. Они генерируются из общего мастера `CherryPlayList/build/icon.png`; порядок обновления — [инструкция ресурсов](../CherryPlayList/build/README.md).
+
 По умолчанию приложение подключается к серверу на `http://localhost:5000`. Можно изменить через переменную окружения **`VITE_API_URL`** в файле `.env` или `.env.development` в **корне репозитория** (Vite читает env из корня). Полный список переменных — в корневом [ENV.md](../ENV.md).
 
 ## CSS contract для `@cherryplay/components`

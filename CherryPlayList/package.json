@@ -169,6 +169,14 @@
     ],
     "extraResources": [
       {
+        "from": "build",
+        "to": "icons",
+        "filter": [
+          "icon.png",
+          "icon.ico"
+        ]
+      },
+      {
         "from": "node_modules/ffmpeg-static",
         "to": "ffmpeg-static",
         "filter": [

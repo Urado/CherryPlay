@@ -8,12 +8,14 @@
 npm install
 ```
 
-2. Добавьте иконки в папку `build/`:
+2. Иконки CherryPashka уже включены в репозиторий:
    - `build/icon.ico` - для Windows
    - `build/icon.icns` - для macOS
    - `build/icon.png` - для Linux
 
-   Иконки опциональны: при их отсутствии electron-builder использует стандартные.
+   `build/icon.png` — общий мастер 1024×1024: выбранный вариант № 3, профиль черепашки в наушниках на тёмной плитке. Изображение выделено из утверждённого листа вариантов через ImageGen; внешние углы прозрачные. Размеры и форматы для desktop и сайта получены без изменения рисунка. Перегенерация описана в [build/README.md](build/README.md).
+
+   Electron использует `build/icon.ico` (Windows) или `build/icon.png` (Linux/macOS) в разработке и копии из `resources/icons/` в дистрибутиве. macOS Dock получает ту же PNG-иконку, а пакет приложения — ICNS. Favicons и Apple touch icon находятся в `public/` обоих приложений.
 
 ## Сборка проекта
 
@@ -54,10 +56,10 @@ npm run dist:all
 
 **Windows scripts:**
 
-| Script | Что делает | AIMP bridge |
-| --- | --- | --- |
-| `dist:win` | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
-| `dist:win:ci` | `build:electron` → `clean:pack` → `electron-builder --win --x64` | Не стейджится; для GitHub Release |
+| Script        | Что делает                                                                             | AIMP bridge                                |
+| ------------- | -------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `dist:win`    | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
+| `dist:win:ci` | `build:electron` → `clean:pack` → `electron-builder --win --x64`                       | Не стейджится; для GitHub Release          |
 
 Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPlayList-{version}-x64.zip`), не NSIS и не portable exe. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
 
