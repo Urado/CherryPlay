@@ -32,7 +32,24 @@ jobs:
               - '**/Migrations/**'
               - 'docker-compose*.yml'
               - 'CherryPlayServer/Dockerfile*'
+              - 'CherryPlayServer.Tests/Dockerfile*'
+              - '.dockerignore'
+              - 'docker-compose.integration-tests.yml'
+              - 'scripts/backend-container-integration.ps1'
+              - 'global.json'
+              - 'Directory.Build.*'
+              - '**/Directory.Build.*'
+              - 'NuGet.Config'
+              - '**/NuGet.Config'
+              - '**/*.sln'
+              - '**/*.slnx'
+              - '**/*.csproj'
+              - 'Directory.Packages.props'
+              - '**/Directory.Packages.props'
+              - 'packages.lock.json'
+              - '**/packages.lock.json'
               - '.github/workflows/tests.yml'
+              - '.github/workflows/backend-container-integration.yml'
 
   fast-tests:
     name: Fast Tests (.NET)
@@ -50,7 +67,7 @@ jobs:
         run: dotnet restore CherryPlayServer.Tests/CherryPlayServer.Tests.csproj
 
       - name: Run fast tests
-        run: dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --configuration Release --no-restore --filter "Category!=IntegrationDb" --logger "trx;LogFileName=fast-tests.trx"
+        run: dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --configuration Release --no-restore --filter "Category!=IntegrationDb&Category!=ContainerIntegration&Category!=ContainerRestartPrepare&Category!=ContainerRestartVerify&Category!=ContainerRestartFreezePrepare&Category!=ContainerRestartFreezeVerify&Category!=ContainerRetentionPrepare&Category!=ContainerRetentionVerify" --logger "trx;LogFileName=fast-tests.trx"
 
       - name: Upload fast test results
         if: always()

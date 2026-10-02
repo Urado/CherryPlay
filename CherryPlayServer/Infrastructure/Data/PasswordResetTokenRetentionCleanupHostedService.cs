@@ -10,13 +10,16 @@ public sealed class PasswordResetTokenRetentionCleanupHostedService : Background
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PasswordResetTokenRetentionCleanupHostedService> _logger;
+    private readonly Func<TimeSpan, CancellationToken, Task> _delayAsync;
 
     public PasswordResetTokenRetentionCleanupHostedService(
         IServiceScopeFactory scopeFactory,
-        ILogger<PasswordResetTokenRetentionCleanupHostedService> logger)
+        ILogger<PasswordResetTokenRetentionCleanupHostedService> logger,
+        Func<TimeSpan, CancellationToken, Task>? delayAsync = null)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _delayAsync = delayAsync ?? Task.Delay;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,7 +56,7 @@ public sealed class PasswordResetTokenRetentionCleanupHostedService : Background
                 _logger.LogError(ex, "Password reset token retention cleanup failed");
             }
 
-            await Task.Delay(AuthConstants.PasswordResetTokenRetentionCleanupInterval, stoppingToken);
+            await _delayAsync(AuthConstants.PasswordResetTokenRetentionCleanupInterval, stoppingToken);
         }
     }
 }

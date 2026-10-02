@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+WORKDIR /src
+COPY . .
+RUN dotnet restore CherryPlayServer.Tests/CherryPlayServer.Tests.csproj
+CMD ["dotnet", "test", "CherryPlayServer.Tests/CherryPlayServer.Tests.csproj", "--configuration", "Release", "--no-restore", "--filter", "Category=ContainerIntegration", "--results-directory", "/artifacts", "--logger", "trx;LogFileName=container-integration.trx", "--collect:XPlat Code Coverage"]

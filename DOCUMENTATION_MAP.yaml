@@ -3,10 +3,10 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-08-13"
+updated: "2026-10-02"
 summary:
-  total_md_files: 112
-  project_documentation: 84
+  total_md_files: 115
+  project_documentation: 87
   not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
@@ -29,7 +29,7 @@ entry_points:
   add_theme: ADDING_THEME.md
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (84 файла)
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (87 файлов)
 # Архитектура, контракты, setup, модули, ops — источник правды для разработки.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -83,6 +83,10 @@ project_documentation:
         title: "AIMP как источник стриминга (Windows x64)"
       - path: docs/integration/data-and-contracts.md
         title: "Данные и контракты — ссылки на CONTRACTS и DATABASE"
+      - path: docs/integration/container-integration-tests.md
+        title: "Контейнерные интеграционные тесты backend"
+      - path: docs/integration/backend-test-cases.md
+        title: "Каталог backend test cases по уровням"
 
   archive:
     description: "Устаревшие или исторические документы (могут не соответствовать коду)"
@@ -129,6 +133,8 @@ project_documentation:
         title: "Техническая документация — стек, архитектура, IPC"
       - path: CherryPlayList/BUILD.md
         title: "Сборка и релиз"
+      - path: CherryPlayList/build/README.md
+        title: "Ресурсы сборки — иконки CherryPashka, entitlements macOS"
       - path: CherryPlayList/QUICK_START_BUILD.md
         title: "Быстрый старт сборки"
       - path: CherryPlayList/docs/README.md

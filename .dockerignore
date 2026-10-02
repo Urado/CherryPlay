@@ -11,8 +11,9 @@
 **/*.log
 **/coverage
 **/.env
-**/.env.local
-**/.env.*.local
+**/.env.*
+!**/.env.example
+!**/.env.*.example
 README.md
 *.md
 .git

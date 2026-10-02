@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: cherryplay_it_password
+      POSTGRES_DB: cherryplay_it_run
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cherryplay_it_run"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./CherryPlayServer
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=cherryplay_it_run;Username=postgres;Password=cherryplay_it_password
+      Database__AutoMigrateOnStartup: "true"
+      UseInMemoryStorage: "false"
+      JWT_SECRET_KEY: cherryplay-container-integration-test-secret-key
+      JWT_ISSUER: CherryPlayServer
+      JWT_AUDIENCE: CherryPlayClient
+      PartyDisplayStatus__OrganizerOfflineGraceSeconds: "2"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/api/health >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      default:
+        aliases:
+          - server
+
+  integration-tests:
+    build:
+      context: .
+      dockerfile: CherryPlayServer.Tests/Dockerfile.container-integration
+    environment:
+      CHERRYPLAY_API_BASE_URL: http://server:5000
+      CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING: Host=postgres;Port=5432;Database=cherryplay_it_run;Username=postgres;Password=cherryplay_it_password
+      CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY: cherryplay-container-integration-test-secret-key
+      CHERRYPLAY_RESTART_PARTY_ID: 11111111-1111-4111-8111-111111111111
+      CHERRYPLAY_RESTART_SHORT_CODE: itrestart01
+      CHERRYPLAY_RESTART_FREEZE_PARTY_ID: 22222222-2222-4222-8222-222222222222
+      CHERRYPLAY_RESTART_FREEZE_SHORT_CODE: itfreeze01
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - ${CHERRYPLAY_INTEGRATION_ARTIFACTS_DIR:-./artifacts/backend-container-integration}:/artifacts
+
+volumes:
+  postgres-data:
