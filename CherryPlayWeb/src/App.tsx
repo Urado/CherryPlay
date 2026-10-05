@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -29,6 +31,46 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import '@cherryplay/components/themes/index.css';
 import './App.css';
 
+const PAGE_TITLES: Record<string, string> = {
+  [ROUTES.HOME]: 'Вечеринки',
+  ['/download']: 'Скачать приложение',
+  [ROUTES.LOGIN]: 'Вход',
+  [ROUTES.REGISTER]: 'Регистрация',
+  [ROUTES.OAUTH_COMPLETE]: 'Вход в приложение',
+  [ROUTES.FORGOT_PASSWORD]: 'Восстановление пароля',
+  [ROUTES.RESET_PASSWORD]: 'Новый пароль',
+  [ROUTES.CABINET]: 'Кабинет организатора',
+  [ROUTES.ADMIN_ORGANIZERS]: 'Организаторы',
+  [ROUTES.PRIVACY]: 'Политика персональных данных',
+  [ROUTES.CONSENT]: 'Согласие на обработку данных',
+  [ROUTES.TERMS]: 'Пользовательское соглашение',
+  [ROUTES.COOKIES]: 'Политика cookie',
+  [ROUTES.LEGAL]: 'Реквизиты оператора',
+};
+
+const getDocumentTitle = (pathname: string): string => {
+  const normalizedPath = pathname.replace(/\/+$/, '') || ROUTES.HOME;
+
+  if (/^\/party\/[^/]+\/info$/.test(normalizedPath)) {
+    return 'Информация о вечеринке';
+  }
+
+  if (/^\/party\/[^/]+$/.test(normalizedPath)) {
+    return 'Вечеринка';
+  }
+
+  if (/^\/admin\/organizers\/[^/]+$/.test(normalizedPath)) {
+    return 'Карточка организатора';
+  }
+
+  if (/^\/(privacy|consent|terms|cookies)\/v\/[^/]+$/.test(normalizedPath)) {
+    const documentPath = normalizedPath.split('/')[1];
+    return PAGE_TITLES[`/${documentPath}`] ?? PAGE_TITLES[ROUTES.HOME];
+  }
+
+  return PAGE_TITLES[normalizedPath] ?? PAGE_TITLES[ROUTES.HOME];
+};
+
 const CatalogOrRedirect = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,6 +83,11 @@ const CatalogOrRedirect = () => {
 
 const AppShell = () => {
   const consentGateOpen = useConsentGateOpen();
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    document.title = getDocumentTitle(pathname);
+  }, [pathname]);
 
   return (
     <>

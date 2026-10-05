@@ -77,6 +77,16 @@ export const PartyView: React.FC<PartyViewProps> = ({
     setError,
   } = partyState;
 
+  useEffect(() => {
+    const displayTitle = partyTitle?.trim() || partyName?.trim();
+
+    if (displayTitle) {
+      document.title = displayTitle;
+    } else if (isDemo) {
+      document.title = 'Демо плейлист';
+    }
+  }, [isDemo, partyName, partyTitle]);
+
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef(playlist);
   const disconnectFreezeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

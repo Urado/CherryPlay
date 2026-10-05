@@ -16,7 +16,8 @@
 }
 
 .party-list-container {
-  max-width: 1200px;
+  width: 80%;
+  max-width: 2400px;
   margin: 0 auto;
 }
 
@@ -87,7 +88,7 @@
 
 .party-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 20px;
 }
 
@@ -346,6 +347,10 @@
 
 /* Адаптивность */
 @media (max-width: 768px) {
+  .party-list-container {
+    width: 100%;
+  }
+
   .party-list-grid {
     grid-template-columns: 1fr;
   }

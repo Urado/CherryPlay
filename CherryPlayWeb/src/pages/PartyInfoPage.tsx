@@ -40,6 +40,14 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
     };
   }, [shortCode]);
 
+  useEffect(() => {
+    const displayTitle = party?.title?.trim() || party?.name.trim();
+
+    if (displayTitle) {
+      document.title = displayTitle;
+    }
+  }, [party]);
+
   if (loading) {
     return (
       <div className="party-info-page">
