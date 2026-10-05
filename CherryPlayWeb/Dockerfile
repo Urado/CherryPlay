@@ -1,9 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Копируем package.json и package-lock.json для CherryPlayComponents
 COPY CherryPlayComponents/package.json CherryPlayComponents/package-lock.json ./CherryPlayComponents/
 COPY CherryPlayComponents ./CherryPlayComponents
+COPY eslint-config-cherryplay ./eslint-config-cherryplay
 
 WORKDIR /app/CherryPlayComponents
 RUN npm ci
@@ -13,24 +13,16 @@ RUN npm run lint || (echo "Linting failed for CherryPlayComponents! Please fix l
 RUN npm run build
 WORKDIR /app
 
-# Копируем package.json и package-lock.json для установки зависимостей CherryPlayWeb
-# Важно: package-lock.json должен быть явно указан для гарантии одинаковых версий зависимостей
-COPY CherryPlayWeb/package.json CherryPlayWeb/package-lock.json ./
+COPY CherryPlayWeb/package.json CherryPlayWeb/package-lock.json ./CherryPlayWeb/
 
-# Используем --ignore-scripts чтобы пропустить prepare hook (husky не нужен в Docker)
-# Скрипт prepare-husky.mjs будет скопирован позже, но он не нужен для Docker сборки
-# npm ci использует package-lock.json для установки точных версий зависимостей
-RUN npm ci --ignore-scripts
-
-# Версия web-клиента для X-Client-Version берётся из server appsettings при сборке
 COPY CherryPlayServer/appsettings.json ./CherryPlayServer/appsettings.json
 
-# Копируем остальные файлы (в т.ч. public/ — статика и ресурсы тем, например images/spring-cross-step-poster.svg)
-# Vite при сборке копирует public/ в корень dist/, откуда nginx раздаёт их в контейнере
-COPY CherryPlayWeb/ .
+COPY CherryPlayWeb/ ./CherryPlayWeb/
 
-# Передаем переменные окружения для Vite (build-time переменные)
-# ARG позволяет передать переменные во время сборки образа
+WORKDIR /app/CherryPlayWeb
+
+RUN npm ci --ignore-scripts
+
 ARG VITE_API_URL
 ARG VITE_SIGNALR_URL
 ENV VITE_API_URL=$VITE_API_URL
@@ -45,7 +37,7 @@ WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*
 
-COPY --from=build /app/dist .
+COPY --from=build /app/CherryPlayWeb/dist .
 
 COPY CherryPlayWeb/nginx.conf /etc/nginx/conf.d/default.conf
 

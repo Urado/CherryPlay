@@ -16,10 +16,7 @@
 !**/.env.*.example
 CherryPlayList/
 CherryPlayListDemo/
-CherryPlayWeb/
-CherryPlayComponents/
 CherryPlayAimpPlugin/
-eslint-config-cherryplay/
 .tmp/
 artifacts/
 .agents/
