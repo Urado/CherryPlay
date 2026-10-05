@@ -9,6 +9,7 @@ public interface IPartyRepository
     Task<List<Party>> GetAllAsync();
     Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId);
     Task<Party> AddAsync(Party party);
+    Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit);
     Task UpdateAsync(Party party);
     Task DeleteAsync(Guid id);
     Task<Party?> GetFirstAsync();

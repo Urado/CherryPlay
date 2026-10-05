@@ -59,7 +59,7 @@ describe('authService.createOAuthAccount', () => {
     });
 
     expect(vi.mocked(apiFetch)).toHaveBeenCalledTimes(1);
-    const [url, init] = vi.mocked(apiFetch).mock.calls[0]!;
+    const [url, init] = vi.mocked(apiFetch).mock.calls[0];
     expect(String(url)).toContain('/api/oauth/accounts');
     expect(init?.credentials).toBe('include');
     const body = JSON.parse(String(init?.body)) as {

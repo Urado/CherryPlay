@@ -3,26 +3,58 @@ using CherryPlayServer.Core.Services;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Repositories;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace CherryPlayServer.Tests;
+namespace CherryPlayServer.Tests.IntegrationDb;
 
+[TestFixture]
+[NonParallelizable]
+[Category("IntegrationDb")]
 public class PasswordResetTokenRetentionEfTests
 {
+    private PostgresContainerFixture? _postgresFixture;
+
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
+    {
+        _postgresFixture = new PostgresContainerFixture();
+        await _postgresFixture.InitializeAsync();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
+    {
+        if (_postgresFixture is not null)
+        {
+            await _postgresFixture.DisposeAsync();
+        }
+    }
+
+    private async Task<AppDbContext> CreateMigratedDbContextAsync()
+    {
+        var fixture = _postgresFixture ?? throw new InvalidOperationException("PostgreSQL fixture is not initialized.");
+        var connectionString = await fixture.CreateFreshDatabaseConnectionStringAsync();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connectionString)
+            .UseSnakeCaseNamingConvention()
+            .Options;
+        var db = new AppDbContext(options);
+        try
+        {
+            await db.Database.MigrateAsync();
+            return db;
+        }
+        catch
+        {
+            await db.DisposeAsync();
+            throw;
+        }
+    }
+
     [Test]
     public async Task EfRepository_DeleteStale_KeepsActiveAndYoung_DeletesOldUsedAndExpired()
     {
-        var connectionString = $"Data Source=file:prt-retention-{Guid.NewGuid():N}?mode=memory&cache=shared";
-        await using var keeperConnection = new SqliteConnection(connectionString);
-        await keeperConnection.OpenAsync();
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connectionString)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-
-        await using var db = new AppDbContext(options);
-        await db.Database.EnsureCreatedAsync();
+        await using var db = await CreateMigratedDbContextAsync();
 
         var organizerId = Guid.NewGuid();
         var emailAccountId = Guid.NewGuid();
@@ -109,16 +141,7 @@ public class PasswordResetTokenRetentionEfTests
     [Test]
     public async Task EfRepository_DeleteStale_ExactCutoffBoundary_DeletesAtOrBefore_KeepsOneSecondFresher()
     {
-        var connectionString = $"Data Source=file:prt-retention-boundary-{Guid.NewGuid():N}?mode=memory&cache=shared";
-        await using var keeperConnection = new SqliteConnection(connectionString);
-        await keeperConnection.OpenAsync();
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connectionString)
-            .UseSnakeCaseNamingConvention()
-            .Options;
-
-        await using var db = new AppDbContext(options);
-        await db.Database.EnsureCreatedAsync();
+        await using var db = await CreateMigratedDbContextAsync();
 
         var organizerId = Guid.NewGuid();
         var emailAccountId = Guid.NewGuid();

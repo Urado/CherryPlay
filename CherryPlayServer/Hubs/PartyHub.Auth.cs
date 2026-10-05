@@ -28,7 +28,13 @@ public partial class PartyHub
         }
 
         var result = await _jwtService.ValidateTokenAsync(token);
-        if (!result.IsValid || !result.OrganizerId.HasValue)
+        if (!result.IsValid || !result.OrganizerId.HasValue || !result.SessionId.HasValue)
+        {
+            return null;
+        }
+
+        var session = await _organizerSessionRepository.GetByIdAsync(result.SessionId.Value);
+        if (session?.OrganizerId != result.OrganizerId.Value)
         {
             return null;
         }

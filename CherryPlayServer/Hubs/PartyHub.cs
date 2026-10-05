@@ -14,6 +14,7 @@ public partial class PartyHub : Hub
     private readonly IOrganizerConnectionTracker _organizerConnectionTracker;
     private readonly IPartyRepository _partyRepository;
     private readonly IStreamingRepository _streamingRepository;
+    private readonly IOrganizerSessionRepository _organizerSessionRepository;
     private readonly IPartyDisplayStatusService _partyDisplayStatusService;
     private readonly IHubContext<PartyHub> _hubContext;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -32,7 +33,8 @@ public partial class PartyHub : Hub
         IHubContext<PartyHub> hubContext,
         IServiceScopeFactory scopeFactory,
         IOptions<PartyDisplayStatusOptions> displayStatusOptions,
-        ILogger<PartyHub> logger)
+        ILogger<PartyHub> logger,
+        IOrganizerSessionRepository organizerSessionRepository)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
         _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
@@ -41,6 +43,7 @@ public partial class PartyHub : Hub
         _organizerConnectionTracker = organizerConnectionTracker ?? throw new ArgumentNullException(nameof(organizerConnectionTracker));
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
+        _organizerSessionRepository = organizerSessionRepository ?? throw new ArgumentNullException(nameof(organizerSessionRepository));
         _partyDisplayStatusService = partyDisplayStatusService
             ?? throw new ArgumentNullException(nameof(partyDisplayStatusService));
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));

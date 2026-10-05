@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { LEGAL_OPERATOR_CONTENT } from '../content/legal/documents';
+
 import { linkifyLegalText } from './linkifyLegalText';
 import './LegalPage.css';
 

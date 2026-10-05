@@ -17,7 +17,7 @@ describe('applyOrganizerConnectionStatusChanged', () => {
     const setIsDisconnectFreezeActive = vi.fn();
     const setPlaybackState = vi.fn();
     const clearOfflineTimers = vi.fn();
-    let scheduled: (() => void) | null = null;
+    const scheduled: { callback?: () => void } = {};
     let scheduledMs = 0;
 
     applyOrganizerConnectionStatusChanged({
@@ -28,7 +28,7 @@ describe('applyOrganizerConnectionStatusChanged', () => {
       setPlaybackState,
       clearOfflineTimers,
       scheduleDisconnectFreeze: (fn, ms) => {
-        scheduled = fn;
+        scheduled.callback = fn;
         scheduledMs = ms;
       },
     });
@@ -36,10 +36,10 @@ describe('applyOrganizerConnectionStatusChanged', () => {
     expect(clearOfflineTimers).toHaveBeenCalledOnce();
     expect(setIsSessionActive).toHaveBeenCalledWith(false);
     expect(setIsDisconnectFreezeActive).toHaveBeenCalledWith(true);
-    expect(scheduled).not.toBeNull();
+    expect(scheduled.callback).toBeTypeOf('function');
     expect(scheduledMs).toBe(DISCONNECT_FREEZE_MS);
 
-    scheduled?.();
+    scheduled.callback?.();
     expect(setPlaybackState).toHaveBeenCalledWith(null);
     expect(setIsDisconnectFreezeActive).toHaveBeenCalledWith(false);
     vi.useRealTimers();
@@ -174,6 +174,7 @@ describe('playlistDataFromDto / full state playlist apply', () => {
             name: 'B',
             displayOrder: 2,
             duration: 20,
+            level: 0,
           },
           {
             id: 'a',
@@ -181,6 +182,7 @@ describe('playlistDataFromDto / full state playlist apply', () => {
             name: 'A',
             displayOrder: 1,
             duration: 10,
+            level: 0,
           },
         ],
         totalDuration: 30,

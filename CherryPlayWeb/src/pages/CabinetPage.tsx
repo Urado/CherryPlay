@@ -128,7 +128,7 @@ export const CabinetPage = () => {
   useEffect(() => {
     const loadOrganizer = async () => {
       try {
-        const currentOrganizer = (await authService.checkAuth()) as OrganizerWithRole | null;
+        const currentOrganizer = (await authService.checkAuth());
         if (!currentOrganizer) {
           navigate(ROUTES.LOGIN);
           return;

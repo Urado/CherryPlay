@@ -81,7 +81,7 @@ From repo root:
 dotnet restore CherryPlayServer/CherryPlayServer.csproj
 dotnet format CherryPlayServer/CherryPlayServer.csproj --verify-no-changes --verbosity minimal
 dotnet build CherryPlayServer/CherryPlayServer.csproj -c Release --no-restore
-dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb" --no-build
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb&Category!=ContainerIntegration&Category!=ContainerRestartPrepare&Category!=ContainerRestartVerify&Category!=ContainerRestartFreezePrepare&Category!=ContainerRestartFreezeVerify&Category!=ContainerRetentionPrepare&Category!=ContainerRetentionVerify" --no-build
 ```
 
 To fix format issues run `dotnet format` (no `--verify-no-changes`) in `CherryPlayServer/`.
@@ -94,7 +94,7 @@ docker image inspect postgres:16-alpine || docker pull postgres:16-alpine
 docker run -d --name cherryplay-healthcheck-postgres -p 0:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres postgres:16-alpine
 # wait until pg_isready, then set CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING (see script)
 dotnet build CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --no-restore
-dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category=IntegrationDb" --no-build
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -p:CherryPlayUseDefaultTestFilter=false --filter "Category=IntegrationDb" --no-build
 docker rm -f cherryplay-healthcheck-postgres
 ```
 

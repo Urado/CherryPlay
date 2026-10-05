@@ -46,6 +46,7 @@ function Invoke-TestCategory {
     $arguments = @(
         "run", "--rm", "integration-tests",
         "dotnet", "test", "CherryPlayServer.Tests/CherryPlayServer.Tests.csproj",
+        "-p:CherryPlayUseDefaultTestFilter=false",
         "--configuration", "Release", "--no-restore", "--filter", "Category=$Category",
         "--results-directory", $resultDirectory,
         "--logger", "trx;LogFileName=$ArtifactName.trx",

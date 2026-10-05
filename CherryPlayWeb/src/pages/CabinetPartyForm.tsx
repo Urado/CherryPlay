@@ -433,7 +433,7 @@ export const CabinetPartyForm = ({
                   }
                 }}
                 onBlur={(e) => {
-                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget as Node))
+                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
                     return;
                   collapseTimeoutRef.current = setTimeout(() => setShowCustomTagInput(false), 150);
                 }}

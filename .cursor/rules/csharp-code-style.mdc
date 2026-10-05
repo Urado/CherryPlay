@@ -44,6 +44,13 @@ internal sealed class LegalOAuthHarness { }
 
 - No blank line between every `using`; single block at top.
 
+## Collection return types
+
+- For collection contracts in interfaces, public services, and read models, use read-only interfaces instead of mutable types such as `List<T>`.
+- Use `IReadOnlyList<T>` when ordering or indexed access is part of the contract; use `IReadOnlyCollection<T>` when neither matters.
+- A read-only interface limits what callers can do through that reference; it does not make a mutable backing collection immutable. Avoid returning a mutable `List<T>` behind a read-only interface. Where practical, return immutable collections or a read-only wrapper over a private materialized array.
+- Keep mutable collections local to implementations when needed, and copy or wrap them before crossing a read-only boundary.
+
 ## When adding types
 
 - New interface → new file under `Core/Interfaces/`.

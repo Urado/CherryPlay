@@ -4,6 +4,7 @@ import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { resolveLegalDocument, type LegalDocKey } from '../content/legal/documents';
 import type { LegalBlock } from '../content/legal/parseLegalMarkdown';
+
 import { linkifyLegalText } from './linkifyLegalText';
 import './LegalPage.css';
 

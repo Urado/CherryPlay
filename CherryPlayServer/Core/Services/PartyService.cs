@@ -82,14 +82,6 @@ public class PartyService : IPartyService
             dto.PartyThemeId,
             organizerId);
 
-        var myParties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
-        var futureCount = myParties.Count(p => p.EventDateTime.HasValue && p.EventDateTime.Value > DateTime.UtcNow);
-        if (futureCount >= AuthConstants.MaxFuturePartiesPerOrganizer)
-        {
-            throw new PartyLimitReachedException(
-                $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
-        }
-
         var shortCode = await _shortCodeGenerator.GenerateUniqueShortCodeAsync(
             async code => await _partyRepository.GetByShortCodeAsync(code) == null);
 
@@ -122,7 +114,15 @@ public class PartyService : IPartyService
             PartyLifecycleState = PartyLifecycleState.Ready,
         };
 
-        await _partyRepository.AddAsync(party);
+        var wasAdded = await _partyRepository.AddIfFuturePartyLimitNotReachedAsync(
+            party,
+            DateTime.UtcNow,
+            AuthConstants.MaxFuturePartiesPerOrganizer);
+        if (!wasAdded)
+        {
+            throw new PartyLimitReachedException(
+                $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
+        }
 
         _logger.LogInformation(
             "Party created and saved: id={PartyId}, shortCode={ShortCode}, organizerId={OrganizerId}",

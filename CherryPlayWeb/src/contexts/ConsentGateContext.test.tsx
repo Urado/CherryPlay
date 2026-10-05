@@ -170,14 +170,14 @@ describe('ConsentGateProvider', () => {
     renderGateApp();
     fireEvent.click(screen.getByRole('button', { name: 'Open gate' }));
 
-    const continueBtn = screen.getByRole('button', { name: 'Продолжить' }) as HTMLButtonElement;
-    expect(continueBtn.disabled).toBe(true);
+    const continueBtn = screen.getByRole('button', { name: 'Продолжить' });
+    expect(continueBtn.hasAttribute('disabled')).toBe(true);
 
     fireEvent.click(screen.getByRole('checkbox', { name: /Пользовательского соглашения/i }));
-    expect(continueBtn.disabled).toBe(true);
+    expect(continueBtn.hasAttribute('disabled')).toBe(true);
 
     fireEvent.click(screen.getByRole('checkbox', { name: /текстом согласия/i }));
-    expect(continueBtn.disabled).toBe(false);
+    expect(continueBtn.hasAttribute('disabled')).toBe(false);
   });
 
   it('focuses first consent checkbox on open, not disabled Continue', () => {

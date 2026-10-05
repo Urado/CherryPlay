@@ -6,10 +6,6 @@ using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Реализация <see cref="IPartyRepository"/> для слоя персистентности (EF Core + PostgreSQL).
-/// Инкапсулирует доступ к данным; возвращает только доменные сущности из Core.
-/// </summary>
 public class EfPartyRepository : IPartyRepository
 {
     private readonly AppDbContext _context;
@@ -66,14 +62,7 @@ public class EfPartyRepository : IPartyRepository
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var partyEf = party.ToEf();
-            _context.Parties.Add(partyEf);
-            await _context.SaveChangesAsync();
-
-            var playlistEf = party.Playlist.ToEf(party.Id);
-            _context.PartyPlaylists.Add(playlistEf);
-            await _context.SaveChangesAsync();
-
+            await AddWithinTransactionAsync(party);
             await transaction.CommitAsync();
         }
         catch
@@ -82,6 +71,42 @@ public class EfPartyRepository : IPartyRepository
             throw;
         }
         return party;
+    }
+
+    public async Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock(hashtextextended({party.OrganizerId.ToString()}, 0))");
+            var futureCount = await _context.Parties.AsNoTracking()
+                .CountAsync(item => item.OrganizerId == party.OrganizerId && !item.IsDeleted && item.EventDateTime > nowUtc);
+            if (futureCount >= limit)
+            {
+                await transaction.CommitAsync();
+                return false;
+            }
+
+            await AddWithinTransactionAsync(party);
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    private async Task AddWithinTransactionAsync(Party party)
+    {
+        var partyEf = party.ToEf();
+        _context.Parties.Add(partyEf);
+        await _context.SaveChangesAsync();
+        var playlistEf = party.Playlist.ToEf(party.Id);
+        _context.PartyPlaylists.Add(playlistEf);
+        await _context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Party party)

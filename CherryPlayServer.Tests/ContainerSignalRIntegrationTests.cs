@@ -91,10 +91,11 @@ public sealed class ContainerSignalRIntegrationTests
         var errors = new List<string>();
         organizer.On<string>("Error", errors.Add);
         await _context.DeleteSessionAsync();
+        var errorReceived = ReceiveError(organizer);
 
         await organizer.InvokeAsync("UpdatePlaybackPosition", _partyId.ToString(), "track-a", 42d);
 
-        Assert.That(errors, Is.Not.Empty);
+        Assert.That(await errorReceived, Does.Contain("Authentication required"));
         using var response = await _context.Client.GetAsync($"/api/parties/public/{_context.ShortCodeFor(_partyId)}/state");
         using var state = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.That(state.RootElement.GetProperty("playbackState").GetProperty("position").GetDouble(), Is.EqualTo(10));

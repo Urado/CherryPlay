@@ -48,7 +48,9 @@ describe('legal routes', () => {
     cleanup();
 
     renderPath(ROUTES.COOKIES);
-    expect(screen.getByRole('heading', { name: /cookie/i })).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Политика использования cookie' }),
+    ).toBeTruthy();
     cleanup();
 
     renderPath(ROUTES.LEGAL);
@@ -61,8 +63,8 @@ describe('legal routes', () => {
     expect(screen.getByRole('heading', { name: /Согласие на обработку/i })).toBeTruthy();
   });
 
-  it('unknown archive version redirects home', () => {
+  it('unknown archive version redirects home', async () => {
     renderPath(ROUTES.PRIVACY_ARCHIVE('9.9'));
-    expect(screen.getByTestId('home')).toBeTruthy();
+    expect(await screen.findByTestId('home')).toBeTruthy();
   });
 });

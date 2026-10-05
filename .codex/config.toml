@@ -1,0 +1,11 @@
+[mcp_servers.code-graph]
+command = 'C:\nvm4w\nodejs\node.exe'
+args = ['C:\Users\CherryPashka\.npm-global\node_modules\code-graph-indexer\dist\cli.js', 'mcp']
+cwd = 'D:\CherryPlay'
+startup_timeout_sec = 60
+
+[mcp_servers.slnmap]
+command = 'C:\Users\CherryPashka\.dotnet\tools\slnmap.exe'
+args = ['serve', '--db', 'D:\CherryPlay\slnmap.db']
+cwd = 'D:\CherryPlay'
+startup_timeout_sec = 60

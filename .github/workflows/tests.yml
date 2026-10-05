@@ -120,7 +120,7 @@ jobs:
         run: dotnet restore CherryPlayServer.Tests/CherryPlayServer.Tests.csproj
 
       - name: Run IntegrationDb tests
-        run: dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --configuration Release --no-restore --filter "Category=IntegrationDb" --logger "trx;LogFileName=integrationdb-tests.trx"
+        run: dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -p:CherryPlayUseDefaultTestFilter=false --configuration Release --no-restore --filter "Category=IntegrationDb" --logger "trx;LogFileName=integrationdb-tests.trx"
 
       - name: Upload IntegrationDb test results
         if: always()

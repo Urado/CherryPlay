@@ -258,13 +258,13 @@ describe('OAuthCompletePage', () => {
     renderComplete('/oauth/complete?provider=mailru&code=code-1');
 
     expect(await screen.findByRole('button', { name: 'Продолжить' })).toBeTruthy();
-    const continueBtn = screen.getByRole('button', { name: 'Продолжить' }) as HTMLButtonElement;
-    expect(continueBtn.disabled).toBe(true);
+    const continueBtn = screen.getByRole('button', { name: 'Продолжить' });
+    expect(continueBtn.hasAttribute('disabled')).toBe(true);
 
     const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]!);
-    fireEvent.click(checkboxes[1]!);
-    expect(continueBtn.disabled).toBe(false);
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
+    expect(continueBtn.hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(continueBtn);
 

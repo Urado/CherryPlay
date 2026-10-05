@@ -61,6 +61,9 @@ const args = process.argv.slice(2);
 const withDocker = args.includes("--docker");
 const skipCi = args.includes("--skip-ci");
 
+const SERVER_FAST_TEST_FILTER =
+  "Category!=IntegrationDb&Category!=ContainerIntegration&Category!=ContainerRestartPrepare&Category!=ContainerRestartVerify&Category!=ContainerRestartFreezePrepare&Category!=ContainerRestartFreezeVerify&Category!=ContainerRetentionPrepare&Category!=ContainerRetentionVerify";
+
 const INTEGRATION_DB_CONTAINER = "cherryplay-healthcheck-postgres";
 const INTEGRATION_DB_IMAGE = "postgres:16-alpine";
 let integrationDbAdminConnectionString = "";
@@ -111,7 +114,7 @@ run("Server: build (Release)", () =>
 );
 run("Server: tests (fast)", () =>
   exec(
-    'dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --filter "Category!=IntegrationDb" --no-build',
+    `dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --filter "${SERVER_FAST_TEST_FILTER}" --no-build`,
   ),
 );
 run("Server: Docker daemon", () => exec("docker info"));
@@ -142,7 +145,7 @@ run("Server: build tests (IntegrationDb)", () =>
 run("Server: tests (IntegrationDb)", () => {
   try {
     exec(
-      'dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --filter "Category=IntegrationDb" --no-build',
+      'dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release -p:CherryPlayUseDefaultTestFilter=false --filter "Category=IntegrationDb" --no-build',
       repoRoot,
       {
         CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING:

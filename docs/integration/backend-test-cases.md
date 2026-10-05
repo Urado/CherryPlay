@@ -39,7 +39,7 @@
 
 ## PostgreSQL persistence
 
-Эти сценарии используют реальный PostgreSQL. Контейнерный набор помечен `ContainerIntegration`; существующие тесты с категорией `IntegrationDb` запускаются отдельно и требуют настроенной тестовой БД.
+Эти сценарии используют реальный PostgreSQL. `IntegrationDb` через `PostgresContainerFixture` автоматически поднимает PostgreSQL через Testcontainers, если не задан override `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING`; требуется Docker, ручная настройка `CHERRYPLAY_*` не нужна. `ContainerIntegration` — смешанная категория: DB-only тесты через `ContainerIntegrationDatabase` требуют admin connection string к существующему PostgreSQL, а HTTP/SignalR тесты через `ContainerIntegrationTestContext` дополнительно требуют `CHERRYPLAY_API_BASE_URL` и `CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY`. Штатный Compose-сценарий настраивает их и запускает все поднаборы; см. [инструкцию запуска](./container-integration-tests.md).
 
 | ID | Ожидаемый результат | Тест |
 | --- | --- | --- |
@@ -58,7 +58,7 @@
 | DB13 | Миграция с предыдущей схемы сохраняет вечеринку, плейлист и playback state. | [`PartyPersistenceContainerIntegrationTests.DatabaseMigrations_FromPreviousSchema_PreservePartyAndPlaybackData`](../../CherryPlayServer.Tests/IntegrationDb/PartyPersistenceContainerIntegrationTests.cs) |
 | DB14 | Повторная очистка reset-токенов идемпотентна: старые записи удалены, свежие и действующие сохранены. | [`PartyPersistenceContainerIntegrationTests.PasswordResetTokenCleanup_RepeatedRunsAreIdempotentAndKeepFreshRecords`](../../CherryPlayServer.Tests/IntegrationDb/PartyPersistenceContainerIntegrationTests.cs) |
 
-Дополнительные PostgreSQL test methods в тех же контейнерных fixtures:
+Дополнительные PostgreSQL test methods в других fixtures:
 
 | Набор сценариев | Ожидаемый результат | Тестовый fixture |
 | --- | --- | --- |
@@ -70,7 +70,7 @@
 | Row locking и soft delete | Запись organizer, полученная для обновления, корректно soft-delete и остаётся доступной через предусмотренный query-filter режим. Метод: `GetByIdForUpdate_ThenSoftDelete_WorksWithQueryFilters`. | [`EfOrganizerForUpdateIntegrationTests`](../../CherryPlayServer.Tests/IntegrationDb/EfOrganizerForUpdateIntegrationTests.cs) |
 | Reset-token EF retention | EF repository удаляет used/expired старые записи, сохраняет свежие и активные и применяет точную границу cutoff. Методы: `EfRepository_DeleteStale_KeepsActiveAndYoung_DeletesOldUsedAndExpired`, `EfRepository_DeleteStale_ExactCutoffBoundary_DeletesAtOrBefore_KeepsOneSecondFresher`. | [`PasswordResetTokenRetentionEfTests`](../../CherryPlayServer.Tests/IntegrationDb/PasswordResetTokenRetentionEfTests.cs) |
 
-Эти fixtures запускаются категорией `IntegrationDb` в workflow [Server Tests](../../.github/workflows/tests.yml); `ContainerIntegration` fixtures из таблиц выше запускаются контейнерным сценарием ниже.
+Категория задаётся отдельно для каждого fixture, а не определяется расположением файла или этой таблицей. Строки DB01–DB14 и `AppUnitOfWork_RollbackRestoresOrganizerAndSessions` относятся к `PartyPersistenceContainerIntegrationTests`, имеют категорию `ContainerIntegration` и используют `ContainerIntegrationDatabase`; их запускает штатный Compose-сценарий [backend-container-integration.ps1](../../scripts/backend-container-integration.ps1). Строки таблицы для `IntegrationDbTests`, `IntegrationDbLegalConsentTests`, `AdminControllerEntitlement*IntegrationTests`, `EfOrganizerForUpdateIntegrationTests` и `PasswordResetTokenRetentionEfTests` относятся к категории `IntegrationDb`; их запускает отдельный workflow [Server Tests](../../.github/workflows/tests.yml), а PostgreSQL по умолчанию предоставляет `PostgresContainerFixture` через Testcontainers.
 
 ## HTTP API
 
@@ -156,7 +156,8 @@
 
 ## Запуск
 
-- Fast tests: запускаются локальным .NET SDK командой и фильтром из [PowerShell сценария](../../scripts/backend-container-integration.ps1); workflow [Server Tests](../../.github/workflows/tests.yml) использует тот же фильтр.
-- Контейнерные тесты: `ContainerIntegration` выполняется в Compose. PostgreSQL, backend в `Production` и .NET runner работают в отдельных контейнерах. `ContainerIntegrationTestContext` направляет HTTP и SignalR запросы к backend и удаляет созданные тестом записи.
+- Обычный `dotnet test` запускает все категории; для нужного поднабора передавайте явный `--filter`, например `--filter "Category=IntegrationDb"`. Fast suite отдельно задаёт исключения DB- и контейнерных категорий в [PowerShell сценарии](../../scripts/backend-container-integration.ps1) и workflow [Server Tests](../../.github/workflows/tests.yml).
+- `IntegrationDb`: `PostgresContainerFixture` запускает PostgreSQL через Testcontainers по умолчанию; необходим Docker daemon. Административный connection string можно задать как override через `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING`.
+- `ContainerIntegration`: смешанная категория. DB-only тестам через `ContainerIntegrationDatabase` достаточно `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` к работающему PostgreSQL admin endpoint; HTTP/SignalR тестам через `ContainerIntegrationTestContext` дополнительно нужны `CHERRYPLAY_API_BASE_URL` и `CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY`. Compose-сценарий автоматически поднимает PostgreSQL и backend, задаёт переменные тестовому контейнеру и запускает все поднаборы. При прямом запуске тестов вызывающий процесс должен предоставить сервисы и переменные для выбранного поднабора.
 - Рестарт: категории `ContainerRestartPrepare`, `ContainerRestartFreezePrepare` и `ContainerRetentionPrepare` записывают fixture-состояние до рестарта backend; категории `ContainerRestartVerify`, `ContainerRestartFreezeVerify` и `ContainerRetentionVerify` проверяют его после рестарта. Между фазами Compose перезапускает backend, сохраняя PostgreSQL volume текущего проекта.
 - Полная инструкция запуска, требования к Docker, артефакты и GitHub Actions: [Container Integration Tests](./container-integration-tests.md).

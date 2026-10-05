@@ -27,7 +27,7 @@ class SignalRService {
     if (!this.connection) return;
     this.eventHandlers.forEach((handler, eventName) => {
       this.connection!.off(eventName);
-      this.connection!.on(eventName, handler as (...args: unknown[]) => void);
+      this.connection!.on(eventName, handler);
     });
   }
 

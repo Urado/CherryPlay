@@ -8,6 +8,7 @@ namespace CherryPlayServer.Infrastructure.Repositories;
 public class InMemoryPartyRepository : IPartyRepository
 {
     private readonly ConcurrentDictionary<Guid, Party> _parties = new();
+    private readonly ConcurrentDictionary<Guid, object> _organizerLocks = new();
     private readonly ConcurrentDictionary<string, Guid> _shortCodeIndex =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -44,6 +45,24 @@ public class InMemoryPartyRepository : IPartyRepository
         _parties.TryAdd(party.Id, party);
         _shortCodeIndex[party.ShortCode] = party.Id;
         return Task.FromResult(party);
+    }
+
+    public Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit)
+    {
+        var organizerLock = _organizerLocks.GetOrAdd(party.OrganizerId, _ => new object());
+        lock (organizerLock)
+        {
+            var futureCount = _parties.Values.Count(item =>
+                item.OrganizerId == party.OrganizerId && item.EventDateTime > nowUtc);
+            if (futureCount >= limit)
+            {
+                return Task.FromResult(false);
+            }
+
+            _parties.TryAdd(party.Id, party);
+            _shortCodeIndex[party.ShortCode] = party.Id;
+            return Task.FromResult(true);
+        }
     }
 
     public Task UpdateAsync(Party party)

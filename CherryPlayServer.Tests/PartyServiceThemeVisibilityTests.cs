@@ -143,6 +143,12 @@ public class PartyServiceThemeVisibilityTests
             return Task.FromResult(party);
         }
 
+        public Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit)
+        {
+            _parties[party.Id] = party;
+            return Task.FromResult(true);
+        }
+
         public Task UpdateAsync(Party party)
         {
             _parties[party.Id] = party;
