@@ -16,6 +16,7 @@ env:
 jobs:
   build-and-push:
     name: Build and Push Tagged Images
+    if: ${{ !(github.event_name == 'release' && startsWith(github.event.release.tag_name, 'player-')) && !(github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.tag, 'player-')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -92,7 +93,7 @@ jobs:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
+    if: ${{ !(github.event_name == 'release' && startsWith(github.event.release.tag_name, 'player-')) && !(github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.tag, 'player-')) && (github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false) }}
 
     steps:
       - name: Checkout repository

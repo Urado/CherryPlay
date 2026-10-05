@@ -18,6 +18,7 @@ import { ConsentGateProvider, useConsentGateOpen } from './contexts/ConsentGateC
 import { AdminOrganizerDetailPage } from './pages/admin/AdminOrganizerDetailPage';
 import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
 import { CabinetPage } from './pages/CabinetPage';
+import { DownloadPage } from './pages/DownloadPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LegalDocumentPage } from './pages/LegalDocumentPage';
 import { LegalOperatorPage } from './pages/LegalOperatorPage';
@@ -93,6 +94,7 @@ const AppShell = () => {
     <>
       <Routes>
         <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
+        <Route path={ROUTES.DOWNLOAD} element={<DownloadPage />} />
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />

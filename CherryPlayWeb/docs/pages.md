@@ -11,6 +11,7 @@
 | Путь | Страница | Компонент |
 |------|---------|-----------|
 | `/` | Каталог вечеринок (или редирект с `?party=...`) | `PartyListPage` / `CatalogOrRedirect` |
+| `/download` | Загрузка CherryPlay для Windows | `DownloadPage` |
 | `/party/:shortCode` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
 | `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
 | `/login` | Вход | `LoginPage` |
@@ -32,6 +33,12 @@
 | `/legal` | Реквизиты / оператор | `LegalOperatorPage` |
 
 - **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
+## Страница загрузки приложения
+
+**DownloadPage**: ссылка «Скачать приложение» в каталоге открывает эту страницу. Она запрашивает публичный GitHub Releases API для `Urado/CherryPlay`, отбирает опубликованные prerelease с тегом `player-*` и ZIP с именем `CherryPlayList-{version}-x64.zip` (поддерживаются версии `major.minor.patch` и необязательный суффикс prerelease). Из подходящих релизов выбирается самый новый по `published_at`. Страница показывает версию из имени файла, а кнопка ведёт непосредственно на проверенный `browser_download_url` GitHub asset, не на страницу релиза. Запрос, включая получение и разбор JSON, ограничен 10 секундами. При сетевой/HTTP-ошибке, неверном ответе GitHub или отсутствии подходящего релиза пользователю показывается ошибка.
+
+Для CP-087 ZIP собирается CI без AIMP bridge; его наличие не является условием для отображения загрузки.
+
 - **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
 - **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.

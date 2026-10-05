@@ -93,7 +93,7 @@ import './index.css';
 ## Документация
 
 - [ENV.md](../ENV.md) (в корне репозитория) — переменные окружения (VITE_API_URL и др.)
-- [docs/pages.md](docs/pages.md) — страницы и маршрутизация, используемые API и SignalR
+- [docs/pages.md](docs/pages.md) — страницы и маршрутизация, включая `/download`, используемые API и SignalR
 
 ## Используемые библиотеки
 

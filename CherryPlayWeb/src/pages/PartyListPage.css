@@ -193,7 +193,6 @@
   font-weight: 500;
 }
 
-/* Фильтры */
 .party-list-filters {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
@@ -345,7 +344,6 @@
   }
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .party-list-container {
     width: 100%;

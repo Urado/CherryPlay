@@ -1,0 +1,115 @@
+.download-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.download-content {
+  width: min(100% - 32px, 720px);
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.download-back-link {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.download-back-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.download-back-link:focus-visible,
+.download-button:focus-visible {
+  outline: 3px solid var(--accent-primary, #00ff88);
+  outline-offset: 4px;
+}
+
+.download-card {
+  padding: clamp(24px, 6vw, 48px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.download-eyebrow {
+  margin-bottom: 12px;
+  color: var(--accent-primary, #00ff88);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.download-card h1 {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 42px);
+}
+
+.download-description {
+  max-width: 480px;
+  margin: 16px auto 28px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.download-status,
+.download-error {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  line-height: 1.5;
+}
+
+.download-error {
+  color: #ffb4b4;
+  background: rgba(150, 20, 20, 0.2);
+}
+
+.download-release {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.download-version {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.download-button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  background: var(--accent-primary, #00ff88);
+  color: #10251b;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.download-button:hover {
+  background: var(--accent-primary-hover, #00cc6a);
+  transform: translateY(-1px);
+}
+
+.download-file-details {
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .download-button {
+    transition: none;
+  }
+}

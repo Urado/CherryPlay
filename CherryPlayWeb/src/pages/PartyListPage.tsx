@@ -94,6 +94,12 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
   return `${date} ${timeRange}`;
 };
 
+const DownloadAppLink = () => (
+  <Link to={ROUTES.DOWNLOAD} className="party-list-login-link">
+    Скачать приложение
+  </Link>
+);
+
 export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   const { ensureConsents } = useConsentGate();
@@ -232,6 +238,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
   if (loading) {
     return (
       <div className="party-list-page">
+        <div className="party-list-container party-list-header-actions">
+          <DownloadAppLink />
+        </div>
         <LoadingSpinner message="Загрузка списка вечеринок..." />
       </div>
     );
@@ -240,6 +249,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
   if (error) {
     return (
       <div className="party-list-page">
+        <div className="party-list-container party-list-header-actions">
+          <DownloadAppLink />
+        </div>
         <ErrorMessage message={error} onRetry={handleRetry} />
       </div>
     );
@@ -261,6 +273,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                   Вход
                 </Link>
               ))}
+            <DownloadAppLink />
             <IconButton
               className="party-list-refresh-btn"
               variant="secondary"
@@ -286,7 +299,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           </div>
         </div>
 
-        {/* Блок фильтров */}
         <div className="party-list-filters">
           <div className="party-list-filters-header">
             <Button
