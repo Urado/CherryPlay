@@ -5,6 +5,9 @@ COPY CherryPlayComponents/package.json CherryPlayComponents/package-lock.json ./
 COPY CherryPlayComponents ./CherryPlayComponents
 COPY eslint-config-cherryplay ./eslint-config-cherryplay
 
+WORKDIR /app/eslint-config-cherryplay
+RUN npm ci
+
 WORKDIR /app/CherryPlayComponents
 RUN npm ci
 

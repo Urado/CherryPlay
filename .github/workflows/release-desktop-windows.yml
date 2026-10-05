@@ -30,8 +30,13 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: |
+            eslint-config-cherryplay/package-lock.json
             CherryPlayComponents/package-lock.json
             CherryPlayList/package-lock.json
+
+      - name: Install shared ESLint config dependencies
+        working-directory: eslint-config-cherryplay
+        run: npm ci
 
       - name: Install and build CherryPlayComponents
         working-directory: CherryPlayComponents
