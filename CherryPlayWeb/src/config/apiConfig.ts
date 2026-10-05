@@ -47,8 +47,7 @@ export const API_ENDPOINTS = {
     ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,
     ORGANIZER_ENTITLEMENTS: (organizerId: string) =>
       `/api/admin/organizers/${organizerId}/entitlements`,
-    ORGANIZER_ENTITLEMENT_BY_ID: (organizerId: string, entitlementId: string) =>
-      `/api/admin/organizers/${organizerId}/entitlements/${entitlementId}`,
+    ENTITLEMENT_REVOCATIONS: '/api/admin/entitlement-revocations',
     THEME_PACKAGES: '/api/admin/theme-packages',
   },
 

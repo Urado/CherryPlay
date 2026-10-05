@@ -1,14 +1,12 @@
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Extensions;
-using CherryPlayServer.Core;
-using CherryPlayServer.Infrastructure.Persistence.Entities;
-using CherryPlayServer.Infrastructure.Persistence.Queries;
+using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Infrastructure.Persistence;
+using CherryPlayServer.Infrastructure.Persistence.Repositories;
+using CherryPlayServer.Core.Services;
 using CherryPlayServer.Models;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace CherryPlayServer.Controllers;
 
@@ -18,379 +16,148 @@ namespace CherryPlayServer.Controllers;
 [EnableRateLimiting("admin-strict")]
 public class AdminController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IAdminQueryService _queryService;
+    private readonly IAdminEntitlementService _entitlementService;
 
     public AdminController(AppDbContext db)
+        : this(
+            new AdminQueryService(new EfAdminQueryRepository(db)),
+            new AdminEntitlementService(new EfAdminEntitlementRepository(db)))
     {
-        _db = db;
+    }
+
+    public AdminController(IAdminQueryService queryService, IAdminEntitlementService entitlementService)
+    {
+        _queryService = queryService;
+        _entitlementService = entitlementService;
     }
 
     [HttpGet("theme-packages")]
     public async Task<ActionResult<AdminThemePackageListDto>> GetPackages()
     {
-        var items = await _db.ThemePackages.AsNoTracking().Include(x => x.Items).OrderBy(x => x.Code)
-            .Select(x => new AdminThemePackageDto(x.Id, x.Code, x.Name, x.IsAutoGranted, x.IsActive, x.Items.Select(i => i.ThemeId).OrderBy(i => i).ToList()))
-            .ToListAsync();
-        return Ok(new AdminThemePackageListDto(items));
+        var items = await _queryService.GetPackagesAsync();
+        return Ok(new AdminThemePackageListDto(items.Select(x => new AdminThemePackageDto(x.Id, x.Code, x.Name, x.IsAutoGranted, x.IsActive, x.ThemeIds.ToList())).ToList()));
     }
 
     [HttpGet("organizers")]
     public async Task<ActionResult<AdminOrganizerListDto>> GetOrganizers([FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        page = Math.Max(page, 1);
-        pageSize = Math.Clamp(pageSize, 1, 100);
-        var organizers = _db.Organizers.AsNoTracking().Where(x => !x.IsDeleted);
-        if (!string.IsNullOrWhiteSpace(query))
-        {
-            var q = $"%{query.Trim()}%";
-            var organizerIdsByEmail = _db.EmailAccounts.AsNoTracking()
-                .Where(email => EF.Functions.ILike(email.Email, q))
-                .Select(email => email.OrganizerId)
-                .Distinct();
-            organizers = organizers.Where(x =>
-                EF.Functions.ILike(x.Name, q) ||
-                organizerIdsByEmail.Contains(x.Id));
-        }
-
-        var now = DateTime.UtcNow;
-        var activeEntitlementFilter = OrganizerEntitlementPredicates.IsActive(now);
-
-        var total = await organizers.CountAsync();
-        var organizerPage = await organizers
-            .OrderBy(x => x.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(x => new { x.Id, x.Name, x.Role, x.CreatedAt })
-            .ToListAsync();
-
-        var organizerIds = organizerPage.Select(x => x.Id).ToList();
-        if (organizerIds.Count == 0)
-        {
-            return Ok(new AdminOrganizerListDto([], total, page, pageSize));
-        }
-
-        var emailsByOrganizer = await _db.EmailAccounts.AsNoTracking()
-            .Where(x => organizerIds.Contains(x.OrganizerId))
-            .GroupBy(x => x.OrganizerId)
-            .Select(g => new
-            {
-                OrganizerId = g.Key,
-                Email = g.OrderBy(x => x.CreatedAt).Select(x => x.Email).FirstOrDefault()
-            })
-            .ToDictionaryAsync(x => x.OrganizerId, x => x.Email);
-
-        var oauthProvidersByOrganizer = await _db.OAuthAccounts.AsNoTracking()
-            .Where(x => organizerIds.Contains(x.OrganizerId))
-            .Select(x => new { x.OrganizerId, x.Provider })
-            .Distinct()
-            .ToListAsync();
-
-        var oauthProviderMap = oauthProvidersByOrganizer
-            .GroupBy(x => x.OrganizerId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(x => x.Provider).OrderBy(x => x).ToList());
-
-        var activeEntitlementCounts = await _db.OrganizerEntitlements.AsNoTracking()
-            .Where(activeEntitlementFilter)
-            .Where(x => organizerIds.Contains(x.OrganizerId))
-            .GroupBy(x => x.OrganizerId)
-            .Select(g => new { OrganizerId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.OrganizerId, x => x.Count);
-
-        var items = organizerPage.Select(x => new AdminOrganizerListItemDto(
-            x.Id,
-            x.Name,
-            emailsByOrganizer.GetValueOrDefault(x.Id),
-            oauthProviderMap.GetValueOrDefault(x.Id, []),
-            x.Role,
-            activeEntitlementCounts.GetValueOrDefault(x.Id),
-            x.CreatedAt))
-            .ToList();
-
-        return Ok(new AdminOrganizerListDto(items, total, page, pageSize));
+        var result = await _queryService.GetOrganizersAsync(query, page, pageSize);
+        var items = result.Items.Select(x => new AdminOrganizerListItemDto(x.Id, x.Name, x.Email, x.OauthProviders.ToList(), x.Role, x.ActiveEntitlementsCount, x.CreatedAt)).ToList();
+        return Ok(new AdminOrganizerListDto(items, result.Total, result.Page, result.PageSize));
     }
 
     [HttpGet("organizers/{id:guid}")]
     public async Task<ActionResult<AdminOrganizerDetailDto>> GetOrganizer(Guid id)
     {
-        var organizer = await _db.Organizers.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-        if (organizer == null) return NotFound(new { code = "organizer_not_found", message = "Organizer not found" });
+        var organizer = await _queryService.GetOrganizerAsync(id);
+        if (organizer is null) return NotFound(new { code = "organizer_not_found", message = "Organizer not found" });
+        var oauth = organizer.OauthAccounts.Select(x => new AdminOauthAccountDto(x.Provider, x.ProviderUserId, x.ProviderUserName)).ToList();
+        var entitlements = organizer.Entitlements.Select(ToDto).ToList();
+        return Ok(new AdminOrganizerDetailDto(organizer.Id, organizer.Name, organizer.Email, oauth, organizer.Role, organizer.CreatedAt, entitlements));
+    }
 
-        var email = await _db.EmailAccounts.AsNoTracking()
-            .Where(x => x.OrganizerId == id)
-            .OrderBy(x => x.CreatedAt)
-            .Select(x => x.Email)
-            .FirstOrDefaultAsync();
+    [HttpGet("organizers/{id:guid}/entitlements")]
+    public async Task<ActionResult<List<EntitlementDto>>> GetOrganizerEntitlements(Guid id, [FromQuery] string? status)
+    {
+        var organizerExists = await _queryService.OrganizerExistsAsync(id);
+        if (!organizerExists) return NotFound(new { code = "organizer_not_found" });
+        var activeOnly = string.Equals(status, "active", StringComparison.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(status) && !activeOnly && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidationProblem("status must be 'active' or 'all'.");
+        }
+        return Ok((await _queryService.GetOrganizerEntitlementsAsync(id, activeOnly)).Select(ToDto).ToList());
+    }
 
-        var oauthAccounts = await _db.OAuthAccounts.AsNoTracking()
-            .Where(x => x.OrganizerId == id)
-            .OrderBy(x => x.Provider)
-            .Select(x => new AdminOauthAccountDto(x.Provider, x.ProviderUserId, x.ProviderUserName))
-            .ToListAsync();
+    [HttpGet("entitlements/{entitlementId:guid}")]
+    public async Task<ActionResult<EntitlementDto>> GetEntitlement(Guid entitlementId)
+    {
+        var entitlement = await _entitlementService.GetEntitlementAsync(entitlementId);
+        return entitlement is null ? NotFound(new { code = "entitlement_not_found" }) : Ok(ToDto(entitlement));
+    }
 
-        var entitlementRows = await _db.OrganizerEntitlements.AsNoTracking()
-            .Where(x => x.OrganizerId == id)
-            .Join(_db.ThemePackages, x => x.PackageId, p => p.Id, (x, p) => new
-            {
-                x.Id,
-                x.PackageId,
-                PackageCode = p.Code,
-                PackageName = p.Name,
-                x.Kind,
-                x.Source,
-                x.GrantedAt,
-                x.ExpiresAt,
-                x.UsesRemaining,
-                x.RevokedAt,
-                x.Note
-            })
-            .OrderByDescending(x => x.GrantedAt)
-            .ToListAsync();
+    [HttpGet("entitlement-revocations")]
+    public async Task<ActionResult<List<EntitlementRevocationDto>>> GetRevocations([FromQuery] Guid entitlementId)
+    {
+        if (entitlementId == Guid.Empty) return ValidationProblem("entitlementId is required.");
+        if (await _entitlementService.GetEntitlementAsync(entitlementId) is null)
+        {
+            return NotFound(new { code = "entitlement_not_found" });
+        }
+        var revocations = await _entitlementService.GetRevocationsAsync(entitlementId);
+        return Ok(revocations.Select(ToDto).ToList());
+    }
 
-        var entitlementIds = entitlementRows.Select(x => x.Id).ToList();
-        var auditRows = entitlementIds.Count == 0
-            ? []
-            : await _db.AdminAuditLogs.AsNoTracking()
-                .Where(x => x.EntitlementId != null && entitlementIds.Contains(x.EntitlementId.Value))
-                .Where(x => x.Action == AdminAuditActionNames.GrantPackage || x.Action == AdminAuditActionNames.RevokePackage)
-                .Select(x => new { x.EntitlementId, x.AdminId, x.Action, x.CreatedAt })
-                .ToListAsync();
+    [HttpGet("entitlement-revocations/{revocationId:guid}")]
+    public async Task<ActionResult<EntitlementRevocationDto>> GetRevocation(Guid revocationId)
+    {
+        var revocation = await _entitlementService.GetRevocationByIdAsync(revocationId);
+        return revocation is null ? NotFound(new { code = "revocation_not_found" }) : Ok(ToDto(revocation));
+    }
 
-        var grantByEntitlement = auditRows
-            .Where(x => x.Action == AdminAuditActionNames.GrantPackage && x.EntitlementId != null)
-            .GroupBy(x => x.EntitlementId!.Value)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CreatedAt).First().AdminId);
+    [HttpPost("entitlement-revocations")]
+    public async Task<ActionResult<EntitlementRevocationDto>> CreateRevocation([FromBody] CreateEntitlementRevocationRequest body)
+    {
+        if (body.Id == Guid.Empty || body.EntitlementId == Guid.Empty) return ValidationProblem("id and entitlementId must be non-empty UUIDs.");
+        var adminId = HttpContext.RequireOrganizerId();
+        var result = await _entitlementService.RevokeAsync(body.EntitlementId, body.Id, adminId, body.Note);
+        if (result.Kind == AdminEntitlementRevocationResultKind.EntitlementNotFound)
+        {
+            return NotFound(new { code = "entitlement_not_found" });
+        }
+        if (result.Kind == AdminEntitlementRevocationResultKind.AlreadyRevoked)
+        {
+            return Conflict(new { code = "entitlement_already_revoked" });
+        }
+        if (result.Kind == AdminEntitlementRevocationResultKind.EventIdConflict)
+        {
+            return Conflict(new { code = "revocation_id_conflict" });
+        }
 
-        var revokeByEntitlement = auditRows
-            .Where(x => x.Action == AdminAuditActionNames.RevokePackage && x.EntitlementId != null)
-            .GroupBy(x => x.EntitlementId!.Value)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.CreatedAt).First().AdminId);
-
-        var adminIds = grantByEntitlement.Values
-            .Concat(revokeByEntitlement.Values)
-            .Distinct()
-            .ToList();
-        // Historical grant/revoke actor names must survive soft-delete of that admin.
-        var adminNames = adminIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.Organizers.AsNoTracking()
-                .IgnoreQueryFilters()
-                .Where(x => adminIds.Contains(x.Id))
-                .ToDictionaryAsync(x => x.Id, x => x.Name);
-
-        var entitlements = entitlementRows.Select(x => new EntitlementDto(
-            x.Id,
-            x.PackageId,
-            x.PackageCode,
-            x.PackageName,
-            x.Kind,
-            x.Source,
-            x.GrantedAt,
-            grantByEntitlement.GetValueOrDefault(x.Id),
-            adminNames.GetValueOrDefault(grantByEntitlement.GetValueOrDefault(x.Id, Guid.Empty)),
-            x.ExpiresAt,
-            x.UsesRemaining,
-            x.RevokedAt,
-            revokeByEntitlement.GetValueOrDefault(x.Id),
-            x.Note)).ToList();
-
-        return Ok(new AdminOrganizerDetailDto(organizer.Id, organizer.Name, email, oauthAccounts, organizer.Role, organizer.CreatedAt, entitlements));
+        var dto = ToDto(result.Revocation!);
+        if (result.Kind == AdminEntitlementRevocationResultKind.AlreadyCreated)
+        {
+            return Ok(dto);
+        }
+        return CreatedAtAction(nameof(GetRevocation), new { revocationId = body.Id }, dto);
     }
 
     [HttpPost("organizers/{id:guid}/entitlements")]
     public async Task<ActionResult<EntitlementDto>> Grant(Guid id, [FromBody] GrantEntitlementRequest body)
     {
-        var organizer = await _db.Organizers.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-        if (organizer == null) return NotFound(new { code = "organizer_not_found", message = "Organizer not found" });
-        var package = await _db.ThemePackages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == body.PackageId && x.IsActive);
-        if (package == null) return NotFound(new { code = "package_not_found", message = "Package not found" });
-        if (package.IsAutoGranted) return BadRequest(new { code = "package_is_auto_granted", message = "Cannot grant auto package" });
-
         var adminId = HttpContext.RequireOrganizerId();
-        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-        var now = DateTime.UtcNow;
-        var active = await _db.OrganizerEntitlements.AsNoTracking()
-            .Where(OrganizerEntitlementPredicates.IsActive(now))
-            .FirstOrDefaultAsync(x => x.OrganizerId == id && x.PackageId == body.PackageId);
-        if (active != null) return Conflict(new { code = "entitlement_already_active", existingEntitlementId = active.Id });
-
-        var entitlement = new Infrastructure.Persistence.Entities.OrganizerEntitlementEf
+        var result = await _entitlementService.GrantAsync(id, body.PackageId, adminId, body.Note);
+        return result.Kind switch
         {
-            Id = Guid.NewGuid(),
-            OrganizerId = id,
-            PackageId = body.PackageId,
-            Kind = "lifetime",
-            Source = "admin_grant",
-            GrantedAt = now,
-            Note = body.Note
+            AdminGrantResultKind.OrganizerNotFound => NotFound(new { code = "organizer_not_found", message = "Organizer not found" }),
+            AdminGrantResultKind.PackageNotFound => NotFound(new { code = "package_not_found", message = "Package not found" }),
+            AdminGrantResultKind.PackageAutoGranted => BadRequest(new { code = "package_is_auto_granted", message = "Cannot grant auto package" }),
+            AdminGrantResultKind.AlreadyActive => Conflict(new { code = "entitlement_already_active", existingEntitlementId = result.Entitlement!.Id }),
+            _ => CreatedAtAction(nameof(GetEntitlement), new { entitlementId = result.Entitlement!.Id }, ToDto(result.Entitlement))
         };
-        _db.OrganizerEntitlements.Add(entitlement);
-        _db.AdminAuditLogs.Add(new Infrastructure.Persistence.Entities.AdminAuditLogEf
-        {
-            Id = Guid.NewGuid(),
-            AdminId = adminId,
-            Action = AdminAuditActionNames.GrantPackage,
-            TargetOrganizerId = id,
-            PackageId = body.PackageId,
-            EntitlementId = entitlement.Id,
-            Note = body.Note,
-            CreatedAt = now
-        });
-        await _db.SaveChangesAsync();
-        await tx.CommitAsync();
-        var admin = await _db.Organizers.AsNoTracking()
-            .Where(x => x.Id == adminId)
-            .Select(x => x.Name)
-            .FirstOrDefaultAsync();
-
-        return StatusCode(201, new EntitlementDto(
-            entitlement.Id,
-            entitlement.PackageId,
-            package.Code,
-            package.Name,
-            entitlement.Kind,
-            entitlement.Source,
-            entitlement.GrantedAt,
-            adminId,
-            admin,
-            entitlement.ExpiresAt,
-            entitlement.UsesRemaining,
-            entitlement.RevokedAt,
-            null,
-            entitlement.Note));
     }
 
     [HttpDelete("organizers/{id:guid}/entitlements/{entitlementId:guid}")]
     public async Task<ActionResult> Revoke(Guid id, Guid entitlementId, [FromBody] RevokeEntitlementRequest? body)
     {
         var adminId = HttpContext.RequireOrganizerId();
-        var now = DateTime.UtcNow;
-        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-        var rowsUpdated = await TryAtomicRevokeAsync(id, entitlementId, now, body?.Note);
-
-        if (rowsUpdated == 0)
+        var result = await _entitlementService.RevokeLegacyAsync(id, entitlementId, adminId, body?.Note);
+        return result.Kind switch
         {
-            await tx.RollbackAsync();
-            var currentState = await _db.OrganizerEntitlements.AsNoTracking()
-                .Where(x => x.Id == entitlementId && x.OrganizerId == id)
-                .Select(x => new { x.RevokedAt })
-                .FirstOrDefaultAsync();
-
-            if (currentState == null)
-            {
-                return NotFound(new { code = "entitlement_not_found", message = "Entitlement not found" });
-            }
-
-            return Conflict(new { code = "entitlement_already_revoked", message = "Entitlement already revoked" });
-        }
-
-        var packageId = await _db.OrganizerEntitlements.AsNoTracking()
-            .Where(x => x.Id == entitlementId && x.OrganizerId == id)
-            .Select(x => x.PackageId)
-            .SingleAsync();
-
-        // Race-hardening invariant: a successful revoke must commit state change and audit record atomically.
-        _db.AdminAuditLogs.Add(new Infrastructure.Persistence.Entities.AdminAuditLogEf
-        {
-            Id = Guid.NewGuid(),
-            AdminId = adminId,
-            Action = AdminAuditActionNames.RevokePackage,
-            TargetOrganizerId = id,
-            PackageId = packageId,
-            EntitlementId = entitlementId,
-            Note = body?.Note,
-            CreatedAt = now
-        });
-        await _db.SaveChangesAsync();
-        await tx.CommitAsync();
-        return NoContent();
+            AdminLegacyRevokeResultKind.EntitlementNotFound => NotFound(new { code = "entitlement_not_found", message = "Entitlement not found" }),
+            AdminLegacyRevokeResultKind.AlreadyRevoked => Conflict(new { code = "entitlement_already_revoked", message = "Entitlement already revoked" }),
+            _ => NoContent()
+        };
     }
 
-    private async Task<int> TryAtomicRevokeAsync(Guid organizerId, Guid entitlementId, DateTime now, string? revokeNote)
+    private static EntitlementRevocationDto ToDto(CherryPlayServer.Core.Entities.EntitlementRevocation revocation)
     {
-        var providerName = _db.Database.ProviderName;
+        return new EntitlementRevocationDto(revocation.Id, revocation.EntitlementId, revocation.AdminId, revocation.Note, revocation.CreatedAt);
+    }
 
-        if (_db.Database.IsNpgsql())
-        {
-            if (string.IsNullOrWhiteSpace(revokeNote))
-            {
-                return await _db.Database.ExecuteSqlInterpolatedAsync($"""
-                    UPDATE organizer_entitlements
-                    SET revoked_at = {now}
-                    WHERE id = {entitlementId} AND organizer_id = {organizerId} AND revoked_at IS NULL
-                    """);
-            }
-
-            var separator = $"\n\n--- revoke: {now:O} ---\n";
-            return await _db.Database.ExecuteSqlInterpolatedAsync($"""
-                UPDATE organizer_entitlements
-                SET revoked_at = {now},
-                    note = CASE
-                        WHEN note IS NULL OR btrim(note) = '' THEN {revokeNote}
-                        ELSE note || {separator} || {revokeNote}
-                    END
-                WHERE id = {entitlementId} AND organizer_id = {organizerId} AND revoked_at IS NULL
-                """);
-        }
-
-        if (_db.Database.IsRelational())
-        {
-            var hasRevokeNote = !string.IsNullOrWhiteSpace(revokeNote);
-            var separator = hasRevokeNote ? $"\n\n--- revoke: {now:O} ---\n" : null;
-            var baseQuery = _db.OrganizerEntitlements
-                .Where(x => x.Id == entitlementId && x.OrganizerId == organizerId && x.RevokedAt == null);
-
-            if (!hasRevokeNote)
-            {
-                return await baseQuery.ExecuteUpdateAsync(
-                    updates => updates.SetProperty(x => x.RevokedAt, _ => now));
-            }
-
-            var safeNote = revokeNote!;
-            var safeSeparator = separator!;
-            var replaceRows = await baseQuery
-                .Where(x => x.Note == null || x.Note.Trim() == string.Empty)
-                .ExecuteUpdateAsync(
-                    updates => updates
-                        .SetProperty(x => x.RevokedAt, _ => now)
-                        .SetProperty(x => x.Note, _ => safeNote));
-
-            if (replaceRows > 0)
-            {
-                return replaceRows;
-            }
-
-            return await baseQuery.ExecuteUpdateAsync(
-                updates => updates
-                    .SetProperty(x => x.RevokedAt, _ => now)
-                    .SetProperty(
-                        x => x.Note,
-                        x => x.Note + safeSeparator + safeNote));
-        }
-
-        if (!string.Equals(providerName, "Microsoft.EntityFrameworkCore.InMemory", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Non-relational revoke fallback is only supported for tests with InMemory provider. Current provider: {providerName ?? "<unknown>"}.");
-        }
-
-        var trackedEntitlement = await _db.OrganizerEntitlements.FirstOrDefaultAsync(x => x.Id == entitlementId && x.OrganizerId == organizerId);
-        if (trackedEntitlement == null || trackedEntitlement.RevokedAt != null)
-        {
-            return 0;
-        }
-
-        trackedEntitlement.RevokedAt = now;
-        if (!string.IsNullOrWhiteSpace(revokeNote))
-        {
-            trackedEntitlement.Note = string.IsNullOrWhiteSpace(trackedEntitlement.Note)
-                ? revokeNote
-                : $"{trackedEntitlement.Note}\n\n--- revoke: {now:O} ---\n{revokeNote}";
-        }
-
-        return 1;
+    private static EntitlementDto ToDto(CherryPlayServer.Core.Entities.AdminEntitlement entitlement)
+    {
+        return new EntitlementDto(entitlement.Id, entitlement.PackageId, entitlement.PackageCode, entitlement.PackageName, entitlement.Kind, entitlement.Source, entitlement.GrantedAt, entitlement.GrantedByAdminId, entitlement.GrantedByAdminName, entitlement.ExpiresAt, entitlement.UsesRemaining, entitlement.RevokedAt, entitlement.RevokedByAdminId, entitlement.Note);
     }
 }

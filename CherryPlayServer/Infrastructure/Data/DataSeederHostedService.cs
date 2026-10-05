@@ -23,19 +23,20 @@ public class DataSeederHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!_configuration.GetValue<bool>("UseInMemoryStorage"))
+        using var scope = _scopeFactory.CreateScope();
+        if (_configuration.GetValue<bool>("UseInMemoryStorage"))
         {
-            _logger.LogInformation("Skipping data seeder (UseInMemoryStorage=false)");
+            _logger.LogInformation("Running in-memory demo data seeder");
+            var dataSeeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
+            await dataSeeder.SeedAsync(cancellationToken);
+            _logger.LogInformation("In-memory demo data seeding completed");
             return;
         }
 
-        _logger.LogInformation("Running data seeder (InMemory)");
-        using (var scope = _scopeFactory.CreateScope())
-        {
-            var dataSeeder = scope.ServiceProvider.GetRequiredService<IDataSeeder>();
-            await dataSeeder.SeedAsync(cancellationToken);
-        }
-        _logger.LogInformation("Data seeder completed");
+        _logger.LogInformation("Ensuring persistent theme catalog data");
+        var themeCatalogSeeder = scope.ServiceProvider.GetRequiredService<IThemeCatalogSeeder>();
+        await themeCatalogSeeder.SeedAsync(cancellationToken);
+        _logger.LogInformation("Persistent theme catalog data is ready");
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

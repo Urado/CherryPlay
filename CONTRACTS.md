@@ -26,8 +26,9 @@
 | **403 theme_not_entitled**           | Нет права на тему                     | Создание/обновление вечеринки с темой, которая не входит в доступные пакеты организатора.                                        |
 | **403 theme_not_visible**            | Тема скрыта                           | Создание/обновление вечеринки с темой, у которой `isVisible=false` в каталоге тем.                                               |
 | **404 package_not_found**            | Пакет не найден                       | `POST /api/admin/organizers/{id}/entitlements`: пакет не существует или `isActive=false`.                                        |
-| **404 organizer_not_found**          | Организатор не найден                 | `GET /api/admin/organizers/{id}` или `POST /api/admin/organizers/{id}/entitlements` для отсутствующего организатора.             |
-| **404 entitlement_not_found**        | Выдача не найдена                     | `DELETE /api/admin/organizers/{id}/entitlements/{entitlementId}` для отсутствующей или чужой выдачи.                             |
+| **404 organizer_not_found**          | Организатор не найден                 | `GET /api/admin/organizers/{id}`, `GET /api/admin/organizers/{id}/entitlements` или `POST /api/admin/organizers/{id}/entitlements` для отсутствующего организатора. |
+| **404 entitlement_not_found**        | Выдача не найдена                     | `GET /api/admin/entitlements/{entitlementId}`, `GET /api/admin/entitlement-revocations?entitlementId={id}`, либо legacy `DELETE`/новый `POST` для отсутствующей или чужой выдачи. |
+| **404 revocation_not_found**         | Событие отзыва не найдено             | `GET /api/admin/entitlement-revocations/{revocationId}` для отсутствующего события.                                               |
 | **409 entitlement_already_active**   | Выдача уже активна                    | Повторный grant активного пакета одному организатору.                                                                            |
 | **409 entitlement_already_revoked**  | Выдача уже отозвана                   | Повторный revoke уже отозванной выдачи.                                                                                          |
 | **409 invalid_lifecycle_transition** | Недопустимый переход жизненного цикла | Запрос смены `partyLifecycleState` вне разрешённых переходов (например `ready` → `draft`, `draft` → `completed`, `completed` → `draft`). Состояние `completed` **не** терминальное: `completed` → `ready` разрешён. |
@@ -407,18 +408,27 @@ DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md)
 | GET    | `/api/admin/theme-packages`                               | Список пакетов тем (с `themeIds`)                        | `AdminThemePackageListDto` |
 | GET    | `/api/admin/organizers`                                   | Поиск/список организаторов (`query`, `page`, `pageSize`) | `AdminOrganizerListDto`    |
 | GET    | `/api/admin/organizers/{id}`                              | Карточка организатора и история выдач                    | `AdminOrganizerDetailDto`  |
+| GET    | `/api/admin/organizers/{id}/entitlements?status=active`    | Выдачи организатора; `status` принимает `active` или `all`, по умолчанию `all` | `EntitlementDto[]`       |
 | POST   | `/api/admin/organizers/{id}/entitlements`                 | Выдать пакет организатору                                | `EntitlementDto` (201)     |
-| DELETE | `/api/admin/organizers/{id}/entitlements/{entitlementId}` | Отозвать выдачу пакета                                   | 204                        |
+| GET    | `/api/admin/entitlements/{entitlementId}`                 | Получить выдачу                                          | `EntitlementDto`           |
+| GET    | `/api/admin/entitlement-revocations?entitlementId={id}`   | История отзывов                                          | `EntitlementRevocationDto[]` |
+| GET    | `/api/admin/entitlement-revocations/{revocationId}`       | Получить событие отзыва                                  | `EntitlementRevocationDto`  |
+| POST   | `/api/admin/entitlement-revocations`                      | Создать событие отзыва                                   | `EntitlementRevocationDto` (201) |
+| DELETE | `/api/admin/organizers/{id}/entitlements/{entitlementId}` | Совместимость со старым CherryPlayWeb, включая `note` | 204 (legacy) |
 
 Правила:
 
 - `POST grant` возвращает `404 package_not_found`, если пакет отсутствует или неактивен.
 - `POST grant` возвращает `400 package_is_auto_granted` для пакетов `isAutoGranted=true`.
 - `POST grant` возвращает `409 entitlement_already_active` и `existingEntitlementId`, если активная выдача уже есть.
-- `DELETE revoke` возвращает `404 entitlement_not_found`, если выдача не найдена для указанного организатора.
-- `DELETE revoke` возвращает `409 entitlement_already_revoked`, если выдача уже отозвана.
-- `DELETE revoke` выполняется атомарно и идемпотентно относительно состояния entitlement: при конкурентных/повторных запросах только первый успешный revoke меняет состояние, остальные получают `409 entitlement_already_revoked`.
-- При успешном `DELETE revoke` поле `revokedAt` заполняется; если в теле передан `note`, он добавляется к существующему `note` с разделителем `--- revoke: <UTC ISO8601> ---` (без потери предыдущего текста).
+- `POST grant` возвращает `Location: /api/admin/entitlements/{entitlementId}`.
+- `GET /api/admin/organizers/{id}/entitlements` принимает `status=active` или `status=all`; без `status` возвращает все выдачи, неизвестное значение — `400`.
+- `POST /api/admin/entitlement-revocations` принимает `{ "id": "<client UUID>", "entitlementId": "<UUID>", "note": "..." }`; запись аудита отзыва одновременно является неизменяемым событием revocation и использует клиентский UUID как `id`.
+- Первый успешный POST атомарно заполняет `revokedAt` и добавляет запись аудита; ответ — `201` с `Location: /api/admin/entitlement-revocations/{revocationId}`. Повтор того же запроса с теми же UUID возвращает `200` и существующий ресурс.
+- Событие остаётся доступно через GET по `revocationId`, даже если entitlement физически удалён; в этом случае `entitlementId` в DTO равен `null`. Список по entitlement после удаления недоступен, поскольку FK аудита становится `NULL`.
+- Повтор с тем же UUID и entitlement возвращает тот же ресурс с `200`; другой UUID для уже отозванной выдачи возвращает `409 entitlement_already_revoked`.
+- Повтор UUID, уже занятого другой записью аудита/отзыва, возвращает `409 revocation_id_conflict`; отсутствующая выдача — `404 entitlement_not_found`, пустые UUID — `400`.
+- Legacy `DELETE revoke` сохранён для совместимости со старыми клиентами. Он принимает `note`, записывает её в аудит и дописывает к `OrganizerEntitlement.Note` с разделителем `--- revoke: <UTC ISO8601> ---`; это совместимое исключение из append-only контракта. CherryPlayWeb использует ресурс событий POST.
 
 ---
 
@@ -703,6 +713,8 @@ _Примечание:_ в текущей реализации веб может
 | `EntitlementDto`            | `id`, `packageId`, `packageCode`, `packageName`, `kind`, `source`, `grantedAt`, `grantedByAdminId`, `grantedByAdminName`, `expiresAt`, `usesRemaining`, `revokedAt`, `revokedByAdminId`, `note` |
 | `GrantEntitlementRequest`   | `packageId`, `note?` (`maxLength: 2000`)                                                                                                                                                        |
 | `RevokeEntitlementRequest`  | `note?` (`maxLength: 2000`)                                                                                                                                                                     |
+| `CreateEntitlementRevocationRequest` | `id`, `entitlementId` (обязательные UUID), `note?` (`maxLength: 2000`)                                                                                                            |
+| `EntitlementRevocationDto` | `id`, `entitlementId?`, `adminId`, `note`, `createdAt`; `entitlementId` может быть `null` после hard-delete выдачи                                                                                |
 
 Дополнительно по `EntitlementDto`:
 

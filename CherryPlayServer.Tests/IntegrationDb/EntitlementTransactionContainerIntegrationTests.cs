@@ -120,7 +120,7 @@ public sealed class EntitlementTransactionContainerIntegrationTests
         function.CommandText = "CREATE FUNCTION reject_admin_audit_insert() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced audit failure'; END; $$";
         await function.ExecuteNonQueryAsync();
         await using var trigger = connection.CreateCommand();
-        trigger.CommandText = "CREATE TRIGGER reject_admin_audit_insert BEFORE INSERT ON admin_audit_logs FOR EACH ROW EXECUTE FUNCTION reject_admin_audit_insert()";
+        trigger.CommandText = "CREATE TRIGGER reject_admin_audit_insert BEFORE INSERT ON admin_audit_log FOR EACH ROW EXECUTE FUNCTION reject_admin_audit_insert()";
         await trigger.ExecuteNonQueryAsync();
     }
 }

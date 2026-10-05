@@ -3,9 +3,10 @@ import type {
   AdminOrganizerDetailDto,
   AdminOrganizerListResponse,
   ApiErrorPayload,
+  CreateEntitlementRevocationRequest,
   EntitlementDto,
+  EntitlementRevocationDto,
   GrantEntitlementRequest,
-  RevokeEntitlementRequest,
   ThemePackageListResponse,
 } from '../types/api';
 import { createApiError, handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
@@ -17,7 +18,10 @@ function formatAdminError(payload: ApiErrorPayload | null, fallback: string): st
     return 'Пакет уже выдан этому организатору и активен.';
   }
   if (payload.code === 'entitlement_already_revoked') {
-    return 'Доступ уже отозван ранее.';
+    return 'Доступ уже отозван. Обновите карточку организатора.';
+  }
+  if (payload.code === 'revocation_id_conflict') {
+    return 'Идентификатор отзыва уже использован. Повторите действие с новым идентификатором.';
   }
   if (payload.code === 'package_is_auto_granted') {
     return 'Этот пакет выдается автоматически и не требует ручной выдачи.';
@@ -115,15 +119,11 @@ class AdminApiService {
     return response.json() as Promise<EntitlementDto>;
   }
 
-  async revokeEntitlement(
-    organizerId: string,
-    entitlementId: string,
-    request: RevokeEntitlementRequest,
-  ): Promise<void> {
+  async revokeEntitlement(request: CreateEntitlementRevocationRequest): Promise<void> {
     const response = await apiFetch(
-      getApiUrl(API_ENDPOINTS.ADMIN.ORGANIZER_ENTITLEMENT_BY_ID(organizerId, entitlementId)),
+      getApiUrl(API_ENDPOINTS.ADMIN.ENTITLEMENT_REVOCATIONS),
       {
-        method: 'DELETE',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(request),
@@ -134,6 +134,23 @@ class AdminApiService {
       const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
       throw await createAdminApiError(response, payload, 'Ошибка отзыва доступа');
     }
+  }
+
+  async getEntitlementRevocations(entitlementId: string): Promise<EntitlementRevocationDto[]> {
+    const searchParams = new URLSearchParams({ entitlementId });
+    const response = await apiFetch(
+      getApiUrl(`${API_ENDPOINTS.ADMIN.ENTITLEMENT_REVOCATIONS}?${searchParams.toString()}`),
+      {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-cache',
+      },
+    );
+
+    return handleApiResponse<EntitlementRevocationDto[]>(
+      response,
+      'Ошибка загрузки истории отзывов',
+    );
   }
 }
 

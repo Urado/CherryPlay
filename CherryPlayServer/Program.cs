@@ -58,6 +58,9 @@ builder.Services.AddCors(options =>
 var useInMemoryStorage = builder.Configuration.GetValue<bool>("UseInMemoryStorage");
 if (useInMemoryStorage)
 {
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("CherryPlayAdmin"));
+    builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
+    builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
     builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
     builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
     builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
@@ -95,6 +98,8 @@ else
     builder.Services.AddScoped<IThemeRepository, EfThemeRepository>();
     builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
+    builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
+    builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
     builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
     builder.Services.AddScoped<ILegalDocumentVersionRepository, EfLegalDocumentVersionRepository>();
     builder.Services.AddScoped<IConsentEventRepository, EfConsentEventRepository>();
@@ -134,6 +139,8 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+builder.Services.AddScoped<IAdminEntitlementService, AdminEntitlementService>();
+builder.Services.AddScoped<IAdminQueryService, AdminQueryService>();
 if (useInMemoryStorage)
 {
     builder.Services.AddSingleton<IAppUnitOfWork, InMemoryAppUnitOfWork>();
@@ -240,6 +247,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IDataSeeder, DataSeeder>();
+builder.Services.AddScoped<IThemeCatalogSeeder, ThemeCatalogSeeder>();
 builder.Services.AddHostedService<DataSeederHostedService>();
 builder.Services.AddHostedService<PasswordResetTokenRetentionCleanupHostedService>();
 

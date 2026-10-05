@@ -4,10 +4,76 @@ import { Link, useParams } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useRequireAdmin } from '../../hooks/useRequireAdmin';
 import { adminApiService } from '../../services/adminApiService';
-import type { AdminOrganizerDetailDto, EntitlementDto, ThemePackageDto } from '../../types/api';
+import type {
+  AdminOrganizerDetailDto,
+  CreateEntitlementRevocationRequest,
+  EntitlementDto,
+  EntitlementRevocationDto,
+  ThemePackageDto,
+} from '../../types/api';
 import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
 
 import './AdminPages.css';
+
+function getPendingRevocationKey(entitlementId: string): string {
+  return `admin-entitlement-revocation:${entitlementId}`;
+}
+
+function readPendingRevocation(
+  entitlementId: string,
+): CreateEntitlementRevocationRequest | null {
+  try {
+    const serialized = window.sessionStorage.getItem(getPendingRevocationKey(entitlementId));
+    if (!serialized) return null;
+
+    const value: unknown = JSON.parse(serialized);
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      !('id' in value) ||
+      typeof value.id !== 'string' ||
+      !('entitlementId' in value) ||
+      value.entitlementId !== entitlementId ||
+      ('note' in value && value.note !== undefined && typeof value.note !== 'string')
+    ) {
+      window.sessionStorage.removeItem(getPendingRevocationKey(entitlementId));
+      return null;
+    }
+
+    return {
+      id: value.id,
+      entitlementId,
+      note: 'note' in value && typeof value.note === 'string' ? value.note : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistPendingRevocation(request: CreateEntitlementRevocationRequest): boolean {
+  try {
+    window.sessionStorage.setItem(
+      getPendingRevocationKey(request.entitlementId),
+      JSON.stringify(request),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearPendingRevocation(entitlementId: string): void {
+  try {
+    window.sessionStorage.removeItem(getPendingRevocationKey(entitlementId));
+  } catch {
+    return;
+  }
+}
+
+function isDefinitiveRevocationRejection(error: unknown): error is { status: number } {
+  if (!error || typeof error !== 'object' || !('status' in error)) return false;
+  return typeof error.status === 'number' && [400, 401, 403, 404, 409, 422].includes(error.status);
+}
 
 function isActiveEntitlement(entitlement: EntitlementDto): boolean {
   if (entitlement.revokedAt) return false;
@@ -19,10 +85,16 @@ export const AdminOrganizerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { checking, isAdmin } = useRequireAdmin();
   const loadRequestIdRef = useRef(0);
+  const revocationHistoryRequestIdsRef = useRef<Record<string, number>>({});
   const [organizer, setOrganizer] = useState<AdminOrganizerDetailDto | null>(null);
   const [packages, setPackages] = useState<ThemePackageDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revocations, setRevocations] = useState<Record<string, EntitlementRevocationDto[]>>({});
+  const [revocationHistoryErrors, setRevocationHistoryErrors] = useState<Record<string, string>>({});
+  const [revocationHistoryLoadingIds, setRevocationHistoryLoadingIds] = useState<
+    Record<string, boolean>
+  >({});
 
   const [grantOpen, setGrantOpen] = useState(false);
   const [grantPackageId, setGrantPackageId] = useState('');
@@ -33,11 +105,67 @@ export const AdminOrganizerDetailPage = () => {
   const [revokeEntitlement, setRevokeEntitlement] = useState<EntitlementDto | null>(null);
   const [revokeNote, setRevokeNote] = useState('');
   const [revokeError, setRevokeError] = useState<string | null>(null);
+  const [revokePersistenceWarning, setRevokePersistenceWarning] = useState<string | null>(null);
   const [revoking, setRevoking] = useState(false);
+  const [revocationRequestId, setRevocationRequestId] = useState<string | null>(null);
+  const [revocationPending, setRevocationPending] = useState(false);
   const grantOpenButtonRef = useRef<HTMLButtonElement | null>(null);
   const revokeOpenButtonRef = useRef<HTMLButtonElement | null>(null);
   const grantModalTitleId = 'admin-grant-modal-title';
   const revokeModalTitleId = 'admin-revoke-modal-title';
+
+  const loadRevocationHistory = useCallback(async (entitlementIds: string[]) => {
+    const requestId = loadRequestIdRef.current;
+    const requestSequences = entitlementIds.map((entitlementId) => {
+      const sequence = (revocationHistoryRequestIdsRef.current[entitlementId] ?? 0) + 1;
+      revocationHistoryRequestIdsRef.current[entitlementId] = sequence;
+      return sequence;
+    });
+    setRevocationHistoryLoadingIds((current) => ({
+      ...current,
+      ...Object.fromEntries(entitlementIds.map((entitlementId) => [entitlementId, true])),
+    }));
+    const results = await Promise.allSettled(
+      entitlementIds.map(async (entitlementId) => ({
+        entitlementId,
+        events: await adminApiService.getEntitlementRevocations(entitlementId),
+      })),
+    );
+    if (requestId !== loadRequestIdRef.current) return;
+
+    results.forEach((result, index) => {
+      const entitlementId = entitlementIds[index];
+      const sequence = requestSequences[index];
+      if (
+        !entitlementId ||
+        sequence === undefined ||
+        revocationHistoryRequestIdsRef.current[entitlementId] !== sequence
+      ) {
+        return;
+      }
+      if (result.status === 'fulfilled') {
+        setRevocations((current) => ({ ...current, [entitlementId]: result.value.events }));
+        setRevocationHistoryErrors((current) => {
+          const next = { ...current };
+          delete next[entitlementId];
+          return next;
+        });
+      } else {
+        setRevocationHistoryErrors((current) => ({
+          ...current,
+          [entitlementId]: extractApiErrorMessage(
+            result.reason,
+            'Не удалось загрузить историю отзывов.',
+          ),
+        }));
+      }
+      setRevocationHistoryLoadingIds((current) => {
+        const next = { ...current };
+        delete next[entitlementId];
+        return next;
+      });
+    });
+  }, []);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestIdRef.current;
@@ -53,6 +181,10 @@ export const AdminOrganizerDetailPage = () => {
 
     setLoading(true);
     setError(null);
+    setRevocations({});
+    setRevocationHistoryErrors({});
+    setRevocationHistoryLoadingIds({});
+    revocationHistoryRequestIdsRef.current = {};
     try {
       const [organizerData, packageData] = await Promise.all([
         adminApiService.getOrganizerById(id),
@@ -60,6 +192,7 @@ export const AdminOrganizerDetailPage = () => {
       ]);
       if (requestId !== loadRequestIdRef.current) return;
       setOrganizer(organizerData);
+      void loadRevocationHistory(organizerData.entitlements.map((entitlement) => entitlement.id));
       const grantablePackages = packageData.items.filter(
         (item) => item.isActive && !item.isAutoGranted,
       );
@@ -79,7 +212,7 @@ export const AdminOrganizerDetailPage = () => {
         setLoading(false);
       }
     }
-  }, [id]);
+  }, [id, loadRevocationHistory]);
 
   useEffect(() => {
     if (!isAdmin || !id) return;
@@ -114,6 +247,8 @@ export const AdminOrganizerDetailPage = () => {
       if (event.key === 'Escape' && !revoking) {
         setRevokeEntitlement(null);
         setRevokeError(null);
+        setRevocationRequestId(null);
+        setRevocationPending(false);
       }
     };
 
@@ -129,6 +264,16 @@ export const AdminOrganizerDetailPage = () => {
     () => (organizer?.entitlements ?? []).filter((e) => !isActiveEntitlement(e)),
     [organizer?.entitlements],
   );
+  const openRevocation = (entitlement: EntitlementDto) => {
+    revokeOpenButtonRef.current = document.activeElement as HTMLButtonElement | null;
+    const pendingRequest = readPendingRevocation(entitlement.id);
+    setRevokeEntitlement(entitlement);
+    setRevokeNote(pendingRequest?.note ?? '');
+    setRevokeError(null);
+    setRevokePersistenceWarning(null);
+    setRevocationRequestId(pendingRequest?.id ?? crypto.randomUUID());
+    setRevocationPending(pendingRequest !== null);
+  };
 
   if (checking || !isAdmin) {
     return <div className="admin-page admin-page--loading">Проверка доступа…</div>;
@@ -146,6 +291,12 @@ export const AdminOrganizerDetailPage = () => {
         </Link>
         <h1>Карточка организатора</h1>
       </div>
+
+      {revokePersistenceWarning && (
+        <div className="admin-error" role="alert">
+          {revokePersistenceWarning}
+        </div>
+      )}
 
       {error && (
         <div className="admin-error" role="alert">
@@ -197,13 +348,7 @@ export const AdminOrganizerDetailPage = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        revokeOpenButtonRef.current =
-                          document.activeElement as HTMLButtonElement | null;
-                        setRevokeEntitlement(entitlement);
-                        setRevokeNote('');
-                        setRevokeError(null);
-                      }}
+                      onClick={() => openRevocation(entitlement)}
                     >
                       Отозвать
                     </button>
@@ -229,7 +374,35 @@ export const AdminOrganizerDetailPage = () => {
                           ? ` · Отозван: ${new Date(entitlement.revokedAt).toLocaleString('ru-RU')}`
                           : ''}
                       </div>
+                      {revocationHistoryLoadingIds[entitlement.id] && (
+                        <div>Загрузка истории отзывов…</div>
+                      )}
+                      {revocations[entitlement.id]?.map((revocation) => (
+                        <div key={revocation.id}>
+                          Отзыв: {new Date(revocation.createdAt).toLocaleString('ru-RU')}
+                          {revocation.note ? ` · Причина: ${revocation.note}` : ''}
+                        </div>
+                      ))}
+                      {revocationHistoryErrors[entitlement.id] && (
+                        <div>
+                          <p className="admin-error" role="alert">
+                            {revocationHistoryErrors[entitlement.id]}
+                          </p>
+                          <button
+                            type="button"
+                            disabled={revocationHistoryLoadingIds[entitlement.id]}
+                            onClick={() => void loadRevocationHistory([entitlement.id])}
+                          >
+                            Повторить загрузку истории
+                          </button>
+                        </div>
+                      )}
                     </div>
+                    {readPendingRevocation(entitlement.id) && (
+                      <button type="button" onClick={() => openRevocation(entitlement)}>
+                        Повторить отзыв
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -324,8 +497,13 @@ export const AdminOrganizerDetailPage = () => {
               Note (опционально)
               <textarea
                 value={revokeNote}
-                onChange={(e) => setRevokeNote(e.target.value)}
+                onChange={(e) => {
+                  setRevokeNote(e.target.value);
+                  setRevokeError(null);
+                  if (!revocationPending) setRevocationRequestId(crypto.randomUUID());
+                }}
                 rows={4}
+                disabled={revocationPending}
               />
             </label>
             {revokeError && (
@@ -339,8 +517,11 @@ export const AdminOrganizerDetailPage = () => {
                 onClick={() => {
                   setRevokeEntitlement(null);
                   setRevokeError(null);
+                  setRevocationRequestId(null);
+                  setRevocationPending(false);
                   revokeOpenButtonRef.current?.focus();
                 }}
+                disabled={revoking}
               >
                 Отмена
               </button>
@@ -350,22 +531,45 @@ export const AdminOrganizerDetailPage = () => {
                 onClick={async () => {
                   setRevoking(true);
                   setRevokeError(null);
-                  try {
-                    await adminApiService.revokeEntitlement(id, revokeEntitlement.id, {
+                  const savedRequest = readPendingRevocation(revokeEntitlement.id);
+                  const request =
+                    savedRequest ??
+                    {
+                      id: revocationRequestId ?? crypto.randomUUID(),
+                      entitlementId: revokeEntitlement.id,
                       note: revokeNote.trim() || undefined,
-                    });
+                    };
+                  try {
+                    const persisted = persistPendingRevocation(request);
+                    setRevokePersistenceWarning(
+                      persisted
+                        ? null
+                        : 'Браузер не сохранил запрос отзыва. Повторить его можно в этом окне; после перезагрузки восстановление запроса не гарантируется.',
+                    );
+                    setRevocationRequestId(request.id);
+                    setRevokeNote(request.note ?? '');
+                    setRevocationPending(true);
+                    await adminApiService.revokeEntitlement(request);
+                    clearPendingRevocation(revokeEntitlement.id);
                     setRevokeEntitlement(null);
                     setRevokeNote('');
+                    setRevocationRequestId(null);
+                    setRevocationPending(false);
                     revokeOpenButtonRef.current?.focus();
                     await load();
                   } catch (err) {
                     setRevokeError(extractApiErrorMessage(err, 'Ошибка отзыва'));
+                    if (isDefinitiveRevocationRejection(err)) {
+                      clearPendingRevocation(revokeEntitlement.id);
+                      setRevocationRequestId(crypto.randomUUID());
+                      setRevocationPending(false);
+                    }
                   } finally {
                     setRevoking(false);
                   }
                 }}
               >
-                {revoking ? 'Отзыв…' : 'Отозвать'}
+                {revoking ? 'Отзыв…' : revocationPending ? 'Повторить отзыв' : 'Отозвать'}
               </button>
             </div>
           </div>

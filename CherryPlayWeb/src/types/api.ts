@@ -4,10 +4,8 @@ export interface AppConfigResponse {
   adminContactUrl?: string;
 }
 
-/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
 export type PartyLifecycleState = 'draft' | 'ready' | 'completed';
 
-/** Статус отображения для зрителя (сервер, CONTRACTS §6.7). */
 export type PartyDisplayStatusId =
   | 'draft'
   | 'scheduled'
@@ -257,8 +255,18 @@ export interface GrantEntitlementRequest {
   note?: string;
 }
 
-export interface RevokeEntitlementRequest {
-  note?: string;
+export interface CreateEntitlementRevocationRequest {
+  readonly id: string;
+  readonly entitlementId: string;
+  readonly note?: string;
+}
+
+export interface EntitlementRevocationDto {
+  id: string;
+  entitlementId?: string | null;
+  adminId: string;
+  note?: string | null;
+  createdAt: string;
 }
 
 export type { OrganizerDto } from '@cherryplay/components';

@@ -7,7 +7,6 @@ using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Models;
-using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +18,128 @@ namespace CherryPlayServer.Tests;
 
 public class AdminControllerEntitlementTests
 {
+    [Test]
+    public async Task GetPackages_MapsReadOnlyThemeIdsToApiDto()
+    {
+        await using var db = CreateDbContext();
+        var adminId = Guid.NewGuid();
+        var packageId = Guid.NewGuid();
+        await SeedOrganizerAsync(db, adminId, "admin");
+        db.Themes.AddRange(
+            new ThemeEf { ThemeId = "zeta", DisplayName = "Zeta" },
+            new ThemeEf { ThemeId = "alpha", DisplayName = "Alpha" });
+        db.ThemePackages.Add(new ThemePackageEf
+        {
+            Id = packageId,
+            Code = "extended",
+            Name = "Extended",
+            IsActive = true,
+            Items =
+            [
+                new ThemePackageItemEf { ThemeId = "zeta" },
+                new ThemePackageItemEf { ThemeId = "alpha" },
+            ],
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateController(db, adminId);
+        var action = await controller.GetPackages();
+
+        Assert.That(action.Result, Is.TypeOf<OkObjectResult>());
+        var result = (OkObjectResult)action.Result!;
+        Assert.That(result.Value, Is.TypeOf<AdminThemePackageListDto>());
+        var dto = (AdminThemePackageListDto)result.Value!;
+        Assert.That(dto.Items.Single().Id, Is.EqualTo(packageId));
+        Assert.That(dto.Items.Single().ThemeIds, Is.EqualTo(new[] { "alpha", "zeta" }));
+    }
+
+    [Test]
+    public async Task CreateRevocation_IsIdempotentAndReturnsResourceLocation()
+    {
+        await using var db = CreateDbContext();
+        var adminId = Guid.NewGuid();
+        var organizerId = Guid.NewGuid();
+        var packageId = Guid.NewGuid();
+        var entitlementId = Guid.NewGuid();
+        var revocationId = Guid.NewGuid();
+        await SeedOrganizerAsync(db, adminId, "admin");
+        await SeedOrganizerAsync(db, organizerId, "organizer");
+        await SeedPackageAsync(db, packageId, "extended", isAutoGranted: false, isActive: true);
+        db.OrganizerEntitlements.Add(new OrganizerEntitlementEf
+        {
+            Id = entitlementId,
+            OrganizerId = organizerId,
+            PackageId = packageId,
+            GrantedAt = DateTime.UtcNow.AddMinutes(-5),
+            Kind = "lifetime",
+            Source = "admin_grant",
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateController(db, adminId);
+        var request = new CreateEntitlementRevocationRequest(revocationId, entitlementId, "cancelled");
+        var first = await controller.CreateRevocation(request);
+
+        Assert.That(first.Result, Is.TypeOf<CreatedAtActionResult>());
+        var created = (CreatedAtActionResult)first.Result!;
+        Assert.That(created.StatusCode, Is.EqualTo(201));
+        Assert.That(created.ActionName, Is.EqualTo(nameof(AdminController.GetRevocation)));
+        Assert.That(created.RouteValues!["revocationId"], Is.EqualTo(revocationId));
+        Assert.That(created.Value, Is.TypeOf<EntitlementRevocationDto>());
+
+        var repeated = await controller.CreateRevocation(request);
+        Assert.That(repeated.Result, Is.TypeOf<OkObjectResult>());
+        var repeatedDto = (EntitlementRevocationDto)((OkObjectResult)repeated.Result!).Value!;
+        var createdDto = (EntitlementRevocationDto)created.Value!;
+        Assert.That(repeatedDto, Is.EqualTo(createdDto));
+
+        var secondId = Guid.NewGuid();
+        var differentId = await controller.CreateRevocation(new CreateEntitlementRevocationRequest(secondId, entitlementId, "another event"));
+        Assert.That(differentId.Result, Is.TypeOf<ConflictObjectResult>());
+        Assert.That(ReadAnonymousProperty<string>(((ConflictObjectResult)differentId.Result!).Value, "code"), Is.EqualTo("entitlement_already_revoked"));
+
+        var collisionId = Guid.NewGuid();
+        db.AdminAuditLogs.Add(new AdminAuditLogEf
+        {
+            Id = collisionId,
+            AdminId = adminId,
+            Action = AdminAuditActionNames.GrantPackage,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var collision = await controller.CreateRevocation(new CreateEntitlementRevocationRequest(collisionId, entitlementId, "collision"));
+        Assert.That(collision.Result, Is.TypeOf<ConflictObjectResult>());
+        Assert.That(ReadAnonymousProperty<string>(((ConflictObjectResult)collision.Result!).Value, "code"), Is.EqualTo("revocation_id_conflict"));
+    }
+
+    [Test]
+    public async Task GetRevocation_RetainedAuditWithNullEntitlement_IsAccessible()
+    {
+        await using var db = CreateDbContext();
+        var adminId = Guid.NewGuid();
+        var revocationId = Guid.NewGuid();
+        await SeedOrganizerAsync(db, adminId, "admin");
+        db.AdminAuditLogs.Add(new AdminAuditLogEf
+        {
+            Id = revocationId,
+            AdminId = adminId,
+            Action = AdminAuditActionNames.RevokePackage,
+            EntitlementId = null,
+            Note = "retained after hard delete",
+            CreatedAt = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateController(db, adminId);
+        var action = await controller.GetRevocation(revocationId);
+
+        Assert.That(action.Result, Is.TypeOf<OkObjectResult>());
+        var dto = (EntitlementRevocationDto)((OkObjectResult)action.Result!).Value!;
+        Assert.That(dto.Id, Is.EqualTo(revocationId));
+        Assert.That(dto.EntitlementId, Is.Null);
+        Assert.That(dto.AdminId, Is.EqualTo(adminId));
+    }
+
     [Test]
     public async Task Grant_Success_CreatesEntitlementWithExpectedFields()
     {
@@ -32,12 +153,13 @@ public class AdminControllerEntitlementTests
 
         var controller = CreateController(db, adminId);
         var action = await controller.Grant(organizerId, new GrantEntitlementRequest(packageId, "manual grant"));
-        Assert.That(action.Result, Is.TypeOf<ObjectResult>());
-        var created = (ObjectResult)action.Result!;
+        Assert.That(action.Result, Is.TypeOf<CreatedAtActionResult>());
+        var created = (CreatedAtActionResult)action.Result!;
         Assert.That(created.StatusCode, Is.EqualTo(201));
-
+        Assert.That(created.ActionName, Is.EqualTo(nameof(AdminController.GetEntitlement)));
         Assert.That(created.Value, Is.TypeOf<EntitlementDto>());
         var dto = (EntitlementDto)created.Value!;
+        Assert.That(created.RouteValues!["entitlementId"], Is.EqualTo(dto.Id));
         Assert.That(dto.PackageId, Is.EqualTo(packageId));
         Assert.That(dto.PackageCode, Is.EqualTo("extended"));
         Assert.That(dto.Kind, Is.EqualTo("lifetime"));
@@ -441,102 +563,6 @@ public class AdminControllerEntitlementTests
     }
 
     [Test]
-    public async Task Revoke_RelationalWhitespaceOnlyOriginalNote_ReplacesWithoutSeparator()
-    {
-        var connectionString = $"Data Source=file:revoke-note-whitespace-{Guid.NewGuid():N}?mode=memory&cache=shared&Default Timeout=15";
-        await using var keeperConnection = new SqliteConnection(connectionString);
-        await keeperConnection.OpenAsync();
-        var options = CreateSqliteDbContextOptions(connectionString);
-
-        await using var db = CreateDbContext(options);
-        await db.Database.EnsureCreatedAsync();
-
-        var adminId = Guid.NewGuid();
-        var organizerId = Guid.NewGuid();
-        var packageId = Guid.NewGuid();
-        var entitlementId = Guid.NewGuid();
-        await SeedOrganizerAsync(db, adminId, "admin");
-        await SeedOrganizerAsync(db, organizerId, "organizer");
-        await SeedPackageAsync(db, packageId, "extended", isAutoGranted: false, isActive: true);
-        db.OrganizerEntitlements.Add(new OrganizerEntitlementEf
-        {
-            Id = entitlementId,
-            OrganizerId = organizerId,
-            PackageId = packageId,
-            GrantedAt = DateTime.UtcNow.AddMinutes(-10),
-            Kind = "lifetime",
-            Source = "admin_grant",
-            Note = "   "
-        });
-        await db.SaveChangesAsync();
-
-        var controller = CreateController(db, adminId);
-        var result = await controller.Revoke(organizerId, entitlementId, new RevokeEntitlementRequest("normalized"));
-        Assert.That(result, Is.TypeOf<NoContentResult>());
-
-        var updated = await db.OrganizerEntitlements.AsNoTracking().SingleAsync(x => x.Id == entitlementId);
-        Assert.That(updated.Note, Is.EqualTo("normalized"));
-    }
-
-    [Test]
-    public async Task Revoke_ConcurrentCalls_OnlyOneSucceedsAndWritesSingleAuditLog()
-    {
-        var connectionString = $"Data Source=file:revoke-concurrency-{Guid.NewGuid():N}?mode=memory&cache=shared&Default Timeout=15";
-        await using var keeperConnection = new SqliteConnection(connectionString);
-        await keeperConnection.OpenAsync();
-        var options = CreateSqliteDbContextOptions(connectionString);
-
-        await using (var seedDb = CreateDbContext(options))
-        {
-            await seedDb.Database.EnsureCreatedAsync();
-
-            var adminId = Guid.NewGuid();
-            var organizerId = Guid.NewGuid();
-            var packageId = Guid.NewGuid();
-            var entitlementId = Guid.NewGuid();
-            await SeedOrganizerAsync(seedDb, adminId, "admin");
-            await SeedOrganizerAsync(seedDb, organizerId, "organizer");
-            await SeedPackageAsync(seedDb, packageId, "extended", isAutoGranted: false, isActive: true);
-            seedDb.OrganizerEntitlements.Add(new OrganizerEntitlementEf
-            {
-                Id = entitlementId,
-                OrganizerId = organizerId,
-                PackageId = packageId,
-                GrantedAt = DateTime.UtcNow.AddMinutes(-10),
-                Kind = "lifetime",
-                Source = "admin_grant",
-            });
-            await seedDb.SaveChangesAsync();
-
-            var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var firstTask = InvokeConcurrentRevokeAsync(options, adminId, organizerId, entitlementId, gate.Task, "first");
-            var secondTask = InvokeConcurrentRevokeAsync(options, adminId, organizerId, entitlementId, gate.Task, "second");
-            gate.SetResult();
-
-            var results = await Task.WhenAll(firstTask, secondTask);
-            Assert.That(results.Count(x => x is NoContentResult), Is.EqualTo(1));
-
-            Assert.That(results.Count(x => x is not NoContentResult), Is.EqualTo(1));
-            var nonSuccess = results.Single(x => x is not NoContentResult);
-            if (nonSuccess is ConflictObjectResult conflict)
-            {
-                Assert.That(ReadAnonymousProperty<string>(conflict.Value, "code"), Is.EqualTo("entitlement_already_revoked"));
-            }
-            else
-            {
-                Assert.That(nonSuccess, Is.TypeOf<NotFoundObjectResult>());
-                var notFound = (NotFoundObjectResult)nonSuccess;
-                Assert.That(ReadAnonymousProperty<string>(notFound.Value, "code"), Is.EqualTo("entitlement_not_found"));
-            }
-
-            var revokeLogs = await seedDb.AdminAuditLogs
-                .Where(x => x.EntitlementId == entitlementId && x.Action == AdminAuditActionNames.RevokePackage)
-                .ToListAsync();
-            Assert.That(revokeLogs, Has.Count.EqualTo(1));
-        }
-    }
-
-    [Test]
     public async Task AuditLog_FailedGrantOrRevoke_DoesNotWriteAnyRecord()
     {
         await using var db = CreateDbContext();
@@ -558,7 +584,7 @@ public class AdminControllerEntitlementTests
     public async Task AdminAuthorizationHandler_NonAdminInDatabase_IsDenied()
     {
         var organizerId = Guid.NewGuid();
-        var scopeFactory = CreateScopeFactory(new StubOrganizerRepository(new Organizer
+        var scopeFactory = CreateScopeFactory(new AdminEntitlementOrganizerRepositoryStub(new Organizer
         {
             Id = organizerId,
             Name = "Not admin",
@@ -584,13 +610,6 @@ public class AdminControllerEntitlementTests
             .Options;
         return new AppDbContext(options);
     }
-
-    private static AppDbContext CreateDbContext(DbContextOptions<AppDbContext> options) => new(options);
-
-    private static DbContextOptions<AppDbContext> CreateSqliteDbContextOptions(string connectionString) =>
-        new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(connectionString)
-            .Options;
 
     private static AdminController CreateController(AppDbContext db, Guid adminId)
     {
@@ -650,52 +669,6 @@ public class AdminControllerEntitlementTests
         var services = new ServiceCollection();
         services.AddScoped(_ => organizerRepository);
         return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
-    }
-
-    private static async Task<IActionResult> InvokeConcurrentRevokeAsync(
-        DbContextOptions<AppDbContext> options,
-        Guid adminId,
-        Guid organizerId,
-        Guid entitlementId,
-        Task gate,
-        string note)
-    {
-        await gate;
-        return await ExecuteWithSqliteLockRetryAsync(async () =>
-        {
-            await using var db = CreateDbContext(options);
-            var controller = CreateController(db, adminId);
-            return await controller.Revoke(organizerId, entitlementId, new RevokeEntitlementRequest(note));
-        });
-    }
-
-    private static async Task<IActionResult> ExecuteWithSqliteLockRetryAsync(Func<Task<IActionResult>> action)
-    {
-        const int maxAttempts = 3;
-        for (var attempt = 1; attempt <= maxAttempts; attempt++)
-        {
-            try
-            {
-                return await action();
-            }
-            catch (DbUpdateException ex) when (attempt < maxAttempts && ex.InnerException is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 5)
-            {
-                await Task.Delay(25 * attempt);
-            }
-        }
-
-        return await action();
-    }
-
-    private sealed class StubOrganizerRepository(Organizer? organizer) : IOrganizerRepository
-    {
-        public Task<Organizer?> GetByIdAsync(Guid id, bool includeDeleted = false) =>
-            Task.FromResult(organizer?.Id == id ? organizer : null);
-        public Task<Organizer?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default) =>
-            GetByIdAsync(id);
-        public Task<Organizer> AddAsync(Organizer organizerToAdd) => Task.FromResult(organizerToAdd);
-        public Task UpdateAsync(Organizer organizerToUpdate) => Task.CompletedTask;
-        public Task DeleteAsync(Guid id) => Task.CompletedTask;
     }
 
     [Test]

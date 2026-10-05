@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
@@ -61,7 +60,7 @@ public sealed class IntegrationDbTests
     }
 
     [Test]
-    public async Task AppStart_FreshDatabase_RunsMigrationsAndSeeding()
+    public async Task AppStart_FreshDatabase_RunsMigrationsAndSeedsCatalogWithoutDemoData()
     {
         var connectionString = await _postgresFixture.CreateFreshDatabaseConnectionStringAsync();
         await using var factory = new IntegrationDbWebApplicationFactory(connectionString);
@@ -82,8 +81,18 @@ public sealed class IntegrationDbTests
             Assert.That(appliedMigrations, Does.Contain(migrationId));
         }
 
-        Assert.That(await db.Themes.AnyAsync(), Is.True, "Expected seeded themes.");
-        Assert.That(await db.ThemePackages.AnyAsync(), Is.True, "Expected seeded theme packages.");
+        Assert.That(await db.LegalDocumentVersions.AnyAsync(), Is.True, "Expected legal registry data from migrations.");
+        Assert.That(await db.Themes.Select(theme => theme.ThemeId).OrderBy(themeId => themeId).ToArrayAsync(),
+            Is.EqualTo(new[] { "art-deco", "basic", "cyberpunk", "sakura", "spring-cross-step" }));
+        Assert.That(await db.ThemePackages.Select(package => package.Code).OrderBy(code => code).ToArrayAsync(),
+            Is.EqualTo(new[] { "extended", "free", "spring-cross-step" }));
+        var freePackage = await db.ThemePackages.Include(package => package.Items)
+            .SingleAsync(package => package.Code == "free");
+        Assert.That(freePackage.IsAutoGranted, Is.True);
+        Assert.That(freePackage.Items.Select(item => item.ThemeId), Is.EqualTo(new[] { "basic" }));
+        Assert.That(await db.Organizers.AnyAsync(), Is.False, "Persistent startup must not seed demo organizers.");
+        Assert.That(await db.EmailAccounts.AnyAsync(), Is.False, "Persistent startup must not seed demo accounts.");
+        Assert.That(await db.Parties.AnyAsync(), Is.False, "Persistent startup must not seed demo parties.");
     }
 
     [Test]
@@ -128,6 +137,8 @@ public sealed class IntegrationDbTests
         Assert.That(payload, Is.Not.Null);
 
         Assert.That(payload!.GrantedThemeIds, Does.Contain("basic"));
+        Assert.That(payload.GrantedThemeIds, Does.Not.Contain("cyberpunk"));
+        Assert.That(payload.GrantedThemeIds, Does.Not.Contain("sakura"));
         Assert.That(payload.VisibleLockedThemes.Any(x => x.ThemeId == "cyberpunk"), Is.False);
         Assert.That(payload.VisibleLockedThemes.Any(x => x.ThemeId == "sakura"), Is.True);
     }
@@ -154,7 +165,7 @@ public sealed class IntegrationDbTests
             OrganizerId = organizer.Id,
             CreatedAt = DateTime.UtcNow
         });
-        var cyberpunkTheme = await db.Themes.SingleAsync(x => x.ThemeId == "cyberpunk");
+        var cyberpunkTheme = await db.Themes.SingleAsync(theme => theme.ThemeId == "cyberpunk");
         cyberpunkTheme.Visibility = "private";
 
         await db.SaveChangesAsync();

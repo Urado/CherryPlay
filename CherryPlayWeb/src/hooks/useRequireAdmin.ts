@@ -1,12 +1,9 @@
-import type { OrganizerDto } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ROUTES } from '../constants/routes';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
-
-type OrganizerWithRole = OrganizerDto & { role?: 'organizer' | 'admin' };
 
 export function useRequireAdmin() {
   const navigate = useNavigate();
@@ -19,7 +16,7 @@ export function useRequireAdmin() {
 
     const check = async () => {
       try {
-        const organizer = (await authService.checkAuth()) as OrganizerWithRole | null;
+        const organizer = (await authService.checkAuth());
 
         if (cancelled) return;
 
@@ -29,7 +26,7 @@ export function useRequireAdmin() {
           return;
         }
 
-        if (organizer.role !== 'admin') {
+        if (!('role' in organizer) || organizer.role !== 'admin') {
           setIsAdmin(false);
           navigate(ROUTES.CABINET, {
             replace: true,
