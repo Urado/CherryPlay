@@ -1,8 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-import { StoreApi, UseBoundStore } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { createWithEqualityFn, useStoreWithEqualityFn } from 'zustand/traditional';
-
 import {
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   DEFAULT_PLAYER_WORKSPACE_ID,
@@ -23,6 +18,11 @@ import {
 } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import { v4 as uuidv4 } from 'uuid';
+import { StoreApi, UseBoundStore } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { createWithEqualityFn, useStoreWithEqualityFn } from 'zustand/traditional';
+
 
 import {
   HistoryCommand,

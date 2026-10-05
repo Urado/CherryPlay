@@ -1,10 +1,9 @@
 import AddIcon from '@mui/icons-material/Add';
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-
 import { useLayoutStore } from '@shared/stores';
 import { LAYOUT_EMPTY_PICKER_KEY } from '@shared/stores/layoutStore';
 import { getCurrentLayoutViewport } from '@shared/utils/layoutViewportBridge';
 import { canAddInitialWorkspace } from '@shared/utils/layoutWorkspaceOperations';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { AIR_DISABLED_HINT, getWorkspacePickerOptions } from './workspaceLayoutEditOptions';
 import { useWorkspacePickerMenu, WorkspacePickerMenu } from './WorkspacePickerMenu';

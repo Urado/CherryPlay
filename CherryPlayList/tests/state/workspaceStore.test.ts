@@ -183,7 +183,7 @@ describe('workspaceStore', () => {
       const state = useLayoutStore.getState();
       expect(state.isWorkspaceDirty()).toBe(false);
       expect(getLayoutZoneSignature(state.layout.rootZone)).toBe(
-        getLayoutZoneSignature(state.userWorkspaces[0]!.layout.rootZone),
+        getLayoutZoneSignature(state.userWorkspaces[0].layout.rootZone),
       );
       expect(state.activeWorkspace).toEqual({ kind: 'user', id: userId });
     });
@@ -202,7 +202,7 @@ describe('workspaceStore', () => {
 
       const userId = useLayoutStore.getState().userWorkspaces[0]?.id;
       act(() => {
-        useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId! });
+        useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId });
         useLayoutStore.getState().setLayoutPreset('simple');
       });
 
@@ -304,7 +304,7 @@ describe('workspaceStore', () => {
       const userId = useLayoutStore.getState().userWorkspaces[0]?.id;
 
       act(() => {
-        expect(useLayoutStore.getState().renameUserWorkspace(userId!, 'New name')).toBe(true);
+        expect(useLayoutStore.getState().renameUserWorkspace(userId, 'New name')).toBe(true);
       });
 
       expect(useLayoutStore.getState().userWorkspaces[0]?.name).toBe('New name');
@@ -372,7 +372,7 @@ describe('workspaceStore', () => {
       });
 
       act(() => {
-        expect(useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId! })).toBe(
+        expect(useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId })).toBe(
           true,
         );
       });
@@ -388,7 +388,7 @@ describe('workspaceStore', () => {
       const userId = useLayoutStore.getState().userWorkspaces[0]?.id;
 
       act(() => {
-        expect(useLayoutStore.getState().deleteUserWorkspace(userId!)).toBe(true);
+        expect(useLayoutStore.getState().deleteUserWorkspace(userId)).toBe(true);
       });
 
       const state = useLayoutStore.getState();
@@ -467,7 +467,7 @@ describe('workspaceStore', () => {
         expect(
           useLayoutStore.getState().activateWorkspace({ kind: 'builtin', preset: 'simple' }),
         ).toBe(true);
-        expect(useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId! })).toBe(
+        expect(useLayoutStore.getState().activateWorkspace({ kind: 'user', id: userId })).toBe(
           true,
         );
       });

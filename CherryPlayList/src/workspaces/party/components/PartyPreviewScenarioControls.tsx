@@ -1,8 +1,8 @@
 import { type PartyThemeId, type PlaybackState } from '@cherryplay/components';
 import { Button, Disclosure } from '@cherryplay/components';
+import type { PartyLifecycleState } from '@shared/services/partyService';
 import React, { useMemo } from 'react';
 
-import type { PartyLifecycleState } from '@shared/services/partyService';
 
 import {
   resetPreviewScenario,

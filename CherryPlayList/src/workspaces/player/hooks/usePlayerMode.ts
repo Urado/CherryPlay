@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useDemoPlayerStore, usePlayerAudioStore, useProjectStore } from '@shared/stores';
+import { useMemo } from 'react';
 
 /**
  * Интерфейс для работы с плеером независимо от режима

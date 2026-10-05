@@ -1,7 +1,7 @@
-import { createWithEqualityFn } from 'zustand/traditional';
 
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import { createWithEqualityFn } from 'zustand/traditional';
 
 import { demoPlaybackEngine } from '../audio/playback/playbackEngines';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';

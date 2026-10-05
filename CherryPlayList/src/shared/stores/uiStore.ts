@@ -1,6 +1,6 @@
+import { WorkspaceId, WorkspaceType } from '@core/types/workspace';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import { WorkspaceId, WorkspaceType } from '@core/types/workspace';
 
 import {
   DEFAULT_PLAYLIST_WORKSPACE_ID,

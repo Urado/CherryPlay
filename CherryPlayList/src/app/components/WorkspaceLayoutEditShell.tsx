@@ -1,8 +1,7 @@
-import CloseIcon from '@mui/icons-material/Close';
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { WorkspaceZone, Zone } from '@core/types/layout';
+import CloseIcon from '@mui/icons-material/Close';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutAirPickerKey } from '@shared/stores/layoutStore';
 import { getCurrentLayoutViewport } from '@shared/utils/layoutViewportBridge';
@@ -12,6 +11,7 @@ import {
   countWorkspaceLeaves,
   isSingletonWorkspaceType,
 } from '@shared/utils/layoutWorkspaceOperations';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 

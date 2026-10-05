@@ -1,9 +1,8 @@
 import { partyThemes, type CustomizationSettings, type PartyThemeId } from '@cherryplay/components';
-import React, { useMemo } from 'react';
-
 import { WorkspaceId } from '@core/types/workspace';
 import { useProjectStore } from '@shared/stores/projectStore';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import React, { useMemo } from 'react';
 
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { PartyPreviewDesignNav } from './components/PartyPreviewDesignNav';

@@ -12,8 +12,8 @@ import {
   useUIStore,
 } from '@shared/stores';
 import { getOnlineNetworkPolicy } from '@shared/streaming';
-import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 import { sanitizeExternalUrl } from '@shared/utils';
+import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 
 import { markPartyPublishFullySynced } from './partyPublishSync';
 import { loadPartyThemeAccess } from './partyThemeAccessLoad';

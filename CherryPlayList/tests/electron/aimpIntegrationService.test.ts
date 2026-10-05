@@ -192,7 +192,7 @@ describe('AimpIntegrationService lifecycle', () => {
       }
 
       return JSON.stringify(validManifest);
-    }) as typeof fs.readFileSync);
+    }));
   }
 
   function createService(): void {

@@ -1,7 +1,7 @@
+import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 
 import { PARTY_GO_TO_PLAY_GUIDE_PANEL_WIDTH } from './partyHeaderGoToPlayGuide';
 
@@ -102,7 +102,7 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
       onMouseLeave={onInteractionResume}
       onFocus={onInteractionPause}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
           onInteractionResume?.();
         }
       }}

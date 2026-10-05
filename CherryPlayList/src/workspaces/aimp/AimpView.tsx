@@ -1,8 +1,6 @@
 import { Button, Icon } from '@cherryplay/components';
-import ListIcon from '@mui/icons-material/List';
-import React, { useEffect, useMemo, useState } from 'react';
-
 import { WorkspaceId } from '@core/types/workspace';
+import ListIcon from '@mui/icons-material/List';
 import { EmptyState, ItemList, ListRowCompound } from '@shared/components';
 import { type AimpPlaylistTrackDto } from '@shared/contracts/aimp';
 import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
@@ -16,6 +14,7 @@ import {
   getAimpEffectiveProgressMs,
   isAimpDegraded,
 } from '@shared/utils';
+import React, { useEffect, useMemo, useState } from 'react';
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;

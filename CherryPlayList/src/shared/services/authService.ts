@@ -18,9 +18,9 @@ import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
 import { getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
+import { isSessionAuthError } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 import { handleAuthError, SESSION_EXPIRED_USER_MESSAGE } from '../utils/authErrorHandler';
-import { isSessionAuthError } from '../utils/apiErrorHandler';
 import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
@@ -197,7 +197,7 @@ class AuthService implements IAuthService {
         code,
         provider,
         deviceId,
-      } as AuthExchangeRequest),
+      }),
       cache: 'no-cache',
     });
 

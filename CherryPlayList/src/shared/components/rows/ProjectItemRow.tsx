@@ -1,9 +1,9 @@
+import { ProjectItem, isProjectGroup } from '@core/types/project';
+import { Track } from '@core/types/track';
 import FolderIcon from '@mui/icons-material/Folder';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-import { ProjectItem, isProjectGroup } from '@core/types/project';
-import { Track } from '@core/types/track';
 
 import { formatTrackDuration } from '../../utils/durationUtils';
 import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItemsUtils';
@@ -121,8 +121,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   const handlePlay = () => {
     if (!track || !onPlay) return;
     const maybePromise = onPlay(track);
-    if (maybePromise && typeof (maybePromise as Promise<void>).catch === 'function') {
-      (maybePromise as Promise<void>).catch(() => undefined);
+    if (maybePromise && typeof (maybePromise).catch === 'function') {
+      (maybePromise).catch(() => undefined);
     }
   };
 

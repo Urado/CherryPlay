@@ -1,8 +1,6 @@
 import { Button, IconButton, FormInput, InfoIcon } from '@cherryplay/components';
-import CloseIcon from '@mui/icons-material/Close';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-
 import { ActionAfterTrack } from '@core/types/project';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   clampLoudnessQuietGapRangeLu,
   clampLoudnessTargetLufs,
@@ -16,6 +14,7 @@ import {
 import { useModalKeyboard } from '@shared/hooks';
 import { usePlatformCapabilities } from '@shared/platform';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export const TrackSettingsModal: React.FC = () => {
   const { closeModal, modal, trackSettingsContext } = useUIStore();

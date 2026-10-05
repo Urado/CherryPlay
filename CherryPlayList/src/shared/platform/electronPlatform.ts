@@ -13,9 +13,7 @@ export class ElectronPlatform implements PlatformAPI {
   }
 
   invoke(channel: string, payload?: object): Promise<import('./types').IPCResponse<unknown>> {
-    return assertWindowApi().invoke(channel, payload) as Promise<
-      import('./types').IPCResponse<unknown>
-    >;
+    return assertWindowApi().invoke(channel, payload);
   }
 
   on(channel: string, listener: (event: unknown, ...args: unknown[]) => void): () => void {

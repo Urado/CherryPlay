@@ -308,7 +308,7 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
   }
 
   if (settings.plannedEndTime === null || isNumber(settings.plannedEndTime)) {
-    result.plannedEndTime = settings.plannedEndTime as number | null;
+    result.plannedEndTime = settings.plannedEndTime;
   } else if (settings.plannedEndTime !== undefined) {
     warnings.push('Invalid plannedEndTime, using default');
   }
@@ -386,7 +386,7 @@ function validateTrackSettings(
     const settings: ProjectTrackSettings = {};
 
     if (value.pauseBetweenTracks === null || isNumber(value.pauseBetweenTracks)) {
-      settings.pauseBetweenTracks = value.pauseBetweenTracks as number | null;
+      settings.pauseBetweenTracks = value.pauseBetweenTracks;
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
@@ -425,7 +425,7 @@ function validateGroupSettings(
     const settings: ProjectGroupSettings = {};
 
     if (value.pauseBetweenTracks === null || isNumber(value.pauseBetweenTracks)) {
-      settings.pauseBetweenTracks = value.pauseBetweenTracks as number | null;
+      settings.pauseBetweenTracks = value.pauseBetweenTracks;
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {

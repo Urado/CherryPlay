@@ -1,12 +1,12 @@
 import {
+  initializeAuthCallbackBootstrap,
+  resetAuthCallbackBootstrapForTests,
+} from '@app/authCallbackBootstrap';
+import {
   beginBrowserLoginFlow,
   getBrowserLoginFlowState,
   resetBrowserLoginFlow,
 } from '@shared/auth/browserLoginFlow';
-import {
-  initializeAuthCallbackBootstrap,
-  resetAuthCallbackBootstrapForTests,
-} from '@app/authCallbackBootstrap';
 import { CapacitorPlatform } from '@shared/platform/capacitorPlatform';
 import { resetPlatformForTests, setPlatform } from '@shared/platform/platformContext';
 import type { PlatformAPI } from '@shared/platform/types';
@@ -47,7 +47,7 @@ function createPlatform(): PlatformAPI {
       onStateChanged: () => () => undefined,
       onLog: () => () => undefined,
     },
-  } as unknown as PlatformAPI;
+  };
 }
 
 async function flushMicrotasks(): Promise<void> {

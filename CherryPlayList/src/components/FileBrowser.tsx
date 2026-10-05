@@ -1,21 +1,10 @@
 import { Button, IconButton } from '@cherryplay/components';
+import type { WorkspaceId } from '@core/types/workspace';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ClearIcon from '@mui/icons-material/Clear';
 import FolderIcon from '@mui/icons-material/Folder';
 import SelectAllIcon from '@mui/icons-material/SelectAll';
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-  useLayoutEffect,
-  Fragment,
-} from 'react';
-import { createPortal } from 'react-dom';
-
-import type { WorkspaceId } from '@core/types/workspace';
 import { useAudioPathDurations, useItemSelection } from '@shared/hooks';
 import { getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
 import { DEMO_MUSIC_ROOT } from '@shared/platform/fixtures/fileBrowserTree';
@@ -30,6 +19,16 @@ import {
   type FileBrowserNavState,
   pushFileBrowserPath,
 } from '@shared/utils/fileBrowserNavigationHistory';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+  Fragment,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 import { FileBrowserItemRow } from './FileBrowserItemRow';
 
@@ -526,7 +525,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             icon={<ArrowBackIcon />}
             variant="ghost"
             size="sm"
-          ></IconButton>
+           />
           <IconButton
             className="nav-button"
             onClick={handleUp}
@@ -537,7 +536,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             icon={<ArrowUpwardIcon />}
             variant="ghost"
             size="sm"
-          ></IconButton>
+           />
           <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
             <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
               {overflowIndex > 0 && (
@@ -615,7 +614,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                 icon={<ClearIcon />}
                 variant="ghost"
                 size="sm"
-              ></IconButton>
+               />
             ) : (
               filteredItems.length > 0 && (
                 <IconButton
@@ -628,7 +627,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                   icon={<SelectAllIcon />}
                   variant="ghost"
                   size="sm"
-                ></IconButton>
+                 />
               )
             )}
             <Button

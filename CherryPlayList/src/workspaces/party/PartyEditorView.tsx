@@ -1,6 +1,6 @@
+import { useOnlineNetworkPolicy } from '@shared/streaming';
 import React from 'react';
 
-import { useOnlineNetworkPolicy } from '@shared/streaming';
 
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';

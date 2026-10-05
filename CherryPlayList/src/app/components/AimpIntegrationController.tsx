@@ -1,4 +1,3 @@
-import React, { useCallback, useEffect, useRef } from 'react';
 
 import {
   useAimpStore,
@@ -14,6 +13,7 @@ import {
   getCurrentPartyPublishSyncParts,
   markPartyPublishPlaylistSynced,
 } from '@workspaces/party/partyPublishSync';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 export const AimpIntegrationController: React.FC = () => {
   const initialize = useAimpStore((state) => state.initialize);

@@ -1,5 +1,4 @@
 import { AuthHttpError } from '@cherryplay/components';
-
 import { clearServerUrlCache } from '@shared/config/serverConfig';
 import { DEMO_ACCESS_TOKEN } from '@shared/demo/demoAuthFixture';
 import * as guardDemoAuth from '@shared/demo/guardDemoAuth';

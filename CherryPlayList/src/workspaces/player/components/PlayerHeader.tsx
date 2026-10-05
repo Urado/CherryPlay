@@ -7,9 +7,9 @@ import SelectAllIcon from '@mui/icons-material/SelectAll';
 import SettingsIcon from '@mui/icons-material/Settings';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import TimerIcon from '@mui/icons-material/Timer';
+import { formatTimeFromDuration } from '@shared/utils';
 import React from 'react';
 
-import { formatTimeFromDuration } from '@shared/utils';
 
 interface PlayerHeaderProps {
   allTracksCount: number;
@@ -114,7 +114,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   icon={<ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                   variant="ghost"
                   size="sm"
-                ></IconButton>
+                 />
                 {canCreateGroup && (
                   <IconButton
                     onClick={onCreateGroup}
@@ -124,7 +124,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                     icon={<GroupAddIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                     variant="ghost"
                     size="sm"
-                  ></IconButton>
+                   />
                 )}
                 <IconButton
                   onClick={onRemoveSelectedItems}
@@ -139,7 +139,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   icon={<DeleteSweepIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                   variant="ghost"
                   size="sm"
-                ></IconButton>
+                 />
               </>
             ) : (
               <IconButton
@@ -150,7 +150,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 icon={<SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                 variant="ghost"
                 size="sm"
-              ></IconButton>
+               />
             )
           ) : null}
 
@@ -162,7 +162,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             icon={<SettingsIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
             variant="ghost"
             size="sm"
-          ></IconButton>
+           />
 
           <IconButton
             onClick={onExportTracksToText}
@@ -173,7 +173,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             icon={<TextSnippetIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
             variant="ghost"
             size="sm"
-          ></IconButton>
+           />
         </div>
       </div>
     </div>

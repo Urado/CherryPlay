@@ -1,7 +1,7 @@
+import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 
 export const TRACK_ACTIONS_DROPDOWN_WIDTH = 240;
 

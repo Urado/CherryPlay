@@ -1,7 +1,7 @@
+import { WorkspaceId } from '@core/types/workspace';
 import { v4 as uuidv4 } from 'uuid';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import { WorkspaceId } from '@core/types/workspace';
 
 import { HistoryCommand } from '../commands';
 import { logger } from '../utils/logger';

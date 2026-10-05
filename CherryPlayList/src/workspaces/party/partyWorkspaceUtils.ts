@@ -3,7 +3,6 @@ import {
   normalizeBasicThemePaletteSettings,
   type PartyThemeId,
 } from '@cherryplay/components';
-
 import {
   ThemeAccessDto,
   LockedThemeDto,
@@ -163,18 +162,18 @@ export function resolveLoadedCustomizationSettings(
     Object.keys(customizationSettings).length > 0;
 
   if (!hasMeaningful) {
-    return defaults as Record<string, unknown>;
+    return defaults;
   }
 
-  const raw = customizationSettings as Record<string, unknown>;
+  const raw = customizationSettings;
   if (resolvedThemeId === 'basic') {
     return normalizeBasicThemePaletteSettings({
       ...defaults,
       ...raw,
-    }) as Record<string, unknown>;
+    });
   }
 
-  return { ...defaults, ...raw } as Record<string, unknown>;
+  return { ...defaults, ...raw };
 }
 
 export function normalizeCustomizationSettings(
@@ -192,13 +191,13 @@ export function normalizeCustomizationSettings(
 
       const valueType = typeof value;
       if (valueType === 'string') {
-        acc[key] = value as string;
+        acc[key] = value;
       } else if (valueType === 'number' && !isNaN(value as number) && isFinite(value as number)) {
-        acc[key] = value as number;
+        acc[key] = value;
       } else if (key === 'basicUserSavedPalettes' && Array.isArray(value)) {
         acc[key] = value;
       } else if (valueType === 'object' && !Array.isArray(value)) {
-        acc[key] = value as Record<string, unknown>;
+        acc[key] = value;
       }
       return acc;
     },

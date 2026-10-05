@@ -1,5 +1,4 @@
 import type { PartyViewerStatusId, PlaybackState } from '@cherryplay/components';
-
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
 /** True when playback reflects an active live session (not an idle session snapshot). */

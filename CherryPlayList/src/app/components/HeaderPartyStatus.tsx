@@ -5,8 +5,6 @@ import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-
 import {
   useAuthStore,
   useLayoutStore,
@@ -17,6 +15,7 @@ import {
   openPartySettingsModal,
 } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { PartyGoToPlayGuidePanel } from '../../workspaces/party/PartyGoToPlayGuidePanel';
 import {

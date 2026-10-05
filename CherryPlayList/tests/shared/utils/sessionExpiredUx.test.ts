@@ -16,11 +16,11 @@ jest.mock('@shared/utils/authSession', () => ({
   clearAuthSession: (...args: unknown[]) => clearAuthSessionMock(...args),
 }));
 
+import { isSessionAuthError } from '@shared/utils/apiErrorHandler';
 import {
   handleAuthError,
   SESSION_EXPIRED_USER_MESSAGE,
 } from '@shared/utils/authErrorHandler';
-import { isSessionAuthError } from '@shared/utils/apiErrorHandler';
 
 describe('session expired UX', () => {
   beforeEach(() => {

@@ -1,9 +1,8 @@
 import { IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import React from 'react';
-
 import { useModalKeyboard } from '@shared/hooks';
 import { useUIStore } from '@shared/stores';
+import React from 'react';
 
 import { AccountView } from './AccountView';
 

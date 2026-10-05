@@ -1,9 +1,9 @@
 import { Button, Icon, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import { useModalKeyboard } from '@shared/hooks';
 import React, { useId, useState, useCallback } from 'react';
 
-import { useModalKeyboard } from '@shared/hooks';
 
 export interface SaveProjectAsModalProps {
   open: boolean;

@@ -1,4 +1,3 @@
-import { useCallback, useRef, useState } from 'react';
 
 import type { Track } from '@core/types/track';
 import { getPlatformCapabilities } from '@shared/platform';
@@ -13,6 +12,7 @@ import {
   getGateTracksNotReady,
   getSessionGateTracks,
 } from '@shared/utils/loudnessSessionGate';
+import { useCallback, useRef, useState } from 'react';
 
 export type LoudnessScanFlowState = {
   open: boolean;

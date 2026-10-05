@@ -9,8 +9,6 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
 import { useModalKeyboard } from '@shared/hooks';
 import {
   InvalidPartyLifecycleTransitionError,
@@ -41,6 +39,7 @@ import {
   PARTY_ARCHIVE_CONFIRM_MESSAGE,
   resolvePartyArchiveAvailability,
 } from '@workspaces/party/resolvePartyArchiveAvailability';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
   const store = usePartyWorkspaceStore.getState();
@@ -485,7 +484,7 @@ export const MyPartiesList: React.FC = () => {
                 icon={<CloseIcon />}
                 variant="ghost"
                 size="md"
-              ></IconButton>
+               />
             </div>
 
             <div className="modal-body">

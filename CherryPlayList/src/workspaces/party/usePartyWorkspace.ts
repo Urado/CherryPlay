@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 
 import { useProjectStore, useUIStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import { useMemo } from 'react';
 
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { usePartyPlaylistState } from './usePartyPlaylistState';

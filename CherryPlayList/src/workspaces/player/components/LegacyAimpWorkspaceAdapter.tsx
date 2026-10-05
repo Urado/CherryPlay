@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { useSettingsStore } from '@shared/stores';
+import React, { useEffect } from 'react';
 
 import { PlayerViewContainer } from './PlayerViewContainer';
 

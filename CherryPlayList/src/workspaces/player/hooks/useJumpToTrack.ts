@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
 
 import { useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { logger } from '@shared/utils';
+import { useCallback } from 'react';
 
 interface UseJumpToTrackResult {
   jumpToTrack: (targetTrackId: string) => Promise<void>;

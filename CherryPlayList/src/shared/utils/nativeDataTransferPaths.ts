@@ -148,7 +148,7 @@ export function tryParseInternalFileBrowserPayload(
     if (!parsed || typeof parsed !== 'object' || !('type' in parsed)) {
       return null;
     }
-    const t = (parsed as { type: unknown }).type;
+    const t = (parsed).type;
     if (t === 'fileBrowser') {
       const o = parsed as { paths?: unknown; directories?: unknown };
       return {

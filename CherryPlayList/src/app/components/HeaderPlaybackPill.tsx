@@ -1,14 +1,14 @@
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import React, { useCallback } from 'react';
-import { shallow } from 'zustand/shallow';
 
 import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { StreamingConnectionIndicator } from '@shared/components';
 import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
 import { togglePlayPause } from '@shared/utils/togglePlayPause';
+import React, { useCallback } from 'react';
+import { shallow } from 'zustand/shallow';
 
 interface HeaderPlaybackPillProps {
   disabled?: boolean;

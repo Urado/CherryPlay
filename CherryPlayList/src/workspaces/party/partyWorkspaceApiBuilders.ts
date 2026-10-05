@@ -1,5 +1,4 @@
 import { convertLocalDateTimeToUtc, getDefaultTimeZone } from '@cherryplay/components';
-
 import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project';
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
 import { CreatePartyDto, type UpdatePartyDto } from '@shared/services/partyService';

@@ -7,14 +7,13 @@ import {
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import React, { useState, useEffect, useCallback } from 'react';
-
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
 import { useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
 import { convertPlaylistForApi } from '@shared/utils';
+import React, { useState, useEffect, useCallback } from 'react';
 
 export const LinkPartyModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();

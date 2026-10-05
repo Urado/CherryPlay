@@ -1,4 +1,3 @@
-import React, { useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
@@ -28,6 +27,7 @@ import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
+import React, { useCallback, useMemo } from 'react';
 
 import { usePlayerDividers } from '../player/hooks/usePlayerDividers';
 import { usePlayerMode } from '../player/hooks/usePlayerMode';

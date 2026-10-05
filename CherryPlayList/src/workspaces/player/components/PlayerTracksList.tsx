@@ -1,4 +1,3 @@
-import React, { useState, useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -18,6 +17,7 @@ import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { getDuplicateTrackIdsFromDisplayItems } from '@shared/utils';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import { TrackActionsDropdown } from '../TrackActionsDropdown';

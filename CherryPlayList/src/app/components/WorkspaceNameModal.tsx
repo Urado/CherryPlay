@@ -1,8 +1,8 @@
 import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
+import { useModalKeyboard } from '@shared/hooks';
 import React, { useId, useState, useCallback } from 'react';
 
-import { useModalKeyboard } from '@shared/hooks';
 
 export type WorkspaceNameModalMode = 'save-as' | 'rename';
 

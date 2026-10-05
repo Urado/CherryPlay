@@ -1,5 +1,4 @@
 import { DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
-
 import type { LinkedParty } from '@core/types/project';
 
 import {
@@ -70,7 +69,7 @@ export function demoCreateParty(data: CreatePartyDto): PartyDto {
     title: data.title,
     subtitle: data.subtitle,
     partyThemeId: data.partyThemeId,
-    customizationSettings: data.customizationSettings as PartyDto['customizationSettings'],
+    customizationSettings: data.customizationSettings,
     partyLifecycleState: 'ready',
     description: data.description,
     place: data.place,
@@ -96,7 +95,7 @@ export function demoUpdateParty(partyId: string, data: UpdatePartyDto): void {
     subtitle: data.subtitle ?? demoPartySnapshot.subtitle,
     partyThemeId: data.partyThemeId ?? demoPartySnapshot.partyThemeId,
     customizationSettings:
-      (data.customizationSettings as PartyDto['customizationSettings']) ??
+      (data.customizationSettings) ??
       demoPartySnapshot.customizationSettings,
     partyLifecycleState: demoPartySnapshot.partyLifecycleState,
     description: data.description ?? demoPartySnapshot.description,

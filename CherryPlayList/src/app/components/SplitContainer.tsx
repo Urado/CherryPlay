@@ -1,10 +1,10 @@
-import DragHandleIcon from '@mui/icons-material/DragHandle';
-import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 
 import { MAX_LAYOUT_DEPTH } from '@core/constants/layoutConstraints';
 import { ContainerZone } from '@core/types/layout';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
 import { useLayoutStore } from '@shared/stores';
 import { getMinSizePercentsForContainer } from '@shared/utils';
+import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 

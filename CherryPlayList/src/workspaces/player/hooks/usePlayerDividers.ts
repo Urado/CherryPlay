@@ -1,8 +1,8 @@
-import { useCallback, useMemo } from 'react';
 
 import { isProjectTrack, type ProjectItem, type ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { useProjectStore, useSettingsStore } from '@shared/stores';
+import { useCallback, useMemo } from 'react';
 
 import {
   calculateDividerMarkers as calculateDividerMarkersUtil,

@@ -1,4 +1,3 @@
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
@@ -14,6 +13,7 @@ import { streamingOrchestrator } from '@shared/streaming';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import { createTrackWithId } from '@shared/utils/trackFactory';
+import React, { useCallback, useMemo, useEffect, useState } from 'react';
 
 import { useJumpToTrack } from '../hooks/useJumpToTrack';
 import { useLoudnessScanFlow } from '../hooks/useLoudnessScanFlow';

@@ -101,7 +101,7 @@ export const useAimpStore = createWithEqualityFn<AimpStoreState>()((set, get) =>
             if (
               entry.data !== undefined &&
               entry.data !== null &&
-              Object.keys(entry.data as object).length > 0
+              Object.keys(entry.data).length > 0
             ) {
               console.log(prefix, entry.data);
             } else {

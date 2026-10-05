@@ -17,7 +17,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 'medium', className = '
       className={`spinner spinner-${size} ${className}`}
       style={{ width: sizeMap[size], height: sizeMap[size] }}
     >
-      <div className="spinner-circle"></div>
+      <div className="spinner-circle" />
     </div>
   );
 };

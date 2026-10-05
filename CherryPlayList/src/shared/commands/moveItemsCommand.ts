@@ -2,7 +2,7 @@ import { ProjectItem } from '@core/types/project';
 
 import { cloneItems } from '../utils/historyCore';
 
-import { CommandResult, HistoryCommand, ItemsState } from './index';
+import { CommandResult, HistoryCommand, ItemsState } from ".";
 
 export class MoveItemCommand implements HistoryCommand {
   readonly type = 'moveItem';

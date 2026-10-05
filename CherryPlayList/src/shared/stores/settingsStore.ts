@@ -1,8 +1,8 @@
+import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
+import type { WorkspaceId } from '@core/types/workspace';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
-import type { WorkspaceId } from '@core/types/workspace';
 
 import type { AimpSourceSelection } from '../contracts/aimp';
 import {
@@ -236,7 +236,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         } else {
           state.loudnessTargetLufs = clampLoudnessTargetLufs(state.loudnessTargetLufs);
         }
-        return state as unknown as SettingsState;
+        return state;
       },
       partialize: (state) => ({
         exportPath: state.exportPath,

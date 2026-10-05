@@ -3,7 +3,7 @@ import { ProjectItem } from '@core/types/project';
 import { insertItemAtPath, removeItemFromItems } from '../stores/projectStoreCore';
 import { cloneItem } from '../utils/historyCore';
 
-import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from './index';
+import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from ".";
 
 export class RemoveItemsCommand implements HistoryCommand {
   readonly type = 'removeItems';

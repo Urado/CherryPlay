@@ -1,6 +1,6 @@
+import type { Track } from '@core/types/track';
 import { describe, expect, it, jest } from '@jest/globals';
 
-import type { Track } from '@core/types/track';
 
 import {
   calculatePlannedEndMarker,
@@ -18,7 +18,7 @@ function makeTrack(id: string, duration: number): Track {
     name: id,
     path: `/t/${id}.mp3`,
     duration,
-  } as Track;
+  };
 }
 
 function baseContext(

@@ -1,4 +1,3 @@
-import React, { useEffect, useRef } from 'react';
 
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
@@ -22,6 +21,7 @@ import {
   getDaysUntilExpiration,
 } from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
+import React, { useEffect, useRef } from 'react';
 
 import { initializeAuthCallbackBootstrap } from './authCallbackBootstrap';
 import { AccountModal } from './components/AccountModal';

@@ -1,7 +1,5 @@
 import { Disclosure, AuthForm, Button, ChangePasswordForm } from '@cherryplay/components';
 import type { OrganizerDto } from '@cherryplay/components';
-import React, { useEffect, useState } from 'react';
-
 import { OnlineUnavailablePanel } from '@shared/components';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
 import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
@@ -16,6 +14,7 @@ import { authService } from '@shared/services/authService';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
 import { clearAuthSession } from '@shared/utils/authSession';
+import React, { useEffect, useState } from 'react';
 
 import { BrowserLoginPanel } from './BrowserLoginPanel';
 import { MyPartiesList } from './MyPartiesList';

@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RefObject } from 'react';
-
 import {
   clampFloatingSize,
   clampFloatingPosition,
@@ -14,6 +11,9 @@ import type {
   DemoPlayerFloatingPosition,
   DemoPlayerFloatingSize,
 } from '@shared/stores/settingsStore';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+
 
 interface UseDemoPlayerFloatingBoundsParams {
   contentContainerRef: RefObject<HTMLElement | null>;

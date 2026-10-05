@@ -1,7 +1,7 @@
 import * as signalR from '@microsoft/signalr';
+import { signalRService } from '@shared/services';
 import React from 'react';
 
-import { signalRService } from '@shared/services';
 
 export interface StreamingConnectionIndicatorProps {
   connectionState: signalR.HubConnectionState | null;

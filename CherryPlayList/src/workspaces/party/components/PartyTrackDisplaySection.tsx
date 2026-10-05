@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
 
 import type { PartyTrackDisplaySettings, PartyTrackStripLeadingMode } from '@core/types/project';
 import { applyPartyTrackDisplayToTrackName } from '@shared/utils/partyUtils';
+import React, { useMemo } from 'react';
 
 import { PartyEditorAccordion } from './PartyEditorAccordion';
 import './PartyTrackDisplaySection.css';

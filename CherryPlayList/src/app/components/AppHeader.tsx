@@ -1,7 +1,3 @@
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import SettingsIcon from '@mui/icons-material/Settings';
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import {
   type ProjectItem,
@@ -11,6 +7,9 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
 import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
@@ -24,6 +23,7 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
 

@@ -1,9 +1,7 @@
 /// <reference types="jest" />
 
 jest.mock('@shared/stores/projectStoreFactory', () => {
-  const { createTrack } = jest.requireActual('../testUtils') as {
-    createTrack: (id: string, path: string) => import('../../src/core/types/track').Track;
-  };
+  const { createTrack } = jest.requireActual('../testUtils');
   const t1 = createTrack('1', '/track-1.mp3');
   const t2 = createTrack('2', '/track-2.mp3');
   const t3 = createTrack('3', '/track-3.mp3');
@@ -24,10 +22,10 @@ jest.mock('@shared/services/ipcService', () => ({
   },
 }));
 
+import { ipcService } from '@shared/services/ipcService';
 import { renderHook, act } from '@testing-library/react';
 import type { DragEvent as ReactDragEvent } from 'react';
 
-import { ipcService } from '@shared/services/ipcService';
 
 import { usePlaylistDragAndDrop } from '../../src/shared/hooks/useWorkspaceDragAndDrop';
 import { useDragDropStore } from '../../src/shared/stores/dragDropStore';

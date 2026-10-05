@@ -1,6 +1,6 @@
+import { useProjectStore } from '@shared/stores/projectStore';
 import React from 'react';
 
-import { useProjectStore } from '@shared/stores/projectStore';
 
 import type { PartyEditorPhase } from '../partyEditorPhase';
 import type { PartySettingsSection } from '../partySettingsUiStore';

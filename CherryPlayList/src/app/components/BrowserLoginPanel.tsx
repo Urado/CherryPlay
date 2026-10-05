@@ -1,8 +1,7 @@
 import { Button } from '@cherryplay/components';
-import React from 'react';
-
 import { Spinner } from '@shared/components';
 import { useBrowserLogin } from '@shared/hooks/useBrowserLogin';
+import React from 'react';
 
 import './BrowserLoginPanel.css';
 

@@ -1,5 +1,4 @@
 import { PlayerItem as ComponentPlayerItem } from '@cherryplay/components/types';
-
 import {
   DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
   type PartyTrackDisplaySettings,

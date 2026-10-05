@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 
 import { ActionAfterTrack } from '@core/types/project';
 import { useProjectStore } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 export const TRACK_SETTINGS_DROPDOWN_WIDTH = 280;
 

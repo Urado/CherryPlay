@@ -25,7 +25,7 @@ const productionBase: PartyPreviewProductionSnapshot = {
     disabledTrackIds: [],
     disabledGroupIds: [],
     lastUpdatedAt: '2025-06-01T10:00:00.000Z',
-  } as PlaybackState,
+  },
   partyLifecycleState: 'ready',
   isLinked: true,
 };

@@ -1,11 +1,10 @@
 import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-
 import { useModalKeyboard } from '@shared/hooks';
 import { exportService, ipcService } from '@shared/services';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export const ExportModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();

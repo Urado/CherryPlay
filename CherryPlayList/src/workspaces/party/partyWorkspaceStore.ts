@@ -3,9 +3,9 @@ import {
   getDefaultCustomizationSettings,
   type PartyThemeId,
 } from '@cherryplay/components';
+import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
 
 export type PartyPublishSyncParts = {
   playlist: string;

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 
 import {
   useAimpStore,
@@ -7,6 +6,7 @@ import {
   useSettingsStore,
 } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import { useMemo } from 'react';
 
 import {
   getPartyEditorActionVisibility,

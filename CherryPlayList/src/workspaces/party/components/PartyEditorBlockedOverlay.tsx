@@ -1,10 +1,10 @@
-import { AuthForm, AUTH_FORM_TITLE_ID } from '@cherryplay/components';
-import React from 'react';
 
 import { BROWSER_LOGIN_PANEL_TITLE_ID, BrowserLoginPanel } from '@app/components/BrowserLoginPanel';
+import { AuthForm, AUTH_FORM_TITLE_ID } from '@cherryplay/components';
 import { OnlineUnavailablePanel, Spinner } from '@shared/components';
 import { getAppMode, isDemoLiveMode } from '@shared/platform';
 import { authService } from '@shared/services/authService';
+import React from 'react';
 
 import type { PartyEditorBlockedReason } from '../partyEditorPhase';
 

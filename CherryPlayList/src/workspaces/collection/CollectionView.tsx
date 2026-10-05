@@ -1,9 +1,8 @@
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   ItemList,
   DropIndicator,
@@ -35,6 +34,7 @@ import {
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
 import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface CollectionViewProps {
   workspaceId: WorkspaceId;

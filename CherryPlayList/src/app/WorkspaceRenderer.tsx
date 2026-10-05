@@ -1,10 +1,10 @@
-import React, { memo } from 'react';
 
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
 import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
+import React, { memo } from 'react';
 
 interface WorkspaceRendererProps {
   zone: WorkspaceZone;

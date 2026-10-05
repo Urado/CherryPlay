@@ -130,7 +130,7 @@ describe('demo loudness platform support', () => {
       ok: true,
       targetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
     });
-    expect(resolveDemoAnalyzeTargetLufs('12' as unknown)).toEqual({
+    expect(resolveDemoAnalyzeTargetLufs('12')).toEqual({
       ok: true,
       targetLufs: DEFAULT_LOUDNESS_TARGET_LUFS,
     });

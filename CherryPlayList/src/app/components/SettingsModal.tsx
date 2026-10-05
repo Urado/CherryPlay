@@ -1,8 +1,7 @@
-import { Button, IconButton } from '@cherryplay/components';
-import CloseIcon from '@mui/icons-material/Close';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
+import { Button, IconButton } from '@cherryplay/components';
+import CloseIcon from '@mui/icons-material/Close';
 import { APP_VERSION } from '@shared/config';
 import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
@@ -18,6 +17,7 @@ import { useAimpStore, useSettingsStore, useUIStore } from '@shared/stores';
 import type { TrackItemSizePreset } from '@shared/types/trackItemSize';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const DIVIDER_INTERVALS = [
   { value: 900, label: '15 минут' },

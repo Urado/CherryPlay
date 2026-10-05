@@ -1,5 +1,4 @@
 import { DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
-
 import { DEFAULT_FILEBROWSER_WORKSPACE_ID } from '@core/constants/workspace';
 
 import { isDemoFixturesMode, isDemoLiveMode } from '../platform/demoLiveMode';

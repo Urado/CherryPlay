@@ -30,7 +30,7 @@ import '../../electron/preload';
 
 function emitChannel(channel: string, payload: unknown): void {
   for (const listener of channelListeners.get(channel) ?? []) {
-    listener({} as Electron.IpcRendererEvent, payload);
+    listener({}, payload);
   }
 }
 

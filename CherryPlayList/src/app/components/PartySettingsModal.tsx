@@ -1,10 +1,9 @@
 import { IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useCallback, useEffect, useRef } from 'react';
-
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import { PartySettingsContent } from '../../workspaces/party/components/PartySettingsContent';
 import {

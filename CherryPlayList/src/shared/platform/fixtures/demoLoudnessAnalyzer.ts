@@ -131,7 +131,7 @@ export function handleDemoAnalyzeLoudness(payload: unknown): IPCResponse<Loudnes
     typeof payload === 'object' &&
     payload !== null &&
     'path' in payload &&
-    typeof (payload as { path: unknown }).path === 'string'
+    typeof (payload).path === 'string'
       ? (payload as { path: string }).path
       : '';
 
@@ -158,7 +158,7 @@ export function handleDemoAnalyzeLoudness(payload: unknown): IPCResponse<Loudnes
 
   const target = resolveDemoAnalyzeTargetLufs(
     typeof payload === 'object' && payload !== null && 'targetLufs' in payload
-      ? (payload as { targetLufs: unknown }).targetLufs
+      ? (payload).targetLufs
       : undefined,
   );
   if (!target.ok) {
@@ -187,7 +187,7 @@ export function handleDemoStatAudioFile(payload: unknown): IPCResponse<AudioFile
     typeof payload === 'object' &&
     payload !== null &&
     'path' in payload &&
-    typeof (payload as { path: unknown }).path === 'string'
+    typeof (payload).path === 'string'
       ? (payload as { path: string }).path
       : '';
 

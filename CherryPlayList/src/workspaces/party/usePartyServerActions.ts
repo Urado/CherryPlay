@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 
 import {
   InvalidPartyLifecycleTransitionError,
@@ -7,8 +6,9 @@ import {
   type PartyLifecycleState,
 } from '@shared/services/partyService';
 import { useAuthStore, useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
-import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 import { copyTextToClipboard, sanitizeExternalUrl } from '@shared/utils';
+import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
+import { useCallback } from 'react';
 
 import { publishPartyToSite } from './partyHeaderCommands';
 import {

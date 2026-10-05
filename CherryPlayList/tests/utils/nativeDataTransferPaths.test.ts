@@ -13,7 +13,7 @@ function makeDataTransferWithFiles(files: File[], types: string[] = ['Files']): 
     ...files,
     length: files.length,
     item: (i: number) => files[i] ?? null,
-  } as FileList;
+  };
   return {
     files: list,
     types,

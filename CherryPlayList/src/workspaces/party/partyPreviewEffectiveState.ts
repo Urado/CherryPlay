@@ -1,9 +1,9 @@
 import type { PartyThemeId, PartyViewerStatusId, PlaybackState } from '@cherryplay/components';
+import type { PartyLifecycleState } from '@shared/services/partyService';
+import { collectComponentPlaylistTrackIds } from '@shared/utils';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import type { PartyLifecycleState } from '@shared/services/partyService';
-import { collectComponentPlaylistTrackIds } from '@shared/utils';
 
 import { DEMO_MOCK_LIVE_PLAYBACK } from './partyPreviewMockPlayback';
 import type { PartyPreviewScenarioState } from './partyPreviewScenarioStore';

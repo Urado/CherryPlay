@@ -1,4 +1,3 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { isProjectTrack } from '@core/types/project';
 import type { Track } from '@core/types/track';
@@ -6,6 +5,7 @@ import { applyLoudnessChangeToActivePlayback } from '@shared/audio/playback/loud
 import { getPlatformCapabilities } from '@shared/platform';
 import { loudnessService } from '@shared/services';
 import { useProjectStore, useSettingsStore } from '@shared/stores';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { TrackLoudnessButton } from './TrackLoudnessButton';
 import { TrackLoudnessPopover } from './TrackLoudnessPopover';

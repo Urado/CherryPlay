@@ -1,4 +1,3 @@
-import { useEffect, type RefObject } from 'react';
 
 import type { Layout } from '@core/types/layout';
 import { APP_MIN_WINDOW_WIDTH, APP_MIN_WINDOW_HEIGHT } from '@shared/contracts/windowMins';
@@ -11,6 +10,7 @@ import {
   type LayoutViewportSize,
 } from '@shared/utils/layoutViewportBridge';
 import { logger } from '@shared/utils/logger';
+import { useEffect, type RefObject } from 'react';
 
 /**
  * Absolute lower bound for the window minimum, used as `max(appFloor, computed)`

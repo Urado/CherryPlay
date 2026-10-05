@@ -56,7 +56,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -70,7 +70,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : '';
         const stat = statDemoPath(path);
@@ -88,7 +88,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -144,7 +144,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'name' in payload &&
-          typeof (payload as { name: unknown }).name === 'string'
+          typeof (payload).name === 'string'
             ? (payload as { name: string }).name
             : 'home';
         if (name === 'music') {
@@ -171,7 +171,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'serverUrl' in payload &&
-          typeof (payload as { serverUrl: unknown }).serverUrl === 'string'
+          typeof (payload).serverUrl === 'string'
             ? (payload as { serverUrl: string }).serverUrl
             : getDemoServerUrl();
         setDemoServerUrl(serverUrl);
@@ -192,7 +192,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'url' in payload &&
-          typeof (payload as { url: unknown }).url === 'string'
+          typeof (payload).url === 'string'
             ? (payload as { url: string }).url
             : undefined;
         if (url && typeof window !== 'undefined') {
