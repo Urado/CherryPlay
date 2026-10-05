@@ -138,6 +138,7 @@ npm run build
 - [DEV_SETUP.md](DEV_SETUP.md) — настройка окружения для разработки (порядок запуска, переменные)
 - [ENV.md](ENV.md) — справочник переменных окружения (бэкенд, фронт, БД, деплой; dev/prod)
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы MVP, архитектура
+- [BETA_SCOPE.md](../CherryPlayKanban/BETA_SCOPE.md) — состав открытой беты в канбане, осознанно выключенные функции и ограничения (черновик)
 - [CONTRACTS.md](CONTRACTS.md) — REST API, SignalR Hub, DTO (Public и Organizer)
 - [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.)
 - [QUICK_START.md](QUICK_START.md) — быстрый старт (локальная разработка)

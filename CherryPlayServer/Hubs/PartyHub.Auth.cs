@@ -22,6 +22,11 @@ public partial class PartyHub
         var token = httpContext.Request.Query["access_token"].FirstOrDefault() ??
                    httpContext.ExtractTokenFromRequest();
 
+        return await GetOrganizerIdFromTokenAsync(token);
+    }
+
+    private async Task<Guid?> GetOrganizerIdFromTokenAsync(string? token)
+    {
         if (string.IsNullOrWhiteSpace(token))
         {
             return null;

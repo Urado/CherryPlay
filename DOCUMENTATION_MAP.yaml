@@ -3,7 +3,7 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-02"
+updated: "2026-10-05"
 summary:
   total_md_files: 115
   project_documentation: 87
@@ -17,6 +17,7 @@ entry_points:
   contracts_api: CONTRACTS.md
   glossary: GLOSSARY.md
   release_plan: RELEASE_PLAN.md
+  beta_scope: ../CherryPlayKanban/BETA_SCOPE.md # Внешний документ продуктового планирования; не входит в счётчики репозитория
   integration: docs/integration/README.md
   desktop_app: CherryPlayList/docs/README.md
   desktop_full: CherryPlayList/FULL_DOCUMENTATION.md

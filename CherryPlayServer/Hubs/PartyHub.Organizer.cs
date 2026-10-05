@@ -194,13 +194,7 @@ public partial class PartyHub
         var organizerId = await GetOrganizerIdFromContextAsync();
         if (!organizerId.HasValue && !string.IsNullOrWhiteSpace(token))
         {
-            var result = await _jwtService.ValidateTokenAsync(token);
-            if (result.IsValid && result.OrganizerId.HasValue)
-            {
-                organizerId = result.OrganizerId.Value;
-                Context.Items["OrganizerId"] = organizerId.Value;
-                Context.Items["OrganizerName"] = result.Name;
-            }
+            organizerId = await GetOrganizerIdFromTokenAsync(token);
         }
 
         if (!organizerId.HasValue)
