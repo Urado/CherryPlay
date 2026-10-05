@@ -4,12 +4,12 @@ import { getLatestDesktopRelease } from './desktopReleaseService';
 
 const makeRelease = (overrides: Record<string, unknown> = {}) => ({
   prerelease: true,
-  tag_name: 'player-v9.9.9',
+  tag_name: 'player-v0.6.4',
   published_at: '2026-10-01T12:00:00Z',
   assets: [
     {
       name: 'CherryPlayList-0.6.4-x64.zip',
-      browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v9.9.9/CherryPlayList-0.6.4-x64.zip',
+      browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.6.4/CherryPlayList-0.6.4-x64.zip',
     },
   ],
   ...overrides,
@@ -19,17 +19,37 @@ const createResponse = (data: unknown, ok = true) =>
   ({ ok, json: vi.fn().mockResolvedValue(data) }) as unknown as Response;
 
 describe('getLatestDesktopRelease', () => {
-  it('selects the newest published player prerelease and reads version from its ZIP', async () => {
+  it('selects the highest matching player tag version', async () => {
     const fetchReleases = vi.fn().mockResolvedValue(
       createResponse([
         makeRelease({ published_at: '2026-09-01T12:00:00Z' }),
         makeRelease({
-          tag_name: 'player-v1.0.0',
+          tag_name: 'player-v0.7.0',
           published_at: '2026-10-02T12:00:00Z',
           assets: [
             {
               name: 'CherryPlayList-0.7.0-x64.zip',
-              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPlayList-0.7.0-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.7.0/CherryPlayList-0.7.0-x64.zip',
+            },
+          ],
+        }),
+        makeRelease({
+          tag_name: 'player-v0.9.0',
+          published_at: '2026-09-02T12:00:00Z',
+          assets: [
+            {
+              name: 'CherryPlayList-0.9.0-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPlayList-0.9.0-x64.zip',
+            },
+          ],
+        }),
+        makeRelease({
+          tag_name: 'player-v1.0.0',
+          published_at: '2026-10-04T12:00:00Z',
+          assets: [
+            {
+              name: 'CherryPlayList-0.7.1-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPlayList-0.7.1-x64.zip',
             },
           ],
         }),
@@ -39,9 +59,9 @@ describe('getLatestDesktopRelease', () => {
     );
 
     await expect(getLatestDesktopRelease(fetchReleases)).resolves.toEqual({
-      version: '0.7.0',
+      version: '0.9.0',
       downloadUrl:
-        'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPlayList-0.7.0-x64.zip',
+        'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPlayList-0.9.0-x64.zip',
     });
   });
 
@@ -107,6 +127,36 @@ describe('getLatestDesktopRelease', () => {
 
   it('reports when no matching ZIP exists', async () => {
     const fetchReleases = vi.fn().mockResolvedValue(createResponse([makeRelease({ assets: [] })]));
+
+    await expect(getLatestDesktopRelease(fetchReleases)).rejects.toThrow(
+      'Сейчас нет доступной бета-версии приложения.',
+    );
+  });
+
+  it('rejects a prerelease when the ZIP version does not match its player tag', async () => {
+    const fetchReleases = vi.fn().mockResolvedValue(
+      createResponse([
+        makeRelease({
+          tag_name: 'player-v1.0.0',
+          assets: [
+            {
+              name: 'CherryPlayList-0.9.9-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPlayList-0.9.9-x64.zip',
+            },
+          ],
+        }),
+      ]),
+    );
+
+    await expect(getLatestDesktopRelease(fetchReleases)).rejects.toThrow(
+      'Сейчас нет доступной бета-версии приложения.',
+    );
+  });
+
+  it('rejects player tags with prerelease suffixes', async () => {
+    const fetchReleases = vi.fn().mockResolvedValue(
+      createResponse([makeRelease({ tag_name: 'player-v1.0.0-beta.1' })]),
+    );
 
     await expect(getLatestDesktopRelease(fetchReleases)).rejects.toThrow(
       'Сейчас нет доступной бета-версии приложения.',

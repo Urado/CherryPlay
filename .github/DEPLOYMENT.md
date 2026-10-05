@@ -6,10 +6,10 @@
 
 1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
 2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
-3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` собирает Windows zip (`dist:win:ci`) с версией **`{appVersion}-pr-{PR}`** (например `0.6.1-pr-8` → `CherryPlayList-0.6.1-pr-8-x64.zip`), кладёт одноимённый Actions artifact и комментирует PR. Без загрузки в GitHub Release — для ручного теста до релиза. Релизный zip остаётся с чистой версией приложения (`0.6.1`)
+3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` выбирает наибольшую версию опубликованного Desktop prerelease с тегом `player-vX.Y.Z` и точным ZIP `CherryPlayList-X.Y.Z-x64.zip`; если такого релиза нет, использует `0.0.0`. Package version сборки — **`{base}-pr-{PR}`**, а ZIP и Actions artifact называются **`CherryPlayList-{base}-pr-{PR}-x64.zip`** и **`CherryPlayList-{base}-pr-{PR}-x64`** (например `CherryPlayList-0.6.4-pr-90-x64.zip`). Комментарий бота отдельно показывает версию пакета и имя ZIP. Без загрузки в GitHub Release — для ручного теста до релиза. Релизные ZIP остаются с чистой версией приложения.
 4. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
 5. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
-6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList (имя zip = версия из `CherryPlayList/package.json` на собранном коммите) и загружает его в GitHub Release (те же триггеры; при `workflow_dispatch` тег — только destination Release)
+6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает Windows zip CherryPlayList и загружает его в GitHub Release. Для `player-vX.Y.Z` тег задаёт версию Desktop: workflow проверяет формат и prerelease-статус, записывает `X.Y.Z` в `package.json` и `package-lock.json`, а затем проверяет версию ZIP. При `workflow_dispatch` этот тег также указывает целевой релиз.
 
 При публикации GitHub Release (не draft) workflows **5** и **6** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`). Draft → Publish тоже даёт `published`; событие `created` для draft GitHub не шлёт в Actions.
 
@@ -213,19 +213,21 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 3. **Автоматический процесс (два независимых workflow):**
    - **`release-and-deploy.yml`**: для стабильного релиза образы с тегом версии публикуются в GHCR и деплоятся на сервер; обычный prerelease пропускает деплой
-   - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release (версия в имени zip — из `CherryPlayList/package.json`, не из тега)
+   - **`release-desktop-windows.yml`** (включая prerelease, без draft): Windows zip → asset того же Release; для тега `player-vX.Y.Z` версия ZIP берётся из тега
 
-Для обновления сайта и сервера используйте стабильные релизы с тегом `vX.Y.Z` (например, `v1.0.0`) без отметки prerelease. Релиз приложения для канала загрузки сайта публикуйте как prerelease с тегом, начинающимся на `player-` (например, `player-v0.7.0`). Для тега `player-*` workflow `release-and-deploy.yml` пропускает и сборку/публикацию web/server образов, и деплой — как при публикации Release, так и при ручном запуске workflow. Такие запуски не изменяют container tags, включая `latest`. `release-desktop-windows.yml` при этом собирает Desktop ZIP и загружает его в Release.
+Для сайта и сервера публикуйте стабильный релиз с тегом `vX.Y.Z` (например, `v1.0.0`) без отметки prerelease. `release-and-deploy.yml` проверяет формат тега и использует его версию как `ClientCompatibility.ServerVersion` в образе сервера и как версию совместимости в сборке web-образа; неподдерживаемый тег останавливает workflow до сборки образов. Порог `ClientCompatibility.Desktop.MinVersion` остаётся отдельной настройкой: сервер возвращает `426 client_outdated` клиентам ниже этого порога.
+
+Релиз приложения публикуйте как prerelease с тегом строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`): три числовых компонента, без prerelease-суффикса. Для такого тега `release-and-deploy.yml` пропускает сборку образов и деплой, а `release-desktop-windows.yml` проверяет формат и prerelease-статус, записывает версию тега в `CherryPlayList/package.json` и `package-lock.json`, собирает ZIP и проверяет его версию. Уведомление Desktop и страница загрузки сайта отбирают опубликованные prerelease с тегом этого формата и точным совпадением `CherryPlayList-X.Y.Z-x64.zip`; оба выбирают наибольшую SemVer-версию. Обновление скачивается вручную через `/download`, автоустановки нет.
 
 ### Скачать Windows desktop (CherryPlayList)
 
 #### Из pull request (до релиза)
 
-На PR с изменениями в List/Components workflow **Verify Desktop Windows** ставит версию `{package.json}-pr-{номерPR}` и кладёт artifact **`CherryPlayList-{version}-pr-{N}-x64`** (тот же basename, что у zip). Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
+На PR с изменениями в List/Components workflow **Verify Desktop Windows** берёт `{base}` из наибольшего опубликованного prerelease Desktop тега `player-vX.Y.Z`, если есть ZIP с тем же номером версии; иначе `{base}` равен `0.0.0`. Package version внутри сборки — `{base}-pr-{N}`, имя ZIP и artifact — **`CherryPlayList-{base}-pr-{N}-x64.zip`** / **`CherryPlayList-{base}-pr-{N}-x64`**. Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
 
 #### Из GitHub Release
 
-После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**, где `{version}` — поле `version` в `CherryPlayList/package.json` **на собранном коммите**, не тег GitHub Release. Тег релиза (и версия деплоя сайта/сервера) могут отличаться от версии desktop-приложения.
+После успешного desktop-workflow на Release появляется артефакт **`CherryPlayList-{version}-x64.zip`**. Для `player-vX.Y.Z` версия `{version}` — `X.Y.Z` из тега, записанная workflow в `package.json` и `package-lock.json`; в иных случаях workflow использует версию пакета из коммита. Версии Desktop и Server/Web ведутся отдельными тегами.
 
 URL для **последнего стабильного** (non-prerelease) релиза:
 
@@ -235,16 +237,15 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVe
 
 Пример: в `package.json` версия `0.7.0`, zip лежит на последнем non-prerelease → `…/releases/latest/download/CherryPlayList-0.7.0-x64.zip`. `/latest/` указывает только на последний **non-prerelease**; prerelease тоже получает zip-asset, но не через `/latest/`. В имени файла — версия приложения.
 
-Страница [`/download`](../CherryPlayWeb/docs/pages.md#страница-загрузки-приложения) сайта использует отдельное правило для беты: запрашивает публичный GitHub Releases API и выбирает самый новый опубликованный prerelease с тегом `player-*`, у которого есть asset `CherryPlayList-{version}-x64.zip`. На странице показывается версия из имени ZIP, а кнопка ведёт прямо на asset. Поэтому после публикации нового `player-*` prerelease ссылка обновляется без повторного деплоя сайта. При недоступности GitHub, некорректном ответе или отсутствии подходящего релиза страница показывает ошибку; стабильный `/latest/` запасным источником не служит.
+Страница [`/download`](../CherryPlayWeb/docs/pages.md#страница-загрузки-приложения) и Desktop уведомление используют публичный GitHub Releases API и опубликованные prerelease с тегом строго в формате `player-vX.Y.Z` (три числовых компонента без prerelease-суффикса), у которых ZIP точно совпадает с версией тега (`CherryPlayList-X.Y.Z-x64.zip`). Оба выбирают наибольшую SemVer-версию. Страница показывает версию из тега и ведёт прямо на asset. Desktop при запуске и не чаще раза в 24 часа сравнивает установленную версию с выбранным релизом. Проверка откладывается на время активной связанной сессии; сетевой сбой не блокирует приложение и повторяется через пять минут. Мягкое уведомление показывается в шапке и может быть закрыто для этой версии. Скачивание и установка выполняются пользователем вручную. Стабильный `/latest/` запасным источником не служит.
 
 Чтобы выпустить обновление приложения для этой страницы:
 
-1. Установите версию приложения в `CherryPlayList/package.json`.
-2. Создайте GitHub Release с тегом `player-vX.Y.Z`, отметьте его как prerelease и опубликуйте.
-3. Дождитесь успешного `Release Desktop Windows` и проверьте, что в релиз добавлен ZIP `CherryPlayList-{version}-x64.zip` с версией из `package.json`.
-4. Откройте `/download` и убедитесь, что показана эта версия и кнопка начинает загрузку ZIP.
+1. Создайте GitHub Release с тегом `player-vX.Y.Z`, отметьте его как prerelease и опубликуйте.
+2. Дождитесь успешного `Release Desktop Windows` и проверьте, что в релиз добавлен ZIP `CherryPlayList-X.Y.Z-x64.zip`, совпадающий с версией в `player-vX.Y.Z`.
+3. Откройте `/download` и убедитесь, что показана эта версия и кнопка начинает загрузку ZIP.
 
-Релизный тег и версия приложения независимы: страница показывает версию из имени ZIP. Для CP-087 ZIP собирается CI без AIMP bridge.
+Тег `player-vX.Y.Z` задаёт версию приложения и ZIP. Для CP-087 ZIP собирается CI без AIMP bridge.
 
 Ручной запуск (**Actions → Release Desktop Windows → Run workflow**):
 

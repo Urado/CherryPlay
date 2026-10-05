@@ -77,7 +77,7 @@ npm run dist:all
 
 - `CherryPlayList-{version}-x64.zip` — zip-дистрибутив (64-bit)
 
-Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено); имя zip — `CherryPlayList-{version}-x64.zip` (версия из `CherryPlayList/package.json` на собранном коммите, не из тега GitHub Release). PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — тот же `dist:win:ci`, но версия **`{version}-pr-{PR}`** (например `CherryPlayList-0.6.1-pr-8-x64.zip`); скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
+Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено). Для prerelease-тега строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`) workflow проверяет формат тега, prerelease-статус и то, что релиз не является draft, затем записывает `X.Y.Z` в `package.json` и `package-lock.json` до сборки. Дополнительный prerelease-суффикс в теге не поддерживается. Созданный ZIP получает ту же версию и workflow сверяет её с ожидаемым именем файла. Для других тегов версия берётся из `package.json`. PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — workflow выбирает наибольшую опубликованную версию prerelease Desktop с тегом `player-vX.Y.Z` и точным ZIP, либо `0.0.0`, если подходящего релиза нет. Внутри сборки package version — **`{base}-pr-{PR}`** (например, `0.6.4-pr-90`), а ZIP и Actions artifact называются **`CherryPlayList-{base}-pr-{PR}-x64.zip`** и **`CherryPlayList-{base}-pr-{PR}-x64`**; скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
 
 Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 
@@ -95,7 +95,7 @@ npm run dist:all
 
 ## Версионирование
 
-Для локальной сборки обновите версию в `package.json` перед `dist:*`:
+Для локальной сборки задайте версию в `package.json` перед `dist:*`:
 
 ```json
 {
@@ -103,7 +103,7 @@ npm run dist:all
 }
 ```
 
-Имя zip берётся из `${version}` electron-builder (`CherryPlayList/package.json` на собранном коммите). В CI (`release-desktop-windows.yml`) версия **не** перезаписывается из тега GitHub Release: zip называется по `package.json`, а input `tag` при `workflow_dispatch` — только destination Release для загрузки. Тег сайта/релиза и версия приложения могут различаться. URL: `…/releases/latest/download/CherryPlayList-{appVersion}-x64.zip` (см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md)).
+Для бета-версии источником истины служит опубликованный prerelease-тег строго в формате `player-vX.Y.Z` (три числовых компонента без prerelease-суффикса). Workflow `release-desktop-windows.yml` извлекает `X.Y.Z`, записывает версию в `package.json` и `package-lock.json`, собирает ZIP и проверяет его имя перед загрузкой в релиз с этим тегом. Desktop уведомление и `/download` используют только опубликованные prerelease с тегом этого формата и соответствующим Windows ZIP; уведомление предлагает вручную скачать ZIP со страницы `/download` и не устанавливает его автоматически. Подробности выпуска: [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md).
 
 ## Проверка сборки
 

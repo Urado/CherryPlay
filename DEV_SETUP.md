@@ -29,7 +29,7 @@ dotnet run
 - Чтобы запустить сервер с этими переменными:
   - **Вариант 1:** подгрузите их перед запуском, например: `source .env.development` (Bash), затем `cd CherryPlayServer && dotnet run`.
   - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
-  - **Вариант 3 (Docker debug):** `docker compose -f docker-compose.debug.yml up --build` — сервис `server` подключает корневой **`.env.development`** через `env_file` (включая `RUSENDER_*` для проверки писем).
+  - **Вариант 3 (Docker debug):** `docker compose -f docker-compose.debug.yml up --build` — сервис `server` подключает корневой **`.env.development`** через `env_file` (включая `RUSENDER_*` для проверки писем). Если контейнерам нужны публичные DNS-серверы, добавьте `-f docker-compose.debug.public-dns.yml`.
 - Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings\_\_DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
 - По умолчанию (`UseInMemoryStorage=false` в appsettings) — **EF Core + PostgreSQL** (нужна БД: Docker `postgres` или локальный Postgres). Опционально `UseInMemoryStorage=true` — in-memory репозитории без Postgres (данные только в процессе). Dual storage intentional — см. [ARCHITECTURE.md](ARCHITECTURE.md), [CherryPlayServer/README.md](CherryPlayServer/README.md).

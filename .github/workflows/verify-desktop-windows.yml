@@ -54,16 +54,19 @@ jobs:
         shell: bash
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${PR_NUMBER}" ]; then
             echo "ERROR: pull_request.number is empty"
             exit 1
           fi
-          BASE="$(node -p "require('./package.json').version.replace(/[-+].*$/, '')")"
+          BASE="$(node scripts/resolveDesktopReleaseVersion.mjs --latest-release)"
           VERSION="${BASE}-pr-${PR_NUMBER}"
-          echo "Stamping CherryPlayList version to ${VERSION} (PR test build)"
+          echo "Stamping CherryPlayList version to ${VERSION} (base ${BASE} from latest published Desktop release)"
           npm version "${VERSION}" --no-git-tag-version --allow-same-version
           echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "base_version=${BASE}" >> "$GITHUB_OUTPUT"
         id: stamp-version
 
       - name: Build Windows zip (no AIMP staging)
@@ -78,6 +81,8 @@ jobs:
         shell: bash
         env:
           EXPECTED_VERSION: ${{ steps.stamp-version.outputs.app_version }}
+          BASE_VERSION: ${{ steps.stamp-version.outputs.base_version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           shopt -s nullglob
           expected="release/CherryPlayList-${EXPECTED_VERSION}-x64.zip"
@@ -86,7 +91,8 @@ jobs:
             ls -la release/ || true
             exit 1
           fi
-          ZIP="${expected}"
+          ZIP="release/CherryPlayList-${BASE_VERSION}-pr-${PR_NUMBER}-x64.zip"
+          mv "${expected}" "${ZIP}"
           ZIP_NAME="$(basename "${ZIP}")"
           ARTIFACT_NAME="${ZIP_NAME%.zip}"
           echo "Found ${ZIP}"
@@ -115,7 +121,7 @@ jobs:
               marker,
               '## Desktop build ready for testing',
               '',
-              `PR test build **\`${appVersion}\`** → zip **\`${zipName}\`**, Actions artifact **\`${artifactName}\`**.`,
+              `App package version **\`${appVersion}\`**; ZIP filename **\`${zipName}\`**; Actions artifact **\`${artifactName}\`**.`,
               '',
               `1. Open the [workflow run](${runUrl})`,
               '2. Scroll to **Artifacts**',

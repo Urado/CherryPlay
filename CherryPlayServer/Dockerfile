@@ -10,6 +10,9 @@ RUN dotnet restore "CherryPlayServer.csproj"
 COPY . .
 WORKDIR "/src"
 
+ARG CLIENT_COMPATIBILITY_SERVER_VERSION
+RUN if [ -n "$CLIENT_COMPATIBILITY_SERVER_VERSION" ]; then sed -i -E "s/(\"ServerVersion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\\1${CLIENT_COMPATIBILITY_SERVER_VERSION}\\2/" appsettings.json; fi
+
 RUN dotnet tool install -g dotnet-format 2>&1 || true
 ENV PATH="${PATH}:/root/.dotnet/tools"
 
@@ -27,7 +30,6 @@ RUN dotnet publish "CherryPlayServer.csproj" -c Release -o /app/publish /p:UseAp
 FROM base AS final
 WORKDIR /app
 
-# Install curl for health checks
 RUN apt-get update && \
     apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*

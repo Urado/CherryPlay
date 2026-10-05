@@ -1,0 +1,140 @@
+import {
+  checkLatestDesktopUpdate,
+  compareDesktopVersions,
+  getDesktopDownloadPageUrl,
+  getLatestDesktopUpdate,
+} from '../src/shared/services/desktopUpdateService';
+
+const buildRelease = (tagName: string, options?: { prerelease?: boolean; assetVersion?: string; downloadUrl?: string }) => ({
+  prerelease: options?.prerelease ?? true,
+  tag_name: tagName,
+  assets: [
+    {
+      name: `CherryPlayList-${options?.assetVersion ?? tagName.replace(/^player-v/, '')}-x64.zip`,
+      browser_download_url: options?.downloadUrl ?? 'https://github.com/Urado/CherryPlay/releases/download/player.zip',
+    },
+  ],
+});
+
+const buildResponse = (ok: boolean, body: unknown): Response =>
+  ({ ok, json: async () => body }) as Response;
+
+describe('desktopUpdateService', () => {
+  it('compares stable and prerelease semantic versions', () => {
+    expect(compareDesktopVersions('0.7.0', '0.6.9')).toBe(1);
+    expect(compareDesktopVersions('1.0.0-alpha.2', '1.0.0-alpha.10')).toBe(-1);
+    expect(compareDesktopVersions('1.0.0', '1.0.0-rc.1')).toBe(1);
+    expect(compareDesktopVersions('invalid', '1.0.0')).toBeNull();
+  });
+
+  it('uses the highest matching player release tag as the version', async () => {
+    const fetchReleases = jest.fn().mockResolvedValue(
+      buildResponse(true, [
+        buildRelease('player-v0.8.0'),
+        buildRelease('player-v0.9.0'),
+        buildRelease('player-v9.0.0', { prerelease: false }),
+        buildRelease('player-v10.0.0', { assetVersion: '9.9.9' }),
+      ]),
+    );
+
+    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toEqual({
+      version: '0.9.0',
+    });
+  });
+
+  it('checks later GitHub pages before choosing the highest matching release', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) =>
+      buildRelease(`web-v${index}.0.0`),
+    );
+    const fetchReleases = jest
+      .fn()
+      .mockResolvedValueOnce(buildResponse(true, firstPage))
+      .mockResolvedValueOnce(buildResponse(true, [buildRelease('player-v1.0.0')]));
+
+    await expect(checkLatestDesktopUpdate(fetchReleases)).resolves.toEqual({
+      success: true,
+      update: { version: '1.0.0' },
+    });
+    expect(fetchReleases).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('per_page=100&page=1'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(fetchReleases).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('per_page=100&page=2'),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('traverses more than ten full pages before selecting the highest release', async () => {
+    const fullPage = Array.from({ length: 100 }, (_, index) => buildRelease(`web-v${index}.0.0`));
+    const fetchReleases = jest.fn().mockImplementation((url: string) => {
+      const page = Number(new URL(url).searchParams.get('page'));
+      return Promise.resolve(
+        buildResponse(true, page <= 11 ? fullPage : [buildRelease('player-v5.0.0')]),
+      );
+    });
+
+    await expect(checkLatestDesktopUpdate(fetchReleases)).resolves.toEqual({
+      success: true,
+      update: { version: '5.0.0' },
+    });
+    expect(fetchReleases).toHaveBeenCalledTimes(12);
+  });
+
+  it('rejects player tags with prerelease suffixes', async () => {
+    const fetchReleases = jest.fn().mockResolvedValue(
+      buildResponse(true, [buildRelease('player-v1.0.0-beta.1')]),
+    );
+
+    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toBeNull();
+  });
+
+  it('rejects player tags with leading zeroes and untrusted asset URLs', async () => {
+    const fetchReleases = jest.fn().mockResolvedValue(
+      buildResponse(true, [
+        buildRelease('player-v01.0.0'),
+        buildRelease('player-v2.0.0', { downloadUrl: 'https://github.com.attacker.test/file.zip' }),
+      ]),
+    );
+
+    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toBeNull();
+  });
+
+  it('compares large numeric identifiers without precision loss', () => {
+    expect(compareDesktopVersions('9007199254740993.0.0', '9007199254740992.0.0')).toBe(1);
+    expect(compareDesktopVersions('1.0.0-alpha.9007199254740993', '1.0.0-alpha.9007199254740992')).toBe(1);
+  });
+
+  it('distinguishes a successful empty result from a transient request failure', async () => {
+    await expect(
+      checkLatestDesktopUpdate(jest.fn().mockResolvedValue(buildResponse(true, []))),
+    ).resolves.toEqual({ success: true, update: null });
+    await expect(
+      checkLatestDesktopUpdate(jest.fn().mockRejectedValue(new Error('offline'))),
+    ).resolves.toEqual({ success: false });
+  });
+
+  it('returns no update when GitHub is unavailable, fails, or has no matching release', async () => {
+    await expect(
+      getLatestDesktopUpdate(jest.fn().mockResolvedValue(buildResponse(false, []))),
+    ).resolves.toBeNull();
+    await expect(
+      getLatestDesktopUpdate(jest.fn().mockRejectedValue(new Error('offline'))),
+    ).resolves.toBeNull();
+    await expect(
+      getLatestDesktopUpdate(
+        jest.fn().mockResolvedValue(
+          buildResponse(true, [buildRelease('player-v1.0.0', { prerelease: false })]),
+        ),
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it('creates an absolute download page URL', () => {
+    expect(getDesktopDownloadPageUrl('https://example.test/base')).toBe(
+      'https://example.test/download',
+    );
+  });
+});

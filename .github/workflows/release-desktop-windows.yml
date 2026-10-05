@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Destination GitHub Release tag to attach the zip (e.g. v0.6.1). Build uses the selected branch; zip version comes from CherryPlayList/package.json.
+        description: Destination GitHub Release tag to attach the zip. player-vX.Y.Z tags also set the Desktop version; other tags use CherryPlayList/package.json.
         required: true
         type: string
 
@@ -48,6 +48,30 @@ jobs:
         working-directory: CherryPlayList
         run: npm ci
 
+      - name: Resolve Desktop version
+        id: app-version
+        working-directory: CherryPlayList
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.event.release.tag_name }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_DRAFT: ${{ github.event.release.draft }}
+        shell: bash
+        run: |
+          IS_PRERELEASE="${RELEASE_PRERELEASE}"
+          IS_DRAFT="${RELEASE_DRAFT}"
+          if [[ "${EVENT_NAME}" == workflow_dispatch && "${TAG_NAME}" == player-* ]]; then
+            RELEASE_STATE="$(gh release view "${TAG_NAME}" --json isPrerelease,isDraft --jq '[.isPrerelease, .isDraft] | @tsv')"
+            IFS=$'\t' read -r IS_PRERELEASE IS_DRAFT <<< "${RELEASE_STATE}"
+          fi
+          VERSION="$(EVENT_NAME="${EVENT_NAME}" TAG_NAME="${TAG_NAME}" IS_PRERELEASE="${IS_PRERELEASE}" IS_DRAFT="${IS_DRAFT}" node scripts/resolveDesktopReleaseVersion.mjs package.json package-lock.json)"
+          echo "Desktop version: ${VERSION}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate release workflow contracts
+        run: node --test CherryPlayList/tests/releaseWorkflowContract.test.mjs
+
       - name: Build Windows zip (no AIMP staging)
         working-directory: CherryPlayList
         env:
@@ -59,11 +83,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.event.release.tag_name }}
+          VERSION: ${{ steps.app-version.outputs.version }}
         shell: bash
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          if [ -z "${VERSION}" ] || [ "${VERSION}" = "undefined" ] || ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            echo "ERROR: CherryPlayList/package.json version is missing or invalid: '${VERSION}'"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [ -z "${VERSION}" ] || [ "${VERSION}" = "undefined" ] || [ "${PACKAGE_VERSION}" != "${VERSION}" ]; then
+            echo "ERROR: Built package version '${PACKAGE_VERSION}' does not match resolved version '${VERSION}'"
             exit 1
           fi
           if [ -z "${TAG_NAME}" ]; then
@@ -76,7 +101,7 @@ jobs:
             ls -la release/ || true
             exit 1
           fi
-          echo "App version (from CherryPlayList/package.json): ${VERSION}"
+          echo "App version: ${VERSION}"
           echo "Destination GitHub Release tag: ${TAG_NAME}"
           echo "Uploading ${ZIP} to release ${TAG_NAME}"
           gh release upload "${TAG_NAME}" "${ZIP}" --clobber

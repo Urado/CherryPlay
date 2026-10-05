@@ -27,6 +27,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 
 import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
 
+import { DesktopUpdateNotice } from './DesktopUpdateNotice';
 import { HeaderPartyStatus } from './HeaderPartyStatus';
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
@@ -704,6 +705,7 @@ export const AppHeader: React.FC = () => {
 
             <WorkspaceMenu />
           </div>
+          <DesktopUpdateNotice />
         </div>
       </div>
 

@@ -22,6 +22,9 @@ COPY CherryPlayServer/appsettings.json ./CherryPlayServer/appsettings.json
 
 COPY CherryPlayWeb/ ./CherryPlayWeb/
 
+ARG CLIENT_COMPATIBILITY_SERVER_VERSION
+RUN if [ -n "$CLIENT_COMPATIBILITY_SERVER_VERSION" ]; then sed -i -E "s/(\"ServerVersion\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\\1${CLIENT_COMPATIBILITY_SERVER_VERSION}\\2/" /app/CherryPlayServer/appsettings.json; fi
+
 WORKDIR /app/CherryPlayWeb
 
 RUN npm ci --ignore-scripts
