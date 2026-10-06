@@ -1,0 +1,8 @@
+{
+  "name": "cherryplay-monitoring-validation",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "yaml": "2.8.3"
+  }
+}

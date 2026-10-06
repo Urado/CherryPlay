@@ -25,7 +25,7 @@ using Prometheus.DotNetRuntime;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
-builder.Logging.AddJsonConsole();
+builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -342,6 +342,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseMiddleware<RequestCorrelationLoggingMiddleware>();
 app.UseHttpMetrics(options => options.ReduceStatusCodeCardinality());
 app.UseCors("ConfiguredOrigins");
 app.UseRateLimiter();

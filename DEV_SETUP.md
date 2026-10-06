@@ -25,7 +25,31 @@ Prometheus получает метрики backend по внутреннему �
 
 Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (сообщения ASP.NET Core ниже `Warning` отфильтрованы). В штатных прикладных событиях используются внутренние `OrganizerId` и `PartyId`, когда они доступны; email, имя, пароль, токены и содержимое запросов или плейлистов в эти события не включаются.
 
-Grafana, Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте, кроме Grafana на `127.0.0.1:3001`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и распространённые credential-параметры URL.
+В Grafana откройте папку **CherryPlay** и dashboard **Обзор CherryPlay**. Панель HTTP группирует request rate по классу status code (`2xx`, `3xx`, `4xx`, `5xx`); соседняя панель показывает p95 задержки. Backend метрики `http_requests_received_total` и `http_request_duration_seconds` не должны получать labels с user/request IDs, токенами или полными URL. Внутри Compose Kestrel слушает `0.0.0.0:8080`; `/metrics` доступен Prometheus по адресу `http://server:8080/metrics` и не имеет отдельного host port. Локальный compose публикует общий server port `5000:8080`; поэтому из Windows endpoint доступен на `http://localhost:5000/metrics`. Prometheus scrape target называется `cherryplay-server`.
+
+Чтобы вручную найти backend errors в Grafana, откройте Explore, выберите Loki и выполните:
+
+```logql
+{job="docker"} | json | Category=~"CherryPlayServer\\..+" | LogLevel=~"Error|Critical"
+```
+
+Для общего потока контейнерных логов используйте `{job="docker"}`. Поля корреляции `TraceId`, `SpanId` и `RequestId` находятся в JSON-поле `Scopes`; откройте детали записи в Logs, чтобы просмотреть scope. Alloy в локальном стеке маскирует email, IP-адреса и значения query-параметров URL.
+
+Warning **CherryPlay HTTP 5xx** срабатывает при любом 5xx за последние 5 минут; summary указывает на наличие HTTP 5xx за этот интервал. **CherryPlay application errors** срабатывает при backend-событии `Error` или `Critical` за тот же интервал, но summary сообщает только об ошибках приложения в целом. Правила вычисляются раз в минуту и не требуют дополнительного времени `for`; при отсутствии данных эти два правила остаются нормальными. После того как событие выйдет из скользящего пятиминутного окна, warning должен вернуться в normal/inactive. Уведомление не содержит детали события или correlation IDs: откройте Loki Explore либо панель **Логи контейнеров**, чтобы найти запись и посмотреть текст ошибки и `TraceId`/`SpanId`/`RequestId` в `Scopes`. Настройки email/Telegram для локального стека не требуются.
+
+Проверка доступности: `/api/health` сервера должен вернуть HTTP 200; в Grafana раздел **Alerting → Alert rules** должен показывать правила CherryPlay без ошибок вычисления, а оба источника данных — Healthy. Поскольку `/metrics`, Prometheus и Loki не публикуют host ports, проверяйте их через Grafana либо из контейнеров Compose.
+
+Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`); production default — `127.0.0.1:3000`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
+
+## Проверка monitoring-конфигурации
+
+В Windows PowerShell из корня репозитория запустите:
+
+```powershell
+.\scripts\validate-monitoring-config.ps1
+```
+
+Проверка использует Git Bash из Git for Windows, Node.js и Docker Desktop с Compose. В Linux и GitHub Actions остаётся Bash-команда `bash scripts/validate-monitoring-config.sh`.
 
 ## Требования
 

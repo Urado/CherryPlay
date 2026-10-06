@@ -14,6 +14,8 @@ on:
       - '.env.monitoring.local.example'
       - 'monitoring/**'
       - 'scripts/validate-monitoring-config.sh'
+      - 'scripts/validate-monitoring-config.ps1'
+      - 'scripts/monitoring-validation/**'
       - 'scripts/compose-env.sh'
       - 'scripts/deploy.sh'
   push:
@@ -32,6 +34,8 @@ on:
       - '.env.monitoring.local.example'
       - 'monitoring/**'
       - 'scripts/validate-monitoring-config.sh'
+      - 'scripts/validate-monitoring-config.ps1'
+      - 'scripts/monitoring-validation/**'
       - 'scripts/compose-env.sh'
       - 'scripts/deploy.sh'
   workflow_dispatch:
@@ -42,6 +46,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install monitoring validator dependency
+        run: npm ci --prefix scripts/monitoring-validation
 
       - name: Validate production and local monitoring configuration
         run: bash scripts/validate-monitoring-config.sh
