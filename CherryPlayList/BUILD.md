@@ -38,10 +38,10 @@ npm run dist
 #### Для конкретной платформы:
 
 ```bash
-# Windows (локально, со staging AIMP-плагина — нужен собранный DLL)
+# Windows (локально и в CI; нужен CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll)
 npm run dist:win
 
-# Windows без AIMP staging (тот же путь, что CI)
+# Windows CI-сборка (также включает AIMP bridge)
 npm run dist:win:ci
 
 # macOS
@@ -58,8 +58,10 @@ npm run dist:all
 
 | Script        | Что делает                                                                             | AIMP bridge                                |
 | ------------- | -------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `dist:win`    | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Staging обязателен (без DLL скрипт падает) |
-| `dist:win:ci` | `build:electron` → `clean:pack` → `electron-builder --win --x64`                       | Не стейджится; для GitHub Release          |
+| `dist:win`    | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Использует `CHERRYPLAY_AIMP_DLL` override, иначе ищет локальную DLL (Release/Debug), затем fallback в `prebuilt/` |
+| `dist:win:ci` | `build:electron` → `stage:aimp-plugin:prebuilt` → `clean:pack` → `electron-builder --win --x64` | Берёт только DLL из `prebuilt/`; при отсутствии сборка завершается ошибкой |
+
+Локально соберите AIMP bridge по инструкции в [CherryPlayAimpPlugin/README.md](../CherryPlayAimpPlugin/README.md) и скопируйте Release x64 DLL в `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`. Коммитьте DLL вместе с изменениями исходников плагина. GitHub Actions использует эту закоммиченную DLL: CI не скачивает AIMP SDK и не компилирует нативный плагин. В Windows ZIP staging помещает bridge и manifest в каталог плагинов CherryPlayList.
 
 Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPlayList-{version}-x64.zip`), не NSIS и не portable exe. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
 
@@ -77,7 +79,7 @@ npm run dist:all
 
 - `CherryPlayList-{version}-x64.zip` — zip-дистрибутив (64-bit)
 
-Опубликованные GitHub Release builds используют `dist:win:ci` и **пока без** нативного AIMP bridge (отложено). Для prerelease-тега строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`) workflow проверяет формат тега, prerelease-статус и то, что релиз не является draft, затем записывает `X.Y.Z` в `package.json` и `package-lock.json` до сборки. Дополнительный prerelease-суффикс в теге не поддерживается. Созданный ZIP получает ту же версию и workflow сверяет её с ожидаемым именем файла. Для других тегов версия берётся из `package.json`. PR в `main`/`develop` с изменениями в List/Components запускают **Verify Desktop Windows Zip** (`verify-desktop-windows.yml`) — workflow выбирает наибольшую опубликованную версию prerelease Desktop с тегом `player-vX.Y.Z` и точным ZIP, либо `0.0.0`, если подходящего релиза нет. Внутри сборки package version — **`{base}-pr-{PR}`** (например, `0.6.4-pr-90`), а ZIP и Actions artifact называются **`CherryPlayList-{base}-pr-{PR}-x64.zip`** и **`CherryPlayList-{base}-pr-{PR}-x64`**; скачать из **Artifacts** или по комментарию бота в PR. Локальный `dist:win` — для мейнтейнеров с собранным плагином.
+Опубликованные GitHub Release builds и PR verification запускают `dist:win:ci`: staging использует только committed DLL из `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`, затем electron-builder собирает ZIP. При отсутствии DLL workflow завершается ошибкой. После сборки оба workflow проверяют, что архив содержит `CherryPlayAimpBridge/CherryPlayAimpBridge.dll` и `CherryPlayAimpBridge/manifest.json`. PR verify запускается при изменениях в `CherryPlayList/**`, `CherryPlayComponents/**`, `CherryPlayAimpPlugin/**`, `eslint-config-cherryplay/**` или самом workflow; обновление исходников плагина или prebuilt DLL поэтому запускает проверку ZIP. Для prerelease-тега строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`) workflow проверяет формат тега, prerelease-статус и то, что релиз не является draft, затем записывает `X.Y.Z` в `package.json` и `package-lock.json` до сборки. Дополнительный prerelease-суффикс в теге не поддерживается. Созданный ZIP получает ту же версию и workflow сверяет её с ожидаемым именем файла. Для других тегов версия берётся из `package.json`. PR в `main`/`develop` получает ZIP как Actions artifact с именем `CherryPlayList-{base}-pr-{PR}-x64`; его скачивает автор PR. Ручная проверка совместимости на Windows 10/11 выполняется владельцем продукта.
 
 Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 

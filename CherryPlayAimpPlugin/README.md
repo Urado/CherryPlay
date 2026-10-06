@@ -30,6 +30,8 @@ Native Windows x64 **AIMP bridge** plugin for CherryPlayList. Streams AIMP playl
 
 ## Build
 
+Run CMake preset commands from `CherryPlayAimpPlugin/`. The explicit-command block below uses paths relative to the CherryPlay repository root.
+
 ### Using CMake presets
 
 Default (VS 2026):
@@ -56,6 +58,20 @@ cmake --build CherryPlayAimpPlugin/build/manual --config Release
 Use `Visual Studio 18 2026` and `-G "Visual Studio 18 2026"` if you have VS 2026.
 
 The build output DLL is `CherryPlayAimpBridge.dll` (under `build/<preset>/Release/` or `.../Debug/`).
+
+## Windows ZIP packaging
+
+The commands below assume PowerShell starts at the CherryPlay repository root. `Set-Location` moves into `CherryPlayAimpPlugin/`; run the preset build and `Copy-Item` there so their relative paths resolve correctly. GitHub Actions does not download the AIMP SDK or compile this native plugin. The release and PR ZIP workflows stage the committed Release x64 DLL from `prebuilt/CherryPlayAimpBridge.dll` together with its manifest. After changing the plugin, build the Release x64 configuration locally and replace the tracked prebuilt DLL:
+
+```powershell
+Set-Location CherryPlayAimpPlugin
+cmake --preset vs2026-x64-release
+cmake --build --preset build-release
+New-Item -ItemType Directory -Force prebuilt | Out-Null
+Copy-Item build/vs2026-x64-release/Release/CherryPlayAimpBridge.dll prebuilt/CherryPlayAimpBridge.dll
+```
+
+For Visual Studio 2022, from the same `CherryPlayAimpPlugin/` directory run `cmake --preset vs2022-x64-release` and `cmake --build --preset build-release-vs2022`, then run `New-Item -ItemType Directory -Force prebuilt | Out-Null` and copy `build/vs2022-x64-release/Release/CherryPlayAimpBridge.dll` to `prebuilt/CherryPlayAimpBridge.dll`. Include the updated DLL in the same commit or PR as the plugin source changes. The desktop workflows fail if the tracked DLL is missing and verify that the generated ZIP contains the DLL and manifest under `CherryPlayAimpBridge/`. The SDK is required only on the maintainer's local build machine and is not included in the repository or ZIP.
 
 ## Install / Установка в AIMP
 

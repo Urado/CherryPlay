@@ -251,7 +251,7 @@ Backend пишет структурированные JSON-логи с уров�
 
 #### Из pull request (до релиза)
 
-На PR с изменениями в List/Components workflow **Verify Desktop Windows** берёт `{base}` из наибольшего опубликованного prerelease Desktop тега `player-vX.Y.Z`, если есть ZIP с тем же номером версии; иначе `{base}` равен `0.0.0`. Package version внутри сборки — `{base}-pr-{N}`, имя ZIP и artifact — **`CherryPlayList-{base}-pr-{N}-x64.zip`** / **`CherryPlayList-{base}-pr-{N}-x64`**. Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
+На PR с изменениями в List/Components или `CherryPlayAimpPlugin/**` workflow **Verify Desktop Windows** берёт `{base}` из наибольшего опубликованного prerelease Desktop тега `player-vX.Y.Z`, если есть ZIP с тем же номером версии; иначе `{base}` равен `0.0.0`. Package version внутри сборки — `{base}-pr-{N}`, имя ZIP и artifact — **`CherryPlayList-{base}-pr-{N}-x64.zip`** / **`CherryPlayList-{base}-pr-{N}-x64`**. Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
 
 #### Из GitHub Release
 
@@ -273,7 +273,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVe
 2. Дождитесь успешного `Release Desktop Windows` и проверьте, что в релиз добавлен ZIP `CherryPlayList-X.Y.Z-x64.zip`, совпадающий с версией в `player-vX.Y.Z`.
 3. Откройте `/download` и убедитесь, что показана эта версия и кнопка начинает загрузку ZIP.
 
-Тег `player-vX.Y.Z` задаёт версию приложения и ZIP. Для CP-087 ZIP собирается CI без AIMP bridge.
+Тег `player-vX.Y.Z` задаёт версию приложения и ZIP. Windows ZIP для релизов и PR собирается с AIMP bridge и manifest из закоммиченной `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`. CI не загружает AIMP SDK и не компилирует bridge; мейнтейнер собирает DLL локально и коммитит её вместе с изменениями плагина. Оба desktop workflow проверяют, что итоговый ZIP содержит DLL и manifest. Инструкции локальной сборки и обновления DLL: [CherryPlayAimpPlugin/README.md](../CherryPlayAimpPlugin/README.md) и [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md).
 
 Ручной запуск (**Actions → Release Desktop Windows → Run workflow**):
 
@@ -284,7 +284,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVe
 
 Обычные prerelease не деплоят сайт/сервер, хотя workflow собирает и публикует их образы. Для тега `player-*` сборка, публикация образов и деплой пропускаются полностью; desktop-workflow отдельно собирает и прикрепляет ZIP к prerelease.
 
-- В опубликованном zip **нет** нативного AIMP bridge (сборка CI без `stage:aimp-plugin`). Полная локальная сборка с AIMP — см. [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md).
+- Для каждого Windows ZIP staging добавляет нативный AIMP bridge и manifest. Если `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll` отсутствует, сборка завершится ошибкой. Проверка состава ZIP описана в [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md); ручная проверка совместимости на Windows 10/11 выполняется отдельно.
 
 ### Откат на предыдущую версию
 
