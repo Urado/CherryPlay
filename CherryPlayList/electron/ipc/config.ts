@@ -24,7 +24,10 @@ function resolveWebBaseUrl(config: ServerConfig | null): string {
   return app.isPackaged ? DEFAULT_WEB_BASE_URL.production : DEFAULT_WEB_BASE_URL.development;
 }
 
-/** Config file name: dev vs packaged app. */
+export function getConfiguredWebBaseUrl(): string {
+  return resolveWebBaseUrl(readConfig());
+}
+
 const CONFIG_FILE = {
   development: 'serverConfig.development.json',
   production: 'serverConfig.production.json',

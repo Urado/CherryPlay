@@ -37,6 +37,7 @@ export type InvokeChannel =
   | 'system:getPath'
   | 'system:openPath'
   | 'system:openExternal'
+  | 'legal:openDocument'
   | 'system:setMinimumWindowSize'
   | 'config:getConfigPath'
   | 'config:getServerUrl'

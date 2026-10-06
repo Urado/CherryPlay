@@ -11,6 +11,7 @@ import { registerConfigHandlers } from './ipc/config.js';
 import { registerDialogHandlers } from './ipc/dialogs.js';
 import { registerExportHandlers } from './ipc/export.js';
 import { registerFileBrowserHandlers } from './ipc/fileBrowser.js';
+import { registerLegalHandlers } from './ipc/legal.js';
 import { registerPlaylistHandlers } from './ipc/playlist.js';
 import { registerProjectHandlers } from './ipc/project.js';
 import { registerSettingsBundleHandlers } from './ipc/settingsBundle.js';
@@ -103,6 +104,7 @@ app.whenReady().then(() => {
   registerAudioHandlers();
   registerDialogHandlers();
   registerSystemHandlers();
+  registerLegalHandlers();
   registerConfigHandlers();
   registerExportHandlers();
   registerProjectHandlers();

@@ -1,4 +1,5 @@
 import { type AimpBridgeState, type AimpSourceSelection } from '../contracts/aimp';
+import { buildLegalDocumentUrl, resolveLegalWebBaseUrl } from '../utils/legalLinks';
 
 import { DEMO_UNAVAILABLE_MESSAGE, demoUnavailableResponse } from './demoUnavailable';
 import { createDemoAimpBridgeState } from './fixtures/demoAimpBridge';
@@ -18,6 +19,15 @@ import type { IPCResponse, PlatformAPI } from './types';
 
 const DEMO_DIALOG_FIXTURE_PATH = '/demo/exports/output.cherry';
 const DEMO_OPEN_DIALOG_PATH = DEMO_MUSIC_ROOT;
+function getDemoWebBaseUrl(): string | null {
+  try {
+    const configuredWebBaseUrl = import.meta.env.VITE_WEB_BASE_URL || '';
+    const override = typeof process === 'undefined' ? undefined : process.env.VITE_WEB_BASE_URL;
+    return resolveLegalWebBaseUrl(configuredWebBaseUrl, override);
+  } catch {
+    return null;
+  }
+}
 
 function createDemoAimpApi(): PlatformAPI['aimp'] {
   let state = createDemoAimpBridgeState('cherryPlayPlayer');
@@ -157,14 +167,49 @@ export class WebDemoPlatform implements PlatformAPI {
       }
 
       case 'system:openPath':
-      case 'system:openExternal':
         return Promise.resolve({ success: true });
+
+      case 'system:openExternal': {
+        const url =
+          typeof payload === 'object' &&
+          payload !== null &&
+          'url' in payload &&
+          typeof (payload).url === 'string'
+            ? (payload as { url: string }).url
+            : undefined;
+        if (url && /^https?:\/\//i.test(url)) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+          return Promise.resolve({ success: true });
+        }
+        return Promise.resolve({ success: false, error: 'Invalid external URL' });
+      }
+
+      case 'legal:openDocument': {
+        const document = payload && 'document' in payload ? payload.document : undefined;
+        if (document !== 'privacy' && document !== 'legal') {
+          return Promise.resolve({ success: false, error: 'Invalid legal document' });
+        }
+        const webBaseUrl = getDemoWebBaseUrl();
+        if (!webBaseUrl) {
+          return Promise.resolve({ success: false, error: 'Web base URL is not configured' });
+        }
+
+        const url = buildLegalDocumentUrl(webBaseUrl, document);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return Promise.resolve({ success: true });
+      }
 
       case 'config:getServerUrl':
         return Promise.resolve({ success: true, data: getDemoServerUrl() });
 
-      case 'config:getWebBaseUrl':
-        return Promise.resolve({ success: true, data: 'http://localhost:3000' });
+      case 'config:getWebBaseUrl': {
+        const webBaseUrl = getDemoWebBaseUrl();
+        return Promise.resolve(
+          webBaseUrl
+            ? { success: true, data: webBaseUrl }
+            : { success: false, error: 'Web base URL is not configured' },
+        );
+      }
 
       case 'config:setServerUrl': {
         const serverUrl =
