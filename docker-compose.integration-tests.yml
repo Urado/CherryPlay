@@ -48,7 +48,7 @@ services:
       dockerfile: CherryPlayServer.Tests/Dockerfile.container-integration
     environment:
       CHERRYPLAY_API_BASE_URL: http://server:5000
-      CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING: Host=postgres;Port=5432;Database=cherryplay_it_run;Username=postgres;Password=cherryplay_it_password
+      CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING: Host=postgres;Port=5432;Database=cherryplay_it_run;Username=postgres;Password=cherryplay_it_password;SslMode=Disable
       CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY: cherryplay-container-integration-test-secret-key
       CHERRYPLAY_RESTART_PARTY_ID: 11111111-1111-4111-8111-111111111111
       CHERRYPLAY_RESTART_SHORT_CODE: itrestart01
