@@ -19,6 +19,7 @@
 | `POSTGRES_PASSWORD` | Пароль PostgreSQL                                                                                                 |
 | `PGADMIN_EMAIL`     | Email для входа в pgAdmin (например `admin@yourdomain.com`). В контейнере передаётся как `PGADMIN_DEFAULT_EMAIL`. |
 | `PGADMIN_PASSWORD`  | Пароль для входа в pgAdmin. В контейнере передаётся как `PGADMIN_DEFAULT_PASSWORD`.                               |
+| `GRAFANA_ADMIN_PASSWORD` | Отдельный сильный пароль Grafana; обязателен для production-деплоя мониторинга. |
 | `GHCR_TOKEN`        | PAT с правом `read:packages` (для публичного репо можно не задавать)                                              |
 
 Миграции БД применяются автоматически при старте контейнера `cherryplay-server` (в коде сервера вызывается `db.Database.Migrate()`). Отдельный секрет для строки подключения не нужен: сервер подключается к PostgreSQL по внутренней Docker-сети (`postgres:5432`).
@@ -72,16 +73,28 @@ cd ~/cherryplay-deploy
 docker compose -f docker-compose.prod.yml ps
 ```
 
-Должны быть в состоянии **Up**: `cherryplay-server`, `cherryplay-web`, `cherryplay-postgres`.
+Должны быть в состоянии **Up**: `cherryplay-server`, `cherryplay-web`, `cherryplay-postgres`, `cherryplay-prometheus`, `cherryplay-postgres-exporter`, `cherryplay-node-exporter`, `cherryplay-loki`, `cherryplay-alloy`, `cherryplay-grafana` и `cherryplay-pgadmin`.
 
 Проверьте доступность:
 
 - Сайт: `http://<DEPLOY_HOST>` (или по домену, если DNS уже указывает на сервер)
-- API: `http://<DEPLOY_HOST>:5000/api/health`
+- API: `https://<ваш-домен>/api/health` после настройки HTTPS; до этого — `http://<ваш-домен>/api/health` (через nginx → web → backend)
 
 Примечание по безопасности: в `docker-compose.prod.yml` pgAdmin по умолчанию публикуется только на `127.0.0.1:5050` (наружу не открыт). Для доступа используйте SSH-туннель с вашего компьютера на сервер.
 
+Backend также публикует порт `5000` только на `127.0.0.1` сервера, чтобы deploy health check и Swagger оставались доступны локально. Публичные API-запросы идут через `nginx → web → server`. Для Swagger с компьютера используйте отдельный SSH-туннель: `ssh -N -L 5000:127.0.0.1:5000 <DEPLOY_USER>@<DEPLOY_HOST>`, затем откройте [http://localhost:5000/swagger](http://localhost:5000/swagger).
+
 При ошибках: `docker compose -f docker-compose.prod.yml logs -f server`
+
+### Grafana через SSH-туннель
+
+На своём компьютере откройте отдельное окно PowerShell и выполните:
+
+```powershell
+ssh -N -L 3001:127.0.0.1:3000 <DEPLOY_USER>@<DEPLOY_HOST>
+```
+
+Пока команда работает, откройте [http://localhost:3001](http://localhost:3001) и войдите как `admin`, используя `GRAFANA_ADMIN_PASSWORD` из GitHub Secrets. Локальный порт `3000` занят frontend, поэтому туннель использует `3001` на вашем компьютере и перенаправляет его на Grafana на сервере. Dashboard находится в папке **CherryPlay** под именем **Обзор CherryPlay**; он показывает текущие подключения PartyHub и тренд за последние 7 дней. Закройте окно SSH, чтобы отключить туннель. Grafana слушает только loopback сервера; Prometheus и Loki наружу не публикуются.
 
 ---
 

@@ -37,8 +37,7 @@ public class PartiesController : ControllerBase
         try
         {
             var partyDto = await _partyService.CreatePartyAsync(dto);
-            _logger.LogInformation("Party created successfully: id={PartyId}, shortCode={ShortCode}",
-                partyDto.Id, partyDto.ShortCode);
+            _logger.LogInformation("Party created successfully");
             return Ok(partyDto);
         }
         catch (ThemeNotEntitledException ex)
@@ -59,7 +58,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating party");
+            _logger.LogError("Error creating party: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while creating the party");
         }
     }
@@ -76,7 +75,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting organizer parties");
+            _logger.LogError("Error getting organizer parties: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving parties");
         }
     }
@@ -110,7 +109,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting party: {PartyId}", partyId);
+            _logger.LogError("Error getting party: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving the party");
         }
     }
@@ -148,7 +147,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating party metadata: {PartyId}", partyId);
+            _logger.LogError("Error updating party metadata: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while updating the party");
         }
     }
@@ -177,7 +176,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting party: {PartyId}", partyId);
+            _logger.LogError("Error deleting party: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while deleting the party");
         }
     }
@@ -215,7 +214,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating playlist for party: {PartyId}", partyId);
+            _logger.LogError("Error updating playlist for party: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while updating the playlist");
         }
     }
@@ -266,7 +265,7 @@ public class PartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error transitioning party lifecycle: {PartyId}", partyId);
+            _logger.LogError("Error transitioning party lifecycle: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while updating party lifecycle state");
         }
     }

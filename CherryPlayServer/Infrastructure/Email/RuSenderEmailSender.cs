@@ -53,23 +53,11 @@ public sealed class RuSenderEmailSender : IEmailSender
         using var response = await client.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "RuSender send failed with status {StatusCode}: {Body}",
-                (int)response.StatusCode,
-                Truncate(body, 500));
+                "RuSender send failed with status {StatusCode}",
+                (int)response.StatusCode);
             throw new InvalidOperationException($"RuSender send failed with status {(int)response.StatusCode}");
         }
-    }
-
-    private static string Truncate(string value, int maxLength)
-    {
-        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
-        {
-            return value;
-        }
-
-        return value[..maxLength];
     }
 
     private sealed class RuSenderSendRequest

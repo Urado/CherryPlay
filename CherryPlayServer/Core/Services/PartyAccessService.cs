@@ -24,10 +24,7 @@ public class PartyAccessService : IPartyAccessService
 
         if (party.OrganizerId != organizerId)
         {
-            _logger.LogWarning(
-                "Access denied: party {PartyId} does not belong to organizer {OrganizerId}",
-                partyId,
-                organizerId);
+            _logger.LogWarning("Access denied: party does not belong to organizer");
             throw new ForbiddenException("You do not have permission to access this party");
         }
     }

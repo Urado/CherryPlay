@@ -27,9 +27,7 @@ public class JwtAuthenticationMiddleware
                     var organizer = await organizerRepository.GetByIdAsync(validationResult.OrganizerId.Value);
                     if (organizer == null)
                     {
-                        _logger.LogWarning(
-                            "Token validation succeeded but organizer {OrganizerId} not found in database",
-                            validationResult.OrganizerId.Value);
+                        _logger.LogWarning("Token validation succeeded but organizer was not found in database");
                     }
                     else
                     {
@@ -43,7 +41,7 @@ public class JwtAuthenticationMiddleware
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to validate JWT token");
+                _logger.LogWarning("Failed to validate JWT token: {FailureType}", ex.GetType().Name);
             }
         }
 

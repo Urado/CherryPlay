@@ -53,7 +53,9 @@ public sealed class PasswordResetTokenRetentionCleanupHostedService : Background
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Password reset token retention cleanup failed");
+                _logger.LogError(
+                    "Password reset token retention cleanup failed: {FailureType}",
+                    ex.GetType().Name);
             }
 
             await _delayAsync(AuthConstants.PasswordResetTokenRetentionCleanupInterval, stoppingToken);

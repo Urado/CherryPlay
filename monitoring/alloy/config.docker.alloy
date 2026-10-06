@@ -1,0 +1,45 @@
+discovery.docker "local" {
+  host = "http://docker-socket-proxy:2375"
+
+  filter {
+    name   = "name"
+    values = ["cherryplay-"]
+  }
+}
+
+loki.source.docker "docker_logs" {
+  host             = "http://docker-socket-proxy:2375"
+  targets          = discovery.docker.local.targets
+  refresh_interval = "1h"
+  labels           = { job = "docker", source = "docker" }
+  forward_to       = [loki.process.docker_logs.receiver]
+}
+
+loki.process "docker_logs" {
+  stage.replace {
+    expression = "(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}"
+    replace    = "[REDACTED_EMAIL]"
+  }
+  stage.replace {
+    expression = "(?i)([?&](code|state|token|access_token|refresh_token|client_secret|id_token|password|secret|authorization)=)[^&\\\" ]+"
+    replace    = "$1[REDACTED]"
+  }
+  stage.replace {
+    expression = "(?i)(client: )[0-9a-f:.]+"
+    replace    = "$1[REDACTED_IP]"
+  }
+  stage.replace {
+    expression = "([0-9]{1,3}\\.){3}[0-9]{1,3}"
+    replace    = "[REDACTED_IP]"
+  }
+  stage.label_drop {
+    values = ["filename", "container_id"]
+  }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

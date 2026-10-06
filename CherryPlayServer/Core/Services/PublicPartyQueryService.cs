@@ -33,12 +33,12 @@ public class PublicPartyQueryService : IPublicPartyQueryService
             throw new ArgumentException("Short code cannot be null or empty", nameof(shortCode));
         }
 
-        _logger.LogDebug("Getting public party by shortCode: {ShortCode}", shortCode);
+        _logger.LogDebug("Getting public party by shortCode");
 
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
-            _logger.LogDebug("Public party not found for shortCode: {ShortCode}", shortCode);
+            _logger.LogDebug("Public party not found for shortCode");
             return null;
         }
 
@@ -60,12 +60,12 @@ public class PublicPartyQueryService : IPublicPartyQueryService
             throw new ArgumentException("Short code cannot be null or empty", nameof(shortCode));
         }
 
-        _logger.LogDebug("Getting playlist by shortCode: {ShortCode}", shortCode);
+        _logger.LogDebug("Getting playlist by shortCode");
 
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
-            _logger.LogDebug("Party not found for playlist request: {ShortCode}", shortCode);
+            _logger.LogDebug("Party not found for playlist request");
             return null;
         }
 

@@ -212,7 +212,7 @@ public static class EfToDomainMappers
         }
         catch (Exception ex)
         {
-            logger?.LogWarning(ex, "Failed to deserialize string list from JSON");
+            logger?.LogWarning("Failed to deserialize string list from JSON: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return null;
         }
     }

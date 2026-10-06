@@ -1,7 +1,12 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
-  # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine
     container_name: cherryplay-postgres
     environment:
       POSTGRES_DB: cherryplay
@@ -19,10 +24,15 @@ services:
     networks:
       - cherryplay-network
     restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
 
-  # pgAdmin - Web interface for PostgreSQL
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.18
     container_name: cherryplay-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?PGADMIN_EMAIL is required}
@@ -38,32 +48,37 @@ services:
     networks:
       - cherryplay-network
     restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
 
-  # Backend Server (.NET)
   server:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_SERVER:-owner/repo/server}:${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_SERVER:-owner/repo/server}:${VERSION:?VERSION is required}
     container_name: cherryplay-server
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
-      - Database__AutoMigrateOnStartup=${DATABASE__AutoMigrateOnStartup:-false}
-      - OAUTH_VK_CLIENT_ID=${OAUTH_VK_CLIENT_ID:-}
-      - OAUTH_VK_CLIENT_SECRET=${OAUTH_VK_CLIENT_SECRET:-}
-      - RUSENDER_API_TOKEN=${RUSENDER_API_TOKEN:-}
-      - RUSENDER_SEND_KEY_ID=${RUSENDER_SEND_KEY_ID:-}
-      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-noreply@cherrypashkaparty.ru}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-CherryPlay}
-      - PUBLIC_WEB_BASE_URL=${PUBLIC_WEB_BASE_URL:-https://cherrypashkaparty.ru}
-      - Cors__AllowedOrigins__0=${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
-      - Cors__AllowedOrigins__1=${CORS_ORIGIN_1:-http://www.cherrypashkaparty.ru}
-      - Cors__AllowedOrigins__2=${CORS_ORIGIN_2:-http://web:80}
-    ports:
-      - "5000:8080"
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=cherryplay;Username=cherryplay;Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      Database__AutoMigrateOnStartup: ${DATABASE__AutoMigrateOnStartup:-false}
+      OAUTH_VK_CLIENT_ID: ${OAUTH_VK_CLIENT_ID:-}
+      OAUTH_VK_CLIENT_SECRET: ${OAUTH_VK_CLIENT_SECRET:-}
+      RUSENDER_API_TOKEN: ${RUSENDER_API_TOKEN:-}
+      RUSENDER_SEND_KEY_ID: ${RUSENDER_SEND_KEY_ID:-}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-noreply@cherrypashkaparty.ru}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-CherryPlay}
+      PUBLIC_WEB_BASE_URL: ${PUBLIC_WEB_BASE_URL:-https://cherrypashkaparty.ru}
+      Cors__AllowedOrigins__0: ${CORS_ORIGIN_0:-http://cherrypashkaparty.ru}
+      Cors__AllowedOrigins__1: ${CORS_ORIGIN_1:-http://www.cherrypashkaparty.ru}
+      Cors__AllowedOrigins__2: ${CORS_ORIGIN_2:-http://web:80}
     depends_on:
       postgres:
         condition: service_healthy
+    ports:
+      - "127.0.0.1:5000:8080"
     networks:
       - cherryplay-network
     healthcheck:
@@ -73,10 +88,15 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
 
-  # Frontend Web Application (порт 8080 на хосте — для проксирования через nginx на 80/443)
   web:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_WEB:-owner/repo/web}:${VERSION:-latest}
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_WEB:-owner/repo/web}:${VERSION:?VERSION is required}
     container_name: cherryplay-web
     ports:
       - "127.0.0.1:8080:80"
@@ -86,15 +106,164 @@ services:
       - server
     networks:
       - cherryplay-network
-    # В продакшене используем относительные пути через nginx
-    # VITE_API_URL и VITE_SIGNALR_URL не устанавливаем, чтобы использовать относительные пути
-    # Если нужен абсолютный URL, добавьте секцию environment с этими переменными
     restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    container_name: cherryplay-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=168h
+      - --storage.tsdb.retention.size=2GB
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - server
+      - postgres-exporter
+      - node-exporter
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: cherryplay-postgres-exporter
+    environment:
+      DATA_SOURCE_URI: postgres:5432/cherryplay?sslmode=disable
+      DATA_SOURCE_USER: cherryplay
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: cherryplay-node-exporter
+    command:
+      - --path.rootfs=/host
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+    volumes:
+      - /:/host:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  loki:
+    image: grafana/loki:3.7.3
+    container_name: cherryplay-loki
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  alloy:
+    image: grafana/alloy:v1.20.1
+    container_name: cherryplay-alloy
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    user: "0:0"
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  grafana:
+    image: grafana/grafana:13.1.6
+    container_name: cherryplay-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_ADDR: 0.0.0.0
+      GF_SERVER_HTTP_PORT: 3000
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_METRICS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
 
 volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  loki_data:
+    driver: local
+  alloy_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:

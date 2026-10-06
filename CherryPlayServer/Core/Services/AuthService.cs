@@ -137,6 +137,8 @@ public class AuthService : IAuthService
                 token = await GenerateTokenAsync(organizer);
             }
 
+            _logger.LogInformation("Organizer registration succeeded: organizerId={OrganizerId}", organizer.Id);
+
             return new AuthResult(
                 Success: true,
                 Token: token,
@@ -146,7 +148,7 @@ public class AuthService : IAuthService
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Registration failed: {Message}", ex.Message);
+            _logger.LogWarning("Registration failed validation");
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -156,7 +158,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during registration");
+            _logger.LogError("Error during registration: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -188,7 +190,7 @@ public class AuthService : IAuthService
             {
                 await Task.Delay(Random.Shared.Next(50, 100));
 
-                _logger.LogWarning("Failed login attempt for email: {Email}", email);
+                _logger.LogWarning("Failed login attempt");
                 return new AuthResult(
                     Success: false,
                     Token: null,
@@ -200,7 +202,7 @@ public class AuthService : IAuthService
             var organizer = await _organizerRepository.GetByIdAsync(emailAccount.OrganizerId);
             if (organizer == null)
             {
-                _logger.LogWarning("Organizer not found for email account: {Email}", email);
+                _logger.LogWarning("Organizer not found for email account");
                 return new AuthResult(
                     Success: false,
                     Token: null,
@@ -218,6 +220,8 @@ public class AuthService : IAuthService
                 token = await GenerateTokenAsync(organizer);
             }
 
+            _logger.LogInformation("Organizer login succeeded: organizerId={OrganizerId}", organizer.Id);
+
             return new AuthResult(
                 Success: true,
                 Token: token,
@@ -227,7 +231,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for email: {Email}", email);
+            _logger.LogError("Error during login: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -308,16 +312,7 @@ public class AuthService : IAuthService
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Failed to send password reset email; token left usable for account {EmailAccountId}",
-                    emailAccount.Id);
-                if (_environment.IsDevelopment())
-                {
-                    _logger.LogInformation(
-                        "Password reset link (Dev fallback after send failure): {ResetUrl}",
-                        resetUrlForFallback);
-                }
+                _logger.LogError("Failed to send password reset email; reset token remains valid: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
 
                 await ApplyForgotPasswordTimingPadAsync(timingStartedAt);
                 return ForgotPasswordGenericSuccess();
@@ -328,13 +323,10 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during forgot-password for email: {Email}", email);
+            _logger.LogError("Error during forgot-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
 
             if (_environment.IsDevelopment() && !string.IsNullOrEmpty(resetUrlForFallback))
             {
-                _logger.LogInformation(
-                    "Password reset link (Dev fallback after unexpected error): {ResetUrl}",
-                    resetUrlForFallback);
                 await ApplyForgotPasswordTimingPadAsync(timingStartedAt);
                 return ForgotPasswordGenericSuccess();
             }
@@ -424,7 +416,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during reset-password");
+            _logger.LogError("Error during reset-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new PasswordMutationResult(
                 Success: false,
                 FailureKind: PasswordMutationFailureKind.InvalidToken,
@@ -488,7 +480,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during change-password for organizer {OrganizerId}", organizerId);
+            _logger.LogError("Error during change-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new PasswordMutationResult(
                 Success: false,
                 FailureKind: PasswordMutationFailureKind.Validation,

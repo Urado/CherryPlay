@@ -63,7 +63,7 @@ public class OrganizerController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating organizer profile: {OrganizerId}", organizerId);
+            _logger.LogError("Error updating organizer profile: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while updating organizer profile");
         }
     }
@@ -80,7 +80,7 @@ public class OrganizerController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting organizer account: {OrganizerId}", organizerId);
+            _logger.LogError("Error deleting organizer account: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while deleting the account");
         }
     }

@@ -20,8 +20,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Prometheus;
+using Prometheus.DotNetRuntime;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -33,6 +37,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+builder.Services.UseHttpClientMetrics();
 builder.Services.AddHttpClient("RuSender", client =>
 {
     client.BaseAddress = new Uri("https://api.rusender.ru/");
@@ -153,6 +158,7 @@ builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
+builder.Services.AddSingleton<SignalRConnectionMetrics>();
 builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));
 builder.Services.Configure<CherryPlayServer.Core.Options.ClientCompatibilityOptions>(
@@ -252,6 +258,9 @@ builder.Services.AddHostedService<DataSeederHostedService>();
 builder.Services.AddHostedService<PasswordResetTokenRetentionCleanupHostedService>();
 
 var app = builder.Build();
+app.Services.GetRequiredService<SignalRConnectionMetrics>();
+var runtimeMetrics = DotNetRuntimeStatsBuilder.Default().StartCollecting();
+app.Lifetime.ApplicationStopped.Register(runtimeMetrics.Dispose);
 
 var autoMigrateOnStartup = builder.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup");
 if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage") && autoMigrateOnStartup)
@@ -333,6 +342,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseHttpMetrics(options => options.ReduceStatusCodeCardinality());
 app.UseCors("ConfiguredOrigins");
 app.UseRateLimiter();
 app.UseExceptionHandler();
@@ -354,6 +364,7 @@ app.UseMiddleware<ConsentGateMiddleware>();
 
 app.MapControllers();
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
+app.MapMetrics();
 
 app.Run();
 

@@ -133,9 +133,14 @@ jobs:
           scp docker-compose.prod.yml \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
 
+      - name: Copy monitoring configuration to server
+        run: |
+          scp -r monitoring \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
+
       - name: Copy deploy script to server
         run: |
-          scp scripts/deploy.sh \
+          scp scripts/deploy.sh scripts/compose-env.sh \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/cherryplay-deploy/
 
       - name: Prepare Nginx HTTPS config with domain from CORS_ORIGIN_0
@@ -162,11 +167,17 @@ jobs:
 
       - name: Deploy application
         env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          VERSION: ${{ needs.build-and-push.outputs.version }}
+          REGISTRY: ${{ env.REGISTRY }}
+          REPOSITORY: ${{ github.repository }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           PGADMIN_EMAIL: ${{ secrets.PGADMIN_EMAIL }}
           PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
-          DATABASE__AUTOMIGRATEONSTARTUP: "true"
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          DATABASE__AutoMigrateOnStartup: "true"
           CORS_ORIGIN_0: ${{ secrets.CORS_ORIGIN_0 }}
           CORS_ORIGIN_1: ${{ secrets.CORS_ORIGIN_1 }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
@@ -175,29 +186,33 @@ jobs:
           RUSENDER_API_TOKEN: ${{ secrets.RUSENDER_API_TOKEN }}
           RUSENDER_SEND_KEY_ID: ${{ secrets.RUSENDER_SEND_KEY_ID }}
         run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
-            set -e
-            cd ~/cherryplay-deploy
-            chmod +x deploy.sh
-            export VERSION='${{ needs.build-and-push.outputs.version }}'
-            export REGISTRY='${{ env.REGISTRY }}'
-            export IMAGE_NAME_SERVER='${REPO_LOWER}/server'
-            export IMAGE_NAME_WEB='${REPO_LOWER}/web'
-            export GHCR_TOKEN='$GHCR_TOKEN'
-            export JWT_SECRET_KEY='$JWT_SECRET_KEY'
-            export POSTGRES_PASSWORD='$POSTGRES_PASSWORD'
-            export PGADMIN_EMAIL='$PGADMIN_EMAIL'
-            export PGADMIN_PASSWORD='$PGADMIN_PASSWORD'
-            export DATABASE__AutoMigrateOnStartup='$DATABASE__AUTOMIGRATEONSTARTUP'
-            export CORS_ORIGIN_0='$CORS_ORIGIN_0'
-            export CORS_ORIGIN_1='$CORS_ORIGIN_1'
-            export OAUTH_VK_CLIENT_ID='$OAUTH_VK_CLIENT_ID'
-            export OAUTH_VK_CLIENT_SECRET='$OAUTH_VK_CLIENT_SECRET'
-            export RUSENDER_API_TOKEN='$RUSENDER_API_TOKEN'
-            export RUSENDER_SEND_KEY_ID='$RUSENDER_SEND_KEY_ID'
-            ./deploy.sh
-          "
+          set -euo pipefail
+          REPO_LOWER=$(printf '%s' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          DEPLOY_ENV_FILE=$(mktemp)
+          trap 'rm -f "$DEPLOY_ENV_FILE"' EXIT
+          write_env_value() {
+            printf '%s=%q\n' "$1" "${!1}" >> "$DEPLOY_ENV_FILE"
+          }
+          export IMAGE_NAME_SERVER="${REPO_LOWER}/server"
+          export IMAGE_NAME_WEB="${REPO_LOWER}/web"
+          write_env_value VERSION
+          write_env_value REGISTRY
+          write_env_value IMAGE_NAME_SERVER
+          write_env_value IMAGE_NAME_WEB
+          write_env_value GHCR_TOKEN
+          write_env_value JWT_SECRET_KEY
+          write_env_value POSTGRES_PASSWORD
+          write_env_value PGADMIN_EMAIL
+          write_env_value PGADMIN_PASSWORD
+          write_env_value GRAFANA_ADMIN_PASSWORD
+          write_env_value DATABASE__AutoMigrateOnStartup
+          write_env_value CORS_ORIGIN_0
+          write_env_value CORS_ORIGIN_1
+          write_env_value OAUTH_VK_CLIENT_ID
+          write_env_value OAUTH_VK_CLIENT_SECRET
+          write_env_value RUSENDER_API_TOKEN
+          write_env_value RUSENDER_SEND_KEY_ID
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -c '\''set -euo pipefail; cd ~/cherryplay-deploy; umask 077; trap "rm -f .deploy.env" EXIT; cat > .deploy.env; set -a; source .deploy.env; set +a; chmod +x deploy.sh; ./deploy.sh'\''' < "$DEPLOY_ENV_FILE"
 
       - name: Deployment status
         if: always()

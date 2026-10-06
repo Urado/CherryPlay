@@ -1,0 +1,97 @@
+services:
+  prometheus:
+    extends:
+      file: docker-compose.prod.yml
+      service: prometheus
+
+  postgres-exporter:
+    extends:
+      file: docker-compose.prod.yml
+      service: postgres-exporter
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: cherryplay-node-exporter
+    networks:
+      - cherryplay-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  loki:
+    extends:
+      file: docker-compose.prod.yml
+      service: loki
+
+  alloy:
+    image: grafana/alloy:v1.20.1
+    container_name: cherryplay-alloy
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - ./monitoring/alloy/config.docker.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+      - docker-socket-proxy
+    networks:
+      - cherryplay-network
+      - monitoring-internal
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  grafana:
+    extends:
+      file: docker-compose.prod.yml
+      service: grafana
+
+  docker-socket-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0
+    container_name: cherryplay-docker-socket-proxy
+    environment:
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      INFO: "1"
+      POST: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring-internal
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64M
+
+volumes:
+  prometheus_data:
+    driver: local
+  loki_data:
+    driver: local
+  alloy_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  cherryplay-network:
+    driver: bridge
+  monitoring-internal:
+    driver: bridge

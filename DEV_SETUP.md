@@ -2,6 +2,31 @@
 
 Как поднять весь стек (сервер, веб-клиент, десктопное приложение) для локальной разработки.
 
+## Локальный стек с Grafana
+
+На Windows с Docker Desktop весь веб-стек и мониторинг запускаются одной командой. Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети.
+
+В PowerShell из корня репозитория:
+
+```powershell
+Copy-Item .env.monitoring.local.example .env.monitoring.local
+docker compose --env-file .env.monitoring.local -f docker-compose.yml -f docker-compose.monitoring.local.yml up --build -d
+```
+
+Войдите в Grafana как `admin`, пароль по умолчанию для локальной разработки — `cherryplay-local-only-password` из `.env.monitoring.local`. Это отдельные локальные значения; production-секреты для этого стека не используются. Файл `.env.monitoring.local` исключён из Git. Чтобы сменить пароль, отредактируйте его до запуска.
+
+Остановить контейнеры, сохранив данные Prometheus, Loki, Grafana и PostgreSQL:
+
+```powershell
+docker compose --env-file .env.monitoring.local -f docker-compose.yml -f docker-compose.monitoring.local.yml down
+```
+
+Prometheus получает метрики backend по внутреннему адресу `server:8080`, PostgreSQL — через exporter, Alloy читает Docker Desktop контейнерные логи через proxy с отключёнными изменяющими API запросами, Loki хранит логи, а provisioning создаёт те же панели и правила Grafana, что и на production. Локальный Alloy читает логи через Docker API proxy и не монтирует каталог логов Docker-хоста. Локальный node-exporter запущен без привилегий и без host mounts `/`, `/proc` и `/sys`: он показывает только значения, видимые из его контейнера. Поэтому локальные графики памяти и диска не являются метриками Windows-хоста или надёжным представлением всего Docker Desktop VM; host resource alerts локально не следует считать источником истины. Панель «Занятое место на системном диске сервера» локально часто показывает `No data`: запрос ищет `mountpoint="/"`, которого нет без bind-mount корня хоста (в Docker Desktop видны только точки вроде `/etc/hostname`). На Linux-сервере в production node-exporter монтирует `/` хоста — там панель заполняется. Сбор метрик каждого контейнера не включён.
+
+Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (сообщения ASP.NET Core ниже `Warning` отфильтрованы). В штатных прикладных событиях используются внутренние `OrganizerId` и `PartyId`, когда они доступны; email, имя, пароль, токены и содержимое запросов или плейлистов в эти события не включаются.
+
+Grafana, Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте, кроме Grafana на `127.0.0.1:3001`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и распространённые credential-параметры URL.
+
 ## Требования
 
 - **.NET 9.0 SDK** (или выше) — для CherryPlayServer

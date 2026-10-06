@@ -15,11 +15,7 @@ public sealed class LoggingEmailSender : IEmailSender
 
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation(
-            "Dev email fallback: to={ToEmail}, subject={Subject}, text={TextBody}",
-            message.ToEmail,
-            message.Subject,
-            message.TextBody);
+        _logger.LogInformation("Development email fallback invoked");
         return Task.CompletedTask;
     }
 }

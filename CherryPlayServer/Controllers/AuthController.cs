@@ -56,22 +56,20 @@ public class AuthController : ControllerBase
             var finalRedirectUri = redirectUri ?? "cherryplaylist://auth";
             if (!IsAllowedRedirectUri(finalRedirectUri, forDesktop: true))
             {
-                _logger.LogWarning("Rejected OAuth redirect URI: {RedirectUri}", finalRedirectUri);
+                _logger.LogWarning("Rejected OAuth redirect URI for provider {Provider}", oauthProvider);
                 return BadRequest("Invalid redirect URI");
             }
             var state = _oauthStateService.GenerateAndStoreState(provider);
 
-            _logger.LogInformation("Starting desktop OAuth flow: provider={Provider}, redirectUri={RedirectUri}",
-                provider, finalRedirectUri);
+            _logger.LogInformation("Starting desktop OAuth flow: provider={Provider}", oauthProvider);
 
             var authUrl = await _oauthService.GetAuthorizationUrlAsync(oauthProvider, finalRedirectUri, state);
 
-            _logger.LogInformation("OAuth authorization URL generated: {AuthUrl}", authUrl);
             return Redirect(authUrl);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error starting OAuth flow for provider: {Provider}", provider);
+            _logger.LogError("Error starting OAuth flow for provider: {Provider}, failureType={FailureType}, failureLocation={FailureLocation}", oauthProvider, ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while starting authentication");
         }
     }
@@ -96,7 +94,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error starting OAuth flow for provider: {Provider}", provider);
+            _logger.LogError("Error starting OAuth flow for provider: {Provider}, failureType={FailureType}, failureLocation={FailureLocation}", oauthProvider, ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while starting authentication");
         }
     }
@@ -109,7 +107,7 @@ public class AuthController : ControllerBase
             return BadRequest("Authorization code is missing");
         }
 
-        if (!Enum.TryParse<OAuthProvider>(provider, true, out _))
+        if (!Enum.TryParse<OAuthProvider>(provider, true, out var oauthProvider))
         {
             return BadRequest($"Unsupported provider: {provider}");
         }
@@ -117,7 +115,7 @@ public class AuthController : ControllerBase
         var stateResult = _oauthStateService.ValidateAndConsumeStateWithClient(state, provider);
         if (stateResult == null)
         {
-            _logger.LogWarning("Invalid or missing OAuth state parameter for provider: {Provider}", provider);
+            _logger.LogWarning("Invalid or missing OAuth state parameter for provider: {Provider}", oauthProvider);
             return Redirect($"/login?error={HttpUtility.UrlEncode("Invalid authentication state. Please try again.")}");
         }
 
@@ -162,7 +160,7 @@ public class AuthController : ControllerBase
 
         if (!string.IsNullOrEmpty(request.State) && !_oauthStateService.ValidateAndConsumeState(request.State, request.Provider))
         {
-            _logger.LogWarning("Invalid OAuth state parameter for provider: {Provider}", request.Provider);
+            _logger.LogWarning("Invalid OAuth state parameter for provider: {Provider}", oauthProvider);
             return Unauthorized("Invalid authentication state");
         }
 
@@ -171,6 +169,10 @@ public class AuthController : ControllerBase
             var redirectUri = "cherryplaylist://auth";
             var organizer = await _authService.ProcessOAuthCallbackAsync(oauthProvider, request.Code, redirectUri, request.DeviceId);
             var token = await _authService.GenerateTokenAsync(organizer);
+            _logger.LogInformation(
+                "Organizer OAuth authentication succeeded: organizerId={OrganizerId}, provider={Provider}",
+                organizer.Id,
+                oauthProvider);
 
             return Ok(new AuthExchangeResponse(token));
         }
@@ -180,7 +182,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exchanging code for provider: {Provider}", request.Provider);
+            _logger.LogError("Error exchanging code for provider: {Provider}, failureType={FailureType}, failureLocation={FailureLocation}", oauthProvider, ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return Unauthorized("Failed to exchange authorization code");
         }
     }
@@ -201,6 +203,10 @@ public class AuthController : ControllerBase
 
             var organizer = await _authService.ProcessOAuthCallbackAsync(OAuthProvider.Vk, request.Code, redirectUri, request.DeviceId);
             var token = await _authService.GenerateTokenAsync(organizer);
+            _logger.LogInformation(
+                "Organizer OAuth authentication succeeded: organizerId={OrganizerId}, provider={Provider}",
+                organizer.Id,
+                OAuthProvider.Vk);
             Response.Cookies.Append(AuthConstants.AuthCookieName, token, Request.CreateAuthCookieOptions());
             return Ok(new AuthExchangeResponse(token));
         }
@@ -210,7 +216,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exchanging VK ID code");
+            _logger.LogError("Error exchanging VK ID code: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return Unauthorized("Failed to exchange VK ID authorization code");
         }
     }
@@ -243,6 +249,7 @@ public class AuthController : ControllerBase
         }
 
         var code = await _desktopAuthCodeService.IssueCodeAsync(organizerId.Value);
+        _logger.LogInformation("Desktop auth code issued: organizerId={OrganizerId}", organizerId.Value);
         return Ok(new DesktopAuthCodeResponse(code));
     }
 
@@ -348,6 +355,7 @@ public class AuthController : ControllerBase
         }
 
         Response.Cookies.Delete(AuthConstants.AuthCookieName);
+        _logger.LogInformation("Organizer password reset completed");
         return NoContent();
     }
 
@@ -377,6 +385,7 @@ public class AuthController : ControllerBase
         }
 
         Response.Cookies.Delete(AuthConstants.AuthCookieName);
+        _logger.LogInformation("Organizer password changed: organizerId={OrganizerId}", organizerId.Value);
         return NoContent();
     }
 

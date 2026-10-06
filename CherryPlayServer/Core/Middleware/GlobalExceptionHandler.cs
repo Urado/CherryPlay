@@ -28,7 +28,10 @@ public class GlobalExceptionHandler : IExceptionHandler
         if (exception is LegalConsentException legalConsentException
             && legalConsentException.Kind == LegalConsentFailureKind.ConsentRequired)
         {
-            _logger.LogWarning(exception, "Unhandled exception occurred");
+            _logger.LogWarning(
+                "Unhandled exception occurred: {FailureType}, failureLocation={FailureLocation}",
+                exception.GetType().Name,
+                CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(exception));
 
             httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
             httpContext.Response.ContentType = "application/json";
@@ -91,7 +94,11 @@ public class GlobalExceptionHandler : IExceptionHandler
             title = "An error occurred";
         }
 
-        _logger.Log(logLevel, exception, "Unhandled exception occurred");
+        _logger.Log(
+            logLevel,
+            "Unhandled exception occurred: {FailureType}, failureLocation={FailureLocation}",
+            exception.GetType().Name,
+            CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(exception));
 
         var problemDetails = new ProblemDetails
         {

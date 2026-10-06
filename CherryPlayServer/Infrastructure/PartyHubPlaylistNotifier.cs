@@ -18,7 +18,7 @@ public class PartyHubPlaylistNotifier : IPartyPlaylistNotifier
     public async Task NotifyPlaylistChangedAsync(Guid partyId)
     {
         var partyIdStr = partyId.ToString();
-        _logger.LogDebug("Sending OnPlaylistChanged: partyId={PartyId}, group={Group}", partyIdStr, partyIdStr);
+        _logger.LogDebug("Sending OnPlaylistChanged");
         await _hubContext.Clients.Group(partyIdStr).SendAsync("OnPlaylistChanged", partyIdStr);
     }
 }

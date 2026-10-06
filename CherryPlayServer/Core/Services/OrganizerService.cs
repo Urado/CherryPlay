@@ -82,9 +82,7 @@ public class OrganizerService : IOrganizerService
             if (organizer is null)
             {
                 await _unitOfWork.RollbackAsync(cancellationToken);
-                _logger.LogInformation(
-                    "Account delete skipped; organizer {OrganizerId} not found or already deleted",
-                    organizerId);
+                _logger.LogInformation("Account delete skipped; organizer not found or already deleted");
                 return;
             }
 
@@ -106,7 +104,7 @@ public class OrganizerService : IOrganizerService
             await _unitOfWork.Organizers.DeleteAsync(organizerId);
 
             await _unitOfWork.CommitAsync(cancellationToken);
-            _logger.LogInformation("Organizer account {OrganizerId} soft-deleted and scrubbed", organizerId);
+            _logger.LogInformation("Organizer account soft-deleted and scrubbed");
         }
         catch
         {
@@ -148,16 +146,14 @@ public class OrganizerService : IOrganizerService
         catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
         {
             _logger.LogWarning(
-                ex,
-                "Consent withdraw skipped for organizer {OrganizerId} (consent store unavailable)",
-                organizerId);
+                "Consent withdraw skipped (consent store unavailable)");
         }
         catch (Exception ex)
         {
             _logger.LogWarning(
-                ex,
-                "Consent withdraw failed for organizer {OrganizerId}; continuing account deletion",
-                organizerId);
+                "Consent withdraw failed; continuing account deletion: failureType={FailureType}, failureLocation={FailureLocation}",
+                ex.GetType().Name,
+                CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
         }
     }
 }

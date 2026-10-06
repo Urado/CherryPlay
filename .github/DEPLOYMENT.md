@@ -58,6 +58,7 @@ GitHub Container Registry уже настроен и доступен автом
 | `POSTGRES_PASSWORD` | Пароль пользователя PostgreSQL (должен совпадать с тем, что на сервере при первом запуске) |
 | `PGADMIN_EMAIL`     | Email для входа в pgAdmin (например `admin@yourdomain.com`)                                |
 | `PGADMIN_PASSWORD`  | Пароль для входа в pgAdmin (задайте сильный пароль)                                        |
+| `GRAFANA_ADMIN_PASSWORD` | Сильный отдельный пароль администратора Grafana; нужен для production-деплоя мониторинга |
 
 #### Опциональные (подставляются в docker-compose и CI/CD при деплое)
 
@@ -76,6 +77,8 @@ GitHub Container Registry уже настроен и доступен автом
 Миграции EF Core применяются при старте контейнера `server`: в коде вызывается `db.Database.Migrate()`, подключение к БД идёт по внутренней Docker-сети (`postgres:5432`). В `release-and-deploy.yml` при релизе принудительно выставляется `Database__AutoMigrateOnStartup=true`, чтобы накат миграций происходил автоматически.
 
 **Перед остановкой контейнеров** `deploy.sh` делает обязательный `pg_dump` в `~/cherryplay-deploy/backups/` (см. [BACKUP_RESTORE.md](../BACKUP_RESTORE.md) §0.1). Если backup не удался, деплой прерывается до миграций.
+
+Для ручного запуска `deploy.sh` файл `compose-env.sh` должен находиться рядом со скриптом: он экранирует значения переменных для Compose `.env`.
 
 ### 3. Настройка SSH ключа
 
@@ -128,7 +131,7 @@ mkdir -p ~/cherryplay-deploy
 
 #### Создание файла `.env.production` (для ручного деплоя или запас)
 
-При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`, `RUSENDER_API_TOKEN`, `RUSENDER_SEND_KEY_ID`) берутся из GitHub Secrets и подставляются в `.env` на сервере. `EMAIL_FROM_*` и `PUBLIC_WEB_BASE_URL` по умолчанию из [docker-compose.prod.yml](../docker-compose.prod.yml) (действия на сервере не нужны). Полный справочник — [ENV.md](../ENV.md). Опциональный запас `~/cherryplay-deploy/.env.production`:
+При деплое через GitHub Actions секреты (`JWT_SECRET_KEY`, `POSTGRES_PASSWORD`, `PGADMIN_EMAIL`, `PGADMIN_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `CORS_ORIGIN_*`, `OAUTH_VK_CLIENT_ID`, `OAUTH_VK_CLIENT_SECRET`, `RUSENDER_API_TOKEN`, `RUSENDER_SEND_KEY_ID`) берутся из GitHub Secrets и передаются deploy script в environment. `EMAIL_FROM_*` и `PUBLIC_WEB_BASE_URL` по умолчанию из [docker-compose.prod.yml](../docker-compose.prod.yml) (действия на сервере не нужны). Полный справочник — [ENV.md](../ENV.md). Опциональный запас `~/cherryplay-deploy/.env.production`:
 
 ```env
 # Обязательно для работы сервера
@@ -140,6 +143,9 @@ POSTGRES_PASSWORD=your_secure_password_here
 # pgAdmin
 PGADMIN_EMAIL=admin@yourdomain.com
 PGADMIN_PASSWORD=your_admin_password
+
+# Grafana
+GRAFANA_ADMIN_PASSWORD=your_separate_grafana_admin_password
 
 # CORS (разрешённые origins для фронта)
 CORS_ORIGIN_0=https://yourdomain.com
@@ -185,6 +191,28 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
    ```
 2. В браузере откройте **http://localhost:5050** — отобразится pgAdmin с сервера.
 3. Войдите по логину/паролю из `PGADMIN_EMAIL` и `PGADMIN_PASSWORD`. При первом заходе (или при раскрытии серверов) pgAdmin попросит задать/ввести **мастер-пароль** для шифрования сохранённых паролей — задайте и запоминайте его, он сохраняется в томе и не сбрасывается при перезапуске. В pgAdmin добавьте сервер БД: Host `postgres`, Port `5432`, база `cherryplay`, пользователь/пароль из `POSTGRES_PASSWORD`.
+
+### Доступ к Grafana
+
+Grafana доступна только на loopback сервера (`127.0.0.1:3000`). Prometheus, Loki и exporters доступны только внутри Docker-сети. Для открытия панели:
+
+1. Откройте PowerShell на своём компьютере и запустите SSH-туннель, подставив пользователя и адрес сервера:
+   ```powershell
+   ssh -N -L 3001:127.0.0.1:3000 <DEPLOY_USER>@<DEPLOY_HOST>
+   ```
+2. Оставьте это окно PowerShell открытым и перейдите в браузере на [http://localhost:3001](http://localhost:3001). Порт `3000` на компьютере уже используется frontend, поэтому для Grafana выбран `3001`; на сервере Grafana по-прежнему доступна на `127.0.0.1:3000`.
+3. Войдите как `admin`, пароль — значение GitHub Secret `GRAFANA_ADMIN_PASSWORD`.
+4. Откройте папку **CherryPlay** и dashboard **Обзор CherryPlay**. В нём есть текущее число соединений PartyHub, пик за выбранный период и тренд (по умолчанию последние 7 дней). В Explore выберите Loki для просмотра логов.
+
+Чтобы завершить доступ, закройте окно туннеля. SSH-туннель шифрует соединение и не публикует Grafana в интернет.
+
+Мониторинг запрашивает `/metrics` backend-сервера из внутренней Docker-сети. Порт `5000` backend опубликован только как `127.0.0.1:5000` для локального health check; публичные `/api`, `/auth` и `/partyHub` идут через существующую цепочку Nginx на хосте → web → `server:8080`. Для локального Swagger доступа с компьютера откройте `ssh -N -L 5000:127.0.0.1:5000 <DEPLOY_USER>@<DEPLOY_HOST>`.
+
+Prometheus хранит данные до 168 часов и ограничивает TSDB до 2 GB; WAL, head block и filesystem overhead могут временно увеличить фактическое использование, а достижение лимита размера может сократить доступную историю. Loki настроен на retention 168 часов и ограничен ingestion rate 4 MB/s (burst 8 MB); основной ограничитель объёма — retention и ротация Docker JSON-логов. Docker JSON-логи дополнительно ограничены до 3 файлов по 10 MiB на контейнер; это аварийный локальный буфер. Loki использует обычный локальный Docker volume без filesystem quota, поэтому 7-дневный retention и rate limit не дают абсолютной гарантии свободного места; размер диска VM неизвестен. Host disk alerts срабатывают при запасе ниже 20% и 10%; правила доступны в Grafana, contact point и маршруты уведомлений не настроены.
+
+Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (события ASP.NET Core ниже `Warning` отфильтрованы). Штатные прикладные события могут включать внутренние `OrganizerId` и `PartyId`; email, имя, пароль, токены, содержимое запросов и плейлистов в эти события не включаются. Alloy дополнительно очищает email, IP-адреса и распространённые секреты в URL перед отправкой записей в Loki.
+
+На одной VM установлены предварительные memory caps: PostgreSQL 1 GiB, backend 1 GiB, web 256 MiB, pgAdmin 256 MiB, Prometheus 256 MiB, Loki 256 MiB, Grafana 256 MiB, Alloy 128 MiB и exporters по 128 MiB — всего 3.625 GiB верхней границы; совокупные CPU caps — 5.5 cores. Caps для вспомогательных сервисов снижены, чтобы ограничить общий аппетит стека на VM с неизвестным размером; это лимиты, не резервирование. Фактический объём CPU, RAM и свободного диска VM пока неизвестен. Prometheus, Loki и Alloy доступны только внутренней Docker-сети. Контейнерные resource metrics отключены: сбор через cAdvisor потребовал бы доступа к Docker socket API, что добавило бы риск управления Docker daemon; в этом Compose оставлены метрики хоста, backend и PostgreSQL. Node-exporter собирает метрики хоста без privileged-режима.
 
 ### Автоматическая сборка при изменениях
 
@@ -288,6 +316,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVe
   nginx-cherryplay-https.conf    # Конфиг Nginx для HTTPS (копируется на сервер при деплое)
 scripts/
   deploy.sh                       # Скрипт деплоя на сервере
+  compose-env.sh                  # Экранирование значений для Compose .env
 docker-compose.prod.yml           # Docker Compose для продакшена
 ```
 

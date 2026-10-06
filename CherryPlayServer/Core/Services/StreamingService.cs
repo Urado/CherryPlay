@@ -38,12 +38,12 @@ public class StreamingService : IStreamingService
             throw new ArgumentException("Short code cannot be null or empty", nameof(shortCode));
         }
 
-        _logger.LogDebug("Getting party state for shortCode: {ShortCode}", shortCode);
+        _logger.LogDebug("Getting party state for shortCode");
 
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
-            _logger.LogDebug("Party not found for shortCode: {ShortCode}", shortCode);
+            _logger.LogDebug("Party not found for shortCode");
             return null;
         }
 
@@ -128,12 +128,12 @@ public class StreamingService : IStreamingService
 
     public async Task StartSessionAsync(Guid partyId)
     {
-        _logger.LogInformation("Starting session for party: {PartyId}", partyId);
+        _logger.LogInformation("Starting session for party");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Cannot start session - party not found: {PartyId}", partyId);
+            _logger.LogWarning("Cannot start session - party not found");
             throw new PartyNotFoundException(partyId);
         }
 
@@ -146,7 +146,7 @@ public class StreamingService : IStreamingService
             existingState.LastUpdatedAt = DateTime.UtcNow;
             SanitizeRestoredState(existingState, party.Playlist?.Items);
             await _streamingRepository.SetSessionStateAsync(party.Id, existingState);
-            _logger.LogInformation("Session restored for party: {PartyId}", partyId);
+            _logger.LogInformation("Session restored for party");
             return;
         }
 
@@ -163,17 +163,17 @@ public class StreamingService : IStreamingService
         };
 
         await _streamingRepository.SetSessionStateAsync(party.Id, initialState);
-        _logger.LogInformation("Session started for party: {PartyId}", partyId);
+        _logger.LogInformation("Session started for party");
     }
 
     public async Task EndSessionAsync(Guid partyId)
     {
-        _logger.LogInformation("Ending session for party: {PartyId}", partyId);
+        _logger.LogInformation("Ending session for party");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Cannot end session - party not found: {PartyId}", partyId);
+            _logger.LogWarning("Cannot end session - party not found");
             throw new PartyNotFoundException(partyId);
         }
 
@@ -187,17 +187,17 @@ public class StreamingService : IStreamingService
             await _streamingRepository.SetSessionStateAsync(partyId, state);
         }
 
-        _logger.LogInformation("Session ended for party: {PartyId}", partyId);
+        _logger.LogInformation("Session ended for party");
     }
 
     public async Task ResetPlaybackStateAsync(Guid partyId)
     {
-        _logger.LogInformation("Resetting playback state for party: {PartyId}", partyId);
+        _logger.LogInformation("Resetting playback state for party");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Cannot reset playback state - party not found: {PartyId}", partyId);
+            _logger.LogWarning("Cannot reset playback state - party not found");
             throw new PartyNotFoundException(partyId);
         }
 
@@ -227,12 +227,11 @@ public class StreamingService : IStreamingService
         }
 
         await _streamingRepository.SetSessionStateAsync(partyId, state);
-        _logger.LogInformation("Playback state reset for party: {PartyId}", partyId);
+        _logger.LogInformation("Playback state reset for party");
     }
 
     public async Task UpdatePlaybackPositionAsync(Guid partyId, string trackId, double position)
     {
-        // Валидация входных данных
         if (string.IsNullOrWhiteSpace(trackId))
         {
             throw new ArgumentException("Track ID cannot be null or empty", nameof(trackId));
@@ -243,20 +242,19 @@ public class StreamingService : IStreamingService
             throw new ArgumentException("Position cannot be negative", nameof(position));
         }
 
-        _logger.LogDebug("Updating playback position: partyId={PartyId}, trackId={TrackId}, position={Position}",
-            partyId, trackId, position);
+        _logger.LogDebug("Updating playback position");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Cannot update playback position - party not found: {PartyId}", partyId);
+            _logger.LogWarning("Cannot update playback position - party not found");
             throw new PartyNotFoundException(partyId);
         }
 
         var state = await _streamingRepository.GetSessionStateAsync(partyId);
         if (state == null)
         {
-            _logger.LogDebug("No active session found for party: {PartyId}", partyId);
+            _logger.LogDebug("No active session found for party");
             throw new InvalidOperationException($"No active session found for party {partyId}");
         }
 
@@ -285,13 +283,12 @@ public class StreamingService : IStreamingService
             throw new ArgumentNullException(nameof(stateDto));
         }
 
-        _logger.LogDebug("Updating full state: partyId={PartyId}, status={Status}, trackId={TrackId}",
-            partyId, stateDto.Status, stateDto.CurrentTrackId);
+        _logger.LogDebug("Updating full state");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Cannot update full state - party not found: {PartyId}", partyId);
+            _logger.LogWarning("Cannot update full state - party not found");
             throw new PartyNotFoundException(partyId);
         }
 
@@ -302,7 +299,6 @@ public class StreamingService : IStreamingService
             state.IsActive = existingState.IsActive;
         }
 
-        // Если SessionStartedAt не установлен и сессия только начинается, устанавливаем его
         if (!state.SessionStartedAt.HasValue && state.Mode == PlaybackMode.Session)
         {
             state.SessionStartedAt = DateTime.UtcNow;
