@@ -54,10 +54,14 @@
 }
 
 [data-theme='art-deco'] .party-playlist-item--disabled {
-  opacity: 0.35;
+  opacity: 1;
   text-decoration: line-through;
   color: #5a4a1a;
   cursor: not-allowed;
+}
+
+[data-theme='art-deco'] .party-playlist-item--disabled .party-playlist-item-content {
+  opacity: 0.35;
 }
 
 [data-theme='art-deco'] .party-playlist-item-circle {
@@ -79,8 +83,8 @@
 }
 
 [data-theme='art-deco'] .party-playlist-item-circle[data-state='disabled'] {
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
+  background: #dc2626;
+  color: #fff;
 }
 
 [data-theme='art-deco'] .party-playlist-item-name {

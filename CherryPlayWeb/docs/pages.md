@@ -39,7 +39,7 @@
 
 Для CP-087 ZIP собирается CI без AIMP bridge; его наличие не является условием для отображения загрузки.
 
-- **PartyView**: отображение плейлиста и состояния воспроизведения; кнопка «Назад» — `navigate(ROUTES.HOME)`.
+- **PartyView**: отображение плейлиста и состояния воспроизведения; «Назад» ведёт на `ROUTES.HOME` обычной ссылкой.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
 - **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
 - **RegisterPage:** `EmailAuthForm` mode `register` + legal checkboxes; API — `POST /api/organizers` (+ consents) → `POST /auth/login` ([accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.3). При `?client=desktop` — **replace-redirect** на `/login?client=desktop` (сохраняет `return_to` / `next`); отдельной desktop-регистрации на `/register` нет.
@@ -55,6 +55,7 @@
 
 - **GET** `/api/parties/public/list` — список вечеринок каталога (`PublicPartyListItemDto[]`).
 - Карточка вечеринки отображает 6 полей по порядку: название, краткое описание, город, дата/время, теги танцев, внешняя ссылка. Тема, количество треков, длительность, shortCode, кнопка «Подробнее» и бейдж «В эфире» на карточке не показываются.
+- Переход по карточке — ссылка на `ROUTES.PARTY_VIEW(shortCode)`, поэтому её можно открыть в новой вкладке стандартным действием браузера; внешняя ссылка карточки остаётся отдельной.
 - Отображение даты/времени на карточке — одной комбинированной строкой на основе `eventDateTime`/`eventEndDateTime` и `timeZone` из `PublicPartyListItemDto`.
 - Заголовок страницы каталога «Вечеринки» оформлен однотонным белым цветом из палитры темы (тот же базовый цвет текста, что и на карточках); градиенты и альтернативные цвета для этого заголовка не используются, чтобы сохранить читаемость и визуальное единство списка.
 - Для демо-режима: **GET** `/api/parties/public/first` — первый доступный плейлист.

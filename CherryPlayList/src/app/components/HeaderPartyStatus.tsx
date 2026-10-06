@@ -3,6 +3,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
@@ -38,9 +39,13 @@ import {
 import { PartyProgramEndedReminder } from '../../workspaces/party/PartyProgramEndedReminder';
 import { usePartyProgramEndedStore } from '../../workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '../../workspaces/party/partyWorkspaceStore';
-import { resolveHeaderPartyPublishDisabledReason } from '../../workspaces/party/resolveHeaderPartyPublishDisabledReason';
+import {
+  hasNoPendingPartyPublishChanges,
+  resolveHeaderPartyPublishDisabledReason,
+} from '../../workspaces/party/resolveHeaderPartyPublishDisabledReason';
 import { usePartyPublishOutOfSync } from '../../workspaces/party/usePartyPublishOutOfSync';
 
+import { requestAccountPopoverOpen } from './accountPopoverEvents';
 import {
   HEADER_PARTY_CONTROL_STAGE_LABELS,
   type HeaderPartyControlStageLabel,
@@ -76,6 +81,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
+  const lastSyncedPublishParts = usePartyWorkspaceStore((state) => state.lastSyncedPublishParts);
   const serverUnreachable = usePartyWorkspaceStore((state) => state.serverUnreachable);
   const isPublishing = usePartyWorkspaceStore((state) => state.isPublishing);
   const isTransitioningLifecycle = usePartyWorkspaceStore(
@@ -164,12 +170,20 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   });
   const publishBusy = isPublishing;
   const publishBlockedByLayout = disabled;
-  const publishDisabled = publishBlockedByLayout || publishBusy || publishDisabledReason != null;
+  const publishHasNoPendingChanges = hasNoPendingPartyPublishChanges({
+    hasLinkedParty,
+    partyLifecycleState,
+    hasSyncBaseline: lastSyncedPublishParts != null,
+    isOutOfSync: publishOutOfSync,
+  });
+  const publishDisabled =
+    publishBlockedByLayout || publishBusy || publishHasNoPendingChanges || publishDisabledReason != null;
+  const publishActionTitle = 'Обновить плейлист и настройки, которые видят гости';
   const publishTitle = publishBusy
     ? 'Обновление на сайте…'
     : publishBlockedByLayout
       ? LAYOUT_EDIT_DISABLED_TITLE
-      : (publishDisabledReason ?? 'Обновить плейлист и настройки, которые видят гости');
+      : (publishDisabledReason ?? publishActionTitle);
 
   if (ctaEnabled !== ctaEnabledSnapshot) {
     setCtaEnabledSnapshot(ctaEnabled);
@@ -310,7 +324,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const handlePublishClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
-      if (publishBlockedByLayout || publishBusy) {
+      if (publishBlockedByLayout || publishBusy || publishHasNoPendingChanges) {
         return;
       }
       if (publishDisabledReason) {
@@ -319,13 +333,19 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           message: publishDisabledReason,
         });
         if (!isAuthenticated) {
-          useUIStore.getState().openModal('account');
+          requestAccountPopoverOpen();
         }
         return;
       }
       void publishPartyFromHeader();
     },
-    [isAuthenticated, publishBlockedByLayout, publishBusy, publishDisabledReason],
+    [
+      isAuthenticated,
+      publishBlockedByLayout,
+      publishBusy,
+      publishDisabledReason,
+      publishHasNoPendingChanges,
+    ],
   );
 
   const handleSettingsClick = useCallback(
@@ -337,6 +357,25 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
       openPartySettings();
     },
     [disabled, openPartySettings],
+  );
+
+  const handleLinkPartyClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (disabled) {
+        return;
+      }
+      if (!isAuthenticated) {
+        useUIStore.getState().addNotification({
+          type: 'warning',
+          message: 'Войдите в аккаунт, чтобы привязать вечеринку.',
+        });
+        requestAccountPopoverOpen();
+        return;
+      }
+      useUIStore.getState().openModal('linkParty');
+    },
+    [disabled, isAuthenticated],
   );
 
   useLayoutEffect(() => {
@@ -460,6 +499,19 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
                 <span className="header-party-control__cta-label">{ctaLabel}</span>
               </button>
 
+              {!hasLinkedParty ? (
+                <button
+                  type="button"
+                  className="header-button header-party-control__icon-button header-party-control__link-button"
+                  disabled={disabled}
+                  title={disabled ? LAYOUT_EDIT_DISABLED_TITLE : 'Привязать существующую вечеринку'}
+                  aria-label="Привязать существующую вечеринку"
+                  onClick={handleLinkPartyClick}
+                >
+                  <LinkOutlinedIcon fontSize="inherit" />
+                </button>
+              ) : null}
+
               {hasLinkedParty ? (
                 <>
                   <button
@@ -467,17 +519,28 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
                     className={[
                       'header-button header-party-control__icon-button',
                       publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
+                      publishHasNoPendingChanges
+                        ? 'header-party-control__icon-button--synced'
+                        : '',
                       publishDisabledReason && !publishBusy && !publishBlockedByLayout
                         ? 'header-party-control__icon-button--blocked'
                         : '',
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    disabled={publishBlockedByLayout || publishBusy}
+                    disabled={publishBlockedByLayout || publishBusy || publishHasNoPendingChanges}
                     aria-disabled={publishDisabled}
                     aria-busy={publishBusy}
-                    title={publishTitle}
-                    aria-label={`Обновить на сайте. ${publishTitle}`}
+                    title={
+                      publishHasNoPendingChanges
+                        ? 'Данные вечеринки уже синхронизированы'
+                        : publishTitle
+                    }
+                    aria-label={
+                      publishHasNoPendingChanges
+                        ? 'Данные вечеринки уже синхронизированы'
+                        : `Обновить на сайте. ${publishTitle}`
+                    }
                     onClick={handlePublishClick}
                   >
                     <CloudUploadOutlinedIcon fontSize="inherit" />

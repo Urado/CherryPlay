@@ -41,11 +41,12 @@
 
 .app-header-playback-pill-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   flex: 1 1 280px;
   min-width: 0;
   gap: var(--spacing-sm);
-  min-height: 32px;
+  container-type: inline-size;
+  container-name: header-playback-pill-row;
 }
 
 .app-header-playback-pill-row .playback-pill {
@@ -829,11 +830,41 @@
   line-height: 0;
 }
 
+.header-button.header-party-control__link-button {
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  font-size: 16px;
+}
+
 .header-button.header-party-control__icon-button > svg {
   display: block;
   width: 16px;
   height: 16px;
   fill: currentColor;
+}
+
+@container header-playback-pill-row (max-width: 620px) {
+  .header-party-control {
+    flex-basis: min(320px, 100%);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .header-party-control__main {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+
+  .header-party-control__action-arrow {
+    display: none;
+  }
+
+  .header-party-control__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
 }
 
 .header-button.header-party-control__icon-button:disabled {
@@ -848,6 +879,11 @@
   border-color: var(--accent-primary, #4a9eff);
   color: var(--accent-primary, #4a9eff);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-primary, #4a9eff) 25%, transparent);
+}
+
+.header-button.header-party-control__icon-button--synced {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
 }
 
 .header-party-control__reminder {
@@ -1377,10 +1413,34 @@
   display: none;
 }
 
+.playback-pill__transmission {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-pill__transmission[data-state='connected'] {
+  color: var(--accent-primary, #4a9eff);
+}
+
+.playback-pill__transmission[data-state='connecting'],
+.playback-pill__transmission[data-state='inactive'],
+.playback-pill__transmission[data-state='unlinked'] {
+  color: var(--state-error, #ef5350);
+}
+
 .playback-pill__online {
   flex-shrink: 0;
   margin-left: auto;
   align-self: center;
+}
+
+.playback-pill:has(.playback-pill__transmission) {
+  min-height: 54px;
 }
 
 .streaming-connection-indicator {

@@ -83,7 +83,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 ### Workspaces (не владельцы SignalR)
 
 - **`PlayerViewContainer`** — локальная сессия и UI зоны Проигрывание. **Не** владеет connect/publish/teardown и **не** показывает индикатор SignalR.
-- **`HeaderPlaybackPill`** — session-only UI в шапке (трек/transport + связь): виден при `session` и `streamingSource === 'cherryPlayPlayer'` (**не** требует `enableStreaming`). `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect). Prep / readiness lamp в pill **нет**.
+- **`HeaderPlaybackPill`** — session-only UI в шапке (трек/transport + состояние трансляции): виден при `session` и `streamingSource === 'cherryPlayPlayer'` (**не** требует `enableStreaming`). `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect). Текст состояния различает отсутствие привязки, отсутствие сессии и состояние SignalR Hub. Состояние `Connected` подтверждает подключение к Hub, но не получение или доставку трансляции сервером. Prep / readiness lamp в pill **нет**.
 
 - **`AimpIntegrationController`** — AIMP bridge bootstrap, source selection sync; вызывает `useAimpStreamingOrchestrator`. **Не** содержит параллельного low-level SignalR path.
 

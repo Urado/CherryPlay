@@ -23,6 +23,7 @@ export const DisableButton: React.FC<DisableButtonProps> = ({ onToggle }) => {
       aria-label={title}
       icon={<BlockIcon style={{ fontSize: '18px' }} />}
       variant="ghost"
+      tone={isDisabled ? 'danger' : 'neutral'}
       size="sm"
     />
   );

@@ -55,10 +55,14 @@
 }
 
 [data-theme='cyberpunk'] .party-playlist-item--disabled {
-  opacity: 0.35;
+  opacity: 1;
   text-decoration: line-through;
   color: #444444;
   cursor: not-allowed;
+}
+
+[data-theme='cyberpunk'] .party-playlist-item--disabled .party-playlist-item-content {
+  opacity: 0.35;
 }
 
 [data-theme='cyberpunk'] .party-playlist-item-name {

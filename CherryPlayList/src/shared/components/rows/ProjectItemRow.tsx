@@ -368,13 +368,14 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         {!isGroup && mode !== 'playlist' && (
           <ListRowCompound.ActionButton
             className="playlist-item-more"
+            allowWhenPlayedLocked
             aria-label="Действия с треком"
             title={
-              trackActionsDisabled || !onTrackActions
+              trackActionsDisabled || !onTrackActions || isDisabled
                 ? undefined
                 : 'Действия: перейти к треку, удалить и др.'
             }
-            disabled={trackActionsDisabled || !onTrackActions}
+            disabled={trackActionsDisabled || !onTrackActions || isDisabled}
             onClick={(e) => {
               if (!trackActionsDisabled && onTrackActions) {
                 onTrackActions(item.id, (e.currentTarget as HTMLElement).getBoundingClientRect());

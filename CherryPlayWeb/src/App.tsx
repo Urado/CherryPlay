@@ -5,7 +5,6 @@ import {
   Route,
   Routes,
   useLocation,
-  useNavigate,
   useParams,
   useSearchParams,
 } from 'react-router-dom';
@@ -74,12 +73,11 @@ const getDocumentTitle = (pathname: string): string => {
 
 const CatalogOrRedirect = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const partyFromQuery = searchParams.get('party');
   if (partyFromQuery) {
     return <Navigate to={ROUTES.PARTY_VIEW(partyFromQuery)} replace />;
   }
-  return <PartyListPage onPartySelect={(shortCode) => navigate(ROUTES.PARTY_VIEW(shortCode))} />;
+  return <PartyListPage />;
 };
 
 const AppShell = () => {
@@ -141,9 +139,8 @@ const App = () => {
 
 const PartyViewByRoute = () => {
   const shortCode = useParams<{ shortCode: string }>().shortCode;
-  const navigate = useNavigate();
   if (!shortCode) return <Navigate to="/" replace />;
-  return <PartyView shortCode={shortCode} onBackToList={() => navigate(ROUTES.HOME)} />;
+  return <PartyView shortCode={shortCode} />;
 };
 
 export default App;

@@ -23,6 +23,7 @@ import { usePlayerSession } from '../hooks/usePlayerSession';
 import { usePlayerStateHelpers } from '../hooks/usePlayerStateHelpers';
 import { useSessionRecovery } from '../hooks/useSessionRecovery';
 import { PlayerView } from '../PlayerView';
+import { stopPlaybackSession } from '../stopPlaybackSession';
 import {
   isTrackOrGroupDisabled as isTrackOrGroupDisabledUtil,
   isTrackActive as isTrackActiveUtil,
@@ -212,7 +213,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         markTrackAsPlayed,
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       allTracks,
       isTrackOrGroupDisabled,
@@ -254,23 +254,20 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
   });
 
   const handleResetSession = useCallback(async () => {
-    if (enableStreaming && linkedParty) {
-      try {
-        await streamingOrchestrator.resetServerPlaybackState();
-      } catch (error) {
+    await stopPlaybackSession({
+      shouldResetServer: enableStreaming && Boolean(linkedParty),
+      stopLocally: handleResetSessionFromHook,
+      resetServerPlaybackState: () => streamingOrchestrator.resetServerPlaybackState(),
+      publishFullState: () => streamingOrchestrator.publishFullState(),
+      onServerResetFailure: (error) => {
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
         addNotification({
           type: 'error',
-          message: 'Не удалось сбросить состояние воспроизведения на сервере',
+          message: 'Проигрывание остановлено локально, но сервер не подтвердил сброс трансляции',
           duration: 5000,
         });
-        return;
-      }
-    }
-    handleResetSessionFromHook();
-    if (enableStreaming && linkedParty) {
-      streamingOrchestrator.publishFullState();
-    }
+      },
+    });
   }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
   useSessionRecovery();
@@ -297,7 +294,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const handleToggleDisabled = useCallback(
     (itemId: string) => {
-      // Запрещаем отключение текущего трека
       if (itemId === activePlayerTrackId) {
         return;
       }
@@ -383,7 +379,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       isTrackPlayed,
       getAllTracksInOrder,
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isPreparationMode,
     selectedItemIds,
@@ -417,8 +412,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       }
     }
     return total;
-    // isTrackOrGroupDisabled + disabled* keys: see usePlayerDividers (zustand stable refs).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
   }, [
     allTracks,
     isTrackOrGroupDisabled,
@@ -453,8 +446,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     }
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
-  // Party metadata reads only (getPartyUrl, getPartyState) — no REST playlist PUT here.
-  // Live playlist sync during session: Site Streamer `partyPlaylistSync` via orchestrator.
   useEffect(() => {
     const regenerateUrl = () => {
       const { linkedParty: party } = useProjectStore.getState().meta;
@@ -466,9 +457,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
               .getState()
               .setLinkedParty({ id: party.id, shortCode: party.shortCode, url });
           })
-          .catch(() => {
-            // Keep linkedParty without url; will retry on next mount
-          });
+          .catch(() => undefined);
       }
     };
 

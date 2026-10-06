@@ -20,6 +20,8 @@ import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
 import { devLog } from '../utils/logger';
+
+import { PartyListCardLink } from './PartyListCardLink';
 import './PartyListPage.css';
 
 const RUSSIAN_CITIES = [
@@ -39,10 +41,6 @@ const RUSSIAN_CITIES = [
   'Волгоград',
   'Краснодар',
 ];
-
-interface PartyListPageProps {
-  onPartySelect: (shortCode: string) => void;
-}
 
 interface PartyFilters {
   dateFrom: string;
@@ -100,7 +98,7 @@ const DownloadAppLink = () => (
   </Link>
 );
 
-export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
+export const PartyListPage: React.FC = () => {
   const { partyInfoPageEnabled } = useAppConfig();
   const { ensureConsents } = useConsentGate();
   void partyInfoPageEnabled;
@@ -421,73 +419,62 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         ) : (
           <div className="party-list-grid">
             {filteredParties.map((party) => (
-              <div
-                key={party.id}
-                role="button"
-                tabIndex={0}
-                className="party-list-card"
-                onClick={() => onPartySelect(party.shortCode)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onPartySelect(party.shortCode);
-                  }
-                }}
-              >
-                <div className="party-list-card-header">
-                  <h2 className="party-list-card-title">{party.name}</h2>
-                </div>
-                <div className="party-list-card-body">
-                  {party.shortDescription && (
-                    <p className="party-list-card-description">{party.shortDescription}</p>
-                  )}
-                  {party.city && (
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-value">{party.city}</span>
-                    </div>
-                  )}
-                  {(() => {
-                    const dateTimeRange = getPartyDateTimeRange(party);
-                    if (!dateTimeRange) return null;
-
-                    return (
+              <div key={party.id} className="party-list-card">
+                <PartyListCardLink to={ROUTES.PARTY_VIEW(party.shortCode)} partyName={party.name}>
+                  <div className="party-list-card-header">
+                    <h2 className="party-list-card-title">{party.name}</h2>
+                  </div>
+                  <div className="party-list-card-body">
+                    {party.shortDescription && (
+                      <p className="party-list-card-description">{party.shortDescription}</p>
+                    )}
+                    {party.city && (
                       <div className="party-list-card-info-item">
-                        <span className="party-list-card-info-value">{dateTimeRange}</span>
+                        <span className="party-list-card-info-value">{party.city}</span>
                       </div>
-                    );
-                  })()}
-                  {party.danceTags && party.danceTags.length > 0 && (
-                    <div className="party-list-card-tags">
-                      {party.danceTags.map((tag, index) => (
-                        <span key={`${tag}-${index}`} className="party-list-card-tag">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {party.externalLinkUrl &&
-                    (() => {
-                      const isSafeUrl =
-                        party.externalLinkUrl.startsWith('http://') ||
-                        party.externalLinkUrl.startsWith('https://');
-                      const label = party.externalLinkText ?? 'Ссылка';
-                      return isSafeUrl ? (
-                        <a
-                          href={party.externalLinkUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="party-list-card-external-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {label}
-                        </a>
-                      ) : (
-                        <span className="party-list-card-external-link party-list-card-external-link--text">
-                          {label}
-                        </span>
+                    )}
+                    {(() => {
+                      const dateTimeRange = getPartyDateTimeRange(party);
+                      if (!dateTimeRange) return null;
+
+                      return (
+                        <div className="party-list-card-info-item">
+                          <span className="party-list-card-info-value">{dateTimeRange}</span>
+                        </div>
                       );
                     })()}
-                </div>
+                    {party.danceTags && party.danceTags.length > 0 && (
+                      <div className="party-list-card-tags">
+                        {party.danceTags.map((tag, index) => (
+                          <span key={`${tag}-${index}`} className="party-list-card-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PartyListCardLink>
+                {party.externalLinkUrl &&
+                  (() => {
+                    const isSafeUrl =
+                      party.externalLinkUrl.startsWith('http://') ||
+                      party.externalLinkUrl.startsWith('https://');
+                    const label = party.externalLinkText ?? 'Ссылка';
+                    return isSafeUrl ? (
+                      <a
+                        href={party.externalLinkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="party-list-card-external-link"
+                      >
+                        {label}
+                      </a>
+                    ) : (
+                      <span className="party-list-card-external-link party-list-card-external-link--text">
+                        {label}
+                      </span>
+                    );
+                  })()}
               </div>
             ))}
           </div>

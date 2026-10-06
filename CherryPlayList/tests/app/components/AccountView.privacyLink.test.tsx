@@ -5,6 +5,8 @@ import React from 'react';
 const getWebBaseUrlMock = jest.fn();
 const invokeMock = jest.fn();
 const addNotificationMock = jest.fn();
+const onCloseMock = jest.fn();
+const logoutMock = jest.fn();
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -75,7 +77,7 @@ jest.mock('@shared/services/authService', () => ({
       createdAt: '2024-01-01T00:00:00Z',
       logoUrl: null,
     }),
-    logout: jest.fn(),
+    logout: (...args: unknown[]) => logoutMock(...args),
   },
 }));
 
@@ -84,9 +86,11 @@ jest.mock('@shared/stores', () => ({
   useUIStore: (
     selector: (s: {
       addNotification: typeof addNotificationMock;
-      closeModal: () => void;
     }) => unknown,
-  ) => selector({ addNotification: addNotificationMock, closeModal: jest.fn() }),
+  ) =>
+    selector({
+      addNotification: addNotificationMock,
+    }),
 }));
 
 const authStoreState = {
@@ -123,26 +127,39 @@ describe('AccountView privacy link', () => {
     getWebBaseUrlMock.mockReset();
     invokeMock.mockReset();
     addNotificationMock.mockReset();
+    onCloseMock.mockReset();
+    logoutMock.mockReset().mockResolvedValue(undefined);
     getWebBaseUrlMock.mockResolvedValue('https://cherryplay.example');
     invokeMock.mockResolvedValue(undefined);
   });
 
-  it('shows short CTA with browser aria-label and opens external cabinet URL', async () => {
+  it('shows only the website cabinet and logout actions', () => {
+    render(<AccountView onClose={onCloseMock} />);
+
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Привязать существующую вечеринку' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Открыть кабинет на сайте' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Выйти' })).toBeVisible();
+  });
+
+  it('opens the cabinet route on the website', async () => {
     render(<AccountView />);
-
-    const button = await screen.findByRole('button', {
-      name: 'Открыть управление аккаунтом на сайте в браузере',
-    });
-    expect(button).toHaveTextContent('Открыть кабинет на сайте');
-    expect(screen.getByText('Откроется в браузере')).toBeInTheDocument();
-    expect(screen.getByText(/Удаление аккаунта и согласия/)).toBeInTheDocument();
-
-    fireEvent.click(button);
+    fireEvent.click(screen.getByRole('button', { name: 'Открыть кабинет на сайте' }));
 
     await waitFor(() => {
       expect(invokeMock).toHaveBeenCalledWith('auth:openExternal', {
-        url: 'https://cherryplay.example/cabinet#account',
+        url: 'https://cherryplay.example/cabinet',
       });
+    });
+  });
+
+  it('logs out and closes the account popover', async () => {
+    render(<AccountView onClose={onCloseMock} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Выйти' }));
+
+    await waitFor(() => {
+      expect(logoutMock).toHaveBeenCalledTimes(1);
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
     });
   });
 });

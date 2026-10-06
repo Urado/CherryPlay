@@ -130,6 +130,14 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
       </div>
       <div className="party-preview-layout">
         <PartyPreviewDesignNav open={previewDesignOpen} onToggle={togglePreviewDesignOpen} />
+        {previewDesignOpen ? (
+          <button
+            type="button"
+            className="party-preview-design-backdrop"
+            aria-label="Закрыть панель дизайна"
+            onClick={togglePreviewDesignOpen}
+          />
+        ) : null}
         <div className="party-preview-layout__main">
           {previewDesignOpen ? <PartyPreviewDesignPanel /> : null}
           <div className="party-preview-layout__canvas">

@@ -1,54 +1,16 @@
-import { IconButton } from '@cherryplay/components';
-import CloseIcon from '@mui/icons-material/Close';
-import { useModalKeyboard } from '@shared/hooks';
 import { useUIStore } from '@shared/stores';
-import React from 'react';
+import React, { useEffect } from 'react';
 
-import { AccountView } from './AccountView';
+import { requestAccountPopoverOpen } from './accountPopoverEvents';
 
 export const AccountModal: React.FC = () => {
   const { modal, closeModal } = useUIStore();
-  const isAccountOpen = modal === 'account';
 
-  const { handleOverlayKeyDown } = useModalKeyboard({
-    enabled: isAccountOpen,
-    onCancel: closeModal,
-  });
+  useEffect(() => {
+    if (modal !== 'account') return;
+    closeModal();
+    requestAccountPopoverOpen();
+  }, [modal, closeModal]);
 
-  if (!isAccountOpen) {
-    return null;
-  }
-
-  return (
-    <div
-      className="modal-overlay"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
-          closeModal();
-        }
-      }}
-      onKeyDown={handleOverlayKeyDown}
-      role="button"
-      tabIndex={0}
-      aria-label="Закрыть окно аккаунта"
-    >
-      <div className="modal-content account-modal-content" role="dialog" aria-modal="true">
-        <div className="account-modal-header">
-          <h2 className="account-modal-title">Аккаунт</h2>
-          <IconButton
-            type="button"
-            onClick={closeModal}
-            className="account-modal-close modal-close"
-            aria-label="Закрыть"
-            icon={<CloseIcon />}
-            variant="ghost"
-            size="md"
-          />
-        </div>
-        <div className="account-modal-body">
-          <AccountView />
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };

@@ -57,7 +57,7 @@ interface ConsentItemProps {
   children: React.ReactNode;
 }
 
-function ConsentItem({
+const ConsentItem = ({
   checked,
   disabled,
   onChange,
@@ -66,7 +66,7 @@ function ConsentItem({
   accessibleName,
   consentKey,
   children,
-}: ConsentItemProps) {
+}: ConsentItemProps) => {
   const id = useId();
 
   return (

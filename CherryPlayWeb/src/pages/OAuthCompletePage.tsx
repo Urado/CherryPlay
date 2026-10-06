@@ -91,7 +91,7 @@ export const OAuthCompletePage = () => {
   }, [searchParams]);
 
   const stripSensitiveQuery = useCallback(() => {
-    navigate(ROUTES.OAUTH_COMPLETE, { replace: true });
+    navigate({ pathname: ROUTES.OAUTH_COMPLETE, search: '' }, { replace: true });
   }, [navigate]);
 
   const finishSuccess = useCallback(async () => {

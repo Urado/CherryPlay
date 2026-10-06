@@ -56,10 +56,15 @@
 }
 
 [data-theme='basic'] .party-playlist-item--disabled {
-  opacity: 0.45;
+  opacity: 1;
   text-decoration: line-through;
   color: var(--text-tertiary);
   cursor: not-allowed;
+}
+
+[data-theme='basic'] .party-playlist-item--disabled .party-playlist-item-info,
+[data-theme='basic'] .party-playlist-item--disabled .party-playlist-item-duration {
+  opacity: 0.85;
 }
 
 [data-theme='basic'] .party-playlist-item-name {

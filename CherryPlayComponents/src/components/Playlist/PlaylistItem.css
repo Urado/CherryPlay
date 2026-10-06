@@ -18,11 +18,6 @@
   opacity: 0.6;
 }
 
-.party-playlist-item--disabled {
-  opacity: 0.4;
-  text-decoration: line-through;
-}
-
 .party-playlist-item-row {
   display: flex;
   align-items: center;
@@ -62,8 +57,14 @@
 }
 
 .party-playlist-item-circle[data-state='disabled'] {
-  background: var(--bg-tertiary, #e0e0e0);
-  color: var(--text-tertiary, #999999);
+  background: #dc2626;
+  color: #fff;
+}
+
+[data-theme] .party-playlist-item--disabled .party-playlist-item-circle[data-state='disabled'] {
+  background: #dc2626;
+  color: #fff;
+  opacity: 1;
 }
 
 .party-playlist-item-info {
@@ -90,7 +91,6 @@
   font-size: 14px;
 }
 
-/* Когда рядом кнопка «…», убираем браузерное троеточие — иначе дублируется */
 .party-playlist-item-name--inline-ellipsis {
   text-overflow: clip;
 }
@@ -136,7 +136,6 @@
   margin-left: 12px;
 }
 
-/* Kept for theme overrides that rely on these structure classes */
 .party-playlist-item-content {
   display: flex;
   align-items: center;

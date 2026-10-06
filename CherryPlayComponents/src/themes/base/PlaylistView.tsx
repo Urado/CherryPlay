@@ -6,7 +6,7 @@ import type { PartyPlaylistData, PlayerItem } from '../../types';
 import { PlaylistItem } from './PlaylistItem';
 import '../../components/Playlist/PlaylistView.css';
 
-function PlaylistIcon(): React.ReactElement {
+const PlaylistIcon = (): React.ReactElement => {
   return (
     <svg
       width="18"

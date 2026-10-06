@@ -7,7 +7,6 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
@@ -27,9 +26,11 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 
 import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
 
+import { AccountPopover } from './AccountPopover';
 import { DesktopUpdateNotice } from './DesktopUpdateNotice';
 import { HeaderPartyStatus } from './HeaderPartyStatus';
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
+import { ProjectNameInput } from './ProjectNameInput';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceMenu } from './WorkspaceMenu';
@@ -98,7 +99,6 @@ export const AppHeader: React.FC = () => {
   const projectMenuPanelId = useId();
 
   const {
-    name,
     items,
     settings,
     trackSettings,
@@ -346,7 +346,7 @@ export const AppHeader: React.FC = () => {
       await runWithSavingIndicator(async () => {
         const projectFile = projectService.serializeProject(
           projectStateDataForSave({
-            name,
+            name: useProjectStore.getState().name,
             items,
             settings,
             trackSettings,
@@ -369,7 +369,6 @@ export const AppHeader: React.FC = () => {
   }, [
     runWithSavingIndicator,
     meta,
-    name,
     items,
     settings,
     trackSettings,
@@ -499,10 +498,6 @@ export const AppHeader: React.FC = () => {
 
   const handleSettings = () => {
     openModal('settings');
-  };
-
-  const handleAccount = () => {
-    openModal('account');
   };
 
   return (
@@ -651,21 +646,11 @@ export const AppHeader: React.FC = () => {
 
             {enableStreaming ? (
               <div className="app-header-account-cluster">
-                <button
-                  className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
-                  onClick={handleAccount}
+                <AccountPopover
+                  isAuthenticated={isAuthenticated}
+                  organizerName={organizer?.name}
                   disabled={isLayoutEditMode}
-                  aria-label="Аккаунт"
-                  title={layoutEditControlTitle(
-                    isAuthenticated
-                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт',
-                    isLayoutEditMode,
-                  )}
-                >
-                  <AccountCircleIcon className="header-button__icon" aria-hidden />
-                  {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
-                </button>
+                />
               </div>
             ) : null}
           </div>
@@ -675,14 +660,8 @@ export const AppHeader: React.FC = () => {
               <div className="app-header-project-name">
                 <span className="app-header-project-name__eyebrow">Проект</span>
                 <div className="app-header-project-name__row">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="project-name-input"
-                    placeholder="Название проекта"
+                  <ProjectNameInput
                     disabled={isLayoutEditMode}
-                    aria-label="Название проекта"
                     title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
                   />
                   {meta.isDirty && (
@@ -713,7 +692,7 @@ export const AppHeader: React.FC = () => {
         key={saveAsModalKey}
         open={saveAsModalOpen}
         isSaving={isSaving}
-        initialProjectName={name}
+        initialProjectName={useProjectStore.getState().name}
         initialDirectory={saveAsInitialDirectory}
         onRequestDirectory={(currentDirectory) =>
           ipcService.showFolderDialog({

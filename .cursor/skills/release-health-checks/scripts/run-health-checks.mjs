@@ -1,22 +1,12 @@
 #!/usr/bin/env node
-/**
- * CherryPlay release health checks.
- * Step order and commands mirror GitHub Actions (build-images.yml, release-and-deploy.yml)
- * and Dockerfiles (CherryPlayServer/Dockerfile, CherryPlayWeb/Dockerfile).
- * Run from repo root: node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
- * Options:
- *   --docker (include Docker image builds)
- *   --skip-ci (skip npm ci in Components)
- */
-
 import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Repo root: directory containing CherryPlayServer and CherryPlayWeb
 const repoRoot = resolve(__dirname, "../../../../");
 if (
   !existsSync(resolve(repoRoot, "CherryPlayServer/CherryPlayServer.csproj"))
@@ -57,9 +47,19 @@ function execCapture(cmd, cwd = repoRoot) {
   return execSync(cmd, { cwd, encoding: "utf8", shell: true }).trim();
 }
 
+function resolvePowerShell() {
+  try {
+    execCapture("pwsh -NoProfile -Command \"$PSVersionTable.PSVersion.Major\"");
+    return "pwsh";
+  } catch {
+    return "powershell";
+  }
+}
+
 const args = process.argv.slice(2);
 const withDocker = args.includes("--docker");
 const skipCi = args.includes("--skip-ci");
+const powerShell = resolvePowerShell();
 
 const SERVER_FAST_TEST_FILTER =
   "Category!=IntegrationDb&Category!=ContainerIntegration&Category!=ContainerRestartPrepare&Category!=ContainerRestartVerify&Category!=ContainerRestartFreezePrepare&Category!=ContainerRestartFreezeVerify&Category!=ContainerRetentionPrepare&Category!=ContainerRetentionVerify";
@@ -76,7 +76,6 @@ function stopIntegrationDbContainer() {
       shell: true,
     });
   } catch {
-    // Container may not exist.
   }
 }
 
@@ -94,10 +93,9 @@ function startIntegrationDbContainer() {
     .split("\n")[0]
     .split(":")
     .pop();
-  integrationDbAdminConnectionString = `Host=127.0.0.1;Port=${publishedPort};Username=postgres;Password=postgres;Database=postgres`;
+  integrationDbAdminConnectionString = `Host=127.0.0.1;Port=${publishedPort};Username=postgres;Password=postgres;Database=postgres;SslMode=Disable`;
 }
 
-// --- Server (order matches CherryPlayServer/Dockerfile: restore → format → build)
 run("Server: restore", () =>
   exec("dotnet restore CherryPlayServer/CherryPlayServer.csproj"),
 );
@@ -156,8 +154,12 @@ run("Server: tests (IntegrationDb)", () => {
     stopIntegrationDbContainer();
   }
 });
+run("Server: container integrations", () =>
+  exec(
+    `${powerShell} -NoProfile -ExecutionPolicy Bypass -File scripts/backend-container-integration.ps1`,
+  ),
+);
 
-// --- Components (order matches CherryPlayWeb/Dockerfile first stage: npm ci → lint → build)
 const componentsDir = resolve(repoRoot, "CherryPlayComponents");
 if (!skipCi) {
   run("Components: npm ci", () => {
@@ -174,26 +176,44 @@ if (!skipCi) {
 run("Components: lint", () =>
   exec("npm run lint", componentsDir),
 );
+run("Components: production audit", () =>
+  exec("npm audit --omit=dev", componentsDir),
+);
 run("Components: test", () => exec("npm test", componentsDir));
-run("Components: build", () => exec("npx tsc", componentsDir));
+run("Components: build", () => {
+  const outputDirectory = mkdtempSync(join(tmpdir(), "cherryplay-components-build-"));
+  try {
+    exec(`npx tsc --outDir "${outputDirectory}"`, componentsDir);
+    exec(`node scripts/copy-css.mjs "${outputDirectory}"`, componentsDir);
+  } finally {
+    rmSync(outputDirectory, { force: true, recursive: true });
+  }
+});
 
-// --- Web (order matches CherryPlayWeb/Dockerfile: lint:fix → lint → build)
 run("Web: lint:fix", () =>
   exec("npm run lint:fix", resolve(repoRoot, "CherryPlayWeb")),
 );
 run("Web: lint", () =>
   exec("npm run lint", resolve(repoRoot, "CherryPlayWeb")),
 );
+run("Web: production audit", () =>
+  exec("npm audit --omit=dev", resolve(repoRoot, "CherryPlayWeb")),
+);
 run("Web: test", () => exec("npm test", resolve(repoRoot, "CherryPlayWeb")));
 run("Web: build", () =>
   exec("npm run build", resolve(repoRoot, "CherryPlayWeb")),
 );
 
-// --- CherryPlayList (desktop app unit tests)
 const cherryPlayListDir = resolve(repoRoot, "CherryPlayList");
+run("CherryPlayList: lint", () => exec("npm run lint", cherryPlayListDir));
+run("CherryPlayList: production audit", () =>
+  exec("npm audit --omit=dev", cherryPlayListDir),
+);
+run("CherryPlayList: build", () =>
+  exec("npm run build:electron", cherryPlayListDir),
+);
 run("CherryPlayList: test", () => exec("npm test", cherryPlayListDir));
 
-// --- Optional Docker
 if (withDocker) {
   run("Docker: server image", () =>
     exec(
@@ -207,7 +227,6 @@ if (withDocker) {
 
 stopIntegrationDbContainer();
 
-// --- Summary
 console.log("\n--- Summary ---\n");
 const status = (ok) => (ok ? "✅" : "❌");
 console.log("| Check | Status |");

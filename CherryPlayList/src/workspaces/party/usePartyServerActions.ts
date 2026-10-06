@@ -166,14 +166,14 @@ export function usePartyServerActions(
     [meta.linkedParty, isAuth, addNotification],
   );
 
-  const handleCreateParty = useCallback(async () => {
+  const handleCreateParty = useCallback(async (): Promise<boolean> => {
     const store = getPartyStore();
     if (!effects.isNetworkEnabled()) {
       addNotification({
         type: 'warning',
         message: 'Создание недоступно: включите «Онлайн» в настройках',
       });
-      return;
+      return false;
     }
     if (!isAuth) {
       addNotification({
@@ -182,7 +182,7 @@ export function usePartyServerActions(
         duration: 5000,
       });
       openModal('account');
-      return;
+      return false;
     }
     if (store.themeAccess !== null && !isThemeGranted(store.themeId, store.themeAccess)) {
       addNotification({
@@ -190,7 +190,7 @@ export function usePartyServerActions(
         message: 'У вас нет доступа к выбранной теме. Выберите доступную тему.',
         duration: 7000,
       });
-      return;
+      return false;
     }
     const nameToUse = resolvePartyNameForServer(store, projectName);
 
@@ -201,7 +201,7 @@ export function usePartyServerActions(
       const createData = buildCreatePartyDto(store, buildCurrentPlaylistForApi(), {
         partyName: nameToUse,
       });
-      await finalizePartyCreation(store, createData, {
+      return await finalizePartyCreation(store, createData, {
         loadThemeAccess: effects.loadThemeAccess,
         checkPartyExists: effects.checkPartyExists,
         setLinkedParty,
@@ -211,11 +211,11 @@ export function usePartyServerActions(
     } catch (error) {
       console.error('Failed to create party:', error);
       if (isSessionExpiredError(error)) {
-        return;
+        return false;
       }
       if (isThemeNotEntitledError(error)) {
         await handleThemeNotEntitled(error);
-        return;
+        return false;
       }
       await handlePartyCreationFailure(
         store,
@@ -225,6 +225,7 @@ export function usePartyServerActions(
         },
         'Ошибка при создании вечеринки',
       );
+      return false;
     } finally {
       store.setIsCreating(false);
     }

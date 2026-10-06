@@ -24,6 +24,8 @@ import {
 import { playbackStateFromDto } from '../utils/playbackState';
 import { playlistDataFromDto } from '../utils/playlistDataFromDto';
 import { resolveCurrentTrackIdFromPlaylist } from '../utils/trackKey';
+
+import { PartyViewBackLink } from './PartyViewBackLink';
 import './PartyView.css';
 
 const SESSION_END_GRACE_MS = 1500;
@@ -44,13 +46,11 @@ function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
 interface PartyViewProps {
   shortCode?: string;
   isDemo?: boolean;
-  onBackToList?: () => void;
 }
 
 export const PartyView: React.FC<PartyViewProps> = ({
   shortCode,
   isDemo = false,
-  onBackToList,
 }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   const partyState = usePartyState({ shortCode, isDemo });
@@ -527,15 +527,8 @@ export const PartyView: React.FC<PartyViewProps> = ({
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">
-            {onBackToList && (
-              <button
-                type="button"
-                className="party-view-back-btn"
-                onClick={onBackToList}
-                title="Список вечеринок"
-              >
-                ← Список вечеринок
-              </button>
+            {!isDemo && (
+              <PartyViewBackLink to={ROUTES.HOME} />
             )}
             {!isDemo && shortCode && partyInfoPageEnabled && (
               <a

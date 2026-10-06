@@ -13,13 +13,27 @@ import { PartyTrackDisplaySection } from './PartyTrackDisplaySection';
 export interface PartySettingsContentProps {
   runtime: PartyWorkspaceRuntimeValue;
   onOpenLinkParty: () => void;
+  onPartyCreated: () => void;
+}
+
+export function notifyParentAfterPartyCreated(created: boolean, onPartyCreated: () => void): void {
+  if (created) {
+    onPartyCreated();
+  }
 }
 
 export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   runtime,
   onOpenLinkParty,
+  onPartyCreated,
 }) => {
   const form = usePartySettingsFormState(runtime);
+
+  const handleCreateParty = () => {
+    void form.handleCreateParty().then((created) => {
+      notifyParentAfterPartyCreated(created, onPartyCreated);
+    });
+  };
 
   const connectivityBanner = !form.isNetworkEnabledForEditor ? (
     <PartyConnectivityBanner
@@ -73,7 +87,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
           form.isTransitioningLifecycle && form.pendingLifecycleTransition === 'ready'
         }
         secondaryExtra={archiveZone}
-        onCreateParty={form.handleCreateParty}
+        onCreateParty={handleCreateParty}
         onOpenLinkParty={onOpenLinkParty}
         onSaveMetadata={form.handleSaveMetadata}
         onMakeReady={() => void form.handleLifecycleTransition('ready')}

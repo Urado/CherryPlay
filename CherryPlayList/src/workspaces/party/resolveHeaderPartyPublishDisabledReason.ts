@@ -1,5 +1,19 @@
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
+export function hasNoPendingPartyPublishChanges(input: {
+  hasLinkedParty: boolean;
+  partyLifecycleState: PartyLifecycleState | null;
+  hasSyncBaseline: boolean;
+  isOutOfSync: boolean;
+}): boolean {
+  return (
+    input.hasLinkedParty &&
+    (input.partyLifecycleState === 'ready' || input.partyLifecycleState === 'draft') &&
+    input.hasSyncBaseline &&
+    !input.isOutOfSync
+  );
+}
+
 export function resolveHeaderPartyPublishDisabledReason(input: {
   isAuthenticated: boolean;
   networkEnabled: boolean;
@@ -18,8 +32,8 @@ export function resolveHeaderPartyPublishDisabledReason(input: {
   if (input.partyLifecycleState === 'completed') {
     return 'Сначала верните вечеринку из архива';
   }
-  if (input.partyLifecycleState !== 'ready' && input.partyLifecycleState !== 'draft') {
-    return 'Нечего отправлять на сайт';
+  if (input.partyLifecycleState == null) {
+    return 'Статус вечеринки ещё не загружен';
   }
   return null;
 }

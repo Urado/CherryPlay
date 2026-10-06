@@ -7,7 +7,7 @@ import { PlayerItem } from '../../types';
 
 import '../../components/Playlist/PlaylistItem.css';
 
-function PlayIcon(): React.ReactElement {
+const PlayIcon = (): React.ReactElement => {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7z" />
@@ -15,7 +15,7 @@ function PlayIcon(): React.ReactElement {
   );
 }
 
-function CheckIcon(): React.ReactElement {
+const CheckIcon = (): React.ReactElement => {
   return (
     <svg
       width="12"
@@ -33,30 +33,18 @@ function CheckIcon(): React.ReactElement {
   );
 }
 
-function CrossIcon(): React.ReactElement {
+const StopIcon = (): React.ReactElement => {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="6" y="6" width="12" height="12" rx="1" />
     </svg>
   );
-}
+};
 
 export interface BasePlaylistItemProps {
   item: PlayerItem;
   index: number;
   level: number;
-  /** 1-based display number (excluding disabled); shown in circle for upcoming tracks */
   trackNumber?: number;
   isCurrent?: boolean;
   isPlayed?: boolean;
@@ -104,7 +92,7 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
       : null;
 
   const circleContent = isDisabled ? (
-    <CrossIcon />
+    <StopIcon />
   ) : isCurrent ? (
     <PlayIcon />
   ) : isPlayed ? (

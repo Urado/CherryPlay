@@ -4,9 +4,7 @@ import { cn } from '../../../utils/cn';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md';
-/** Resting color tone for icon/border (orthogonal to filled `variant="danger"`). */
 export type ButtonTone = 'neutral' | 'danger';
-/** Background fill mode (orthogonal to `hoverable` border/color chrome). */
 export type ButtonFill = 'none' | 'hover' | 'always';
 
 export interface ButtonChromeProps {
@@ -14,23 +12,9 @@ export interface ButtonChromeProps {
   size?: ButtonSize;
   fullWidth?: boolean;
   iconOnly?: boolean;
-  /** When true, suppress border chrome (`cp-button--borderless`). Default false. */
   borderless?: boolean;
-  /**
-   * Resting icon/border color tone (`cp-button--tone-*`).
-   * Use with `ghost`/`secondary` for tinted chrome; filled `variant="danger"` stays separate.
-   */
   tone?: ButtonTone;
-  /**
-   * When false, hover keeps the same chrome as rest (`cp-button--no-hover`).
-   * Default true.
-   */
   hoverable?: boolean;
-  /**
-   * Background fill (`cp-button--fill-hover` / `cp-button--fill-always`).
-   * Works with `tone="danger"` for red outline at rest + red fill on hover.
-   * Default `none`.
-   */
   filled?: ButtonFill;
 }
 
@@ -144,7 +128,7 @@ export interface ButtonInnerContentProps {
   loadingLabel?: string;
 }
 
-function ButtonLoadingSpinner(): React.ReactElement {
+const ButtonLoadingSpinner = (): React.ReactElement => {
   return (
     <span className="cp-button__icon cp-button__icon--loading" aria-hidden="true">
       <svg viewBox="0 0 16 16" width="16" height="16" focusable="false">
@@ -163,14 +147,14 @@ function ButtonLoadingSpinner(): React.ReactElement {
   );
 }
 
-export function ButtonInnerContent({
+export const ButtonInnerContent = ({
   children,
   startIcon,
   endIcon,
   iconOnly = false,
   loading = false,
   loadingLabel = BUTTON_LOADING_LABEL_DEFAULT,
-}: ButtonInnerContentProps): React.ReactElement {
+}: ButtonInnerContentProps): React.ReactElement => {
   const iconOnlyFallback =
     iconOnly && startIcon == null && endIcon == null && children != null ? children : null;
   const resolvedStartIcon = startIcon ?? iconOnlyFallback;

@@ -22,6 +22,14 @@ function createAuthService(startOAuthFlow = vi.fn()): AuthService {
   };
 }
 
+function getButtonByName(name: RegExp): HTMLButtonElement {
+  const button = screen.getByRole('button', { name });
+  if (!(button instanceof HTMLButtonElement)) {
+    throw new Error('Expected a button element');
+  }
+  return button;
+}
+
 describe('OAuthButtons consent gate', () => {
   afterEach(() => {
     cleanup();
@@ -31,16 +39,16 @@ describe('OAuthButtons consent gate', () => {
   it('disables provider buttons until both consents are checked', () => {
     render(<OAuthButtons authService={createAuthService()} providers={['vk']} />);
 
-    const button = screen.getByRole('button', { name: /Войти через VK/i }) as HTMLButtonElement;
+    const button = getButtonByName(/Войти через VK/i);
     expect(button.disabled).toBe(true);
     expect(screen.getByText('Отметьте оба согласия, чтобы продолжить')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'Юридические согласия' })).toBeTruthy();
 
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes).toHaveLength(2);
-    fireEvent.click(checkboxes[0]!);
+    fireEvent.click(checkboxes[0]);
     expect(button.disabled).toBe(true);
-    fireEvent.click(checkboxes[1]!);
+    fireEvent.click(checkboxes[1]);
     expect(button.disabled).toBe(false);
     expect(screen.queryByText('Отметьте оба согласия, чтобы продолжить')).toBeNull();
   });
@@ -52,8 +60,8 @@ describe('OAuthButtons consent gate', () => {
     );
 
     const checkboxes = screen.getAllByRole('checkbox');
-    fireEvent.click(checkboxes[0]!);
-    fireEvent.click(checkboxes[1]!);
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
 
     fireEvent.click(screen.getByRole('button', { name: /Войти через Telegram/i }));
 

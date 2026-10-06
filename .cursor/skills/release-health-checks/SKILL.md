@@ -16,7 +16,7 @@ Use this skill to run deterministic release-health validation for CherryPlay and
 
 ## Script (recommended)
 
-From repo root, run all checks (Server + tests + Components + Web + CherryPlayList):
+From repo root, run all checks (Server + all server test categories + Components + Web + CherryPlayList):
 
 ```bash
 node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
@@ -54,7 +54,7 @@ Use this skill when the user asks to:
 
 ## Scope
 
-CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). The script also runs unit tests for **CherryPlayWeb**, **CherryPlayComponents**, and **CherryPlayList**. CI verifies Docker builds on PR (`.github/workflows/verify-docker-build.yml`, no push) and pushes images on merge (`.github/workflows/build-images.yml`); `release-and-deploy.yml` on release. The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
+CherryPlay release builds **CherryPlayServer** (.NET), **CherryPlayWeb** and **CherryPlayList**; Web depends on **CherryPlayComponents**. The script runs fast server tests, IntegrationDb, the canonical container integration/restart/retention runner, lint, production dependency audits, tests and builds for the Node projects. Docker image builds remain opt-in with `--docker`. The repository has no configured Playwright or Cypress E2E command.
 
 ## Artifacts
 
@@ -73,7 +73,7 @@ Either run the script above or run the following steps manually in this order (m
 ### 1. CherryPlayServer (.NET)
 
 Order as in `CherryPlayServer/Dockerfile`: restore → format → build.  
-Then run server tests: fast suite, then IntegrationDb (Docker required).
+Then run server tests: fast suite, IntegrationDb and the canonical container integration/restart/retention runner (Docker required).
 
 From repo root:
 
@@ -110,7 +110,8 @@ cd CherryPlayComponents; npm ci; npm run lint; npm test; npm run build
 
 - **Lint:** ESLint (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** Vitest (`vitest run`).
-- **Build:** `tsc`.
+- **Production audit:** `npm audit --omit=dev`.
+- **Build:** TypeScript compilation and CSS asset copy. The health script stages output in a temporary directory to avoid collisions with files opened by a running desktop app; the Docker web build validates the normal package build in a clean container.
 
 ### 3. CherryPlayWeb (Node + Vite)
 
@@ -124,13 +125,14 @@ cd CherryPlayWeb; npm run lint:fix; npm run lint; npm test; npm run build
 
 - **Lint:** ESLint via wrapper (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** `tsc --noEmit && vitest run`.
+- **Production audit:** `npm audit --omit=dev`.
 
 ### 4. CherryPlayList (desktop app)
 
-Unit tests only (Jest):
+Lint, production dependency audit, Electron production build and Jest tests:
 
 ```bash
-cd CherryPlayList; npm test
+cd CherryPlayList; npm run lint; npm audit --omit=dev; npm run build:electron; npm test
 ```
 
 ### 5. Optional — Docker builds (release images)

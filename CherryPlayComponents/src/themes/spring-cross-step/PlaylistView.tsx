@@ -16,7 +16,7 @@ export interface SpringCrossStepPlaylistViewProps {
   themeId?: string;
 }
 
-function PlaylistIcon(): React.ReactElement {
+const PlaylistIcon = (): React.ReactElement => {
   return (
     <svg
       width="18"

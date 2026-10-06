@@ -15,12 +15,19 @@ import { getOnlineNetworkPolicy } from '@shared/streaming';
 import { sanitizeExternalUrl } from '@shared/utils';
 import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 
-import { markPartyPublishFullySynced } from './partyPublishSync';
+import {
+  getCurrentPartyPublishSyncParts,
+  markPartyPublishFullySynced,
+  resolveHeaderPartyPublishHighlight,
+} from './partyPublishSync';
 import { loadPartyThemeAccess } from './partyThemeAccessLoad';
 import { buildPlaylistForApi, buildUpdatePartyDto } from './partyWorkspaceApiBuilders';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWorkspaceUtils';
-import { resolveHeaderPartyPublishDisabledReason } from './resolveHeaderPartyPublishDisabledReason';
+import {
+  hasNoPendingPartyPublishChanges,
+  resolveHeaderPartyPublishDisabledReason,
+} from './resolveHeaderPartyPublishDisabledReason';
 import {
   PARTY_ARCHIVE_CONFIRM_MESSAGE,
   resolvePartyArchiveAvailability,
@@ -71,6 +78,24 @@ export async function publishPartyToSite(): Promise<void> {
   const networkEnabled = isNetworkEnabledNow();
   const isAuth = useAuthStore.getState().isAuthenticated();
   const linkedParty = useProjectStore.getState().meta.linkedParty;
+
+  const hasSyncBaseline = store.lastSyncedPublishParts != null;
+  const isOutOfSync = resolveHeaderPartyPublishHighlight({
+    hasLinkedParty: Boolean(linkedParty),
+    partyLifecycleState: store.partyLifecycleState,
+    lastSynced: store.lastSyncedPublishParts,
+    current: getCurrentPartyPublishSyncParts(),
+  });
+  if (
+    hasNoPendingPartyPublishChanges({
+      hasLinkedParty: Boolean(linkedParty),
+      partyLifecycleState: store.partyLifecycleState,
+      hasSyncBaseline,
+      isOutOfSync,
+    })
+  ) {
+    return;
+  }
 
   const disabledReason = resolveHeaderPartyPublishDisabledReason({
     isAuthenticated: isAuth,

@@ -16,6 +16,14 @@ function createAuthService(register = vi.fn()): AuthService {
   };
 }
 
+function getButtonByName(name: string): HTMLButtonElement {
+  const button = screen.getByRole('button', { name });
+  if (!(button instanceof HTMLButtonElement)) {
+    throw new Error('Expected a button element');
+  }
+  return button;
+}
+
 describe('EmailAuthForm register consent gate (interaction)', () => {
   afterEach(() => {
     cleanup();
@@ -35,7 +43,7 @@ describe('EmailAuthForm register consent gate (interaction)', () => {
       />,
     );
 
-    const submit = screen.getByRole('button', { name: 'Зарегистрироваться' }) as HTMLButtonElement;
+    const submit = getButtonByName('Зарегистрироваться');
     expect(submit.disabled).toBe(true);
     expect(screen.getByText('Отметьте оба согласия, чтобы продолжить')).toBeTruthy();
     expect(submit.getAttribute('aria-describedby')).toBeTruthy();
@@ -57,9 +65,9 @@ describe('EmailAuthForm register consent gate (interaction)', () => {
 
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes).toHaveLength(2);
-    fireEvent.click(checkboxes[0]!);
+    fireEvent.click(checkboxes[0]);
     expect(submit.disabled).toBe(true);
-    fireEvent.click(checkboxes[1]!);
+    fireEvent.click(checkboxes[1]);
 
     await waitFor(() => {
       expect(submit.disabled).toBe(false);

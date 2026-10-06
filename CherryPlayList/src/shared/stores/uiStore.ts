@@ -57,6 +57,7 @@ DEFAULT_WORKSPACES.forEach((workspace) => {
 interface UIState {
   activeSource: 'fileBrowser' | 'playlists' | 'db';
   modal: ModalType;
+  modalReturnTo: 'partySettings' | null;
   trackSettingsContext: TrackSettingsModalContext;
   notifications: Notification[];
   fileBrowserFocusRequest: {
@@ -70,6 +71,7 @@ interface UIState {
 
   setActiveSource: (source: 'fileBrowser' | 'playlists' | 'db') => void;
   openModal: (type: ModalType) => void;
+  openLinkPartyModal: (returnTo?: 'partySettings') => void;
   openPartySettingsModal: () => void;
   closeModal: () => void;
   openTrackSettingsModal: (context: TrackSettingsModalContext) => void;
@@ -90,6 +92,7 @@ interface UIState {
 export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   activeSource: 'fileBrowser',
   modal: null,
+  modalReturnTo: null,
   trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
   notifications: [],
   fileBrowserFocusRequest: null,
@@ -99,15 +102,18 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   setActiveSource: (source) => set({ activeSource: source }),
 
-  openModal: (type) => set({ modal: type }),
+  openModal: (type) => set({ modal: type, modalReturnTo: null }),
 
-  openPartySettingsModal: () => set({ modal: 'partySettings' }),
+  openLinkPartyModal: (returnTo) => set({ modal: 'linkParty', modalReturnTo: returnTo ?? null }),
+
+  openPartySettingsModal: () => set({ modal: 'partySettings', modalReturnTo: null }),
 
   closeModal: () =>
-    set({
-      modal: null,
+    set((state) => ({
+      modal: state.modal === 'linkParty' ? state.modalReturnTo : null,
+      modalReturnTo: null,
       trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
-    }),
+    })),
 
   openTrackSettingsModal: (context) =>
     set({ modal: 'trackSettings', trackSettingsContext: context }),

@@ -125,7 +125,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           }, settings.pauseBetweenTracks * 1000);
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
-          setCurrentTrack(null);
           tryMarkPartyProgramEndedFromCherryPlay();
         }
       } else {
@@ -138,7 +137,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           await playPlayer();
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
-          setCurrentTrack(null);
           tryMarkPartyProgramEndedFromCherryPlay();
         }
       }
@@ -185,7 +183,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
       } else {
         markSkippedDisabledTracks(currentIndex, allTracks.length);
         stop();
-        setCurrentTrack(null);
         tryMarkPartyProgramEndedFromCherryPlay();
       }
     } finally {

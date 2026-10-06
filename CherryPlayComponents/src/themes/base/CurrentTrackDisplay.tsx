@@ -53,10 +53,10 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
       ? flatTracks.findIndex((t) => t.id === playbackState.currentTrackId)
       : -1;
   const hasMultipleTracks = flatTracks.length > 1;
-  const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1]! : null;
+  const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1] : null;
   const nextTrack =
     currentIndex >= 0 && currentIndex < flatTracks.length - 1
-      ? flatTracks[currentIndex + 1]!
+      ? flatTracks[currentIndex + 1]
       : null;
 
   const currentDisplayName =
