@@ -95,9 +95,18 @@ limits = loki.fetch("limits_config")
 abort "Loki retention must be 168 hours" unless limits.fetch("retention_period") == "168h"
 abort "Loki ingestion rate limit changed" unless limits.fetch("ingestion_rate_mb") == 4 && limits.fetch("ingestion_burst_size_mb") == 8
 
-expected_grafana_rules = %w[cherryplay-target-down cherryplay-host-disk-warning cherryplay-host-disk-critical cherryplay-host-memory-low]
-actual_grafana_rules = grafana_alerts.fetch("groups").flat_map { |group| group.fetch("rules") }.map { |rule| rule.fetch("uid") }
+grafana_rules = grafana_alerts.fetch("groups").flat_map { |group| group.fetch("rules") }
+expected_grafana_rules = %w[cherryplay-http-5xx cherryplay-log-errors cherryplay-target-down cherryplay-host-disk-warning cherryplay-host-disk-critical cherryplay-host-memory-low]
+actual_grafana_rules = grafana_rules.map { |rule| rule.fetch("uid") }
 abort "Grafana infrastructure alert rules are incomplete" unless (expected_grafana_rules - actual_grafana_rules).empty?
+application_error_expression = grafana_rules.find { |rule| rule.fetch("uid") == "cherryplay-log-errors" }.fetch("data").find { |query| query.fetch("refId") == "A" }.dig("model", "expr")
+abort "Grafana application error alert must inspect backend JSON severity fields" unless application_error_expression.include?("| json | Category=~") && application_error_expression.include?("LogLevel=~\"Error|Critical\"")
+http_5xx_expression = grafana_rules.find { |rule| rule.fetch("uid") == "cherryplay-http-5xx" }.fetch("data").find { |query| query.fetch("refId") == "A" }.dig("model", "expr")
+abort "Grafana HTTP 5xx alert must query backend status metrics" unless http_5xx_expression.include?("http_requests_received_total") && http_5xx_expression.include?("code=\"5xx\"")
+%w[cherryplay-log-errors cherryplay-http-5xx].each do |uid|
+  rule = grafana_rules.find { |item| item.fetch("uid") == uid }
+  abort "Grafana alert #{uid} must treat missing events as normal" unless rule.fetch("noDataState") == "OK"
+end
 notification_keys = %w[contactpoint contactpoints policy policies notificationpolicy notificationpolicies]
 contains_notification_config = nil
 contains_notification_config = lambda do |node|

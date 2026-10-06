@@ -20,7 +20,7 @@ groups:
                 type: loki
                 uid: loki
               editorMode: code
-              expr: sum(count_over_time({job="docker"} |~ "(?i)(error|critical|fatal)" [5m]))
+              expr: sum(count_over_time({job="docker"} | json | Category=~"CherryPlayServer\\..+" | LogLevel=~"Error|Critical" [5m]))
               queryType: instant
               refId: A
           - refId: B
@@ -72,13 +72,86 @@ groups:
               expression: B
               refId: C
               type: threshold
-        noDataState: NoData
+        noDataState: OK
         execErrState: Error
-        for: 5m
+        for: 0s
         labels:
           severity: warning
         annotations:
           summary: Application error log lines were detected
+      - uid: cherryplay-http-5xx
+        title: CherryPlay HTTP 5xx
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              editorMode: code
+              expr: sum(increase(http_requests_received_total{job="cherryplay-server", code="5xx"}[5m]))
+              instant: true
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: []
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [B]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: B
+              type: reduce
+              reducer: last
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params: [0]
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: [C]
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: B
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: HTTP 5xx requests were detected in the last five minutes
   - orgId: 1
     name: cherryplay-infrastructure
     folder: CherryPlay
