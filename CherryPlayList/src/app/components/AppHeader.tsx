@@ -7,10 +7,16 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
+import ContactSupportOutlinedIcon from '@mui/icons-material/ContactSupportOutlined';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { getWebBaseUrl } from '@shared/config';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
-import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
+import {
+  getPlatform,
+  getPlatformUnavailableMessage,
+  usePlatformCapabilities,
+} from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
@@ -500,6 +506,23 @@ export const AppHeader: React.FC = () => {
     openModal('settings');
   };
 
+  const handleFeedback = async () => {
+    try {
+      const webBaseUrl = await getWebBaseUrl();
+      const result = await getPlatform().invoke('system:openExternal', {
+        url: `${webBaseUrl.replace(/\/+$/, '')}/feedback`,
+      });
+      if (!result.success) {
+        throw new Error(result.error ?? 'Failed to open feedback page');
+      }
+    } catch {
+      addNotification({
+        type: 'error',
+        message: 'Не удалось открыть страницу обратной связи',
+      });
+    }
+  };
+
   return (
     <div className="app-header">
       <div className="app-header-toolbar">
@@ -641,6 +664,15 @@ export const AppHeader: React.FC = () => {
                 title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
               >
                 <SettingsIcon className="header-button__icon" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="header-button"
+                onClick={() => void handleFeedback()}
+                aria-label="Обратная связь"
+                title="Обратная связь"
+              >
+                <ContactSupportOutlinedIcon className="header-button__icon" aria-hidden />
               </button>
             </div>
 

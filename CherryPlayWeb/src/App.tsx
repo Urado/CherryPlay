@@ -7,7 +7,7 @@ import {
   useLocation,
   useParams,
   useSearchParams,
-} from 'react-router-dom';
+ Link } from 'react-router-dom';
 
 import { CookieNotice } from './components/CookieNotice';
 import { ROUTES } from './constants/routes';
@@ -18,6 +18,7 @@ import { AdminOrganizerDetailPage } from './pages/admin/AdminOrganizerDetailPage
 import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
 import { CabinetPage } from './pages/CabinetPage';
 import { DownloadPage } from './pages/DownloadPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LegalDocumentPage } from './pages/LegalDocumentPage';
 import { LegalOperatorPage } from './pages/LegalOperatorPage';
@@ -34,6 +35,7 @@ import './App.css';
 const PAGE_TITLES: Record<string, string> = {
   [ROUTES.HOME]: 'Вечеринки',
   ['/download']: 'Скачать приложение',
+  [ROUTES.FEEDBACK]: 'Обратная связь',
   [ROUTES.LOGIN]: 'Вход',
   [ROUTES.REGISTER]: 'Регистрация',
   [ROUTES.OAUTH_COMPLETE]: 'Вход в приложение',
@@ -90,9 +92,17 @@ const AppShell = () => {
 
   return (
     <>
+      <header className="site-header">
+        <nav aria-label="Навигация сайта">
+          <Link className="site-header__link" to={ROUTES.FEEDBACK}>
+            Обратная связь
+          </Link>
+        </nav>
+      </header>
       <Routes>
         <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
         <Route path={ROUTES.DOWNLOAD} element={<DownloadPage />} />
+        <Route path={ROUTES.FEEDBACK} element={<FeedbackPage />} />
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />

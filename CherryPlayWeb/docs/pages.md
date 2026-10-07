@@ -12,6 +12,7 @@
 |------|---------|-----------|
 | `/` | Каталог вечеринок (или редирект с `?party=...`) | `PartyListPage` / `CatalogOrRedirect` |
 | `/download` | Загрузка CherryPlay для Windows | `DownloadPage` |
+| `/feedback` | Обратная связь, email поддержки и прямая ссылка на сообщения ВКонтакте | `FeedbackPage` |
 | `/party/:shortCode` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
 | `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
 | `/login` | Вход | `LoginPage` |
