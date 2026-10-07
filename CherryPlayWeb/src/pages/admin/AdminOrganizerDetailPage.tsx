@@ -261,7 +261,7 @@ export const AdminOrganizerDetailPage = () => {
     [organizer?.entitlements],
   );
   const historyEntitlements = useMemo(
-    () => (organizer?.entitlements ?? []).filter((e) => !isActiveEntitlement(e)),
+    () => organizer?.entitlements ?? [],
     [organizer?.entitlements],
   );
   const openRevocation = (entitlement: EntitlementDto) => {
@@ -372,7 +372,11 @@ export const AdminOrganizerDetailPage = () => {
                         Выдан: {new Date(entitlement.grantedAt).toLocaleString('ru-RU')}
                         {entitlement.revokedAt
                           ? ` · Отозван: ${new Date(entitlement.revokedAt).toLocaleString('ru-RU')}`
-                          : ''}
+                          : isActiveEntitlement(entitlement)
+                            ? ' · Активен'
+                            : entitlement.expiresAt
+                              ? ` · Истёк: ${new Date(entitlement.expiresAt).toLocaleString('ru-RU')}`
+                              : ''}
                       </div>
                       {revocationHistoryLoadingIds[entitlement.id] && (
                         <div>Загрузка истории отзывов…</div>

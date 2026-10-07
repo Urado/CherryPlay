@@ -5,7 +5,6 @@ import {
   getDefaultTimeZone,
   getPopularTimeZones,
   sortPartiesByEventDateDesc,
-  type OrganizerDto,
 } from '@cherryplay/components';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -18,7 +17,7 @@ import { useAppConfig } from '../contexts/AppConfigContext';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
 import { partyApiService } from '../services/partyApiService';
-import type { PublicPartyListItemDto } from '../types/api';
+import type { OrganizerDto, PublicPartyListItemDto } from '../types/api';
 import { devLog } from '../utils/logger';
 
 import { PartyListCardLink } from './PartyListCardLink';
@@ -93,7 +92,7 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
 };
 
 const DownloadAppLink = () => (
-  <Link to={ROUTES.DOWNLOAD} className="party-list-login-link">
+  <Link to={ROUTES.DOWNLOAD} className="party-view-back-btn">
     Скачать приложение
   </Link>
 );
@@ -263,15 +262,18 @@ export const PartyListPage: React.FC = () => {
           <div className="party-list-header-actions">
             {!authLoading &&
               (organizer ? (
-                <Link to={ROUTES.CABINET} className="party-list-login-link">
+                <Link to={ROUTES.CABINET} className="party-view-back-btn">
                   Кабинет
                 </Link>
               ) : (
-                <Link to={ROUTES.LOGIN} className="party-list-login-link">
+                <Link to={ROUTES.LOGIN} className="party-view-back-btn">
                   Вход
                 </Link>
               ))}
             <DownloadAppLink />
+            <Link to={ROUTES.FEEDBACK} className="party-view-back-btn">
+              Обратная связь
+            </Link>
             <IconButton
               className="party-list-refresh-btn"
               variant="secondary"

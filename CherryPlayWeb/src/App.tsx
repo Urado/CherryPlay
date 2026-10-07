@@ -7,7 +7,7 @@ import {
   useLocation,
   useParams,
   useSearchParams,
- Link } from 'react-router-dom';
+} from 'react-router-dom';
 
 import { CookieNotice } from './components/CookieNotice';
 import { ROUTES } from './constants/routes';
@@ -92,13 +92,6 @@ const AppShell = () => {
 
   return (
     <>
-      <header className="site-header">
-        <nav aria-label="Навигация сайта">
-          <Link className="site-header__link" to={ROUTES.FEEDBACK}>
-            Обратная связь
-          </Link>
-        </nav>
-      </header>
       <Routes>
         <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
         <Route path={ROUTES.DOWNLOAD} element={<DownloadPage />} />

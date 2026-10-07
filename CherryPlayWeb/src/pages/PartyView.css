@@ -28,29 +28,6 @@
   gap: 1rem;
 }
 
-.party-view-back-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  background: var(--bg-tertiary, rgba(0, 0, 0, 0.4));
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-  color: var(--text-primary, #ffffff);
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.party-view-back-btn:hover {
-  background: var(--bg-hover, rgba(0, 0, 0, 0.6));
-  border-color: var(--accent-primary, rgba(255, 255, 255, 0.3));
-  transform: translateX(-2px);
-}
-
 .party-view-info-btn {
   display: inline-flex;
   align-items: center;
@@ -263,11 +240,6 @@
   .party-view-header-controls {
     flex-wrap: wrap;
     gap: 0.5rem;
-  }
-
-  .party-view-back-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
   }
 
   .party-view-start-button {
