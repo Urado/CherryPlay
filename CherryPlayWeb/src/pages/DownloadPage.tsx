@@ -66,6 +66,12 @@ export const DownloadPage = () => {
               <p className="download-file-details">ZIP-архив · Windows x64</p>
             </div>
           )}
+          <a className="download-guide-link" href="/first-run-guide.html">
+            <span className="download-guide-title">Впервые запускаете CherryPlayList?</span>
+            <span className="download-guide-description">
+              Откройте краткую инструкцию по установке и первому эфиру
+            </span>
+          </a>
         </section>
       </main>
       <SiteFooter />

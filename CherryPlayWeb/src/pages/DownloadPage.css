@@ -25,7 +25,8 @@
 }
 
 .download-back-link:focus-visible,
-.download-button:focus-visible {
+.download-button:focus-visible,
+.download-guide-link:focus-visible {
   outline: 3px solid var(--accent-primary, #00ff88);
   outline-offset: 4px;
 }
@@ -108,8 +109,37 @@
   font-size: 14px;
 }
 
+.download-guide-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 32px;
+  padding: 18px 20px;
+  border: 1px solid var(--accent-primary, #00ff88);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: rgba(0, 255, 136, 0.08);
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.download-guide-link:hover {
+  background: rgba(0, 255, 136, 0.15);
+}
+
+.download-guide-title {
+  font-weight: 700;
+}
+
+.download-guide-description {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .download-button {
+  .download-button,
+  .download-guide-link {
     transition: none;
   }
 }
