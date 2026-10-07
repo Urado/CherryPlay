@@ -88,9 +88,8 @@ public class EfAdminQueryRepository(AppDbContext db) : IAdminQueryRepository
             .OrderBy(x => x.Provider)
             .Select(x => new AdminOauthAccountView(x.Provider, x.ProviderUserId, x.ProviderUserName))
             .ToArrayAsync();
-        var rows = await GetEntitlementRows(db.OrganizerEntitlements.AsNoTracking().Where(x => x.OrganizerId == organizerId))
-            .OrderByDescending(x => x.GrantedAt)
-            .ToListAsync();
+        var rows = await LoadEntitlementRowsAsync(
+            db.OrganizerEntitlements.AsNoTracking().Where(x => x.OrganizerId == organizerId));
         var entitlements = await BuildEntitlementsAsync(rows);
         return new AdminOrganizerDetailView(organizer.Id, organizer.Name, email, Array.AsReadOnly(oauth), organizer.Role, organizer.CreatedAt, Array.AsReadOnly(entitlements.ToArray()));
     }
@@ -104,15 +103,32 @@ public class EfAdminQueryRepository(AppDbContext db) : IAdminQueryRepository
     {
         var query = db.OrganizerEntitlements.AsNoTracking().Where(x => x.OrganizerId == organizerId);
         if (activeOnly) query = query.Where(OrganizerEntitlementPredicates.IsActive(DateTime.UtcNow));
-        var rows = await GetEntitlementRows(query).OrderByDescending(x => x.GrantedAt).ToListAsync();
+        var rows = await LoadEntitlementRowsAsync(query);
         var entitlements = await BuildEntitlementsAsync(rows);
         return Array.AsReadOnly(entitlements.ToArray());
     }
 
-    private IQueryable<AdminEntitlementRow> GetEntitlementRows(IQueryable<OrganizerEntitlementEf> query)
+    private Task<List<AdminEntitlementRow>> LoadEntitlementRowsAsync(IQueryable<OrganizerEntitlementEf> query)
     {
-        return query.Join(db.ThemePackages.AsNoTracking(), outerKeySelector: x => x.PackageId, innerKeySelector: x => x.Id, resultSelector: (x, p) => new AdminEntitlementRow(
-            x.Id, x.PackageId, p.Code, p.Name, x.Kind, x.Source, x.GrantedAt, x.ExpiresAt, x.UsesRemaining, x.RevokedAt, x.Note));
+        return query
+            .OrderByDescending(x => x.GrantedAt)
+            .Join(
+                db.ThemePackages.AsNoTracking(),
+                x => x.PackageId,
+                p => p.Id,
+                (x, p) => new AdminEntitlementRow(
+                    x.Id,
+                    x.PackageId,
+                    p.Code,
+                    p.Name,
+                    x.Kind,
+                    x.Source,
+                    x.GrantedAt,
+                    x.ExpiresAt,
+                    x.UsesRemaining,
+                    x.RevokedAt,
+                    x.Note))
+            .ToListAsync();
     }
 
     private async Task<List<AdminEntitlement>> BuildEntitlementsAsync(List<AdminEntitlementRow> rows)

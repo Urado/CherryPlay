@@ -1,9 +1,9 @@
 using CherryPlayServer.Controllers;
 using CherryPlayServer.Core;
 using CherryPlayServer.Infrastructure.Persistence;
+using CherryPlayServer.Tests;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +30,35 @@ public sealed class AdminControllerEntitlementIntegrationTests
         {
             await _postgresFixture.DisposeAsync();
         }
+    }
+
+    [Test]
+    public async Task GetOrganizer_WithEntitlements_TranslatesJoinOrderByGrantedAtOnPostgres()
+    {
+        var options = await CreateMigratedOptionsAsync();
+        await using var db = new AppDbContext(options);
+        var adminId = Guid.NewGuid();
+        var organizerId = Guid.NewGuid();
+        var olderEntitlementId = Guid.NewGuid();
+        var newerEntitlementId = Guid.NewGuid();
+        var olderGrantedAt = DateTime.UtcNow.AddHours(-2);
+        var newerGrantedAt = DateTime.UtcNow.AddHours(-1);
+        await SeedOrganizerWithEntitlementsAsync(
+            db,
+            adminId,
+            organizerId,
+            (olderEntitlementId, olderGrantedAt, "older"),
+            (newerEntitlementId, newerGrantedAt, "newer"));
+
+        var detailAction = await CreateController(db, adminId).GetOrganizer(organizerId);
+        Assert.That(detailAction.Result, Is.TypeOf<OkObjectResult>());
+        var detail = (AdminOrganizerDetailDto)((OkObjectResult)detailAction.Result!).Value!;
+        Assert.That(detail.Entitlements.Select(x => x.Id), Is.EqualTo(new[] { newerEntitlementId, olderEntitlementId }));
+
+        var listAction = await CreateController(db, adminId).GetOrganizerEntitlements(organizerId, status: "all");
+        Assert.That(listAction.Result, Is.TypeOf<OkObjectResult>());
+        var list = (List<EntitlementDto>)((OkObjectResult)listAction.Result!).Value!;
+        Assert.That(list.Select(x => x.Id), Is.EqualTo(new[] { newerEntitlementId, olderEntitlementId }));
     }
 
     [Test]
@@ -101,41 +130,51 @@ public sealed class AdminControllerEntitlementIntegrationTests
     private static async Task SeedEntitlementAsync(
         AppDbContext db, Guid adminId, Guid organizerId, Guid entitlementId, string? note)
     {
-        var packageId = Guid.NewGuid();
+        await SeedOrganizerWithEntitlementsAsync(
+            db,
+            adminId,
+            organizerId,
+            (entitlementId, DateTime.UtcNow.AddMinutes(-10), note));
+    }
+
+    private static async Task SeedOrganizerWithEntitlementsAsync(
+        AppDbContext db,
+        Guid adminId,
+        Guid organizerId,
+        params (Guid EntitlementId, DateTime GrantedAt, string? Note)[] entitlements)
+    {
         db.Organizers.AddRange(
             new OrganizerEf { Id = adminId, Name = $"admin-{adminId:N}", Role = "admin", CreatedAt = DateTime.UtcNow },
             new OrganizerEf { Id = organizerId, Name = $"organizer-{organizerId:N}", Role = "organizer", CreatedAt = DateTime.UtcNow });
-        db.ThemePackages.Add(new ThemePackageEf
+        foreach (var (entitlementId, grantedAt, note) in entitlements)
         {
-            Id = packageId,
-            Code = "extended",
-            Name = "extended",
-            IsAutoGranted = false,
-            IsActive = true,
-            Items = [],
-        });
-        db.OrganizerEntitlements.Add(new OrganizerEntitlementEf
-        {
-            Id = entitlementId,
-            OrganizerId = organizerId,
-            PackageId = packageId,
-            GrantedAt = DateTime.UtcNow.AddMinutes(-10),
-            Kind = "lifetime",
-            Source = "admin_grant",
-            Note = note,
-        });
+            var packageId = Guid.NewGuid();
+            db.ThemePackages.Add(new ThemePackageEf
+            {
+                Id = packageId,
+                Code = $"pkg-{packageId:N}",
+                Name = $"package-{packageId:N}",
+                IsAutoGranted = false,
+                IsActive = true,
+                Items = [],
+            });
+            db.OrganizerEntitlements.Add(new OrganizerEntitlementEf
+            {
+                Id = entitlementId,
+                OrganizerId = organizerId,
+                PackageId = packageId,
+                GrantedAt = grantedAt,
+                Kind = "lifetime",
+                Source = "admin_grant",
+                Note = note,
+            });
+        }
+
         await db.SaveChangesAsync();
     }
 
-    private static AdminController CreateController(AppDbContext db, Guid adminId)
-    {
-        var controller = new AdminController(db)
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
-        controller.HttpContext.Items["OrganizerId"] = adminId;
-        return controller;
-    }
+    private static AdminController CreateController(AppDbContext db, Guid adminId) =>
+        AdminControllerTestFactory.Create(db, adminId);
 
     private static async Task<IActionResult> InvokeConcurrentRevokeAsync(
         DbContextOptions<AppDbContext> options, Guid adminId, Guid organizerId, Guid entitlementId,

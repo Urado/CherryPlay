@@ -611,16 +611,8 @@ public class AdminControllerEntitlementTests
         return new AppDbContext(options);
     }
 
-    private static AdminController CreateController(AppDbContext db, Guid adminId)
-    {
-        var controller = new AdminController(db);
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext(),
-        };
-        controller.HttpContext.Items["OrganizerId"] = adminId;
-        return controller;
-    }
+    private static AdminController CreateController(AppDbContext db, Guid adminId) =>
+        AdminControllerTestFactory.Create(db, adminId);
 
     private static async Task SeedOrganizerAsync(AppDbContext db, Guid organizerId, string role)
     {

@@ -1,8 +1,8 @@
 using CherryPlayServer.Controllers;
 using CherryPlayServer.Infrastructure.Persistence;
+using CherryPlayServer.Tests;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -117,13 +117,6 @@ public sealed class AdminControllerEntitlementRevokeNoteIntegrationTests
         await db.SaveChangesAsync();
     }
 
-    private static AdminController CreateController(AppDbContext db, Guid adminId)
-    {
-        var controller = new AdminController(db)
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
-        controller.HttpContext.Items["OrganizerId"] = adminId;
-        return controller;
-    }
+    private static AdminController CreateController(AppDbContext db, Guid adminId) =>
+        AdminControllerTestFactory.Create(db, adminId);
 }

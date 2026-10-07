@@ -2,7 +2,6 @@ using CherryPlayServer.Controllers;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -63,15 +62,8 @@ public sealed class AdminControllerEntitlementGrantOrganizerNotFoundTests
         return new AppDbContext(options);
     }
 
-    private static AdminController CreateController(AppDbContext db, Guid adminId)
-    {
-        var controller = new AdminController(db)
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
-        controller.HttpContext.Items["OrganizerId"] = adminId;
-        return controller;
-    }
+    private static AdminController CreateController(AppDbContext db, Guid adminId) =>
+        AdminControllerTestFactory.Create(db, adminId);
 
     private static async Task SeedAdminAndPackageAsync(AppDbContext db, Guid adminId, Guid packageId)
     {

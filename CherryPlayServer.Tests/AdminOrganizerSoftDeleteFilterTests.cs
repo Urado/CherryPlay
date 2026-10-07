@@ -2,16 +2,12 @@ using CherryPlayServer.Controllers;
 using CherryPlayServer.Core;
 using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace CherryPlayServer.Tests;
 
-/// <summary>
-/// Soft-delete global query filters on Organizer + Admin IgnoreQueryFilters for historical names.
-/// </summary>
 public class AdminOrganizerSoftDeleteFilterTests
 {
     [Test]
@@ -158,16 +154,6 @@ public class AdminOrganizerSoftDeleteFilterTests
         return new AppDbContext(options);
     }
 
-    private static AdminController CreateController(AppDbContext db, Guid adminId)
-    {
-        var controller = new AdminController(db)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext(),
-            },
-        };
-        controller.HttpContext.Items["OrganizerId"] = adminId;
-        return controller;
-    }
+    private static AdminController CreateController(AppDbContext db, Guid adminId) =>
+        AdminControllerTestFactory.Create(db, adminId);
 }

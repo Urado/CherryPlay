@@ -1,9 +1,6 @@
 using CherryPlayServer.Core.Attributes;
 using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Infrastructure.Persistence;
-using CherryPlayServer.Infrastructure.Persistence.Repositories;
-using CherryPlayServer.Core.Services;
 using CherryPlayServer.Models;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
@@ -18,13 +15,6 @@ public class AdminController : ControllerBase
 {
     private readonly IAdminQueryService _queryService;
     private readonly IAdminEntitlementService _entitlementService;
-
-    public AdminController(AppDbContext db)
-        : this(
-            new AdminQueryService(new EfAdminQueryRepository(db)),
-            new AdminEntitlementService(new EfAdminEntitlementRepository(db)))
-    {
-    }
 
     public AdminController(IAdminQueryService queryService, IAdminEntitlementService entitlementService)
     {
