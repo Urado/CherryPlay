@@ -16,7 +16,7 @@ import {
 } from '../demo/demoAuthFixture';
 import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
-import { getPlatform, isPlatformInitialized } from '../platform';
+import { getAppMode, getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
 import { isSessionAuthError } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
@@ -64,9 +64,11 @@ async function throwAuthHttpError(response: Response): Promise<never> {
 export function buildDesktopAuthReturnTo(
   isDev: boolean,
   origin: string | undefined,
+  options?: { webDelivery?: boolean },
 ): string {
   if (isDev && origin) {
-    return `${origin}/auth/callback`;
+    const base = `${origin}/auth/callback`;
+    return options?.webDelivery ? `${base}?delivery=web` : base;
   }
   return 'cherryplaylist://auth';
 }
@@ -87,6 +89,7 @@ class AuthService implements IAuthService {
     const returnTo = buildDesktopAuthReturnTo(
       import.meta.env.DEV,
       typeof window !== 'undefined' ? window.location.origin : undefined,
+      { webDelivery: getAppMode() === 'demo' },
     );
     const loginUrl = `${webBaseUrl.replace(/\/$/, '')}/login?client=desktop&return_to=${encodeURIComponent(returnTo)}`;
 

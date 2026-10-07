@@ -48,6 +48,7 @@
       (function () {
         var params = new URLSearchParams(window.location.search);
         var code = params.get('code');
+        var delivery = params.get('delivery');
         var status = document.getElementById('status');
         var fallback = document.getElementById('fallback');
         var link = document.getElementById('open-link');
@@ -55,6 +56,34 @@
           status.textContent = 'Отсутствует код авторизации в URL.';
           return;
         }
+
+        if (delivery === 'web') {
+          status.textContent = 'Возвращаемся в CherryPlayList…';
+          window.location.replace('/?desktop_auth_code=' + encodeURIComponent(code));
+          return;
+        }
+
+        try {
+          localStorage.setItem('cherryplaylist-pending-desktop-auth-code', code);
+        } catch (storageErr) {}
+
+        try {
+          var channel = new BroadcastChannel('cherryplaylist-desktop-auth');
+          channel.postMessage({ type: 'desktop-auth-code', code: code });
+          channel.close();
+        } catch (err) {}
+
+        if (window.opener && !window.opener.closed) {
+          try {
+            window.opener.postMessage(
+              { type: 'desktop-auth-code', code: code },
+              window.location.origin,
+            );
+            window.opener.focus();
+          } catch (openerErr) {}
+        }
+
+        status.textContent = 'Код отправлен в CherryPlayList. Можно закрыть это окно.';
         var deepLink = 'cherryplaylist://auth?code=' + encodeURIComponent(code);
         if (link) {
           link.href = deepLink;
@@ -64,7 +93,7 @@
         }
         window.setTimeout(function () {
           window.location.href = deepLink;
-        }, 300);
+        }, 500);
       })();
     </script>
   </body>

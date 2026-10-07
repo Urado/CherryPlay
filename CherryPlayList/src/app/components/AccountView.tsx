@@ -1,4 +1,4 @@
-import { AuthForm, Button } from '@cherryplay/components';
+import { Button } from '@cherryplay/components';
 import { OnlineUnavailablePanel } from '@shared/components';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
 import { DEMO_ORGANIZER_DTO } from '@shared/demo/demoAuthFixture';
@@ -123,7 +123,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onClose = () => undefi
         )}
         {isLiveDemo && (
           <p className="account-view-demo-hint">
-            Веб-демо (live): вход email/password через CherryPlayServer (Vite proxy).
+            Веб-демо (live): вход через браузер (CherryPlayWeb), как в Desktop.
           </p>
         )}
         {error ? <div className="account-view-error">{error}</div> : null}
@@ -163,26 +163,15 @@ export const AccountView: React.FC<AccountViewProps> = ({ onClose = () => undefi
       )}
       {isLiveDemo && (
         <p className="account-view-demo-hint">
-          Веб-демо (live): вход email/password через CherryPlayServer (Vite proxy).
+          Веб-демо (live): вход через браузер (CherryPlayWeb), как в Desktop.
         </p>
       )}
       {error ? <div className="account-view-error">{error}</div> : null}
       <div className="account-view-login-panel">
-        {isLiveDemo ? (
-          <AuthForm
-            title="Вход в систему"
-            description="Для работы с аккаунтом необходимо войти"
-            compact={false}
-            authService={authService}
-            oauthEnabled={false}
-            onLoginSuccess={() => void loadOrganizerInfo()}
-          />
-        ) : (
-          <BrowserLoginPanel
-            title="Вход в систему"
-            description="Откроется системный браузер для входа в CherryPlay"
-          />
-        )}
+        <BrowserLoginPanel
+          title="Вход в систему"
+          description="Откроется системный браузер для входа в CherryPlay"
+        />
       </div>
     </div>
   );

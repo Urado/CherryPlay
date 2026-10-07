@@ -1,7 +1,9 @@
+import { consumeWebDesktopAuthCodeAtBootstrap } from '@shared/auth/webDesktopAuthBootstrap';
 import { resetDemoPersistStorage } from '@shared/demo/demoResetStorage';
 import {
   CapacitorPlatform,
   ElectronPlatform,
+  isDemoLiveMode,
   setPlatform,
   WebDemoPlatform,
 } from '@shared/platform';
@@ -70,6 +72,9 @@ export async function bootstrapApp(): Promise<void> {
   if (isDemoMode) {
     await resetDemoPersistStorage();
     setPlatform(new WebDemoPlatform(), 'demo');
+    if (isDemoLiveMode()) {
+      await consumeWebDesktopAuthCodeAtBootstrap();
+    }
     return;
   }
 

@@ -28,10 +28,8 @@ import {
   findPartyHeaderGuideTarget,
   PARTY_HEADER_GUIDE_HIGHLIGHT_MS,
   PARTY_HEADER_GUIDE_TARGET_RESUME,
-  PARTY_HEADER_GUIDE_TARGET_STOP,
   type PartyHeaderGuideTargetKind,
   resolvePartyHeaderGuideStartLabel,
-  resolvePartyHeaderGuideStopLabel,
   resolvePartyHeaderGuideTargetKind,
   runPartyHeaderGuideHighlight,
   waitForPartyHeaderGuideTarget,
@@ -57,7 +55,6 @@ import { isAlreadyOnOnlinePartyLayout, resolveHeaderPartyStatus } from './resolv
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 
 const GO_TO_PLAY_CTA_TITLE = 'Показать, где начать проигрывание';
-const GO_TO_STOP_CTA_TITLE = 'Показать, где остановить проигрывание';
 const OPEN_SETTINGS_CTA_TITLE = 'Открыть настройки вечеринки';
 const UNARCHIVE_CTA_TITLE = 'Вернуть вечеринку из архива';
 const SETTINGS_BUTTON_TITLE = 'Настройки вечеринки';
@@ -126,33 +123,27 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   const isGoToStopCta = ctaLabel === 'Остановить';
   const isOpenAboutCta = ctaLabel === 'Создать' || ctaLabel === 'К настройкам';
   const isUnarchiveCta = ctaLabel === 'Вернуть из архива';
+  const showCtaButton = !isGoToStopCta;
   const ctaEnabled =
-    !disabled && (isGoToPlayCta || isGoToStopCta || isOpenAboutCta || isUnarchiveCta);
+    !disabled && showCtaButton && (isGoToPlayCta || isOpenAboutCta || isUnarchiveCta);
   const actionTitle = disabled
     ? LAYOUT_EDIT_DISABLED_TITLE
     : isGoToPlayCta
       ? GO_TO_PLAY_CTA_TITLE
-      : isGoToStopCta
-        ? GO_TO_STOP_CTA_TITLE
-        : isOpenAboutCta
-          ? OPEN_SETTINGS_CTA_TITLE
-          : isUnarchiveCta
-            ? UNARCHIVE_CTA_TITLE
-            : OPEN_SETTINGS_CTA_TITLE;
+      : isOpenAboutCta
+        ? OPEN_SETTINGS_CTA_TITLE
+        : isUnarchiveCta
+          ? UNARCHIVE_CTA_TITLE
+          : OPEN_SETTINGS_CTA_TITLE;
 
   const startLabel = resolvePartyHeaderGuideStartLabel(streamingSource);
-  const stopLabel = resolvePartyHeaderGuideStopLabel(streamingSource);
   const targetKind = resolvePartyHeaderGuideTargetKind({
     primaryStatus: status.primary,
     streamingSource,
   });
   const panelStartLabel =
-    targetKind === PARTY_HEADER_GUIDE_TARGET_STOP
-      ? stopLabel
-      : targetKind === PARTY_HEADER_GUIDE_TARGET_RESUME
-        ? 'Воспроизвести'
-        : startLabel;
-  const usesGuidePanel = isGoToPlayCta || isGoToStopCta;
+    targetKind === PARTY_HEADER_GUIDE_TARGET_RESUME ? 'Воспроизвести' : startLabel;
+  const usesGuidePanel = isGoToPlayCta;
   const showProgramEndedReminder =
     status.primary === 'Конец' && reminderVisible && reminderDeadlineMs != null;
   const panelOpen =
@@ -458,7 +449,14 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
         })}
       </ol>
 
-      <div className="header-party-control__main">
+      <div
+        className={[
+          'header-party-control__main',
+          showCtaButton ? '' : 'header-party-control__main--no-cta',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="header-party-control__status" role="status">
           <span
             className="header-party-control__status-primary"
@@ -476,28 +474,32 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           ) : null}
         </div>
 
-        <span className="header-party-control__action-arrow" aria-hidden>
-          <ArrowForwardIcon fontSize="inherit" />
-        </span>
+        {showCtaButton ? (
+          <span className="header-party-control__action-arrow" aria-hidden>
+            <ArrowForwardIcon fontSize="inherit" />
+          </span>
+        ) : null}
 
         <div className="header-party-control__actions">
           {showProgramEndedReminder ? (
             <PartyProgramEndedReminder />
           ) : (
             <>
-              <button
-                ref={ctaRef}
-                type="button"
-                className="header-button header-party-control__cta"
-                disabled={!ctaEnabled || (isUnarchiveCta && isTransitioningLifecycle)}
-                title={actionTitle}
-                aria-label={`${ctaLabel}. ${actionTitle}`}
-                aria-expanded={panelOpen}
-                aria-haspopup={usesGuidePanel ? 'dialog' : undefined}
-                onClick={handleCtaClick}
-              >
-                <span className="header-party-control__cta-label">{ctaLabel}</span>
-              </button>
+              {showCtaButton ? (
+                <button
+                  ref={ctaRef}
+                  type="button"
+                  className="header-button header-party-control__cta"
+                  disabled={!ctaEnabled || (isUnarchiveCta && isTransitioningLifecycle)}
+                  title={actionTitle}
+                  aria-label={`${ctaLabel}. ${actionTitle}`}
+                  aria-expanded={panelOpen}
+                  aria-haspopup={usesGuidePanel ? 'dialog' : undefined}
+                  onClick={handleCtaClick}
+                >
+                  <span className="header-party-control__cta-label">{ctaLabel}</span>
+                </button>
+              ) : null}
 
               {!hasLinkedParty ? (
                 <button
@@ -568,7 +570,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
           anchorRect={guideAnchorRect}
           showGoButton={showGoButton}
           startLabel={panelStartLabel}
-          mode={isGoToStopCta ? 'stop' : 'start'}
+          mode="start"
           excludeCloseRef={ctaRef}
           onGo={handleGo}
           onClose={closeGuide}

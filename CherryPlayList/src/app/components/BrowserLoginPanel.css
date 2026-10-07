@@ -62,8 +62,7 @@
   min-width: 200px;
 }
 
-.party-editor-shell-blocked-overlay-content .browser-login-panel,
-.account-view-login-panel .browser-login-panel {
+.party-editor-shell-blocked-overlay-content .browser-login-panel {
   flex: 0 1 auto;
   min-height: auto;
   max-width: 420px;
@@ -74,5 +73,15 @@
   border: 1px solid var(--ui-border);
   border-radius: 8px;
   box-shadow: 0 4px 16px var(--ui-shadow);
+  box-sizing: border-box;
+}
+
+.account-view-login-panel .browser-login-panel {
+  flex: 0 1 auto;
+  min-height: auto;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
   box-sizing: border-box;
 }

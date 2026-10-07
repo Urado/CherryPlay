@@ -241,7 +241,7 @@ export class WebDemoPlatform implements PlatformAPI {
             ? (payload as { url: string }).url
             : undefined;
         if (url && typeof window !== 'undefined') {
-          window.open(url, '_blank', 'noopener,noreferrer');
+          window.open(url, '_blank');
         }
         return Promise.resolve({ success: true });
       }
