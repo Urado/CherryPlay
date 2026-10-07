@@ -38,9 +38,9 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   filled = 'none',
   'aria-pressed': ariaPressed,
 }) => {
-  const { baseClassName, isLocked, isPlayed, isCurrent } = useListRowContext();
+  const { baseClassName, isLocked, isCurrent } = useListRowContext();
   const computedAriaLabel = ariaLabel ?? title ?? 'List row action';
-  const isLockedForAction = isLocked && !(allowWhenPlayedLocked && isPlayed && !isCurrent);
+  const isLockedForAction = isLocked && !(allowWhenPlayedLocked && !isCurrent);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();

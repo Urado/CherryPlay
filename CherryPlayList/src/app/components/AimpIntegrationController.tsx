@@ -7,7 +7,11 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { useAimpStreamingOrchestrator } from '@shared/streaming';
+import {
+  applySyncedPlaylistTrackIds,
+  useAimpStreamingOrchestrator,
+  type PlaylistForApiPayload,
+} from '@shared/streaming';
 import { getAimpAvailability, logger } from '@shared/utils';
 import {
   getCurrentPartyPublishSyncParts,
@@ -29,8 +33,9 @@ export const AimpIntegrationController: React.FC = () => {
 
   const previousStreamingSourceRef = useRef<typeof streamingSource | null>(null);
 
-  const handlePlaylistSynced = useCallback(() => {
+  const handlePlaylistSynced = useCallback((payload: PlaylistForApiPayload) => {
     markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+    applySyncedPlaylistTrackIds(payload);
   }, []);
 
   const handlePartyNotFound = useCallback(() => {

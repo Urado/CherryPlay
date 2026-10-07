@@ -1,6 +1,10 @@
 import * as signalR from '@microsoft/signalr';
 import { useProjectStore, useUIStore } from '@shared/stores';
-import { useStreamingOrchestrator } from '@shared/streaming';
+import {
+  applySyncedPlaylistTrackIds,
+  useStreamingOrchestrator,
+  type PlaylistForApiPayload,
+} from '@shared/streaming';
 import { createCherryPlayStreamingErrorHandlers } from '@shared/streaming/cherryPlayStreamingErrors';
 import {
   getCurrentPartyPublishSyncParts,
@@ -54,8 +58,9 @@ export const CherryPlayStreamingController: React.FC<CherryPlayStreamingControll
     });
   }, [addNotification]);
 
-  const handlePlaylistSynced = useCallback(() => {
+  const handlePlaylistSynced = useCallback((payload: PlaylistForApiPayload) => {
     markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+    applySyncedPlaylistTrackIds(payload);
   }, []);
 
   const handleConnectError = useCallback((error: unknown) => {

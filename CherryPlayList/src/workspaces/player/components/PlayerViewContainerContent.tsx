@@ -9,11 +9,15 @@ import { fileService, ipcService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
-import { streamingOrchestrator } from '@shared/streaming';
+import {
+  clearServerPlaylistTrackIds,
+  streamingOrchestrator,
+  useServerPlaylistTrackIdsStore,
+} from '@shared/streaming';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import { createTrackWithId } from '@shared/utils/trackFactory';
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 
 import { useJumpToTrack } from '../hooks/useJumpToTrack';
 import { useLoudnessScanFlow } from '../hooks/useLoudnessScanFlow';
@@ -140,7 +144,10 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
 
-  const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
+  const serverTrackIds = useServerPlaylistTrackIdsStore((state) => state.serverTrackIds);
+  const setServerTrackIdsFromIdList = useServerPlaylistTrackIdsStore(
+    (state) => state.setFromIdList,
+  );
 
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
@@ -474,27 +481,28 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   useEffect(() => {
     if (!linkedParty?.shortCode) {
-      setServerTrackIds(null);
+      clearServerPlaylistTrackIds();
       return;
     }
     let cancelled = false;
+    const requestGeneration = useServerPlaylistTrackIdsStore.getState().syncGeneration;
     partyService
       .getPartyState(linkedParty.shortCode)
       .then((state) => {
         if (cancelled) return;
-        if (state?.serverTrackIds?.length) {
-          setServerTrackIds(new Set(state.serverTrackIds));
-        } else {
-          setServerTrackIds(null);
-        }
+        setServerTrackIdsFromIdList(state?.serverTrackIds, requestGeneration);
       })
       .catch(() => {
-        if (!cancelled) setServerTrackIds(null);
+        if (cancelled) return;
+        if (useServerPlaylistTrackIdsStore.getState().syncGeneration > requestGeneration) {
+          return;
+        }
+        clearServerPlaylistTrackIds();
       });
     return () => {
       cancelled = true;
     };
-  }, [linkedParty?.shortCode]);
+  }, [linkedParty?.shortCode, setServerTrackIdsFromIdList]);
 
   return (
     <>

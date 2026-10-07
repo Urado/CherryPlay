@@ -227,6 +227,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
             items: state.items,
             name: state.name,
             trackSettings: state.trackSettings,
+            groupSettings: state.groupSettings,
           };
           const result =
             mode === 'execute' ? command.execute(currentState) : command.undo(currentState);

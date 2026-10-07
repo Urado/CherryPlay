@@ -1,9 +1,13 @@
-import { ProjectItem, type ProjectTrackSettings } from '@core/types/project';
+import {
+  ProjectItem,
+  type ProjectGroupSettings,
+  type ProjectTrackSettings,
+} from '@core/types/project';
 
 import { insertItemAtPath } from '../stores/projectStoreCore';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 
-import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from ".";
+import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from '.';
 
 export class AddItemsCommand implements HistoryCommand {
   readonly type = 'addItems';
@@ -27,12 +31,17 @@ export class AddItemsCommand implements HistoryCommand {
   }
 }
 
+export type AddItemsAtPositionsSettings = {
+  trackSettings?: Map<string, ProjectTrackSettings>;
+  groupSettings?: Map<string, ProjectGroupSettings>;
+};
+
 export class AddItemsAtPositionsCommand implements HistoryCommand {
   readonly type = 'addItemsAtPositions';
 
   constructor(
     private readonly positions: ItemPosition[],
-    private readonly trackSettings?: { trackId: string; settings: ProjectTrackSettings },
+    private readonly addedSettings?: AddItemsAtPositionsSettings,
   ) {}
 
   execute(state: ItemsState): CommandResult {
@@ -42,10 +51,21 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
       newItems = insertItemAtPath(newItems, cloneItem(pos.item), pos.parentPath, pos.index);
     }
     const newState: Partial<ItemsState> = { items: newItems };
-    if (this.trackSettings) {
+    const trackEntries = this.addedSettings?.trackSettings;
+    if (trackEntries && trackEntries.size > 0) {
       const nextTrackSettings = new Map(state.trackSettings ?? []);
-      nextTrackSettings.set(this.trackSettings.trackId, { ...this.trackSettings.settings });
+      for (const [trackId, settings] of trackEntries) {
+        nextTrackSettings.set(trackId, { ...settings });
+      }
       newState.trackSettings = nextTrackSettings;
+    }
+    const groupEntries = this.addedSettings?.groupSettings;
+    if (groupEntries && groupEntries.size > 0) {
+      const nextGroupSettings = new Map(state.groupSettings ?? []);
+      for (const [groupId, settings] of groupEntries) {
+        nextGroupSettings.set(groupId, { ...settings });
+      }
+      newState.groupSettings = nextGroupSettings;
     }
     return { success: true, newState };
   }
@@ -63,10 +83,21 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
         });
     };
     const newState: Partial<ItemsState> = { items: removeRecursive(state.items) };
-    if (this.trackSettings) {
+    const trackEntries = this.addedSettings?.trackSettings;
+    if (trackEntries && trackEntries.size > 0) {
       const nextTrackSettings = new Map(state.trackSettings ?? []);
-      nextTrackSettings.delete(this.trackSettings.trackId);
+      for (const trackId of trackEntries.keys()) {
+        nextTrackSettings.delete(trackId);
+      }
       newState.trackSettings = nextTrackSettings;
+    }
+    const groupEntries = this.addedSettings?.groupSettings;
+    if (groupEntries && groupEntries.size > 0) {
+      const nextGroupSettings = new Map(state.groupSettings ?? []);
+      for (const groupId of groupEntries.keys()) {
+        nextGroupSettings.delete(groupId);
+      }
+      newState.groupSettings = nextGroupSettings;
     }
     return { success: true, newState };
   }

@@ -219,6 +219,17 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
     disabled: isLocked || isEditingName,
   });
 
+  const moreDisabled = trackActionsDisabled || !onTrackActions || isDisabled;
+  const moreTitle = moreDisabled
+    ? isDisabled
+      ? 'Элемент отключён'
+      : trackActionsDisabled
+        ? 'Действия недоступны'
+        : undefined
+    : isGroup
+      ? 'Действия: перейти к первому треку группы и др.'
+      : 'Действия: перейти к треку, удалить и др.';
+
   const handleDragOver = useCallback(
     (e: React.DragEvent) => {
       if (isEditingName) {
@@ -365,19 +376,15 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
           <ListRowCompound.DisableButton onToggle={handleToggleDisabled} />
         )}
 
-        {!isGroup && mode !== 'playlist' && (
+        {mode !== 'playlist' && (
           <ListRowCompound.ActionButton
             className="playlist-item-more"
             allowWhenPlayedLocked
-            aria-label="Действия с треком"
-            title={
-              trackActionsDisabled || !onTrackActions || isDisabled
-                ? undefined
-                : 'Действия: перейти к треку, удалить и др.'
-            }
-            disabled={trackActionsDisabled || !onTrackActions || isDisabled}
+            aria-label={isGroup ? 'Действия с группой' : 'Действия с треком'}
+            title={moreTitle}
+            disabled={moreDisabled}
             onClick={(e) => {
-              if (!trackActionsDisabled && onTrackActions) {
+              if (!moreDisabled && onTrackActions) {
                 onTrackActions(item.id, (e.currentTarget as HTMLElement).getBoundingClientRect());
               }
             }}

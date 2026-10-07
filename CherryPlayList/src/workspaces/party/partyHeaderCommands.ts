@@ -11,7 +11,7 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { getOnlineNetworkPolicy } from '@shared/streaming';
+import { applySyncedPlaylistTrackIds, getOnlineNetworkPolicy } from '@shared/streaming';
 import { sanitizeExternalUrl } from '@shared/utils';
 import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 
@@ -123,6 +123,7 @@ export async function publishPartyToSite(): Promise<void> {
   try {
     const playlistForApi = buildPlaylistForApi(buildPlaylistParamsFromStores());
     await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
+    applySyncedPlaylistTrackIds(playlistForApi);
     await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
     await refreshPartyThemeAccess(true);
     markPartyPublishFullySynced();
