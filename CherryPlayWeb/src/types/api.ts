@@ -40,7 +40,7 @@ export interface PublicPartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId: string;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
   hasActiveSession: boolean;
   isListedInCatalog: boolean;
   sessionStartedAt?: string;
@@ -128,6 +128,7 @@ export interface CreatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId: string;
+  customizationSettings?: Record<string, unknown>;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog?: boolean;
@@ -147,6 +148,7 @@ export interface UpdatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId?: string;
+  customizationSettings?: Record<string, unknown>;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog?: boolean;

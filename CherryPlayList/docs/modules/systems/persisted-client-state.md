@@ -118,7 +118,7 @@ Auto-save **scratch** использует `allocateUnnamedWorkspaceName()` (`wo
   - **`linkedParty`** — только `{ id, shortCode }` или `null` (URL в persist не хранится)
   - **`partyTrackDisplay`** — настройки отображения имён треков для страницы вечеринки (`stripLeadingCharsEnabled`, режим `count` \| `untilDelimiter`, count, delimiter; см. [Party](../workspaces/party.md#отображение-имён-треков-party-track-display))
   - **`partyThemeId`** (опционально) — черновик/кэш идентификатора темы вечеринки (до синхронизации с сервером)
-  - **`partyCustomizationSettings`** (опционально) — черновик/кэш настроек кастомизации темы (локальный JSON)
+  - **`partyCustomizationSettings`** (опционально) — черновик/кэш настроек кастомизации темы (локальный JSON), включая `groupDisplayDepth`
 
 ### Тема вечеринки: сервер и локальный кэш
 

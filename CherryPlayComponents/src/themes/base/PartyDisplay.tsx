@@ -14,12 +14,22 @@ export interface BasePartyDisplayProps {
   showPlayer?: boolean;
 }
 
+export function resolveGroupDisplayDepth(settings: Record<string, unknown> | undefined): number {
+  const value = settings?.groupDisplayDepth;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
+    ? value
+    : 3;
+}
+
 export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
   data,
   className = '',
   showPlayer = true,
 }) => {
   const themeVars = usePartyThemeVars(data.themeId, data.customizationSettings);
+  const groupDisplayDepth = resolveGroupDisplayDepth(
+    data.customizationSettings,
+  );
 
   return (
     <div className={`party-display ${className}`} data-theme={data.themeId} style={themeVars}>
@@ -49,6 +59,7 @@ export const PartyDisplay: React.FC<BasePartyDisplayProps> = ({
                 playedTrackIds={data.playbackState?.playedTrackIds || []}
                 disabledTrackIds={data.playbackState?.disabledTrackIds || []}
                 disabledGroupIds={data.playbackState?.disabledGroupIds || []}
+                groupDisplayDepth={groupDisplayDepth}
                 isSessionActive={data.isSessionActive}
                 themeId={data.themeId}
               />

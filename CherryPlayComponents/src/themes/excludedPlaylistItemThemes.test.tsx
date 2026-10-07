@@ -43,7 +43,7 @@ describe('excluded playlist track themes', () => {
     expect(markup).toContain('class="party-playlist-item party-playlist-item--track');
   });
 
-  it('renders a red stop marker and keeps the excluded state accessible in Spring Cross Step', () => {
+  it('renders a stop marker and keeps the excluded state accessible in Spring Cross Step', () => {
     const markup = renderToStaticMarkup(
       <div data-theme="spring-cross-step">
         <SpringPlaylistItem item={excludedTrack} index={0} level={0} isDisabled />
@@ -53,7 +53,7 @@ describe('excluded playlist track themes', () => {
     expect(markup).toContain('aria-label="Трек отменён"');
     expect(markup).toContain('data-state="disabled"');
     expect(markup).toContain('<rect');
-    expect(markup).toContain('background:#dc2626');
+    expect(markup).not.toContain('background:#dc2626');
   });
 
   it('keeps the included track marker in its theme-specific normal state', () => {

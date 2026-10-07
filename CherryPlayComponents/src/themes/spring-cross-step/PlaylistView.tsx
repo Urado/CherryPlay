@@ -35,7 +35,7 @@ const PlaylistIcon = (): React.ReactElement => {
       <circle cx="18" cy="16" r="3" />
     </svg>
   );
-}
+};
 
 export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
   playlist,
@@ -104,27 +104,34 @@ export const PlaylistView: React.FC<SpringCrossStepPlaylistViewProps> = ({
 
     const trackNumber = item.type === 'track' ? trackNumberByItemId[item.id] : undefined;
 
+    const playlistItem = (
+      <PlaylistItem
+        key={`${item.id}-${level}-${index}`}
+        item={item}
+        index={index}
+        level={level}
+        trackNumber={trackNumber}
+        isCurrent={isCurrent}
+        isPlayed={isPlayed}
+        isDisabled={isDisabled}
+        onCancelIconClick={onCancelIconClick}
+        showCancelPopupFromParent={activeCancelPopupTrackId === item.id}
+      />
+    );
+
+    if (item.type !== 'group') return playlistItem;
+
     return (
-      <React.Fragment key={`${item.id}-${level}-${index}`}>
-        <PlaylistItem
-          item={item}
-          index={index}
-          level={level}
-          trackNumber={trackNumber}
-          isCurrent={isCurrent}
-          isPlayed={isPlayed}
-          isDisabled={isDisabled}
-          onCancelIconClick={onCancelIconClick}
-          showCancelPopupFromParent={activeCancelPopupTrackId === item.id}
-        />
-        {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
-          <div className="party-playlist-group-items">
+      <div className="party-playlist-group" key={`${item.id}-${level}-${index}`}>
+        {playlistItem}
+        {sortedItems && sortedItems.length > 0 && (
+          <div className="party-playlist-group-items" role="list">
             {sortedItems.map((childItem, childIndex) =>
               renderItem(childItem, childIndex, level + 1),
             )}
           </div>
         )}
-      </React.Fragment>
+      </div>
     );
   };
 

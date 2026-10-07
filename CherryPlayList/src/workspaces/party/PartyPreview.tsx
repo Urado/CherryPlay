@@ -24,9 +24,7 @@ interface PartyPreviewProps {
   partyName?: string;
   subtitle?: string;
   partyId?: string;
-  /** Server lifecycle; unlinked/draft → draft viewer status. */
   previewLifecycleState?: PartyLifecycleState | null;
-  /** Demo-only: force viewer status (e.g. connection break). */
   previewViewerStatusOverride?: PartyViewerStatusId | null;
 }
 

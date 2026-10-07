@@ -4,8 +4,6 @@
 @import './player.css';
 @import './party-info.css';
 
-/* PartyTheme: spring-cross-step — весенний кросс-степ */
-
 [data-theme='spring-cross-step'] {
   --bg-primary: #f9fcf7;
   --bg-secondary: #f2f9ec;
@@ -21,9 +19,9 @@
   --selected-border: #2d7a3f;
   --flower-white: #fdf5f0;
   --leaf-green: #7cb342;
-  /* Cancelled/disabled track: icon and strikethrough color */
-  --canceled-track: #c97a82;
-  --canceled-track-text: rgba(26, 60, 26, 0.4);
+  --canceled-track: color-mix(in srgb, var(--text-primary) 52%, var(--flower-white) 48%);
+  --canceled-track-text: color-mix(in srgb, var(--text-primary) 40%, transparent);
+  --canceled-track-icon: var(--flower-white);
   background: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -213,7 +211,6 @@
   }
 }
 
-/* Floating petals/leaves background — absolute so they're contained by .party-display (e.g. preview area in List, full page in Web) */
 [data-theme='spring-cross-step'] .party-display-floating-petals {
   position: absolute;
   inset: 0;

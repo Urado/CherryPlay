@@ -29,6 +29,7 @@ export interface UsePartyStateReturn {
   partySubtitle: string | null;
   partyId: string | null;
   themeId: PartyThemeId;
+  groupDisplayDepth: number;
   customizationSettings: CustomizationSettings<PartyThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
@@ -133,11 +134,9 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
               if (party.partyThemeId && isValidPartyTheme(party.partyThemeId)) {
                 setThemeId(party.partyThemeId);
               }
-              if (party.customizationSettings) {
-                setCustomizationSettings(
-                  party.customizationSettings as CustomizationSettings<PartyThemeId>,
-                );
-              }
+              setCustomizationSettings(
+                (party.customizationSettings ?? {}) as CustomizationSettings<PartyThemeId>,
+              );
               if (isPartyDisplayStatusId(party.partyDisplayStatus)) {
                 setPartyDisplayStatus(party.partyDisplayStatus);
               }
@@ -168,6 +167,13 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     loadPlaylist();
   }, [loadPlaylist]);
 
+  const groupDisplayDepth = (() => {
+    const value = (customizationSettings as Record<string, unknown>).groupDisplayDepth;
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
+      ? value
+      : 3;
+  })();
+
   return {
     playlist,
     loading,
@@ -177,6 +183,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     partySubtitle,
     partyId,
     themeId,
+    groupDisplayDepth,
     customizationSettings,
     playbackState,
     isSessionActive,

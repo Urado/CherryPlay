@@ -13,7 +13,7 @@ export interface PartyInfoDisplayData {
   schedule?: string | null;
   timeZone?: string | null;
   themeId: PartyThemeId;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
 }
 
 export interface BasePartyInfoDisplayProps {

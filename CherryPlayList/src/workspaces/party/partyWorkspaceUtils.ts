@@ -77,6 +77,23 @@ export function resolveDisplayPartyName(
 export const REVOKED_THEME_PACKAGE_CODE = 'revoked-current-theme';
 export const REVOKED_THEME_PACKAGE_NAME = 'Не доступна в пакетах';
 
+export function getGroupDisplayDepth(settings: Record<string, unknown> | undefined): number {
+  const value = settings?.groupDisplayDepth;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
+    ? value
+    : 3;
+}
+
+export function withGroupDisplayDepth(
+  settings: Record<string, unknown>,
+  groupDisplayDepth: number,
+): Record<string, unknown> {
+  const depth = Number.isInteger(groupDisplayDepth)
+    ? Math.min(10, Math.max(0, groupDisplayDepth))
+    : 3;
+  return { ...settings, groupDisplayDepth: depth };
+}
+
 const UNAVAILABLE_PACKAGE_LABELS = new Set([
   REVOKED_THEME_PACKAGE_NAME,
   'Недоступно',
@@ -162,18 +179,21 @@ export function resolveLoadedCustomizationSettings(
     Object.keys(customizationSettings).length > 0;
 
   if (!hasMeaningful) {
-    return defaults;
+    return withGroupDisplayDepth(defaults, getGroupDisplayDepth(customizationSettings));
   }
 
   const raw = customizationSettings;
   if (resolvedThemeId === 'basic') {
-    return normalizeBasicThemePaletteSettings({
-      ...defaults,
-      ...raw,
-    });
+    return withGroupDisplayDepth(
+      normalizeBasicThemePaletteSettings({
+        ...defaults,
+        ...raw,
+      }),
+      getGroupDisplayDepth(raw),
+    );
   }
 
-  return { ...defaults, ...raw };
+  return withGroupDisplayDepth({ ...defaults, ...raw }, getGroupDisplayDepth(raw));
 }
 
 export function normalizeCustomizationSettings(

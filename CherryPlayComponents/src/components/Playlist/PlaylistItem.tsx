@@ -33,7 +33,7 @@ export const PlaylistItem: React.FC<PlaylistItemProps> = ({
       className={`party-playlist-item ${isGroup ? 'party-playlist-item--group' : 'party-playlist-item--track'} ${
         isCurrent ? 'party-playlist-item--current' : ''
       } ${isPlayed ? 'party-playlist-item--played' : ''} ${isDisabled ? 'party-playlist-item--disabled' : ''}`}
-      style={{ paddingLeft: `${level * 20}px` }}
+      style={{ ['--party-playlist-item-nest' as string]: String(level) }}
     >
       <div className="party-playlist-item-content">
         <div className="party-playlist-item-main">

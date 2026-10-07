@@ -8,6 +8,7 @@ import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { PartyPreviewDesignNav } from './components/PartyPreviewDesignNav';
 import { PartyPreview } from './PartyPreview';
 import { PartyPreviewDesignPanel } from './PartyPreviewDesignPanel';
+import { PartyPreviewDisplayPanel } from './PartyPreviewDisplayPanel';
 import { usePartyPreviewEffectiveState } from './partyPreviewEffectiveState';
 import { usePartySettingsUiStore } from './partySettingsUiStore';
 import { PartyWorkspaceDemoPanel } from './PartyWorkspaceDemoPanel';
@@ -75,7 +76,11 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
   });
 
   const previewDesignOpen = usePartySettingsUiStore((state) => state.previewDesignOpen);
+  const previewDisplayOpen = usePartySettingsUiStore((state) => state.previewDisplayOpen);
   const togglePreviewDesignOpen = usePartySettingsUiStore((state) => state.togglePreviewDesignOpen);
+  const togglePreviewDisplayOpen = usePartySettingsUiStore(
+    (state) => state.togglePreviewDisplayOpen,
+  );
 
   const availableThemeSet = useMemo(
     () => (visibleThemeIds ? new Set(visibleThemeIds) : null),
@@ -129,17 +134,26 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
         )}
       </div>
       <div className="party-preview-layout">
-        <PartyPreviewDesignNav open={previewDesignOpen} onToggle={togglePreviewDesignOpen} />
-        {previewDesignOpen ? (
+        <PartyPreviewDesignNav
+          open={previewDesignOpen}
+          displayOpen={previewDisplayOpen}
+          onToggle={togglePreviewDesignOpen}
+          onDisplayToggle={togglePreviewDisplayOpen}
+        />
+        {previewDesignOpen || previewDisplayOpen ? (
           <button
             type="button"
             className="party-preview-design-backdrop"
-            aria-label="Закрыть панель дизайна"
-            onClick={togglePreviewDesignOpen}
+            aria-label="Закрыть панель настроек"
+            onClick={previewDesignOpen ? togglePreviewDesignOpen : togglePreviewDisplayOpen}
           />
         ) : null}
         <div className="party-preview-layout__main">
-          {previewDesignOpen ? <PartyPreviewDesignPanel /> : null}
+          <PartyPreviewDesignPanel hidden={!previewDesignOpen} />
+          <PartyPreviewDisplayPanel
+            themeId={effectiveThemeId}
+            hidden={!previewDisplayOpen}
+          />
           <div className="party-preview-layout__canvas">
             <div className="party-preview-view-content">
               <PartyPreview

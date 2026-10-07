@@ -31,6 +31,7 @@ import {
   REVOKED_THEME_PACKAGE_CODE,
   REVOKED_THEME_PACKAGE_NAME,
   THEME_ACCESS_POLL_INTERVAL_MS,
+  withGroupDisplayDepth,
 } from './partyWorkspaceUtils';
 import { resetPartyWorkspaceForFreshProject } from './resetPartyWorkspaceForFreshProject';
 
@@ -45,7 +46,6 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   const setPartyCustomizationSettingsInMeta = useProjectStore(
     (state) => state.setPartyCustomizationSettings,
   );
-
   const themeId = usePartyWorkspaceStore((state) => state.themeId);
   const themeAccess = usePartyWorkspaceStore((state) => state.themeAccess);
 
@@ -53,7 +53,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     (newThemeId: PartyThemeId) => {
       const store = getPartyStore();
       store.setThemeId(newThemeId);
-      const next = getDefaultCustomizationSettings(newThemeId) as Record<string, unknown>;
+      const next = withGroupDisplayDepth(
+        getDefaultCustomizationSettings(newThemeId),
+        store.groupDisplayDepth,
+      );
       store.setCustomizationSettings(next);
       setPartyThemeIdInMeta(newThemeId);
       setPartyCustomizationSettingsInMeta(next);
@@ -65,7 +68,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     (settings: Record<string, unknown>) => {
       const store = getPartyStore();
       store.setCustomizationSettings(settings);
-      setPartyCustomizationSettingsInMeta(settings);
+      setPartyCustomizationSettingsInMeta(getPartyStore().customizationSettings);
       const metaThemeId = useProjectStore.getState().meta.partyThemeId;
       if (!metaThemeId || !isValidPartyTheme(metaThemeId)) {
         setPartyThemeIdInMeta(store.themeId);
@@ -145,7 +148,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         console.error('Failed to load party metadata:', error);
       }
     },
-    [networkEnabled, setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
+    [
+      networkEnabled,
+      setPartyCustomizationSettingsInMeta,
+      setPartyThemeIdInMeta,
+    ],
   );
 
   const restoreAfterReconnect = useCallback(
@@ -332,7 +339,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
       try {
         await checkPartyExists(meta.linkedParty.id);
       } catch {
-        // ERROR_CONNECTION / partyVerified already set by checkPartyExists
+        return;
       }
     } else {
       store.setServerError(null);
@@ -392,7 +399,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     store.setCustomizationSettings(
       resolveLoadedCustomizationSettings(resolvedThemeId, meta.partyCustomizationSettings),
     );
-  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
+  }, [
+    meta.partyThemeId,
+    meta.partyCustomizationSettings,
+    projectIdentityKey,
+  ]);
 
   useEffect(() => {
     if (networkEnabled) {

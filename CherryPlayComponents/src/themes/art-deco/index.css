@@ -17,6 +17,8 @@
   --selected-bg: rgba(212, 175, 55, 0.2);
   --selected-border: var(--gold-color, #d4af37);
   --pattern-style: var(--pattern-style, 'geometric');
+  --canceled-track: color-mix(in srgb, var(--text-primary) 72%, var(--accent-primary) 28%);
+  --canceled-track-icon: var(--bg-primary);
   background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
   color: var(--text-primary);
   position: relative;

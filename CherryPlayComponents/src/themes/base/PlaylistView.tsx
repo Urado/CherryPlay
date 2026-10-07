@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { getFlatTracksInDisplayOrder, sortItemsByDisplayOrder } from '../../core/utils/playlist';
+import { sortItemsByDisplayOrder } from '../../core/utils/playlist';
 import type { PartyPlaylistData, PlayerItem } from '../../types';
 
 import { PlaylistItem } from './PlaylistItem';
@@ -33,6 +33,7 @@ export interface BasePlaylistViewProps {
   playedTrackIds?: string[];
   disabledTrackIds?: string[];
   disabledGroupIds?: string[];
+  groupDisplayDepth?: number;
   isSessionActive?: boolean;
   className?: string;
   themeId?: string;
@@ -44,11 +45,26 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
   playedTrackIds = [],
   disabledTrackIds = [],
   disabledGroupIds = [],
+  groupDisplayDepth = 3,
   isSessionActive = true,
   className = '',
   themeId,
 }) => {
-  const flatTracks = useMemo(() => getFlatTracksInDisplayOrder(playlist.items), [playlist.items]);
+  const flatTracks = useMemo(() => {
+    const tracks: PlayerItem[] = [];
+    const collectTracks = (items: PlayerItem[], parentDisabled = false) => {
+      for (const item of sortItemsByDisplayOrder(items)) {
+        const isDisabled = parentDisabled || (item.type === 'group' && disabledGroupIds.includes(item.id));
+        if (item.type === 'track') {
+          if (!isDisabled) tracks.push(item);
+        } else if (item.items) {
+          collectTracks(item.items, isDisabled);
+        }
+      }
+    };
+    collectTracks(playlist.items);
+    return tracks;
+  }, [playlist.items, disabledGroupIds]);
 
   const notYetPlayedCount = useMemo(
     () =>
@@ -73,16 +89,92 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
     return map;
   }, [flatTracks, disabledTrackIds]);
 
-  const renderItem = (item: PlayerItem, index: number, level: number = 0): React.ReactNode => {
+  const groupStatsById = useMemo(() => {
+    const stats = new Map<string, { count: number; played: number; duration: number | null }>();
+    const collectStats = (
+      item: PlayerItem,
+      parentDisabled = false,
+    ): { count: number; played: number; duration: number | null } => {
+      const isDisabled =
+        parentDisabled ||
+        (item.type === 'track'
+          ? disabledTrackIds.includes(item.id)
+          : disabledGroupIds.includes(item.id));
+      if (item.type === 'track') {
+        return {
+          count: isDisabled ? 0 : 1,
+          played: !isDisabled && playedTrackIds.includes(item.id) ? 1 : 0,
+          duration: isDisabled ? 0 : (item.duration ?? null),
+        };
+      }
+      const aggregate = (item.items ?? []).reduce<{
+        count: number;
+        played: number;
+        duration: number | null;
+      }>(
+        (total, child) => {
+          const childStats = collectStats(child, isDisabled);
+          return {
+            count: total.count + childStats.count,
+            played: total.played + childStats.played,
+            duration:
+              total.duration === null || childStats.duration === null
+                ? null
+                : total.duration + childStats.duration,
+          };
+        },
+        { count: 0, played: 0, duration: 0 },
+      );
+      stats.set(item.id, aggregate);
+      return aggregate;
+    };
+    playlist.items.forEach((item) => collectStats(item));
+    return stats;
+  }, [playlist.items, disabledTrackIds, disabledGroupIds, playedTrackIds]);
+
+  const maxGroupDepthById = useMemo(() => {
+    const depths = new Map<string, number>();
+    const measureDepth = (item: PlayerItem): number => {
+      if (item.type === 'track') return 0;
+      const depth =
+        1 +
+        (item.items ?? []).reduce(
+          (maximum, child) => Math.max(maximum, measureDepth(child)),
+          0,
+        );
+      depths.set(item.id, depth);
+      return depth;
+    };
+    playlist.items.forEach(measureDepth);
+    return depths;
+  }, [playlist.items]);
+
+  const renderItem = (
+    item: PlayerItem,
+    index: number,
+    level = 0,
+    parentDisabled = false,
+  ): React.ReactNode => {
     const isCurrent = item.id === currentTrackId;
     const isPlayed = playedTrackIds.includes(item.id);
     const isDisabled =
-      item.type === 'track'
+      parentDisabled ||
+      (item.type === 'track'
         ? disabledTrackIds.includes(item.id)
-        : disabledGroupIds.includes(item.id);
+        : disabledGroupIds.includes(item.id));
 
     const sortedItems =
       item.type === 'group' && item.items ? sortItemsByDisplayOrder(item.items) : null;
+
+    if (item.type === 'group' && (groupDisplayDepth === 0 || (maxGroupDepthById.get(item.id) ?? 1) > groupDisplayDepth)) {
+      return (
+        <React.Fragment key={`${item.id}-${level}-${index}`}>
+          {sortedItems?.map((childItem, childIndex) =>
+            renderItem(childItem, childIndex, level, isDisabled),
+          )}
+        </React.Fragment>
+      );
+    }
 
     const trackNumber = item.type === 'track' ? trackNumberByItemId[item.id] : undefined;
 
@@ -96,14 +188,12 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
           isCurrent={isCurrent}
           isPlayed={isPlayed}
           isDisabled={isDisabled}
+          groupStats={item.type === 'group' ? groupStatsById.get(item.id) : undefined}
         >
           {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
-            <div
-              className="party-playlist-group-items"
-              style={{ marginLeft: `${(level + 1) * 20}px` }}
-            >
+            <div className="party-playlist-group-items">
               {sortedItems.map((childItem, childIndex) =>
-                renderItem(childItem, childIndex, level + 1),
+                renderItem(childItem, childIndex, level + 1, isDisabled),
               )}
             </div>
           )}

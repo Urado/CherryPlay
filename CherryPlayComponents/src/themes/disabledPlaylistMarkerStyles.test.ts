@@ -27,20 +27,29 @@ const getRule = (styles: string, selector: string): string | undefined => {
 
 describe('disabled playlist marker theme styles', () => {
   it.each(Object.entries(stylesByTheme))(
-    '%s dims row content without dimming the marker',
+    '%s styles disabled tracks for the theme',
     (theme, styles) => {
       const parentRule = getRule(
         styles,
         `[data-theme='${theme}'] .party-playlist-item--disabled`,
       );
-      const contentRule = getRule(
-        styles,
-        `[data-theme='${theme}'] .party-playlist-item--disabled .party-playlist-item-content`,
-      );
 
       expect(parentRule).toBeDefined();
+
+      if (theme === 'basic') {
+        expect(parentRule).toMatch(/opacity:\s*0\.65\s*;/);
+        expect(parentRule).toContain('text-decoration: line-through;');
+        const markerRule = getRule(
+          styles,
+          `[data-theme='${theme}'] .party-playlist-item-circle[data-state='disabled']`,
+        );
+        expect(markerRule).toContain('background: var(--border-color, #e0e0e0);');
+        expect(markerRule).toContain('color: var(--text-secondary, #666666);');
+        return;
+      }
+
       expect(parentRule).toMatch(/opacity:\s*1\s*;/);
-      if (theme === 'basic' || theme === 'spring-cross-step') {
+      if (theme === 'spring-cross-step') {
         const infoRule = getRule(
           styles,
           `[data-theme='${theme}'] .party-playlist-item--disabled .party-playlist-item-info`,
@@ -52,27 +61,25 @@ describe('disabled playlist marker theme styles', () => {
         expect(infoRule).toContain('opacity: 0.85;');
         expect(durationRule).toContain('opacity: 0.85;');
       } else {
+        const contentRule = getRule(
+          styles,
+          `[data-theme='${theme}'] .party-playlist-item--disabled .party-playlist-item-content`,
+        );
         expect(contentRule).toContain('opacity: 0.35;');
       }
-      if (theme === 'spring-cross-step') {
+      if (theme === 'spring-cross-step' || theme === 'art-deco') {
         const markerRule = getRule(
           styles,
           `[data-theme='${theme}'] .party-playlist-item-circle[data-state='disabled']`,
         );
         expect(markerRule).toContain('background: var(--canceled-track);');
-        expect(markerRule).toContain('color: var(--flower-white);');
-      } else if (theme === 'art-deco') {
-        const markerRule = getRule(
-          styles,
-          `[data-theme='${theme}'] .party-playlist-item-circle[data-state='disabled']`,
-        );
-        expect(markerRule).toContain('background: #dc2626;');
-        expect(markerRule).toContain('color: #fff;');
+        expect(markerRule).toContain('color: var(--canceled-track-icon);');
       } else {
         expect(sharedPlaylistStyles).toContain(
-          '.party-playlist-item--disabled .party-playlist-item-circle[data-state=\'disabled\']',
+          ".party-playlist-item--disabled .party-playlist-item-circle[data-state='disabled']",
         );
-        expect(sharedPlaylistStyles).toContain('background: #dc2626;');
+        expect(sharedPlaylistStyles).toContain('background: var(--canceled-track);');
+        expect(sharedPlaylistStyles).toContain('color: var(--canceled-track-icon);');
       }
     },
   );

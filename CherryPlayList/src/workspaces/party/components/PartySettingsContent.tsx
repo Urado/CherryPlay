@@ -8,7 +8,6 @@ import { PartyConnectivityBanner } from './PartyConnectivityBanner';
 import { PartyEditor } from './PartyEditor';
 import { PartyEditorActions } from './PartyEditorActions';
 import { PartyEditorDangerZone } from './PartyEditorDangerZone';
-import { PartyTrackDisplaySection } from './PartyTrackDisplaySection';
 
 export interface PartySettingsContentProps {
   runtime: PartyWorkspaceRuntimeValue;
@@ -106,19 +105,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       </div>
     ) : null;
 
-  const aboutActions =
-    form.showTrackDisplay || footerActions ? (
-      <>
-        {form.showTrackDisplay ? (
-          <PartyTrackDisplaySection
-            value={form.partyTrackDisplay}
-            onChange={form.setPartyTrackDisplaySettings}
-            defaultExpanded={true}
-          />
-        ) : null}
-        {footerActions}
-      </>
-    ) : null;
+  const aboutActions = footerActions;
 
   const designPreviewHint = form.editorPhase ? (
     <p className="party-settings-design-hint">

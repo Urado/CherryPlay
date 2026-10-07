@@ -229,11 +229,7 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
                 </div>,
                 document.body,
               )}
-            <div
-              className="party-playlist-item-circle"
-              data-state={circleState}
-              style={isDisabled ? { background: '#dc2626', color: '#fff', opacity: 1 } : undefined}
-            >
+            <div className="party-playlist-item-circle" data-state={circleState}>
               {circleContent}
             </div>
           </button>
@@ -244,11 +240,7 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
             onMouseEnter={handlePointerEnter}
             onMouseLeave={handlePointerLeave}
           >
-            <div
-              className="party-playlist-item-circle"
-              data-state={circleState}
-              style={isDisabled ? { background: '#dc2626', color: '#fff', opacity: 1 } : undefined}
-            >
+            <div className="party-playlist-item-circle" data-state={circleState}>
               {circleContent}
             </div>
           </div>
