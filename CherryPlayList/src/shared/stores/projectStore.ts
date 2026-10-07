@@ -223,7 +223,11 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({ _skipHistory: true });
 
         try {
-          const currentState: ItemsState = { items: state.items, name: state.name };
+          const currentState: ItemsState = {
+            items: state.items,
+            name: state.name,
+            trackSettings: state.trackSettings,
+          };
           const result =
             mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
 

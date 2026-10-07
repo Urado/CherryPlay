@@ -1,4 +1,4 @@
-import { ProjectItem } from '@core/types/project';
+import { ProjectItem, type ProjectTrackSettings } from '@core/types/project';
 
 import { insertItemAtPath } from '../stores/projectStoreCore';
 import { cloneItem, cloneItems } from '../utils/historyCore';
@@ -30,7 +30,10 @@ export class AddItemsCommand implements HistoryCommand {
 export class AddItemsAtPositionsCommand implements HistoryCommand {
   readonly type = 'addItemsAtPositions';
 
-  constructor(private readonly positions: ItemPosition[]) {}
+  constructor(
+    private readonly positions: ItemPosition[],
+    private readonly trackSettings?: { trackId: string; settings: ProjectTrackSettings },
+  ) {}
 
   execute(state: ItemsState): CommandResult {
     let newItems = [...state.items];
@@ -38,7 +41,13 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
     for (const pos of sortedPositions) {
       newItems = insertItemAtPath(newItems, cloneItem(pos.item), pos.parentPath, pos.index);
     }
-    return { success: true, newState: { items: newItems } };
+    const newState: Partial<ItemsState> = { items: newItems };
+    if (this.trackSettings) {
+      const nextTrackSettings = new Map(state.trackSettings ?? []);
+      nextTrackSettings.set(this.trackSettings.trackId, { ...this.trackSettings.settings });
+      newState.trackSettings = nextTrackSettings;
+    }
+    return { success: true, newState };
   }
 
   undo(state: ItemsState): CommandResult {
@@ -53,6 +62,12 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
           return item;
         });
     };
-    return { success: true, newState: { items: removeRecursive(state.items) } };
+    const newState: Partial<ItemsState> = { items: removeRecursive(state.items) };
+    if (this.trackSettings) {
+      const nextTrackSettings = new Map(state.trackSettings ?? []);
+      nextTrackSettings.delete(this.trackSettings.trackId);
+      newState.trackSettings = nextTrackSettings;
+    }
+    return { success: true, newState };
   }
 }

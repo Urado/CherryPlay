@@ -1,8 +1,9 @@
-import { ProjectItem } from '@core/types/project';
+import { ProjectItem, type ProjectTrackSettings } from '@core/types/project';
 
 export interface ItemsState {
   items: ProjectItem[];
   name: string;
+  trackSettings?: Map<string, ProjectTrackSettings>;
 }
 
 export interface CommandResult {
