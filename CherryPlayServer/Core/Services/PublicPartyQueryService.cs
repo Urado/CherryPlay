@@ -76,15 +76,16 @@ public class PublicPartyQueryService : IPublicPartyQueryService
     {
         _logger.LogDebug("Getting all public parties (catalog only)");
 
-        var allParties = await _partyRepository.GetAllAsync();
+        var allParties = await _partyRepository.GetAllWithOrganizerNamesAsync();
         var parties = allParties
-            .Where(p => p.IsListedInCatalog && p.PartyLifecycleState != PartyLifecycleState.Draft)
+            .Where(item => item.Party.IsListedInCatalog
+                && item.Party.PartyLifecycleState != PartyLifecycleState.Draft)
             .ToList();
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
-
-        var dtos = parties.Select(party =>
+        var dtos = parties.Select(item =>
         {
+            var party = item.Party;
             var hasActiveSession = stateLookup.TryGetValue(party.Id, out var s) && s.IsActive;
             return new PublicPartyListItemDto(
                 Id: party.Id.ToString(),
@@ -105,7 +106,8 @@ public class PublicPartyQueryService : IPublicPartyQueryService
                 ShortDescription: party.ShortDescription,
                 ExternalLinkUrl: party.ExternalLinkUrl,
                 ExternalLinkText: party.ExternalLinkText,
-                DanceTags: party.DanceTags.Count > 0 ? party.DanceTags : null
+                DanceTags: party.DanceTags.Count > 0 ? party.DanceTags : null,
+                OrganizerName: item.OrganizerName
             );
         }).ToList();
 

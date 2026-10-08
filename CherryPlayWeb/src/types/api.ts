@@ -96,6 +96,7 @@ export interface PublicPartyListItemDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  organizerName?: string | null;
   partyLifecycleState: PartyLifecycleState;
 }
 

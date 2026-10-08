@@ -21,5 +21,6 @@ public record PublicPartyListItemDto(
     string? ShortDescription = null,
     string? ExternalLinkUrl = null,
     string? ExternalLinkText = null,
-    IReadOnlyList<string>? DanceTags = null
+    IReadOnlyList<string>? DanceTags = null,
+    string? OrganizerName = null
 );

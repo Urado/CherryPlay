@@ -2,15 +2,22 @@ using System.Collections.Concurrent;
 using System;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Core.Models;
 
 namespace CherryPlayServer.Infrastructure.Repositories;
 
 public class InMemoryPartyRepository : IPartyRepository
 {
+    private readonly IOrganizerRepository? _organizerRepository;
     private readonly ConcurrentDictionary<Guid, Party> _parties = new();
     private readonly ConcurrentDictionary<Guid, object> _organizerLocks = new();
     private readonly ConcurrentDictionary<string, Guid> _shortCodeIndex =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public InMemoryPartyRepository(IOrganizerRepository? organizerRepository = null)
+    {
+        _organizerRepository = organizerRepository;
+    }
 
     public Task<Party?> GetByIdAsync(Guid id)
     {
@@ -32,6 +39,26 @@ public class InMemoryPartyRepository : IPartyRepository
     public Task<List<Party>> GetAllAsync()
     {
         return Task.FromResult(_parties.Values.ToList());
+    }
+
+    public async Task<IReadOnlyList<PublicPartyCatalogRecord>> GetAllWithOrganizerNamesAsync()
+    {
+        var parties = _parties.Values.ToArray();
+        var organizerNames = new Dictionary<Guid, string?>();
+        if (_organizerRepository is not null)
+        {
+            foreach (var organizerId in parties.Select(party => party.OrganizerId).Distinct())
+            {
+                var organizer = await _organizerRepository.GetByIdAsync(organizerId);
+                organizerNames[organizerId] = organizer?.Name;
+            }
+        }
+
+        return parties
+            .Select(party => new PublicPartyCatalogRecord(
+                party,
+                organizerNames.GetValueOrDefault(party.OrganizerId)))
+            .ToArray();
     }
 
     public Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId)

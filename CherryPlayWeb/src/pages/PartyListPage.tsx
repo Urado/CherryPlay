@@ -409,6 +409,11 @@ export const PartyListPage: React.FC = () => {
                         </div>
                       );
                     })()}
+                    {party.organizerName?.trim() && (
+                      <p className="party-list-card-organizer">
+                        Организатор: {party.organizerName.trim()}
+                      </p>
+                    )}
                     {party.danceTags && party.danceTags.length > 0 && (
                       <div className="party-list-card-tags">
                         {party.danceTags.map((tag, index) => (

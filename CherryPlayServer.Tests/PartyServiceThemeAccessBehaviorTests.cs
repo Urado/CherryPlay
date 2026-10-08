@@ -30,7 +30,7 @@ public class PartyServiceThemeAccessBehaviorTests
     }
 
     [Test]
-    public async Task CreateParty_WithPaidThemeWithoutEntitlement_ThrowsThemeNotEntitled()
+    public void CreateParty_WithPaidThemeWithoutEntitlement_ThrowsThemeNotEntitled()
     {
         var themeAccess = new FakeThemeAccessService();
         themeAccess.SetResult("cyberpunk", new ThemeAccessCheckResult(false, true, ["extended"]));

@@ -29,7 +29,7 @@ public class ConsentGateMiddlewareUnitTests
     }
 
     [Test]
-    public async Task InvokeAsync_WhenMissingGrants_ThrowsConsentRequired()
+    public void InvokeAsync_WhenMissingGrants_ThrowsConsentRequired()
     {
         var missing = new[] { Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") };
         var legalDocs = new StubLegalDocumentsService(missing);
@@ -37,7 +37,7 @@ public class ConsentGateMiddlewareUnitTests
         var context = CreateMutatingContext("/api/organizer/profile");
 
         var ex = Assert.ThrowsAsync<CherryPlayServer.Core.Exceptions.LegalConsentException>(
-            async () => await middleware.InvokeAsync(context, legalDocs));
+            () => middleware.InvokeAsync(context, legalDocs));
 
         Assert.That(ex!.Kind, Is.EqualTo(CherryPlayServer.Core.Enums.LegalConsentFailureKind.ConsentRequired));
         Assert.That(ex.Missing, Is.EquivalentTo(missing));

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Core.Models;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
@@ -44,6 +45,28 @@ public class EfPartyRepository : IPartyRepository
             .OrderBy(e => e.CreatedAt)
             .ToListAsync();
         return list.Select(e => e.ToDomain(_logger)).ToList();
+    }
+
+    public async Task<IReadOnlyList<PublicPartyCatalogRecord>> GetAllWithOrganizerNamesAsync()
+    {
+        var list = await _context.Parties
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(party => party.Playlist)
+            .Where(party => !party.IsDeleted)
+            .OrderBy(party => party.CreatedAt)
+            .Select(party => new
+            {
+                Party = party,
+                OrganizerName = party.Organizer.Name
+            })
+            .ToListAsync();
+
+        return list
+            .Select(item => new PublicPartyCatalogRecord(
+                item.Party.ToDomain(_logger),
+                item.OrganizerName))
+            .ToArray();
     }
 
     public async Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId)
