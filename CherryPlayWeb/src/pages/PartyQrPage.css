@@ -66,14 +66,15 @@
 .party-qr-code-preview {
   position: relative;
   width: 100%;
-  max-width: 40rem;
+  max-width: 22rem;
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: 0.75rem;
 }
 
 .party-qr-code-canvas,
-.party-qr-code-canvas > svg {
+.party-qr-code-canvas > svg,
+.party-qr-code-canvas > canvas {
   display: block;
   width: 100%;
   height: 100%;
@@ -146,11 +147,32 @@
 }
 
 @media (max-width: 600px) {
+  .party-qr-page-main {
+    justify-content: flex-start;
+    padding-bottom: 2rem;
+  }
+
   .party-qr-page-header {
     padding: 0.75rem 1rem;
   }
 
   .party-qr-code-card {
     padding: 1rem;
+  }
+
+  .party-qr-code-preview {
+    max-width: 18rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .party-qr-code-preview {
+    max-width: 16rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .party-qr-code-preview {
+    max-width: 14rem;
   }
 }
