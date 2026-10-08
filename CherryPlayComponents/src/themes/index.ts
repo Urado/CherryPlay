@@ -127,7 +127,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Cyberpunk',
     description: 'Неоновая тема в стиле киберпанк',
     cssPath: './cyberpunk/index.css',
-    qrStyle: { foreground: '#210c31', background: '#fff7ff', accent: '#ff43d0', frame: 'neon' },
+    qrStyle: { foreground: '#00ff00', background: '#0a0a0a', accent: '#00ff88', frame: 'neon' },
     customizationOptions: [],
     overrides: {
       CustomizationEditor: CyberpunkThemeCustomizationEditor,

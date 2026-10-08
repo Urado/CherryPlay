@@ -146,8 +146,8 @@ describe('base PlaylistView group display', () => {
     expect(rows).toHaveLength(2);
     expect((rows[0] as HTMLElement).style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
     expect((rows[1] as HTMLElement).style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
-    expect(getComputedStyle(rows[0] as Element).paddingLeft).toBe(
-      getComputedStyle(rows[1] as Element).paddingLeft,
+    expect(getComputedStyle(rows[0]).paddingLeft).toBe(
+      getComputedStyle(rows[1]).paddingLeft,
     );
   });
 

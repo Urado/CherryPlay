@@ -29,7 +29,6 @@ import {
   resolveHeaderPartyPublishDisabledReason,
 } from './resolveHeaderPartyPublishDisabledReason';
 import {
-  PARTY_ARCHIVE_CONFIRM_MESSAGE,
   resolvePartyArchiveAvailability,
 } from './resolvePartyArchiveAvailability';
 
@@ -274,10 +273,6 @@ export async function archivePartyFromHeader(): Promise<void> {
     });
     return;
   }
-  if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
-    return;
-  }
-
   store.setPendingLifecycleTransition('completed');
   store.setIsTransitioningLifecycle(true);
   try {

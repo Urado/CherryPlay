@@ -40,6 +40,7 @@ import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
 
 const App: React.FC = () => {
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -78,7 +79,7 @@ const App: React.FC = () => {
     }
 
     const checkAuthOnStart = async () => {
-      const token = useAuthStore.getState().accessToken;
+      const token = accessToken;
       if (!token) {
         return;
       }
@@ -107,7 +108,7 @@ const App: React.FC = () => {
     };
 
     checkAuthOnStart();
-  }, [isDemoMode, supportsRealAuth]);
+  }, [accessToken, isDemoMode, supportsRealAuth]);
 
   useTrackItemSize();
 

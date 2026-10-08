@@ -320,7 +320,7 @@ CTA открывает **модал настроек** (секция **«О ве
 
 **CTA / guide при Конец:** CherryPlay → `resume-playback`; AIMP → `start-playback` (**«Включить онлайн»**), без resume.
 
-**Кнопка «Архивировать»** ([`PartyProgramEndedReminder.tsx`](../src/workspaces/party/PartyProgramEndedReminder.tsx) на пульте): единственная кнопка напоминания показывает countdown mm:ss и напрямую запускает `archivePartyFromHeader()` (confirm / `blockedByLive` → alert / transition `completed`). Кнопки закрытия/скрытия напоминания нет. Пока reminder visible при **Конец**, кнопка заменяет действия после стрелки (`Играть` / Publish ↑ / ⚙): `Конец → [Архивировать mm:ss]`. При `mark` дедлайн — **20 мин**. По истечении срока кнопка остаётся с urgent-стилем `--due` + pulse; таймер не архивирует вечеринку автоматически.
+**Кнопка «Архивировать»** ([`PartyProgramEndedReminder.tsx`](../src/workspaces/party/PartyProgramEndedReminder.tsx) на пульте): кнопка напоминания показывает countdown mm:ss; нажатие открывает встроенное подтверждение с действиями **Отмена** и **Архивировать**. Отмена закрывает подтверждение без смены статуса. Подтверждение запускает `archivePartyFromHeader()` (`blockedByLive` → alert / transition `completed`). Кнопка **×** скрывает напоминание и останавливает countdown, не меняя lifecycle вечеринки. Пока reminder visible при **Конец**, напоминание заменяет действия после стрелки (`Играть` / Publish ↑ / ⚙): `Конец → [Архивировать mm:ss]`. При `mark` дедлайн — **20 мин**. По истечении срока кнопка остаётся с urgent-стилем `--due` + pulse; таймер не архивирует вечеринку автоматически.
 
 ```
 Последний трек доиграл

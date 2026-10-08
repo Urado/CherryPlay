@@ -1,4 +1,5 @@
 import { Button, DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
@@ -63,6 +64,8 @@ export const CabinetPartyList = ({
   transitioningTargetState,
   onLifecycleTransition,
 }: CabinetPartyListProps) => {
+  const [confirmingDeletePartyId, setConfirmingDeletePartyId] = useState<string | null>(null);
+
   return (
     <ul className="cabinet-party-list">
       {parties.map((party) => (
@@ -120,19 +123,48 @@ export const CabinetPartyList = ({
             >
               {expandedPartyId === party.id ? 'Редактирование…' : 'Редактировать'}
             </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              className="cabinet-party-delete"
-              loading={deletingPartyId === party.id}
-              loadingLabel="Удаление…"
-              onClick={() =>
-                window.confirm(`Удалить вечеринку «${party.name}»?`) && onDeleteConfirm(party.id)
-              }
-            >
-              Удалить
-            </Button>
+            {confirmingDeletePartyId === party.id ? (
+              <div
+                className="cabinet-party-delete-confirmation"
+                role="group"
+                aria-label={`Подтвердить удаление вечеринки «${party.name}»`}
+              >
+                <span>Удалить вечеринку «{party.name}»? Это действие невозможно отменить.</span>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  className="cabinet-party-delete-confirm"
+                  loading={deletingPartyId === party.id}
+                  loadingLabel="Удаление…"
+                  onClick={() => onDeleteConfirm(party.id)}
+                >
+                  Да
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="cabinet-party-delete-cancel"
+                  disabled={deletingPartyId === party.id}
+                  onClick={() => setConfirmingDeletePartyId(null)}
+                >
+                  Нет
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                className="cabinet-party-delete"
+                loading={deletingPartyId === party.id}
+                loadingLabel="Удаление…"
+                onClick={() => setConfirmingDeletePartyId(party.id)}
+              >
+                Удалить
+              </Button>
+            )}
           </div>
           {expandedPartyId === party.id && editingParty?.id === party.id && (
             <div className="cabinet-party-edit">

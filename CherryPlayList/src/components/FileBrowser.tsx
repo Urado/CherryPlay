@@ -261,7 +261,6 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
 
   const hasSelectedPaths = selectedPaths.size > 0;
 
-  // Breadcrumbs jump by path (handleNavigate); Back still uses history only — same as typical file managers.
   const breadcrumbs = useMemo(() => {
     if (!currentPath) return [];
     return fileService.getPathSegments(currentPath);
@@ -492,15 +491,32 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
           name: item.name,
         };
         const isSameTrack = activeTrackPath === item.path;
+        let loadGeneration: number | undefined;
         if (!isSameTrack || playerStatus === 'ended') {
-          await loadDemoTrack(track, 'file-browser-preview');
+          loadGeneration = await loadDemoTrack(track, 'file-browser-preview', true);
+        }
+        if (useDemoPlayerStore.getState().isDisabled) {
+          pause();
+          useDemoPlayerStore.setState({
+            error: 'Воспроизведение невозможно: используется то же устройство, что и плеер',
+            status: 'error',
+          });
+          return;
+        }
+        if (
+          loadGeneration !== undefined &&
+          !useDemoPlayerStore
+            .getState()
+            .shouldAutoPlayTrack(track.id, 'file-browser-preview', loadGeneration)
+        ) {
+          return;
         }
         await play();
       } catch (err) {
         logger.error('Failed to preview file from browser', err);
       }
     },
-    [activeTrackPath, playerStatus, loadDemoTrack, play],
+    [activeTrackPath, playerStatus, loadDemoTrack, play, pause],
   );
 
   const parentPath = fileService.getParentPath(currentPath);

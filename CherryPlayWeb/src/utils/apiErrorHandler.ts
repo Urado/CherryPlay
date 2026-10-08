@@ -1,7 +1,3 @@
-/**
- * Унифицированная обработка ошибок API для CherryPlayWeb
- */
-
 export interface ApiError {
   message: string;
   status: number;
@@ -23,21 +19,19 @@ function isApiError(error: unknown): error is ApiError {
   );
 }
 
-/**
- * Обрабатывает ответ от API и выбрасывает ошибку если запрос неуспешен
- */
 export async function handleApiResponse<T>(response: Response, defaultMessage: string): Promise<T> {
   if (!response.ok) {
     const error = await createApiError(response, defaultMessage);
     throw error;
   }
 
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
   return response.json();
 }
 
-/**
- * Создает объект ошибки из Response
- */
 export async function createApiError(
   response: Response,
   defaultMessage: string,
@@ -49,7 +43,6 @@ export async function createApiError(
   try {
     const text = await response.text();
     if (text) {
-      // Пытаемся распарсить JSON с сообщением об ошибке
       try {
         const json = JSON.parse(text);
         code = typeof json.code === 'string' ? json.code : undefined;
@@ -84,11 +77,6 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
   }
 }
 
-/**
- * Проверяет, стоит ли трактовать HTTP-ответ как logout-worthy auth error.
- * 403 `consent_required` — нет: ConsentGate открывается через apiFetch notifier.
- * Callers that redirect/logout on auth failure should use this helper (pass `code` from body).
- */
 export function isAuthError(status: number, code?: string): boolean {
   if (status === 401) {
     return true;

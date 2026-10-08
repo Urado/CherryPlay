@@ -776,7 +776,14 @@
   min-height: 34px;
 }
 
+.cabinet-party-delete-confirmation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .cabinet-party-delete.cp-button--danger,
+.cabinet-party-delete-confirm.cp-button--danger,
 .cabinet-privacy-delete .cp-button--danger {
   border-color: color-mix(in srgb, var(--state-error, #d32f2f) 36%, var(--border-color));
   background: color-mix(in srgb, var(--state-error, #d32f2f) 12%, var(--bg-secondary));
@@ -784,6 +791,7 @@
 }
 
 .cabinet-party-delete.cp-button--danger:hover:not(:disabled),
+.cabinet-party-delete-confirm.cp-button--danger:hover:not(:disabled),
 .cabinet-privacy-delete .cp-button--danger:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--state-error, #d32f2f) 52%, var(--border-color));
   background: color-mix(in srgb, var(--state-error, #d32f2f) 18%, var(--bg-secondary));

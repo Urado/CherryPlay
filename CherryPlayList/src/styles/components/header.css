@@ -1024,6 +1024,69 @@
   background-color: var(--bg-hover, rgba(127, 127, 127, 0.12));
 }
 
+.header-party-control__archive-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+}
+
+.header-party-control__archive-confirm {
+  width: min(100%, 420px);
+  padding: 24px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.header-party-control__archive-confirm h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.header-party-control__archive-confirm p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.header-party-control__archive-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.header-party-control__archive-confirm-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.header-party-control__archive-confirm-cancel {
+  background: var(--bg-primary, var(--bg-secondary));
+  color: var(--text-primary);
+}
+
+.header-party-control__archive-confirm-submit {
+  border-color: var(--status-warning, #d4a017) !important;
+  background: var(--status-warning, #d4a017);
+  color: #171717;
+}
+
 .party-go-to-play-guide-panel {
   display: flex;
   flex-direction: column;

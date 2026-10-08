@@ -41,7 +41,8 @@ interface PlayerAudioState {
   error: string | null;
   onTrackEnded?: () => void;
 
-  loadTrack: (track: Track) => Promise<void>;
+  loadTrack: (track: Track, autoPlay?: boolean) => Promise<number>;
+  shouldAutoPlayTrack: (trackId: string, generation: number) => boolean;
   play: () => Promise<void>;
   pause: () => void;
   stop: () => void;
@@ -104,6 +105,8 @@ const markTrackMissing = (trackId: string): void => {
 };
 
 const playbackEngine = mainPlaybackEngine;
+let trackLoadGeneration = 0;
+let pendingAutoPlay: { generation: number; trackId: string } | null = null;
 
 export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, get) => {
   let pauseTimerId: NodeJS.Timeout | null = null;
@@ -137,47 +140,73 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
   return {
     ...INITIAL_STATE,
 
-    loadTrack: async (track) => {
+    loadTrack: async (track, autoPlay = false) => {
+      const generation = ++trackLoadGeneration;
+      pendingAutoPlay = autoPlay ? { generation, trackId: track.id } : null;
       if (isDemoLiveMockPlaybackEnabled()) {
         clearPauseTimer();
         loadDemoLiveMockTrack(track);
-        return;
+        if (autoPlay) {
+          set({ status: 'loading' });
+        }
+        return generation;
       }
 
-      await loadTrackCore({
-        engine: playbackEngine,
-        track,
-        applyDevice,
-        getDeviceId: () => useSettingsStore.getState().playerAudioDeviceId,
-        markTrackFound,
-        onBeforeLoad: clearPauseTimer,
-        resolvePrecheck: (activeTrack) =>
-          resolveTrackPrecheck({
-            track: activeTrack,
-            markTrackFound,
-            notifyMissingTrack,
-            handleError,
-          }),
-        onSuccess: (activeTrack, duration) => {
-          set({
-            currentTrack: { ...activeTrack, isMissing: false },
-            status: 'paused',
-            position: 0,
-            duration,
-            error: null,
-          });
-        },
-        onFileNotFound: (activeTrack) => {
-          markTrackMissing(activeTrack.id);
-          notifyMissingTrack(activeTrack);
-        },
-      });
+      try {
+        await loadTrackCore({
+          engine: playbackEngine,
+          track,
+          applyDevice,
+          getDeviceId: () => useSettingsStore.getState().playerAudioDeviceId,
+          markTrackFound,
+          onBeforeLoad: clearPauseTimer,
+          resolvePrecheck: (activeTrack) =>
+            resolveTrackPrecheck({
+              track: activeTrack,
+              markTrackFound,
+              notifyMissingTrack,
+              handleError,
+            }),
+          onSuccess: (activeTrack, duration) => {
+            if (generation !== trackLoadGeneration) {
+              return;
+            }
+            set({
+              currentTrack: { ...activeTrack, isMissing: false },
+              status: pendingAutoPlay?.generation === generation ? 'loading' : 'paused',
+              position: 0,
+              duration,
+              error: null,
+            });
+          },
+          onFileNotFound: (activeTrack) => {
+            markTrackMissing(activeTrack.id);
+            notifyMissingTrack(activeTrack);
+          },
+        });
+        if (generation === trackLoadGeneration && get().currentTrack?.id !== track.id) {
+          pendingAutoPlay = null;
+        }
+      } catch (error) {
+        if (generation === trackLoadGeneration) {
+          pendingAutoPlay = null;
+        }
+        throw error;
+      }
+      return generation;
     },
 
+    shouldAutoPlayTrack: (trackId, generation) =>
+      pendingAutoPlay?.trackId === trackId && pendingAutoPlay.generation === generation,
+
     play: async () => {
+      const autoPlayGeneration = pendingAutoPlay?.generation;
       if (isDemoLiveMockPlaybackEnabled()) {
         clearPauseTimer();
         playDemoLiveMockPlayback();
+        if (pendingAutoPlay?.generation === autoPlayGeneration) {
+          pendingAutoPlay = null;
+        }
         return;
       }
 
@@ -189,14 +218,27 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
           getDeviceId: () => useSettingsStore.getState().playerAudioDeviceId,
           syncDevice: syncMainWithDemoPlayer,
           onBeforePlay: clearPauseTimer,
+          canPlay: () =>
+            autoPlayGeneration === undefined ||
+            (trackLoadGeneration === autoPlayGeneration &&
+              pendingAutoPlay?.generation === autoPlayGeneration),
         });
       } catch (error) {
         throw error instanceof Error ? error : new Error('Failed to start playback');
+      } finally {
+        if (pendingAutoPlay?.generation === autoPlayGeneration) {
+          pendingAutoPlay = null;
+        }
       }
     },
 
     pause: () => {
       clearPauseTimer();
+      const isAutoPlayPending = pendingAutoPlay !== null;
+      pendingAutoPlay = null;
+      if (isAutoPlayPending && get().status === 'loading') {
+        set({ status: 'paused' });
+      }
       if (isDemoLiveMockPlaybackEnabled()) {
         pauseDemoLiveMockPlayback();
         return;
@@ -206,6 +248,8 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
 
     stop: () => {
       clearPauseTimer();
+      trackLoadGeneration += 1;
+      pendingAutoPlay = null;
       if (isDemoLiveMockPlaybackEnabled()) {
         stopDemoLiveMockPlayback();
         set({ status: 'idle', position: 0, error: null });
@@ -248,6 +292,8 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
 
     clear: () => {
       clearPauseTimer();
+      trackLoadGeneration += 1;
+      pendingAutoPlay = null;
       if (isDemoLiveMockPlaybackEnabled()) {
         stopDemoLiveMockPlayback();
         const preservedVolume = get().volume;
@@ -315,6 +361,12 @@ wirePlaybackEngine({
   engine: playbackEngine,
   getStatus: () => usePlayerAudioStore.getState().status,
   setStatus: (status) => {
+    if (status === 'paused' && usePlayerAudioStore.getState().status === 'idle') {
+      return;
+    }
+    if (status === 'paused' && pendingAutoPlay?.generation === trackLoadGeneration) {
+      return;
+    }
     usePlayerAudioStore.setState(status === 'playing' ? { status, error: null } : { status });
   },
   setPosition: (position) => {

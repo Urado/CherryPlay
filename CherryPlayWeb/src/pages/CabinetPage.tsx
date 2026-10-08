@@ -45,12 +45,21 @@ const emptyForm: CreatePartyDto = {
   danceTags: [],
 };
 
-function mergePartiesWithLocalDrafts(current: PartyDto[], fromServer: PartyDto[]): PartyDto[] {
-  const serverIds = new Set(fromServer.map((party) => party.id));
+function mergePartiesWithLocalDrafts(
+  current: PartyDto[],
+  fromServer: PartyDto[],
+  excludedPartyIds: string[] = [],
+): PartyDto[] {
+  const excludedIds = new Set(excludedPartyIds);
+  const availableParties = fromServer.filter((party) => !excludedIds.has(party.id));
+  const serverIds = new Set(availableParties.map((party) => party.id));
   const localDrafts = current.filter(
-    (party) => party.partyLifecycleState === 'draft' && !serverIds.has(party.id),
+    (party) =>
+      party.partyLifecycleState === 'draft' &&
+      !serverIds.has(party.id) &&
+      !excludedIds.has(party.id),
   );
-  return [...localDrafts, ...sortPartiesByEventDateDesc(fromServer)];
+  return [...localDrafts, ...sortPartiesByEventDateDesc(availableParties)];
 }
 
 export const CabinetPage = () => {
@@ -95,12 +104,12 @@ export const CabinetPage = () => {
     organizer?.id ?? null,
   );
 
-  const loadParties = useCallback(async () => {
+  const loadParties = useCallback(async (excludedPartyIds: string[] = []) => {
     setLoadingParties(true);
     setError(null);
     try {
       const list = await partyApiService.getMyParties();
-      setParties((current) => mergePartiesWithLocalDrafts(current, list));
+      setParties((current) => mergePartiesWithLocalDrafts(current, list, excludedPartyIds));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка загрузки вечеринок');
     } finally {
@@ -418,8 +427,9 @@ export const CabinetPage = () => {
     setError(null);
     try {
       await partyApiService.deleteParty(partyId);
+      setParties((current) => current.filter((party) => party.id !== partyId));
       setDeletingPartyId(null);
-      await loadParties();
+      await loadParties([partyId]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка удаления');
       setDeletingPartyId(null);
@@ -597,7 +607,7 @@ export const CabinetPage = () => {
                   />
                 )}
 
-                {loadingParties ? (
+                {loadingParties && parties.length === 0 ? (
                   <p className="cabinet-loading">Загрузка списка…</p>
                 ) : (
                   <CabinetPartyList

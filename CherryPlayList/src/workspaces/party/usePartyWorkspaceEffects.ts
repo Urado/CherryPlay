@@ -96,6 +96,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
       const store = getPartyStore();
       try {
         const party = await partyService.getParty(partyId);
+        if (useProjectStore.getState().meta.linkedParty?.id !== partyId) {
+          return false;
+        }
         if (party.name) store.setPartyName(party.name);
         store.setPartyTitle(party.title ?? '');
         store.setPartySubtitle(party.subtitle ?? '');
@@ -144,8 +147,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setPartyLifecycleState(party.partyLifecycleState);
         store.setIsListedInCatalog(party.isListedInCatalog ?? false);
         markPartyPublishFullySynced();
+        return true;
       } catch (error) {
         console.error('Failed to load party metadata:', error);
+        return false;
       }
     },
     [
@@ -507,15 +512,21 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     if (!networkEnabled) {
       return;
     }
+    if (!meta.linkedParty || !isAuth) {
+      partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+      return;
+    }
     if (meta.linkedParty && isAuth) {
       const partyId = meta.linkedParty.id;
       if (partyWorkspaceOneShotGuards.loadedPartyMetadataId === partyId) {
         return;
       }
       partyWorkspaceOneShotGuards.loadedPartyMetadataId = partyId;
-      void loadPartyMetadata(partyId);
-    } else if (!meta.linkedParty) {
-      partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+      void loadPartyMetadata(partyId).then((loaded) => {
+        if (!loaded && partyWorkspaceOneShotGuards.loadedPartyMetadataId === partyId) {
+          partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+        }
+      });
     }
   }, [meta.linkedParty, isAuth, loadPartyMetadata, networkEnabled]);
 

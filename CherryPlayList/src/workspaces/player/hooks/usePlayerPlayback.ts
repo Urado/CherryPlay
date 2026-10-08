@@ -132,9 +132,15 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         if (nextTrack) {
           const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
           markSkippedDisabledTracks(currentIndex, nextIndex);
-          await loadPlayerTrack(nextTrack);
+          const loadGeneration = await loadPlayerTrack(nextTrack, true);
           setCurrentTrack(nextTrack.id);
-          await playPlayer();
+          if (
+            usePlayerAudioStore
+              .getState()
+              .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
+          ) {
+            await playPlayer();
+          }
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
           tryMarkPartyProgramEndedFromCherryPlay();
@@ -177,9 +183,15 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
       if (nextTrack) {
         const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
         markSkippedDisabledTracks(currentIndex, nextIndex);
-        await loadPlayerTrack(nextTrack);
+        const loadGeneration = await loadPlayerTrack(nextTrack, true);
         setCurrentTrack(nextTrack.id);
-        await playPlayer();
+        if (
+          usePlayerAudioStore
+            .getState()
+            .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
+        ) {
+          await playPlayer();
+        }
       } else {
         markSkippedDisabledTracks(currentIndex, allTracks.length);
         stop();
