@@ -199,25 +199,13 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     fi
     
     if command -v curl > /dev/null 2>&1; then
-        if curl -f -s http://localhost:5000/api/health > /dev/null 2>&1; then
+        if curl -f -s http://localhost:5000/api/health/ready > /dev/null 2>&1; then
             echo -e "${GREEN}✅ Server is healthy (checked via curl)${NC}"
             break
         fi
     elif command -v wget > /dev/null 2>&1; then
-        if wget -q --spider http://localhost:5000/api/health 2>/dev/null; then
+        if wget -q --spider http://localhost:5000/api/health/ready 2>/dev/null; then
             echo -e "${GREEN}✅ Server is healthy (checked via wget)${NC}"
-            break
-        fi
-    fi
-    
-    if command -v nc > /dev/null 2>&1; then
-        if nc -z localhost 5000 2>/dev/null; then
-            echo -e "${GREEN}✅ Server port is accessible${NC}"
-            break
-        fi
-    elif command -v telnet > /dev/null 2>&1; then
-        if echo "quit" | telnet localhost 5000 2>/dev/null | grep -q "Connected"; then
-            echo -e "${GREEN}✅ Server port is accessible${NC}"
             break
         fi
     fi

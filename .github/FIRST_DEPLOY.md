@@ -78,7 +78,8 @@ docker compose -f docker-compose.prod.yml ps
 Проверьте доступность:
 
 - Сайт: `http://<DEPLOY_HOST>` (или по домену, если DNS уже указывает на сервер)
-- API: `https://<ваш-домен>/api/health` после настройки HTTPS; до этого — `http://<ваш-домен>/api/health` (через nginx → web → backend)
+- Liveness: `https://<ваш-домен>/api/health/live` после настройки HTTPS; до этого — `http://<ваш-домен>/api/health/live` (через nginx → web → backend)
+- Readiness: `https://<ваш-домен>/api/health/ready` после настройки HTTPS; до этого — `http://<ваш-домен>/api/health/ready`. Ожидается HTTP 200, когда сервер готов принимать запросы, включая доступность PostgreSQL.
 
 Примечание по безопасности: в `docker-compose.prod.yml` pgAdmin по умолчанию публикуется только на `127.0.0.1:5050` (наружу не открыт). Для доступа используйте SSH-туннель с вашего компьютера на сервер.
 

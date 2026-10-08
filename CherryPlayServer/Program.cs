@@ -16,7 +16,9 @@ using CherryPlayServer.Core.Middleware;
 using CherryPlayServer.Core.Authorization;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Options;
+using CherryPlayServer.Infrastructure.Health;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -35,6 +37,8 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", timeout: TimeSpan.FromSeconds(3));
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
 builder.Services.UseHttpClientMetrics();
@@ -364,6 +368,17 @@ app.UseAuthorization();
 app.UseMiddleware<ConsentGateMiddleware>();
 
 app.MapControllers();
+app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var status = report.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
+            ? "Healthy"
+            : "Unhealthy";
+        await context.Response.WriteAsync($"{{\"status\":\"{status}\"}}");
+    }
+});
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
 app.MapMetrics();
 

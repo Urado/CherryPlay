@@ -4,11 +4,12 @@
 
 ---
 
-## Health endpoint
+## Liveness и readiness
 
-- **Назначение:** проверка доступности сервиса (мониторинг, балансировщики, оркестраторы).
-- **Путь:** `GET /api/health`.
-- **Ожидаемое поведение:** при работоспособном сервере — ответ 200, JSON `{ "status": "Healthy", "timestamp": "..." }` (ISO 8601).
+- **Liveness:** `GET /api/health/live` проверяет, что процесс отвечает; БД не опрашивает. Возвращает HTTP 200 и JSON `{"status":"Healthy","timestamp":"..."}` с UTC timestamp. Старый `GET /api/health` сохранён как alias liveness.
+- **Readiness:** `GET /api/health/ready` проверяет подключение к PostgreSQL (`Database.CanConnectAsync`) с timeout 3 секунды. Healthy: HTTP 200 и `{"status":"Healthy"}`; unhealthy или timeout: HTTP 503 и `{"status":"Unhealthy"}`.
+- **Docker:** healthcheck сервиса `server` в [docker-compose.yml](../docker-compose.yml) и [docker-compose.prod.yml](../docker-compose.prod.yml) вызывает `/api/health/ready` внутри контейнера. [deploy.sh](../scripts/deploy.sh) также проверяет readiness на сервере.
+- **Ручная проверка:** выполните `curl -i http://localhost:5000/api/health/live` и `curl -i http://localhost:5000/api/health/ready` на сервере. Для readiness успешный ответ должен содержать HTTP 200 и `{"status":"Healthy"}`. Неуспешный ответ — HTTP 503 и `{"status":"Unhealthy"}`. Проверку недоступной БД проводите в контролируемом тестовом окружении; production smoke этого сценария не заменяет.
 
 ---
 
@@ -180,8 +181,8 @@ HTTP latency показывается на dashboard, но отдельного 
 ## Деплой и откат
 
 - **Деплой:** остановка сервиса → обновление бинарников/конфигурации → запуск → проверка health.
-- **Откат:** возврат к предыдущей версии бинарников и конфигурации; при изменении схемы БД — наличие миграций с откатом (down) и порядок применения при откате описать отдельно.
+- **Откат приложения не откатывает EF Core migrations.** Перед возвратом старого приложения убедитесь в его совместимости с текущей схемой. Production workflow не выполняет downgrade миграций; возврат БД по pre-deploy dump перезаписывает более новые данные и требует повторного применения последующих удалений/очисток.
 
-**Подробная документация по деплою:** [`.github/DEPLOYMENT.md`](../.github/DEPLOYMENT.md) — настройка GitHub Secrets, автоматический деплой через GitHub Actions, ручной деплой, откат версий.
+**Операторский чеклист беты:** [BETA_RELEASE_RUNBOOK.md](../.github/BETA_RELEASE_RUNBOOK.md) — preflight, deploy, verify и rollback. Подробности CI/CD: [`.github/DEPLOYMENT.md`](../.github/DEPLOYMENT.md); backup/restore: [BACKUP_RESTORE.md](../BACKUP_RESTORE.md).
 
-Чеклист деплоя и отката детализируется в рамках Epic G.
+Операторский порядок действий и проверки перед релизом собраны в runbook CP-031.
