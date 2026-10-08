@@ -200,7 +200,7 @@ describe('PartyQrCode', () => {
     );
 
     await waitFor(() =>
-      expect((screen.getByRole('button', { name: 'Скачать PNG' })).disabled).toBe(
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Скачать PNG' }).disabled).toBe(
         false,
       ),
     );
@@ -225,7 +225,7 @@ describe('PartyQrCode', () => {
     );
 
     await waitFor(() =>
-      expect((screen.getByRole('button', { name: 'Скачать PNG' })).disabled).toBe(
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Скачать PNG' }).disabled).toBe(
         false,
       ),
     );
@@ -246,7 +246,7 @@ describe('PartyQrCode', () => {
     );
 
     await waitFor(() =>
-      expect((screen.getByRole('button', { name: 'Скачать PNG' })).disabled).toBe(
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Скачать PNG' }).disabled).toBe(
         false,
       ),
     );
@@ -269,7 +269,7 @@ describe('PartyQrCode', () => {
     );
 
     await waitFor(() =>
-      expect((screen.getByRole('button', { name: 'Скачать PNG' })).disabled).toBe(
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Скачать PNG' }).disabled).toBe(
         false,
       ),
     );

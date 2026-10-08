@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -120,6 +120,7 @@ describe('CabinetPage parties', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.clearAllMocks();
   });
 
@@ -203,7 +204,7 @@ describe('CabinetPage parties', () => {
     );
     await waitFor(() => expect(mocks.getMyParties).toHaveBeenCalledTimes(2));
     expect(
-      (screen.getByRole('checkbox', { name: 'В каталоге' })).checked,
+      screen.getByRole<HTMLInputElement>('checkbox', { name: 'В каталоге' }).checked,
     ).toBe(true);
   });
 });

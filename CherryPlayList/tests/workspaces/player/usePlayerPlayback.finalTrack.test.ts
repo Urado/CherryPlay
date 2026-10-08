@@ -14,7 +14,7 @@ let mockOnTrackEnded: (() => Promise<void>) | undefined;
 const mockAudioState = {
   currentTrack: mockTrack,
   status: 'ended',
-  loadTrack: jest.fn(async (_track: Track) => undefined),
+  loadTrack: jest.fn(async (_track: Track) => 1),
   play: jest.fn(async () => undefined),
   setOnTrackEnded: jest.fn((callback: (() => Promise<void>) | undefined) => {
     mockOnTrackEnded = callback;
@@ -22,6 +22,9 @@ const mockAudioState = {
   setPauseTimer: jest.fn((_callback: () => void, _delayMs: number) => undefined),
   clearPauseTimer: jest.fn(() => undefined),
   stop: jest.fn(() => undefined),
+  shouldAutoPlayTrack: jest.fn((trackId: string, generation: number) =>
+    trackId === 'track-2' && generation === 1,
+  ),
 };
 
 const mockProjectState = {
@@ -39,7 +42,9 @@ jest.mock('@shared/hooks/usePlaybackPreview', () => ({
 }));
 
 jest.mock('@shared/stores', () => ({
-  usePlayerAudioStore: () => mockAudioState,
+  usePlayerAudioStore: Object.assign(() => mockAudioState, {
+    getState: () => mockAudioState,
+  }),
   useProjectStore: Object.assign(
     (selector: (state: typeof mockProjectState) => unknown) => selector(mockProjectState),
     { getState: () => mockProjectState },
@@ -93,7 +98,8 @@ describe('usePlayerPlayback final track transitions', () => {
       await mockOnTrackEnded?.();
     });
 
-    expect(mockAudioState.loadTrack).toHaveBeenCalledWith(nextTrack);
+    expect(mockAudioState.loadTrack).toHaveBeenCalledWith(nextTrack, true);
+    expect(mockAudioState.shouldAutoPlayTrack).toHaveBeenCalledWith(nextTrack.id, 1);
     expect(options.setCurrentTrack).toHaveBeenCalledWith(nextTrack.id);
     expect(options.setCurrentTrack).not.toHaveBeenCalledWith(null);
     expect(mockAudioState.play).toHaveBeenCalledTimes(1);
