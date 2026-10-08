@@ -5,20 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Краткая инструкция первого запуска CherryPlayList и выхода в эфир на CherryPashkaParty."
+      content="Краткая инструкция первого запуска CherryPashka List и выхода в эфир на CherryPashkaParty."
     />
     <title>Первый запуск — CherryPashkaParty</title>
     <script>
       if (window.location.protocol !== 'file:') {
         window.location.replace(
-          new URL(`/guide/first-run${window.location.search}${window.location.hash}`, window.location.href).href,
+          new URL(
+            `/guide/first-run${window.location.search}${window.location.hash}`,
+            window.location.href,
+          ).href,
         );
       }
     </script>
     <style>
       :root {
         color-scheme: dark;
-        font-family: Inter, "Segoe UI", sans-serif;
+        font-family: Inter, 'Segoe UI', sans-serif;
         background: #101114;
         color: #f4f4f5;
         font-synthesis: none;
@@ -148,12 +151,14 @@
     <main>
       <header>
         <p class="eyebrow">CherryPashkaParty</p>
-        <h1>Первый запуск CherryPlayList</h1>
+        <h1>Первый запуск CherryPashka List</h1>
         <p class="intro">
           Создайте вечеринку, опубликуйте плейлист и поделитесь ссылкой с гостями. Для эфира
           используйте встроенный проигрыватель или подключите AIMP.
         </p>
-        <p class="callout">Для этой инструкции: Windows 10/11 x64. Источник AIMP доступен только в Windows x64.</p>
+        <p class="callout">
+          Для этой инструкции: Windows 10/11 x64. Источник AIMP доступен только в Windows x64.
+        </p>
       </header>
 
       <div class="steps">
@@ -161,33 +166,26 @@
           <h2>1. Скачайте и распакуйте приложение</h2>
           <ol>
             <li>
-              Откройте <a href="https://cherrypashkaparty.ru/download">страницу загрузки CherryPashkaParty</a>
+              Откройте
+              <a href="https://cherrypashkaparty.ru/download"
+                >страницу загрузки CherryPashkaParty</a
+              >
               и скачайте ZIP для Windows.
             </li>
             <li>В Проводнике нажмите ZIP правой кнопкой мыши → <strong>Извлечь всё…</strong>.</li>
             <li>Откройте распакованную папку и запустите <strong>CherryPlayList.exe</strong>.</li>
           </ol>
-          <p class="muted">Приложение распространяется ZIP-архивом: запускать нужно файл из распакованной папки.</p>
+          <p class="muted">
+            Приложение распространяется ZIP-архивом: запускать нужно файл из распакованной папки.
+          </p>
         </section>
 
         <section>
           <h2>2. Выберите проигрыватель</h2>
-          <p>Можно сразу использовать встроенный проигрыватель CherryPlayList. Настройка AIMP — необязательная альтернатива:</p>
-          <ol>
-            <li>
-              Установите <a href="https://www.aimp.ru/?do=download&amp;os=desktop">AIMP x64 с официального сайта</a>.
-              При установке выберите 64-разрядную версию.
-            </li>
-            <li>Закройте AIMP, если он запущен.</li>
-            <li>
-              В распакованной папке CherryPlayList откройте
-              <strong>CherryPlayAimpBridge</strong> и скопируйте
-              <strong>CherryPlayAimpBridge.dll</strong> в подпапку <strong>Plugins</strong> каталога
-              установки AIMP. Если Windows запросит права, подтвердите копирование.
-            </li>
-            <li>Запустите AIMP заново и добавьте в его плейлист музыку.</li>
-          </ol>
-          <p class="muted">Если выбираете встроенный проигрыватель, пропустите этот раздел.</p>
+          <p>
+            Для эфира можно использовать встроенный проигрыватель CherryPashka List или подключить
+            AIMP. Инструкция по подключению AIMP приведена ниже.
+          </p>
         </section>
 
         <section>
@@ -203,13 +201,13 @@
               <span class="choice">Зарегистрироваться</span>.
             </li>
             <li>
-              Вернитесь в CherryPlayList, откройте аккаунт и нажмите
+              Вернитесь в CherryPashka List, откройте аккаунт и нажмите
               <span class="choice">Войти через браузер</span>.
             </li>
             <li>
               В открывшемся браузере выберите <strong>Email / Пароль</strong>, введите email и
               пароль и нажмите <span class="choice">Войти</span>. Браузер вернёт вас в приложение;
-              если этого не произошло, нажмите ссылку возврата в CherryPlayList на странице входа.
+              если этого не произошло, нажмите ссылку возврата в CherryPashka List на странице входа.
             </li>
           </ol>
         </section>
@@ -231,6 +229,10 @@
               <strong>«Обновить на сайте»</strong> или <strong>«Обновить для гостей»</strong>.
               Дождитесь подтверждения синхронизации.
             </li>
+            <li>
+              Скопируйте <strong>URL вечеринки</strong> в её настройках или откройте страницу
+              вечеринки в браузере и возьмите там ссылку или QR-код для гостей.
+            </li>
           </ol>
           <p class="callout">
             Публикация отправляет плейлист на страницу вечеринки. Настройка каталога отдельно
@@ -246,29 +248,46 @@
               в зоне «Проигрывание».
             </li>
             <li>
-              Для AIMP откройте настройки приложения → раздел «Проигрывание» → поле
-              <strong>Источник проигрывания</strong> → выберите <strong>AIMP</strong>. Когда в панели
-              AIMP появится подключение и список треков, нажмите
+              Если настроили AIMP (см. инструкцию ниже), откройте настройки приложения → раздел
+              «Проигрывание» → поле <strong>Источник проигрывания</strong> → выберите
+              <strong>AIMP</strong>. Когда в панели появится подключение и список треков, нажмите
               <span class="choice">Включить онлайн</span>.
             </li>
-            <li>
-              В настройках вечеринки найдите поле <strong>URL вечеринки</strong> и нажмите
-              <span class="choice">Скопировать</span>.
-            </li>
-            <li>Отправьте ссылку гостям. Они откроют её в браузере и увидят страницу вечеринки.</li>
+            <li>Отправьте ссылку или QR-код гостям, чтобы они открыли страницу вечеринки.</li>
           </ol>
           <p class="callout">
-            Гости получают плейлист и состояние воспроизведения. Звук на сайт не передаётся:
-            музыку слышат в AIMP или CherryPlayList у организатора.
+            Гости получают плейлист и состояние воспроизведения. Звук на сайт не передаётся: музыку
+            слышат в AIMP или CherryPashka List у организатора.
           </p>
+        </section>
+
+        <section>
+          <h2>Дополнительно: подключение AIMP</h2>
+          <p>
+            Этот шаг нужен только если вы хотите использовать AIMP вместо встроенного проигрывателя.
+          </p>
+          <ol>
+            <li>
+              Установите <a href="https://www.aimp.ru/?do=download&amp;os=desktop">AIMP x64</a> с
+              официального сайта.
+            </li>
+            <li>Закройте AIMP, если он запущен.</li>
+            <li>
+              В распакованной папке CherryPlayList скопируйте папку
+              <strong>CherryPlayAimpBridge</strong> целиком в подпапку
+              <strong>Plugins</strong> каталога установки AIMP. Если Windows запросит права,
+              подтвердите копирование.
+            </li>
+            <li>Запустите AIMP заново и добавьте музыку в его плейлист.</li>
+          </ol>
         </section>
 
         <section>
           <h2>Если что-то не получилось</h2>
           <ul>
             <li>
-              <strong>Не получается войти:</strong> проверьте email и пароль. Если пароль забыт,
-              на странице входа нажмите «Забыли пароль?» и следуйте инструкции в письме.
+              <strong>Не получается войти:</strong> проверьте email и пароль. Если пароль забыт, на
+              странице входа нажмите «Забыли пароль?» и следуйте инструкции в письме.
             </li>
             <li>
               <strong>Не удаётся создать вечеринку или опубликовать плейлист:</strong> проверьте
@@ -279,28 +298,28 @@
               отображается в её настройках.
             </li>
             <li>
-              <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPlayList
+              <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPashka List
               для Windows x64. Проверьте, что в папке приложения есть
               <strong>CherryPlayAimpBridge</strong> с файлом <strong>manifest.json</strong>, затем
               перезапустите CherryPlayList.
             </li>
             <li>
               <strong>Плагин не подключается:</strong> убедитесь, что запущен AIMP x64, а
-              <strong>CherryPlayAimpBridge.dll</strong> находится в папке Plugins этой установки.
-              В CherryPlayList выберите AIMP в настройке «Источник проигрывания» и дождитесь
-              состояния «Подключено». Если состояние не меняется, полностью перезапустите AIMP.
+              <strong>CherryPlayAimpBridge.dll</strong> находится в папке Plugins этой установки. В
+              CherryPashka List выберите AIMP в настройке «Источник проигрывания» и дождитесь состояния
+              «Подключено». Если состояние не меняется, полностью перезапустите AIMP.
             </li>
             <li>
               <strong>Подключение устарело:</strong> перезапустите AIMP. Если это не помогло,
-              перезапустите CherryPlayList и дождитесь повторного подключения плагина.
+              перезапустите CherryPashka List и дождитесь повторного подключения плагина.
             </li>
             <li>
               <strong>AIMP подключён, но список пуст:</strong> выберите в AIMP активный плейлист с
-              треками и дождитесь обновления списка в CherryPlayList.
+              треками и дождитесь обновления списка в CherryPashka List.
             </li>
             <li>
               <strong>«Включить онлайн» недоступно:</strong> сначала создайте или привяжите
-              вечеринку, включите «Онлайн» в настройках CherryPlayList и дождитесь подключения
+              вечеринку, включите «Онлайн» в настройках CherryPashka List и дождитесь подключения
               плагина и списка треков.
             </li>
           </ul>
@@ -308,9 +327,11 @@
       </div>
 
       <footer>
-        <p>Страница вечеринки доступна гостям по ссылке. Изменения локального плейлиста следует публиковать заново.</p>
+        <p>
+          Страница вечеринки доступна гостям по ссылке. Изменения локального плейлиста следует
+          публиковать заново.
+        </p>
       </footer>
-
     </main>
   </body>
 </html>
