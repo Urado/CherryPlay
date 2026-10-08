@@ -38,7 +38,7 @@ import './App.css';
 const PAGE_TITLES: Record<string, string> = {
   [ROUTES.HOME]: 'Вечеринки',
   ['/download']: 'Скачать приложение',
-  [ROUTES.FIRST_RUN_GUIDE]: 'Первый запуск CherryPlayList',
+  [ROUTES.FIRST_RUN_GUIDE]: 'Первый запуск CherryPashka List',
   [ROUTES.FEEDBACK]: 'Обратная связь',
   [ROUTES.LOGIN]: 'Вход',
   [ROUTES.REGISTER]: 'Регистрация',

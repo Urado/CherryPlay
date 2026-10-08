@@ -197,7 +197,7 @@ export const OAuthCompletePage = () => {
           </div>
           <p className="oauth-complete-page-return-fallback">
             Если приложение не открылось автоматически,{' '}
-            <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
+            <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashka List</a>.
           </p>
         </div>
       </div>

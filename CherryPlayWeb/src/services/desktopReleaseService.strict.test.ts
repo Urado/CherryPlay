@@ -7,8 +7,8 @@ const createRelease = (version: string) => ({
   tag_name: `player-v${version}`,
   assets: [
     {
-      name: `CherryPlayList-${version}-x64.zip`,
-      browser_download_url: `https://github.com/Urado/CherryPlay/releases/download/player-v${version}/CherryPlayList-${version}-x64.zip`,
+      name: `CherryPashkaList-${version}-x64.zip`,
+      browser_download_url: `https://github.com/Urado/CherryPlay/releases/download/player-v${version}/CherryPashkaList-${version}-x64.zip`,
     },
   ],
 });
@@ -54,7 +54,7 @@ describe('getLatestDesktopRelease strict version selection', () => {
   it('rejects GitHub lookalike hosts and non-HTTPS URLs', async () => {
     const release = createRelease('1.2.3');
     release.assets[0].browser_download_url =
-      'https://github.com.attacker.example/Urado/CherryPlay/releases/download/player-v1.2.3/CherryPlayList-1.2.3-x64.zip';
+      'https://github.com.attacker.example/Urado/CherryPlay/releases/download/player-v1.2.3/CherryPashkaList-1.2.3-x64.zip';
     const fetchReleases = vi.fn().mockResolvedValue(createResponse([release]));
 
     await expect(getLatestDesktopRelease(fetchReleases)).rejects.toThrow(
@@ -63,8 +63,8 @@ describe('getLatestDesktopRelease strict version selection', () => {
   });
 
   it.each([
-    'https://github.com/attacker/CherryPlay/releases/download/player-v1.2.3/CherryPlayList-1.2.3-x64.zip',
-    'https://github.com/Urado/OtherProject/releases/download/player-v1.2.3/CherryPlayList-1.2.3-x64.zip',
+    'https://github.com/attacker/CherryPlay/releases/download/player-v1.2.3/CherryPashkaList-1.2.3-x64.zip',
+    'https://github.com/Urado/OtherProject/releases/download/player-v1.2.3/CherryPashkaList-1.2.3-x64.zip',
     'https://github.com/Urado/CherryPlay/releases/download/player-v1.2.3/other.zip',
   ])('rejects GitHub asset URLs outside the expected repository path: %s', async (url) => {
     const release = createRelease('1.2.3');

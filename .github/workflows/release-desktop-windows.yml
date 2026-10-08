@@ -83,7 +83,7 @@ jobs:
         env:
           VERSION: ${{ steps.app-version.outputs.version }}
         run: |
-          $zipPath = "CherryPlayList/release/CherryPlayList-$env:VERSION-x64.zip"
+          $zipPath = "CherryPlayList/release/CherryPashkaList-$env:VERSION-x64.zip"
           if (-not (Test-Path -LiteralPath $zipPath)) {
             throw "Expected Windows zip not found: $zipPath"
           }
@@ -122,7 +122,7 @@ jobs:
             echo "ERROR: Release tag is empty"
             exit 1
           fi
-          ZIP="release/CherryPlayList-${VERSION}-x64.zip"
+          ZIP="release/CherryPashkaList-${VERSION}-x64.zip"
           if [ ! -f "${ZIP}" ]; then
             echo "ERROR: Expected zip not found: ${ZIP}"
             ls -la release/ || true

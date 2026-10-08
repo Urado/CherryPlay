@@ -29,7 +29,7 @@ export const FirstRunGuidePage = () => (
             В Проводнике нажмите ZIP правой кнопкой мыши → <strong>Извлечь всё…</strong>.
           </li>
           <li>
-            Откройте распакованную папку и запустите <strong>CherryPlayList.exe</strong>.
+            Откройте распакованную папку и запустите <strong>CherryPashkaList.exe</strong>.
           </li>
         </ol>
         <p className="first-run-guide-muted">
@@ -131,7 +131,7 @@ export const FirstRunGuidePage = () => (
           </li>
           <li>Закройте AIMP, если он запущен.</li>
           <li>
-            В распакованной папке CherryPlayList скопируйте папку{' '}
+            В распакованной папке CherryPashka List скопируйте папку{' '}
             <strong>CherryPlayAimpBridge</strong> целиком в подпапку <strong>Plugins</strong>{' '}
             каталога установки AIMP. Если Windows запросит права, подтвердите копирование.
           </li>

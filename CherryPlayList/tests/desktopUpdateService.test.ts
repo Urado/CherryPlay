@@ -5,12 +5,12 @@ import {
   getLatestDesktopUpdate,
 } from '../src/shared/services/desktopUpdateService';
 
-const buildRelease = (tagName: string, options?: { prerelease?: boolean; assetVersion?: string; downloadUrl?: string }) => ({
+const buildRelease = (tagName: string, options?: { prerelease?: boolean; assetVersion?: string; assetName?: string; downloadUrl?: string }) => ({
   prerelease: options?.prerelease ?? true,
   tag_name: tagName,
   assets: [
     {
-      name: `CherryPlayList-${options?.assetVersion ?? tagName.replace(/^player-v/, '')}-x64.zip`,
+      name: options?.assetName ?? `CherryPashkaList-${options?.assetVersion ?? tagName.replace(/^player-v/, '')}-x64.zip`,
       browser_download_url: options?.downloadUrl ?? 'https://github.com/Urado/CherryPlay/releases/download/player.zip',
     },
   ],
@@ -40,6 +40,16 @@ describe('desktopUpdateService', () => {
     await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toEqual({
       version: '0.9.0',
     });
+  });
+
+  it('accepts the legacy archive name for an existing release', async () => {
+    const fetchReleases = jest.fn().mockResolvedValue(
+      buildResponse(true, [
+        buildRelease('player-v0.8.0', { assetName: 'CherryPlayList-0.8.0-x64.zip' }),
+      ]),
+    );
+
+    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toEqual({ version: '0.8.0' });
   });
 
   it('checks later GitHub pages before choosing the highest matching release', async () => {

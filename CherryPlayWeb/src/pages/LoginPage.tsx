@@ -35,7 +35,7 @@ const DesktopReturnToAppNotice = ({ returnUrl }: { returnUrl: string }) => {
         </div>
         <p className="login-page-return-fallback">
           Если приложение не открылось автоматически,{' '}
-          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
+          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashka List</a>.
         </p>
       </div>
     </div>
@@ -225,7 +225,7 @@ export const LoginPage = () => {
             </div>
           )}
           <div className="login-page-session-continue login-page-form">
-            <h1 className="login-page-session-continue-title">Вход в CherryPlayList</h1>
+            <h1 className="login-page-session-continue-title">Вход в CherryPashka List</h1>
             <p className="login-page-session-continue-description">
               Вы уже вошли в CherryPlay. Нажмите «Войти», чтобы открыть приложение.
             </p>

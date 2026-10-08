@@ -87,8 +87,8 @@ const getZipRelease = (release: GitHubRelease): DesktopRelease | null => {
   const tagMatch = TAG_PATTERN.exec(release.tag_name);
   if (!tagMatch) return null;
   const version = `${tagMatch[1]}.${tagMatch[2]}.${tagMatch[3]}`;
-  const zipName = `CherryPlayList-${version}-x64.zip`;
-  const asset = release.assets.find((candidate) => candidate.name === zipName);
+  const zipNames = [`CherryPashkaList-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+  const asset = release.assets.find((candidate) => zipNames.includes(candidate.name));
   let downloadUrl: URL;
   try {
     downloadUrl = new URL(asset?.browser_download_url ?? '');
@@ -103,7 +103,7 @@ const getZipRelease = (release: GitHubRelease): DesktopRelease | null => {
     downloadUrl.password !== '' ||
     downloadUrl.port !== '' ||
     downloadUrl.pathname !==
-      `/Urado/CherryPlay/releases/download/player-v${version}/${zipName}` ||
+      `/Urado/CherryPlay/releases/download/player-v${version}/${asset?.name}` ||
     downloadUrl.search !== '' ||
     downloadUrl.hash !== ''
   ) {

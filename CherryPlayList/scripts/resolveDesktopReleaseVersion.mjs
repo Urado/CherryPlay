@@ -72,8 +72,8 @@ export const getLatestDesktopReleaseVersion = async ({
     const match = typeof release.tag_name === 'string' ? playerTagPattern.exec(release.tag_name) : null;
     if (!match) return [];
     const version = `${match[1]}.${match[2]}.${match[3]}`;
-    const expectedZip = `CherryPlayList-${version}-x64.zip`;
-    if (!Array.isArray(release.assets) || !release.assets.some((asset) => asset?.name === expectedZip)) return [];
+    const expectedZips = [`CherryPashkaList-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+    if (!Array.isArray(release.assets) || !release.assets.some((asset) => expectedZips.includes(asset?.name))) return [];
     return [version];
   });
 

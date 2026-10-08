@@ -126,7 +126,7 @@ project_documentation:
         title: "Страницы и маршруты"
 
   cherryplay_list:
-    description: "Desktop Electron — организатор плейлистов"
+    description: "CherryPashka List — десктоп Electron для организатора плейлистов"
     hub: CherryPlayList/docs/README.md
     files:
       - path: CherryPlayList/README.md
@@ -142,7 +142,7 @@ project_documentation:
       - path: CherryPlayList/QUICK_START_BUILD.md
         title: "Быстрый старт сборки"
       - path: CherryPlayList/docs/README.md
-        title: "Оглавление документации CherryPlayList"
+        title: "Оглавление документации CherryPashka List"
       - path: CherryPlayList/docs/web-demo.md
         title: "Веб-демо в браузере"
       - path: CherryPlayList/docs/android-capacitor-brief.md

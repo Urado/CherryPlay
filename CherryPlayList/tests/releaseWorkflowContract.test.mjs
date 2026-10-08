@@ -43,7 +43,7 @@ test('desktop player tags require strict stable SemVer and a prerelease release'
 
 test('latest matching published Desktop release is selected across paginated results', async () => {
   const older = { prerelease: true, draft: false, tag_name: 'player-v0.6.4', assets: [{ name: 'CherryPlayList-0.6.4-x64.zip' }] };
-  const latest = { prerelease: true, draft: false, tag_name: 'player-v0.9.0', assets: [{ name: 'CherryPlayList-0.9.0-x64.zip' }] };
+  const latest = { prerelease: true, draft: false, tag_name: 'player-v0.9.0', assets: [{ name: 'CherryPashkaList-0.9.0-x64.zip' }] };
   const pages = [
     [...Array.from({ length: 99 }, () => ({})), older],
     [
@@ -105,10 +105,11 @@ test('release workflows verify ZIP naming, stable tags, prerelease status, and c
   const serverDockerfile = await readFile(path.join(repositoryRoot, 'CherryPlayServer/Dockerfile'), 'utf8');
   const webDockerfile = await readFile(path.join(repositoryRoot, 'CherryPlayWeb/Dockerfile'), 'utf8');
   const appsettings = await readFile(path.join(repositoryRoot, 'CherryPlayServer/appsettings.json'), 'utf8');
+  const desktopPackage = JSON.parse(await readFile(path.join(repositoryRoot, 'CherryPlayList/package.json'), 'utf8'));
 
   assert.match(desktopWorkflow, /resolveDesktopReleaseVersion\.mjs package\.json package-lock\.json/);
   assert.match(desktopWorkflow, /gh release view "\$\{TAG_NAME\}" --json isPrerelease,isDraft/);
-  assert.match(desktopWorkflow, /ZIP="release\/CherryPlayList-\$\{VERSION\}-x64\.zip"/);
+  assert.match(desktopWorkflow, /ZIP="release\/CherryPashkaList-\$\{VERSION\}-x64\.zip"/);
   assert.match(desktopWorkflow, /\[ ! -f "\$\{ZIP\}" \]/);
   assert.match(serverWorkflow, /\^v\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\$/);
   assert.equal((serverWorkflow.match(/CLIENT_COMPATIBILITY_SERVER_VERSION=\$\{\{ steps\.version\.outputs\.server_version \}\}/g) ?? []).length, 2);
@@ -121,9 +122,11 @@ test('release workflows verify ZIP naming, stable tags, prerelease status, and c
   assert.match(appsettings, /"MinVersion":\s*"0\.6\.4"/);
   assert.match(pullRequestWorkflow, /VERSION="\$\{BASE\}-pr-\$\{PR_NUMBER\}"/);
   assert.match(pullRequestWorkflow, /resolveDesktopReleaseVersion\.mjs --latest-release/);
-  assert.match(pullRequestWorkflow, /ZIP="release\/CherryPlayList-\$\{BASE_VERSION\}-pr-\$\{PR_NUMBER\}-x64\.zip"/);
+  assert.match(pullRequestWorkflow, /ZIP="release\/CherryPashkaList-\$\{BASE_VERSION\}-pr-\$\{PR_NUMBER\}-x64\.zip"/);
   assert.match(pullRequestWorkflow, /mv "\$\{expected\}" "\$\{ZIP\}"/);
   assert.match(pullRequestWorkflow, /zip_path=CherryPlayList\/\$\{ZIP\}/);
   assert.match(pullRequestWorkflow, /ARTIFACT_NAME="\$\{ZIP_NAME%\.zip\}"/);
   assert.match(pullRequestWorkflow, /App package version \*\*\\`\$\{appVersion\}\\`\*\*; ZIP filename \*\*\\`\$\{zipName\}\\`\*\*; Actions artifact \*\*\\`\$\{artifactName\}\\`\*\*/);
+  assert.equal(desktopPackage.build.executableName, 'CherryPashkaList');
+  assert.equal(desktopPackage.build.win.artifactName, 'CherryPashkaList-${version}-${arch}.${ext}');
 });

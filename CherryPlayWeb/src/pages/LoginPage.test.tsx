@@ -143,7 +143,7 @@ describe('LoginPage desktop SSO', () => {
 
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPlayList',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
     });
     expect(fallback.getAttribute('href')).toContain('code=url-code-1');
     expect(screen.queryByTestId('auth-form')).toBeNull();
@@ -221,7 +221,7 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     expect(issueDesktopAuthCodeMock).toHaveBeenCalledTimes(1);
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPlayList',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
     });
     expect(fallback.getAttribute('href')).toContain('code=issued-code');
   });
@@ -263,7 +263,7 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     expect(ensureConsentsMock).toHaveBeenCalledTimes(1);
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPlayList',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
     });
     expect(fallback.getAttribute('href')).toContain('code=form-success-code');
   });

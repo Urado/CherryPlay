@@ -119,6 +119,7 @@
   "build": {
     "appId": "com.cherryplaylist.app",
     "productName": "CherryPashka List",
+    "executableName": "CherryPashkaList",
     "copyright": "Copyright © 2024",
     "directories": {
       "output": "release",
@@ -219,7 +220,7 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "CherryPlayList-${version}-${arch}.${ext}"
+      "artifactName": "CherryPashkaList-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -229,7 +230,7 @@
       "shortcutName": "CherryPashka List"
     },
     "mac": {
-      "artifactName": "CherryPlayList-${version}-${arch}-mac.${ext}",
+      "artifactName": "CherryPashkaList-${version}-${arch}-mac.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -247,14 +248,14 @@
         }
       ],
       "icon": "build/icon.icns",
-      "dmg": {
-        "artifactName": "CherryPlayList-${version}-${arch}.${ext}"
-      },
       "category": "public.app-category.music",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "artifactName": "CherryPlayList-${version}-${arch}.${ext}"
     },
     "linux": {
       "artifactName": "CherryPlayList-${version}-${arch}.${ext}",
