@@ -25,7 +25,9 @@ import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
+import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
+import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import React, { useCallback, useMemo } from 'react';
 
@@ -76,13 +78,9 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
 
   const { plannedEndTime } = settings;
   const isPreparationMode = sessionState.mode === 'preparation';
-  const disabledTracksKey = sessionState.disabledTrackIds.join(',');
-  const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
 
-  // Flatten items for display (supports groups)
   const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
 
-  // Flat track order aligned with on-screen list (for dividers, same as player)
   const tracks = useMemo(() => getTracksFromDisplayItems(displayItems), [displayItems]);
 
   const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
@@ -100,18 +98,15 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     onDurationResolved: updateTrackDuration,
   });
 
-  // Use unified playback preview hook
   const { startPlayback, pausePlayback } = usePlaybackPreview({
     workspaceId: DEFAULT_PLAYLIST_WORKSPACE_ID,
   });
 
-  // Use unified selection with modifiers hook
   const { handleToggleSelect } = useSelectionWithModifiers({
     toggleSelection: toggleItemSelection,
     selectRange,
   });
 
-  // Adapters for drag and drop
   const handleAddTracks = useCallback(
     (newTracks: Omit<Track, 'id'>[]) => {
       addItems(newTracks);
@@ -126,7 +121,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     [addItems],
   );
 
-  // Cross-workspace drag-drop executor
   const { executeMove, executeCopy } = useDragDropExecutor();
   const addNotification = useUIStore((state) => state.addNotification);
 
@@ -148,13 +142,12 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     onAddTracksAt: handleAddTracksAt,
     onTracksAdded: loadDurationsForTracks,
     loadFolderTracks: ipcService.findAudioFilesRecursive.bind(ipcService),
-    // Unified move/copy executors (handles both same-workspace and cross-workspace)
     onMove: executeMove,
     onCopy: executeCopy,
     onError: handleError,
   });
 
-  const { showHourDividers } = useSettingsStore();
+  const { showHourDividers, enableStreaming } = useSettingsStore();
 
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
@@ -214,12 +207,8 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   const showPlannedEndDividerAtListBottom =
     !isPreparationMode && plannedEndTime !== null && plannedEndDividerPosition === null;
 
-  // Интервальные отсечки: те же calculateDividerMarkers / formatDividerLabel, что и в плеере
-  // (таймлайн сессии, паузы, disabled), а не наивная сумма длительностей — см. usePlayerDividers.
-
   const hasSelectedItems = selectedItemIds.size > 0;
 
-  // Total duration aligned with player header: skip disabled tracks, include pause-between gaps.
   const totalDuration = useMemo(() => {
     let total = 0;
     for (let i = 0; i < tracks.length; i++) {
@@ -236,19 +225,16 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       }
     }
     return total;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change (zustand stable isTrackOrGroupDisabled)
   }, [
     tracks,
     isTrackOrGroupDisabled,
     getEffectiveTrackSettings,
-    disabledTracksKey,
-    disabledGroupsKey,
+    sessionState.disabledTrackIds,
+    sessionState.disabledGroupIds,
   ]);
 
-  // Check if can create group (need 2+ consecutive selected items)
   const canCreateGroup = useMemo(() => {
     if (selectedItemIds.size < 2) return false;
-    // Check if selected items are consecutive at root level
     const selectedIndices: number[] = [];
     items.forEach((item, index) => {
       if (selectedItemIds.has(item.id)) {
@@ -256,7 +242,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       }
     });
     if (selectedIndices.length < 2) return false;
-    // Check if consecutive
     for (let i = 1; i < selectedIndices.length; i++) {
       if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
         return false;
@@ -265,7 +250,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     return true;
   }, [selectedItemIds, items]);
 
-  // Handle create group
   const handleCreateGroup = useCallback(() => {
     if (!canCreateGroup) return;
     const selectedIds = Array.from(selectedItemIds);
@@ -277,13 +261,32 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     }
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
-  // Handle clear all
   const handleClearAll = useCallback(() => {
     if (tracks.length === 0) return;
-    newProject();
-  }, [tracks.length, newProject]);
+    void runNewProjectWithSessionGuard({
+      sessionActive: sessionState.mode === 'session',
+      confirmSessionStop: () =>
+        window.confirm(
+          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Создать новый проект?',
+        ),
+      stopLocally: stopLocalPlayerSession,
+      stopServerSession: () => {
+        const linkedParty = useProjectStore.getState().meta.linkedParty;
+        return enableStreaming && linkedParty
+          ? streamingOrchestrator.endServerSession()
+          : Promise.resolve();
+      },
+      resetProject: newProject,
+      onServerStopFailure: () => {
+        addNotification({
+          type: 'error',
+          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
+          duration: 5000,
+        });
+      },
+    });
+  }, [tracks.length, sessionState.mode, newProject, enableStreaming, addNotification]);
 
-  // Keyboard shortcuts for list operations
   useListShortcuts({
     'list.undo': undo,
     'list.redo': redo,
@@ -327,7 +330,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
           const isDraggedItem =
             isItemDragState(playlistDrag.draggedItems) &&
             playlistDrag.draggedItems.allFlatIndices.has(flatIndex);
-          // Подсветка строки и делители: один источник «текущего трека» (демо в подготовке, аудио в сессии), не demo preview из другого workspace
           const isActive = track ? activeTrackIdForDividers === track.id : false;
           const isPlaying = isActive && playerMode.status === 'playing';
 

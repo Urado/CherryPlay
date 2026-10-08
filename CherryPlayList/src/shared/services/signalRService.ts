@@ -502,16 +502,20 @@ class SignalRService {
 
   
   async endSession(partyId: string): Promise<void> {
-    if (!this.isServiceConnected() || !this.connection) {
-      return; 
-    }
-
     try {
-      await this.invokeWithLogging('EndSession', partyId);
-      console.log('[SignalR] Session ended');
+      await this.endSessionOrThrow(partyId);
     } catch (error) {
       console.error('[SignalR] Failed to end session:', error);
     }
+  }
+
+  async endSessionOrThrow(partyId: string): Promise<void> {
+    if (!this.isServiceConnected() || !this.connection) {
+      throw new Error('Нет подключения к серверу');
+    }
+
+    await this.invokeWithLogging('EndSession', partyId);
+    console.log('[SignalR] Session ended');
   }
 
   

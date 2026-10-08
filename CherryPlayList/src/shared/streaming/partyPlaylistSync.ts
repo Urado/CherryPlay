@@ -66,6 +66,13 @@ export function subscribePartyPlaylistSync(
     }
 
     const projectState = useProjectStore.getState();
+    if (
+      Object.prototype.hasOwnProperty.call(projectState, 'meta') &&
+      projectState.meta.linkedParty?.id !== partyId
+    ) {
+      return;
+    }
+
     console.log('[PartyPlaylistSync] Playlist changed:', {
       itemsCount: projectState.items.length,
       timestamp: new Date().toISOString(),

@@ -28,6 +28,8 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
+import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
+import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
 import { isProjectBindingCurrent } from '@shared/utils/projectBinding';
 import { canDiscardUnsavedProjectChanges } from '@shared/utils/projectNavigationGuard';
 import { runProjectSaveTransaction } from '@shared/utils/projectSaveTransaction';
@@ -227,11 +229,35 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleNew = useCallback(() => {
-    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
+    const sessionActive = sessionState.mode === 'session';
+    if (
+      !sessionActive &&
+      !canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)
+    ) {
       return;
     }
-    newProject();
-  }, [meta.isDirty, newProject]);
+    void runNewProjectWithSessionGuard({
+      sessionActive,
+      confirmSessionStop: () =>
+        window.confirm(
+          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Текущий проект и несохранённые изменения будут сброшены. Создать новый проект?',
+        ),
+      stopLocally: stopLocalPlayerSession,
+      stopServerSession: () =>
+        enableStreaming && meta.linkedParty
+          ? streamingOrchestrator.endServerSession()
+          : Promise.resolve(),
+      resetProject: newProject,
+      onServerStopFailure: (error) => {
+        addNotification({
+          type: 'error',
+          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
+          duration: 5000,
+        });
+        console.error('Failed to end server session before creating a new project', error);
+      },
+    });
+  }, [meta.isDirty, meta.linkedParty, sessionState.mode, newProject, enableStreaming, addNotification]);
 
   const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
     setIsSaving(true);

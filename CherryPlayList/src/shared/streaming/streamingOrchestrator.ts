@@ -224,6 +224,18 @@ export class StreamingOrchestrator {
     await signalRService.resetPlaybackState(partyId);
   }
 
+  async endServerSession(): Promise<void> {
+    const partyId = this.config?.partyId;
+    if (!partyId) {
+      return;
+    }
+
+    await signalRService.endSessionOrThrow(partyId);
+    this.liveSessionActive = false;
+    this.stopPositionTicks();
+    await signalRService.resetPlaybackState(partyId);
+  }
+
   publishFullState(): void {
     const partyId = this.config?.partyId;
     if (!partyId || !signalRService.isServiceConnected()) {
