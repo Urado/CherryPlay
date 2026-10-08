@@ -3,10 +3,10 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-07"
+updated: "2026-10-08"
 summary:
-  total_md_files: 116
-  project_documentation: 88
+  total_md_files: 117
+  project_documentation: 89
   not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
@@ -19,6 +19,7 @@ entry_points:
   release_plan: RELEASE_PLAN.md
   beta_scope: ../CherryPlayKanban/BETA_SCOPE.md # Внешний документ продуктового планирования; не входит в счётчики репозитория
   integration: docs/integration/README.md
+  beta_release_runbook: .github/BETA_RELEASE_RUNBOOK.md
   desktop_app: CherryPlayList/docs/README.md
   desktop_full: CherryPlayList/FULL_DOCUMENTATION.md
   desktop_technical: CherryPlayList/TECHNICAL.md
@@ -30,7 +31,7 @@ entry_points:
   add_theme: ADDING_THEME.md
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (87 файлов)
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (88 файлов)
 # Архитектура, контракты, setup, модули, ops — источник правды для разработки.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ project_documentation:
         title: "SSH-туннель для pgAdmin"
       - path: RELEASE_PLAN.md
         title: "План релиза v1 — границы MVP, эпики, критерии готовности"
+      - path: .github/BETA_RELEASE_RUNBOOK.md
+        title: "Операторский runbook беты: деплой и откат"
       - path: TASK_TRACKER.md
         title: "Трекер задач проекта"
       - path: ADDING_THEME.md

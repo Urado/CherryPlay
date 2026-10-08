@@ -2,6 +2,8 @@
 
 Этот документ описывает настройку автоматической сборки Docker образов и деплоя на сервер через GitHub Actions.
 
+Для выпуска и отката по операторскому чеклисту используйте [BETA_RELEASE_RUNBOOK.md](BETA_RELEASE_RUNBOOK.md).
+
 ## Архитектура
 
 1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
@@ -288,18 +290,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPlayList-{appVe
 
 ### Откат на предыдущую версию
 
-Для отката на предыдущую версию:
-
-1. Создайте новый Release с тегом предыдущей версии (например, `v0.9.0`)
-2. Или вручную на сервере:
-   ```bash
-   cd ~/cherryplay-deploy
-   export VERSION=v0.9.0
-   export REGISTRY=ghcr.io
-   export IMAGE_NAME_SERVER=<owner>/<repo>/server
-   export IMAGE_NAME_WEB=<owner>/<repo>/web
-   ./deploy.sh
-   ```
+Выполните [операторский чеклист беты](BETA_RELEASE_RUNBOOK.md#откат-приложения). Откат приложения не отменяет миграции БД; восстановление схемы и данных описано отдельно в [runbook](BETA_RELEASE_RUNBOOK.md#откат-схемы-и-данных-бд).
 
 ## Структура файлов
 
