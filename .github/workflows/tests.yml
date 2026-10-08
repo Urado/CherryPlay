@@ -13,13 +13,13 @@ on:
 jobs:
   detect-integrationdb-changes:
     name: Detect IntegrationDb-relevant changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request'
     outputs:
       should_run: ${{ steps.filter.outputs.integrationdb }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check changed paths
         id: filter
@@ -53,10 +53,10 @@ jobs:
 
   fast-tests:
     name: Fast Tests (.NET)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -79,7 +79,7 @@ jobs:
 
   integrationdb-tests:
     name: IntegrationDb Tests (Postgres)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - detect-integrationdb-changes
       - fast-tests
@@ -109,7 +109,7 @@ jobs:
       CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING: Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=postgres;SslMode=Disable
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
