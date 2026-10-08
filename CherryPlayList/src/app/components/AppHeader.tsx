@@ -28,6 +28,9 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
+import { isProjectBindingCurrent } from '@shared/utils/projectBinding';
+import { canDiscardUnsavedProjectChanges } from '@shared/utils/projectNavigationGuard';
+import { runProjectSaveTransaction } from '@shared/utils/projectSaveTransaction';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
@@ -224,7 +227,7 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleNew = useCallback(() => {
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
       return;
     }
     newProject();
@@ -240,7 +243,7 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const handleLoadDemoProject = useCallback(async () => {
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
       return;
     }
     await loadDemoProjectSafe();
@@ -281,29 +284,41 @@ export const AppHeader: React.FC = () => {
       const projectFile = projectService.serializeProject(stateData);
 
       if (portablePackage) {
-        const { cherryPath } = await projectService.savePortableAs(targetDirectory, projectFile, {
-          notifyOnIpcError: false,
-        });
-        setName(baseName);
-        setFilePath(cherryPath);
-        resetDirty();
-        setLastOpenedPlaylist(cherryPath);
-        setPortableMode(true);
-        setSaveAsModalOpen(false);
+        let cherryPath = '';
+        await runProjectSaveTransaction(
+          async () => {
+            ({ cherryPath } = await projectService.savePortableAs(targetDirectory, projectFile, {
+              notifyOnIpcError: false,
+            }));
+          },
+          () => {
+            setName(baseName);
+            setFilePath(cherryPath);
+            resetDirty();
+            setLastOpenedPlaylist(cherryPath);
+            setPortableMode(true);
+            setSaveAsModalOpen(false);
+          },
+        );
         return;
       }
       const normalizedDir = targetDirectory.replace(/[\\/]+$/, '');
       const path = `${normalizedDir}\\${baseName}.cherry`;
 
-      await projectService.saveProject(path, projectFile, {
-        portableMode: settings.portableMode,
-        notifyOnIpcError: false,
-      });
-      setName(baseName);
-      setFilePath(path);
-      resetDirty();
-      setLastOpenedPlaylist(path);
-      setSaveAsModalOpen(false);
+      await runProjectSaveTransaction(
+        () =>
+          projectService.saveProject(path, projectFile, {
+            portableMode: settings.portableMode,
+            notifyOnIpcError: false,
+          }),
+        () => {
+          setName(baseName);
+          setFilePath(path);
+          resetDirty();
+          setLastOpenedPlaylist(path);
+          setSaveAsModalOpen(false);
+        },
+      );
     },
     [
       items,
@@ -393,7 +408,7 @@ export const AppHeader: React.FC = () => {
       return;
     }
 
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
       return;
     }
 
@@ -419,6 +434,10 @@ export const AppHeader: React.FC = () => {
           partyService
             .getPartyUrl(linkedPartyFromFile.shortCode)
             .then((url) => {
+              const currentProject = useProjectStore.getState();
+              if (!isProjectBindingCurrent(currentProject.meta, path, linkedPartyFromFile.id)) {
+                return;
+              }
               useProjectStore.getState().setLinkedParty({
                 id: linkedPartyFromFile.id,
                 shortCode: linkedPartyFromFile.shortCode,

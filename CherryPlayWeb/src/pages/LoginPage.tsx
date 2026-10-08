@@ -29,13 +29,15 @@ const DESKTOP_SESSION_PROBE_TIMEOUT_MS = 10000;
 const DesktopReturnToAppNotice = ({ returnUrl }: { returnUrl: string }) => {
   return (
     <div className="login-page">
-      <div className="login-page-notice" role="status" aria-live="polite">
-        Возвращаемся в приложение…
+      <div className="login-page-body">
+        <div className="login-page-notice" role="status" aria-live="polite">
+          Возвращаемся в приложение…
+        </div>
+        <p className="login-page-return-fallback">
+          Если приложение не открылось автоматически,{' '}
+          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
+        </p>
       </div>
-      <p className="login-page-return-fallback">
-        Если приложение не открылось автоматически,{' '}
-        <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
-      </p>
     </div>
   );
 };

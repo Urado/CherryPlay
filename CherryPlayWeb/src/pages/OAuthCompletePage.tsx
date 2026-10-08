@@ -191,13 +191,15 @@ export const OAuthCompletePage = () => {
     const returnUrl = buildAuthReturnUrl(returnToRef.current, pendingDesktopCode);
     return (
       <div className="oauth-complete-page">
-        <div className="oauth-complete-page-notice" role="status" aria-live="polite">
-          Возвращаемся в приложение…
+        <div className="oauth-complete-page-body">
+          <div className="oauth-complete-page-notice" role="status" aria-live="polite">
+            Возвращаемся в приложение…
+          </div>
+          <p className="oauth-complete-page-return-fallback">
+            Если приложение не открылось автоматически,{' '}
+            <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
+          </p>
         </div>
-        <p className="oauth-complete-page-return-fallback">
-          Если приложение не открылось автоматически,{' '}
-          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPlayList</a>.
-        </p>
       </div>
     );
   }

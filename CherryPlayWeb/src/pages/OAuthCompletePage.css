@@ -83,7 +83,7 @@
 .oauth-complete-page-return-fallback {
   max-width: 500px;
   width: 100%;
-  margin: 16px auto 0;
+  margin: 0;
   font-size: 14px;
   text-align: center;
   color: var(--text-secondary, #aaa);

@@ -14,9 +14,8 @@ import {
   initializeGlobalHistory,
   initializeProjectStoreHistory,
 } from '@shared/stores';
-import { clearAuthSession } from '@shared/utils/authSession';
+import { clearExpiredAuthSession } from '@shared/utils/authSession';
 import {
-  isTokenExpired,
   isTokenExpiringSoon,
   getDaysUntilExpiration,
 } from '@shared/utils/tokenUtils';
@@ -84,9 +83,8 @@ const App: React.FC = () => {
         return;
       }
 
-      if (isTokenExpired(token)) {
+      if (clearExpiredAuthSession(token)) {
         console.warn('[App] Token expired on startup, clearing auth');
-        clearAuthSession();
         return;
       }
 

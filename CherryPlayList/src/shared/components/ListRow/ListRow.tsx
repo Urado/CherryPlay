@@ -99,7 +99,7 @@ export const ListRow: React.FC<ListRowProps> = ({
     isPlayed ? `${baseClassName}--played` : '',
     isDisabled ? `${baseClassName}--disabled` : '',
     isCurrent ? `${baseClassName}--current` : '',
-    level > 0 ? `${baseClassName}--level-${level}` : '',
+    level === 1 ? `${baseClassName}--level-1` : '',
     className,
   ]
     .filter(Boolean)

@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,7 +13,7 @@ const qrMocks = vi.hoisted(() => ({
   instances: [] as Array<{ options: Record<string, unknown> }>,
   containers: [] as HTMLElement[],
   getRawData: vi.fn<() => Promise<Blob | null>>(),
-  download: vi.fn<() => Promise<void>>(),
+  download: vi.fn<(options: { name: string; extension: string }) => Promise<void>>(),
 }));
 
 vi.mock('qr-code-styling', () => ({
@@ -163,7 +166,7 @@ describe('PartyQrCode', () => {
 
     expect(screen.getByRole('status').textContent).toBe('Готовим QR-код для «Spring Night»…');
     expect(qr.getAttribute('aria-busy')).toBe('true');
-    expect(button.disabled).toBe(true);
+    expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(qrMocks.instances[0].options).toMatchObject({
       data: 'https://example.test/party/night',
       margin: 64,
@@ -176,7 +179,7 @@ describe('PartyQrCode', () => {
       resolveRawData(new Blob(['png']));
     });
 
-    await waitFor(() => expect(button.disabled).toBe(false));
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
     expect(qr.getAttribute('aria-busy')).toBe('false');
     fireEvent.click(button);
     await waitFor(() => expect(qrMocks.download).toHaveBeenCalledWith({
@@ -196,7 +199,11 @@ describe('PartyQrCode', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Скачать PNG' }).disabled).toBe(false));
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: 'Скачать PNG' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
 
     expect(qrMocks.instances[0].options).toMatchObject({
       dotsOptions: { type: 'extra-rounded' },
@@ -217,7 +224,11 @@ describe('PartyQrCode', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Скачать PNG' }).disabled).toBe(false));
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: 'Скачать PNG' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
 
     expect(qrMocks.instances).toHaveLength(1);
     expect(imageFromOptions(qrMocks.instances[0].options)).toContain('fill="#fff8fc"');
@@ -234,7 +245,11 @@ describe('PartyQrCode', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Скачать PNG' }).disabled).toBe(false));
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: 'Скачать PNG' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
 
     expect(qrMocks.instances).toHaveLength(1);
     expect(imageFromOptions(qrMocks.instances[0].options)).toContain('fill="#fff8fc"');
@@ -253,7 +268,11 @@ describe('PartyQrCode', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Скачать PNG' }).disabled).toBe(false));
+    await waitFor(() =>
+      expect((screen.getByRole('button', { name: 'Скачать PNG' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      ),
+    );
 
     expect(qrMocks.instances).toHaveLength(2);
     expect(imageFromOptions(qrMocks.instances[1].options)).toContain('fill="#fff8fc"');

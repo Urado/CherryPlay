@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { partyService } from '../services/partyService';
 import { signalRService } from '../services/signalRService';
 import { useSettingsStore } from '../stores';
 
@@ -126,11 +127,29 @@ export function useStreamingOrchestrator(
       return;
     }
 
-    const interval = setInterval(() => {
-      setHubConnectionState(signalRService.getConnectionState());
-    }, 1000);
+    let active = true;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const refreshConnectionState = async () => {
+      const serverReachable = await partyService.checkServerReachable();
+      if (!active) {
+        return;
+      }
+      setHubConnectionState(
+        serverReachable
+          ? signalRService.getConnectionState()
+          : signalR.HubConnectionState.Disconnected,
+      );
+      timeout = setTimeout(() => void refreshConnectionState(), 2000);
+    };
 
-    return () => clearInterval(interval);
+    void refreshConnectionState();
+
+    return () => {
+      active = false;
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
   }, [orchestratorActive]);
 
   const reconnect = useCallback(() => {

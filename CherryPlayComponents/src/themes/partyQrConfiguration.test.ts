@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ensureQrContrast } from '../components/PartyQrCode/ensureQrContrast';

@@ -481,6 +481,19 @@ export function validateProjectFile(data: unknown): ValidationResult {
       ? validatePartyCustomizationSettings(data.partyCustomizationSettings, warnings)
       : undefined;
 
+  let linkedParty: ProjectFile['linkedParty'];
+  if (data.linkedParty !== undefined) {
+    if (
+      isObject(data.linkedParty) &&
+      isString(data.linkedParty.id) &&
+      isString(data.linkedParty.shortCode)
+    ) {
+      linkedParty = { id: data.linkedParty.id, shortCode: data.linkedParty.shortCode };
+    } else {
+      warnings.push('Invalid linkedParty, omitting');
+    }
+  }
+
   if (errors.length > 0) {
     return {
       isValid: false,
@@ -499,6 +512,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
     trackSettings,
     groupSettings,
     sessionState,
+    ...(linkedParty ? { linkedParty } : {}),
     partyTrackDisplay,
     ...(partyThemeId !== undefined ? { partyThemeId } : {}),
     ...(partyCustomizationSettings !== undefined ? { partyCustomizationSettings } : {}),

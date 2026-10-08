@@ -31,6 +31,8 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
+      react: path.resolve(projectRoot, 'node_modules/react'),
+      'react-dom': path.resolve(projectRoot, 'node_modules/react-dom'),
       '@cherryplay/components': cherryPlayComponentsSrc,
       '@cherryplay/themes': path.resolve(cherryPlayComponentsSrc, 'themes'),
     },
