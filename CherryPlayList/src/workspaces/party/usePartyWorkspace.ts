@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 
 import { useProjectStore, useUIStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import { useMemo } from 'react';
 
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { usePartyPlaylistState } from './usePartyPlaylistState';
@@ -16,6 +16,9 @@ export function usePartyWorkspaceRuntime() {
   const setPartyTrackDisplaySettings = useProjectStore(
     (state) => state.setPartyTrackDisplaySettings,
   );
+  const setPartyCustomizationSettingsInMeta = useProjectStore(
+    (state) => state.setPartyCustomizationSettings,
+  );
 
   const {
     partyName,
@@ -23,6 +26,7 @@ export function usePartyWorkspaceRuntime() {
     partySubtitle,
     themeId,
     customizationSettings,
+    groupDisplayDepth,
     eventDateTime,
     eventEndDateTime,
     description,
@@ -54,6 +58,7 @@ export function usePartyWorkspaceRuntime() {
     setPartyName,
     setPartyTitle,
     setPartySubtitle,
+    setGroupDisplayDepth,
     setEventDateTime,
     setDescription,
     setPlace,
@@ -71,6 +76,7 @@ export function usePartyWorkspaceRuntime() {
     partySubtitle: state.partySubtitle,
     themeId: state.themeId,
     customizationSettings: state.customizationSettings,
+    groupDisplayDepth: state.groupDisplayDepth,
     eventDateTime: state.eventDateTime,
     eventEndDateTime: state.eventEndDateTime,
     description: state.description,
@@ -102,6 +108,7 @@ export function usePartyWorkspaceRuntime() {
     setPartyName: state.setPartyName,
     setPartyTitle: state.setPartyTitle,
     setPartySubtitle: state.setPartySubtitle,
+    setGroupDisplayDepth: state.setGroupDisplayDepth,
     setEventDateTime: state.setEventDateTime,
     setDescription: state.setDescription,
     setPlace: state.setPlace,
@@ -167,6 +174,13 @@ export function usePartyWorkspaceRuntime() {
       meta,
       partyTrackDisplay: playlistState.partyTrackDisplay,
       setPartyTrackDisplaySettings,
+      groupDisplayDepth,
+      setGroupDisplayDepth: (depth: number) => {
+        setGroupDisplayDepth(depth);
+        setPartyCustomizationSettingsInMeta(
+          usePartyWorkspaceStore.getState().customizationSettings,
+        );
+      },
       partyName,
       partyTitle,
       partySubtitle,
@@ -240,6 +254,9 @@ export function usePartyWorkspaceRuntime() {
       meta,
       playlistState.partyTrackDisplay,
       setPartyTrackDisplaySettings,
+      groupDisplayDepth,
+      setGroupDisplayDepth,
+      setPartyCustomizationSettingsInMeta,
       partyName,
       partyTitle,
       partySubtitle,

@@ -1,6 +1,3 @@
-import { useCallback, useState } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
-
 import {
   clampFloatingPosition,
   DEFAULT_EDGE_OFFSET_PX,
@@ -9,6 +6,9 @@ import {
   type FloatingMetrics,
 } from '@app/hooks/demoPlayerFloatingPositioning';
 import type { DemoPlayerFloatingPosition } from '@shared/stores/settingsStore';
+import { useCallback, useState } from 'react';
+import type { KeyboardEvent, PointerEvent } from 'react';
+
 
 interface UseDemoPlayerFloatingDragParams {
   isLayoutBlocked: boolean;

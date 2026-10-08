@@ -10,6 +10,8 @@ export { apiConfig, getApiConfig, clearApiConfigCache } from './apiConfig';
 export {
   getServerUrl,
   getServerUrlSync,
+  getWebBaseUrl,
+  getWebBaseUrlSync,
   setServerUrl,
   clearServerUrlCache,
   initializeServerConfig,

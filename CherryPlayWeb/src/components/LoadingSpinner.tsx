@@ -12,7 +12,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'За�
   return (
     <div className="loading-spinner-container">
       <div className="loading-spinner">
-        <div className="spinner"></div>
+        <div className="spinner" />
       </div>
       {message && <p className="loading-spinner-message">{message}</p>}
     </div>

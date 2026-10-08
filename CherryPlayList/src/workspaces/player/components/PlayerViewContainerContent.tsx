@@ -1,4 +1,3 @@
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
@@ -10,10 +9,15 @@ import { fileService, ipcService } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
 import { useUIStore, useSettingsStore, useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
-import { streamingOrchestrator } from '@shared/streaming';
+import {
+  clearServerPlaylistTrackIds,
+  streamingOrchestrator,
+  useServerPlaylistTrackIdsStore,
+} from '@shared/streaming';
 import { logger } from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import { createTrackWithId } from '@shared/utils/trackFactory';
+import React, { useCallback, useMemo, useEffect } from 'react';
 
 import { useJumpToTrack } from '../hooks/useJumpToTrack';
 import { useLoudnessScanFlow } from '../hooks/useLoudnessScanFlow';
@@ -23,6 +27,7 @@ import { usePlayerSession } from '../hooks/usePlayerSession';
 import { usePlayerStateHelpers } from '../hooks/usePlayerStateHelpers';
 import { useSessionRecovery } from '../hooks/useSessionRecovery';
 import { PlayerView } from '../PlayerView';
+import { stopPlaybackSession } from '../stopPlaybackSession';
 import {
   isTrackOrGroupDisabled as isTrackOrGroupDisabledUtil,
   isTrackActive as isTrackActiveUtil,
@@ -139,7 +144,10 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const linkedParty = useProjectStore((state) => state.meta?.linkedParty ?? null);
 
-  const [serverTrackIds, setServerTrackIds] = useState<Set<string> | null>(null);
+  const serverTrackIds = useServerPlaylistTrackIdsStore((state) => state.serverTrackIds);
+  const setServerTrackIdsFromIdList = useServerPlaylistTrackIdsStore(
+    (state) => state.setFromIdList,
+  );
 
   const disabledTracksKey = sessionState.disabledTrackIds.join(',');
   const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
@@ -212,7 +220,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         markTrackAsPlayed,
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       allTracks,
       isTrackOrGroupDisabled,
@@ -254,23 +261,20 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
   });
 
   const handleResetSession = useCallback(async () => {
-    if (enableStreaming && linkedParty) {
-      try {
-        await streamingOrchestrator.resetServerPlaybackState();
-      } catch (error) {
+    await stopPlaybackSession({
+      shouldResetServer: enableStreaming && Boolean(linkedParty),
+      stopLocally: handleResetSessionFromHook,
+      resetServerPlaybackState: () => streamingOrchestrator.resetServerPlaybackState(),
+      publishFullState: () => streamingOrchestrator.publishFullState(),
+      onServerResetFailure: (error) => {
         logger.error('[PlayerViewContainer] Failed to reset playback state on server', error);
         addNotification({
           type: 'error',
-          message: 'Не удалось сбросить состояние воспроизведения на сервере',
+          message: 'Проигрывание остановлено локально, но сервер не подтвердил сброс трансляции',
           duration: 5000,
         });
-        return;
-      }
-    }
-    handleResetSessionFromHook();
-    if (enableStreaming && linkedParty) {
-      streamingOrchestrator.publishFullState();
-    }
+      },
+    });
   }, [enableStreaming, linkedParty, handleResetSessionFromHook, addNotification]);
 
   useSessionRecovery();
@@ -297,7 +301,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   const handleToggleDisabled = useCallback(
     (itemId: string) => {
-      // Запрещаем отключение текущего трека
       if (itemId === activePlayerTrackId) {
         return;
       }
@@ -383,7 +386,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       isTrackPlayed,
       getAllTracksInOrder,
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isPreparationMode,
     selectedItemIds,
@@ -417,8 +419,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       }
     }
     return total;
-    // isTrackOrGroupDisabled + disabled* keys: see usePlayerDividers (zustand stable refs).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
   }, [
     allTracks,
     isTrackOrGroupDisabled,
@@ -453,8 +453,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     }
   }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
 
-  // Party metadata reads only (getPartyUrl, getPartyState) — no REST playlist PUT here.
-  // Live playlist sync during session: Site Streamer `partyPlaylistSync` via orchestrator.
   useEffect(() => {
     const regenerateUrl = () => {
       const { linkedParty: party } = useProjectStore.getState().meta;
@@ -466,9 +464,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
               .getState()
               .setLinkedParty({ id: party.id, shortCode: party.shortCode, url });
           })
-          .catch(() => {
-            // Keep linkedParty without url; will retry on next mount
-          });
+          .catch(() => undefined);
       }
     };
 
@@ -485,27 +481,28 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
 
   useEffect(() => {
     if (!linkedParty?.shortCode) {
-      setServerTrackIds(null);
+      clearServerPlaylistTrackIds();
       return;
     }
     let cancelled = false;
+    const requestGeneration = useServerPlaylistTrackIdsStore.getState().syncGeneration;
     partyService
       .getPartyState(linkedParty.shortCode)
       .then((state) => {
         if (cancelled) return;
-        if (state?.serverTrackIds?.length) {
-          setServerTrackIds(new Set(state.serverTrackIds));
-        } else {
-          setServerTrackIds(null);
-        }
+        setServerTrackIdsFromIdList(state?.serverTrackIds, requestGeneration);
       })
       .catch(() => {
-        if (!cancelled) setServerTrackIds(null);
+        if (cancelled) return;
+        if (useServerPlaylistTrackIdsStore.getState().syncGeneration > requestGeneration) {
+          return;
+        }
+        clearServerPlaylistTrackIds();
       });
     return () => {
       cancelled = true;
     };
-  }, [linkedParty?.shortCode]);
+  }, [linkedParty?.shortCode, setServerTrackIdsFromIdList]);
 
   return (
     <>

@@ -1,4 +1,3 @@
-import React, { useEffect, useRef } from 'react';
 
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
@@ -15,14 +14,15 @@ import {
   initializeGlobalHistory,
   initializeProjectStoreHistory,
 } from '@shared/stores';
-import { clearAuthSession } from '@shared/utils/authSession';
+import { clearExpiredAuthSession } from '@shared/utils/authSession';
 import {
-  isTokenExpired,
   isTokenExpiringSoon,
   getDaysUntilExpiration,
 } from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
+import React, { useEffect, useRef } from 'react';
 
+import { initializeAuthCallbackBootstrap } from './authCallbackBootstrap';
 import { AccountModal } from './components/AccountModal';
 import { AimpIntegrationController } from './components/AimpIntegrationController';
 import { AppFooter } from './components/AppFooter';
@@ -40,6 +40,7 @@ import { requestExitEditMode } from './hooks/useWorkspaceDirtyGuard';
 
 const App: React.FC = () => {
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const isDemoMode = getAppMode() === 'demo';
   const { supportsAimpWorkspace, supportsRealAuth } = usePlatformCapabilities();
   const appContentRef = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isDemoMode) {
-      document.title = 'CherryPlayList (Demo)';
+      document.title = 'CherryPashka List (Demo)';
     }
 
     initializeProjectStoreHistory();
@@ -58,6 +59,8 @@ const App: React.FC = () => {
     initializeServerConfig().catch((error: unknown) => {
       console.warn('Failed to initialize server config:', error);
     });
+
+    initializeAuthCallbackBootstrap();
 
     initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
       isShortcutsBlocked: () => useLayoutStore.getState().isLayoutEditMode,
@@ -76,14 +79,13 @@ const App: React.FC = () => {
     }
 
     const checkAuthOnStart = async () => {
-      const token = useAuthStore.getState().accessToken;
+      const token = accessToken;
       if (!token) {
         return;
       }
 
-      if (isTokenExpired(token)) {
+      if (clearExpiredAuthSession(token)) {
         console.warn('[App] Token expired on startup, clearing auth');
-        clearAuthSession();
         return;
       }
 
@@ -106,7 +108,7 @@ const App: React.FC = () => {
     };
 
     checkAuthOnStart();
-  }, [isDemoMode, supportsRealAuth]);
+  }, [accessToken, isDemoMode, supportsRealAuth]);
 
   useTrackItemSize();
 

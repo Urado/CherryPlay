@@ -1,0 +1,86 @@
+name: Backend Container Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'CherryPlayServer/**'
+      - 'CherryPlayServer.Tests/**'
+      - 'tools/CherryPlay.LegalPublish/**'
+      - 'scripts/backend-container-integration.ps1'
+      - 'global.json'
+      - 'Directory.Build.*'
+      - '**/Directory.Build.*'
+      - 'NuGet.Config'
+      - '**/NuGet.Config'
+      - '**/*.sln'
+      - '**/*.slnx'
+      - '**/*.csproj'
+      - 'Directory.Packages.props'
+      - '**/Directory.Packages.props'
+      - 'packages.lock.json'
+      - '**/packages.lock.json'
+      - '.dockerignore'
+      - 'docker-compose.integration-tests.yml'
+      - '.github/workflows/backend-container-integration.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'CherryPlayServer/**'
+      - 'CherryPlayServer.Tests/**'
+      - 'tools/CherryPlay.LegalPublish/**'
+      - 'scripts/backend-container-integration.ps1'
+      - 'global.json'
+      - 'Directory.Build.*'
+      - '**/Directory.Build.*'
+      - 'NuGet.Config'
+      - '**/NuGet.Config'
+      - '**/*.sln'
+      - '**/*.slnx'
+      - '**/*.csproj'
+      - 'Directory.Packages.props'
+      - '**/Directory.Packages.props'
+      - 'packages.lock.json'
+      - '**/packages.lock.json'
+      - '.dockerignore'
+      - 'docker-compose.integration-tests.yml'
+      - '.github/workflows/backend-container-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-container-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Container Integration Tests
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: cherryplay-it-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Run fast and container integration tests
+        shell: pwsh
+        run: ./scripts/backend-container-integration.ps1 -ProjectName "$env:COMPOSE_PROJECT_NAME"
+
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-container-integration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/backend-container-integration/
+          if-no-files-found: warn
+          retention-days: 14

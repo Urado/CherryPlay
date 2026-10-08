@@ -3,9 +3,11 @@ import {
   getDefaultCustomizationSettings,
   type PartyThemeId,
 } from '@cherryplay/components';
+import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import { ThemeAccessDto, type PartyLifecycleState } from '@shared/services/partyService';
+import { getGroupDisplayDepth, withGroupDisplayDepth } from './partyWorkspaceUtils';
+
 
 export type PartyPublishSyncParts = {
   playlist: string;
@@ -23,6 +25,7 @@ export interface PartyWorkspaceState {
   partySubtitle: string;
   themeId: PartyThemeId;
   customizationSettings: Record<string, unknown>;
+  groupDisplayDepth: number;
   eventDateTime: string;
   eventEndDateTime: string;
   hasInitialEventEndDateTime: boolean;
@@ -61,6 +64,7 @@ export interface PartyWorkspaceState {
   setPartySubtitle: (value: string) => void;
   setThemeId: (value: PartyThemeId) => void;
   setCustomizationSettings: (value: Record<string, unknown>) => void;
+  setGroupDisplayDepth: (value: number) => void;
   setEventDateTime: (value: string) => void;
   setEventEndDateTime: (value: string) => void;
   setHasInitialEventEndDateTime: (value: boolean) => void;
@@ -100,13 +104,15 @@ export interface PartyWorkspaceState {
 const defaultCustomizationSettings = getDefaultCustomizationSettings(
   DEFAULT_PARTY_THEME_ID,
 ) as Record<string, unknown>;
+const initialCustomizationSettings = withGroupDisplayDepth(defaultCustomizationSettings, 3);
 
 const initialPartyWorkspaceState = {
   partyName: '',
   partyTitle: '',
   partySubtitle: '',
   themeId: DEFAULT_PARTY_THEME_ID,
-  customizationSettings: defaultCustomizationSettings,
+  customizationSettings: initialCustomizationSettings,
+  groupDisplayDepth: 3,
   eventDateTime: '',
   eventEndDateTime: '',
   hasInitialEventEndDateTime: false,
@@ -148,7 +154,31 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   setPartyTitle: (partyTitle) => set({ partyTitle }),
   setPartySubtitle: (partySubtitle) => set({ partySubtitle }),
   setThemeId: (themeId) => set({ themeId }),
-  setCustomizationSettings: (customizationSettings) => set({ customizationSettings }),
+  setCustomizationSettings: (customizationSettings) =>
+    set((state) => {
+      const depth = getGroupDisplayDepth(customizationSettings);
+      return {
+        customizationSettings: withGroupDisplayDepth(
+          customizationSettings,
+          customizationSettings.groupDisplayDepth === undefined
+            ? state.groupDisplayDepth
+            : depth,
+        ),
+        groupDisplayDepth:
+          customizationSettings.groupDisplayDepth === undefined ? state.groupDisplayDepth : depth,
+      };
+    }),
+  setGroupDisplayDepth: (groupDisplayDepth) =>
+    set((state) => {
+      const customizationSettings = withGroupDisplayDepth(
+        state.customizationSettings,
+        groupDisplayDepth,
+      );
+      return {
+        groupDisplayDepth: getGroupDisplayDepth(customizationSettings),
+        customizationSettings,
+      };
+    }),
   setEventDateTime: (eventDateTime) => set({ eventDateTime }),
   setEventEndDateTime: (eventEndDateTime) => set({ eventEndDateTime }),
   setHasInitialEventEndDateTime: (hasInitialEventEndDateTime) =>
@@ -187,7 +217,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
   resetPartyWorkspaceState: () =>
     set((state) => ({
       ...initialPartyWorkspaceState,
-      customizationSettings: { ...defaultCustomizationSettings },
+      customizationSettings: { ...initialCustomizationSettings },
       danceTags: [],
       themeAccess: state.themeAccess,
       isThemeAccessLoading: state.isThemeAccessLoading,

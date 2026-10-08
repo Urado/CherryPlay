@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 
 import {
   useAimpStore,
@@ -7,6 +6,7 @@ import {
   useSettingsStore,
 } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
+import { useMemo } from 'react';
 
 import {
   getPartyEditorActionVisibility,
@@ -37,6 +37,8 @@ export function usePartySettingsFormState(
     meta,
     partyTrackDisplay,
     setPartyTrackDisplaySettings,
+    groupDisplayDepth,
+    setGroupDisplayDepth,
     partyName,
     partyTitle,
     partySubtitle,
@@ -109,7 +111,7 @@ export function usePartySettingsFormState(
   });
   const phase = phaseResult.phase;
   const isBlocked = phaseResult.isBlocked;
-  const editorPhase = isBlocked ? null : (phase ?? 'draft-unlinked');
+  const editorPhase = phase ?? (isBlocked ? null : 'draft-unlinked');
   const showTrackDisplay = shouldShowPartyTrackDisplaySection(phase);
   const showCatalog = editorPhase != null && shouldShowPartyCatalogVisibilityControl(editorPhase);
   const showCopyUrl =
@@ -266,6 +268,8 @@ export function usePartySettingsFormState(
     actionVisibility,
     partyTrackDisplay,
     setPartyTrackDisplaySettings,
+    groupDisplayDepth,
+    setGroupDisplayDepth,
     isListedInCatalog,
     isTogglingCatalogVisibility,
     isCreating,

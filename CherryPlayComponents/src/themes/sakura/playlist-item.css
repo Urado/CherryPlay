@@ -1,11 +1,10 @@
 [data-theme='sakura'] .party-playlist-item {
   background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid rgba(255, 182, 193, 0.25);
-  border-left: 3px solid transparent;
+  border-left: none;
   transition:
     background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+    box-shadow 0.2s ease;
   border-radius: 12px;
   margin: 8px 12px;
   padding: 14px 10px;
@@ -13,39 +12,73 @@
 }
 
 [data-theme='sakura'] .party-playlist-item--group {
-  background: rgba(255, 182, 193, 0.15);
-  border-left: 4px solid rgba(255, 182, 193, 0.4);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(139, 74, 107, 0.18);
+  box-shadow: none;
+  margin: 8px 12px;
+  padding: 0 0 6px;
+  border-radius: 14px;
   font-weight: 700;
+  cursor: default;
+  min-width: 0;
+}
+
+[data-theme='sakura'] .party-playlist-item--group:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+[data-theme='sakura'] .party-playlist-item--group > .party-playlist-item-row {
+  background: rgba(255, 182, 193, 0.16);
+  border: 0;
+  border-left: none;
+  border-radius: 13px 13px 0 0;
+  margin: 0 0 4px;
+  padding: 12px 16px;
+  box-sizing: border-box;
 }
 
 [data-theme='sakura'] .party-playlist-item--track {
   background: rgba(255, 255, 255, 0.88);
+  border-left: none;
 }
 
-[data-theme='sakura'] .party-playlist-item:hover {
+[data-theme='sakura'] .party-playlist-item--track:hover {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 4px 16px rgba(255, 182, 193, 0.4);
-  border-left-color: rgba(255, 182, 193, 0.6);
-}
-
-[data-theme='sakura'] .party-playlist-item--group:hover {
-  background: rgba(255, 182, 193, 0.22);
-  border-left-color: rgba(255, 182, 193, 0.6);
 }
 
 [data-theme='sakura'] .party-playlist-item--current {
   background: rgba(255, 182, 193, 0.25);
   border-left: 5px solid var(--pink-tint, #ffb3d9);
-  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(139, 74, 107, 0.15);
   font-weight: 700;
   padding: 16px 10px;
   margin: 10px 12px;
   border-radius: 16px;
 }
 
+[data-theme='sakura'] .party-playlist-item--played,
+[data-theme='sakura'] .party-playlist-item--disabled {
+  border-left: none;
+  box-shadow: none;
+}
+
 [data-theme='sakura'] .party-playlist-item--played {
   opacity: 0.65;
   color: #b88a9e;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+[data-theme='sakura'] .party-playlist-item--played.party-playlist-item--track,
+[data-theme='sakura'] .party-playlist-item--played.party-playlist-item--group {
+  border-left: none;
+  box-shadow: none;
+}
+
+[data-theme='sakura'] .party-playlist-item-circle[data-state='played'] {
+  background: color-mix(in srgb, var(--text-tertiary, #b88a9e) 28%, #fff);
+  color: var(--text-tertiary, #b88a9e);
+  box-shadow: none;
 }
 
 [data-theme='sakura'] .party-playlist-item--disabled {
@@ -56,8 +89,11 @@
 }
 
 [data-theme='sakura'] .party-playlist-item-row {
+  padding-left: 8px;
   gap: 12px;
-  padding: 8px 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 8px;
 }
 
 [data-theme='sakura'] .party-playlist-item-name {
@@ -69,8 +105,13 @@
   padding-left: 16px;
 }
 
-[data-theme='sakura'] .party-playlist-item--group .party-playlist-item-name {
-  padding-left: 8px;
+[data-theme='sakura']
+  .party-playlist-item--group
+  > .party-playlist-item-row
+  .party-playlist-item-name {
+  padding-left: 0;
+  margin-bottom: 0;
+  font-weight: 700;
 }
 
 [data-theme='sakura'] .party-playlist-item-group-icon {
@@ -85,10 +126,84 @@
   margin-left: 8px;
 }
 
+[data-theme='sakura'] .party-playlist-item-state--placeholder {
+  display: none;
+}
+
+[data-theme='sakura'] .party-playlist-group-summary {
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--text-primary) 80%, var(--bg-primary));
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme='sakura'] .party-playlist-group-summary::before {
+  content: none;
+  display: none;
+}
+
+[data-theme='sakura'] .party-playlist-group-items > .party-playlist-item::before,
+[data-theme='sakura'] .party-playlist-group-items > .party-playlist-item:not(:last-child)::before,
+[data-theme='sakura'] .party-playlist-group-items > .party-playlist-item:last-child::before,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item
+  > .party-playlist-item-row::after,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item
+  > .party-playlist-item-content::after,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item--played::before,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item--played:not(:last-child)::before,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item--played:last-child::before,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item--played
+  > .party-playlist-item-row::after,
+[data-theme='sakura']
+  .party-playlist-group-items
+  > .party-playlist-item--played
+  > .party-playlist-item-content::after {
+  content: none !important;
+  display: none !important;
+  background: transparent !important;
+  width: 0 !important;
+  height: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 480px) {
-  [data-theme='sakura'] .party-playlist-item {
+  [data-theme='sakura'] .party-playlist-item-name-wrap--with-summary {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+
+  [data-theme='sakura'] .party-playlist-group-summary {
+    flex-basis: 100%;
+    font-size: 11px;
+  }
+
+  [data-theme='sakura'] .party-playlist-item--group {
+    margin: 6px;
+    padding-bottom: 4px;
+  }
+
+  [data-theme='sakura'] .party-playlist-item--track {
     margin: 6px 8px;
     padding: 10px 6px;
+  }
+
+  [data-theme='sakura'] .party-playlist-item--group > .party-playlist-item-row {
+    margin: 0 0 4px;
+    padding: 10px;
   }
 
   [data-theme='sakura'] .party-playlist-item--current {
@@ -98,17 +213,15 @@
 
   [data-theme='sakura'] .party-playlist-item-row {
     gap: 10px;
-    padding: 6px 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-right: 6px;
   }
 
   [data-theme='sakura'] .party-playlist-item-name {
     font-size: 14px;
     padding-left: 8px;
     margin-bottom: 4px;
-  }
-
-  [data-theme='sakura'] .party-playlist-item--group .party-playlist-item-name {
-    padding-left: 4px;
   }
 
   [data-theme='sakura'] .party-playlist-item-duration {

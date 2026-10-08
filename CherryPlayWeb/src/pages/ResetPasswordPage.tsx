@@ -8,7 +8,7 @@ import './LoginPage.css';
 
 const REDIRECT_TO_LOGIN_MS = 4000;
 
-export function ResetPasswordPage() {
+export const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -43,4 +43,4 @@ export function ResetPasswordPage() {
       </div>
     </div>
   );
-}
+};

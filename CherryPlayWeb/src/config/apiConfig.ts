@@ -24,24 +24,30 @@ export const API_ENDPOINTS = {
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     CHANGE_PASSWORD: '/auth/change-password',
+    DESKTOP_CODE: '/auth/desktop/code',
     OAUTH_START: (provider: string) => `/auth/${provider}/start`,
     OAUTH_CALLBACK: (provider: string) => `/auth/${provider}/callback`,
+    OAUTH_ACCOUNTS: '/api/oauth/accounts',
   },
 
   ORGANIZER: {
     ME: '/api/organizer/me',
     PROFILE: '/api/organizer/profile',
+    ACCOUNT: '/api/organizer/account',
     SESSION_CHECK: '/api/organizer/session/check',
     THEME_ACCESS: '/api/organizer/me/theme-access',
   },
+
+  ORGANIZERS: '/api/organizers',
+
+  CONSENT_EVENTS: '/api/consent-events',
 
   ADMIN: {
     ORGANIZERS: '/api/admin/organizers',
     ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,
     ORGANIZER_ENTITLEMENTS: (organizerId: string) =>
       `/api/admin/organizers/${organizerId}/entitlements`,
-    ORGANIZER_ENTITLEMENT_BY_ID: (organizerId: string, entitlementId: string) =>
-      `/api/admin/organizers/${organizerId}/entitlements/${entitlementId}`,
+    ENTITLEMENT_REVOCATIONS: '/api/admin/entitlement-revocations',
     THEME_PACKAGES: '/api/admin/theme-packages',
   },
 

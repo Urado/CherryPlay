@@ -1,5 +1,6 @@
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
 using CherryPlayServer.Core.Options;
@@ -54,7 +55,7 @@ public class AuthService : IAuthService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<AuthResult> RegisterAsync(string email, string password, string name)
+    public async Task<AuthResult> RegisterAsync(string email, string password, string name, bool issueToken = true)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(name))
         {
@@ -130,7 +131,13 @@ public class AuthService : IAuthService
             };
             await _emailAccountRepository.AddAsync(emailAccount);
 
-            var token = await GenerateTokenAsync(organizer);
+            string? token = null;
+            if (issueToken)
+            {
+                token = await GenerateTokenAsync(organizer);
+            }
+
+            _logger.LogInformation("Organizer registration succeeded: organizerId={OrganizerId}", organizer.Id);
 
             return new AuthResult(
                 Success: true,
@@ -141,7 +148,7 @@ public class AuthService : IAuthService
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Registration failed: {Message}", ex.Message);
+            _logger.LogWarning("Registration failed validation");
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -151,7 +158,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during registration");
+            _logger.LogError("Error during registration: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -161,7 +168,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<AuthResult> LoginAsync(string email, string password)
+    public async Task<AuthResult> LoginAsync(string email, string password, bool issueToken = true)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
@@ -183,7 +190,7 @@ public class AuthService : IAuthService
             {
                 await Task.Delay(Random.Shared.Next(50, 100));
 
-                _logger.LogWarning("Failed login attempt for email: {Email}", email);
+                _logger.LogWarning("Failed login attempt");
                 return new AuthResult(
                     Success: false,
                     Token: null,
@@ -195,7 +202,7 @@ public class AuthService : IAuthService
             var organizer = await _organizerRepository.GetByIdAsync(emailAccount.OrganizerId);
             if (organizer == null)
             {
-                _logger.LogWarning("Organizer not found for email account: {Email}", email);
+                _logger.LogWarning("Organizer not found for email account");
                 return new AuthResult(
                     Success: false,
                     Token: null,
@@ -207,7 +214,13 @@ public class AuthService : IAuthService
             emailAccount.LastUsedAt = DateTime.UtcNow;
             await _emailAccountRepository.UpdateAsync(emailAccount);
 
-            var token = await GenerateTokenAsync(organizer);
+            string? token = null;
+            if (issueToken)
+            {
+                token = await GenerateTokenAsync(organizer);
+            }
+
+            _logger.LogInformation("Organizer login succeeded: organizerId={OrganizerId}", organizer.Id);
 
             return new AuthResult(
                 Success: true,
@@ -218,7 +231,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for email: {Email}", email);
+            _logger.LogError("Error during login: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new AuthResult(
                 Success: false,
                 Token: null,
@@ -299,16 +312,7 @@ public class AuthService : IAuthService
             }
             catch (Exception ex)
             {
-                _logger.LogError(
-                    ex,
-                    "Failed to send password reset email; token left usable for account {EmailAccountId}",
-                    emailAccount.Id);
-                if (_environment.IsDevelopment())
-                {
-                    _logger.LogInformation(
-                        "Password reset link (Dev fallback after send failure): {ResetUrl}",
-                        resetUrlForFallback);
-                }
+                _logger.LogError("Failed to send password reset email; reset token remains valid: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
 
                 await ApplyForgotPasswordTimingPadAsync(timingStartedAt);
                 return ForgotPasswordGenericSuccess();
@@ -319,13 +323,10 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during forgot-password for email: {Email}", email);
+            _logger.LogError("Error during forgot-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
 
             if (_environment.IsDevelopment() && !string.IsNullOrEmpty(resetUrlForFallback))
             {
-                _logger.LogInformation(
-                    "Password reset link (Dev fallback after unexpected error): {ResetUrl}",
-                    resetUrlForFallback);
                 await ApplyForgotPasswordTimingPadAsync(timingStartedAt);
                 return ForgotPasswordGenericSuccess();
             }
@@ -415,7 +416,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during reset-password");
+            _logger.LogError("Error during reset-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new PasswordMutationResult(
                 Success: false,
                 FailureKind: PasswordMutationFailureKind.InvalidToken,
@@ -479,7 +480,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during change-password for organizer {OrganizerId}", organizerId);
+            _logger.LogError("Error during change-password: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return new PasswordMutationResult(
                 Success: false,
                 FailureKind: PasswordMutationFailureKind.Validation,
@@ -500,7 +501,15 @@ public class AuthService : IAuthService
             userInfo = await _oauthService.ExchangeCodeAsync(provider, code, redirectUri);
         }
 
-        return await GetOrCreateOrganizerFromOAuthUserInfoAsync(provider, userInfo);
+        var organizer = await TryGetOrganizerFromOAuthUserInfoAsync(provider, userInfo);
+        if (organizer is null)
+        {
+            throw new LegalConsentException(
+                LegalConsentFailureKind.Validation,
+                "New OAuth subjects must complete registration via POST /api/oauth/accounts with consents.");
+        }
+
+        return organizer;
     }
 
     public async Task<string> GenerateTokenAsync(Organizer organizer)
@@ -569,39 +578,18 @@ public class AuthService : IAuthService
         );
     }
 
-    private async Task<Organizer> GetOrCreateOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)
+    private async Task<Organizer?> TryGetOrganizerFromOAuthUserInfoAsync(OAuthProvider provider, OAuthUserInfo userInfo)
     {
         var existingAccount = await _oauthAccountRepository.GetByProviderUserIdAsync(provider, userInfo.ProviderUserId);
-        if (existingAccount != null)
+        if (existingAccount is null)
         {
-            existingAccount.LastUsedAt = DateTime.UtcNow;
-            existingAccount.ProviderUserName = userInfo.ProviderUserName;
-            existingAccount.ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl;
-            await _oauthAccountRepository.UpdateAsync(existingAccount);
-            var organizer = await _organizerRepository.GetByIdAsync(existingAccount.OrganizerId);
-            if (organizer != null)
-                return organizer;
+            return null;
         }
 
-        var newOrganizer = new Organizer
-        {
-            Id = Guid.NewGuid(),
-            Name = userInfo.ProviderUserName ?? $"User from {provider}",
-            CreatedAt = DateTime.UtcNow
-        };
-        await _organizerRepository.AddAsync(newOrganizer);
-        var newAccount = new OAuthAccount
-        {
-            Id = Guid.NewGuid(),
-            OrganizerId = newOrganizer.Id,
-            Provider = provider,
-            ProviderUserId = userInfo.ProviderUserId,
-            ProviderUserName = userInfo.ProviderUserName,
-            ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl,
-            CreatedAt = DateTime.UtcNow,
-            LastUsedAt = DateTime.UtcNow
-        };
-        await _oauthAccountRepository.AddAsync(newAccount);
-        return newOrganizer;
+        existingAccount.LastUsedAt = DateTime.UtcNow;
+        existingAccount.ProviderUserName = userInfo.ProviderUserName;
+        existingAccount.ProviderUserAvatarUrl = userInfo.ProviderUserAvatarUrl;
+        await _oauthAccountRepository.UpdateAsync(existingAccount);
+        return await _organizerRepository.GetByIdAsync(existingAccount.OrganizerId);
     }
 }

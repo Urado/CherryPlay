@@ -10,19 +10,15 @@ export interface SpringCrossStepPlaylistItemProps {
   item: PlayerItem;
   index: number;
   level: number;
-  /** 1-based display number excluding cancelled tracks; used for track-type items when not current/played/disabled. */
   trackNumber?: number;
   isCurrent?: boolean;
   isPlayed?: boolean;
   isDisabled?: boolean;
-  /** Called when user clicks or activates the cancel icon on a disabled track; parent controls single 10s popup. */
   onCancelIconClick?: (trackId: string) => void;
-  /** When true, show the 10s "Трек отменён" popup (parent sets this for the active item only). */
   showCancelPopupFromParent?: boolean;
 }
 
-/** Иконка Music как в lucide-react (пример): две ноты, обводка */
-function MusicIcon(): React.ReactElement {
+const MusicIcon = (): React.ReactElement => {
   return (
     <svg
       width="14"
@@ -42,7 +38,7 @@ function MusicIcon(): React.ReactElement {
   );
 }
 
-function CheckIcon(): React.ReactElement {
+const CheckIcon = (): React.ReactElement => {
   return (
     <svg
       width="14"
@@ -60,30 +56,20 @@ function CheckIcon(): React.ReactElement {
   );
 }
 
-/** Иконка отмены (крестик) для отключённого трека */
-function CancelIcon(): React.ReactElement {
+const StopIcon = (): React.ReactElement => {
   return (
     <svg
       width="14"
       height="14"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill="currentColor"
       aria-hidden
     >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
+      <rect x="6" y="6" width="12" height="12" rx="1" />
     </svg>
   );
 }
 
-/**
- * PlaylistItem for spring-cross-step theme.
- * Layout from reference: circle (number / Music / Check), name (+ optional path), duration.
- */
 export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
   item,
   index,
@@ -118,7 +104,7 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
       ? (trackNumber ?? index + 1)
       : null;
   const circleContent = isDisabled ? (
-    <CancelIcon />
+    <StopIcon />
   ) : isCurrent ? (
     <MusicIcon />
   ) : isPlayed ? (

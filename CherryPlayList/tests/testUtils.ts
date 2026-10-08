@@ -25,7 +25,7 @@ export function createMockDragEvent(options: DragEventOptions = {}): DragEvent<E
       ? (Object.assign(nativeFiles, {
           length: nativeFiles.length,
           item: (i: number) => nativeFiles[i] ?? null,
-        }) as FileList)
+        }))
       : undefined;
 
   const mergedTypes =

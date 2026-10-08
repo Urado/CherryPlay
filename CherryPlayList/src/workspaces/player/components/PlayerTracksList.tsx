@@ -1,4 +1,3 @@
-import React, { useState, useCallback, useMemo } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
@@ -18,6 +17,7 @@ import { useProjectStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { getDuplicateTrackIdsFromDisplayItems } from '@shared/utils';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { DraggedItems, InsertPosition } from '../../../modules/dragDrop/types';
 import { TrackActionsDropdown } from '../TrackActionsDropdown';
@@ -27,6 +27,10 @@ import {
   isItemLocked,
   calculateGroupDurationWithPauses,
 } from '../utils/itemStateUtils';
+import {
+  getActionsTargetTrackId,
+  isTrackActionsMenuDisabled,
+} from '../utils/trackActionsMenuUtils';
 
 interface DragAndDropState {
   draggedItems: DraggedItems;
@@ -226,7 +230,6 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
           const isDraggedItem =
             isItemDragState(playerDrag.draggedItems) &&
             playerDrag.draggedItems.allFlatIndices.has(flatIndex);
-          // Demo preview highlight (play button) vs session current track (dividers / isCurrent)
           const isPreviewActive = activeTrackId === item.id;
           const isPlaying = isPreviewActive && playerStatus === 'playing';
           const isCurrentTrack = track?.id === activePlayerTrackId;
@@ -273,6 +276,12 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
             : undefined;
 
           const rowMode = isPreparationMode ? 'player-preparation' : 'player-session';
+          const actionsTargetTrackId = getActionsTargetTrackId(item, getAllTracksInOrder);
+          const trackActionsDisabled = isTrackActionsMenuDisabled(
+            jumpToTrack,
+            actionsTargetTrackId,
+            activePlayerTrackId,
+          );
 
           return (
             <React.Fragment key={item.id}>
@@ -334,13 +343,10 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 onRenameGroup={setGroupName}
                 onUngroupGroup={handleUngroupGroup}
                 settingsButton={renderSettingsButton(item, isGroup)}
-                onTrackActions={
-                  !isGroup
-                    ? (itemId, rect) =>
-                        setTrackActionsDropdown({ trackId: itemId, anchorRect: rect })
-                    : undefined
+                onTrackActions={(itemId, rect) =>
+                  setTrackActionsDropdown({ trackId: itemId, anchorRect: rect })
                 }
-                trackActionsDisabled={!jumpToTrack || item.id === activePlayerTrackId}
+                trackActionsDisabled={trackActionsDisabled}
                 loudnessControls={track ? <TrackLoudnessRowControls track={track} /> : undefined}
               />
               <HourDividerAfterTrackRow

@@ -1,0 +1,42 @@
+{
+  "documentVersion": "1.0",
+  "effectiveFrom": "2026-09-21",
+  "documents": [
+    {
+      "file": "consent.md",
+      "type": "pd_consent_text",
+      "versionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "currentPath": "/consent",
+      "title": "Согласие на обработку персональных данных"
+    },
+    {
+      "file": "terms.md",
+      "type": "terms",
+      "versionId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "currentPath": "/terms",
+      "title": "Пользовательское соглашение"
+    },
+    {
+      "file": "privacy.md",
+      "type": "privacy_policy",
+      "versionId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "currentPath": "/privacy",
+      "title": "Политика обработки персональных данных"
+    },
+    {
+      "file": "cookies.md",
+      "type": "cookie_policy",
+      "versionId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "currentPath": "/cookies",
+      "title": "Политика использования cookie"
+    }
+  ],
+  "operator": {
+    "file": "operator.md",
+    "title": "Реквизиты и контакты",
+    "operatorName": "Калёнов Павел Андреевич",
+    "generalContact": "samurai-94@mail.ru",
+    "privacyContact": "samurai-94@mail.ru",
+    "subjectRequestChannel": "samurai-94@mail.ru — запросы субъекта персональных данных (доступ, уточнение, отзыв согласия, уничтожение)"
+  }
+}

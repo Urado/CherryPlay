@@ -14,7 +14,7 @@ namespace CherryPlayServer.Tests;
 public class PartyServiceThemeVisibilityTests
 {
     [Test]
-    public async Task CreateParty_ThrowsThemeNotEntitled_WhenThemeIsInvisibleAndNotAllowed()
+    public void CreateParty_ThrowsThemeNotEntitled_WhenThemeIsInvisibleAndNotAllowed()
     {
         var service = CreateService(
             themeAccessService: new StubThemeAccessService(new ThemeAccessCheckResult(false, false, [])));
@@ -29,7 +29,7 @@ public class PartyServiceThemeVisibilityTests
     }
 
     [Test]
-    public async Task UpdateParty_ThrowsThemeNotEntitled_WhenChangingToInvisibleTheme()
+    public void UpdateParty_ThrowsThemeNotEntitled_WhenChangingToInvisibleTheme()
     {
         var organizerId = Guid.NewGuid();
         var partyId = Guid.NewGuid();
@@ -135,12 +135,21 @@ public class PartyServiceThemeVisibilityTests
         public Task<Party?> GetByIdAsync(Guid id) => Task.FromResult(_parties.TryGetValue(id, out var party) ? party : null);
         public Task<Party?> GetByShortCodeAsync(string shortCode) => Task.FromResult(_parties.Values.FirstOrDefault(x => x.ShortCode == shortCode));
         public Task<List<Party>> GetAllAsync() => Task.FromResult(_parties.Values.ToList());
+        public Task<IReadOnlyList<PublicPartyCatalogRecord>> GetAllWithOrganizerNamesAsync() =>
+            Task.FromResult<IReadOnlyList<PublicPartyCatalogRecord>>(
+                _parties.Values.Select(party => new PublicPartyCatalogRecord(party, null)).ToList());
         public Task<List<Party>> GetByOrganizerIdAsync(Guid organizerId) => Task.FromResult(_parties.Values.Where(x => x.OrganizerId == organizerId).ToList());
 
         public Task<Party> AddAsync(Party party)
         {
             _parties[party.Id] = party;
             return Task.FromResult(party);
+        }
+
+        public Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit)
+        {
+            _parties[party.Id] = party;
+            return Task.FromResult(true);
         }
 
         public Task UpdateAsync(Party party)

@@ -4,21 +4,49 @@ import type { PartyWorkspaceRuntimeValue } from '../partyWorkspaceRuntimeContext
 import { usePartySettingsFormState } from '../usePartySettingsFormState';
 
 import { PartyCatalogVisibilityControl } from './PartyCatalogVisibilityControl';
+import { PartyConnectivityBanner } from './PartyConnectivityBanner';
 import { PartyEditor } from './PartyEditor';
 import { PartyEditorActions } from './PartyEditorActions';
 import { PartyEditorDangerZone } from './PartyEditorDangerZone';
-import { PartyTrackDisplaySection } from './PartyTrackDisplaySection';
 
 export interface PartySettingsContentProps {
   runtime: PartyWorkspaceRuntimeValue;
   onOpenLinkParty: () => void;
+  onPartyCreated: () => void;
+}
+
+export function notifyParentAfterPartyCreated(created: boolean, onPartyCreated: () => void): void {
+  if (created) {
+    onPartyCreated();
+  }
 }
 
 export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   runtime,
   onOpenLinkParty,
+  onPartyCreated,
 }) => {
   const form = usePartySettingsFormState(runtime);
+
+  const handleCreateParty = () => {
+    void form.handleCreateParty().then((created) => {
+      notifyParentAfterPartyCreated(created, onPartyCreated);
+    });
+  };
+
+  const connectivityBanner = !form.isNetworkEnabledForEditor ? (
+    <PartyConnectivityBanner
+      kind="offline"
+      offlineHint="Включите «Онлайн» в настройках приложения (шестерёнка), а не здесь. Локальное редактирование полей вечеринки доступно."
+    />
+  ) : runtime.serverUnreachable ? (
+    <PartyConnectivityBanner
+      kind="unreachable"
+      isReconnecting={runtime.isReconnecting}
+      lastManualCheckFailed={runtime.lastManualCheckFailed}
+      onManualReconnect={runtime.handleManualReconnect}
+    />
+  ) : null;
 
   const archiveZone = form.archiveAvailability.showDangerSection ? (
     <PartyEditorDangerZone
@@ -58,7 +86,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
           form.isTransitioningLifecycle && form.pendingLifecycleTransition === 'ready'
         }
         secondaryExtra={archiveZone}
-        onCreateParty={form.handleCreateParty}
+        onCreateParty={handleCreateParty}
         onOpenLinkParty={onOpenLinkParty}
         onSaveMetadata={form.handleSaveMetadata}
         onMakeReady={() => void form.handleLifecycleTransition('ready')}
@@ -77,19 +105,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       </div>
     ) : null;
 
-  const aboutActions =
-    form.showTrackDisplay || footerActions ? (
-      <>
-        {form.showTrackDisplay ? (
-          <PartyTrackDisplaySection
-            value={form.partyTrackDisplay}
-            onChange={form.setPartyTrackDisplaySettings}
-            defaultExpanded={true}
-          />
-        ) : null}
-        {footerActions}
-      </>
-    ) : null;
+  const aboutActions = footerActions;
 
   const designPreviewHint = form.editorPhase ? (
     <p className="party-settings-design-hint">
@@ -99,6 +115,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
 
   return (
     <div className="party-settings-content">
+      {connectivityBanner}
       <div className="party-settings-content__body">
         {form.editorPhase ? (
           <PartyEditor

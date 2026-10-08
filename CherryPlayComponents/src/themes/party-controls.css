@@ -1,0 +1,44 @@
+[data-theme='basic'] {
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 82%, #000);
+  --bg-disabled: var(--bg-tertiary);
+  --state-error: #d32f2f;
+  --text-on-accent: var(--text-primary);
+  --ui-border: var(--border-color);
+  --shadow: var(--shadow-black-20);
+}
+
+[data-theme='cyberpunk'] {
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 75%, #fff);
+  --bg-disabled: var(--bg-tertiary);
+  --state-error: #ff1744;
+  --text-on-accent: #0a0a0a;
+  --ui-border: var(--border-color);
+  --shadow: rgba(0, 255, 0, 0.24);
+}
+
+[data-theme='sakura'] {
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 78%, var(--text-primary));
+  --bg-disabled: var(--bg-tertiary);
+  --state-error: #c62854;
+  --text-on-accent: #6f304f;
+  --ui-border: var(--border-color);
+  --shadow: rgba(139, 74, 107, 0.2);
+}
+
+[data-theme='art-deco'] {
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 80%, #fff);
+  --bg-disabled: var(--bg-tertiary);
+  --state-error: #c44536;
+  --text-on-accent: #1a1a1a;
+  --ui-border: var(--border-color);
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='spring-cross-step'] {
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 78%, #000);
+  --bg-disabled: var(--bg-tertiary);
+  --state-error: #b3261e;
+  --text-on-accent: #fff;
+  --ui-border: var(--border-color);
+  --shadow: rgba(26, 60, 26, 0.2);
+}

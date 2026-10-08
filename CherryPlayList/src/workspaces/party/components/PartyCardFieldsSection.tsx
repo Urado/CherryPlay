@@ -4,8 +4,6 @@ import {
   getDefaultTimeZone,
   IconButton,
 } from '@cherryplay/components';
-import React, { useEffect, useRef, useState } from 'react';
-
 import {
   MAX_SHORT_DESCRIPTION_LENGTH,
   MAX_DANCE_TAGS,
@@ -14,6 +12,8 @@ import {
   MAX_EXTERNAL_LINK_TEXT_LENGTH,
   PREDEFINED_DANCE_TAGS,
 } from '@shared/services/partyService';
+import React, { useEffect, useRef, useState } from 'react';
+
 
 import { PartyEditorAccordion } from './PartyEditorAccordion';
 
@@ -124,7 +124,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               onChange={(e) => setCustomInput(e.target.value.slice(0, maxTagLength))}
               onKeyDown={handleCustomKeyDown}
               onBlur={(e) => {
-                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget as Node))
+                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
                   return;
                 collapseTimeoutRef.current = setTimeout(() => setShowCustomInput(false), 150);
               }}

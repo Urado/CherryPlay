@@ -13,6 +13,7 @@ const config: Config = {
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.ts',
     '\\.(jpg|jpeg|png|gif|webp|svg|mp3|wav|flac)$': '<rootDir>/tests/__mocks__/fileMock.ts',
     '^music-metadata$': '<rootDir>/tests/__mocks__/music-metadata.ts',
+    '^.*legal-registry\\.generated\\.json$': '<rootDir>/tests/__mocks__/legalRegistry.cjs',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',

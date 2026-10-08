@@ -1,95 +1,20 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import testingLibrary from 'eslint-plugin-testing-library';
 
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
+import { createCherryPlayEslintConfig, softenPreset } from '@cherryplay/eslint-config';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const testingLibraryReact = testingLibrary.configs['flat/react'];
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  resolvePluginsRelativeTo: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
-
-const baseConfig = {
-  root: true,
-  env: {
-    browser: true,
-    es2023: true,
+export default createCherryPlayEslintConfig({
+  tsconfigRootDir: import.meta.dirname,
+  features: {
+    jsxA11y: true,
   },
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    // Use only main tsconfig to avoid "multiple projects" warning
-    // tsconfig.node.json is still used by import/resolver for vite.config.ts
-    // Note: "Multiple projects" warning may still appear due to TypeScript project references
-    // This is a known limitation and doesn't affect linting functionality
-    project: './tsconfig.json',
-    tsconfigRootDir: __dirname,
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-  },
-  plugins: ['@typescript-eslint', 'react', 'react-hooks', 'import', 'prettier'],
-  settings: {
-    react: {
-      version: 'detect',
+  extraIgnores: ['CherryPlayList/**', 'CherryPlayComponents/**', 'eslint-out.json'],
+  extraConfigs: [
+    {
+      files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}'],
+      plugins: testingLibraryReact.plugins,
+      rules: softenPreset(testingLibraryReact.rules),
     },
-    'import/resolver': {
-      typescript: {
-        project: ['./tsconfig.json', './tsconfig.node.json'],
-        alwaysTryTypes: true,
-      },
-    },
-  },
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'plugin:prettier/recommended',
   ],
-  rules: {
-    'prettier/prettier': 'error',
-    'react/react-in-jsx-scope': 'off',
-    'react/jsx-uses-react': 'off',
-    '@typescript-eslint/no-unused-vars': [
-      'warn',
-      {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-      },
-    ],
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'import/no-unresolved': 'off',
-    'import/order': [
-      'warn',
-      {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true,
-        },
-      },
-    ],
-  },
-};
-
-export default [
-  {
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      'eslint.config.mjs',
-      'vite.config.ts', // Использует tsconfig.node.json через references
-      'scripts/**', // Исключаем скрипты из проверки
-      'vitest.config.ts',
-      'CherryPlayComponents/**', // Исключаем CherryPlayComponents из проверки
-    ],
-  },
-  ...compat.config(baseConfig),
-];
+});

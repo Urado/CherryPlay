@@ -12,6 +12,9 @@ dist-electron/
 build/*.ico
 build/*.icns
 build/*.png
+!build/icon.png
+!build/icon.ico
+!build/icon.icns
 build/*.nsh
 build/*.plist
 build/icon.iconset/

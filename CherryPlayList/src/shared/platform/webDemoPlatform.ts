@@ -1,4 +1,5 @@
 import { type AimpBridgeState, type AimpSourceSelection } from '../contracts/aimp';
+import { buildLegalDocumentUrl, resolveLegalWebBaseUrl } from '../utils/legalLinks';
 
 import { DEMO_UNAVAILABLE_MESSAGE, demoUnavailableResponse } from './demoUnavailable';
 import { createDemoAimpBridgeState } from './fixtures/demoAimpBridge';
@@ -18,6 +19,15 @@ import type { IPCResponse, PlatformAPI } from './types';
 
 const DEMO_DIALOG_FIXTURE_PATH = '/demo/exports/output.cherry';
 const DEMO_OPEN_DIALOG_PATH = DEMO_MUSIC_ROOT;
+function getDemoWebBaseUrl(): string | null {
+  try {
+    const configuredWebBaseUrl = import.meta.env.VITE_WEB_BASE_URL || '';
+    const override = typeof process === 'undefined' ? undefined : process.env.VITE_WEB_BASE_URL;
+    return resolveLegalWebBaseUrl(configuredWebBaseUrl, override);
+  } catch {
+    return null;
+  }
+}
 
 function createDemoAimpApi(): PlatformAPI['aimp'] {
   let state = createDemoAimpBridgeState('cherryPlayPlayer');
@@ -56,7 +66,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -70,7 +80,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : '';
         const stat = statDemoPath(path);
@@ -88,7 +98,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload as { path: unknown }).path === 'string'
+          typeof (payload).path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -144,7 +154,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'name' in payload &&
-          typeof (payload as { name: unknown }).name === 'string'
+          typeof (payload).name === 'string'
             ? (payload as { name: string }).name
             : 'home';
         if (name === 'music') {
@@ -157,18 +167,56 @@ export class WebDemoPlatform implements PlatformAPI {
       }
 
       case 'system:openPath':
-      case 'system:openExternal':
         return Promise.resolve({ success: true });
+
+      case 'system:openExternal': {
+        const url =
+          typeof payload === 'object' &&
+          payload !== null &&
+          'url' in payload &&
+          typeof (payload).url === 'string'
+            ? (payload as { url: string }).url
+            : undefined;
+        if (url && /^https?:\/\//i.test(url)) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+          return Promise.resolve({ success: true });
+        }
+        return Promise.resolve({ success: false, error: 'Invalid external URL' });
+      }
+
+      case 'legal:openDocument': {
+        const document = payload && 'document' in payload ? payload.document : undefined;
+        if (document !== 'privacy' && document !== 'legal') {
+          return Promise.resolve({ success: false, error: 'Invalid legal document' });
+        }
+        const webBaseUrl = getDemoWebBaseUrl();
+        if (!webBaseUrl) {
+          return Promise.resolve({ success: false, error: 'Web base URL is not configured' });
+        }
+
+        const url = buildLegalDocumentUrl(webBaseUrl, document);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return Promise.resolve({ success: true });
+      }
 
       case 'config:getServerUrl':
         return Promise.resolve({ success: true, data: getDemoServerUrl() });
+
+      case 'config:getWebBaseUrl': {
+        const webBaseUrl = getDemoWebBaseUrl();
+        return Promise.resolve(
+          webBaseUrl
+            ? { success: true, data: webBaseUrl }
+            : { success: false, error: 'Web base URL is not configured' },
+        );
+      }
 
       case 'config:setServerUrl': {
         const serverUrl =
           typeof payload === 'object' &&
           payload !== null &&
           'serverUrl' in payload &&
-          typeof (payload as { serverUrl: unknown }).serverUrl === 'string'
+          typeof (payload).serverUrl === 'string'
             ? (payload as { serverUrl: string }).serverUrl
             : getDemoServerUrl();
         setDemoServerUrl(serverUrl);
@@ -189,16 +237,25 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'url' in payload &&
-          typeof (payload as { url: unknown }).url === 'string'
+          typeof (payload).url === 'string'
             ? (payload as { url: string }).url
             : undefined;
         if (url && typeof window !== 'undefined') {
-          window.open(url, '_blank', 'noopener,noreferrer');
+          window.open(url, '_blank');
         }
         return Promise.resolve({ success: true });
       }
 
       case 'auth:registerCallback':
+        return Promise.resolve({
+          success: false,
+          error: DEMO_UNAVAILABLE_MESSAGE,
+        });
+
+      case 'auth:cancelCallback':
+        return Promise.resolve({ success: true });
+
+      case 'auth:deliverCallbackUrl':
         return Promise.resolve({
           success: false,
           error: DEMO_UNAVAILABLE_MESSAGE,

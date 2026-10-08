@@ -1,0 +1,28 @@
+---
+description: Backend integration test types, prerequisites, and canonical container runner
+globs: CherryPlayServer.Tests/**/*.cs,scripts/backend-container-integration.ps1,docker-compose.integration-tests.yml
+alwaysApply: false
+---
+
+# Backend integration tests
+
+Backend integration tests use two different environments. Choose the runner based on the test category.
+
+## IntegrationDb
+
+- Tests in the `IntegrationDb` category use `PostgresContainerFixture`. It starts PostgreSQL through Testcontainers when `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` is absent, or connects to the configured admin endpoint when the override is present.
+- Docker Engine must be running and accessible to the test process when using the default container. No environment variables are required by default; `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` is an optional override for an existing PostgreSQL admin endpoint.
+- A direct `dotnet test` invocation can run these tests when Docker is available. Test category selection comes only from explicit `--filter` arguments; the project does not apply an implicit category filter.
+
+## ContainerIntegration
+
+- `ContainerIntegration` is a mixed category. Database-only tests use `ContainerIntegrationDatabase`; they need `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` pointing to an existing PostgreSQL admin endpoint, where the helper creates and drops isolated databases.
+- HTTP/SignalR tests use `ContainerIntegrationTestContext` to call an already-running backend and connect to its PostgreSQL database for fixture setup and assertions. In addition to the admin connection string, these tests require `CHERRYPLAY_API_BASE_URL` and `CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY`.
+- Direct `dotnet test` does not provision PostgreSQL or the backend. Set only the variables required by the selected test subset and provide the corresponding running services.
+- The canonical local and CI entry point is `scripts/backend-container-integration.ps1`. It builds and starts the isolated Compose backend/PostgreSQL/test-runner environment and supplies those variables inside the integration-test container. Run it from the repository root:
+
+  ```powershell
+  .\scripts\backend-container-integration.ps1
+  ```
+
+- Do not make these tests silently skip when their environment is missing; use the canonical runner for a complete container integration run.

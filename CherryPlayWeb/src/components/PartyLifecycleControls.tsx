@@ -10,6 +10,7 @@ export interface PartyLifecycleControlsProps {
   isTransitioning?: boolean;
   pendingTransition?: PartyLifecycleState | null;
   disabled?: boolean;
+  describedById?: string;
   onTransition: (targetState: PartyLifecycleState) => void;
 }
 
@@ -21,13 +22,14 @@ function isLoadingForTarget(
   return isTransitioning && pendingTransition === target;
 }
 
-export function PartyLifecycleControls({
+export const PartyLifecycleControls = ({
   partyLifecycleState,
   isTransitioning = false,
   pendingTransition = null,
   disabled = false,
+  describedById,
   onTransition,
-}: PartyLifecycleControlsProps) {
+}: PartyLifecycleControlsProps) => {
   const isDisabled = disabled || isTransitioning;
   const showActions =
     partyLifecycleState === 'draft' ||
@@ -35,7 +37,11 @@ export function PartyLifecycleControls({
     partyLifecycleState === 'completed';
 
   return (
-    <section className="cabinet-lifecycle" aria-label="Состояние вечеринки">
+    <section
+      className="cabinet-lifecycle"
+      aria-label="Состояние вечеринки"
+      aria-describedby={describedById}
+    >
       <div className="cabinet-lifecycle-header">
         <span className="cabinet-lifecycle-header-label">Статус вечеринки</span>
         <span className={`cabinet-lifecycle-badge cabinet-lifecycle-badge--${partyLifecycleState}`}>
@@ -99,4 +105,4 @@ export function PartyLifecycleControls({
       )}
     </section>
   );
-}
+};

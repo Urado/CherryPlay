@@ -6,12 +6,12 @@ import '@workspaces/player';
 import '@workspaces/demoPlayer';
 import '@workspaces/party';
 import '@workspaces/aimp';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
 
 import { App } from '@app';
 import { applyDemoStoreDefaults } from '@shared/demo/demoReset';
 import { loadDemoProjectSafe, shouldAutoLoadDemoProject } from '@shared/demo/loadDemoProject';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
 // After workspace imports register stores; persisted data was cleared in bootstrap.
 applyDemoStoreDefaults();

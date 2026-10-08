@@ -1,6 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
-
 import type { LayoutPreset } from '@core/types/workspacePreset';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   DEFAULT_FILEBROWSER_WORKSPACE_ID,

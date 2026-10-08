@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid var(--cp-ui-border);
+  border: 1px solid var(--ui-border, rgba(255, 255, 255, 0.15));
   border-radius: 50%;
   background: var(--bg-secondary, #252525);
   color: var(--text-primary, #fff);
@@ -41,10 +41,10 @@
 }
 
 .cp-playback-control--error {
-  color: var(--color-error, var(--cp-accent-danger, #d32f2f));
+  color: var(--color-error, var(--state-error, #d32f2f));
 }
 
 .cp-playback-control:focus-visible {
-  outline: 2px solid var(--cp-accent-primary);
+  outline: 2px solid var(--accent-primary, #4a9eff);
   outline-offset: 1px;
 }

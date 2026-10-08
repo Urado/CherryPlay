@@ -1,12 +1,3 @@
-/**
- * Radical compact row layout for trackItemSizePreset === 'tiny'.
- * Applied via data-track-item-size on document.documentElement (see useTrackItemSize).
- * Import this file last among component styles so overrides win over player.css / playlist.css.
- *
- * Note: .list-row-* selectors are legacy; most rows use .playlist-item via ListRow.
- */
-
-/* --- Row shells --- */
 [data-track-item-size='tiny'] .playlist-item,
 [data-track-item-size='tiny'] .file-browser-item,
 [data-track-item-size='tiny'] .list-row {
@@ -15,7 +6,6 @@
   border-radius: 2px;
 }
 
-/* --- Play controls (18px — radical but still tappable) --- */
 [data-track-item-size='tiny'] .playlist-item-play,
 [data-track-item-size='tiny'] .cp-playback-control.playlist-item-play,
 [data-track-item-size='tiny'] .file-browser-item-play,
@@ -28,7 +18,6 @@
   min-height: 18px;
 }
 
-/* --- Row icon controls: explicit box beats cp-button--icon-only (32px) --- */
 [data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-action,
 [data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-settings,
 [data-track-item-size='tiny'] .playlist-item .cp-button.playlist-item-more,
@@ -63,7 +52,6 @@
   min-height: 16px;
 }
 
-/* --- Icons inside row controls --- */
 [data-track-item-size='tiny'] .playlist-item .playlist-item-drag-handle .drag-icon,
 [data-track-item-size='tiny'] .playlist-item .playlist-item-checkbox .checkbox-icon,
 [data-track-item-size='tiny'] .list-row .drag-icon,
@@ -92,7 +80,6 @@
   font-size: 7px;
 }
 
-/* --- Text columns --- */
 [data-track-item-size='tiny'] .playlist-item-index,
 [data-track-item-size='tiny'] .list-row-index {
   font-size: 10px;
@@ -112,19 +99,11 @@
   min-width: 40px;
 }
 
-/* --- Action groups --- */
 [data-track-item-size='tiny'] .playlist-item-actions,
 [data-track-item-size='tiny'] .list-row-actions {
   gap: 0;
 }
 
-[data-track-item-size='tiny'] .playlist-item.selected,
-[data-track-item-size='tiny'] .file-browser-item.selected,
-[data-track-item-size='tiny'] .list-row.selected {
-  border-width: 1px;
-}
-
-/* --- File browser --- */
 [data-track-item-size='tiny'] .file-browser-item-icon {
   width: 18px;
   height: 18px;
@@ -135,7 +114,6 @@
   font-size: 16px;
 }
 
-/* Single-line info: folders and files share the same row height */
 [data-track-item-size='tiny'] .file-browser-item-info {
   flex-direction: row;
   align-items: baseline;

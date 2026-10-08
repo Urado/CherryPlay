@@ -202,6 +202,7 @@ public static class DomainToEfMappers
 
     public static void ApplyTo(this OAuthAccount domain, OAuthAccountEf ef)
     {
+        ef.ProviderUserId = domain.ProviderUserId;
         ef.ProviderUserName = domain.ProviderUserName;
         ef.ProviderUserAvatarUrl = domain.ProviderUserAvatarUrl;
         ef.LastUsedAt = domain.LastUsedAt;
@@ -229,6 +230,40 @@ public static class DomainToEfMappers
             CreatedAt = EnsureUtc(domain.CreatedAt),
         };
     }
+
+    public static DesktopAuthCodeEf ToEf(this DesktopAuthCode domain)
+    {
+        return new DesktopAuthCodeEf
+        {
+            Id = domain.Id,
+            OrganizerId = domain.OrganizerId,
+            TokenHash = domain.TokenHash,
+            ExpiresAt = EnsureUtc(domain.ExpiresAt),
+            UsedAt = EnsureUtc(domain.UsedAt),
+            CreatedAt = EnsureUtc(domain.CreatedAt),
+        };
+    }
+
+    public static ConsentEventEf ToEf(this ConsentEvent domain)
+    {
+        return new ConsentEventEf
+        {
+            Id = domain.Id,
+            SubjectId = domain.SubjectId,
+            LegalDocumentVersionId = domain.LegalDocumentVersionId,
+            DocumentHash = domain.DocumentHash,
+            Decision = ToConsentDecisionDb(domain.Decision),
+            EventAt = domain.EventAt.ToUniversalTime(),
+        };
+    }
+
+    private static string ToConsentDecisionDb(ConsentDecision value) => value switch
+    {
+        ConsentDecision.Grant => "grant",
+        ConsentDecision.Withdraw => "withdraw",
+        ConsentDecision.Deny => "deny",
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown consent decision"),
+    };
 
     private static string? SerializeStringList(List<string>? list)
     {

@@ -686,10 +686,13 @@
 }
 
 .account-modal-body {
+  display: flex;
+  flex-direction: column;
   padding: var(--spacing-md);
   padding-bottom: var(--spacing-sm);
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .account-view {
@@ -697,6 +700,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.account-view--login {
+  min-height: 280px;
+  justify-content: stretch;
 }
 
 .account-view-demo-hint {
@@ -709,6 +719,7 @@
   font-size: var(--font-size-secondary);
   color: var(--text-secondary);
   line-height: 1.4;
+  flex-shrink: 0;
 }
 
 .account-view-organizer-details {
@@ -718,33 +729,39 @@
   min-height: 0;
 }
 
-.account-view .auth-form-container {
-  width: 100%;
+.account-view-login-panel {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  justify-content: center;
 }
 
-.account-view .auth-form-container .auth-form-card {
+.account-view-login-panel .auth-form-container {
   width: 100%;
-  max-width: 420px;
-}
-
-.account-view-password-panel {
-  width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 0;
+  padding: 0;
 }
 
-.account-view-password-panel .password-auth-form,
+.account-view-login-panel .auth-form-container .auth-form-card {
+  width: 100%;
+  max-width: none;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
 .account-disclosure .password-auth-form {
   width: 100%;
   max-width: 420px;
-}
-
-.account-view-password-panel .password-auth-form {
-  margin: 0 auto;
 }
 
 .account-view h2 {
@@ -857,6 +874,24 @@
 .account-view-field-value--mono {
   font-family: Consolas, 'Courier New', monospace;
   font-size: var(--font-size-secondary);
+}
+
+.account-view-privacy-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary, #aaa);
+}
+
+.account-view-privacy-link {
+  width: 100%;
+}
+
+.account-view-privacy-external {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.5));
 }
 
 .account-view-logo-wrap {

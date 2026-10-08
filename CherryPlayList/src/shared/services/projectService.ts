@@ -21,26 +21,17 @@ import { validateProjectFile, validateProjectIntegrity } from '@shared/utils/pro
 import { ipcService } from './ipcService';
 import { normalizeLoadedLoudness } from './loudnessService';
 
-/**
- * Returns the directory portion of a file path (cross-platform, handles both / and \).
- */
 function pathDirname(filePath: string): string {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
 }
 
-/**
- * Resolves a relative path against a base directory.
- * Handles `./` and `../` segments without requiring Node.js `path` module.
- */
 function resolveRelativePath(baseDir: string, relativePath: string): string {
-  // Normalize separators to forward slash for processing
   const normalizedBase = baseDir.replace(/\\/g, '/');
   const normalizedRel = relativePath.replace(/\\/g, '/');
 
   const parts = normalizedBase.split('/');
 
-  // Remove trailing empty segment if base ends with /
   if (parts[parts.length - 1] === '') {
     parts.pop();
   }
@@ -60,8 +51,6 @@ function resolveRelativePath(baseDir: string, relativePath: string): string {
 
   const resolved = parts.join('/');
 
-  // Restore Windows drive letter separator if present (e.g. "C:/..." → "C:/...")
-  // and convert back to backslashes on Windows paths
   if (/^[A-Za-z]:/.test(resolved)) {
     return resolved.replace(/\//g, '\\');
   }
@@ -69,9 +58,6 @@ function resolveRelativePath(baseDir: string, relativePath: string): string {
   return resolved;
 }
 
-/**
- * Returns true if the given path is relative (starts with ./ or ../).
- */
 function isRelativePath(filePath: string): boolean {
   return (
     filePath.startsWith('./') ||
@@ -81,10 +67,6 @@ function isRelativePath(filePath: string): boolean {
   );
 }
 
-/**
- * Checks whether a file is accessible on disk.
- * Returns false instead of throwing if the file does not exist.
- */
 async function checkFileExists(filePath: string): Promise<boolean> {
   try {
     await ipcService.statFile(filePath);
@@ -94,10 +76,6 @@ async function checkFileExists(filePath: string): Promise<boolean> {
   }
 }
 
-/**
- * Resolves relative track paths to absolute and marks missing tracks.
- * Mutates tracks in-place; operates on all tracks recursively.
- */
 async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: string): Promise<void> {
   const baseDir = pathDirname(cherryFilePath);
 
@@ -119,9 +97,6 @@ async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: strin
   await processItems(items);
 }
 
-/**
- * Состояние проекта для сериализации/десериализации
- */
 export interface ProjectStateData {
   name: string;
   items: ProjectItem[];
@@ -136,9 +111,6 @@ export interface ProjectStateData {
 }
 
 class ProjectService {
-  /**
-   * Сохранить проект в файл .cherry
-   */
   async saveProject(
     path: string,
     projectFile: ProjectFile,
@@ -157,9 +129,6 @@ class ProjectService {
     );
   }
 
-  /**
-   * Переносимый «пакет»: вложенная папка с именем проекта, .cherry и копия треков (строгий режим в main).
-   */
   async savePortableAs(
     parentPath: string,
     projectFile: ProjectFile,
@@ -176,18 +145,11 @@ class ProjectService {
     );
   }
 
-  /**
-   * Загрузить проект из файла .cherry
-   * Валидирует данные и выводит предупреждения в консоль
-   */
   async loadProject(filePath: string): Promise<ProjectStateData> {
     const rawData = await ipcService.invoke<unknown>('project:load', { path: filePath });
     return this.loadProjectFromData(rawData, filePath);
   }
 
-  /**
-   * Parse and validate project JSON (e.g. fetched demo asset) without IPC.
-   */
   async loadProjectFromData(rawData: unknown, filePath: string): Promise<ProjectStateData> {
     const validationResult = validateProjectFile(rawData);
 
@@ -214,14 +176,10 @@ class ProjectService {
     return projectData;
   }
 
-  /**
-   * Сериализация состояния проекта в формат файла .cherry
-   */
   serializeProject(state: ProjectStateData): ProjectFile {
     const savedItems: SavedProjectItem[] = [];
     const rootItemIds: string[] = [];
 
-    // Рекурсивно собираем все элементы
     const processItems = (items: ProjectItem[]): void => {
       items.forEach((item) => {
         if (isProjectTrack(item)) {
@@ -235,7 +193,6 @@ class ProjectService {
           };
           savedItems.push(savedTrack);
         } else if (isProjectGroup(item)) {
-          // Сначала обрабатываем вложенные элементы
           processItems(item.items);
 
           const savedGroup: SavedProjectGroup = {
@@ -249,15 +206,12 @@ class ProjectService {
       });
     };
 
-    // Обрабатываем все элементы
     processItems(state.items);
 
-    // Собираем ID корневых элементов
     state.items.forEach((item) => {
       rootItemIds.push(item.id);
     });
 
-    // Конвертируем Map в Record
     const trackSettingsRecord: Record<string, ProjectTrackSettings> = {};
     state.trackSettings.forEach((value, key) => {
       trackSettingsRecord[key] = value;
@@ -286,17 +240,12 @@ class ProjectService {
     };
   }
 
-  /**
-   * Десериализация файла .cherry в состояние проекта
-   */
   deserializeProject(file: ProjectFile): ProjectStateData {
-    // Создаем Map для быстрого доступа к элементам по ID
     const itemsById = new Map<string, SavedProjectItem>();
     file.items.forEach((item) => {
       itemsById.set(item.id, item);
     });
 
-    // Рекурсивная функция для восстановления элемента
     const restoreItem = (itemId: string, visited: Set<string>): ProjectItem | null => {
       if (visited.has(itemId)) {
         console.warn(`Circular reference detected for item ${itemId}`);
@@ -343,7 +292,6 @@ class ProjectService {
       return null;
     };
 
-    // Восстанавливаем корневые элементы
     const items: ProjectItem[] = [];
     file.rootItems.forEach((itemId) => {
       const item = restoreItem(itemId, new Set());
@@ -352,7 +300,6 @@ class ProjectService {
       }
     });
 
-    // Конвертируем Record в Map
     const trackSettings = new Map<string, ProjectTrackSettings>();
     if (file.trackSettings) {
       Object.entries(file.trackSettings).forEach(([key, value]) => {

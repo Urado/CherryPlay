@@ -15,6 +15,8 @@
   --accent-primary-light: rgba(255, 182, 193, 0.2);
   --border-color: rgba(255, 182, 193, 0.5);
   --background-opacity: var(--background-opacity, 0.9);
+  --canceled-track: color-mix(in srgb, var(--text-primary) 75%, var(--accent-primary) 25%);
+  --canceled-track-icon: var(--bg-primary);
   background: linear-gradient(135deg, #ffeef5 0%, #fff5f5 50%, #ffeef0 100%);
   color: var(--text-primary);
 }
@@ -30,7 +32,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  /* Базовый PartyDisplay использует clamp; фиксированные 3rem на узких экранах съедали место */
   font-size: clamp(22px, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.02em;

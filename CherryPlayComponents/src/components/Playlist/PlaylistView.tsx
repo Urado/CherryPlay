@@ -55,10 +55,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
           isDisabled={isDisabled}
         >
           {item.type === 'group' && sortedItems && sortedItems.length > 0 && (
-            <div
-              className="party-playlist-group-items"
-              style={{ marginLeft: `${(level + 1) * 20}px` }}
-            >
+            <div className="party-playlist-group-items">
               {sortedItems.map((childItem, childIndex) =>
                 renderItem(childItem, childIndex, level + 1),
               )}

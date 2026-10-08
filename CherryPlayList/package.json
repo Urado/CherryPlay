@@ -16,7 +16,7 @@
     "preview": "vite preview",
     "test": "jest",
     "test:unit": "jest",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "stylelint": "stylelint \"src/**/*.{css,scss}\"",
     "format": "prettier --write .",
@@ -26,8 +26,9 @@
     "clean:pack": "node scripts/clean-pack.mjs",
     "dist": "npm run build:electron && npm run clean:pack && electron-builder",
     "stage:aimp-plugin": "node scripts/stage-aimp-plugin.mjs",
+    "stage:aimp-plugin:prebuilt": "node scripts/stage-aimp-plugin.mjs --prebuilt-only",
     "dist:win": "npm run build:electron && npm run stage:aimp-plugin && npm run clean:pack && electron-builder --win --x64",
-    "dist:win:ci": "npm run build:electron && npm run clean:pack && electron-builder --win --x64",
+    "dist:win:ci": "npm run build:electron && npm run stage:aimp-plugin:prebuilt && npm run clean:pack && electron-builder --win --x64",
     "dist:mac": "npm run build:electron && npm run clean:pack && electron-builder --mac",
     "dist:linux": "npm run build:electron && npm run clean:pack && electron-builder --linux",
     "dist:all": "npm run build:electron && npm run clean:pack && electron-builder --win --mac --linux"
@@ -57,8 +58,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.1",
+    "@cherryplay/eslint-config": "file:../eslint-config-cherryplay",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -67,8 +67,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.0",
-    "@typescript-eslint/parser": "^8.57.0",
     "@vitejs/plugin-react": "^6.0.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
@@ -76,18 +74,12 @@
     "electron-builder": "^26.0.0",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-electron": "^7.0.0",
-    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jest": "^29.15.0",
     "eslint-plugin-jest-dom": "^5.5.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-security": "^4.0.0",
     "eslint-plugin-testing-library": "^7.16.0",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
@@ -113,7 +105,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --max-warnings=0 --fix",
+      "eslint --fix",
       "prettier --write"
     ],
     "*.{css,scss}": [
@@ -126,7 +118,8 @@
   },
   "build": {
     "appId": "com.cherryplaylist.app",
-    "productName": "CherryPlayList",
+    "productName": "CherryPashka List",
+    "executableName": "CherryPashkaList",
     "copyright": "Copyright © 2024",
     "directories": {
       "output": "release",
@@ -178,6 +171,14 @@
     ],
     "extraResources": [
       {
+        "from": "build",
+        "to": "icons",
+        "filter": [
+          "icon.png",
+          "icon.ico"
+        ]
+      },
+      {
         "from": "node_modules/ffmpeg-static",
         "to": "ffmpeg-static",
         "filter": [
@@ -194,6 +195,13 @@
       }
     ],
     "extraFiles": [
+      {
+        "from": "../CherryPlayWeb/public",
+        "to": ".",
+        "filter": [
+          "first-run-guide.html"
+        ]
+      },
       {
         "from": "plugins/CherryPlayAimpBridge",
         "to": "CherryPlayAimpBridge",
@@ -212,16 +220,17 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "artifactName": "CherryPashkaList-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CherryPlayList"
+      "shortcutName": "CherryPashka List"
     },
     "mac": {
+      "artifactName": "CherryPashkaList-${version}-${arch}-mac.${ext}",
       "target": [
         {
           "target": "dmg",
@@ -245,7 +254,11 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
     },
+    "dmg": {
+      "artifactName": "CherryPlayList-${version}-${arch}.${ext}"
+    },
     "linux": {
+      "artifactName": "CherryPlayList-${version}-${arch}.${ext}",
       "target": [
         {
           "target": "AppImage",

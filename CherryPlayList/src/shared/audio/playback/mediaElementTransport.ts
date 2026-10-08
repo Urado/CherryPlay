@@ -44,10 +44,6 @@ type EventHandlers = {
   canplaythrough?: () => void;
 };
 
-/**
- * Shared HTMLAudioElement transport: snapshot, events, load/play/pause/seek lifecycle.
- * Used by {@link WebAudioPlaybackEngine}; backend-specific routing via hooks.
- */
 export class MediaElementTransport {
   readonly id: string;
 
@@ -172,6 +168,7 @@ export class MediaElementTransport {
       return;
     }
 
+    this.updatePosition(this.audioElement.currentTime);
     this.audioElement.pause();
     if (this.snapshot.status === 'playing') {
       this.setStatus('paused');

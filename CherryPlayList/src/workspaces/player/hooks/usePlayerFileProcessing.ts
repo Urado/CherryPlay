@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
 import { fileService, ipcService } from '@shared/services';
 import { useProjectStore } from '@shared/stores';
 import { logger } from '@shared/utils';
 import { createTrackWithId, extractName } from '@shared/utils/trackFactory';
+import { useCallback } from 'react';
 
 const DEFAULT_GROUP_INSERT_INDEX = 0;
 

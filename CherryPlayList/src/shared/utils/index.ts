@@ -85,6 +85,7 @@ export type { AimpAvailability } from './aimpStreamingAdapter';
 export {
   createAimpPublishingPathState,
   formatAimpPublishingPathError,
+  shouldApplyAimpDisconnectedPublishingError,
   startAimpPublishingBridge,
   type AimpPublishingBridgeServices,
   type AimpPublishingPathState,

@@ -8,16 +8,14 @@ import {
   convertLocalDateTimeToUtc,
   getDefaultTimeZone,
 } from '@cherryplay/components';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-
-import { getPlatform, getPlatformCapabilities, isPlatformInitialized } from '@shared/platform';
-import { authService } from '@shared/services/authService';
+import { isDefinitivePartyExistenceError } from '@shared/services/partyExistenceErrors';
 import { partyService } from '@shared/services/partyService';
-import { useAuthStore, useProjectStore, useUIStore } from '@shared/stores';
-import { setAuthSessionToken } from '@shared/utils/authSession';
+import { useProjectStore } from '@shared/stores';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { markPartyPublishFullySynced } from './partyPublishSync';
 import { invalidatePartyThemeAccessLoads, loadPartyThemeAccess } from './partyThemeAccessLoad';
+import { resolveUnlinkedThemeAccessReconnectAction } from './partyThemeAccessReconnect';
 import {
   clearPartyWorkspaceLinkedPartyCheck,
   partyWorkspaceLinkedPartyCheck,
@@ -33,6 +31,7 @@ import {
   REVOKED_THEME_PACKAGE_CODE,
   REVOKED_THEME_PACKAGE_NAME,
   THEME_ACCESS_POLL_INTERVAL_MS,
+  withGroupDisplayDepth,
 } from './partyWorkspaceUtils';
 import { resetPartyWorkspaceForFreshProject } from './resetPartyWorkspaceForFreshProject';
 
@@ -47,76 +46,17 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   const setPartyCustomizationSettingsInMeta = useProjectStore(
     (state) => state.setPartyCustomizationSettings,
   );
-
   const themeId = usePartyWorkspaceStore((state) => state.themeId);
   const themeAccess = usePartyWorkspaceStore((state) => state.themeAccess);
-
-  const { addNotification } = useUIStore((state) => ({
-    addNotification: state.addNotification,
-  }));
-  const authStore = useAuthStore();
-
-  useEffect(() => {
-    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth || isAuth) {
-      return;
-    }
-    if (partyWorkspaceOneShotGuards.oauthCallbackRegistered) {
-      return;
-    }
-    partyWorkspaceOneShotGuards.oauthCallbackRegistered = true;
-
-    let isMounted = true;
-
-    const registerCallback = async () => {
-      try {
-        const result = (await getPlatform().invoke('auth:registerCallback')) as
-          | { success: true; data: { code: string; provider: string } }
-          | { success: false; error: string };
-
-        if (isMounted && result.success && result.data) {
-          const { code, provider } = result.data;
-          try {
-            const deviceId = `desktop-${Date.now()}`;
-            const token = await authService.exchangeCode(code, provider, deviceId);
-            setAuthSessionToken(token);
-
-            const organizerInfo = await authService.getCurrentOrganizer();
-            authStore.setOrganizer({ id: organizerInfo.id, name: organizerInfo.name });
-          } catch (error) {
-            addNotification({
-              type: 'error',
-              message: error instanceof Error ? error.message : 'Ошибка при входе',
-              duration: 5000,
-            });
-          }
-        }
-      } catch (error) {
-        if (isMounted && error instanceof Error && !error.message.includes('timeout')) {
-          console.error('Error handling OAuth callback:', error);
-        }
-      }
-    };
-
-    void registerCallback();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isAuth, authStore, addNotification]);
-
-  const prevIsAuthRef = useRef(isAuth);
-  useEffect(() => {
-    if (prevIsAuthRef.current && !isAuth) {
-      partyWorkspaceOneShotGuards.oauthCallbackRegistered = false;
-    }
-    prevIsAuthRef.current = isAuth;
-  }, [isAuth]);
 
   const handleThemeChange = useCallback(
     (newThemeId: PartyThemeId) => {
       const store = getPartyStore();
       store.setThemeId(newThemeId);
-      const next = getDefaultCustomizationSettings(newThemeId) as Record<string, unknown>;
+      const next = withGroupDisplayDepth(
+        getDefaultCustomizationSettings(newThemeId),
+        store.groupDisplayDepth,
+      );
       store.setCustomizationSettings(next);
       setPartyThemeIdInMeta(newThemeId);
       setPartyCustomizationSettingsInMeta(next);
@@ -124,15 +64,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     [setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
-  const loadThemeAccess = useCallback(async (forceRefresh = false) => {
-    await loadPartyThemeAccess(forceRefresh);
-  }, []);
-
   const handleCustomizationSettingsChange = useCallback(
     (settings: Record<string, unknown>) => {
       const store = getPartyStore();
       store.setCustomizationSettings(settings);
-      setPartyCustomizationSettingsInMeta(settings);
+      setPartyCustomizationSettingsInMeta(getPartyStore().customizationSettings);
       const metaThemeId = useProjectStore.getState().meta.partyThemeId;
       if (!metaThemeId || !isValidPartyTheme(metaThemeId)) {
         setPartyThemeIdInMeta(store.themeId);
@@ -148,6 +84,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     }
   }, []);
 
+  const loadThemeAccessCore = useCallback(async (forceRefresh = false) => {
+    return loadPartyThemeAccess(forceRefresh);
+  }, []);
+
   const loadPartyMetadata = useCallback(
     async (partyId: string) => {
       if (!networkEnabled) {
@@ -156,6 +96,9 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
       const store = getPartyStore();
       try {
         const party = await partyService.getParty(partyId);
+        if (useProjectStore.getState().meta.linkedParty?.id !== partyId) {
+          return false;
+        }
         if (party.name) store.setPartyName(party.name);
         store.setPartyTitle(party.title ?? '');
         store.setPartySubtitle(party.subtitle ?? '');
@@ -204,17 +147,23 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setPartyLifecycleState(party.partyLifecycleState);
         store.setIsListedInCatalog(party.isListedInCatalog ?? false);
         markPartyPublishFullySynced();
+        return true;
       } catch (error) {
         console.error('Failed to load party metadata:', error);
+        return false;
       }
     },
-    [networkEnabled, setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
+    [
+      networkEnabled,
+      setPartyCustomizationSettingsInMeta,
+      setPartyThemeIdInMeta,
+    ],
   );
 
   const restoreAfterReconnect = useCallback(
     async (linkedParty: { id: string; shortCode: string }) => {
       if (!networkEnabled) {
-        return;
+        return 'skipped' as const;
       }
       const store = getPartyStore();
       try {
@@ -222,7 +171,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setPartyVerified(exists);
         if (!exists) {
           store.setServerError(ERROR_PARTY_NOT_FOUND);
-          return;
+          return 'skipped' as const;
         }
         store.setServerError(null);
 
@@ -230,16 +179,22 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         setLinkedParty({ ...linkedParty, url });
 
         if (isAuth) {
-          await loadThemeAccess(true);
+          const themeResult = await loadThemeAccessCore(true);
           await loadPartyMetadata(linkedParty.id);
+          return themeResult;
         }
+        return 'ok' as const;
       } catch (error) {
         console.error('Failed to restore after reconnect:', error);
         store.setServerError(ERROR_CONNECTION);
         store.setPartyVerified(false);
+        if (isDefinitivePartyExistenceError(error)) {
+          return 'skipped' as const;
+        }
+        return 'unreachable' as const;
       }
     },
-    [isAuth, loadPartyMetadata, loadThemeAccess, networkEnabled, setLinkedParty],
+    [isAuth, loadPartyMetadata, loadThemeAccessCore, networkEnabled, setLinkedParty],
   );
 
   const startReconnectTimer = useCallback(
@@ -266,10 +221,16 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
               if (!partyWorkspaceReconnectRefs.cancelled) store.setLastManualCheckFailed(false);
               const activeLinkedParty = partyWorkspaceReconnectRefs.linkedParty;
               if (activeLinkedParty) {
-                await restoreAfterReconnect(activeLinkedParty);
+                const themeResult = await restoreAfterReconnect(activeLinkedParty);
+                if (themeResult === 'unreachable' && !partyWorkspaceReconnectRefs.cancelled) {
+                  startReconnectTimer(activeLinkedParty);
+                }
               } else {
                 if (isAuth) {
-                  await loadThemeAccess(true);
+                  const themeResult = await loadThemeAccessCore(true);
+                  if (themeResult === 'unreachable' && !partyWorkspaceReconnectRefs.cancelled) {
+                    startReconnectTimer(null);
+                  }
                 }
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setServerError(null);
                 if (!partyWorkspaceReconnectRefs.cancelled) store.setPartyVerified(false);
@@ -283,7 +244,28 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         })();
       }, RECONNECT_INTERVAL_MS);
     },
-    [networkEnabled, stopReconnectTimer, restoreAfterReconnect, isAuth, loadThemeAccess],
+    [networkEnabled, stopReconnectTimer, restoreAfterReconnect, isAuth, loadThemeAccessCore],
+  );
+
+  const loadThemeAccess = useCallback(
+    async (forceRefresh = false) => {
+      const result = await loadThemeAccessCore(forceRefresh);
+      const action = resolveUnlinkedThemeAccessReconnectAction({
+        result,
+        hasLinkedParty: useProjectStore.getState().meta.linkedParty != null,
+      });
+      if (action === 'start') {
+        startReconnectTimer(null);
+      } else if (action === 'clear') {
+        const store = getPartyStore();
+        stopReconnectTimer();
+        store.setServerUnreachable(false);
+        store.setServerError(null);
+        store.setLastManualCheckFailed(false);
+      }
+      return result;
+    },
+    [loadThemeAccessCore, startReconnectTimer, stopReconnectTimer],
   );
 
   const checkPartyExists = useCallback(
@@ -305,7 +287,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         console.error('Failed to check party existence:', error);
         store.setServerError(ERROR_CONNECTION);
         store.setPartyVerified(false);
-        return false;
+        throw error;
       } finally {
         store.setIsCheckingParty(false);
       }
@@ -327,7 +309,10 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         store.setServerUnreachable(false);
         store.setLastManualCheckFailed(false);
         if (linkedParty) {
-          await restoreAfterReconnect(linkedParty);
+          const themeResult = await restoreAfterReconnect(linkedParty);
+          if (themeResult === 'unreachable') {
+            startReconnectTimer(linkedParty);
+          }
         } else {
           if (isAuth) {
             await loadThemeAccess(true);
@@ -347,6 +332,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     meta.linkedParty,
     networkEnabled,
     stopReconnectTimer,
+    startReconnectTimer,
     restoreAfterReconnect,
     isAuth,
     loadThemeAccess,
@@ -355,7 +341,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
   const handleRetry = useCallback(async () => {
     const store = getPartyStore();
     if (meta.linkedParty) {
-      await checkPartyExists(meta.linkedParty.id);
+      try {
+        await checkPartyExists(meta.linkedParty.id);
+      } catch {
+        return;
+      }
     } else {
       store.setServerError(null);
       store.setPartyVerified(false);
@@ -414,7 +404,11 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     store.setCustomizationSettings(
       resolveLoadedCustomizationSettings(resolvedThemeId, meta.partyCustomizationSettings),
     );
-  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
+  }, [
+    meta.partyThemeId,
+    meta.partyCustomizationSettings,
+    projectIdentityKey,
+  ]);
 
   useEffect(() => {
     if (networkEnabled) {
@@ -477,10 +471,14 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
           if (!exists) {
             store.setServerError(ERROR_PARTY_NOT_FOUND);
           }
-        } catch {
+        } catch (error) {
           if (seq !== partyWorkspaceLinkedPartyCheck.seq) return;
-          store.setServerUnreachable(true);
           store.setPartyVerified(false);
+          store.setServerError(ERROR_CONNECTION);
+          if (isDefinitivePartyExistenceError(error)) {
+            return;
+          }
+          store.setServerUnreachable(true);
           startReconnectTimer(linkedParty);
         } finally {
           if (seq === partyWorkspaceLinkedPartyCheck.seq) {
@@ -514,15 +512,21 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     if (!networkEnabled) {
       return;
     }
+    if (!meta.linkedParty || !isAuth) {
+      partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+      return;
+    }
     if (meta.linkedParty && isAuth) {
       const partyId = meta.linkedParty.id;
       if (partyWorkspaceOneShotGuards.loadedPartyMetadataId === partyId) {
         return;
       }
       partyWorkspaceOneShotGuards.loadedPartyMetadataId = partyId;
-      void loadPartyMetadata(partyId);
-    } else if (!meta.linkedParty) {
-      partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+      void loadPartyMetadata(partyId).then((loaded) => {
+        if (!loaded && partyWorkspaceOneShotGuards.loadedPartyMetadataId === partyId) {
+          partyWorkspaceOneShotGuards.loadedPartyMetadataId = null;
+        }
+      });
     }
   }, [meta.linkedParty, isAuth, loadPartyMetadata, networkEnabled]);
 

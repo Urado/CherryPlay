@@ -1,6 +1,9 @@
 import {
   Button,
   DEFAULT_PARTY_THEME_ID,
+  FormInput,
+  FormSelect,
+  FormTextarea,
   convertUtcToLocalDateTime,
   convertLocalDateTimeToUtc,
   getDefaultTimeZone,
@@ -36,7 +39,7 @@ export interface CabinetPartyFormProps {
   onCancel: () => void;
 }
 
-export function CabinetPartyForm({
+export const CabinetPartyForm = ({
   editingParty,
   editForm,
   createForm,
@@ -49,7 +52,7 @@ export function CabinetPartyForm({
   onSelectLockedTheme,
   onSubmit,
   onCancel,
-}: CabinetPartyFormProps) {
+}: CabinetPartyFormProps) => {
   const isEditing = !!editingParty;
   const grantedThemes = new Set(themeAccess?.grantedThemeIds ?? []);
   const lockedByThemeId = new Map(
@@ -128,9 +131,9 @@ export function CabinetPartyForm({
           отдельно от статуса.
         </p>
       )}
-      <label>
-        Название *
-        <input
+      <FormInput
+          label="Название *"
+          id="party-name"
           type="text"
           value={isEditing ? (editForm.name ?? '') : createForm.name}
           onChange={(e) =>
@@ -141,10 +144,9 @@ export function CabinetPartyForm({
           required
           maxLength={200}
         />
-      </label>
-      <label>
-        Заголовок (на экране)
-        <input
+      <FormInput
+          label="Заголовок (на экране)"
+          id="party-title"
           type="text"
           value={isEditing ? (editForm.title ?? '') : (createForm.title ?? '')}
           onChange={(e) =>
@@ -155,10 +157,9 @@ export function CabinetPartyForm({
           placeholder="Если пусто — показывается название"
           maxLength={500}
         />
-      </label>
-      <label>
-        Подзаголовок
-        <input
+      <FormInput
+          label="Подзаголовок"
+          id="party-subtitle"
           type="text"
           value={isEditing ? (editForm.subtitle ?? '') : (createForm.subtitle ?? '')}
           onChange={(e) =>
@@ -169,10 +170,9 @@ export function CabinetPartyForm({
           placeholder="Строка под заголовком"
           maxLength={500}
         />
-      </label>
-      <label>
-        Тема
-        <select
+      <FormSelect
+          label="Тема"
+          id="party-theme"
           value={selectedThemeId}
           onChange={(e) => {
             const nextThemeId = e.target.value;
@@ -192,8 +192,7 @@ export function CabinetPartyForm({
               {lockedByThemeId.has(opt.value) ? `🔒 ${opt.label}` : opt.label}
             </option>
           ))}
-        </select>
-      </label>
+        </FormSelect>
       {themeAccessError && <div className="cabinet-error">{themeAccessError}</div>}
       {!!themeAccess?.visibleLockedThemes.length && (
         <div className="cabinet-theme-locked-list">
@@ -213,9 +212,9 @@ export function CabinetPartyForm({
             ))}
         </div>
       )}
-      <label>
-        Таймзона
-        <select
+      <FormSelect
+          label="Таймзона"
+          id="party-time-zone"
           value={
             isEditing
               ? (editForm.timeZone ?? getDefaultTimeZone())
@@ -253,19 +252,17 @@ export function CabinetPartyForm({
               {tz.label}
             </option>
           ))}
-        </select>
-      </label>
-      <label>
-        Дата мероприятия (по местному времени выбранной таймзоны)
-        <input
+        </FormSelect>
+      <FormInput
+          label="Дата мероприятия (по местному времени выбранной таймзоны)"
+          id="party-event-date"
           type="datetime-local"
           value={displayedDateTime}
           onChange={(e) => handleDateTimeChange(e.target.value)}
         />
-      </label>
-      <label>
-        Описание
-        <textarea
+      <FormTextarea
+          label="Описание"
+          id="party-description"
           value={isEditing ? (editForm.description ?? '') : (createForm.description ?? '')}
           onChange={(e) =>
             isEditing
@@ -274,10 +271,9 @@ export function CabinetPartyForm({
           }
           rows={3}
         />
-      </label>
-      <label>
-        Место
-        <input
+      <FormInput
+          label="Место"
+          id="party-place"
           type="text"
           value={isEditing ? (editForm.place ?? '') : (createForm.place ?? '')}
           onChange={(e) =>
@@ -286,10 +282,9 @@ export function CabinetPartyForm({
               : setCreateForm((f) => ({ ...f, place: e.target.value }))
           }
         />
-      </label>
-      <label>
-        Город
-        <input
+      <FormInput
+          label="Город"
+          id="party-city"
           type="text"
           value={isEditing ? (editForm.city ?? '') : (createForm.city ?? '')}
           onChange={(e) =>
@@ -298,10 +293,9 @@ export function CabinetPartyForm({
               : setCreateForm((f) => ({ ...f, city: e.target.value }))
           }
         />
-      </label>
-      <label>
-        Краткое описание (для карточки)
-        <textarea
+      <FormTextarea
+          label="Краткое описание (для карточки)"
+          id="party-short-description"
           value={
             isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? '')
           }
@@ -320,17 +314,16 @@ export function CabinetPartyForm({
           maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
           placeholder="Краткое описание для карточки в каталоге"
         />
-        <span className="cabinet-char-count">
+      <span className="cabinet-char-count">
           {
             (isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? ''))
               .length
           }
           /{MAX_SHORT_DESCRIPTION_LENGTH}
-        </span>
-      </label>
-      <label>
-        Ссылка (URL)
-        <input
+      </span>
+      <FormInput
+          label="Ссылка (URL)"
+          id="party-external-link-url"
           type="url"
           value={isEditing ? (editForm.externalLinkUrl ?? '') : (createForm.externalLinkUrl ?? '')}
           onChange={(e) =>
@@ -347,10 +340,9 @@ export function CabinetPartyForm({
           placeholder="https://..."
           maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
         />
-      </label>
-      <label>
-        Текст ссылки
-        <input
+      <FormInput
+          label="Текст ссылки"
+          id="party-external-link-text"
           type="text"
           value={
             isEditing ? (editForm.externalLinkText ?? '') : (createForm.externalLinkText ?? '')
@@ -369,7 +361,6 @@ export function CabinetPartyForm({
           placeholder="Текст ссылки (если пусто — «Ссылка»)"
           maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
         />
-      </label>
       <div className="cabinet-form-field">
         <span className="cabinet-form-field-label">Танцевальные теги (макс. {MAX_DANCE_TAGS})</span>
         <div className="cabinet-dance-tags-predefined">
@@ -433,7 +424,7 @@ export function CabinetPartyForm({
                   }
                 }}
                 onBlur={(e) => {
-                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget as Node))
+                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
                     return;
                   collapseTimeoutRef.current = setTimeout(() => setShowCustomTagInput(false), 150);
                 }}
@@ -517,4 +508,4 @@ export function CabinetPartyForm({
       </div>
     </form>
   );
-}
+};

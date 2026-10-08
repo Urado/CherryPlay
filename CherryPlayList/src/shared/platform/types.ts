@@ -37,13 +37,17 @@ export type InvokeChannel =
   | 'system:getPath'
   | 'system:openPath'
   | 'system:openExternal'
+  | 'legal:openDocument'
   | 'system:setMinimumWindowSize'
   | 'config:getConfigPath'
   | 'config:getServerUrl'
+  | 'config:getWebBaseUrl'
   | 'config:setServerUrl'
   | 'config:getConfig'
   | 'auth:openExternal'
-  | 'auth:registerCallback';
+  | 'auth:registerCallback'
+  | 'auth:cancelCallback'
+  | 'auth:deliverCallbackUrl';
 
 export type OnChannel = 'project:save-progress';
 
@@ -58,11 +62,6 @@ export type AudioFileStat = {
   size: number;
 };
 
-/**
- * Minimum window size (client pixels) sent from renderer to the Electron shell.
- * Renderer computes chrome insets + layout mins; the Electron main process
- * applies it via `BrowserWindow.setMinimumSize` (handler in Electron subtask).
- */
 export interface MinimumWindowSize {
   minWidth: number;
   minHeight: number;
@@ -78,7 +77,6 @@ export interface PlatformAimpApi {
   onLog: (listener: (entry: AimpLogEntry) => void) => () => void;
 }
 
-/** Renderer platform API mirroring `Window['api']` from `electron/preload.ts`. */
 export interface PlatformAPI {
   getPathForFile: (file: File) => string;
   invoke: (channel: string, payload?: object) => Promise<IPCResponse<unknown>>;

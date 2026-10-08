@@ -1,0 +1,49 @@
+---
+description: Strict resource REST and complete Swagger/OpenAPI coverage for CherryPlay HTTP API
+globs: CherryPlay/CherryPlayServer/Controllers/**/*.cs,CherryPlay/CherryPlayServer/Program.cs,CherryPlay/CherryPlayServer/**/*.cs,CherryPlay/CONTRACTS.md,CherryPlay/CherryPlayServer/API.md
+alwaysApply: false
+---
+
+# REST API (CherryPlay)
+
+Strict resource REST. Aligns with EPIC-18 / CP-067. URI = **noun**; verb only in HTTP method (or explicit resource action).
+
+## Swagger / OpenAPI coverage
+
+- Every routable HTTP API endpoint must appear in the generated Swagger/OpenAPI document, including controller actions and endpoints registered with methods such as `MapHealthChecks`, `MapGet`, `MapPost`, or `MapMetrics`.
+- Give mapped endpoints stable HTTP method, path, operation ID, summary, and description metadata so generated documentation is useful and deterministic.
+- Add or maintain an automated completeness check that compares the application's HTTP API routes with the generated OpenAPI operations. Exclusions must be narrow, explicit, justified, and tracked as technical debt; do not silently omit endpoints.
+- SignalR Hub methods/events are not HTTP API operations and are currently deferred from Swagger presentation. Track their discoverability/documentation separately in [CP-112](../../../CherryPlayKanban/tasks/CP-112-openapi-and-signalr-contract-discoverability.md).
+- The HTTP API routes and domain payloads remain documented in `CONTRACTS.md` / `CherryPlayServer/API.md`; OpenAPI coverage does not replace those source-of-truth contracts.
+
+Concrete routes and domain payloads live in `CONTRACTS.md` / `CherryPlayServer/API.md` and kanban tasks — **not** in this rule.
+
+## Do
+
+- Plural collection nouns under `/api/...` (e.g. `/api/items`, `/api/items/{id}`)
+- Nesting ≤ 2 levels (e.g. `/api/owners/{id}/items`)
+- Filters via query on list endpoints (`?status=active`), not via path verbs
+- Create → `POST` + **201** + `Location` when a new resource exists
+- Append-only logs/history → only `GET`/`POST` on an events collection; never `PUT`/`PATCH`/`DELETE` prior rows
+- State change that is itself a new fact → append a new event (or create a resource), do not rewrite history
+- Authz / policy denial on a protected write → **403** + `application/problem+json` with a stable `type` and machine-readable extensions when the client must act
+- Validation → **400** + problem details; missing resource → **404**; conflict / duplicate create → **409**
+- Batch in one body only when it is one business transaction
+- Idempotent creates/writes when needed: client-supplied UUID as event/resource `id`; same id → same result
+
+## Don't
+
+- Verbs in path: `/login`, `/register`, `/grant`, `/required`, `/complete`, `/exchange`, `/doSomething`
+- New RPC under `/auth/*` (legacy auth may remain until EPIC-18 migration)
+- Over-nesting: `/a/{a}/b/{b}/c/{c}/d/{d}`
+- Extra “status check” / catalog GET when the client already has the ids/hashes it will submit and a write can return **403** with what is missing
+- Encoding product-specific endpoint catalogs or deploy-config schemes inside this rule
+
+## Status / errors
+
+Prefer ASP.NET Core ProblemDetails (`AddProblemDetails`). Stable `type` URIs under the product domain. No stack traces or SQL in production bodies.
+
+## Related
+
+- SoT contracts: `CONTRACTS.md`
+- Server index: `CherryPlayServer/API.md`

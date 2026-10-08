@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=IntegrationDb&amp;Category!=ContainerIntegration&amp;Category!=ContainerRestartPrepare&amp;Category!=ContainerRestartVerify&amp;Category!=ContainerRestartFreezePrepare&amp;Category!=ContainerRestartFreezeVerify&amp;Category!=ContainerRetentionPrepare&amp;Category!=ContainerRetentionVerify</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

@@ -9,7 +9,7 @@ describe('getLayoutPresetFromLayout', () => {
         id: 'root',
         type: 'container',
         direction: 'horizontal',
-        sizes: [50, 25, 25],
+        sizes: [50, 50],
         zones: [
           {
             id: 'aimp-zone',
@@ -19,18 +19,11 @@ describe('getLayoutPresetFromLayout', () => {
             size: 50,
           },
           {
-            id: 'party-editor-zone',
-            type: 'workspace',
-            workspaceId: 'party-editor-workspace',
-            workspaceType: 'party-editor',
-            size: 25,
-          },
-          {
             id: 'party-preview-zone',
             type: 'workspace',
             workspaceId: 'party-preview-workspace',
             workspaceType: 'party-preview',
-            size: 25,
+            size: 50,
           },
         ],
       },
@@ -46,7 +39,7 @@ describe('getLayoutPresetFromLayout', () => {
         id: 'root',
         type: 'container',
         direction: 'horizontal',
-        sizes: [50, 25, 25],
+        sizes: [50, 50],
         zones: [
           {
             id: 'player-zone',
@@ -56,18 +49,11 @@ describe('getLayoutPresetFromLayout', () => {
             size: 50,
           },
           {
-            id: 'party-editor-zone',
-            type: 'workspace',
-            workspaceId: 'party-editor-workspace',
-            workspaceType: 'party-editor',
-            size: 25,
-          },
-          {
             id: 'party-preview-zone',
             type: 'workspace',
             workspaceId: 'party-preview-workspace',
             workspaceType: 'party-preview',
-            size: 25,
+            size: 50,
           },
         ],
       },

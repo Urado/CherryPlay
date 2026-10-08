@@ -1,7 +1,3 @@
-import { IconButton } from '@cherryplay/components';
-import CloseIcon from '@mui/icons-material/Close';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
-import React, { useCallback, useEffect, useMemo } from 'react';
 
 import {
   useDemoPlayerFloatingBounds,
@@ -13,11 +9,15 @@ import {
   FALLBACK_PANEL_WIDTH_PX,
   FLOATING_PANEL_FIXED_HEIGHT_PX,
 } from '@app/hooks/demoPlayerFloatingPositioning';
+import { IconButton } from '@cherryplay/components';
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
+import CloseIcon from '@mui/icons-material/Close';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
 import { DemoPlayer } from '@shared/components';
 import { useLayoutStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { useDemoPlayerStore } from '@shared/stores/demoPlayerStore';
 import { collectWorkspaceTypes } from '@shared/utils/layoutWorkspaceOperations';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
 export interface DemoPlayerShellProps {
   contentContainerRef: React.RefObject<HTMLElement | null>;

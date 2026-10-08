@@ -9,13 +9,18 @@ export interface PartyConnectivityBannerProps {
   isReconnecting?: boolean;
   lastManualCheckFailed?: boolean;
   onManualReconnect?: () => void;
+  offlineHint?: string;
 }
+
+const DEFAULT_OFFLINE_HINT =
+  'Включите «Онлайн» в настройках для работы с сервером. Локальное редактирование проекта доступно.';
 
 export const PartyConnectivityBanner: React.FC<PartyConnectivityBannerProps> = ({
   kind,
   isReconnecting = false,
   lastManualCheckFailed = false,
   onManualReconnect,
+  offlineHint = DEFAULT_OFFLINE_HINT,
 }) => {
   if (kind === 'offline') {
     return (
@@ -25,10 +30,7 @@ export const PartyConnectivityBanner: React.FC<PartyConnectivityBannerProps> = (
         aria-live="polite"
       >
         <span className="party-connectivity-banner-title">Онлайн-функции отключены</span>
-        <span className="party-connectivity-banner-hint">
-          Включите «Онлайн» в настройках для работы с сервером. Локальное редактирование проекта
-          доступно.
-        </span>
+        <span className="party-connectivity-banner-hint">{offlineHint}</span>
       </div>
     );
   }

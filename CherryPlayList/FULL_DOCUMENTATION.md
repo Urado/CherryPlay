@@ -1247,10 +1247,10 @@ Plugin exports an object with methods `init(api)` and `destroy()`. API includes 
 
 ### 9.1.0 UI Layers and Migration Contract
 
-- **Primitives** (`@cherryplay/components`): base visual building blocks (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`) with classes `cp-*` and shared tokens. **Default shell buttons** ship with built-in styling (primary accent `#667eea`, variants `primary`/`secondary`/`danger`/`ghost`, sizes `sm`/`md`) after `primitives.css` import — no per-button CSS required. Canonical API and props: [CherryPlayComponents/README.md — UI-примитивы (shell)](../CherryPlayComponents/README.md#ui-примитивы-shell).
+- **Primitives** (`@cherryplay/components`): base visual building blocks (`Button`, `ButtonLink`, `IconButton`, `Disclosure`, `Icon`) with classes `cp-*` and shared tokens. Shell buttons use the shared blue accent `#4a9eff` after `primitives.css` import. Canonical API and props: [CherryPlayComponents/README.md — UI-примитивы (shell)](../CherryPlayComponents/README.md#ui-примитивы-shell).
 - **Package-level wrappers**: `FormButton` in `@cherryplay/components` (legacy auth); maps `outline` → `ghost`.
 - **Domain components**: feature-specific components (playlist rows, modals, headers, workspace views) built on primitives/wrappers.
-- **PartyTheme isolation**: party content inside `PartyDisplay` uses isolated themes (`data-theme`); it does **not** inherit `cp-button` or shell primitive contracts. Shell and PartyTheme are separate visual layers.
+- **PartyTheme isolation**: party content uses its own variables on `data-theme`; the document shell uses `data-shell-theme="dark"`. Primitive color tokens resolve on the primitive element so a local PartyTheme can override them. Portal content must retain a `data-theme` wrapper. See [shell theme contract](../CherryPlayComponents/docs/SHELL_THEME.md).
 
 **Usage rules (current):**
 
@@ -1262,7 +1262,9 @@ Plugin exports an object with methods `init(api)` and `destroy()`. API includes 
 
 - `src/styles/index.css` must import `@cherryplay/components/styles/primitives.css` before local CherryPlayList styles.
 - `primitives.css` already includes shell palette tokens and is sufficient for correct `cp-button` + `cp-button--icon-only` appearance.
-- CherryPlayList overrides shell accent on `:root` via `--accent-primary: #4a9eff` in `src/styles/variables.css` (picked up by `--cp-accent-primary`).
+- CherryPlayList imports shared `primitives.css` before app-specific variables; shared colors are defined by the Components shell palette and `variables.css` contains List-only tokens.
+- `entry.tsx` imports PartyTheme styles after the shared shell and List styles. Registered PartyThemes provide local aliases for shared primitive colors; themed portal content carries an explicit `data-theme` wrapper. `applyPartyTheme` requires a root element and never sets the document theme.
+- The desktop display name is **CherryPashka List**. Project, package, storage, deep-link, API, and release asset identifiers retain their existing technical names.
 
 ### 9.1.1 Theme System
 

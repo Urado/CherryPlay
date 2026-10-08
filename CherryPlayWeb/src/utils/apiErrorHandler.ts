@@ -1,7 +1,3 @@
-/**
- * Унифицированная обработка ошибок API для CherryPlayWeb
- */
-
 export interface ApiError {
   message: string;
   status: number;
@@ -23,21 +19,19 @@ function isApiError(error: unknown): error is ApiError {
   );
 }
 
-/**
- * Обрабатывает ответ от API и выбрасывает ошибку если запрос неуспешен
- */
 export async function handleApiResponse<T>(response: Response, defaultMessage: string): Promise<T> {
   if (!response.ok) {
     const error = await createApiError(response, defaultMessage);
     throw error;
   }
 
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
   return response.json();
 }
 
-/**
- * Создает объект ошибки из Response
- */
 export async function createApiError(
   response: Response,
   defaultMessage: string,
@@ -49,7 +43,6 @@ export async function createApiError(
   try {
     const text = await response.text();
     if (text) {
-      // Пытаемся распарсить JSON с сообщением об ошибке
       try {
         const json = JSON.parse(text);
         code = typeof json.code === 'string' ? json.code : undefined;
@@ -84,11 +77,22 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
   }
 }
 
-/**
- * Проверяет статус ответа и обрабатывает специфичные ошибки авторизации
- */
-export function isAuthError(status: number): boolean {
-  return status === 401 || status === 403;
+export function isAuthError(status: number, code?: string): boolean {
+  if (status === 401) {
+    return true;
+  }
+  if (status !== 403) {
+    return false;
+  }
+  if (
+    code === 'consent_required' ||
+    code === 'theme_not_entitled' ||
+    code === 'theme_not_visible' ||
+    code === 'admin_only'
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function extractApiErrorMessage(error: unknown, fallbackMessage: string): string {

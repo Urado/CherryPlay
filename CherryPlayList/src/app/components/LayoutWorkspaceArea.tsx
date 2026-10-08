@@ -1,8 +1,8 @@
-import React from 'react';
 
 import { ContainerZone, WorkspaceZone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
 import { isLayoutEmpty } from '@shared/utils/layoutWorkspaceOperations';
+import React from 'react';
 
 import { WorkspaceRenderer } from '../WorkspaceRenderer';
 
@@ -32,7 +32,7 @@ export const LayoutWorkspaceArea: React.FC = () => {
   }
 
   if (layout.rootZone.type === 'workspace') {
-    const zone = layout.rootZone as WorkspaceZone;
+    const zone = layout.rootZone;
 
     return (
       <div className="layout-workspace-root">
@@ -45,5 +45,5 @@ export const LayoutWorkspaceArea: React.FC = () => {
     );
   }
 
-  return <SplitContainer zone={layout.rootZone as ContainerZone} />;
+  return <SplitContainer zone={layout.rootZone} />;
 };

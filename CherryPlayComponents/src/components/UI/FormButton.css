@@ -1,17 +1,13 @@
-/**
- * FormButton styles are provided by the shared Button primitive.
- * This file is kept for backward compatibility with direct CSS imports.
- */
 @import '../primitives/Button/Button.css';
 
 .form-button--outline.cp-button--ghost {
   background: transparent;
-  border-color: var(--cp-ui-border);
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
 }
 
 .form-button--outline.cp-button--ghost:hover:not(:disabled) {
   background: var(--bg-hover);
-  border-color: var(--cp-accent-primary);
-  color: var(--cp-accent-primary);
+  border-color: var(--accent-primary, #4a9eff);
+  color: var(--accent-primary, #4a9eff);
 }

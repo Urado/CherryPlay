@@ -47,6 +47,7 @@ When reviewing code, focus on:
   - Clear, intention-revealing names; small, focused functions and classes.
   - Consistent style with the existing codebase (naming, patterns, and structure).
   - Readability over cleverness; avoid deep nesting and complex conditionals when they can be simplified.
+  - **No code comments** (`.cursor/rules/no-code-comments.mdc`): leftover `//`, `/* */`, JSDoc/TSDoc, or C# `///` in edited sources is a **Warning**; narrating/Arrange-Act-Assert comments added in the diff are a **Warning**.
 
 ## Language- and stack-aware reviewing
 

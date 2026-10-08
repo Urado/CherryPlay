@@ -60,6 +60,5 @@ export interface PartyDisplayData<T extends PartyThemeId = PartyThemeId> {
   playlist: PartyPlaylistData;
   playbackState?: PlaybackState | null;
   isSessionActive: boolean;
-  /** Merged viewer status (server + client overlays). */
   viewerStatus: PartyViewerStatus;
 }

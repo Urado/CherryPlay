@@ -27,7 +27,8 @@ public class InMemoryPasswordResetTokenRepository : IPasswordResetTokenRepositor
     public Task InvalidateUnusedByEmailAccountIdAsync(Guid emailAccountId)
     {
         var now = DateTime.UtcNow;
-        foreach (var token in _tokens.Values.Where(t => t.EmailAccountId == emailAccountId && t.UsedAt == null))
+        foreach (var token in _tokens.Values.Where(t =>
+            t.EmailAccountId == emailAccountId && t.UsedAt == null && t.ExpiresAt > now))
         {
             token.UsedAt = now;
         }
@@ -61,6 +62,29 @@ public class InMemoryPasswordResetTokenRepository : IPasswordResetTokenRepositor
 
         token.UsedAt = null;
         return Task.FromResult(true);
+    }
+
+    public Task<int> DeleteStaleAsync(DateTime utcNow, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var cutoff = utcNow - retention;
+        var staleIds = _tokens.Values
+            .Where(t =>
+                (t.UsedAt != null && t.UsedAt <= cutoff)
+                || (t.UsedAt == null && t.ExpiresAt <= cutoff))
+            .Select(t => t.Id)
+            .ToArray();
+
+        var deleted = 0;
+        foreach (var id in staleIds)
+        {
+            if (_tokens.TryRemove(id, out _))
+            {
+                deleted++;
+            }
+        }
+
+        return Task.FromResult(deleted);
     }
 
     private static PasswordResetToken Clone(PasswordResetToken token)

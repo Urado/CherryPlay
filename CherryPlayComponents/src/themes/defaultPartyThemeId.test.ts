@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_PARTY_THEME_ID, getPartyThemeOrDefault } from './index';
+import { DEFAULT_PARTY_THEME_ID, getPartyThemeOrDefault } from ".";
 
 describe('DEFAULT_PARTY_THEME_ID', () => {
   it('is basic', () => {

@@ -28,7 +28,7 @@ export async function finalizePartyCreation(
   store: PartyStore,
   createData: CreatePartyDto,
   deps: FinalizePartyCreationDeps,
-): Promise<void> {
+): Promise<boolean> {
   const party = await partyService.createParty(createData);
 
   try {
@@ -36,16 +36,25 @@ export async function finalizePartyCreation(
   } catch (error) {
     console.error('Failed to load theme access after party creation:', error);
     deps.addNotification({ type: 'error', message: ERROR_PARTY_CREATED_THEME_ACCESS_FAILED });
-    return;
+    return false;
   }
 
-  const exists = await deps.checkPartyExists(party.id);
-  if (!exists) {
+  let exists: boolean;
+  try {
+    exists = await deps.checkPartyExists(party.id);
+  } catch {
     deps.addNotification({
       type: 'error',
       message: 'Вечеринка создана, но сервер недоступен',
     });
-    return;
+    return false;
+  }
+  if (!exists) {
+    deps.addNotification({
+      type: 'error',
+      message: 'Вечеринка создана, но не найдена на сервере',
+    });
+    return false;
   }
 
   let url: string;
@@ -54,7 +63,7 @@ export async function finalizePartyCreation(
   } catch (error) {
     console.error('Failed to get party URL after creation:', error);
     deps.addNotification({ type: 'error', message: ERROR_PARTY_CREATED_URL_FAILED });
-    return;
+    return false;
   }
 
   deps.setLinkedParty({ id: party.id, shortCode: party.shortCode, url });
@@ -63,6 +72,7 @@ export async function finalizePartyCreation(
   store.setIsListedInCatalog(party.isListedInCatalog ?? createData.isListedInCatalog ?? false);
   deps.markAsDirty();
   markPartyPublishFullySynced();
+  return true;
 }
 
 export async function handlePartyCreationFailure(

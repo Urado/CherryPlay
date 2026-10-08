@@ -1,4 +1,4 @@
-import { CommandResult, HistoryCommand, ItemsState } from './index';
+import { CommandResult, HistoryCommand, ItemsState } from ".";
 
 export class SetNameCommand implements HistoryCommand {
   readonly type = 'setName';

@@ -8,6 +8,8 @@ on:
     paths:
       - 'CherryPlayList/**'
       - 'CherryPlayComponents/**'
+      - 'CherryPlayAimpPlugin/**'
+      - 'eslint-config-cherryplay/**'
       - '.github/workflows/verify-desktop-windows.yml'
 
 permissions:
@@ -22,16 +24,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: |
+            eslint-config-cherryplay/package-lock.json
             CherryPlayComponents/package-lock.json
             CherryPlayList/package-lock.json
+
+      - name: Install shared ESLint config dependencies
+        working-directory: eslint-config-cherryplay
+        run: npm ci
 
       - name: Install and build CherryPlayComponents
         working-directory: CherryPlayComponents
@@ -48,19 +55,22 @@ jobs:
         shell: bash
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${PR_NUMBER}" ]; then
             echo "ERROR: pull_request.number is empty"
             exit 1
           fi
-          BASE="$(node -p "require('./package.json').version.replace(/[-+].*$/, '')")"
+          BASE="$(node scripts/resolveDesktopReleaseVersion.mjs --latest-release)"
           VERSION="${BASE}-pr-${PR_NUMBER}"
-          echo "Stamping CherryPlayList version to ${VERSION} (PR test build)"
+          echo "Stamping CherryPlayList version to ${VERSION} (base ${BASE} from latest published Desktop release)"
           npm version "${VERSION}" --no-git-tag-version --allow-same-version
           echo "app_version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "base_version=${BASE}" >> "$GITHUB_OUTPUT"
         id: stamp-version
 
-      - name: Build Windows zip (no AIMP staging)
+      - name: Build Windows zip with committed AIMP bridge
         working-directory: CherryPlayList
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -72,21 +82,47 @@ jobs:
         shell: bash
         env:
           EXPECTED_VERSION: ${{ steps.stamp-version.outputs.app_version }}
+          BASE_VERSION: ${{ steps.stamp-version.outputs.base_version }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           shopt -s nullglob
-          expected="release/CherryPlayList-${EXPECTED_VERSION}-x64.zip"
+          expected="release/CherryPashkaList-${EXPECTED_VERSION}-x64.zip"
           if [ ! -f "${expected}" ]; then
             echo "ERROR: Expected zip not found: ${expected}"
             ls -la release/ || true
             exit 1
           fi
-          ZIP="${expected}"
+          ZIP="release/CherryPashkaList-${BASE_VERSION}-pr-${PR_NUMBER}-x64.zip"
+          mv "${expected}" "${ZIP}"
           ZIP_NAME="$(basename "${ZIP}")"
           ARTIFACT_NAME="${ZIP_NAME%.zip}"
           echo "Found ${ZIP}"
           echo "zip_path=CherryPlayList/${ZIP}" >> "$GITHUB_OUTPUT"
           echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
           echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify AIMP bridge in Windows zip
+        shell: pwsh
+        env:
+          ZIP_PATH: ${{ steps.locate-zip.outputs.zip_path }}
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($env:ZIP_PATH)
+          try {
+            $entryNames = @($archive.Entries | ForEach-Object { $_.FullName -replace '\\', '/' })
+            $requiredSuffixes = @(
+              'CherryPlayAimpBridge/CherryPlayAimpBridge.dll',
+              'CherryPlayAimpBridge/manifest.json'
+            )
+            foreach ($suffix in $requiredSuffixes) {
+              if (-not ($entryNames | Where-Object { $_.EndsWith($suffix, [System.StringComparison]::OrdinalIgnoreCase) })) {
+                throw "Windows zip is missing packaged AIMP file ending in '$suffix'."
+              }
+            }
+          }
+          finally {
+            $archive.Dispose()
+          }
 
       - name: Upload Windows zip artifact
         uses: actions/upload-artifact@v4
@@ -109,7 +145,7 @@ jobs:
               marker,
               '## Desktop build ready for testing',
               '',
-              `PR test build **\`${appVersion}\`** → zip **\`${zipName}\`**, Actions artifact **\`${artifactName}\`**.`,
+              `App package version **\`${appVersion}\`**; ZIP filename **\`${zipName}\`**; Actions artifact **\`${artifactName}\`**.`,
               '',
               `1. Open the [workflow run](${runUrl})`,
               '2. Scroll to **Artifacts**',

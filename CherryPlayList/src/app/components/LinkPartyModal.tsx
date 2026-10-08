@@ -7,14 +7,14 @@ import {
 } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import React, { useState, useEffect, useCallback } from 'react';
-
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
 import { partyService } from '@shared/services/partyService';
 import type { PartyDto } from '@shared/services/partyService';
 import { useClientOutdatedStore, useProjectStore, useUIStore } from '@shared/stores';
+import { applySyncedPlaylistTrackIds } from '@shared/streaming';
 import { convertPlaylistForApi } from '@shared/utils';
+import React, { useState, useEffect, useCallback } from 'react';
 
 export const LinkPartyModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
@@ -74,6 +74,7 @@ export const LinkPartyModal: React.FC = () => {
       if (uploadPlaylist && items.length > 0) {
         const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
+        applySyncedPlaylistTrackIds(playlistForApi);
       }
       closeModal();
     } catch (e) {

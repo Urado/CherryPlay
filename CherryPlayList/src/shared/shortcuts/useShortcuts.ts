@@ -1,6 +1,6 @@
+import { toggleSessionPlayPause } from '@shared/utils/togglePlayPause';
 import { useEffect, useMemo, useRef } from 'react';
 
-import { toggleSessionPlayPause } from '@shared/utils/togglePlayPause';
 
 import { shortcutManager } from './ShortcutManager';
 import type { ShortcutHandlers, ShortcutId, UseShortcutsOptions } from './shortcutTypes';

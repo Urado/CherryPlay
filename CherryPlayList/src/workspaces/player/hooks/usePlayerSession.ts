@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 
 import { Track } from '@core/types/track';
 import {
@@ -13,6 +12,7 @@ import {
   useSettingsStore,
 } from '@shared/stores';
 import { logger } from '@shared/utils';
+import { useCallback } from 'react';
 
 interface UsePlayerSessionOptions {
   allTracks: Track[];

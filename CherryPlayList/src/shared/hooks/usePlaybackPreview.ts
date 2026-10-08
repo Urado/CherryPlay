@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react';
 
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import { useCallback, useMemo } from 'react';
 
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
@@ -61,16 +61,27 @@ export function usePlaybackPreview({
         }
 
         const isSameTrack = activeTrackId === track.id;
+        let loadGeneration: number | undefined;
         if (!isSameTrack || playerStatus === 'ended') {
-          await loadTrack(track, workspaceId);
+          loadGeneration = await loadTrack(track, workspaceId, true);
         }
 
         const { isDisabled } = useDemoPlayerStore.getState();
         if (isDisabled) {
+          pause();
           useDemoPlayerStore.setState({
             error: 'Воспроизведение невозможно: используется то же устройство, что и плеер',
             status: 'error',
           });
+          return;
+        }
+
+        if (
+          loadGeneration !== undefined &&
+          !useDemoPlayerStore
+            .getState()
+            .shouldAutoPlayTrack(track.id, workspaceId, loadGeneration)
+        ) {
           return;
         }
 
@@ -94,6 +105,7 @@ export function usePlaybackPreview({
       loadTrack,
       play,
       setActiveTrack,
+      pause,
       setDemoPlayerFloatingOpen,
       hasDemoPlayerWorkspace,
       workspaceId,

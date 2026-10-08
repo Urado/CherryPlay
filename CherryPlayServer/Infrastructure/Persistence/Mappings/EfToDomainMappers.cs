@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
+using CherryPlayServer.Core.Models;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -140,6 +141,68 @@ public static class EfToDomainMappers
         };
     }
 
+    public static DesktopAuthCode ToDomain(this DesktopAuthCodeEf ef)
+    {
+        return new DesktopAuthCode
+        {
+            Id = ef.Id,
+            OrganizerId = ef.OrganizerId,
+            TokenHash = ef.TokenHash,
+            ExpiresAt = ef.ExpiresAt,
+            UsedAt = ef.UsedAt,
+            CreatedAt = ef.CreatedAt,
+        };
+    }
+
+    public static ConsentEvent ToDomain(this ConsentEventEf ef)
+    {
+        return new ConsentEvent
+        {
+            Id = ef.Id,
+            SubjectId = ef.SubjectId,
+            LegalDocumentVersionId = ef.LegalDocumentVersionId,
+            DocumentHash = ef.DocumentHash,
+            Decision = ParseConsentDecision(ef.Decision),
+            EventAt = ef.EventAt,
+        };
+    }
+
+    public static LegalDocumentVersionInfo ToInfo(this LegalDocumentVersionEf ef)
+    {
+        return new LegalDocumentVersionInfo(
+            ef.Id,
+            ParseLegalDocumentType(ef.DocumentType),
+            ef.DocumentVersion,
+            ef.ContentHash,
+            ParseLegalDocumentVersionStatus(ef.Status));
+    }
+
+    private static ConsentDecision ParseConsentDecision(string? value) => value?.ToLowerInvariant() switch
+    {
+        "grant" => ConsentDecision.Grant,
+        "withdraw" => ConsentDecision.Withdraw,
+        "deny" => ConsentDecision.Deny,
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown consent decision"),
+    };
+
+    private static LegalDocumentType ParseLegalDocumentType(string? value) => value?.ToLowerInvariant() switch
+    {
+        "pd_consent_text" => LegalDocumentType.PdConsentText,
+        "terms" => LegalDocumentType.Terms,
+        "privacy_policy" => LegalDocumentType.PrivacyPolicy,
+        "cookie_policy" => LegalDocumentType.CookiePolicy,
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown legal document type"),
+    };
+
+    private static LegalDocumentVersionStatus ParseLegalDocumentVersionStatus(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "draft" => LegalDocumentVersionStatus.Draft,
+            "active" => LegalDocumentVersionStatus.Active,
+            "retired" => LegalDocumentVersionStatus.Retired,
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown legal document version status"),
+        };
+
     private static List<string>? DeserializeStringList(string? json, ILogger? logger = null)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
@@ -149,7 +212,7 @@ public static class EfToDomainMappers
         }
         catch (Exception ex)
         {
-            logger?.LogWarning(ex, "Failed to deserialize string list from JSON");
+            logger?.LogWarning("Failed to deserialize string list from JSON: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return null;
         }
     }

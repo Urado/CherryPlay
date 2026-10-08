@@ -1,7 +1,3 @@
-/**
- * Copies the native AIMP bridge DLL next to manifest.json under plugins/CherryPlayAimpBridge/
- * so electron-builder extraFiles includes both. Folder name matches the DLL basename (AIMP convention).
- */
 import * as fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,14 +25,20 @@ function exists(p) {
   }
 }
 
-function findDllSource(dllName) {
+function findDllSource(dllName, prebuiltOnly) {
+  const repoRoot = path.resolve(listRoot, '..');
+  const aimpProject = path.join(repoRoot, 'CherryPlayAimpPlugin');
+  const prebuiltDll = path.join(aimpProject, 'prebuilt', dllName);
+
+  if (prebuiltOnly) {
+    return exists(prebuiltDll) ? prebuiltDll : null;
+  }
+
   const envPath = process.env.CHERRYPLAY_AIMP_DLL;
   if (envPath && exists(envPath)) {
     return envPath;
   }
 
-  const repoRoot = path.resolve(listRoot, '..');
-  const aimpProject = path.join(repoRoot, 'CherryPlayAimpPlugin');
   const candidates = [
     path.join(aimpProject, 'build', 'vs2026-x64-release', 'Release', dllName),
     path.join(aimpProject, 'build', 'vs2022-x64-release', 'Release', dllName),
@@ -44,18 +46,22 @@ function findDllSource(dllName) {
     path.join(aimpProject, 'build', 'vs2022-x64-debug', 'Debug', dllName),
     path.join(aimpProject, 'build', 'manual', 'Release', dllName),
     path.join(aimpProject, 'build', 'manual', 'Debug', dllName),
+    prebuiltDll,
   ];
 
   return candidates.find((p) => exists(p)) ?? null;
 }
 
 const dllName = readManifestMain();
-const src = findDllSource(dllName);
+const prebuiltOnly = process.argv.includes('--prebuilt-only');
+const src = findDllSource(dllName, prebuiltOnly);
 if (!src) {
   console.error(
     [
       `CherryPlayAimpBridge: could not find ${dllName}.`,
-      'Build the native project (CherryPlayAimpPlugin) Release x64, or set CHERRYPLAY_AIMP_DLL to the full path of the DLL.',
+      prebuiltOnly
+        ? 'Commit the locally built DLL to CherryPlayAimpPlugin/prebuilt/.'
+        : 'Build the native project (CherryPlayAimpPlugin) Release x64, or set CHERRYPLAY_AIMP_DLL to the full path of the DLL.',
       'See CherryPlayAimpPlugin/README.md.',
     ].join('\n'),
   );

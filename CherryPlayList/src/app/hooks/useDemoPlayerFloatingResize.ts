@@ -1,6 +1,3 @@
-import { useCallback, useState } from 'react';
-import type { PointerEvent } from 'react';
-
 import {
   clampFloatingSize,
   FALLBACK_PANEL_WIDTH_PX,
@@ -8,6 +5,9 @@ import {
   type FloatingMetrics,
 } from '@app/hooks/demoPlayerFloatingPositioning';
 import type { DemoPlayerFloatingSize } from '@shared/stores/settingsStore';
+import { useCallback, useState } from 'react';
+import type { PointerEvent } from 'react';
+
 
 interface ResizeState {
   startX: number;

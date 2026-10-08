@@ -32,7 +32,7 @@ export function getPartyEditorActionVisibility(
 ): { showCreate: boolean; showLinkParty: boolean; showSave: boolean; showMakeReady: boolean } {
   const showCreate = phase === 'draft-unlinked';
   const showLinkParty =
-    phase === 'draft-unlinked' && options.hasOnOpenLinkParty && options.isAuthenticated;
+    phase !== 'completed' && options.hasOnOpenLinkParty && options.isAuthenticated;
   const showSave = phase === 'draft-linked' || phase === 'ready';
   const showMakeReady = phase === 'draft-linked';
 

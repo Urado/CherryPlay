@@ -1,7 +1,7 @@
-import { createWithEqualityFn } from 'zustand/traditional';
 
 import { ProjectItem } from '@core/types/project';
 import { WorkspaceId } from '@core/types/workspace';
+import { createWithEqualityFn } from 'zustand/traditional';
 
 import { DraggedItems, DragDropResult, ItemDragState } from '../../modules/dragDrop/types';
 import { logger } from '../utils/logger';

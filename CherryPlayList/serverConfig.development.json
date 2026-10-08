@@ -1,3 +1,4 @@
 {
-  "serverUrl": "http://localhost:5000"
+  "serverUrl": "http://localhost:5000",
+  "webBaseUrl": "http://localhost:3000"
 }

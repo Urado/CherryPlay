@@ -36,7 +36,6 @@ public class PartyHubNegativeAndEdgeCasesTests
     private static readonly DateTime Now = new(2026, 5, 29, 12, 0, 0, DateTimeKind.Utc);
     private static readonly string PartyIdStr = PartyId.ToString();
 
-    #region §4.1 Auth / ownership
 
     [Test]
     public async Task StartSession_WithoutJwt_SendsAuthenticationRequired_NoGroupRelay()
@@ -75,7 +74,6 @@ public class PartyHubNegativeAndEdgeCasesTests
     [Test]
     public async Task JoinPartyAsOrganizer_EmptyTokenWithFailingJwt_SendsAuthenticationTokenRequired_NoGroupRelay()
     {
-        // Empty token returns before JWT validation; FailingJwtService is never invoked.
         var hubCallerClients = new CapturingHubCallerClients();
         var hub = CreateDefaultHub(new FakeOrganizerTracker(), jwtService: new FailingJwtService());
         AttachHubContext(hub, hubCallerClients, ConnectionId);
@@ -142,9 +140,6 @@ public class PartyHubNegativeAndEdgeCasesTests
         AssertCallerError(hubCallerClients, "You do not have permission to access this party");
     }
 
-    #endregion
-
-    #region §4.2 Validation errors
 
     [TestCase("")]
     [TestCase("   ")]
@@ -241,9 +236,6 @@ public class PartyHubNegativeAndEdgeCasesTests
         AssertCallerError(hubCallerClients, "State cannot be null");
     }
 
-    #endregion
-
-    #region §4.3 Viewer / state edge cases
 
     [Test]
     public async Task JoinPartyAsViewer_PartyNotFound_SendsPartyNotFound_NoOnFullStateUpdated()
@@ -396,9 +388,6 @@ public class PartyHubNegativeAndEdgeCasesTests
         AssertCallerError(hubCallerClients, "An error occurred while requesting party state");
     }
 
-    #endregion
-
-    #region §4.5 OnDisconnectedAsync edge cases
 
     [Test]
     public async Task OnDisconnectedAsync_NonOrganizerConnection_SendsNoStatusOrDisplayMessages()
@@ -428,9 +417,6 @@ public class PartyHubNegativeAndEdgeCasesTests
             Is.Empty);
     }
 
-    #endregion
-
-    #region §4.6 Exception paths on organizer methods
 
     private static IEnumerable<TestCaseData> PartyNotFoundStreamingMethodCases()
     {
@@ -613,9 +599,6 @@ public class PartyHubNegativeAndEdgeCasesTests
             Is.Empty);
     }
 
-    #endregion
-
-    #region §4.8 Side effects
 
     [Test]
     public async Task JoinPartyAsOrganizer_Success_RegistersConnectionInTracker()
@@ -640,9 +623,6 @@ public class PartyHubNegativeAndEdgeCasesTests
         Assert.That(tracker.IsOrganizerConnected(PartyId), Is.True);
     }
 
-    #endregion
-
-    #region Helpers
 
     private static void AssertCallerError(CapturingHubCallerClients clients, string message)
     {
@@ -798,10 +778,11 @@ public class PartyHubNegativeAndEdgeCasesTests
         IJwtService? jwtService = null,
         IPartyAccessService? partyAccessService = null)
     {
+        var tokenService = jwtService ?? new StubJwtService();
         return new PartyHub(
             streamingService ?? new StubStreamingService(),
             new PartyIdValidator(),
-            jwtService ?? new StubJwtService(),
+            tokenService,
             partyAccessService ?? new StubPartyAccessService(),
             organizerTracker,
             partyRepository,
@@ -810,7 +791,8 @@ public class PartyHubNegativeAndEdgeCasesTests
             hubContext,
             new StubScopeFactory(),
             Options.Create(new PartyDisplayStatusOptions { OrganizerOfflineGraceSeconds = 0 }),
-            NullLogger<PartyHub>.Instance);
+            NullLogger<PartyHub>.Instance,
+            new ValidatedOrganizerSessionRepository(tokenService));
     }
 
     private static void AttachAuthenticatedHubContext(
@@ -974,9 +956,6 @@ public class PartyHubNegativeAndEdgeCasesTests
         property!.SetValue(hub, value);
     }
 
-    #endregion
-
-    #region Test-only types
 
     private sealed class TestHubCallerContext : HubCallerContext
     {
@@ -1293,5 +1272,4 @@ public class PartyHubNegativeAndEdgeCasesTests
         }
     }
 
-    #endregion
 }

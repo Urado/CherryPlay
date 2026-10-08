@@ -1,7 +1,7 @@
-import React from 'react';
 
 import { DemoPlayer } from '@shared/components';
 import { useUIStore } from '@shared/stores';
+import React from 'react';
 
 const DemoPlayerWorkspaceView: React.FC = () => {
   const focusFileInBrowser = useUIStore((state) => state.focusFileInBrowser);

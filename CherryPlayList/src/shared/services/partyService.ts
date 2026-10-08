@@ -256,12 +256,30 @@ class PartyService {
   }
 
   async checkPartyExists(partyId: string): Promise<boolean> {
-    try {
-      await this.getParty(partyId);
+    if (isDemoAuthMode()) {
       return true;
-    } catch {
+    }
+    const token = useAuthStore.getState().accessToken;
+    if (!token) {
+      throw new Error('Для получения данных вечеринки необходимо войти в аккаунт');
+    }
+    const baseUrl = await this.getBaseUrl();
+    const normalizedPartyId = this.normalizePartyId(partyId);
+    const response = await apiFetch(`${baseUrl}/parties/${normalizedPartyId}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      cache: 'no-cache',
+    });
+
+    if (response.status === 404) {
       return false;
     }
+
+    if (!response.ok) {
+      await handleApiResponse<never>(response, 'Failed to check party existence');
+    }
+
+    return true;
   }
 
   async checkServerReachable(): Promise<boolean> {

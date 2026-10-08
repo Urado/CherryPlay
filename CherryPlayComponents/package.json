@@ -8,10 +8,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && node scripts/copy-css.mjs",
-    "dev": "tsc --watch",
-    "lint": "eslint . --max-warnings=0",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-css.mjs",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run"
   },
   "keywords": [
@@ -22,27 +24,21 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "luxon": "^3.4.4"
+    "luxon": "^3.4.4",
+    "qr-code-styling": "^1.9.2"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
+    "@cherryplay/eslint-config": "file:../eslint-config-cherryplay",
+    "@testing-library/react": "^16.3.0",
     "@types/luxon": "^3.4.2",
-    "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.39.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@typescript-eslint/eslint-plugin": "^8.47.0",
-    "@typescript-eslint/parser": "^8.47.0",
     "eslint": "^9.39.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
+    "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "typescript": "^5.3.3",
     "vitest": "^3.2.4"

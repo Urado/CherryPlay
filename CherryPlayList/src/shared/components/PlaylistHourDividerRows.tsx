@@ -1,6 +1,6 @@
+import { getPriorityHourDividerKind } from '@shared/utils';
 import React from 'react';
 
-import { getPriorityHourDividerKind } from '@shared/utils';
 
 export interface HourDividerAfterTrackRowProps {
   hasPlannedEndDivider: boolean;
@@ -17,7 +17,7 @@ export interface HourDividerAfterTrackRowProps {
  * Одна отсечка после строки трека (приоритет: план — конец очереди — интервал).
  * Общая разметка для плеера и плейлиста.
  */
-export function HourDividerAfterTrackRow({
+export const HourDividerAfterTrackRow = ({
   hasPlannedEndDivider,
   hasQueueEndDivider,
   showIntervalDivider,
@@ -25,7 +25,7 @@ export function HourDividerAfterTrackRow({
   formatPlannedEndTimelineLabel,
   formatQueueEndTimelineLabel,
   formatDividerLabel,
-}: HourDividerAfterTrackRowProps): React.ReactElement | null {
+}: HourDividerAfterTrackRowProps): React.ReactElement | null => {
   const kind = getPriorityHourDividerKind(
     hasPlannedEndDivider,
     hasQueueEndDivider,
@@ -69,13 +69,13 @@ export interface HourDividerListBottomProps {
  * Отсечки внизу списка, когда обе привязки ушли в «хвост» (position === null):
  * показываем обе подряд, без приоритета planned над queue-end — иначе теряется маркер конца очереди.
  */
-export function HourDividerListBottom({
+export const HourDividerListBottom = ({
   showPlannedEndDividerAtListBottom,
   displayItemsLength,
   showQueueEndDividerAtListBottom,
   formatPlannedEndTimelineLabel,
   formatQueueEndTimelineLabel,
-}: HourDividerListBottomProps): React.ReactElement | null {
+}: HourDividerListBottomProps): React.ReactElement | null => {
   const showPlanned = showPlannedEndDividerAtListBottom && displayItemsLength > 0;
   const showQueue = showQueueEndDividerAtListBottom;
 

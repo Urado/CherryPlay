@@ -11,17 +11,24 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { getOnlineNetworkPolicy } from '@shared/streaming';
+import { applySyncedPlaylistTrackIds, getOnlineNetworkPolicy } from '@shared/streaming';
 import { sanitizeExternalUrl } from '@shared/utils';
+import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 
-import { markPartyPublishFullySynced } from './partyPublishSync';
+import {
+  getCurrentPartyPublishSyncParts,
+  markPartyPublishFullySynced,
+  resolveHeaderPartyPublishHighlight,
+} from './partyPublishSync';
 import { loadPartyThemeAccess } from './partyThemeAccessLoad';
 import { buildPlaylistForApi, buildUpdatePartyDto } from './partyWorkspaceApiBuilders';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 import { buildThemeNotEntitledMessage, isThemeNotEntitledError } from './partyWorkspaceUtils';
-import { resolveHeaderPartyPublishDisabledReason } from './resolveHeaderPartyPublishDisabledReason';
 import {
-  PARTY_ARCHIVE_CONFIRM_MESSAGE,
+  hasNoPendingPartyPublishChanges,
+  resolveHeaderPartyPublishDisabledReason,
+} from './resolveHeaderPartyPublishDisabledReason';
+import {
   resolvePartyArchiveAvailability,
 } from './resolvePartyArchiveAvailability';
 
@@ -71,6 +78,24 @@ export async function publishPartyToSite(): Promise<void> {
   const isAuth = useAuthStore.getState().isAuthenticated();
   const linkedParty = useProjectStore.getState().meta.linkedParty;
 
+  const hasSyncBaseline = store.lastSyncedPublishParts != null;
+  const isOutOfSync = resolveHeaderPartyPublishHighlight({
+    hasLinkedParty: Boolean(linkedParty),
+    partyLifecycleState: store.partyLifecycleState,
+    lastSynced: store.lastSyncedPublishParts,
+    current: getCurrentPartyPublishSyncParts(),
+  });
+  if (
+    hasNoPendingPartyPublishChanges({
+      hasLinkedParty: Boolean(linkedParty),
+      partyLifecycleState: store.partyLifecycleState,
+      hasSyncBaseline,
+      isOutOfSync,
+    })
+  ) {
+    return;
+  }
+
   const disabledReason = resolveHeaderPartyPublishDisabledReason({
     isAuthenticated: isAuth,
     networkEnabled,
@@ -97,6 +122,7 @@ export async function publishPartyToSite(): Promise<void> {
   try {
     const playlistForApi = buildPlaylistForApi(buildPlaylistParamsFromStores());
     await partyService.updatePartyPlaylist(linkedParty.id, playlistForApi);
+    applySyncedPlaylistTrackIds(playlistForApi);
     await partyService.updateParty(linkedParty.id, buildUpdatePartyDto(store));
     await refreshPartyThemeAccess(true);
     markPartyPublishFullySynced();
@@ -106,6 +132,9 @@ export async function publishPartyToSite(): Promise<void> {
     });
   } catch (error) {
     console.error('Failed to publish playlist:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (isThemeNotEntitledError(error)) {
       await handleThemeNotEntitled(error);
       return;
@@ -163,6 +192,9 @@ export async function unarchivePartyFromHeader(): Promise<void> {
     store.setPartyLifecycleState(party.partyLifecycleState);
   } catch (error) {
     console.error('Failed to unarchive party from header:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (error instanceof InvalidPartyLifecycleTransitionError) {
       ui.addNotification({
         type: 'error',
@@ -241,10 +273,6 @@ export async function archivePartyFromHeader(): Promise<void> {
     });
     return;
   }
-  if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
-    return;
-  }
-
   store.setPendingLifecycleTransition('completed');
   store.setIsTransitioningLifecycle(true);
   try {
@@ -252,6 +280,9 @@ export async function archivePartyFromHeader(): Promise<void> {
     store.setPartyLifecycleState(party.partyLifecycleState);
   } catch (error) {
     console.error('Failed to archive party from header:', error);
+    if (isSessionExpiredError(error)) {
+      return;
+    }
     if (error instanceof InvalidPartyLifecycleTransitionError) {
       ui.addNotification({
         type: 'error',

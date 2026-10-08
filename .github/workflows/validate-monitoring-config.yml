@@ -1,0 +1,59 @@
+name: Validate Monitoring Configuration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/validate-monitoring-config.yml'
+      - '.github/workflows/release-and-deploy.yml'
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - '.env.example'
+      - 'ENV.md'
+      - 'docker-compose.monitoring.local.yml'
+      - 'CherryPlayWeb/nginx.conf'
+      - '.env.monitoring.local.example'
+      - 'monitoring/**'
+      - 'scripts/validate-monitoring-config.sh'
+      - 'scripts/validate-monitoring-config.ps1'
+      - 'scripts/monitoring-validation/**'
+      - 'scripts/compose-env.sh'
+      - 'scripts/deploy.sh'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '.github/workflows/validate-monitoring-config.yml'
+      - '.github/workflows/release-and-deploy.yml'
+      - 'docker-compose.yml'
+      - 'docker-compose.prod.yml'
+      - '.env.example'
+      - 'ENV.md'
+      - 'docker-compose.monitoring.local.yml'
+      - 'CherryPlayWeb/nginx.conf'
+      - '.env.monitoring.local.example'
+      - 'monitoring/**'
+      - 'scripts/validate-monitoring-config.sh'
+      - 'scripts/validate-monitoring-config.ps1'
+      - 'scripts/monitoring-validation/**'
+      - 'scripts/compose-env.sh'
+      - 'scripts/deploy.sh'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install monitoring validator dependency
+        run: npm ci --prefix scripts/monitoring-validation
+
+      - name: Validate production and local monitoring configuration
+        run: bash scripts/validate-monitoring-config.sh

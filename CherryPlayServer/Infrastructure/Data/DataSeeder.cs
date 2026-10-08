@@ -6,33 +6,40 @@ namespace CherryPlayServer.Infrastructure.Data;
 
 public class DataSeeder : IDataSeeder
 {
+    private static readonly Guid PdConsentVersionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid TermsVersionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private const string PdConsentHash =
+        "1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f";
+    private const string TermsHash =
+        "c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d";
+
     private readonly IPartyRepository _partyRepository;
     private readonly IOrganizerRepository _organizerRepository;
     private readonly IEmailAccountRepository _emailAccountRepository;
+    private readonly IConsentEventRepository _consentEventRepository;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IThemeRepository _themeRepository;
-    private readonly IThemePackageRepository _themePackageRepository;
+    private readonly IThemeCatalogSeeder _themeCatalogSeeder;
 
     public DataSeeder(
         IPartyRepository partyRepository,
         IOrganizerRepository organizerRepository,
         IEmailAccountRepository emailAccountRepository,
+        IConsentEventRepository consentEventRepository,
         IPasswordHasher passwordHasher,
-        IThemeRepository themeRepository,
-        IThemePackageRepository themePackageRepository)
+        IThemeCatalogSeeder themeCatalogSeeder)
     {
         _partyRepository = partyRepository;
         _organizerRepository = organizerRepository;
         _emailAccountRepository = emailAccountRepository;
+        _consentEventRepository = consentEventRepository;
         _passwordHasher = passwordHasher;
-        _themeRepository = themeRepository;
-        _themePackageRepository = themePackageRepository;
+        _themeCatalogSeeder = themeCatalogSeeder;
     }
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await SeedThemeMonetizationAsync();
+        await _themeCatalogSeeder.SeedAsync(cancellationToken);
 
         var testEmail = "t@t.ru";
         Guid demoOrganizerId;
@@ -43,6 +50,7 @@ public class DataSeeder : IDataSeeder
             {
                 Id = Guid.NewGuid(),
                 Name = "Test User",
+                Role = OrganizerRole.Admin,
                 CreatedAt = DateTime.UtcNow
             };
             await _organizerRepository.AddAsync(testOrganizer);
@@ -62,7 +70,17 @@ public class DataSeeder : IDataSeeder
         else
         {
             demoOrganizerId = existingTestAccount.OrganizerId;
+            var existingOrganizer = await _organizerRepository.GetByIdAsync(demoOrganizerId);
+            if (existingOrganizer is not null && existingOrganizer.Role != OrganizerRole.Admin)
+            {
+                existingOrganizer.Role = OrganizerRole.Admin;
+                await _organizerRepository.UpdateAsync(existingOrganizer);
+            }
         }
+
+        await EnsureActiveGrantsAsync(demoOrganizerId);
+
+        await EnsureLegacyOrganizerWithoutConsentsAsync();
 
         var existingParties = await _partyRepository.GetAllAsync();
         if (existingParties.Any()) return;
@@ -356,60 +374,69 @@ public class DataSeeder : IDataSeeder
         await _partyRepository.AddAsync(basicParty);
     }
 
-    private async Task SeedThemeMonetizationAsync()
+    private async Task EnsureLegacyOrganizerWithoutConsentsAsync()
     {
-        var existingThemes = await _themeRepository.GetAllAsync();
-        var existingPackages = await _themePackageRepository.GetAllWithItemsAsync();
-        var themeMap = new Dictionary<string, string>
-        {
-            ["basic"] = "Базовый",
-            ["cyberpunk"] = "Cyberpunk",
-            ["sakura"] = "Sakura",
-            ["art-deco"] = "Art Deco",
-            ["spring-cross-step"] = "Весенний кросс-степ",
-        };
-        var missingThemes = themeMap
-            .Where(x => existingThemes.All(t => t.ThemeId != x.Key))
-            .Select(x => new Theme { ThemeId = x.Key, DisplayName = x.Value, Visibility = ThemeVisibility.Public })
-            .ToList();
-        if (missingThemes.Count > 0)
-        {
-            await _themeRepository.AddRangeAsync(missingThemes);
-        }
-
-        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
-        {
-            Code = "free",
-            Name = "Бесплатный",
-            IsAutoGranted = true,
-            IsActive = true,
-            ThemeIds = ["basic"]
-        });
-        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
-        {
-            Code = "extended",
-            Name = "Расширенный",
-            IsAutoGranted = false,
-            IsActive = true,
-            ThemeIds = ["cyberpunk", "sakura", "art-deco"]
-        });
-        await AddPackageIfMissingAsync(existingPackages, new ThemePackage
-        {
-            Code = "spring-cross-step",
-            Name = "Весенний кросс-степ",
-            IsAutoGranted = false,
-            IsActive = true,
-            ThemeIds = ["spring-cross-step"]
-        });
-    }
-
-    private async Task AddPackageIfMissingAsync(IEnumerable<ThemePackage> existingPackages, ThemePackage package)
-    {
-        if (existingPackages.Any(x => string.Equals(x.Code, package.Code, StringComparison.Ordinal)))
+        const string legacyEmail = "legacy@t.ru";
+        var existing = await _emailAccountRepository.GetByEmailAsync(legacyEmail);
+        if (existing is not null)
         {
             return;
         }
 
-        await _themePackageRepository.UpsertAsync(package);
+        var organizer = new Organizer
+        {
+            Id = Guid.NewGuid(),
+            Name = "Legacy User",
+            Role = OrganizerRole.Organizer,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _organizerRepository.AddAsync(organizer);
+
+        await _emailAccountRepository.AddAsync(new EmailAccount
+        {
+            Id = Guid.NewGuid(),
+            OrganizerId = organizer.Id,
+            Email = legacyEmail,
+            PasswordHash = _passwordHasher.HashPassword("123456"),
+            CreatedAt = DateTime.UtcNow,
+            LastUsedAt = DateTime.UtcNow
+        });
     }
+
+    private async Task EnsureActiveGrantsAsync(Guid subjectId)
+    {
+        var existing = await _consentEventRepository.ListBySubjectAsync(subjectId);
+        var hasPd = existing.Any(e =>
+            e.LegalDocumentVersionId == PdConsentVersionId && e.Decision == ConsentDecision.Grant);
+        var hasTerms = existing.Any(e =>
+            e.LegalDocumentVersionId == TermsVersionId && e.Decision == ConsentDecision.Grant);
+
+        var now = DateTimeOffset.UtcNow;
+        if (!hasPd)
+        {
+            await _consentEventRepository.TryAddAsync(new ConsentEvent
+            {
+                Id = Guid.NewGuid(),
+                SubjectId = subjectId,
+                LegalDocumentVersionId = PdConsentVersionId,
+                DocumentHash = PdConsentHash,
+                Decision = ConsentDecision.Grant,
+                EventAt = now
+            });
+        }
+
+        if (!hasTerms)
+        {
+            await _consentEventRepository.TryAddAsync(new ConsentEvent
+            {
+                Id = Guid.NewGuid(),
+                SubjectId = subjectId,
+                LegalDocumentVersionId = TermsVersionId,
+                DocumentHash = TermsHash,
+                Decision = ConsentDecision.Grant,
+                EventAt = now
+            });
+        }
+    }
+
 }

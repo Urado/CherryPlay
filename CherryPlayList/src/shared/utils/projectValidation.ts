@@ -14,9 +14,6 @@ import {
 } from '@core/types/project';
 import { LOUDNESS_ALGORITHM_VERSION, type TrackLoudnessStatus } from '@core/types/track';
 
-/**
- * Результат валидации проекта
- */
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -24,30 +21,18 @@ export interface ValidationResult {
   data: ProjectFile | null;
 }
 
-/**
- * Проверяет, является ли значение объектом
- */
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/**
- * Проверяет, является ли значение массивом
- */
 function isArray(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
 
-/**
- * Проверяет, является ли значение строкой
- */
 function isString(value: unknown): value is string {
   return typeof value === 'string';
 }
 
-/**
- * Проверяет, является ли значение числом
- */
 function isNumber(value: unknown): value is number {
   return typeof value === 'number' && !isNaN(value);
 }
@@ -110,9 +95,6 @@ function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrack
   };
 }
 
-/**
- * Валидирует ActionAfterTrack
- */
 function isValidActionAfterTrack(value: unknown): boolean {
   return value === 'next' || value === 'pauseAndNext' || value === 'pause';
 }
@@ -176,9 +158,6 @@ function validateTrackLoudness(
   return true;
 }
 
-/**
- * Валидирует SavedProjectTrack
- */
 function validateSavedTrack(
   item: unknown,
   errors: string[],
@@ -221,9 +200,6 @@ function validateSavedTrack(
   return true;
 }
 
-/**
- * Валидирует SavedProjectGroup
- */
 function validateSavedGroup(item: unknown, errors: string[]): item is SavedProjectGroup {
   if (!isObject(item)) {
     errors.push('Group item is not an object');
@@ -260,9 +236,6 @@ function validateSavedGroup(item: unknown, errors: string[]): item is SavedProje
   return true;
 }
 
-/**
- * Валидирует SavedProjectItem
- */
 function validateSavedItem(
   item: unknown,
   errors: string[],
@@ -283,9 +256,6 @@ function validateSavedItem(
   }
 }
 
-/**
- * Валидирует ProjectSettings с graceful degradation
- */
 function validateSettings(settings: unknown, warnings: string[]): ProjectSettings {
   const result = { ...DEFAULT_PROJECT_SETTINGS };
 
@@ -308,7 +278,7 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
   }
 
   if (settings.plannedEndTime === null || isNumber(settings.plannedEndTime)) {
-    result.plannedEndTime = settings.plannedEndTime as number | null;
+    result.plannedEndTime = settings.plannedEndTime;
   } else if (settings.plannedEndTime !== undefined) {
     warnings.push('Invalid plannedEndTime, using default');
   }
@@ -322,9 +292,6 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
   return result;
 }
 
-/**
- * Валидирует ProjectSessionState с graceful degradation
- */
 function validateSessionState(sessionState: unknown, warnings: string[]): ProjectSessionState {
   const result = { ...DEFAULT_SESSION_STATE };
 
@@ -361,9 +328,6 @@ function validateSessionState(sessionState: unknown, warnings: string[]): Projec
   return result;
 }
 
-/**
- * Валидирует trackSettings
- */
 function validateTrackSettings(
   trackSettings: unknown,
   warnings: string[],
@@ -386,7 +350,7 @@ function validateTrackSettings(
     const settings: ProjectTrackSettings = {};
 
     if (value.pauseBetweenTracks === null || isNumber(value.pauseBetweenTracks)) {
-      settings.pauseBetweenTracks = value.pauseBetweenTracks as number | null;
+      settings.pauseBetweenTracks = value.pauseBetweenTracks;
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
@@ -400,9 +364,6 @@ function validateTrackSettings(
   return result;
 }
 
-/**
- * Валидирует groupSettings
- */
 function validateGroupSettings(
   groupSettings: unknown,
   warnings: string[],
@@ -425,7 +386,7 @@ function validateGroupSettings(
     const settings: ProjectGroupSettings = {};
 
     if (value.pauseBetweenTracks === null || isNumber(value.pauseBetweenTracks)) {
-      settings.pauseBetweenTracks = value.pauseBetweenTracks as number | null;
+      settings.pauseBetweenTracks = value.pauseBetweenTracks;
     }
 
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
@@ -439,15 +400,10 @@ function validateGroupSettings(
   return result;
 }
 
-/**
- * Валидирует файл проекта .cherry
- * Возвращает результат валидации с graceful degradation
- */
 export function validateProjectFile(data: unknown): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Проверяем базовую структуру
   if (!isObject(data)) {
     return {
       isValid: false,
@@ -457,7 +413,6 @@ export function validateProjectFile(data: unknown): ValidationResult {
     };
   }
 
-  // Проверяем версию
   if (data.version !== '2.0') {
     if (data.version === undefined) {
       errors.push('Missing version field');
@@ -466,7 +421,6 @@ export function validateProjectFile(data: unknown): ValidationResult {
     }
   }
 
-  // Проверяем name
   let name = 'Untitled';
   if (isString(data.name)) {
     name = data.name;
@@ -474,7 +428,6 @@ export function validateProjectFile(data: unknown): ValidationResult {
     warnings.push('Missing or invalid name, using "Untitled"');
   }
 
-  // Проверяем items
   const items: SavedProjectItem[] = [];
   if (!isArray(data.items)) {
     errors.push('Missing or invalid items array');
@@ -489,11 +442,9 @@ export function validateProjectFile(data: unknown): ValidationResult {
     }
   }
 
-  // Проверяем rootItems
   let rootItems: string[] = [];
   if (!isArray(data.rootItems)) {
     errors.push('Missing or invalid rootItems array');
-    // Fallback: use all top-level item IDs
     rootItems = items.map((item) => item.id);
     warnings.push('Using all items as root items');
   } else {
@@ -503,16 +454,12 @@ export function validateProjectFile(data: unknown): ValidationResult {
     }
   }
 
-  // Валидируем settings с graceful degradation
   const settings = validateSettings(data.settings, warnings);
 
-  // Валидируем trackSettings
   const trackSettings = validateTrackSettings(data.trackSettings, warnings);
 
-  // Валидируем groupSettings
   const groupSettings = validateGroupSettings(data.groupSettings, warnings);
 
-  // Валидируем sessionState
   const sessionState = validateSessionState(data.sessionState, warnings);
 
   const partyTrackDisplay =
@@ -534,7 +481,19 @@ export function validateProjectFile(data: unknown): ValidationResult {
       ? validatePartyCustomizationSettings(data.partyCustomizationSettings, warnings)
       : undefined;
 
-  // Если есть критические ошибки, возвращаем null
+  let linkedParty: ProjectFile['linkedParty'];
+  if (data.linkedParty !== undefined) {
+    if (
+      isObject(data.linkedParty) &&
+      isString(data.linkedParty.id) &&
+      isString(data.linkedParty.shortCode)
+    ) {
+      linkedParty = { id: data.linkedParty.id, shortCode: data.linkedParty.shortCode };
+    } else {
+      warnings.push('Invalid linkedParty, omitting');
+    }
+  }
+
   if (errors.length > 0) {
     return {
       isValid: false,
@@ -544,7 +503,6 @@ export function validateProjectFile(data: unknown): ValidationResult {
     };
   }
 
-  // Собираем валидный ProjectFile
   const projectFile: ProjectFile = {
     version: '2.0',
     name,
@@ -554,6 +512,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
     trackSettings,
     groupSettings,
     sessionState,
+    ...(linkedParty ? { linkedParty } : {}),
     partyTrackDisplay,
     ...(partyThemeId !== undefined ? { partyThemeId } : {}),
     ...(partyCustomizationSettings !== undefined ? { partyCustomizationSettings } : {}),
@@ -567,22 +526,16 @@ export function validateProjectFile(data: unknown): ValidationResult {
   };
 }
 
-/**
- * Проверяет целостность ссылок в проекте
- * (все rootItems и group.items ссылаются на существующие элементы)
- */
 export function validateProjectIntegrity(projectFile: ProjectFile): string[] {
   const warnings: string[] = [];
   const itemIds = new Set(projectFile.items.map((item) => item.id));
 
-  // Проверяем rootItems
   for (const rootId of projectFile.rootItems) {
     if (!itemIds.has(rootId)) {
       warnings.push(`Root item ${rootId} not found in items`);
     }
   }
 
-  // Проверяем ссылки в группах
   for (const item of projectFile.items) {
     if (item.type === 'group') {
       for (const childId of item.items) {

@@ -9,7 +9,7 @@
 | Режим | Скрипт | Env | Сервер | Auth / Party | SignalR |
 | ----- | ------ | --- | ------ | ------------ | ------- |
 | **Fixtures** | `npm run dev:web` (+ `dev:web:project`) | `VITE_APP_MODE=demo`, без `VITE_DEMO_LIVE` | Не нужен | Фикстуры (`supportsRealAuth: false`) | Нет |
-| **Live** | `npm run dev:web:live` | `VITE_APP_MODE=demo` + `VITE_DEMO_LIVE=1` | CherryPlayServer на `:5000` | Local email/password (`/auth/login`); party с сервера (`supportsRealAuth: true`) | Да, при **Онлайн** ON |
+| **Live** | `npm run dev:web:live` | `VITE_APP_MODE=demo` + `VITE_DEMO_LIVE=1` | CherryPlayServer на `:5000` | Browser SSO через CherryPlayWeb (`:3000`), как Desktop; party с сервера (`supportsRealAuth: true`) | Да, при **Онлайн** ON |
 
 `AppMode` в обоих случаях остаётся `'demo'`; live — overlay-флаг (`isDemoLiveMode()` / `VITE_DEMO_LIVE`), не отдельный `AppMode`.
 
@@ -130,7 +130,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 npm run dev:web:live
 cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000 vite
 ```
 
-Переключение fixtures ↔ live — **только** через скрипт/env; in-app toggle нет. OAuth (VK/Mail.ru) в live **не** требуется (local email/password).
+Переключение fixtures ↔ live — **только** через скрипт/env; in-app toggle нет. Вход в live — тот же browser SSO, что в Desktop (`BrowserLoginPanel` → CherryPlayWeb `/login?client=desktop`); для callback в web-демо используется `BroadcastChannel` + `auth-callback.html`.
 
 ---
 
@@ -140,7 +140,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 - **Плейлист** — DnD из обозревателя, переупорядочивание, **undo/redo**.
 - **Коллекции (Collection)** — список треков, DnD, группы, undo/redo (как плейлист); экспорт JSON и копирование треков в папку — **«Не доступно в демо»**.
 - **Party (fixtures)** — старт **без** `linkedParty` (шапка **«Не создана»** / CTA **«Создать»**); фикстура `demoPartyFixture` (`DEMODK`) доступна через demo-сценарии (в т.ч. legacy **Черновик**); **Онлайн** по умолчанию (`enableStreaming: true`); без SignalR и без зависимости от `:5000`.
-- **Party / auth (live)** — local login/register против сервера; данные вечеринок с API; SignalR при Online ON через proxy. Гостевой URL (`getPartyUrl`) при пустом `serverUrl` (Vite proxy / same-origin) — `http://localhost:3000/party/{shortCode}`; при непустом `VITE_API_URL` — эвристика host + `:5000`→`:3000` (как в Electron).
+- **Party / auth (live)** — browser SSO через CherryPlayWeb (нужен `:3000` + сервер `:5000`); данные вечеринок с API; SignalR при Online ON через proxy. Гостевой URL (`getPartyUrl`) при пустом `serverUrl` (Vite proxy / same-origin) — `http://localhost:3000/party/{shortCode}`; при непустом `VITE_API_URL` — эвристика host + `:5000`→`:3000` (как в Electron).
 - **Загрузка демо-проекта** — меню **Файл** → **«Учебный демо-проект…»** (`title`: «Загружает учебный демо-проект, не настоящую вечеринку») или `npm run dev:web:project` (fixtures; live-флаг выключен). При `meta.isDirty` — confirm перед отбрасыванием изменений (см. [Save/Load](./modules/systems/save-load.md)).
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех без записи файлов на диск; **без** success-toast (модалка закрывается).
 - **Нормализация громкости (simulated)** — `supportsLoudnessAnalysis: true`; Player gear (`TrackSettingsModal` isGlobal) / track controls доступны для UI-работы в `dev:web` / `dev:web:project`. IPC `audio:analyzeLoudness` / `audio:statAudioFile` обслуживает `WebDemoPlatform` через детерминированные профили (`demoLoudnessAnalyzer.ts`), **без** FFmpeg. `sample.cherry` seeded с `track.loudness`. Реальный local playback по-прежнему недоступен. См. [loudness](./modules/audio/loudness-normalization.md), [Platform](./modules/platform/README.md).
@@ -165,11 +165,11 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 | **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`, фикстурный плейлист); desktop без изменений                                                         | То же                                                                                                          |
 | **Loudness**               | ✓ UI + simulated scan (фикстуры); без FFmpeg; без реального local playback                                                                           | То же                                                                                                          |
 | **Party**                  | Старт без link (**Не создана**); фикстура `DEMODK` через demo-сценарии; без live REST/SignalR                      | REST/SignalR к серверу при Online ON                                                                           |
-| **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Local email/password (`/auth/login`); OAuth вне scope                                                          |
+| **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Browser SSO как Desktop (`BrowserLoginPanel` → Web `:3000`); callback через `BroadcastChannel`                 |
 | **Трансляция / Онлайн**    | `enableStreaming` ↔ `networkEnabled`; hub **не** стартует                                                                                            | `enableStreaming` ↔ `networkEnabled`; hub при Online ON + `supportsRealAuth`                                   |
 | **Production web build**   | Нет `build:web-demo`                                                                                                                                 | Нет                                                                                                            |
 
-Вне scope: File System Access API, Android WebView, production web build, CherryPlayWeb как продукт, OAuth в браузерном демо, переименование `electronStorage`, mp3 в репозитории.
+Вне scope: File System Access API, Android WebView, production web build, переименование `electronStorage`, mp3 в репозитории. CherryPlayWeb нужен в live для browser SSO (как у Desktop).
 
 ---
 

@@ -1,4 +1,4 @@
-using System.Threading.RateLimiting;
+﻿using System.Threading.RateLimiting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Linq;
@@ -16,12 +16,18 @@ using CherryPlayServer.Core.Middleware;
 using CherryPlayServer.Core.Authorization;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Options;
+using CherryPlayServer.Infrastructure.Health;
+using CherryPlayServer.Infrastructure.OpenApi;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Prometheus;
+using Prometheus.DotNetRuntime;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -30,9 +36,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options => options.DocumentFilter<MetricsEndpointDocumentFilter>());
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", timeout: TimeSpan.FromSeconds(3));
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+builder.Services.UseHttpClientMetrics();
 builder.Services.AddHttpClient("RuSender", client =>
 {
     client.BaseAddress = new Uri("https://api.rusender.ru/");
@@ -58,6 +67,9 @@ builder.Services.AddCors(options =>
 var useInMemoryStorage = builder.Configuration.GetValue<bool>("UseInMemoryStorage");
 if (useInMemoryStorage)
 {
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("CherryPlayAdmin"));
+    builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
+    builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
     builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
     builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
     builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
@@ -66,10 +78,13 @@ if (useInMemoryStorage)
     builder.Services.AddSingleton<IEmailAccountRepository, InMemoryEmailAccountRepository>();
     builder.Services.AddSingleton<IPasswordResetTokenRepository, InMemoryPasswordResetTokenRepository>();
     builder.Services.AddSingleton<IPasswordResetApplicator, InMemoryPasswordResetApplicator>();
+    builder.Services.AddSingleton<IDesktopAuthCodeRepository, InMemoryDesktopAuthCodeRepository>();
     builder.Services.AddSingleton<IThemeRepository, InMemoryThemeRepository>();
     builder.Services.AddSingleton<IThemePackageRepository, InMemoryThemePackageRepository>();
     builder.Services.AddSingleton<IOrganizerEntitlementRepository, InMemoryOrganizerEntitlementRepository>();
     builder.Services.AddSingleton<IAdminAuditLogRepository, InMemoryAdminAuditLogRepository>();
+    builder.Services.AddSingleton<ILegalDocumentVersionRepository, InMemoryLegalDocumentVersionRepository>();
+    builder.Services.AddSingleton<IConsentEventRepository, InMemoryConsentEventRepository>();
 }
 else
 {
@@ -88,10 +103,15 @@ else
     builder.Services.AddScoped<IEmailAccountRepository, EfEmailAccountRepository>();
     builder.Services.AddScoped<IPasswordResetTokenRepository, EfPasswordResetTokenRepository>();
     builder.Services.AddScoped<IPasswordResetApplicator, EfPasswordResetApplicator>();
+    builder.Services.AddScoped<IDesktopAuthCodeRepository, EfDesktopAuthCodeRepository>();
     builder.Services.AddScoped<IThemeRepository, EfThemeRepository>();
     builder.Services.AddScoped<IThemePackageRepository, EfThemePackageRepository>();
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
+    builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
+    builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
     builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
+    builder.Services.AddScoped<ILegalDocumentVersionRepository, EfLegalDocumentVersionRepository>();
+    builder.Services.AddScoped<IConsentEventRepository, EfConsentEventRepository>();
 }
 
 builder.Services.Configure<EmailOptions>(options =>
@@ -128,10 +148,21 @@ builder.Services.AddScoped<IPartyService, PartyService>();
 builder.Services.AddScoped<IPublicPartyQueryService, PublicPartyQueryService>();
 builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+builder.Services.AddScoped<IAdminEntitlementService, AdminEntitlementService>();
+builder.Services.AddScoped<IAdminQueryService, AdminQueryService>();
+if (useInMemoryStorage)
+{
+    builder.Services.AddSingleton<IAppUnitOfWork, InMemoryAppUnitOfWork>();
+}
+else
+{
+    builder.Services.AddScoped<IAppUnitOfWork, EfAppUnitOfWork>();
+}
 builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
+builder.Services.AddSingleton<SignalRConnectionMetrics>();
 builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));
 builder.Services.Configure<CherryPlayServer.Core.Options.ClientCompatibilityOptions>(
@@ -143,6 +174,24 @@ builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IOAuthStateService, OAuthStateService>();
 
+if (useInMemoryStorage)
+{
+    builder.Services.AddSingleton<ILegalConsentUnitOfWork>(sp => new InMemoryLegalConsentUnitOfWork(
+        sp.GetRequiredService<IOrganizerRepository>(),
+        sp.GetRequiredService<IEmailAccountRepository>(),
+        sp.GetRequiredService<IOAuthAccountRepository>(),
+        sp.GetRequiredService<IConsentEventRepository>(),
+        sp.GetRequiredService<ILegalDocumentVersionRepository>()));
+}
+else
+{
+    builder.Services.AddScoped<ILegalConsentUnitOfWork, EfLegalConsentUnitOfWork>();
+}
+builder.Services.AddScoped<ILegalDocumentsService, LegalDocumentsService>();
+builder.Services.AddScoped<IOrganizersService, OrganizersService>();
+builder.Services.AddScoped<IOAuthAccountsService, OAuthAccountsService>();
+builder.Services.AddScoped<IConsentEventsService, ConsentEventsService>();
+
 builder.Services.AddTransient<VkOAuthClient>();
 builder.Services.AddTransient<MailRuOAuthClient>();
 builder.Services.AddTransient<TelegramOAuthClient>();
@@ -153,6 +202,7 @@ builder.Services.AddTransient<IOAuthProviderClient>(sp => sp.GetRequiredService<
 
 builder.Services.AddSingleton<IOAuthService, OAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDesktopAuthCodeService, DesktopAuthCodeService>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -207,9 +257,14 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddScoped<IDataSeeder, DataSeeder>();
+builder.Services.AddScoped<IThemeCatalogSeeder, ThemeCatalogSeeder>();
 builder.Services.AddHostedService<DataSeederHostedService>();
+builder.Services.AddHostedService<PasswordResetTokenRetentionCleanupHostedService>();
 
 var app = builder.Build();
+app.Services.GetRequiredService<SignalRConnectionMetrics>();
+var runtimeMetrics = DotNetRuntimeStatsBuilder.Default().StartCollecting();
+app.Lifetime.ApplicationStopped.Register(runtimeMetrics.Dispose);
 
 var autoMigrateOnStartup = builder.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup");
 if (!builder.Configuration.GetValue<bool>("UseInMemoryStorage") && autoMigrateOnStartup)
@@ -291,6 +346,8 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseMiddleware<RequestCorrelationLoggingMiddleware>();
+app.UseHttpMetrics(options => options.ReduceStatusCodeCardinality());
 app.UseCors("ConfiguredOrigins");
 app.UseRateLimiter();
 app.UseExceptionHandler();
@@ -308,9 +365,15 @@ app.UseMiddleware<ClientVersionMiddleware>();
 app.UseMiddleware<JwtAuthenticationMiddleware>();
 
 app.UseAuthorization();
+app.UseMiddleware<ConsentGateMiddleware>();
 
 app.MapControllers();
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
+app.MapMetrics().WithMetadata(
+    new HttpMethodMetadata(["GET"]),
+    new EndpointNameMetadata("GetMetrics"),
+    new EndpointSummaryAttribute("Get Prometheus metrics"),
+    new EndpointDescriptionAttribute("Returns application and runtime metrics in Prometheus exposition format."));
 
 app.Run();
 

@@ -1,12 +1,12 @@
-import { Button, IconButton } from '@cherryplay/components';
-import CloseIcon from '@mui/icons-material/Close';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
+import { Button, IconButton } from '@cherryplay/components';
+import CloseIcon from '@mui/icons-material/Close';
 import { APP_VERSION } from '@shared/config';
+import { getWebBaseUrl } from '@shared/config/serverConfig';
 import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
-import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
+import { getPlatform, getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
 import {
   applySettingsImport,
   exportSettingsBundle,
@@ -18,6 +18,8 @@ import { useAimpStore, useSettingsStore, useUIStore } from '@shared/stores';
 import type { TrackItemSizePreset } from '@shared/types/trackItemSize';
 import { getAimpAvailability } from '@shared/utils';
 import { AudioDevice, getAudioOutputDevices, getDefaultDeviceId } from '@shared/utils/audioDevices';
+import { buildLegalDocumentUrl } from '@shared/utils/legalLinks';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const DIVIDER_INTERVALS = [
   { value: 900, label: '15 минут' },
@@ -73,8 +75,33 @@ export const SettingsModal: React.FC = () => {
 
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
+  const [legalLinks, setLegalLinks] = useState<{ privacy: string; legal: string } | null>(null);
 
   const prevModalRef = useRef(modal);
+
+  useEffect(() => {
+    if (modal !== 'settings') {
+      return;
+    }
+
+    let active = true;
+    getWebBaseUrl()
+      .then((webBaseUrl) => {
+        if (active) {
+          setLegalLinks({
+            privacy: buildLegalDocumentUrl(webBaseUrl, 'privacy'),
+            legal: buildLegalDocumentUrl(webBaseUrl, 'legal'),
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load legal links', error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [modal]);
 
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
@@ -605,6 +632,35 @@ export const SettingsModal: React.FC = () => {
                 {getPlatformUnavailableMessage()}
               </div>
             )}
+
+            <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
+
+            <div className="settings-section-title" style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}>
+              Правовая информация
+            </div>
+
+            <div className="settings-group">
+              <Button
+                type="button"
+                className="modal-button"
+                variant="secondary"
+                size="sm"
+                disabled={!legalLinks}
+                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'privacy' })}
+              >
+                Политика персональных данных
+              </Button>
+              <Button
+                type="button"
+                className="modal-button"
+                variant="secondary"
+                size="sm"
+                disabled={!legalLinks}
+                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'legal' })}
+              >
+                Реквизиты и контакты
+              </Button>
+            </div>
 
             <div className="settings-version">Версия {APP_VERSION}</div>
           </div>

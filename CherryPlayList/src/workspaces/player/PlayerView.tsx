@@ -1,8 +1,8 @@
-import React from 'react';
 
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
+import React from 'react';
 
 import { DraggedItems, InsertPosition } from '../../modules/dragDrop/types';
 

@@ -2,6 +2,7 @@
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: #d4af37;
   font-family: 'Playfair Display', 'Georgia', serif;
+  --party-playlist-row-inline-start: 16px;
 }
 
 [data-theme='art-deco'] .party-playlist-header {
@@ -39,13 +40,6 @@
   font-size: 15px;
 }
 
-[data-theme='art-deco'] .party-playlist-group-items {
-  border-left: 2px solid var(--border-color);
-  margin-left: 16px;
-  padding-left: 16px;
-  margin-top: 6px;
-}
-
 @media (max-width: 480px) {
   [data-theme='art-deco'] .party-playlist-header {
     padding: 12px 10px 10px;
@@ -68,10 +62,5 @@
   [data-theme='art-deco'] .party-playlist-empty {
     padding: 32px 12px;
     font-size: 14px;
-  }
-
-  [data-theme='art-deco'] .party-playlist-group-items {
-    margin-left: 10px;
-    padding-left: 10px;
   }
 }

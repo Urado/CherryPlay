@@ -1,12 +1,11 @@
 import { PlaybackControlButton } from '@cherryplay/components';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import React, { useCallback } from 'react';
-
 import { usePlaybackTimeline } from '@shared/hooks/usePlaybackTimeline';
 import { usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
 import { togglePlayPause } from '@shared/utils/togglePlayPause';
+import React, { useCallback } from 'react';
 
 interface PlayerControlsProps {
   onNext?: () => void;

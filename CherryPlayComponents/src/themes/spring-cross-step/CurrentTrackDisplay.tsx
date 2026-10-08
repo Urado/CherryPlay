@@ -28,10 +28,6 @@ function getStatusLabel(status: PlaybackState['status']): string {
   }
 }
 
-/**
- * CurrentTrackDisplay for spring-cross-step theme.
- * Markup from reference: status row (dot + label), name, meta, time row, progress bar with knob.
- */
 export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayProps> = ({
   playbackState,
   playlist,
@@ -57,10 +53,10 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
       ? flatTracks.findIndex((t) => t.id === playbackState.currentTrackId)
       : -1;
   const hasMultipleTracks = flatTracks.length > 1;
-  const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1]! : null;
+  const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1] : null;
   const nextTrack =
     currentIndex >= 0 && currentIndex < flatTracks.length - 1
-      ? flatTracks[currentIndex + 1]!
+      ? flatTracks[currentIndex + 1]
       : null;
   const currentDisplayName =
     currentTrack && currentTrack.type === 'track' ? stripLastExtension(currentTrack.name) : '';

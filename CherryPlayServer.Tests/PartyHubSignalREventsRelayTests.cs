@@ -389,10 +389,11 @@ public class PartyHubSignalREventsRelayTests
         IJwtService? jwtService = null,
         int organizerOfflineGraceSeconds = 0)
     {
+        var tokenService = jwtService ?? new StubJwtService();
         return new PartyHub(
             streamingService ?? new StubStreamingService(),
             new PartyIdValidator(),
-            jwtService ?? new StubJwtService(),
+            tokenService,
             new StubPartyAccessService(),
             organizerTracker,
             partyRepository,
@@ -401,7 +402,8 @@ public class PartyHubSignalREventsRelayTests
             hubContext,
             new StubScopeFactory(),
             Options.Create(new PartyDisplayStatusOptions { OrganizerOfflineGraceSeconds = organizerOfflineGraceSeconds }),
-            NullLogger<PartyHub>.Instance);
+            NullLogger<PartyHub>.Instance,
+            new ValidatedOrganizerSessionRepository(tokenService));
     }
 
     private static void AttachAuthenticatedHubContext(

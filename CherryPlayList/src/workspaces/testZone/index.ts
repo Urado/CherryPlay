@@ -9,7 +9,7 @@ const testZoneTypes = ['test1', 'test2', 'test3', 'test4', 'test5', 'test6', 'te
 
 testZoneTypes.forEach((type) => {
   const TestZoneModule: IWorkspaceModule = {
-    id: `${type}-placeholder` as WorkspaceId,
+    id: `${type}-placeholder`,
     type,
     name: `Test Zone ${type.slice(-1)}`,
     component: TestZoneView,

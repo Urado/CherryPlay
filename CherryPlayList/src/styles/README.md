@@ -1,12 +1,12 @@
 # Styles Architecture
 
-Модульная система стилей с использованием CSS переменных из TypeScript темы.
+Модульная система стилей с общими токенами оболочки из CherryPlayComponents и локальными CSS-переменными CherryPlayList.
 
 ## Структура
 
 ```
 src/styles/
-├── variables.css          # CSS переменные (из TypeScript темы)
+├── variables.css          # Отступы, типографика и токены режима настройки окон
 ├── base.css              # Базовые стили (reset, scrollbar)
 ├── utilities.css         # Переиспользуемые утилиты
 ├── index.css             # Главный файл импорта
@@ -22,8 +22,8 @@ src/styles/
 
 ## Принципы
 
-1. **Single Source of Truth**: Все цвета, отступы и типографика определены в `src/theme/`
-2. **CSS переменные**: Используются для связи TypeScript темы с CSS
+1. **Общая палитра оболочки**: Цвета и токены UI-примитивов предоставляет `@cherryplay/components/styles/primitives.css`
+2. **Локальные переменные**: `variables.css` содержит только токены CherryPlayList
 3. **Модульность**: Каждый компонент имеет свой CSS модуль
 4. **Переиспользование**: Утилиты в `utilities.css` для общих паттернов
 
@@ -31,14 +31,9 @@ src/styles/
 
 Все стили импортируются через `src/styles/index.css` в `App.tsx`.
 
-## Генерация CSS переменных
+Shell palette активируется атрибутом `data-shell-theme="dark"` в `index.html`. `entry.tsx` импортирует сначала `styles/index.css`, чей первый импорт — `@cherryplay/components/styles/primitives.css`, затем компонентные стили и после них PartyTheme. Общие токены подключаются до локальных таблиц приложения. `variables.css` содержит только токены CherryPashka List для типографики, отступов и режима настройки окон. `src/theme/theme.ts` и `src/theme/generateCSS.ts` не подключены к runtime и не являются источниками отображаемых цветов.
 
-CSS переменные можно сгенерировать из TypeScript темы используя `src/theme/generateCSS.ts`:
-
-```typescript
-import { generateCSSVariables } from './theme/generateCSS';
-const css = generateCSSVariables();
-```
+PartyTheme подключается отдельно через `@cherryplay/components/themes/index.css`; атрибут `data-theme` задаёт независимые цвета каждой PartyTheme. Порталы с тематическим содержимым должны иметь собственную обёртку с `data-theme`. Shell-токены не должны заменять переменные PartyTheme.
 
 ## Переключение темы (будущее)
 

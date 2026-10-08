@@ -14,7 +14,7 @@ import './ClientOutdatedContext.css';
 
 const ClientOutdatedContext = createContext(false);
 
-function ClientOutdatedOverlay() {
+const ClientOutdatedOverlay = () => {
   const refreshButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -49,9 +49,9 @@ function ClientOutdatedOverlay() {
       </div>
     </div>
   );
-}
+};
 
-export function ClientOutdatedProvider({ children }: { children: ReactNode }) {
+export const ClientOutdatedProvider = ({ children }: { children: ReactNode }) => {
   const [outdated, setOutdated] = useState(isClientOutdated());
   const appContentRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +79,7 @@ export function ClientOutdatedProvider({ children }: { children: ReactNode }) {
       {outdated ? <ClientOutdatedOverlay /> : null}
     </ClientOutdatedContext.Provider>
   );
-}
+};
 
 export function useClientOutdated(): boolean {
   return useContext(ClientOutdatedContext);

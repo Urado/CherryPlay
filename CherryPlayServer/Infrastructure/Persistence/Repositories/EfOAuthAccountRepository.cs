@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
@@ -28,6 +29,25 @@ public class EfOAuthAccountRepository : IOAuthAccountRepository
         return ef?.ToDomain();
     }
 
+    public async Task<OAuthAccount?> GetByProviderUserIdForUpdateAsync(
+        OAuthProvider provider,
+        string providerUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var providerStr = provider.ToString().ToLowerInvariant();
+        var lockKey = $"{providerStr}:{providerUserId}";
+        await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({lockKey}))",
+            cancellationToken);
+
+        var ef = await _context.OAuthAccounts
+            .FromSqlInterpolated(
+                $"SELECT * FROM oauth_accounts WHERE provider = {providerStr} AND provider_user_id = {providerUserId} FOR UPDATE")
+            .AsTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+        return ef?.ToDomain();
+    }
+
     public async Task<List<OAuthAccount>> GetByOrganizerIdAsync(Guid organizerId)
     {
         var list = await _context.OAuthAccounts
@@ -39,10 +59,36 @@ public class EfOAuthAccountRepository : IOAuthAccountRepository
 
     public async Task<OAuthAccount> AddAsync(OAuthAccount account)
     {
+        if (!await TryAddAsync(account))
+        {
+            throw new InvalidOperationException(
+                $"OAuth account for provider {account.Provider} and user {account.ProviderUserId} already exists");
+        }
+
+        return account;
+    }
+
+    public async Task<bool> TryAddAsync(OAuthAccount account)
+    {
+        var providerStr = account.Provider.ToString().ToLowerInvariant();
+        if (await _context.OAuthAccounts.AnyAsync(
+                e => e.Provider == providerStr && e.ProviderUserId == account.ProviderUserId))
+        {
+            return false;
+        }
+
         var ef = account.ToEf();
         _context.OAuthAccounts.Add(ef);
-        await _context.SaveChangesAsync();
-        return account;
+        try
+        {
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException)
+        {
+            _context.Entry(ef).State = EntityState.Detached;
+            return false;
+        }
     }
 
     public async Task UpdateAsync(OAuthAccount account)

@@ -57,12 +57,12 @@ public class PublicPartiesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid argument for GetPublicParty: shortCode={ShortCode}", shortCode);
+            _logger.LogWarning("Invalid argument for GetPublicParty");
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving public party: shortCode={ShortCode}", shortCode);
+            _logger.LogError("Error retrieving public party: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving the party");
         }
     }
@@ -87,19 +87,16 @@ public class PublicPartiesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid argument for GetPartyPlaylist: shortCode={ShortCode}", shortCode);
+            _logger.LogWarning("Invalid argument for GetPartyPlaylist");
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving playlist: shortCode={ShortCode}", shortCode);
+            _logger.LogError("Error retrieving playlist: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving the playlist");
         }
     }
 
-    /// <summary>
-    /// Получает полное состояние вечеринки (плейлист + сессия)
-    /// </summary>
     [HttpGet("{shortCode}/state")]
     public async Task<ActionResult<PartyStateDto>> GetPartyState(string shortCode)
     {
@@ -120,19 +117,16 @@ public class PublicPartiesController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid argument for GetPartyState: shortCode={ShortCode}", shortCode);
+            _logger.LogWarning("Invalid argument for GetPartyState");
             return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving party state: shortCode={ShortCode}", shortCode);
+            _logger.LogError("Error retrieving party state: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving the party state");
         }
     }
 
-    /// <summary>
-    /// Получает список всех публичных вечеринок
-    /// </summary>
     [HttpGet("list")]
     public async Task<ActionResult<List<PublicPartyListItemDto>>> GetAllParties()
     {
@@ -143,7 +137,7 @@ public class PublicPartiesController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving all public parties");
+            _logger.LogError("Error retrieving all public parties: failureType={FailureType}, failureLocation={FailureLocation}", ex.GetType().Name, CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             return StatusCode(500, "An error occurred while retrieving the parties");
         }
     }

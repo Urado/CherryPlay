@@ -1,14 +1,20 @@
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import React, { useCallback } from 'react';
-import { shallow } from 'zustand/shallow';
 
 import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
+import * as signalR from '@microsoft/signalr';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { StreamingConnectionIndicator } from '@shared/components';
 import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 import { formatPlayerTime } from '@shared/utils/durationUtils';
 import { togglePlayPause } from '@shared/utils/togglePlayPause';
+import React, { useCallback } from 'react';
+import { shallow } from 'zustand/shallow';
+
+import {
+  resolveHeaderPlaybackTransmissionLabel,
+  resolveHeaderPlaybackTransmissionState,
+} from './headerPlaybackTransmission';
 
 interface HeaderPlaybackPillProps {
   disabled?: boolean;
@@ -42,6 +48,16 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
   const canToggle = currentTrack !== null && !disabled;
   const resolvedDuration = duration || currentTrack?.duration || 0;
   const showTimeline = resolvedDuration > 0 && currentTrack !== null;
+  const sessionActive = sessionMode === 'session';
+  const transmissionState = resolveHeaderPlaybackTransmissionState({
+    hasLinkedParty: Boolean(linkedParty),
+    sessionActive,
+    connected: connectionState === signalR.HubConnectionState.Connected,
+    connecting:
+      connectionState === signalR.HubConnectionState.Connecting ||
+      connectionState === signalR.HubConnectionState.Reconnecting,
+  });
+  const transmissionLabel = resolveHeaderPlaybackTransmissionLabel(transmissionState, sessionActive);
 
   const handleToggle = useCallback(() => {
     void togglePlayPause({
@@ -98,6 +114,13 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
               : '\u00a0'}
           </span>
         </div>
+        <span
+          className="playback-pill__transmission"
+          data-state={transmissionState}
+          title={transmissionLabel}
+        >
+          {transmissionLabel}
+        </span>
       </div>
 
       {linkedParty ? (

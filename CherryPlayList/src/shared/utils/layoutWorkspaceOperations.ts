@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 
 import { MAX_LAYOUT_DEPTH, MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import {
@@ -19,6 +18,7 @@ import {
   ZoneId,
 } from '@core/types/layout';
 import { WorkspaceId } from '@core/types/workspace';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   cleanupContainers,
@@ -167,7 +167,7 @@ function migrateAimpZoneToPlayer(zone: Zone): Zone {
 export function migrateAimpZonesToPlayerInLayout(layout: Layout): Layout {
   return {
     ...layout,
-    rootZone: migrateAimpZoneToPlayer(layout.rootZone) as Layout['rootZone'],
+    rootZone: migrateAimpZoneToPlayer(layout.rootZone),
   };
 }
 
@@ -203,7 +203,7 @@ export function migrateDuplicateFileBrowserWorkspaceIds(layout: Layout): Layout 
 
   return {
     ...layout,
-    rootZone: migrateDuplicateFileBrowserZone(layout.rootZone, seenDefaultId) as Layout['rootZone'],
+    rootZone: migrateDuplicateFileBrowserZone(layout.rootZone, seenDefaultId),
   };
 }
 

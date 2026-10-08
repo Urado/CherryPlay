@@ -1,9 +1,13 @@
-import { ProjectItem } from '@core/types/project';
+import {
+  ProjectItem,
+  type ProjectGroupSettings,
+  type ProjectTrackSettings,
+} from '@core/types/project';
 
 import { insertItemAtPath } from '../stores/projectStoreCore';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 
-import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from './index';
+import { CommandResult, HistoryCommand, ItemPosition, ItemsState } from '.';
 
 export class AddItemsCommand implements HistoryCommand {
   readonly type = 'addItems';
@@ -27,10 +31,18 @@ export class AddItemsCommand implements HistoryCommand {
   }
 }
 
+export type AddItemsAtPositionsSettings = {
+  trackSettings?: Map<string, ProjectTrackSettings>;
+  groupSettings?: Map<string, ProjectGroupSettings>;
+};
+
 export class AddItemsAtPositionsCommand implements HistoryCommand {
   readonly type = 'addItemsAtPositions';
 
-  constructor(private readonly positions: ItemPosition[]) {}
+  constructor(
+    private readonly positions: ItemPosition[],
+    private readonly addedSettings?: AddItemsAtPositionsSettings,
+  ) {}
 
   execute(state: ItemsState): CommandResult {
     let newItems = [...state.items];
@@ -38,7 +50,24 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
     for (const pos of sortedPositions) {
       newItems = insertItemAtPath(newItems, cloneItem(pos.item), pos.parentPath, pos.index);
     }
-    return { success: true, newState: { items: newItems } };
+    const newState: Partial<ItemsState> = { items: newItems };
+    const trackEntries = this.addedSettings?.trackSettings;
+    if (trackEntries && trackEntries.size > 0) {
+      const nextTrackSettings = new Map(state.trackSettings ?? []);
+      for (const [trackId, settings] of trackEntries) {
+        nextTrackSettings.set(trackId, { ...settings });
+      }
+      newState.trackSettings = nextTrackSettings;
+    }
+    const groupEntries = this.addedSettings?.groupSettings;
+    if (groupEntries && groupEntries.size > 0) {
+      const nextGroupSettings = new Map(state.groupSettings ?? []);
+      for (const [groupId, settings] of groupEntries) {
+        nextGroupSettings.set(groupId, { ...settings });
+      }
+      newState.groupSettings = nextGroupSettings;
+    }
+    return { success: true, newState };
   }
 
   undo(state: ItemsState): CommandResult {
@@ -53,6 +82,23 @@ export class AddItemsAtPositionsCommand implements HistoryCommand {
           return item;
         });
     };
-    return { success: true, newState: { items: removeRecursive(state.items) } };
+    const newState: Partial<ItemsState> = { items: removeRecursive(state.items) };
+    const trackEntries = this.addedSettings?.trackSettings;
+    if (trackEntries && trackEntries.size > 0) {
+      const nextTrackSettings = new Map(state.trackSettings ?? []);
+      for (const trackId of trackEntries.keys()) {
+        nextTrackSettings.delete(trackId);
+      }
+      newState.trackSettings = nextTrackSettings;
+    }
+    const groupEntries = this.addedSettings?.groupSettings;
+    if (groupEntries && groupEntries.size > 0) {
+      const nextGroupSettings = new Map(state.groupSettings ?? []);
+      for (const groupId of groupEntries.keys()) {
+        nextGroupSettings.delete(groupId);
+      }
+      newState.groupSettings = nextGroupSettings;
+    }
+    return { success: true, newState };
   }
 }

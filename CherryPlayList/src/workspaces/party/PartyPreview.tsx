@@ -8,9 +8,9 @@ import {
   type CustomizationSettings,
   type PartyViewerStatusId,
 } from '@cherryplay/components';
+import type { PartyLifecycleState } from '@shared/services/partyService';
 import React, { useMemo } from 'react';
 
-import type { PartyLifecycleState } from '@shared/services/partyService';
 
 import { isPlaybackLiveActive, resolvePreviewViewerStatusId } from './partyPreviewLifecycle';
 
@@ -24,9 +24,7 @@ interface PartyPreviewProps {
   partyName?: string;
   subtitle?: string;
   partyId?: string;
-  /** Server lifecycle; unlinked/draft → draft viewer status. */
   previewLifecycleState?: PartyLifecycleState | null;
-  /** Demo-only: force viewer status (e.g. connection break). */
   previewViewerStatusOverride?: PartyViewerStatusId | null;
 }
 
@@ -51,9 +49,7 @@ export const PartyPreview: React.FC<PartyPreviewProps> = ({
       partyName,
       subtitle: subtitle ?? undefined,
       themeId,
-      customizationSettings: customizationSettings as
-        | CustomizationSettings<PartyThemeId>
-        | undefined,
+      customizationSettings: customizationSettings,
       playlist,
       playbackState: playbackState || null,
       isSessionActive: isPlaybackLiveActive(playbackState),

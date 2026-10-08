@@ -39,7 +39,7 @@
 - По умолчанию вечеринка **unlisted** (доступна только по ссылке); при create можно сразу включить каталог (чекбокс).
 - Включение в **каталог** — решение организатора (toggle в кабинете, Editor, **Мои вечеринки**) при `ready` и `completed`.
 - Публичный список вечеринок: GET `/api/parties/public/list` — только с `isListedInCatalog=true` **и** не `draft` (см. `PublicPartyQueryService`, [CONTRACTS.md](../../CONTRACTS.md) §2, [DATABASE.md](../../CherryPlayServer/DATABASE.md)). Empty-state hint на странице каталога Web указывает создать вечеринку в CherryPlayList.
-- Антиспам: rate limiting на публичные ручки и Hub; лимиты по вечеринкам (например, ограничение числа «будущих» вечеринок на организатора — по плану §4.2).
+- Антиспам: rate limiting на публичные ручки и Hub; лимит «будущих» вечеринок на организатора — `AuthConstants.MaxFuturePartiesPerOrganizer` = 2, **только при create** (`PartyService`; update `EventDateTime` не перепроверяет) — по плану §4.2, [CONTRACTS.md](../../CONTRACTS.md) §8.
 
 ### Карточка вечеринки в каталоге
 
@@ -47,7 +47,7 @@
 
 ## Лимиты v1
 
-- Ограничение «будущих» вечеринок на организатора (например, 2); повышение лимита — вручную, без админки.
+- `AuthConstants.MaxFuturePartiesPerOrganizer` = **2**: при `POST /api/parties` считаются вечеринки организатора с `EventDateTime > UtcNow`; при достижении лимита create отклоняется. Проверка **create-only** (`PartyService`); смена даты через update лимит не пересчитывает. Повышение — вручную, без админки.
 
 ## Страницы для зрителей
 

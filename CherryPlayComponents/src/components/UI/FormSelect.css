@@ -1,0 +1,28 @@
+@import './FormField.css';
+
+.form-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  background-color: var(--bg-primary, #fff);
+  color: var(--text-primary, #333);
+}
+
+.form-select:focus-visible {
+  outline: 2px solid var(--accent-primary, #4a9eff);
+  outline-offset: 2px;
+  border-color: var(--accent-primary, #4a9eff);
+}
+
+.form-select:disabled {
+  background-color: var(--bg-disabled, #f5f5f5);
+  cursor: not-allowed;
+}
+
+.form-select--error {
+  border-color: var(--state-error, #d32f2f);
+}

@@ -12,7 +12,8 @@ import {
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 import { partyApiService } from '../services/partyApiService';
-import type { PartyDisplayStatusId, PlayerItemDto } from '../types/api';
+import type { PartyDisplayStatusId } from '../types/api';
+import { playlistDataFromDto } from '../utils/playlistDataFromDto';
 
 export interface UsePartyStateOptions {
   shortCode?: string;
@@ -28,12 +29,14 @@ export interface UsePartyStateReturn {
   partySubtitle: string | null;
   partyId: string | null;
   themeId: PartyThemeId;
+  groupDisplayDepth: number;
   customizationSettings: CustomizationSettings<PartyThemeId>;
   playbackState: PlaybackState | null;
   isSessionActive: boolean;
   partyDisplayStatus: PartyDisplayStatusId | null;
   apiReachable: boolean;
   loadPlaylist: (options?: { silent?: boolean }) => Promise<void>;
+  setPlaylist: (playlist: PartyPlaylistData | null) => void;
   setPlaybackState: (state: PlaybackState | null) => void;
   setIsSessionActive: (active: boolean) => void;
   setPartyDisplayStatus: (status: PartyDisplayStatusId | null) => void;
@@ -44,24 +47,10 @@ export interface UsePartyStateReturn {
   setPartyName: (name: string | null) => void;
 }
 
-function normalizePlaylistItems(items: PlayerItemDto[]): PlayerItemDto[] {
-  const sorted = [...items].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-
-  return sorted.map((item) => {
-    if (item.type === 'group' && item.items) {
-      return {
-        ...item,
-        items: normalizePlaylistItems(item.items),
-      };
-    }
-    return item;
-  });
-}
-
 export function usePartyState(options: UsePartyStateOptions = {}): UsePartyStateReturn {
   const { shortCode, isDemo = false } = options;
 
-  const [playlist, setPlaylist] = useState<PartyPlaylistData | null>(null);
+  const [playlist, setPlaylistState] = useState<PartyPlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [themeId, setThemeId] = useState<PartyThemeId>(DEFAULT_PARTY_THEME_ID);
@@ -92,6 +81,11 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     playlistRef.current = playlist;
   }, [playlist]);
 
+  const setPlaylist = useCallback((next: PartyPlaylistData | null) => {
+    setPlaylistState(next);
+    playlistRef.current = next;
+  }, []);
+
   const loadPlaylist = useCallback(
     async (options?: { silent?: boolean }) => {
       const silent = options?.silent === true;
@@ -116,18 +110,10 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
 
         if (isDemo || !shortCode) {
           const dto = await partyApiService.getFirstPartyPlaylist();
-          playlistData = {
-            items: normalizePlaylistItems(dto.items),
-            totalDuration: dto.totalDuration,
-            totalTracks: dto.totalTracks,
-          };
+          playlistData = playlistDataFromDto(dto);
         } else {
           const dto = await partyApiService.getPartyPlaylist(shortCode);
-          playlistData = {
-            items: normalizePlaylistItems(dto.items),
-            totalDuration: dto.totalDuration,
-            totalTracks: dto.totalTracks,
-          };
+          playlistData = playlistDataFromDto(dto);
 
           if (currentPartyKeyRef.current !== partyKey) return;
 
@@ -148,11 +134,9 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
               if (party.partyThemeId && isValidPartyTheme(party.partyThemeId)) {
                 setThemeId(party.partyThemeId);
               }
-              if (party.customizationSettings) {
-                setCustomizationSettings(
-                  party.customizationSettings as CustomizationSettings<PartyThemeId>,
-                );
-              }
+              setCustomizationSettings(
+                (party.customizationSettings ?? {}) as CustomizationSettings<PartyThemeId>,
+              );
               if (isPartyDisplayStatusId(party.partyDisplayStatus)) {
                 setPartyDisplayStatus(party.partyDisplayStatus);
               }
@@ -164,7 +148,6 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
 
         if (currentPartyKeyRef.current !== partyKey) return;
         setPlaylist(playlistData);
-        playlistRef.current = playlistData;
       } catch (err) {
         if (currentPartyKeyRef.current !== partyKey) return;
         const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке';
@@ -177,12 +160,19 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
         }
       }
     },
-    [shortCode, isDemo],
+    [shortCode, isDemo, setPlaylist],
   );
 
   useEffect(() => {
     loadPlaylist();
   }, [loadPlaylist]);
+
+  const groupDisplayDepth = (() => {
+    const value = (customizationSettings as Record<string, unknown>).groupDisplayDepth;
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
+      ? value
+      : 3;
+  })();
 
   return {
     playlist,
@@ -193,12 +183,14 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     partySubtitle,
     partyId,
     themeId,
+    groupDisplayDepth,
     customizationSettings,
     playbackState,
     isSessionActive,
     partyDisplayStatus,
     apiReachable,
     loadPlaylist,
+    setPlaylist,
     setPlaybackState,
     setIsSessionActive,
     setPartyDisplayStatus,

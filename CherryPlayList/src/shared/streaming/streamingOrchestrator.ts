@@ -1,5 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 
+import { isDefinitivePartyExistenceError } from '../services/partyExistenceErrors';
 import { partyService } from '../services/partyService';
 import { signalRService } from '../services/signalRService';
 import { logger } from '../utils';
@@ -21,6 +22,7 @@ export interface StreamingOrchestratorConfig {
   onPublishError?: (operation: 'playlistPublish' | 'fullStatePublish', error: unknown) => void;
   onPublishSuccess?: () => void;
   onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
+  onReconnectionFailed?: () => void;
 }
 
 const RECONNECT_DELAY_MS = 10_000;
@@ -101,6 +103,9 @@ export class StreamingOrchestrator {
 
     this.running = true;
     signalRService.setPartyReconnectHandler((partyId) => this.restoreAfterReconnect(partyId));
+    signalRService.onReconnectionFailed(() => {
+      this.handleHubReconnectionExhausted();
+    });
     await this.connectAndSubscribe();
   }
 
@@ -219,6 +224,18 @@ export class StreamingOrchestrator {
     await signalRService.resetPlaybackState(partyId);
   }
 
+  async endServerSession(): Promise<void> {
+    const partyId = this.config?.partyId;
+    if (!partyId) {
+      return;
+    }
+
+    await signalRService.endSessionOrThrow(partyId);
+    this.liveSessionActive = false;
+    this.stopPositionTicks();
+    await signalRService.resetPlaybackState(partyId);
+  }
+
   publishFullState(): void {
     const partyId = this.config?.partyId;
     if (!partyId || !signalRService.isServiceConnected()) {
@@ -257,7 +274,35 @@ export class StreamingOrchestrator {
 
     if (clearReconnectHandler) {
       signalRService.setPartyReconnectHandler(null);
+      signalRService.onReconnectionFailed(undefined);
     }
+  }
+
+  private scheduleReconnect(generation: number): void {
+    if (!this.running || generation !== this.connectGeneration) {
+      return;
+    }
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      if (this.running && generation === this.connectGeneration) {
+        void this.connectAndSubscribe();
+      }
+    }, RECONNECT_DELAY_MS);
+  }
+
+  private handleHubReconnectionExhausted(): void {
+    if (!this.running || !this.config) {
+      return;
+    }
+
+    this.config.onReconnectionFailed?.();
+    this.config.onConnectionStateChange?.(signalR.HubConnectionState.Disconnected);
+    this.scheduleReconnect(this.connectGeneration);
   }
 
   private async connectAndSubscribe(): Promise<void> {
@@ -301,13 +346,18 @@ export class StreamingOrchestrator {
         logger.warn(
           '[StreamingOrchestrator] Party does not exist on server, skipping SignalR connection',
         );
-        onPartyNotFound?.();
         onConnectionStateChange?.(signalR.HubConnectionState.Disconnected);
+        onPartyNotFound?.();
         return;
       }
     } catch (error) {
       logger.error('[StreamingOrchestrator] Failed to check party existence:', error);
       onConnectionStateChange?.(signalR.HubConnectionState.Disconnected);
+      if (isDefinitivePartyExistenceError(error)) {
+        config.onConnectError?.(error);
+        return;
+      }
+      this.scheduleReconnect(generation);
       return;
     }
 
@@ -340,12 +390,7 @@ export class StreamingOrchestrator {
       logger.error('[StreamingOrchestrator] Failed to connect to SignalR:', error);
       config.onConnectError?.(error);
       onConnectionStateChange?.(signalR.HubConnectionState.Disconnected);
-
-      if (this.running && generation === this.connectGeneration) {
-        this.reconnectTimeout = setTimeout(() => {
-          void this.connectAndSubscribe();
-        }, RECONNECT_DELAY_MS);
-      }
+      this.scheduleReconnect(generation);
     }
   }
 
@@ -399,6 +444,9 @@ export class StreamingOrchestrator {
       () => config.broadcastSource.getPlaylistForApi(),
       () => {
         this.scheduleFullStatePublish(partyId);
+      },
+      (error) => {
+        config.onPublishError?.('playlistPublish', error);
       },
       (payload) => {
         config.onPlaylistSynced?.(payload);

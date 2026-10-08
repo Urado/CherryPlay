@@ -7,7 +7,7 @@ import { CollectionView } from './CollectionView';
 // Collection workspaces use dynamic IDs, so we register a factory function
 // For now, we'll register a placeholder module that will be used for type matching
 const CollectionModule: IWorkspaceModule = {
-  id: 'collection-placeholder' as WorkspaceId,
+  id: 'collection-placeholder',
   type: 'collection',
   name: 'Collection',
   component: CollectionView,

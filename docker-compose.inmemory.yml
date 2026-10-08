@@ -1,0 +1,57 @@
+# In-memory storage (no PostgreSQL). Data is process-local and resets on container restart.
+# Запуск: docker compose -f docker-compose.inmemory.yml up --build
+# API: http://localhost:5000  Web: http://localhost:3000
+
+services:
+  server:
+    build:
+      context: ./CherryPlayServer
+      dockerfile: Dockerfile
+    container_name: cherryplay-server-inmemory
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - EnableSwagger=true
+      - UseInMemoryStorage=true
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-cherryplay-jwt-secret-minimum-32-characters-long}
+      - RUSENDER_API_TOKEN=${RUSENDER_API_TOKEN:-}
+      - RUSENDER_SEND_KEY_ID=${RUSENDER_SEND_KEY_ID:-}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-CherryPlay}
+      - PUBLIC_WEB_BASE_URL=${PUBLIC_WEB_BASE_URL:-http://localhost:3000}
+      - Cors__AllowedOrigins__0=http://localhost:3000
+      - Cors__AllowedOrigins__1=http://web:80
+      - Cors__AllowedOrigins__2=http://localhost:5173
+    ports:
+      - "5000:8080"
+    networks:
+      - cherryplay-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/swagger/index.html || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: ./CherryPlayWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5000
+        - VITE_SIGNALR_URL=http://localhost:5000/partyHub
+    container_name: cherryplay-web-inmemory
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    networks:
+      - cherryplay-network
+
+networks:
+  cherryplay-network:
+    driver: bridge

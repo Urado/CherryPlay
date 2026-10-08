@@ -1,0 +1,38 @@
+groups:
+  - name: cherryplay-availability
+    rules:
+      - alert: CherryPlayTargetDown
+        expr: up{job=~"cherryplay-server|postgres|host|prometheus|loki|grafana|alloy"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} target is unavailable"
+          description: "Prometheus has not scraped {{ $labels.instance }} successfully for 2 minutes."
+
+      - alert: CherryPlayHostDiskAlmostFull
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) < 0.20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host root filesystem has less than 20% space available"
+          description: "Free space on the host root filesystem is below 20%."
+
+      - alert: CherryPlayHostDiskCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{mountpoint="/",fstype!~"tmpfs|overlay"}) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host root filesystem has less than 10% space available"
+          description: "Free space on the host root filesystem is below 10%."
+
+      - alert: CherryPlayHostMemoryLow
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host available memory is below 10%"
+          description: "Available host memory has remained below 10% for 10 minutes."

@@ -34,7 +34,7 @@ export class CapacitorPlatform implements PlatformAPI {
   invoke(channel: string, payload?: object): Promise<IPCResponse<unknown>> {
     const api = getWindowApi();
     if (api) {
-      return api.invoke(channel, payload) as Promise<IPCResponse<unknown>>;
+      return api.invoke(channel, payload);
     }
     return Promise.resolve(platformUnavailableResponse());
   }

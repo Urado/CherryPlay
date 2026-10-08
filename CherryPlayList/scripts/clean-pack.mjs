@@ -52,16 +52,19 @@ async function removePath(target, attempts = 8) {
   throw new Error(`Failed to remove ${resolved}: ${message}`);
 }
 
-function collectTargets(productName, version) {
+function collectTargets(version) {
   const dirs = ['win-unpacked', 'linux-unpacked', 'mac', 'mac-arm64', 'mac-universal'];
   const artifacts = [
-    `${productName}-${version}-x64.zip`,
-    `${productName}-${version}-x64.dmg`,
-    `${productName}-${version}-arm64.dmg`,
-    `${productName}-${version}-x64-mac.zip`,
-    `${productName}-${version}-arm64-mac.zip`,
-    `${productName}-${version}-x64.AppImage`,
-    `${productName}-${version}-x64.deb`,
+    `CherryPashkaList-${version}-x64.zip`,
+    `CherryPashkaList-${version}-x64-mac.zip`,
+    `CherryPashkaList-${version}-arm64-mac.zip`,
+    `CherryPlayList-${version}-x64.zip`,
+    `CherryPlayList-${version}-x64.dmg`,
+    `CherryPlayList-${version}-arm64.dmg`,
+    `CherryPlayList-${version}-x64-mac.zip`,
+    `CherryPlayList-${version}-arm64-mac.zip`,
+    `CherryPlayList-${version}-x64.AppImage`,
+    `CherryPlayList-${version}-x64.deb`,
     'builder-debug.yml',
     'builder-effective-config.yaml',
   ];
@@ -81,14 +84,11 @@ function collectTargets(productName, version) {
 
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const version = typeof pkg.version === 'string' ? pkg.version : null;
-const productName =
-  typeof pkg.build?.productName === 'string' ? pkg.build.productName : 'CherryPlayList';
-
 if (!version) {
   throw new Error('package.json is missing a version field');
 }
 
-const targets = collectTargets(productName, version);
+const targets = collectTargets(version);
 const removed = [];
 for (const target of targets) {
   if (await removePath(target)) {

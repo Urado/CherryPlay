@@ -1,4 +1,5 @@
 import { Button, DEFAULT_PARTY_THEME_ID } from '@cherryplay/components';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { PartyLifecycleControls } from '../components/PartyLifecycleControls';
@@ -42,7 +43,7 @@ const emptyCreateForm: CreatePartyDto = {
   isListedInCatalog: false,
 };
 
-export function CabinetPartyList({
+export const CabinetPartyList = ({
   parties,
   togglingPartyId,
   deletingPartyId,
@@ -62,7 +63,9 @@ export function CabinetPartyList({
   transitioningPartyId,
   transitioningTargetState,
   onLifecycleTransition,
-}: CabinetPartyListProps) {
+}: CabinetPartyListProps) => {
+  const [confirmingDeletePartyId, setConfirmingDeletePartyId] = useState<string | null>(null);
+
   return (
     <ul className="cabinet-party-list">
       {parties.map((party) => (
@@ -72,27 +75,16 @@ export function CabinetPartyList({
         >
           <div className="cabinet-party-main">
             <span className="cabinet-party-name">{party.name}</span>
-            <span className="cabinet-party-short">/{party.shortCode}</span>
             <Link
               to={ROUTES.PARTY_VIEW(party.shortCode)}
               target="_blank"
               rel="noopener noreferrer"
-              className="cabinet-party-link"
+              className="cabinet-party-short cabinet-party-link"
+              aria-label={`Открыть вечеринку «${party.name}»`}
             >
-              Открыть
+              /{party.shortCode}
             </Link>
           </div>
-          <PartyLifecycleControls
-            partyLifecycleState={party.partyLifecycleState}
-            isTransitioning={transitioningPartyId === party.id}
-            pendingTransition={transitioningPartyId === party.id ? transitioningTargetState : null}
-            disabled={
-              deletingPartyId === party.id ||
-              togglingPartyId === party.id ||
-              (expandedPartyId === party.id && savingEdit)
-            }
-            onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
-          />
           <div className="cabinet-party-actions">
             {canToggleCatalogVisibility(party.partyLifecycleState) && (
               <label
@@ -108,6 +100,20 @@ export function CabinetPartyList({
                 В каталоге
               </label>
             )}
+            <PartyLifecycleControls
+              partyLifecycleState={party.partyLifecycleState}
+              describedById="cabinet-lifecycle-overview"
+              isTransitioning={transitioningPartyId === party.id}
+              pendingTransition={
+                transitioningPartyId === party.id ? transitioningTargetState : null
+              }
+              disabled={
+                deletingPartyId === party.id ||
+                togglingPartyId === party.id ||
+                (expandedPartyId === party.id && savingEdit)
+              }
+              onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
+            />
             <Button
               type="button"
               variant="secondary"
@@ -117,18 +123,48 @@ export function CabinetPartyList({
             >
               {expandedPartyId === party.id ? 'Редактирование…' : 'Редактировать'}
             </Button>
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              loading={deletingPartyId === party.id}
-              loadingLabel="Удаление…"
-              onClick={() =>
-                window.confirm(`Удалить вечеринку «${party.name}»?`) && onDeleteConfirm(party.id)
-              }
-            >
-              Удалить
-            </Button>
+            {confirmingDeletePartyId === party.id ? (
+              <div
+                className="cabinet-party-delete-confirmation"
+                role="group"
+                aria-label={`Подтвердить удаление вечеринки «${party.name}»`}
+              >
+                <span>Удалить вечеринку «{party.name}»? Это действие невозможно отменить.</span>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  className="cabinet-party-delete-confirm"
+                  loading={deletingPartyId === party.id}
+                  loadingLabel="Удаление…"
+                  onClick={() => onDeleteConfirm(party.id)}
+                >
+                  Да
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="cabinet-party-delete-cancel"
+                  disabled={deletingPartyId === party.id}
+                  onClick={() => setConfirmingDeletePartyId(null)}
+                >
+                  Нет
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                className="cabinet-party-delete"
+                loading={deletingPartyId === party.id}
+                loadingLabel="Удаление…"
+                onClick={() => setConfirmingDeletePartyId(party.id)}
+              >
+                Удалить
+              </Button>
+            )}
           </div>
           {expandedPartyId === party.id && editingParty?.id === party.id && (
             <div className="cabinet-party-edit">
@@ -152,4 +188,4 @@ export function CabinetPartyList({
       ))}
     </ul>
   );
-}
+};

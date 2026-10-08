@@ -1,14 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
-using CherryPlayServer.Infrastructure.Persistence.Entities;
+using CherryPlayServer.Infrastructure.Persistence;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Реализация <see cref="IOrganizerRepository"/> для слоя персистентности (EF Core + PostgreSQL).
-/// </summary>
 public class EfOrganizerRepository : IOrganizerRepository
 {
     private readonly AppDbContext _context;
@@ -18,11 +15,30 @@ public class EfOrganizerRepository : IOrganizerRepository
         _context = context;
     }
 
-    public async Task<Organizer?> GetByIdAsync(Guid id)
+    public async Task<Organizer?> GetByIdAsync(Guid id, bool includeDeleted = false)
+    {
+        var query = _context.Organizers.AsNoTracking().Where(e => e.Id == id);
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters().Where(e => e.Id == id);
+        }
+
+        var ef = await query.FirstOrDefaultAsync();
+        return ef?.ToDomain();
+    }
+
+    public async Task<Organizer?> GetByIdForUpdateAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
     {
         var ef = await _context.Organizers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FromSqlInterpolated($@"
+                SELECT * FROM organizers
+                WHERE id = {id} AND is_deleted = FALSE
+                FOR UPDATE")
+            .IgnoreQueryFilters()
+            .AsTracking()
+            .FirstOrDefaultAsync(cancellationToken);
         return ef?.ToDomain();
     }
 
@@ -38,7 +54,7 @@ public class EfOrganizerRepository : IOrganizerRepository
     public async Task UpdateAsync(Organizer organizer)
     {
         var ef = await _context.Organizers
-            .FirstOrDefaultAsync(e => e.Id == organizer.Id);
+            .FirstOrDefaultAsync(e => e.Id == organizer.Id && !e.IsDeleted);
         if (ef == null)
             return;
         organizer.ApplyTo(ef);
@@ -48,8 +64,7 @@ public class EfOrganizerRepository : IOrganizerRepository
     public async Task DeleteAsync(Guid id)
     {
         var ef = await _context.Organizers
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         if (ef == null)
             return;
         ef.IsDeleted = true;

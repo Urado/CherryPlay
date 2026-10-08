@@ -79,9 +79,9 @@ public partial class PartyHub
             catch (Exception ex)
             {
                 _logger.LogWarning(
-                    ex,
-                    "[SignalR Server] Failed grace-expiry display status notify: partyId={PartyId}",
-                    partyId);
+                    "[SignalR Server] Failed grace-expiry display status notify: failureType={FailureType}, failureLocation={FailureLocation}",
+                    ex.GetType().Name,
+                    CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(ex));
             }
         });
     }

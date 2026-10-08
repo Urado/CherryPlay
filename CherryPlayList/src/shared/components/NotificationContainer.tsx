@@ -30,7 +30,7 @@ export const NotificationContainer: React.FC = () => {
   };
 
   return (
-    <div className="notification-container">
+    <div className="notification-container" role="status" aria-live="polite">
       {notifications.map((notification) => (
         <div
           key={notification.id}

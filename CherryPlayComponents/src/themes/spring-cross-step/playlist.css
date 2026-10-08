@@ -84,7 +84,23 @@
   font-style: italic;
 }
 
-[data-theme='spring-cross-step'] .party-playlist-group-items {
-  display: flex;
-  flex-direction: column;
+[data-theme='spring-cross-step'] .party-playlist-group {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin: 8px 12px;
+  padding-bottom: 6px;
+  min-width: 0;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-group-items > .party-playlist-item::before {
+  content: none;
+}
+
+@media (max-width: 480px) {
+  [data-theme='spring-cross-step'] .party-playlist-group {
+    margin: 6px;
+    padding-bottom: 4px;
+    border-radius: 10px;
+  }
 }

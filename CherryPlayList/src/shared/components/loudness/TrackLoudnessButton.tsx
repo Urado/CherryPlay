@@ -1,8 +1,7 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import GraphicEqIcon from '@mui/icons-material/GraphicEq';
-import React from 'react';
 
 import type { Track } from '@core/types/track';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import { getEffectiveGainDb, resolveAutoGainDb } from '@shared/audio/loudnessGain';
 import {
   getEffectiveCompressionStrength,
@@ -10,6 +9,7 @@ import {
 } from '@shared/audio/playback/compressionStrength';
 import { useSettingsStore } from '@shared/stores/settingsStore';
 import { formatGainDb } from '@shared/utils/formatGainDb';
+import React from 'react';
 
 import { Spinner } from '../Spinner';
 

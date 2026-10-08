@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Проверка групп</title>
+    <style>
+      body { margin: 0; background: #202024; font-family: sans-serif; }
+      #controls { padding: 12px; color: white; }
+      #preview { max-width: 980px; margin: auto; }
+      select { margin-left: 12px; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="controls"><label>Тема<select id="theme"><option>basic</option><option>cyberpunk</option><option>sakura</option><option>art-deco</option><option>spring-cross-step</option></select></label></div>
+    <div id="preview"></div>
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { PlaylistView } from '@cherryplay/components/themes/base/PlaylistView';
+      import { PlaylistView as SpringPlaylistView } from '@cherryplay/components/themes/spring-cross-step/PlaylistView';
+      import '@cherryplay/components/themes/basic/index.css';
+      import '@cherryplay/components/themes/cyberpunk/index.css';
+      import '@cherryplay/components/themes/sakura/index.css';
+      import '@cherryplay/components/themes/art-deco/index.css';
+      import '@cherryplay/components/themes/spring-cross-step/index.css';
+      const track = (id, name, displayOrder) => ({ id, name, displayOrder, type: 'track', duration: 240 });
+      const group = (id, name, displayOrder, items) => ({ id, name, displayOrder, type: 'group', items });
+      const playlist = { items: [
+        group('year', 'Год — танцуем вместе', 0, [
+          group('summer', 'Лето', 0, [
+            track('current', "129 Plain White T's — Welcome To Mystery", 0),
+            group('june', 'Июнь — очень длинное название группы для проверки переноса и раскрытия текста', 1, [
+              track('next', '132 Les Friction — Firewall', 0),
+              track('disabled', 'Отменённый трек', 1),
+            ]),
+            track('played', '069 Escala Palladio — Sarabande', 2),
+          ]),
+          track('end', '115 Origa — Yal Fi-ne Nohlar', 1),
+        ]),
+        track('outside', "123 First Aid Kit — The Lion's Roar", 1),
+        group('cancelled-group', 'Отменённая группа', 2, [track('cancelled-child', 'Трек отменённой группы', 0)]),
+      ] };
+      const root = createRoot(document.getElementById('preview'));
+      const render = () => {
+        const themeId = document.getElementById('theme').value;
+        root.render(React.createElement(themeId === 'spring-cross-step' ? SpringPlaylistView : PlaylistView, {
+          playlist, themeId, currentTrackId: 'current', playedTrackIds: ['played'],
+          disabledTrackIds: ['disabled'], disabledGroupIds: ['cancelled-group']
+        }));
+      };
+      document.getElementById('theme').addEventListener('change', render);
+      render();
+    </script>
+  </body>
+</html>

@@ -8,6 +8,8 @@ public record AdminOrganizerDetailDto(Guid Id, string Name, string? Email, List<
 public record AdminOauthAccountDto(string Provider, string ProviderUserId, string? ProviderUserName);
 public record GrantEntitlementRequest(Guid PackageId, [param: System.ComponentModel.DataAnnotations.StringLength(2000)] string? Note);
 public record RevokeEntitlementRequest([param: System.ComponentModel.DataAnnotations.StringLength(2000)] string? Note);
+public record CreateEntitlementRevocationRequest(Guid Id, Guid EntitlementId, [param: System.ComponentModel.DataAnnotations.StringLength(2000)] string? Note);
+public record EntitlementRevocationDto(Guid Id, Guid? EntitlementId, Guid AdminId, string? Note, DateTime CreatedAt);
 public record EntitlementDto(
     Guid Id,
     Guid PackageId,

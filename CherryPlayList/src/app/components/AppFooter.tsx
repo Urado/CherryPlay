@@ -1,6 +1,6 @@
+import { APP_VERSION } from '@shared/config';
 import React from 'react';
 
-import { APP_VERSION } from '@shared/config';
 
 export const AppFooter: React.FC = () => {
   return (

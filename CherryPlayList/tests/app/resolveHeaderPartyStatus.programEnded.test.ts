@@ -49,8 +49,8 @@ describe('resolveHeaderPartyStatus programEnded overlay', () => {
     ).toEqual({ primary: 'Ждёт начала' });
   });
 
-  it('keeps stage 3 and К игре CTA for Конец', () => {
+  it('keeps stage 3 and Играть CTA for Конец', () => {
     expect(resolveHeaderPartyControlActiveStageIndex('Конец')).toBe(2);
-    expect(resolveHeaderPartyControlCtaLabel('Конец')).toBe('К игре');
+    expect(resolveHeaderPartyControlCtaLabel('Конец')).toBe('Играть');
   });
 });

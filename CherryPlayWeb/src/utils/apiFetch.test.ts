@@ -7,12 +7,22 @@ import {
   CLIENT_VERSION_HEADER,
 } from '../config/clientVersion';
 
-import { apiFetch, CLIENT_OUTDATED_CODE, CLIENT_OUTDATED_STATUS } from './apiFetch';
+import {
+  apiFetch,
+  CLIENT_OUTDATED_CODE,
+  CLIENT_OUTDATED_STATUS,
+  CONSENT_REQUIRED_CODE,
+} from './apiFetch';
 import {
   isClientOutdated,
   resetClientOutdatedNotifier,
   subscribeClientOutdated,
 } from './clientOutdatedNotifier';
+import {
+  isConsentGateOpen,
+  resetConsentGateNotifier,
+  subscribeConsentRequired,
+} from './consentGateNotifier';
 
 function mockResponse(status: number, body: unknown): Response {
   const text = JSON.stringify(body);
@@ -29,11 +39,13 @@ function mockResponse(status: number, body: unknown): Response {
 describe('apiFetch', () => {
   beforeEach(() => {
     resetClientOutdatedNotifier();
+    resetConsentGateNotifier();
     vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     resetClientOutdatedNotifier();
+    resetConsentGateNotifier();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -86,6 +98,46 @@ describe('apiFetch', () => {
     await apiFetch('/api/parties');
 
     expect(isClientOutdated()).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+
+    unsubscribe();
+  });
+
+  it('notifies consent gate on 403 consent_required without treating as logout', async () => {
+    const missing = ['aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'];
+    vi.mocked(fetch).mockResolvedValueOnce(
+      mockResponse(403, {
+        code: CONSENT_REQUIRED_CODE,
+        message: 'Consent required',
+        missing,
+      }),
+    );
+
+    const listener = vi.fn();
+    const unsubscribe = subscribeConsentRequired(listener);
+
+    const response = await apiFetch('/api/parties', { method: 'POST' });
+
+    expect(response.status).toBe(403);
+    expect(isConsentGateOpen()).toBe(true);
+    expect(listener).toHaveBeenCalledWith(missing);
+
+    unsubscribe();
+  });
+
+  it('does not open consent gate for unrelated 403', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      mockResponse(403, {
+        code: 'theme_not_entitled',
+      }),
+    );
+
+    const listener = vi.fn();
+    const unsubscribe = subscribeConsentRequired(listener);
+
+    await apiFetch('/api/parties', { method: 'POST' });
+
+    expect(isConsentGateOpen()).toBe(false);
     expect(listener).not.toHaveBeenCalled();
 
     unsubscribe();

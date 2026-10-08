@@ -1,7 +1,3 @@
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import SettingsIcon from '@mui/icons-material/Settings';
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import {
   type ProjectItem,
@@ -11,8 +7,16 @@ import {
   type ProjectGroupSettings,
   type ProjectTrackSettings,
 } from '@core/types/project';
+import ContactSupportOutlinedIcon from '@mui/icons-material/ContactSupportOutlined';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { getWebBaseUrl } from '@shared/config';
 import { loadDemoProjectSafe } from '@shared/demo/loadDemoProject';
-import { getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
+import {
+  getPlatform,
+  getPlatformUnavailableMessage,
+  usePlatformCapabilities,
+} from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
 import { partyService } from '@shared/services/partyService';
@@ -24,11 +28,20 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
+import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
+import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
+import { isProjectBindingCurrent } from '@shared/utils/projectBinding';
+import { canDiscardUnsavedProjectChanges } from '@shared/utils/projectNavigationGuard';
+import { runProjectSaveTransaction } from '@shared/utils/projectSaveTransaction';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { usePartyProgramEndedEffects } from '../../workspaces/party/usePartyProgramEndedEffects';
 
+import { AccountPopover } from './AccountPopover';
+import { DesktopUpdateNotice } from './DesktopUpdateNotice';
 import { HeaderPartyStatus } from './HeaderPartyStatus';
 import { HeaderPlaybackPill } from './HeaderPlaybackPill';
+import { ProjectNameInput } from './ProjectNameInput';
 import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceMenu } from './WorkspaceMenu';
@@ -97,7 +110,6 @@ export const AppHeader: React.FC = () => {
   const projectMenuPanelId = useId();
 
   const {
-    name,
     items,
     settings,
     trackSettings,
@@ -217,11 +229,35 @@ export const AppHeader: React.FC = () => {
   );
 
   const handleNew = useCallback(() => {
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    const sessionActive = sessionState.mode === 'session';
+    if (
+      !sessionActive &&
+      !canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)
+    ) {
       return;
     }
-    newProject();
-  }, [meta.isDirty, newProject]);
+    void runNewProjectWithSessionGuard({
+      sessionActive,
+      confirmSessionStop: () =>
+        window.confirm(
+          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Текущий проект и несохранённые изменения будут сброшены. Создать новый проект?',
+        ),
+      stopLocally: stopLocalPlayerSession,
+      stopServerSession: () =>
+        enableStreaming && meta.linkedParty
+          ? streamingOrchestrator.endServerSession()
+          : Promise.resolve(),
+      resetProject: newProject,
+      onServerStopFailure: (error) => {
+        addNotification({
+          type: 'error',
+          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
+          duration: 5000,
+        });
+        console.error('Failed to end server session before creating a new project', error);
+      },
+    });
+  }, [meta.isDirty, meta.linkedParty, sessionState.mode, newProject, enableStreaming, addNotification]);
 
   const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
     setIsSaving(true);
@@ -233,7 +269,7 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const handleLoadDemoProject = useCallback(async () => {
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
       return;
     }
     await loadDemoProjectSafe();
@@ -274,29 +310,41 @@ export const AppHeader: React.FC = () => {
       const projectFile = projectService.serializeProject(stateData);
 
       if (portablePackage) {
-        const { cherryPath } = await projectService.savePortableAs(targetDirectory, projectFile, {
-          notifyOnIpcError: false,
-        });
-        setName(baseName);
-        setFilePath(cherryPath);
-        resetDirty();
-        setLastOpenedPlaylist(cherryPath);
-        setPortableMode(true);
-        setSaveAsModalOpen(false);
+        let cherryPath = '';
+        await runProjectSaveTransaction(
+          async () => {
+            ({ cherryPath } = await projectService.savePortableAs(targetDirectory, projectFile, {
+              notifyOnIpcError: false,
+            }));
+          },
+          () => {
+            setName(baseName);
+            setFilePath(cherryPath);
+            resetDirty();
+            setLastOpenedPlaylist(cherryPath);
+            setPortableMode(true);
+            setSaveAsModalOpen(false);
+          },
+        );
         return;
       }
       const normalizedDir = targetDirectory.replace(/[\\/]+$/, '');
       const path = `${normalizedDir}\\${baseName}.cherry`;
 
-      await projectService.saveProject(path, projectFile, {
-        portableMode: settings.portableMode,
-        notifyOnIpcError: false,
-      });
-      setName(baseName);
-      setFilePath(path);
-      resetDirty();
-      setLastOpenedPlaylist(path);
-      setSaveAsModalOpen(false);
+      await runProjectSaveTransaction(
+        () =>
+          projectService.saveProject(path, projectFile, {
+            portableMode: settings.portableMode,
+            notifyOnIpcError: false,
+          }),
+        () => {
+          setName(baseName);
+          setFilePath(path);
+          resetDirty();
+          setLastOpenedPlaylist(path);
+          setSaveAsModalOpen(false);
+        },
+      );
     },
     [
       items,
@@ -345,7 +393,7 @@ export const AppHeader: React.FC = () => {
       await runWithSavingIndicator(async () => {
         const projectFile = projectService.serializeProject(
           projectStateDataForSave({
-            name,
+            name: useProjectStore.getState().name,
             items,
             settings,
             trackSettings,
@@ -368,7 +416,6 @@ export const AppHeader: React.FC = () => {
   }, [
     runWithSavingIndicator,
     meta,
-    name,
     items,
     settings,
     trackSettings,
@@ -387,7 +434,7 @@ export const AppHeader: React.FC = () => {
       return;
     }
 
-    if (meta.isDirty && !confirmDiscardUnsavedChanges()) {
+    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
       return;
     }
 
@@ -413,6 +460,10 @@ export const AppHeader: React.FC = () => {
           partyService
             .getPartyUrl(linkedPartyFromFile.shortCode)
             .then((url) => {
+              const currentProject = useProjectStore.getState();
+              if (!isProjectBindingCurrent(currentProject.meta, path, linkedPartyFromFile.id)) {
+                return;
+              }
               useProjectStore.getState().setLinkedParty({
                 id: linkedPartyFromFile.id,
                 shortCode: linkedPartyFromFile.shortCode,
@@ -500,8 +551,21 @@ export const AppHeader: React.FC = () => {
     openModal('settings');
   };
 
-  const handleAccount = () => {
-    openModal('account');
+  const handleFeedback = async () => {
+    try {
+      const webBaseUrl = await getWebBaseUrl();
+      const result = await getPlatform().invoke('system:openExternal', {
+        url: `${webBaseUrl.replace(/\/+$/, '')}/feedback`,
+      });
+      if (!result.success) {
+        throw new Error(result.error ?? 'Failed to open feedback page');
+      }
+    } catch {
+      addNotification({
+        type: 'error',
+        message: 'Не удалось открыть страницу обратной связи',
+      });
+    }
   };
 
   return (
@@ -646,25 +710,24 @@ export const AppHeader: React.FC = () => {
               >
                 <SettingsIcon className="header-button__icon" aria-hidden />
               </button>
+              <button
+                type="button"
+                className="header-button"
+                onClick={() => void handleFeedback()}
+                aria-label="Обратная связь"
+                title="Обратная связь"
+              >
+                <ContactSupportOutlinedIcon className="header-button__icon" aria-hidden />
+              </button>
             </div>
 
             {enableStreaming ? (
               <div className="app-header-account-cluster">
-                <button
-                  className={`header-button${isAuthenticated ? ' header-button--account-authenticated' : ''}`}
-                  onClick={handleAccount}
+                <AccountPopover
+                  isAuthenticated={isAuthenticated}
+                  organizerName={organizer?.name}
                   disabled={isLayoutEditMode}
-                  aria-label="Аккаунт"
-                  title={layoutEditControlTitle(
-                    isAuthenticated
-                      ? `Аккаунт: ${organizer?.name || 'Организатор'}`
-                      : 'Войти в аккаунт',
-                    isLayoutEditMode,
-                  )}
-                >
-                  <AccountCircleIcon className="header-button__icon" aria-hidden />
-                  {isAuthenticated && <span className="header-auth-dot" title="Авторизован" />}
-                </button>
+                />
               </div>
             ) : null}
           </div>
@@ -674,14 +737,8 @@ export const AppHeader: React.FC = () => {
               <div className="app-header-project-name">
                 <span className="app-header-project-name__eyebrow">Проект</span>
                 <div className="app-header-project-name__row">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="project-name-input"
-                    placeholder="Название проекта"
+                  <ProjectNameInput
                     disabled={isLayoutEditMode}
-                    aria-label="Название проекта"
                     title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
                   />
                   {meta.isDirty && (
@@ -704,6 +761,7 @@ export const AppHeader: React.FC = () => {
 
             <WorkspaceMenu />
           </div>
+          <DesktopUpdateNotice />
         </div>
       </div>
 
@@ -711,7 +769,7 @@ export const AppHeader: React.FC = () => {
         key={saveAsModalKey}
         open={saveAsModalOpen}
         isSaving={isSaving}
-        initialProjectName={name}
+        initialProjectName={useProjectStore.getState().name}
         initialDirectory={saveAsInitialDirectory}
         onRequestDirectory={(currentDirectory) =>
           ipcService.showFolderDialog({

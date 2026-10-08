@@ -1,6 +1,6 @@
+import { WorkspaceId } from '@core/types/workspace';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { WorkspaceId } from '@core/types/workspace';
 
 import { useDragDropStore } from '../../stores/dragDropStore';
 

@@ -166,7 +166,7 @@ export function createLoudnessService(deps: LoudnessServiceDeps) {
     return {
       ...(previous ?? track.loudness),
       status: 'pending',
-    } as TrackLoudness;
+    };
   };
 
   const runExecuteScanTrack = async (

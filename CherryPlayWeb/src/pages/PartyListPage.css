@@ -1,57 +1,50 @@
 .party-list-page {
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-primary);
-  padding: 20px;
+  padding: 20px 20px 0;
+  box-sizing: border-box;
 }
 
 .party-list-container {
-  max-width: 1200px;
+  width: 80%;
+  max-width: 2400px;
   margin: 0 auto;
+  padding-bottom: 32px;
 }
 
 .party-list-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+  gap: 12px 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .party-list-title {
   font-size: 32px;
   font-weight: 700;
+  line-height: 1;
   margin: 0;
   color: var(--text-primary);
 }
 
 .party-list-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
-.party-list-login-link {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  display: inline-block;
-}
-
-.party-list-login-link:hover {
-  background: var(--bg-hover);
-  border-color: var(--selected-border);
-  transform: translateY(-1px);
-}
-
 .party-list-refresh-btn {
+  flex-shrink: 0;
   transition: transform 0.3s ease;
 }
 
@@ -77,25 +70,43 @@
 
 .party-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 20px;
 }
 
 .party-list-card {
+  position: relative;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  cursor: pointer;
+  padding: 0;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
+.party-list-card-open {
+  display: block;
+  padding: 20px;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+
+.party-list-card-open:focus-visible {
+  outline: 2px solid var(--accent-primary, #4a9eff);
+  outline-offset: 3px;
+}
+
+.party-list-card-external-link {
+  display: inline-block;
+  margin: 0 20px 20px;
+}
+
 .party-list-card:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(0, 255, 0, 0.5);
+  border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 255, 0, 0.2);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
 .party-list-card-header {
@@ -123,6 +134,13 @@
   margin: 0;
   font-size: 14px;
   color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.party-list-card-organizer {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
   line-height: 1.4;
 }
 
@@ -182,7 +200,6 @@
   font-weight: 500;
 }
 
-/* Фильтры */
 .party-list-filters {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
@@ -200,12 +217,7 @@
 }
 
 .party-list-filters-toggle {
-  background: transparent;
-  border: none;
   color: var(--text-primary);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -222,7 +234,7 @@
 
 .party-list-filters-toggle:hover,
 .cp-button.party-list-filters-toggle:hover:not(:disabled) {
-  color: rgba(0, 255, 0, 0.8);
+  color: var(--accent-primary);
   border-color: transparent;
   background: transparent;
 }
@@ -233,13 +245,6 @@
 }
 
 .party-list-filters-clear {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 14px;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
   transition: all 0.3s ease;
 }
 
@@ -269,18 +274,37 @@
 }
 
 .party-list-filters-input {
-  background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 14px;
   padding: 8px 12px;
   transition: all 0.3s ease;
+  background: var(--bg-tertiary);
+}
+
+.party-list-filters-group .form-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.party-list-filters-group .form-input {
+  border-color: var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+}
+
+.party-list-filters-group .form-input:focus {
+  border-color: var(--accent-primary);
+  background: var(--bg-hover);
 }
 
 .party-list-filters-input:focus {
   outline: none;
-  border-color: rgba(0, 255, 0, 0.5);
+  border-color: var(--accent-primary);
   background: var(--bg-hover);
 }
 
@@ -291,28 +315,7 @@
 }
 
 .party-list-filters-day {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
   min-width: 40px;
-  text-align: center;
-}
-
-.party-list-filters-day:hover {
-  background: var(--bg-hover);
-  border-color: rgba(0, 255, 0, 0.3);
-}
-
-.party-list-filters-day--active {
-  background: rgba(0, 255, 0, 0.2);
-  border-color: rgba(0, 255, 0, 0.5);
-  color: #00ff00;
 }
 
 .party-list-empty-clear {
@@ -334,18 +337,35 @@
   }
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
+  .party-list-container {
+    width: 100%;
+  }
+
   .party-list-grid {
     grid-template-columns: 1fr;
+  }
+
+  .party-list-header {
+    gap: 10px 12px;
+  }
+
+  .party-list-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
   }
 
   .party-list-title {
     font-size: 24px;
   }
 
-  .party-list-card {
+  .party-list-card-open {
     padding: 16px;
+  }
+
+  .party-list-card-external-link {
+    margin: 0 16px 16px;
   }
 
   .party-list-filters-content {

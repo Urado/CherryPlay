@@ -3,18 +3,38 @@ import * as path from 'path';
 
 import { app, ipcMain } from 'electron';
 
-interface ServerConfig {
-  serverUrl: string;
+function getDevProjectRoot(): string {
+  return fs.realpathSync.native(process.cwd());
 }
 
-/** Config file name: dev vs packaged app. */
+interface ServerConfig {
+  serverUrl: string;
+  webBaseUrl?: string;
+}
+
+const DEFAULT_WEB_BASE_URL = {
+  development: 'http://localhost:3000',
+  production: 'https://cherrypashkaparty.ru',
+} as const;
+
+function resolveWebBaseUrl(config: ServerConfig | null): string {
+  if (config?.webBaseUrl && typeof config.webBaseUrl === 'string' && config.webBaseUrl.trim()) {
+    return config.webBaseUrl.trim();
+  }
+  return app.isPackaged ? DEFAULT_WEB_BASE_URL.production : DEFAULT_WEB_BASE_URL.development;
+}
+
+export function getConfiguredWebBaseUrl(): string {
+  return resolveWebBaseUrl(readConfig());
+}
+
 const CONFIG_FILE = {
   development: 'serverConfig.development.json',
   production: 'serverConfig.production.json',
 } as const;
 
 function getConfigPath(): string {
-  const root = app.isPackaged ? app.getAppPath() : process.cwd();
+  const root = app.isPackaged ? app.getAppPath() : getDevProjectRoot();
   const fileName = app.isPackaged ? CONFIG_FILE.production : CONFIG_FILE.development;
   return path.join(root, fileName);
 }
@@ -90,6 +110,21 @@ export function registerConfigHandlers(): void {
       return {
         success: true,
         data: config.serverUrl,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  });
+
+  ipcMain.handle('config:getWebBaseUrl', async () => {
+    try {
+      const config = readConfig();
+      return {
+        success: true,
+        data: resolveWebBaseUrl(config),
       };
     } catch (error) {
       return {

@@ -1,9 +1,8 @@
 import { Button } from '@cherryplay/components';
-import React, { useCallback, useMemo } from 'react';
-
 import { usePlatformCapabilities } from '@shared/platform';
 import { useAimpStore, useSettingsStore } from '@shared/stores';
 import { getAimpAvailability } from '@shared/utils';
+import React, { useCallback, useMemo } from 'react';
 
 type PlaybackSource = 'cherryPlayPlayer' | 'aimp';
 

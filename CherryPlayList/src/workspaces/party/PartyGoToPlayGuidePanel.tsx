@@ -1,11 +1,13 @@
+import type { PartyThemeId } from '@cherryplay/components';
+import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 
 import { PARTY_GO_TO_PLAY_GUIDE_PANEL_WIDTH } from './partyHeaderGoToPlayGuide';
 
 export interface PartyGoToPlayGuidePanelProps {
+  themeId: PartyThemeId;
   anchorRect: DOMRect;
   showGoButton: boolean;
   startLabel: string;
@@ -20,6 +22,7 @@ export interface PartyGoToPlayGuidePanelProps {
 const GUIDE_TEXT_ID = 'party-go-to-play-guide-text';
 
 export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = ({
+  themeId,
   anchorRect,
   showGoButton,
   startLabel,
@@ -90,36 +93,38 @@ export const PartyGoToPlayGuidePanel: React.FC<PartyGoToPlayGuidePanelProps> = (
         : `Вечеринка готова. Нажмите «${startLabel}».`;
 
   return createPortal(
-    <div
-      ref={panelRef}
-      className="party-go-to-play-guide-panel"
-      style={style}
-      role="dialog"
-      aria-label={mode === 'stop' ? 'Остановить' : 'Играть'}
-      aria-describedby={GUIDE_TEXT_ID}
-      tabIndex={-1}
-      onMouseEnter={onInteractionPause}
-      onMouseLeave={onInteractionResume}
-      onFocus={onInteractionPause}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-          onInteractionResume?.();
-        }
-      }}
-    >
-      <p id={GUIDE_TEXT_ID} className="party-go-to-play-guide-panel__text">
-        {bodyText}
-      </p>
-      {showGoButton ? (
-        <button
-          ref={goButtonRef}
-          type="button"
-          className="header-button party-go-to-play-guide-panel__go"
-          onClick={onGo}
-        >
-          Перейти
-        </button>
-      ) : null}
+    <div data-theme={themeId}>
+      <div
+        ref={panelRef}
+        className="party-go-to-play-guide-panel"
+        style={style}
+        role="dialog"
+        aria-label={mode === 'stop' ? 'Остановить' : 'Играть'}
+        aria-describedby={GUIDE_TEXT_ID}
+        tabIndex={-1}
+        onMouseEnter={onInteractionPause}
+        onMouseLeave={onInteractionResume}
+        onFocus={onInteractionPause}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            onInteractionResume?.();
+          }
+        }}
+      >
+        <p id={GUIDE_TEXT_ID} className="party-go-to-play-guide-panel__text">
+          {bodyText}
+        </p>
+        {showGoButton ? (
+          <button
+            ref={goButtonRef}
+            type="button"
+            className="header-button party-go-to-play-guide-panel__go"
+            onClick={onGo}
+          >
+            Перейти
+          </button>
+        ) : null}
+      </div>
     </div>,
     document.body,
   );

@@ -5,7 +5,7 @@ import { ROUTES } from '../constants/routes';
 import { authService } from '../services/authService';
 import './LoginPage.css';
 
-export function ForgotPasswordPage() {
+export const ForgotPasswordPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -18,4 +18,4 @@ export function ForgotPasswordPage() {
       </div>
     </div>
   );
-}
+};

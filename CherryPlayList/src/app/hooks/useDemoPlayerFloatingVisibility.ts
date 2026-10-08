@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
 
 import type { Track } from '@core/types/track';
 import type { PlayerStatus } from '@shared/stores/demoPlayerStore';
+import { useEffect, useMemo, useRef } from 'react';
 
 interface UseDemoPlayerFloatingVisibilityParams {
   hasDemoPlayerWorkspace: boolean;

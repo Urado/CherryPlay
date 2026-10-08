@@ -1,0 +1,131 @@
+.download-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.download-content {
+  width: min(100% - 32px, 720px);
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.download-back-link {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.download-back-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.download-back-link:focus-visible,
+.download-guide-link:focus-visible {
+  outline: 3px solid var(--accent-primary, #4a9eff);
+  outline-offset: 4px;
+}
+
+.download-card {
+  padding: clamp(24px, 6vw, 48px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  text-align: center;
+}
+
+.download-eyebrow {
+  margin-bottom: 12px;
+  color: var(--accent-primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.download-card h1 {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 42px);
+}
+
+.download-description {
+  max-width: 480px;
+  margin: 16px auto 28px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.download-status,
+.download-error {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  line-height: 1.5;
+}
+
+.download-error {
+  color: var(--state-error-text);
+  background: var(--state-error-bg);
+}
+
+.download-release {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.download-version {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.download-button {
+  min-height: 48px;
+  padding: 12px 24px;
+}
+
+.download-file-details {
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.download-guide-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 32px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, var(--border-color));
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent-primary) 8%, var(--bg-secondary));
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.download-guide-link:hover {
+  background: color-mix(in srgb, var(--accent-primary) 15%, var(--bg-secondary));
+}
+
+.download-guide-title {
+  font-weight: 700;
+}
+
+.download-guide-description {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .download-button,
+  .download-guide-link {
+    transition: none;
+  }
+}

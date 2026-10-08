@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef } from 'react';
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
@@ -6,6 +5,7 @@ import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
 import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { markPartyProgramEnded } from '@workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
+import { useCallback, useEffect, useRef } from 'react';
 
 function tryMarkPartyProgramEndedFromCherryPlay(): void {
   if (useSettingsStore.getState().streamingSource === 'aimp') {
@@ -125,7 +125,6 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           }, settings.pauseBetweenTracks * 1000);
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
-          setCurrentTrack(null);
           tryMarkPartyProgramEndedFromCherryPlay();
         }
       } else {
@@ -133,12 +132,17 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         if (nextTrack) {
           const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
           markSkippedDisabledTracks(currentIndex, nextIndex);
-          await loadPlayerTrack(nextTrack);
+          const loadGeneration = await loadPlayerTrack(nextTrack, true);
           setCurrentTrack(nextTrack.id);
-          await playPlayer();
+          if (
+            usePlayerAudioStore
+              .getState()
+              .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
+          ) {
+            await playPlayer();
+          }
         } else {
           markSkippedDisabledTracks(currentIndex, allTracks.length);
-          setCurrentTrack(null);
           tryMarkPartyProgramEndedFromCherryPlay();
         }
       }
@@ -179,13 +183,18 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
       if (nextTrack) {
         const nextIndex = allTracks.findIndex((t) => t.id === nextTrack.id);
         markSkippedDisabledTracks(currentIndex, nextIndex);
-        await loadPlayerTrack(nextTrack);
+        const loadGeneration = await loadPlayerTrack(nextTrack, true);
         setCurrentTrack(nextTrack.id);
-        await playPlayer();
+        if (
+          usePlayerAudioStore
+            .getState()
+            .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
+        ) {
+          await playPlayer();
+        }
       } else {
         markSkippedDisabledTracks(currentIndex, allTracks.length);
         stop();
-        setCurrentTrack(null);
         tryMarkPartyProgramEndedFromCherryPlay();
       }
     } finally {

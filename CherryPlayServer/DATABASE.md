@@ -15,6 +15,41 @@
 
 Флаг `UseInMemoryStorage=true` в конфигурации (`Program.cs`) подключает in-memory реализации тех же репозиториев **без** PostgreSQL: удобно для локальной разработки и тестов без БД. Данные не персистятся между процессами. Это **намеренный** dual path за едиными интерфейсами репозиториев, а не незавершённая миграция. Обзор: [ARCHITECTURE.md](../ARCHITECTURE.md); запуск: [README.md](README.md).
 
+### Legal consent (CP-066)
+
+Dual UoW: `UseInMemoryStorage=true` → `InMemoryLegalConsentUnitOfWork`; `false` → `EfLegalConsentUnitOfWork` (таблицы ниже). Контракт API: [CONTRACTS.md](../CONTRACTS.md) §3.2.3. Миграция: `Migrations/20260908182106_AddLegalConsentTables.cs` (+ последующий sync registry).
+
+#### legal_document_versions
+
+Каталог версий юридических текстов (seed через EF `HasData` / InMemory seed; active hashes из `legal-registry.generated.json`).
+
+| Колонка | Тип | Ограничения | Описание |
+| ------- | --- | ----------- | -------- |
+| `id` | uuid | PK | Идентификатор версии (`legalDocumentVersionId`). |
+| `document_type` | string(64) | NOT NULL, CHECK IN (`pd_consent_text`,`terms`,`privacy_policy`,`cookie_policy`) | Тип документа. |
+| `document_version` | string(64) | NOT NULL; UNIQUE с `document_type` | Label версии (active seed: **`1.0`**). |
+| `content_hash` | string(256) | NOT NULL | SHA-256 содержимого (клиент передаёт тот же hash). |
+| `effective_from` | timestamptz | NOT NULL | Начало действия. |
+| `effective_to` | timestamptz | NULL | Конец действия (retired). |
+| `status` | string(32) | NOT NULL, CHECK IN (`draft`,`active`,`retired`) | Статус; partial unique index — не более одной `active` на `document_type`. |
+
+**Seed (active):** `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (`pd_consent_text`, `1.0`, hash `1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f`); `bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb` (`terms`, `1.0`, hash `c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d`). Retired sample `cccccccc-…` может оставлять placeholder hash.
+
+#### consent_events
+
+Append-only журнал решений субъекта (организатора). Soft-deleted organizers сохраняют строки (без query filter на этой таблице).
+
+| Колонка | Тип | Ограничения | Описание |
+| ------- | --- | ----------- | -------- |
+| `id` | uuid | PK | Client UUID = ключ идемпотентности. |
+| `subject_id` | uuid | FK → `organizers.id`, RESTRICT | Организатор. |
+| `legal_document_version_id` | uuid | FK → `legal_document_versions.id`, RESTRICT | Версия документа. |
+| `document_hash` | string(256) | NOT NULL | Hash на момент события. |
+| `decision` | string(32) | NOT NULL, CHECK IN (`grant`,`withdraw`,`deny`) | Решение. |
+| `event_at` | timestamptz | NOT NULL | Время события. |
+
+Индексы: `(subject_id, event_at)`, `(subject_id, legal_document_version_id)`, FK на version.
+
 ---
 
 ## Organizer (организатор)
@@ -28,15 +63,16 @@
 | `LogoUrl`                      | string      | NULL                                                         | URL логотипа (опционально).                                   |
 | `Links`                        | JSON/string | NULL                                                         | Ссылки (соцсети, сайт) — JSON-объект или текст.               |
 | `DefaultPartyThemeId`          | string      | NULL                                                         | PartyTheme по умолчанию организатора. Продуктовый дефолт сервера — `PartyThemeDefaults.Id` (`basic`), согласован с клиентским `DEFAULT_PARTY_THEME_ID`; также cyberpunk, sakura, art-deco, spring-cross-step. |
+| `TimeZone`                     | string      | NULL                                                         | IANA/отображаемый часовой пояс организатора (кабинет).        |
 | `Role`                         | string      | NOT NULL, default organizer, CHECK IN (`organizer`, `admin`) | Роль организатора: `organizer` или `admin`.                   |
 | `DefaultCustomizationSettings` | JSON        | NULL                                                         | Настройки оформления по умолчанию (override на уровне party). |
 | `CreatedAt`                    | datetime    | NOT NULL                                                     | Дата создания.                                                |
 | `UpdatedAt`                    | datetime    | NULL                                                         | Дата последнего обновления.                                   |
-| `IsDeleted`                    | boolean     | NOT NULL, default false                                      | Soft delete (скрытие из выборок).                             |
+| `IsDeleted`                    | boolean     | NOT NULL, default false                                      | Soft delete (скрытие из выборок). Self-service delete (`DELETE /api/organizer/account`) ставит флаг и scrub (`OrganizerAccountScrub`): `Name` → «Удалённый пользователь»; `LogoUrl`/`Links`/`TimeZone`/`DefaultCustomizationSettings`/`DefaultPartyThemeId` → null; `Role` → `organizer`. Email/OAuth/sessions — hard-delete в той же транзакции. Вечеринки остаются (`RESTRICT`). **OrganizerEntitlements** и **DesktopAuthCodes** при soft-delete **не** чистятся (их FK `CASCADE` срабатывает только при hard-delete строки организатора). |
 
 Индекс: `IsDeleted` (global query filter).
 
-_Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам._
+_Связь с учётной записью: email+пароль (таблица EmailAccounts) и OAuth-привязки (таблица OAuthAccounts — в v1 используются VK, Mail.ru; OAuth2 для Telegram отложен). Один организатор может иметь несколько привязок к разным провайдерам. Транзакция self-service delete — через `IAppUnitOfWork` (`EfAppUnitOfWork` / `InMemoryAppUnitOfWork`); отзыв согласий — отдельно, best-effort через consent API (см. Legal consent выше и [CONTRACTS.md](../CONTRACTS.md) §3.3)._
 
 ---
 
@@ -105,16 +141,16 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## AdminAuditLog (аудит админ-действий)
 
-Неперезаписываемый журнал успешных `grant/revoke` операций.
+Неперезаписываемый журнал успешных `grant/revoke` операций. Запись `revoke_package` также является неизменяемым событием отзыва, доступным в Admin API. Для новых отзывов её `Id` равен UUID события, переданному клиентом; выдачи по-прежнему получают случайный ID.
 
 | Колонка             | Тип      | Ограничения                                            | Описание                                    |
 | ------------------- | -------- | ------------------------------------------------------ | ------------------------------------------- |
 | `Id`                | GUID     | PK                                                     | Идентификатор записи аудита.                |
-| `AdminId`           | GUID     | FK → Organizer.Id, NOT NULL                            | Админ, выполнивший действие.                |
+| `AdminId`           | GUID     | FK → Organizer.Id, NOT NULL, ON DELETE RESTRICT        | Админ, выполнивший действие (строка аудита не обнуляется). |
 | `Action`            | string   | NOT NULL, CHECK IN (`grant_package`, `revoke_package`) | Тип действия.                               |
-| `TargetOrganizerId` | GUID     | FK → Organizer.Id, NULL                                | Организатор, к которому применено действие. |
-| `PackageId`         | GUID     | FK → ThemePackages.Id, NULL                            | Контекстный пакет.                          |
-| `EntitlementId`     | GUID     | FK → OrganizerEntitlements.Id, NULL                    | Контекстная выдача.                         |
+| `TargetOrganizerId` | GUID     | FK → Organizer.Id, NULL, ON DELETE SET NULL            | Организатор, к которому применено действие. |
+| `PackageId`         | GUID     | FK → ThemePackages.Id, NULL, ON DELETE SET NULL        | Контекстный пакет.                          |
+| `EntitlementId`     | GUID     | FK → OrganizerEntitlements.Id, NULL, ON DELETE SET NULL | Контекстная выдача. При hard-delete entitlement запись аудита сохраняется с `EntitlementId = NULL`; отдельный GET события отзыва остаётся доступен, список по entitlement — нет. |
 | `Note`              | text     | NULL                                                   | Примечание администратора.                  |
 | `CreatedAt`         | datetime | NOT NULL                                               | Время записи в аудит.                       |
 
@@ -130,7 +166,7 @@ _Связь с учётной записью: email+пароль (таблица
 | ----------------------- | -------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `Id`                    | GUID     | PK                                              | Идентификатор привязки.                                                                                     |
 | `OrganizerId`           | GUID     | FK → Organizer.Id, NOT NULL                     | Идентификатор организатора.                                                                                 |
-| `Provider`              | string   | NOT NULL, CHECK IN ('telegram', 'vk', 'mailru') | Провайдер OAuth. В v1 используются `vk`, `mailru`; `telegram` зарезервирован (OAuth2 для Telegram отложен). |
+| `Provider`              | string   | NOT NULL, MaxLength (без DB CHECK)              | Провайдер OAuth. Допустимые значения на уровне приложения (`OAuthProvider`: `vk`, `mailru`, `telegram`); в схеме БД CHECK нет. В v1 используются `vk`, `mailru`; `telegram` зарезервирован (OAuth2 для Telegram отложен). |
 | `ProviderUserId`        | string   | NOT NULL                                        | Идентификатор пользователя у провайдера (уникален в рамках провайдера).                                     |
 | `ProviderUserName`      | string   | NULL                                            | Отображаемое имя пользователя у провайдера (может меняться).                                                |
 | `ProviderUserAvatarUrl` | string   | NULL                                            | URL аватара пользователя у провайдера (опционально).                                                        |
@@ -139,11 +175,11 @@ _Связь с учётной записью: email+пароль (таблица
 
 **Уникальность:** `(Provider, ProviderUserId)` — уникальная комбинация (один аккаунт провайдера может быть привязан только к одному организатору).
 
-**Поток создания:**
+**Поток создания (OAuth one-shot):**
 
-1. При первом входе через провайдера создаётся запись `OAuthAccounts` и (если организатора ещё нет) запись `Organizer`.
-2. При последующих входах через тот же провайдер находится существующая привязка, обновляется `LastUsedAt` и возвращается JWT для существующего организатора.
-3. Если организатор уже авторизован, можно добавить дополнительную привязку к другому провайдеру (например, войти через VK, затем привязать Mail.ru).
+1. `GET /auth/{provider}/callback` только валидирует state и редиректит SPA на `/oauth/complete` (без create).
+2. `POST /api/oauth/accounts`: реальный exchange у провайдера. **Новый** subject → `Organizer` + `OAuthAccounts` + consent events атомарно (обязательные grants). **Существующий** → обновление `LastUsedAt` / профиля провайдера, login без replay consents.
+3. Ответ: JWT (`accessToken`) + httpOnly cookie. Контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.3.
 
 ---
 
@@ -164,7 +200,30 @@ _Связь с учётной записью: email+пароль (таблица
 
 При выдаче нового токена предыдущие неиспользованные для того же `EmailAccountId` инвалидируются (`UsedAt`). Успешный **reset-password** гасит использованный токен; успешный **change-password** также инвалидирует все неиспользованные reset-токены того же `EmailAccount`. После успешного сброса или смены пароля удаляются все `OrganizerSessions` организатора.
 
+Автоочистка (фоновый job, раз в час = `PasswordResetTokenRetentionCleanupInterval`): использованные или просроченные строки удаляются не позднее **30 дней** после `UsedAt` или `ExpiresAt`. Константа `PasswordResetTokenRecordRetention` = 30d − interval (чтобы worst-case retention + interval ≤ 30 дней). Условие удаления: `(UsedAt != null && UsedAt <= now - retention) OR (UsedAt == null && ExpiresAt <= now - retention)`. Действующие неиспользованные токены (`UsedAt == null && ExpiresAt > now`) не удаляются. Usability TTL остаётся ~1 час (`PasswordResetTokenTtl`).
+
 Потоки API и политика почты (Dev-лог / Prod **503** при отсутствии конфига / soft-fail **200** при сбое отправки с токеном, **остающимся usable** до TTL): [CONTRACTS.md](../CONTRACTS.md) §3.2.0a, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md), [ENV.md](../ENV.md), [OPS.md](OPS.md).
+
+---
+
+## DesktopAuthCodes (одноразовые коды browser SSO для Desktop)
+
+Коды для возврата из CherryPlayWeb в CherryPlayList после успешного login/register/OAuth в режиме `client=desktop`, а также при session-continue через **`POST /auth/desktop/code`** (та же таблица). В БД хранится только хеш (SHA-256), не plaintext. Сырой код передаётся в return URL (`cherryplaylist://auth?code=…` или DEV `/auth/callback?code=…`) и обменивается на JWT через `POST /auth/desktop/exchange`.
+
+| Колонка       | Тип      | Ограничения                                      | Описание                                      |
+| ------------- | -------- | ------------------------------------------------ | --------------------------------------------- |
+| `Id`          | GUID     | PK                                               | Идентификатор записи.                         |
+| `OrganizerId` | GUID     | FK → Organizers.Id, NOT NULL, ON DELETE CASCADE  | Организатор, для которого выдан код.          |
+| `TokenHash`   | string   | UNIQUE, NOT NULL, длина 64 (hex SHA-256)         | Хеш сырого кода из deep link.                 |
+| `ExpiresAt`   | datetime | NOT NULL                                         | Срок действия (TTL **3 минуты**).             |
+| `UsedAt`      | datetime | NULL                                             | Когда код погашен при exchange; NULL = не использован. |
+| `CreatedAt`   | datetime | NOT NULL                                         | Время создания.                               |
+
+Индексы: `TokenHash` (UNIQUE), `OrganizerId`.
+
+При exchange: поиск по хешу, проверка `ExpiresAt` и `UsedAt`, атомарная пометка `UsedAt`, выдача JWT (новая сессия). Повторный exchange или просроченный код → **401**. Несколько активных кодов на одного организатора допустимы (каждый login/register/OAuth выдаёт новую строку).
+
+Поток и контракт: [CONTRACTS.md](../CONTRACTS.md) §3.2.0b, [accounts-and-auth.md](../docs/integration/accounts-and-auth.md).
 
 ---
 
@@ -185,11 +244,12 @@ _Связь с учётной записью: email+пароль (таблица
 | `City`                  | string    | NULL                           | Город.                                                                                    |
 | `EventDateTime`         | datetime  | NULL                           | Дата и время начала мероприятия.                                                          |
 | `EventEndDateTime`      | datetime  | NULL                           | Дата и время окончания мероприятия.                                                       |
+| `TimeZone`              | string    | NULL                           | Часовой пояс события (IANA/отображаемый); независим от `Organizer.TimeZone`.              |
 | `PartyLifecycleState`   | int       | NOT NULL, default 1 (Draft)    | Жизненный цикл: 1 = Draft, 2 = Ready, 3 = Completed. JSON: `draft`, `ready`, `completed`. Application create (`POST /api/parties`) явно выставляет **Ready**; default колонки Draft остаётся для legacy/EF до optional migration. `completed` **не** терминальное: разрешён переход обратно в Ready. |
 | `Schedule`              | text/JSON | NULL                           | Расписание (текст или структурированный JSON).                                            |
 | `PartyThemeId`          | string    | NOT NULL                       | PartyTheme идентификатор. Продуктовый дефолт сущности — `PartyThemeDefaults.Id` (`basic`); также cyberpunk, sakura, art-deco, spring-cross-step. |
-| `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer).                                         |
-| `IsListedInCatalog`     | boolean   | NOT NULL, default false        | По умолчанию unlisted; true — вечеринка в общем каталоге. Флаг ортогонален lifecycle; организатор управляет им при Ready и Completed. |
+| `CustomizationSettings` | JSON      | NULL                           | Настройки оформления (override поверх organizer), включая `groupDisplayDepth` для ограничения глубины групп в превью. Отдельной колонки для глубины нет. |
+| `IsListedInCatalog`     | boolean   | NOT NULL                       | App-default `false` (C# / маппер); **DB DEFAULT у колонки нет**. true — вечеринка в общем каталоге. Флаг ортогонален lifecycle; организатор управляет им при Ready и Completed. |
 | `CreatedAt`             | datetime  | NOT NULL                       | Дата создания.                                                                            |
 | `UpdatedAt`             | datetime  | NULL                           | Дата последнего обновления.                                                               |
 | `IsDeleted`             | boolean   | NOT NULL, default false        | Soft delete (скрытие из выборок).                                                         |
@@ -206,19 +266,17 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## PartyPlaylist (плейлист вечеринки)
 
-Хранит только отображаемые поля: id, name/title, duration, структура групп. **Без абсолютных путей к файлам.**
+Хранит отображаемые данные плейлиста (без абсолютных путей к файлам) в отдельной таблице `party_playlists`. Связь с `parties` — один-к-одному: `party_id` одновременно является первичным ключом и внешним ключом на `parties.id`.
 
-Вариант 1 — одна таблица с JSON:
+| Колонка          | Тип                         | Ограничения                         | Описание                                                                                                      |
+| --- | --- | --- | --- |
+| `party_id`       | uuid                        | PK, FK → `parties.id`, NOT NULL     | Идентификатор вечеринки; задаёт связь 1:1. FK использует `ON DELETE CASCADE` при физическом удалении вечеринки. |
+| `items`          | jsonb                       | NOT NULL                            | Массив `PlayerItem` в camelCase: `id`, `type` (`track` или `group`), `name`, `displayOrder`, `level`, необязательные `duration` и вложенный `items`. |
+| `total_duration` | integer                     | NOT NULL                            | Общая длительность в секундах.                                                                                |
+| `total_tracks`   | integer                     | NOT NULL                            | Количество треков.                                                                                           |
+| `updated_at`     | timestamp with time zone    | NULL                                | Время последней публикации (Publish).                                                                         |
 
-| Колонка         | Тип      | Ограничения    | Описание                                                                                            |
-| --------------- | -------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| `PartyId`       | GUID     | PK, FK → Party | Одна запись на вечеринку (1:1).                                                                     |
-| `Items`         | JSON     | NOT NULL       | Массив элементов: `{ id, type: "track" \| "group", name, displayOrder, level, duration?, items? }`. |
-| `TotalDuration` | int      | NOT NULL       | Общая длительность в секундах.                                                                      |
-| `TotalTracks`   | int      | NOT NULL       | Количество треков.                                                                                  |
-| `UpdatedAt`     | datetime | NULL           | Время последней публикации (Publish).                                                               |
-
-Вариант 2 — отдельная сущность в той же таблице Party (колонки `PlaylistItems` JSON, `PlaylistTotalDuration`, `PlaylistTotalTracks`) — на усмотрение реализации.
+Soft-deleted parties скрывают связанные плейлисты через EF query filter. Поскольку удаление вечеринки в v1 — soft delete, каскадный FK не удаляет плейлист в этом потоке; он срабатывает только при физическом удалении строки `parties`.
 
 ---
 
@@ -248,11 +306,11 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## Связи и политика удаления
 
-- **Organizer** — владелец многих **Party**. FK `Party.OrganizerId` использует `RESTRICT`; soft-delete организатора не удаляет вечеринки физически.
-- **Party** — хранится «навсегда» до удаления организатором; в v1 без автоархивации. При удалении вечеринки удаляются связанные **PartyPlaylist** и **SessionState**.
+- **Organizer** — владелец многих **Party**. FK `Party.OrganizerId` использует `RESTRICT`; soft-delete организатора (в т.ч. self-service `DELETE /api/organizer/account`: `IsDeleted` + полный scrub профиля — см. колонку `IsDeleted`) не удаляет вечеринки физически. EmailAccounts / OAuthAccounts / OrganizerSessions при self-service delete удаляются hard-delete в той же `IAppUnitOfWork`-транзакции. **OrganizerEntitlements** и **DesktopAuthCodes** при soft-delete не трогаются (см. ниже).
+- **Party** — soft-delete (`IsDeleted = true`) через `PartyService.DeletePartyAsync` / `EfPartyRepository.DeleteAsync`; строка вечеринки не удаляется физически, в v1 без автоархивации. **SessionState** при удалении вечеринки снимается явно (`IStreamingRepository.DeleteSessionStateAsync`). **PartyPlaylist** остаётся: FK `Cascade` срабатывает только при hard-delete строки `Party`, которого в v1 нет; отдельной очистки/scrub плейлиста при soft-delete нет.
 - **ThemePackages** ↔ **Themes**: связь many-to-many через **ThemePackageItems**. Удаление пакета каскадно удаляет его элементы (`ThemePackageItems`), удаление темы ограничено (`RESTRICT`), если она входит в пакет.
-- **OrganizerEntitlements**: удаляются каскадно при удалении организатора, но пакет (`ThemePackage`) удалять при наличии выдач нельзя (`RESTRICT`).
-- **AdminAuditLog**: хранит ссылки на организаторов, пакеты и entitlement для трассировки действий; записи аудита создаются вместе с выдачей/отзывом в одной транзакции.
-- В `AdminAuditLog` удаление ссылочных сущностей переводит внешние ключи в `NULL` (`SET NULL`) для сохранения истории аудита.
+- **OrganizerEntitlements**: FK на организатора — `ON DELETE CASCADE`, на пакет — `RESTRICT` (пакет с выдачами удалить нельзя). CASCADE срабатывает **только при hard-delete** строки организатора; self-service soft-delete entitlements **не** удаляет.
+- **DesktopAuthCodes**: FK `ON DELETE CASCADE` на организатора — тоже только при hard-delete; soft-delete / self-service коды не чистит (TTL короткий, строки могут остаться до истечения/exchange).
+- **AdminAuditLog**: записи создаются вместе с grant/revoke в одной транзакции. FK: `AdminId` → `RESTRICT`; `TargetOrganizerId` / `PackageId` / `EntitlementId` → `SET NULL` (история аудита сохраняется при hard-delete целевых сущностей). Soft-delete организатора FK не триггерит.
 - Список организатора: `GET /api/parties` (`GetPartiesByOrganizerAsync`) возвращает **все** lifecycle-состояния владельца, включая `draft` (кабинет, **Мои вечеринки**, привязка существующей вечеринки). Публичный каталог по-прежнему без `draft`.
-- Каталог: в публичный список (`GET /api/parties/public/list`, `PublicPartyQueryService`) попадают только вечеринки с `IsListedInCatalog = true` **и** `PartyLifecycleState != Draft` (не `draft`); `Completed` при listed **допускается**. Лимит «будущих» вечеринок на организатора (например, 2) проверяется при создании/обновлении (по §4.2). См. [CONTRACTS.md](../CONTRACTS.md) §2.
+- Каталог: в публичный список (`GET /api/parties/public/list`, `PublicPartyQueryService`) попадают только вечеринки с `IsListedInCatalog = true` **и** `PartyLifecycleState != Draft` (не `draft`); `Completed` при listed **допускается**. Лимит «будущих» вечеринок на организатора (`AuthConstants.MaxFuturePartiesPerOrganizer` = 2) проверяется **только при создании** (`PartyService` create); update `EventDateTime` лимит не перепроверяет. См. [CONTRACTS.md](../CONTRACTS.md) §8, [party-management.md](../docs/integration/party-management.md).

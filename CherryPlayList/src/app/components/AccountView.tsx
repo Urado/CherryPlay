@@ -1,62 +1,50 @@
-import {
-  Disclosure,
-  AuthForm,
-  Button,
-  ForgotPasswordForm,
-  ChangePasswordForm,
-} from '@cherryplay/components';
-import type { OrganizerDto } from '@cherryplay/components';
-import React, { useEffect, useState } from 'react';
-
+import { Button } from '@cherryplay/components';
 import { OnlineUnavailablePanel } from '@shared/components';
-import { DEMO_ORGANIZER_DTO, getDemoOrganizerDto } from '@shared/demo/demoAuthFixture';
+import { getWebBaseUrl } from '@shared/config/serverConfig';
+import { DEMO_ORGANIZER_DTO } from '@shared/demo/demoAuthFixture';
 import {
   getAppMode,
   getPlatform,
   getPlatformCapabilities,
   isDemoFixturesMode,
   isDemoLiveMode,
-  isPlatformInitialized,
 } from '@shared/platform';
 import { authService } from '@shared/services/authService';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
 import { useAuthStore } from '@shared/stores/authStore';
-import { clearAuthSession, setAuthSessionToken } from '@shared/utils/authSession';
+import { clearAuthSession } from '@shared/utils/authSession';
+import React, { useCallback, useEffect, useState } from 'react';
 
-import { MyPartiesList } from './MyPartiesList';
+import { BrowserLoginPanel } from './BrowserLoginPanel';
 
-type UnauthenticatedPanel = 'login' | 'forgot';
+interface AccountViewProps {
+  onClose?: () => void;
+}
 
-export const AccountView: React.FC = () => {
+export const AccountView: React.FC<AccountViewProps> = ({ onClose = () => undefined }) => {
   const accessToken = useAuthStore((state) => state.accessToken);
   const storeOrganizer = useAuthStore((state) => state.organizer);
   const setOrganizer = useAuthStore((state) => state.setOrganizer);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [loading, setLoading] = useState(false);
-  const [organizerInfo, setOrganizerInfo] = useState<OrganizerDto | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isOrganizerCardExpanded, setIsOrganizerCardExpanded] = useState(false);
-  const [isChangePasswordExpanded, setIsChangePasswordExpanded] = useState(false);
-  const [unauthenticatedPanel, setUnauthenticatedPanel] = useState<UnauthenticatedPanel>('login');
   const addNotification = useUIStore((state) => state.addNotification);
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
-  const isDemoMode = getAppMode() === 'demo';
-  const isFixturesDemo = isDemoFixturesMode(getAppMode());
+  const appMode = getAppMode();
+  const isDemoMode = appMode === 'demo';
+  const isFixturesDemo = isDemoFixturesMode(appMode);
   const isLiveDemo = isDemoLiveMode() && isDemoMode;
   const authenticated = isAuthenticated();
 
-  const loadOrganizerInfo = async () => {
+  const loadOrganizerInfo = useCallback(async () => {
     const token = useAuthStore.getState().accessToken;
     if (!token) {
       return;
     }
 
     try {
-      setLoading(true);
-      setError(null);
       const info = await authService.getCurrentOrganizer();
-      setOrganizerInfo(info);
       setOrganizer({ id: info.id, name: info.name });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load organizer info';
@@ -64,101 +52,30 @@ export const AccountView: React.FC = () => {
       if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
         clearAuthSession();
       }
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [setOrganizer]);
 
   useEffect(() => {
-    if (isDemoFixturesMode(getAppMode())) {
+    if (isFixturesDemo) {
       if (useAuthStore.getState().isAuthenticated()) {
-        setOrganizerInfo(getDemoOrganizerDto());
         setOrganizer({ id: DEMO_ORGANIZER_DTO.id, name: DEMO_ORGANIZER_DTO.name });
       }
       return;
     }
-    if (!getPlatformCapabilities().supportsRealAuth) {
-      return;
-    }
-    if (useAuthStore.getState().isAuthenticated() && useAuthStore.getState().accessToken) {
+    if (
+      getPlatformCapabilities().supportsRealAuth &&
+      useAuthStore.getState().isAuthenticated() &&
+      useAuthStore.getState().accessToken
+    ) {
       void loadOrganizerInfo();
     }
-  }, [accessToken, storeOrganizer?.id, setOrganizer]);
-
-  useEffect(() => {
-    if (!isPlatformInitialized() || !getPlatformCapabilities().supportsRealAuth) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const registerCallback = async () => {
-      try {
-        const result = (await getPlatform().invoke('auth:registerCallback')) as
-          | { success: true; data: { code: string; provider: string } }
-          | { success: false; error: string };
-
-        if (isMounted && result.success && result.data) {
-          const { code, provider } = result.data;
-          await handleOAuthExchange(code, provider);
-        }
-      } catch (callbackError) {
-        if (isMounted) {
-          console.error('Error handling OAuth callback:', callbackError);
-          setError(
-            callbackError instanceof Error
-              ? callbackError.message
-              : 'Failed to handle OAuth callback',
-          );
-        }
-      }
-    };
-
-    void registerCallback();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (authenticated) {
-      setUnauthenticatedPanel('login');
-    }
-  }, [authenticated]);
-
-  const handleOAuthExchange = async (code: string, provider: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const deviceId = `desktop-${Date.now()}`;
-
-      const token = await authService.exchangeCode(code, provider, deviceId);
-      setAuthSessionToken(token);
-
-      await loadOrganizerInfo();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to authenticate';
-      setError(errorMessage);
-      addNotification({
-        type: 'error',
-        message: errorMessage,
-        duration: 5000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const closeModal = useUIStore((state) => state.closeModal);
+  }, [accessToken, storeOrganizer?.id, isFixturesDemo, loadOrganizerInfo, setOrganizer]);
 
   const handleLogout = async () => {
     try {
       setLoading(true);
       await authService.logout();
-      setOrganizerInfo(null);
-      closeModal();
+      onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to logout';
       setError(errorMessage);
@@ -172,39 +89,21 @@ export const AccountView: React.FC = () => {
     }
   };
 
-  const handleForgotPasswordSuccess = (message: string) => {
-    addNotification({
-      type: 'info',
-      message: `${message} Ссылка для сброса пароля откроется в браузере на сайте CherryPlay.`,
-      duration: 12000,
-    });
+  const openCabinetOnWeb = async () => {
+    try {
+      const webBaseUrl = await getWebBaseUrl();
+      const url = `${webBaseUrl.replace(/\/$/, '')}/cabinet`;
+      await getPlatform().invoke('auth:openExternal', { url });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Не удалось открыть сайт';
+      setError(errorMessage);
+      addNotification({
+        type: 'error',
+        message: errorMessage,
+        duration: 5000,
+      });
+    }
   };
-
-  const handleChangePasswordSuccess = () => {
-    clearAuthSession();
-    setOrganizerInfo(null);
-    setIsChangePasswordExpanded(false);
-    setUnauthenticatedPanel('login');
-    setError(null);
-    addNotification({
-      type: 'success',
-      message: 'Пароль успешно изменён. Войдите снова с новым паролем.',
-      duration: 8000,
-    });
-  };
-
-  const organizer: OrganizerDto | null =
-    organizerInfo ??
-    (isFixturesDemo
-      ? getDemoOrganizerDto()
-      : storeOrganizer
-        ? {
-            id: storeOrganizer.id,
-            name: storeOrganizer.name,
-            createdAt: '',
-            logoUrl: null,
-          }
-        : null);
 
   if (!isDemoMode && isClientOutdated) {
     return (
@@ -214,8 +113,49 @@ export const AccountView: React.FC = () => {
     );
   }
 
+  if (authenticated) {
+    return (
+      <div className="account-view">
+        {isFixturesDemo && (
+          <p className="account-view-demo-hint">
+            Веб-демо: фейковый организатор, без запросов к CherryPlayServer.
+          </p>
+        )}
+        {isLiveDemo && (
+          <p className="account-view-demo-hint">
+            Веб-демо (live): вход через браузер (CherryPlayWeb), как в Desktop.
+          </p>
+        )}
+        {error ? <div className="account-view-error">{error}</div> : null}
+        <div className="account-view-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="account-view-privacy-link"
+            onClick={() => {
+              void openCabinetOnWeb();
+            }}
+          >
+            Открыть кабинет на сайте
+          </Button>
+          <Button
+            type="button"
+            onClick={() => void handleLogout()}
+            loading={loading}
+            className="account-view-logout-btn modal-button"
+            variant="danger"
+            size="sm"
+          >
+            Выйти
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="account-view">
+    <div className="account-view account-view--login">
       {isFixturesDemo && (
         <p className="account-view-demo-hint">
           Веб-демо: фейковый организатор, без запросов к CherryPlayServer.
@@ -223,134 +163,16 @@ export const AccountView: React.FC = () => {
       )}
       {isLiveDemo && (
         <p className="account-view-demo-hint">
-          Веб-демо (live): вход email/password через CherryPlayServer (Vite proxy).
+          Веб-демо (live): вход через браузер (CherryPlayWeb), как в Desktop.
         </p>
       )}
-
-      {error && <div className="account-view-error">{error}</div>}
-
-      {loading && !organizer && <div className="account-view-loading">Загрузка…</div>}
-
-      {authenticated && organizer ? (
-        <div className="account-info">
-          <div className="account-view-success" role="status" aria-live="polite">
-            <span className="account-view-success-mark" aria-hidden="true">
-              ✓
-            </span>
-            <span className="account-view-success-text">
-              Вы авторизованы как организатор
-              {isFixturesDemo ? ' (демо)' : ''}
-            </span>
-          </div>
-
-          <div className="account-disclosure-stack">
-            <section className="account-disclosure-card" aria-label="Информация об организаторе">
-              <Disclosure
-                title="Информация об организаторе"
-                className="account-disclosure"
-                expanded={isOrganizerCardExpanded}
-                onExpandedChange={setIsOrganizerCardExpanded}
-              >
-                <div className="account-view-organizer-details">
-                  <div className="account-view-field">
-                    <span className="account-view-field-label">Имя</span>
-                    <span className="account-view-field-value">{organizer.name}</span>
-                  </div>
-
-                  <div className="account-view-field">
-                    <span className="account-view-field-label">ID</span>
-                    <span className="account-view-field-value account-view-field-value--mono">
-                      {organizer.id}
-                    </span>
-                  </div>
-
-                  {organizer.logoUrl && (
-                    <div className="account-view-field">
-                      <span className="account-view-field-label">Логотип</span>
-                      <div className="account-view-logo-wrap">
-                        <img
-                          src={organizer.logoUrl}
-                          alt={organizer.name}
-                          className="account-view-logo"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {organizer.createdAt ? (
-                    <div className="account-view-field">
-                      <span className="account-view-field-label">Создан</span>
-                      <span className="account-view-field-value">
-                        {new Date(organizer.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-              </Disclosure>
-            </section>
-
-            {!isFixturesDemo && (
-              <section className="account-disclosure-card" aria-label="Смена пароля">
-                <Disclosure
-                  title="Смена пароля"
-                  className="account-disclosure"
-                  expanded={isChangePasswordExpanded}
-                  onExpandedChange={setIsChangePasswordExpanded}
-                >
-                  <ChangePasswordForm
-                    authService={authService}
-                    layout="embedded"
-                    title={null}
-                    onSuccess={handleChangePasswordSuccess}
-                  />
-                </Disclosure>
-              </section>
-            )}
-
-            <MyPartiesList />
-          </div>
-
-          <div className="account-view-actions">
-            <Button
-              type="button"
-              onClick={handleLogout}
-              loading={loading}
-              className="account-view-logout-btn modal-button"
-              variant="danger"
-              size="sm"
-            >
-              Выйти
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {unauthenticatedPanel === 'forgot' ? (
-            <div className="account-view-password-panel">
-              <ForgotPasswordForm
-                authService={authService}
-                description="Укажите email аккаунта. Если он зарегистрирован, мы отправим инструкции по сбросу пароля. Ссылка из письма откроется в браузере на сайте CherryPlay."
-                onSuccess={handleForgotPasswordSuccess}
-                onBackToLogin={() => setUnauthenticatedPanel('login')}
-              />
-            </div>
-          ) : (
-            <AuthForm
-              title="Вход в систему"
-              compact={false}
-              authService={authService}
-              oauthEnabled={!isDemoMode}
-              onLoginSuccess={() => {
-                void loadOrganizerInfo();
-              }}
-              onForgotPassword={() => setUnauthenticatedPanel('forgot')}
-            />
-          )}
-          <div className="account-disclosure-stack">
-            <MyPartiesList />
-          </div>
-        </>
-      )}
+      {error ? <div className="account-view-error">{error}</div> : null}
+      <div className="account-view-login-panel">
+        <BrowserLoginPanel
+          title="Вход в систему"
+          description="Откроется системный браузер для входа в CherryPlay"
+        />
+      </div>
     </div>
   );
 };

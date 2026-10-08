@@ -4,10 +4,8 @@ export interface AppConfigResponse {
   adminContactUrl?: string;
 }
 
-/** Жизненный цикл вечеринки (CONTRACTS.md §6.7, snake_case в JSON). */
 export type PartyLifecycleState = 'draft' | 'ready' | 'completed';
 
-/** Статус отображения для зрителя (сервер, CONTRACTS §6.7). */
 export type PartyDisplayStatusId =
   | 'draft'
   | 'scheduled'
@@ -42,7 +40,7 @@ export interface PublicPartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId: string;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
   hasActiveSession: boolean;
   isListedInCatalog: boolean;
   sessionStartedAt?: string;
@@ -98,6 +96,7 @@ export interface PublicPartyListItemDto {
   externalLinkUrl?: string;
   externalLinkText?: string;
   danceTags?: string[];
+  organizerName?: string | null;
   partyLifecycleState: PartyLifecycleState;
 }
 
@@ -130,6 +129,7 @@ export interface CreatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId: string;
+  customizationSettings?: Record<string, unknown>;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog?: boolean;
@@ -149,6 +149,7 @@ export interface UpdatePartyDto {
   title?: string;
   subtitle?: string;
   partyThemeId?: string;
+  customizationSettings?: Record<string, unknown>;
   eventDateTime?: string;
   eventEndDateTime?: string;
   isListedInCatalog?: boolean;
@@ -257,8 +258,18 @@ export interface GrantEntitlementRequest {
   note?: string;
 }
 
-export interface RevokeEntitlementRequest {
-  note?: string;
+export interface CreateEntitlementRevocationRequest {
+  readonly id: string;
+  readonly entitlementId: string;
+  readonly note?: string;
+}
+
+export interface EntitlementRevocationDto {
+  id: string;
+  entitlementId?: string | null;
+  adminId: string;
+  note?: string | null;
+  createdAt: string;
 }
 
 export type { OrganizerDto } from '@cherryplay/components';

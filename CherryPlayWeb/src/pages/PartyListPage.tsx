@@ -1,23 +1,25 @@
 import {
   Button,
+  FormInput,
+  FormSelect,
   IconButton,
   formatDateInTimeZone,
   getDefaultTimeZone,
   getPopularTimeZones,
   sortPartiesByEventDateDesc,
-  type OrganizerDto,
 } from '@cherryplay/components';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
-import { authService } from '../services/authService';
+import { useConsentGate } from '../contexts/ConsentGateContext';
+import { useSiteAuth } from '../contexts/SiteAuthContext';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyListItemDto } from '../types/api';
-import { devLog } from '../utils/logger';
+
+import { PartyListCardLink } from './PartyListCardLink';
 import './PartyListPage.css';
 
 const RUSSIAN_CITIES = [
@@ -37,10 +39,6 @@ const RUSSIAN_CITIES = [
   'Волгоград',
   'Краснодар',
 ];
-
-interface PartyListPageProps {
-  onPartySelect: (shortCode: string) => void;
-}
 
 interface PartyFilters {
   dateFrom: string;
@@ -92,14 +90,14 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
   return `${date} ${timeRange}`;
 };
 
-export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) => {
+export const PartyListPage: React.FC = () => {
   const { partyInfoPageEnabled } = useAppConfig();
+  const { ensureConsents } = useConsentGate();
+  const { organizer, checked: authChecked } = useSiteAuth();
   void partyInfoPageEnabled;
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [organizer, setOrganizer] = useState<OrganizerDto | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [filters, setFilters] = useState<PartyFilters>({
     dateFrom: '',
     dateTo: '',
@@ -127,19 +125,10 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
   }, [loadParties]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const currentOrganizer = await authService.checkAuth();
-        setOrganizer(currentOrganizer);
-      } catch (err) {
-        devLog('[PartyListPage] Auth check failed (non-critical):', err);
-        setOrganizer(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
+    if (authChecked && organizer) {
+      void ensureConsents();
+    }
+  }, [authChecked, ensureConsents, organizer]);
 
   const handleRetry = () => {
     loadParties();
@@ -245,16 +234,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         <div className="party-list-header">
           <h1 className="party-list-title">Вечеринки</h1>
           <div className="party-list-header-actions">
-            {!authLoading &&
-              (organizer ? (
-                <Link to={ROUTES.CABINET} className="party-list-login-link">
-                  Кабинет
-                </Link>
-              ) : (
-                <Link to={ROUTES.LOGIN} className="party-list-login-link">
-                  Вход
-                </Link>
-              ))}
             <IconButton
               className="party-list-refresh-btn"
               variant="secondary"
@@ -280,7 +259,6 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           </div>
         </div>
 
-        {/* Блок фильтров */}
         <div className="party-list-filters">
           <div className="party-list-filters-header">
             <Button
@@ -309,8 +287,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
           {isFiltersExpanded && (
             <div className="party-list-filters-content">
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дата от</label>
-                <input
+                <FormInput
+                  id="party-filter-date-from"
+                  label="Дата от"
                   type="date"
                   className="party-list-filters-input"
                   value={filters.dateFrom}
@@ -319,8 +298,9 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дата до</label>
-                <input
+                <FormInput
+                  id="party-filter-date-to"
+                  label="Дата до"
                   type="date"
                   className="party-list-filters-input"
                   value={filters.dateTo}
@@ -328,28 +308,30 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                 />
               </div>
 
-              <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дни недели</label>
+              <div className="party-list-filters-group" role="group" aria-label="Дни недели">
+                <span className="party-list-filters-label">Дни недели</span>
                 <div className="party-list-filters-days">
                   {dayNames.map((name, index) => (
-                    <button
+                    <Button
                       key={index}
-                      type="button"
                       className={`party-list-filters-day ${
                         filters.daysOfWeek.includes(index) ? 'party-list-filters-day--active' : ''
                       }`}
+                      variant={filters.daysOfWeek.includes(index) ? 'primary' : 'secondary'}
+                      size="sm"
+                      aria-pressed={filters.daysOfWeek.includes(index)}
                       onClick={() => handleDayOfWeekToggle(index)}
                     >
                       {name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Таймзона</label>
-                <select
-                  className="party-list-filters-input"
+                <FormSelect
+                  id="party-filter-time-zone"
+                  label="Таймзона"
                   value={filters.timeZone}
                   onChange={(e) => setFilters((prev) => ({ ...prev, timeZone: e.target.value }))}
                 >
@@ -359,13 +341,13 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                       {tz.label}
                     </option>
                   ))}
-                </select>
+                </FormSelect>
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Город</label>
-                <select
-                  className="party-list-filters-input"
+                <FormSelect
+                  id="party-filter-city"
+                  label="Город"
                   value={filters.city}
                   onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
                 >
@@ -375,7 +357,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
                       {city}
                     </option>
                   ))}
-                </select>
+                </FormSelect>
               </div>
             </div>
           )}
@@ -384,7 +366,7 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         {parties.length === 0 ? (
           <div className="party-list-empty">
             <p>Нет доступных вечеринок</p>
-            <p className="party-list-empty-hint">Создайте вечеринку в приложении CherryPlayList</p>
+            <p className="party-list-empty-hint">Создайте вечеринку в приложении CherryPashka List</p>
           </div>
         ) : filteredParties.length === 0 ? (
           <div className="party-list-empty">
@@ -403,73 +385,67 @@ export const PartyListPage: React.FC<PartyListPageProps> = ({ onPartySelect }) =
         ) : (
           <div className="party-list-grid">
             {filteredParties.map((party) => (
-              <div
-                key={party.id}
-                role="button"
-                tabIndex={0}
-                className="party-list-card"
-                onClick={() => onPartySelect(party.shortCode)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onPartySelect(party.shortCode);
-                  }
-                }}
-              >
-                <div className="party-list-card-header">
-                  <h2 className="party-list-card-title">{party.name}</h2>
-                </div>
-                <div className="party-list-card-body">
-                  {party.shortDescription && (
-                    <p className="party-list-card-description">{party.shortDescription}</p>
-                  )}
-                  {party.city && (
-                    <div className="party-list-card-info-item">
-                      <span className="party-list-card-info-value">{party.city}</span>
-                    </div>
-                  )}
-                  {(() => {
-                    const dateTimeRange = getPartyDateTimeRange(party);
-                    if (!dateTimeRange) return null;
-
-                    return (
+              <div key={party.id} className="party-list-card">
+                <PartyListCardLink to={ROUTES.PARTY_VIEW(party.shortCode)} partyName={party.name}>
+                  <div className="party-list-card-header">
+                    <h2 className="party-list-card-title">{party.name}</h2>
+                  </div>
+                  <div className="party-list-card-body">
+                    {party.shortDescription && (
+                      <p className="party-list-card-description">{party.shortDescription}</p>
+                    )}
+                    {party.city && (
                       <div className="party-list-card-info-item">
-                        <span className="party-list-card-info-value">{dateTimeRange}</span>
+                        <span className="party-list-card-info-value">{party.city}</span>
                       </div>
-                    );
-                  })()}
-                  {party.danceTags && party.danceTags.length > 0 && (
-                    <div className="party-list-card-tags">
-                      {party.danceTags.map((tag, index) => (
-                        <span key={`${tag}-${index}`} className="party-list-card-tag">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {party.externalLinkUrl &&
-                    (() => {
-                      const isSafeUrl =
-                        party.externalLinkUrl.startsWith('http://') ||
-                        party.externalLinkUrl.startsWith('https://');
-                      const label = party.externalLinkText ?? 'Ссылка';
-                      return isSafeUrl ? (
-                        <a
-                          href={party.externalLinkUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="party-list-card-external-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {label}
-                        </a>
-                      ) : (
-                        <span className="party-list-card-external-link party-list-card-external-link--text">
-                          {label}
-                        </span>
+                    )}
+                    {(() => {
+                      const dateTimeRange = getPartyDateTimeRange(party);
+                      if (!dateTimeRange) return null;
+
+                      return (
+                        <div className="party-list-card-info-item">
+                          <span className="party-list-card-info-value">{dateTimeRange}</span>
+                        </div>
                       );
                     })()}
-                </div>
+                    {party.organizerName?.trim() && (
+                      <p className="party-list-card-organizer">
+                        Организатор: {party.organizerName.trim()}
+                      </p>
+                    )}
+                    {party.danceTags && party.danceTags.length > 0 && (
+                      <div className="party-list-card-tags">
+                        {party.danceTags.map((tag, index) => (
+                          <span key={`${tag}-${index}`} className="party-list-card-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PartyListCardLink>
+                {party.externalLinkUrl &&
+                  (() => {
+                    const isSafeUrl =
+                      party.externalLinkUrl.startsWith('http://') ||
+                      party.externalLinkUrl.startsWith('https://');
+                    const label = party.externalLinkText ?? 'Ссылка';
+                    return isSafeUrl ? (
+                      <a
+                        href={party.externalLinkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="party-list-card-external-link"
+                      >
+                        {label}
+                      </a>
+                    ) : (
+                      <span className="party-list-card-external-link party-list-card-external-link--text">
+                        {label}
+                      </span>
+                    );
+                  })()}
               </div>
             ))}
           </div>

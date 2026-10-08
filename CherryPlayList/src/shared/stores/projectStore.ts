@@ -1,7 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-import { persist } from 'zustand/middleware';
-import { createWithEqualityFn } from 'zustand/traditional';
-
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import {
   ActionAfterTrack,
@@ -23,6 +19,10 @@ import {
   ProjectTrackSettings,
 } from '@core/types/project';
 import { LOUDNESS_ALGORITHM_VERSION, Track, type TrackLoudness } from '@core/types/track';
+import { v4 as uuidv4 } from 'uuid';
+import { persist } from 'zustand/middleware';
+import { createWithEqualityFn } from 'zustand/traditional';
+
 
 import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/resetPartyWorkspaceForFreshProject';
 import {
@@ -223,7 +223,12 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({ _skipHistory: true });
 
         try {
-          const currentState: ItemsState = { items: state.items, name: state.name };
+          const currentState: ItemsState = {
+            items: state.items,
+            name: state.name,
+            trackSettings: state.trackSettings,
+            groupSettings: state.groupSettings,
+          };
           const result =
             mode === 'execute' ? command.execute(currentState) : command.undo(currentState);
 

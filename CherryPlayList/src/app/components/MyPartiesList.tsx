@@ -9,8 +9,6 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-
 import { useModalKeyboard } from '@shared/hooks';
 import {
   InvalidPartyLifecycleTransitionError,
@@ -41,6 +39,7 @@ import {
   PARTY_ARCHIVE_CONFIRM_MESSAGE,
   resolvePartyArchiveAvailability,
 } from '@workspaces/party/resolvePartyArchiveAvailability';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
   const store = usePartyWorkspaceStore.getState();
@@ -89,9 +88,12 @@ export const MyPartiesList: React.FC = () => {
     setError(null);
     try {
       const list = await partyService.getParties();
-      setParties(sortPartiesByEventDateDesc(list));
+      const sortedParties = sortPartiesByEventDateDesc(list);
+      setParties(sortedParties);
+      return sortedParties;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить список вечеринок');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -146,6 +148,7 @@ export const MyPartiesList: React.FC = () => {
 
       setDeleteTarget(null);
       deleteTriggerRef.current = null;
+      await loadParties();
     } catch (e) {
       addNotification({
         type: 'error',
@@ -154,7 +157,15 @@ export const MyPartiesList: React.FC = () => {
     } finally {
       setDeletingId(null);
     }
-  }, [addNotification, deleteTarget, linkedParty?.id, markAsDirty, networkEnabled, setLinkedParty]);
+  }, [
+    addNotification,
+    deleteTarget,
+    linkedParty?.id,
+    loadParties,
+    markAsDirty,
+    networkEnabled,
+    setLinkedParty,
+  ]);
 
   const { handleOverlayKeyDown: handleDeleteOverlayKeyDown } = useModalKeyboard({
     enabled: deleteTarget !== null,
@@ -211,9 +222,12 @@ export const MyPartiesList: React.FC = () => {
 
     try {
       await partyService.updateParty(party.id, { isListedInCatalog: listed });
+      const refreshedParties = await loadParties();
+      const refreshedParty = refreshedParties?.find((item) => item.id === party.id);
       if (linkedParty?.id === party.id) {
-        usePartyWorkspaceStore.getState().setIsListedInCatalog(listed);
-        markPartyPublishCatalogVisibilitySynced(listed);
+        const serverVisibility = refreshedParty?.isListedInCatalog ?? listed;
+        usePartyWorkspaceStore.getState().setIsListedInCatalog(serverVisibility);
+        markPartyPublishCatalogVisibilitySynced(serverVisibility);
       }
     } catch (e) {
       setParties((current) =>
@@ -485,13 +499,13 @@ export const MyPartiesList: React.FC = () => {
                 icon={<CloseIcon />}
                 variant="ghost"
                 size="md"
-              ></IconButton>
+               />
             </div>
 
             <div className="modal-body">
               <p className="workspace-delete-dialog__message" id="my-parties-delete-description">
-                Вечеринка «{deleteTarget.name}» будет удалена с сервера без возможности
-                восстановления.
+                Вечеринка «{deleteTarget.name}» будет удалена с сервера. Это действие нельзя
+                отменить, восстановить вечеринку не получится.
               </p>
             </div>
 

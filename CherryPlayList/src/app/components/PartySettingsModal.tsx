@@ -1,10 +1,9 @@
 import { IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useCallback, useEffect, useRef } from 'react';
-
 import { OnlineUnavailablePanel } from '@shared/components';
 import { useModalKeyboard } from '@shared/hooks';
 import { useClientOutdatedStore, useUIStore } from '@shared/stores';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 import { PartySettingsContent } from '../../workspaces/party/components/PartySettingsContent';
 import {
@@ -95,7 +94,11 @@ const PartySettingsModalOpen: React.FC<PartySettingsModalOpenProps> = ({
             {isClientOutdated ? (
               <OnlineUnavailablePanel reason="outdated" requiredVersion={clientRequiredVersion} />
             ) : runtime ? (
-              <PartySettingsContent runtime={runtime} onOpenLinkParty={onOpenLinkParty} />
+              <PartySettingsContent
+                runtime={runtime}
+                onOpenLinkParty={onOpenLinkParty}
+                onPartyCreated={onClose}
+              />
             ) : (
               <div className="party-settings-modal-loading">Загрузка настроек вечеринки...</div>
             )}
@@ -139,7 +142,7 @@ const PartySettingsModalOpen: React.FC<PartySettingsModalOpenProps> = ({
 };
 
 export const PartySettingsModal: React.FC = () => {
-  const { modal, closeModal, openModal } = useUIStore();
+  const { modal, closeModal, openLinkPartyModal } = useUIStore();
   const runtime = useSharedPartyWorkspaceRuntime();
   const setThemeEntitlementModal = usePartyWorkspaceStore(
     (state) => state.setThemeEntitlementModal,
@@ -164,7 +167,7 @@ export const PartySettingsModal: React.FC = () => {
       isClientOutdated={isClientOutdated}
       clientRequiredVersion={clientRequiredVersion}
       onClose={handleClose}
-      onOpenLinkParty={() => openModal('linkParty')}
+      onOpenLinkParty={() => openLinkPartyModal('partySettings')}
     />
   );
 };

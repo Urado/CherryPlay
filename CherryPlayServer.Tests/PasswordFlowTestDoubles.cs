@@ -234,6 +234,29 @@ internal sealed class TestPasswordResetTokenRepository : IPasswordResetTokenRepo
         return Task.FromResult(true);
     }
 
+    public Task<int> DeleteStaleAsync(DateTime utcNow, TimeSpan retention, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var cutoff = utcNow - retention;
+        var staleIds = _tokens.Values
+            .Where(t =>
+                (t.UsedAt != null && t.UsedAt <= cutoff)
+                || (t.UsedAt == null && t.ExpiresAt <= cutoff))
+            .Select(t => t.Id)
+            .ToArray();
+
+        var deleted = 0;
+        foreach (var id in staleIds)
+        {
+            if (_tokens.TryRemove(id, out _))
+            {
+                deleted++;
+            }
+        }
+
+        return Task.FromResult(deleted);
+    }
+
     private static PasswordResetToken Clone(PasswordResetToken token)
     {
         return new PasswordResetToken
@@ -298,10 +321,17 @@ internal sealed class UnusedOAuthAccountRepository : IOAuthAccountRepository
     public Task<OAuthAccount?> GetByProviderUserIdAsync(OAuthProvider provider, string providerUserId) =>
         Task.FromResult<OAuthAccount?>(null);
 
+    public Task<OAuthAccount?> GetByProviderUserIdForUpdateAsync(
+        OAuthProvider provider,
+        string providerUserId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<OAuthAccount?>(null);
+
     public Task<List<OAuthAccount>> GetByOrganizerIdAsync(Guid organizerId) =>
         Task.FromResult(new List<OAuthAccount>());
 
     public Task<OAuthAccount> AddAsync(OAuthAccount account) => Task.FromResult(account);
+    public Task<bool> TryAddAsync(OAuthAccount account) => Task.FromResult(true);
     public Task UpdateAsync(OAuthAccount account) => Task.CompletedTask;
     public Task DeleteAsync(Guid id) => Task.CompletedTask;
 }

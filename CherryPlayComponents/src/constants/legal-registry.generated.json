@@ -1,0 +1,51 @@
+{
+  "contentVersion": "1.0",
+  "hashAlgorithm": "sha256-lf-text",
+  "generatedAtUtc": "2026-09-23T19:33:05.0464659Z",
+  "documents": [
+    {
+      "type": "pd_consent_text",
+      "versionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "documentVersion": "1.0",
+      "contentHash": "1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f",
+      "effectiveFrom": "2026-09-21",
+      "currentPath": "/consent",
+      "archivePath": "/consent/v/1.0",
+      "title": "Согласие на обработку персональных данных",
+      "sourceFile": "v1.0/consent.md"
+    },
+    {
+      "type": "terms",
+      "versionId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "documentVersion": "1.0",
+      "contentHash": "c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d",
+      "effectiveFrom": "2026-09-21",
+      "currentPath": "/terms",
+      "archivePath": "/terms/v/1.0",
+      "title": "Пользовательское соглашение",
+      "sourceFile": "v1.0/terms.md"
+    },
+    {
+      "type": "privacy_policy",
+      "versionId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "documentVersion": "1.0",
+      "contentHash": "284f16561a4144c980a30d1dae93a86e59155cbd8c41edd9372b3002fae03439",
+      "effectiveFrom": "2026-09-21",
+      "currentPath": "/privacy",
+      "archivePath": "/privacy/v/1.0",
+      "title": "Политика обработки персональных данных",
+      "sourceFile": "v1.0/privacy.md"
+    },
+    {
+      "type": "cookie_policy",
+      "versionId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "documentVersion": "1.0",
+      "contentHash": "27746265179e4bfcdbf54cfd0413045563bf44725b7a22c46115f8d49a8a7904",
+      "effectiveFrom": "2026-09-21",
+      "currentPath": "/cookies",
+      "archivePath": "/cookies/v/1.0",
+      "title": "Политика использования cookie",
+      "sourceFile": "v1.0/cookies.md"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
+import type { ProjectSessionMode } from '@core/types/project';
 import React from 'react';
 
-import type { ProjectSessionMode } from '@core/types/project';
 
 import {
   PARTY_EDITOR_PHASE_BADGE_LABELS,

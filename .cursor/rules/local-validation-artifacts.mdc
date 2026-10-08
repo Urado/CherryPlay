@@ -1,0 +1,12 @@
+---
+description: Keep generated local validation artifacts out of product source trees and Git
+alwaysApply: true
+---
+
+# Local Validation Artifacts
+
+Store generated validation outputs, including unpacked desktop builds, release archives, and temporary build diagnostics, under the repository-root `artifacts/local-validation/` directory.
+
+Do not create validation output directories inside product projects such as `CherryPlayList/`. The repository `.gitignore` excludes `artifacts/local-validation/`.
+
+Keep concise validation results, commands, and outstanding manual checks in the relevant task or project documentation. Do not copy generated binaries or archives into those records.

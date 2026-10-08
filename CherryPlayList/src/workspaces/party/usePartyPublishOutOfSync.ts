@@ -1,7 +1,7 @@
+import { useAimpStore, useProjectStore, useSettingsStore } from '@shared/stores';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { useAimpStore, useProjectStore, useSettingsStore } from '@shared/stores';
 
 import { buildPartyPublishSyncParts, resolveHeaderPartyPublishHighlight } from './partyPublishSync';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';

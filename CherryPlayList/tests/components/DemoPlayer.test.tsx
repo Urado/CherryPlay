@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
+import type { Track } from '@core/types/track';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-import type { Track } from '@core/types/track';
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -101,9 +101,7 @@ jest.mock('../../src/shared/stores/demoPlayerStore', () => {
 
 const { useDemoPlayerStore: mockUseDemoPlayerStore } = jest.requireMock(
   '../../src/shared/stores/demoPlayerStore',
-) as {
-  useDemoPlayerStore: jest.Mock;
-};
+);
 
 jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: (selector: (state: { addNotification: typeof mockAddNotification }) => unknown) =>

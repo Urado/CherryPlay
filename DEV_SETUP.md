@@ -2,6 +2,55 @@
 
 Как поднять весь стек (сервер, веб-клиент, десктопное приложение) для локальной разработки.
 
+## Локальный стек с Grafana
+
+На Windows с Docker Desktop весь веб-стек и мониторинг запускаются одной командой. Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети.
+
+В PowerShell из корня репозитория:
+
+```powershell
+Copy-Item .env.monitoring.local.example .env.monitoring.local
+docker compose --env-file .env.monitoring.local -f docker-compose.yml -f docker-compose.monitoring.local.yml up --build -d
+```
+
+Войдите в Grafana как `admin`, пароль по умолчанию для локальной разработки — `cherryplay-local-only-password` из `.env.monitoring.local`. Это отдельные локальные значения; production-секреты для этого стека не используются. Файл `.env.monitoring.local` исключён из Git. Чтобы сменить пароль, отредактируйте его до запуска.
+
+Остановить контейнеры, сохранив данные Prometheus, Loki, Grafana и PostgreSQL:
+
+```powershell
+docker compose --env-file .env.monitoring.local -f docker-compose.yml -f docker-compose.monitoring.local.yml down
+```
+
+Prometheus получает метрики backend по внутреннему адресу `server:8080`, PostgreSQL — через exporter, Alloy читает Docker Desktop контейнерные логи через proxy с отключёнными изменяющими API запросами, Loki хранит логи, а provisioning создаёт те же панели и правила Grafana, что и на production. Локальный Alloy читает логи через Docker API proxy и не монтирует каталог логов Docker-хоста. Локальный node-exporter запущен без привилегий и без host mounts `/`, `/proc` и `/sys`: он показывает только значения, видимые из его контейнера. Поэтому локальные графики памяти и диска не являются метриками Windows-хоста или надёжным представлением всего Docker Desktop VM; host resource alerts локально не следует считать источником истины. Панель «Занятое место на системном диске сервера» локально часто показывает `No data`: запрос ищет `mountpoint="/"`, которого нет без bind-mount корня хоста (в Docker Desktop видны только точки вроде `/etc/hostname`). На Linux-сервере в production node-exporter монтирует `/` хоста — там панель заполняется. Сбор метрик каждого контейнера не включён.
+
+Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (сообщения ASP.NET Core ниже `Warning` отфильтрованы). В штатных прикладных событиях используются внутренние `OrganizerId` и `PartyId`, когда они доступны; email, имя, пароль, токены и содержимое запросов или плейлистов в эти события не включаются.
+
+В Grafana откройте папку **CherryPlay** и dashboard **Обзор CherryPlay**. Панель HTTP группирует request rate по классу status code (`2xx`, `3xx`, `4xx`, `5xx`); соседняя панель показывает p95 задержки. Backend метрики `http_requests_received_total` и `http_request_duration_seconds` не должны получать labels с user/request IDs, токенами или полными URL. Внутри Compose Kestrel слушает `0.0.0.0:8080`; `/metrics` доступен Prometheus по адресу `http://server:8080/metrics` и не имеет отдельного host port. Локальный compose публикует общий server port `5000:8080`; поэтому из Windows endpoint доступен на `http://localhost:5000/metrics`. Prometheus scrape target называется `cherryplay-server`.
+
+Чтобы вручную найти backend errors в Grafana, откройте Explore, выберите Loki и выполните:
+
+```logql
+{job="docker"} | json | Category=~"CherryPlayServer\\..+" | LogLevel=~"Error|Critical"
+```
+
+Для общего потока контейнерных логов используйте `{job="docker"}`. Поля корреляции `TraceId`, `SpanId` и `RequestId` находятся в JSON-поле `Scopes`; откройте детали записи в Logs, чтобы просмотреть scope. Alloy в локальном стеке маскирует email, IP-адреса и значения query-параметров URL.
+
+Warning **CherryPlay HTTP 5xx** срабатывает при любом 5xx за последние 5 минут; summary указывает на наличие HTTP 5xx за этот интервал. **CherryPlay application errors** срабатывает при backend-событии `Error` или `Critical` за тот же интервал, но summary сообщает только об ошибках приложения в целом. Правила вычисляются раз в минуту и не требуют дополнительного времени `for`; при отсутствии данных эти два правила остаются нормальными. После того как событие выйдет из скользящего пятиминутного окна, warning должен вернуться в normal/inactive. Уведомление не содержит детали события или correlation IDs: откройте Loki Explore либо панель **Логи контейнеров**, чтобы найти запись и посмотреть текст ошибки и `TraceId`/`SpanId`/`RequestId` в `Scopes`. Настройки email/Telegram для локального стека не требуются.
+
+Проверка доступности: `/api/health` сервера должен вернуть HTTP 200; в Grafana раздел **Alerting → Alert rules** должен показывать правила CherryPlay без ошибок вычисления, а оба источника данных — Healthy. Поскольку `/metrics`, Prometheus и Loki не публикуют host ports, проверяйте их через Grafana либо из контейнеров Compose.
+
+Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`); production default — `127.0.0.1:3000`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
+
+## Проверка monitoring-конфигурации
+
+В Windows PowerShell из корня репозитория запустите:
+
+```powershell
+.\scripts\validate-monitoring-config.ps1
+```
+
+Проверка использует Git Bash из Git for Windows, Node.js и Docker Desktop с Compose. В Linux и GitHub Actions остаётся Bash-команда `bash scripts/validate-monitoring-config.sh`.
+
 ## Требования
 
 - **.NET 9.0 SDK** (или выше) — для CherryPlayServer
@@ -29,10 +78,12 @@ dotnet run
 - Чтобы запустить сервер с этими переменными:
   - **Вариант 1:** подгрузите их перед запуском, например: `source .env.development` (Bash), затем `cd CherryPlayServer && dotnet run`.
   - **Вариант 2:** используйте скрипты-лаунчеры из корня репозитория: **`./run-dev.sh`** (Linux/Mac) или **`.\run-dev.ps1`** (Windows). Они подхватят `.env.development` или `.env`, если файл есть, и запустят сервер; если файла нет — используется только appsettings (без ошибки).
-  - **Вариант 3 (Docker debug):** `docker compose -f docker-compose.debug.yml up --build` — сервис `server` подключает корневой **`.env.development`** через `env_file` (включая `RUSENDER_*` для проверки писем).
+  - **Вариант 3 (Docker debug):** `docker compose -f docker-compose.debug.yml up --build` — сервис `server` подключает корневой **`.env.development`** через `env_file` (включая `RUSENDER_*` для проверки писем). Если контейнерам нужны публичные DNS-серверы, добавьте `-f docker-compose.debug.public-dns.yml`.
 - Конфигурация сервера по-прежнему берётся из appsettings.json и appsettings.Development.json; переменные окружения их переопределяют. Для локального запуска без Docker при использовании PostgreSQL задайте в .env.development **ConnectionStrings\_\_DefaultConnection** (подробнее см. [ENV.md](ENV.md)).
 - Hub: **http://localhost:5000/partyHub**
 - По умолчанию (`UseInMemoryStorage=false` в appsettings) — **EF Core + PostgreSQL** (нужна БД: Docker `postgres` или локальный Postgres). Опционально `UseInMemoryStorage=true` — in-memory репозитории без Postgres (данные только в процессе). Dual storage intentional — см. [ARCHITECTURE.md](ARCHITECTURE.md), [CherryPlayServer/README.md](CherryPlayServer/README.md).
+- **Без Postgres (Docker):** `docker compose -f docker-compose.inmemory.yml up --build` — `UseInMemoryStorage=true`, API `:5000`, Web `:3000`. Consent UoW и gate работают и в InMemory, и в EF (`EfLegalConsentUnitOfWork` + миграции); см. [CONTRACTS.md](CONTRACTS.md) §3.2.3.
+- **DataSeeder:** `DataSeederHostedService` запускает seed **только** при `UseInMemoryStorage=true` (при EF — skip). Demo Admin (InMemory only): email **`t@t.ru`**, пароль **`123456`** (роль admin + демо-вечеринки + grants ПДн/Terms — gate **не** открывается). Legacy без согласий: **`legacy@t.ru`** / **`123456`** — smoke CP-044 (модалка после входа / до desktop deep-link). Подробнее: [CherryPlayServer/README.md](CherryPlayServer/README.md).
 
 #### Forgot password (Dev)
 
@@ -86,7 +137,18 @@ npm run dev
 ### Настройка URL сервера в CherryPlayList
 
 - **Через приложение**: Настройки → указать адрес сервера (например, `http://localhost:5000`)
-- **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например: `{ "serverUrl": "http://localhost:5000" }`
+- **Через конфиг**: в корне CherryPlayList править `serverConfig.development.json` (dev) или `serverConfig.production.json` (релиз), например:
+
+```json
+{
+  "serverUrl": "http://localhost:5000",
+  "webBaseUrl": "http://localhost:3000"
+}
+```
+
+- **`serverUrl`** — базовый URL CherryPlayServer (API, SignalR).
+- **`webBaseUrl`** — базовый URL CherryPlayWeb для browser SSO (Desktop открывает `{webBaseUrl}/login?client=desktop&return_to=…`). Dev: `http://localhost:3000`; prod: `https://cherrypashkaparty.ru`. Должен совпадать с **`PUBLIC_WEB_BASE_URL`** на сервере ([ENV.md](ENV.md)). Подробнее: [accounts-and-auth.md](docs/integration/accounts-and-auth.md) — «Логин в CherryPlayList».
+- В **DEV** Desktop передаёт `return_to={origin}/auth/callback` (Vite **5173**/**5174**). После успеха Web редиректит на `/auth/callback?code=…`; страница пересылает одноразовый код в Electron через IPC, затем `POST /auth/desktop/exchange`. См. [accounts-and-auth.md](docs/integration/accounts-and-auth.md) и [CONTRACTS.md](CONTRACTS.md) §3.2.0b.
 - **Через переменную окружения**: при сборке/запуске задать `VITE_API_URL=http://localhost:5000`
 
 ### Веб-демо в браузере

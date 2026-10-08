@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CherryPashka List — вход</title>
+    <style>
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(ellipse at 50% 0%, #123329 0, #1b1d1d 45%, #151616 100%);
+        color: #f2f5f3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        width: min(100%, 440px);
+        padding: 40px 36px 34px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        background: rgba(31, 34, 33, 0.92);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+        text-align: center;
+      }
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        margin: 0 auto 18px;
+        border: 1px solid rgba(0, 235, 132, 0.25);
+        border-radius: 16px;
+        background: rgba(0, 235, 132, 0.1);
+        color: #00eb84;
+        font-size: 26px;
+        font-weight: 700;
+      }
+      h1 {
+        margin: 0 0 24px;
+        font-size: 1.35rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      .status-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: rgba(0, 235, 132, 0.12);
+        color: #00eb84;
+        font-size: 20px;
+      }
+      a {
+        color: #00eb84;
+        font-weight: 600;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+      p {
+        margin: 0 0 14px;
+        color: #c2c9c5;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .hint {
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: #8e9993;
+        font-size: 13px;
+      }
+      @media (max-width: 480px) {
+        main {
+          padding: 32px 24px 26px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand-mark" aria-hidden="true">C</div>
+      <h1>CherryPashka List</h1>
+      <div class="status-icon" aria-hidden="true">✓</div>
+      <p id="status" role="status" aria-live="polite">Возвращаемся в приложение…</p>
+      <p id="fallback" class="hint" hidden>
+        Если приложение не открылось, <a id="open-link" href="#">нажмите здесь</a>.
+      </p>
+    </main>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get('code');
+        var delivery = params.get('delivery');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        var status = document.getElementById('status');
+        var fallback = document.getElementById('fallback');
+        var link = document.getElementById('open-link');
+        if (!code) {
+          status.textContent = 'Отсутствует код авторизации в URL.';
+          return;
+        }
+
+        if (delivery === 'web') {
+          status.textContent = 'Возвращаемся в CherryPashka List…';
+          window.location.replace('/?desktop_auth_code=' + encodeURIComponent(code));
+          return;
+        }
+
+        try {
+          localStorage.setItem('cherryplaylist-pending-desktop-auth-code', code);
+        } catch (storageErr) {}
+
+        try {
+          var channel = new BroadcastChannel('cherryplaylist-desktop-auth');
+          channel.postMessage({ type: 'desktop-auth-code', code: code });
+          channel.close();
+        } catch (err) {}
+
+        if (window.opener && !window.opener.closed) {
+          try {
+            window.opener.postMessage(
+              { type: 'desktop-auth-code', code: code },
+              window.location.origin,
+            );
+            window.opener.focus();
+          } catch (openerErr) {}
+        }
+
+        status.textContent = 'Код отправлен в CherryPashka List. Можно закрыть это окно.';
+        var deepLink = 'cherryplaylist://auth?code=' + encodeURIComponent(code);
+        if (link) {
+          link.href = deepLink;
+        }
+        if (fallback) {
+          fallback.hidden = false;
+        }
+        window.setTimeout(function () {
+          window.location.href = deepLink;
+        }, 500);
+      })();
+    </script>
+  </body>
+</html>

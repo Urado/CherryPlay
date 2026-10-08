@@ -5,17 +5,19 @@ import {
   getDefaultTimeZone,
   PartyInfoDisplay,
   isValidPartyTheme,
+  usePartyThemeVars,
 } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { partyApiService } from '../services/partyApiService';
 import type { PublicPartyDto } from '../types/api';
 import './PartyInfoPage.css';
 
-function PartyInfoContent({ shortCode }: { shortCode: string }) {
+const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
   const navigate = useNavigate();
   const [party, setParty] = useState<PublicPartyDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,9 +41,22 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
     };
   }, [shortCode]);
 
+  useEffect(() => {
+    const displayTitle = party?.title?.trim() || party?.name.trim();
+
+    if (displayTitle) {
+      document.title = displayTitle;
+    }
+  }, [party]);
+
+  const themeId = party && isValidPartyTheme(party.partyThemeId)
+    ? party.partyThemeId
+    : DEFAULT_PARTY_THEME_ID;
+  const themeVars = usePartyThemeVars(themeId, party?.customizationSettings);
+
   if (loading) {
     return (
-      <div className="party-info-page">
+      <div className="party-info-page" data-theme={themeId} style={themeVars}>
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
             <Button
@@ -63,7 +78,7 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
 
   if (error || !party) {
     return (
-      <div className="party-info-page">
+      <div className="party-info-page" data-theme={themeId} style={themeVars}>
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
             <Button
@@ -91,12 +106,8 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
     );
   }
 
-  const themeId = isValidPartyTheme(party.partyThemeId)
-    ? party.partyThemeId
-    : DEFAULT_PARTY_THEME_ID;
-
   return (
-    <div className="party-info-page" data-theme={themeId}>
+    <div className="party-info-page" data-theme={themeId} style={themeVars}>
       <div className="party-info-page-header">
         <div className="party-info-page-header-controls">
           <Button
@@ -144,11 +155,12 @@ function PartyInfoContent({ shortCode }: { shortCode: string }) {
           customizationSettings: party.customizationSettings,
         }}
       />
+      <SiteFooter />
     </div>
   );
-}
+};
 
-export function PartyInfoPage() {
+export const PartyInfoPage = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const { partyInfoPageEnabled } = useAppConfig();
 
@@ -165,4 +177,4 @@ export function PartyInfoPage() {
   }
 
   return <PartyInfoContent key={shortCode} shortCode={shortCode} />;
-}
+};

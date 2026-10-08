@@ -60,7 +60,7 @@ function getPluginsBasePaths(): string[] {
         path.join(path.dirname(process.execPath), 'plugins'),
         path.join(process.resourcesPath, 'plugins'),
       ]
-    : [path.join(process.cwd(), 'plugins'), path.join(app.getAppPath(), 'plugins')];
+    : [path.join(fs.realpathSync.native(process.cwd()), 'plugins'), path.join(app.getAppPath(), 'plugins')];
 
   return [...new Set(pluginsBasePaths)];
 }
@@ -355,18 +355,18 @@ export class AimpIntegrationService {
       logger.error('[AIMP] Named-pipe server error', error);
       this.transientGatingReason = {
         code: 'pipeListenFailed',
-        message: `Failed to listen on AIMP named pipe: ${(error as Error).message}`,
+        message: `Failed to listen on AIMP named pipe: ${(error).message}`,
       };
       this.refreshEnvironmentEligibility();
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP named-pipe server failed to listen.',
-        details: (error as Error).message,
+        details: (error).message,
       };
       this.stopListening(
         'listenFailed',
         'Named-pipe server listen failed',
-        (error as Error).message,
+        (error).message,
       );
       this.emitState();
     });
@@ -478,9 +478,9 @@ export class AimpIntegrationService {
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP client socket error',
-        details: (error as Error).message,
+        details: (error).message,
       };
-      this.closeClient('transportError', 'AIMP client socket error', (error as Error).message);
+      this.closeClient('transportError', 'AIMP client socket error', (error).message);
     });
 
     socket.on('close', (hadError: boolean) => {

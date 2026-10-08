@@ -16,7 +16,7 @@ Use this skill to run deterministic release-health validation for CherryPlay and
 
 ## Script (recommended)
 
-From repo root, run all checks (Server + tests + Components + Web + CherryPlayList):
+From repo root, run all checks (Server + all server test categories + Components + Web + CherryPlayList):
 
 ```bash
 node .cursor/skills/release-health-checks/scripts/run-health-checks.mjs
@@ -54,7 +54,7 @@ Use this skill when the user asks to:
 
 ## Scope
 
-CherryPlay release builds **CherryPlayServer** (.NET) and **CherryPlayWeb** (which depends on **CherryPlayComponents**). The script also runs unit tests for **CherryPlayWeb**, **CherryPlayComponents**, and **CherryPlayList**. CI verifies Docker builds on PR (`.github/workflows/verify-docker-build.yml`, no push) and pushes images on merge (`.github/workflows/build-images.yml`); `release-and-deploy.yml` on release. The script runs the same restore/lint/format/build steps as inside those Dockerfiles so local checks match what CI runs.
+CherryPlay release builds **CherryPlayServer** (.NET), **CherryPlayWeb** and **CherryPlayList**; Web depends on **CherryPlayComponents**. The script runs fast server tests, IntegrationDb, the canonical container integration/restart/retention runner, lint, production dependency audits, tests and builds for the Node projects. Docker image builds remain opt-in with `--docker`. The repository has no configured Playwright or Cypress E2E command.
 
 ## Artifacts
 
@@ -73,7 +73,7 @@ Either run the script above or run the following steps manually in this order (m
 ### 1. CherryPlayServer (.NET)
 
 Order as in `CherryPlayServer/Dockerfile`: restore → format → build.  
-Then run server tests: fast suite, then IntegrationDb (Docker required).
+Then run server tests: fast suite, IntegrationDb and the canonical container integration/restart/retention runner (Docker required).
 
 From repo root:
 
@@ -81,7 +81,7 @@ From repo root:
 dotnet restore CherryPlayServer/CherryPlayServer.csproj
 dotnet format CherryPlayServer/CherryPlayServer.csproj --verify-no-changes --verbosity minimal
 dotnet build CherryPlayServer/CherryPlayServer.csproj -c Release --no-restore
-dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb" --no-build
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category!=IntegrationDb&Category!=ContainerIntegration&Category!=ContainerRestartPrepare&Category!=ContainerRestartVerify&Category!=ContainerRestartFreezePrepare&Category!=ContainerRestartFreezeVerify&Category!=ContainerRetentionPrepare&Category!=ContainerRetentionVerify" --no-build
 ```
 
 To fix format issues run `dotnet format` (no `--verify-no-changes`) in `CherryPlayServer/`.
@@ -94,7 +94,7 @@ docker image inspect postgres:16-alpine || docker pull postgres:16-alpine
 docker run -d --name cherryplay-healthcheck-postgres -p 0:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres postgres:16-alpine
 # wait until pg_isready, then set CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING (see script)
 dotnet build CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --no-restore
-dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj --filter "Category=IntegrationDb" --no-build
+dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -p:CherryPlayUseDefaultTestFilter=false --filter "Category=IntegrationDb" --no-build
 docker rm -f cherryplay-healthcheck-postgres
 ```
 
@@ -108,9 +108,10 @@ From repo root:
 cd CherryPlayComponents; npm ci; npm run lint; npm test; npm run build
 ```
 
-- **Lint:** ESLint with `--max-warnings=0`.
+- **Lint:** ESLint (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** Vitest (`vitest run`).
-- **Build:** `tsc`.
+- **Production audit:** `npm audit --omit=dev`.
+- **Build:** TypeScript compilation and CSS asset copy. The health script stages output in a temporary directory to avoid collisions with files opened by a running desktop app; the Docker web build validates the normal package build in a clean container.
 
 ### 3. CherryPlayWeb (Node + Vite)
 
@@ -122,15 +123,16 @@ From repo root:
 cd CherryPlayWeb; npm run lint:fix; npm run lint; npm test; npm run build
 ```
 
-- **Lint:** ESLint via wrapper, `--max-warnings=10`.
+- **Lint:** ESLint via wrapper (`npm run lint`); style rules are mostly `warn` and do not fail the run.
 - **Test:** `tsc --noEmit && vitest run`.
+- **Production audit:** `npm audit --omit=dev`.
 
 ### 4. CherryPlayList (desktop app)
 
-Unit tests only (Jest):
+Lint, production dependency audit, Electron production build and Jest tests:
 
 ```bash
-cd CherryPlayList; npm test
+cd CherryPlayList; npm run lint; npm audit --omit=dev; npm run build:electron; npm test
 ```
 
 ### 5. Optional — Docker builds (release images)
@@ -192,8 +194,8 @@ Keep the table to the checks you actually ran (e.g. omit Docker if not requested
 | Project        | Lint/format                         | Test                          | Build                        |
 | -------------- | ----------------------------------- | ----------------------------- | ---------------------------- |
 | Server         | `dotnet format --verify-no-changes` | fast + IntegrationDb (Docker) | `dotnet build -c Release`    |
-| Components     | `npm run lint` (max-warnings=0)     | `npm test` (vitest)           | `npm run build` (tsc)        |
-| Web            | `npm run lint` (max-warnings=10)    | `npm test` (vitest)           | `npm run build` (tsc + vite) |
+| Components     | `npm run lint`                      | `npm test` (vitest)           | `npm run build` (tsc)        |
+| Web            | `npm run lint`                      | `npm test` (vitest)           | `npm run build` (tsc + vite) |
 | CherryPlayList | —                                   | `npm test` (jest)             | —                            |
 
 Fix hints:

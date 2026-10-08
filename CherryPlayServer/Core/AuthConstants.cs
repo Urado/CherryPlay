@@ -7,6 +7,15 @@ public static class AuthConstants
     public const int TokenLifetimeDays = 30;
     public static readonly TimeSpan JwtClockSkew = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan PasswordResetTokenTtl = TimeSpan.FromHours(1);
+    public static readonly TimeSpan PasswordResetTokenRetentionCleanupInterval = TimeSpan.FromHours(1);
+    public static readonly TimeSpan PasswordResetTokenRecordRetention =
+        TimeSpan.FromDays(30) - PasswordResetTokenRetentionCleanupInterval;
+    public static readonly TimeSpan DesktopAuthCodeTtl = TimeSpan.FromMinutes(3);
+    public const string DesktopAuthCodeInvalidMessage =
+        "Код авторизации недействителен или устарел";
+    public const string DesktopClientHeaderName = "X-CherryPlay-Client";
+    public const string DesktopClientValue = "desktop";
+    public const string DesktopAuthDeepLinkBase = "cherryplaylist://auth";
     public const string InvalidCredentialsMessage = "Invalid email or password";
     public const string DummyPasswordHash = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtY.RRDPuC8Oi";
     public const string AuthCookieName = "auth_token";

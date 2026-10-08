@@ -164,29 +164,8 @@ public class AuthControllerPasswordFlowTests
         Assert.That(action, Is.TypeOf<UnauthorizedResult>());
     }
 
-    private static AuthController CreateController(StubAuthService authService, Guid? organizerId = null)
-    {
-        var httpContext = new DefaultHttpContext();
-        if (organizerId.HasValue)
-        {
-            httpContext.Items["OrganizerId"] = organizerId.Value;
-        }
-
-        var controller = new AuthController(
-            authService,
-            new UnusedOAuthService(),
-            new StubOAuthStateService(),
-            new TestOrganizerSessionRepository(),
-            new ConfigurationBuilder().Build(),
-            NullLogger<AuthController>.Instance)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = httpContext,
-            },
-        };
-        return controller;
-    }
+    private static AuthController CreateController(StubAuthService authService, Guid? organizerId = null) =>
+        AuthControllerTestFactory.Create(authService, organizerId);
 
     private static void AssertAuthCookieDeleted(HttpResponse response)
     {
@@ -215,10 +194,10 @@ public class AuthControllerPasswordFlowTests
         public PasswordMutationResult ChangeResult { get; set; } = new(true, null, null);
         public Guid? LastChangeOrganizerId { get; private set; }
 
-        public Task<AuthResult> RegisterAsync(string email, string password, string name) =>
+        public Task<AuthResult> RegisterAsync(string email, string password, string name, bool issueToken = true) =>
             throw new NotSupportedException();
 
-        public Task<AuthResult> LoginAsync(string email, string password) =>
+        public Task<AuthResult> LoginAsync(string email, string password, bool issueToken = true) =>
             throw new NotSupportedException();
 
         public Task<Organizer> ProcessOAuthCallbackAsync(
@@ -244,11 +223,5 @@ public class AuthControllerPasswordFlowTests
             LastChangeOrganizerId = organizerId;
             return Task.FromResult(ChangeResult);
         }
-    }
-
-    private sealed class StubOAuthStateService : IOAuthStateService
-    {
-        public string GenerateAndStoreState(string provider) => "state";
-        public bool ValidateAndConsumeState(string? state, string expectedProvider) => true;
     }
 }

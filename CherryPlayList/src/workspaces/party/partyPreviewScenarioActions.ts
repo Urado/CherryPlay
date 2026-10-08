@@ -1,5 +1,4 @@
 import { getDefaultCustomizationSettings, type PartyThemeId } from '@cherryplay/components';
-
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
 import {
@@ -86,7 +85,7 @@ export function setPreviewTheme(themeId: PartyThemeId): void {
   const store = getScenarioStore();
   const customizationSettingsOverride =
     store.customizationSettingsOverride ??
-    (getDefaultCustomizationSettings(themeId) as Record<string, unknown>);
+    (getDefaultCustomizationSettings(themeId));
 
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,

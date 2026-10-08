@@ -3,7 +3,6 @@ import {
   normalizeBasicThemePaletteSettings,
   type PartyThemeId,
 } from '@cherryplay/components';
-
 import {
   ThemeAccessDto,
   LockedThemeDto,
@@ -77,6 +76,23 @@ export function resolveDisplayPartyName(
 
 export const REVOKED_THEME_PACKAGE_CODE = 'revoked-current-theme';
 export const REVOKED_THEME_PACKAGE_NAME = 'Не доступна в пакетах';
+
+export function getGroupDisplayDepth(settings: Record<string, unknown> | undefined): number {
+  const value = settings?.groupDisplayDepth;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
+    ? value
+    : 3;
+}
+
+export function withGroupDisplayDepth(
+  settings: Record<string, unknown>,
+  groupDisplayDepth: number,
+): Record<string, unknown> {
+  const depth = Number.isInteger(groupDisplayDepth)
+    ? Math.min(10, Math.max(0, groupDisplayDepth))
+    : 3;
+  return { ...settings, groupDisplayDepth: depth };
+}
 
 const UNAVAILABLE_PACKAGE_LABELS = new Set([
   REVOKED_THEME_PACKAGE_NAME,
@@ -163,18 +179,21 @@ export function resolveLoadedCustomizationSettings(
     Object.keys(customizationSettings).length > 0;
 
   if (!hasMeaningful) {
-    return defaults as Record<string, unknown>;
+    return withGroupDisplayDepth(defaults, getGroupDisplayDepth(customizationSettings));
   }
 
-  const raw = customizationSettings as Record<string, unknown>;
+  const raw = customizationSettings;
   if (resolvedThemeId === 'basic') {
-    return normalizeBasicThemePaletteSettings({
-      ...defaults,
-      ...raw,
-    }) as Record<string, unknown>;
+    return withGroupDisplayDepth(
+      normalizeBasicThemePaletteSettings({
+        ...defaults,
+        ...raw,
+      }),
+      getGroupDisplayDepth(raw),
+    );
   }
 
-  return { ...defaults, ...raw } as Record<string, unknown>;
+  return withGroupDisplayDepth({ ...defaults, ...raw }, getGroupDisplayDepth(raw));
 }
 
 export function normalizeCustomizationSettings(
@@ -192,13 +211,13 @@ export function normalizeCustomizationSettings(
 
       const valueType = typeof value;
       if (valueType === 'string') {
-        acc[key] = value as string;
+        acc[key] = value;
       } else if (valueType === 'number' && !isNaN(value as number) && isFinite(value as number)) {
-        acc[key] = value as number;
+        acc[key] = value;
       } else if (key === 'basicUserSavedPalettes' && Array.isArray(value)) {
         acc[key] = value;
       } else if (valueType === 'object' && !Array.isArray(value)) {
-        acc[key] = value as Record<string, unknown>;
+        acc[key] = value;
       }
       return acc;
     },

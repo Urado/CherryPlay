@@ -1,12 +1,9 @@
 import { Button, IconButton } from '@cherryplay/components';
+import type { Track, TrackLoudness } from '@core/types/track';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-
-import type { Track, TrackLoudness } from '@core/types/track';
 import { getEffectiveGainDb, resolveAutoGainDb } from '@shared/audio/loudnessGain';
 import {
   getEffectiveCompressionStrength,
@@ -21,6 +18,8 @@ import {
   resolveAnchorPanelLeft,
 } from '@shared/utils/anchorPanelLayout';
 import { formatGainDb } from '@shared/utils/formatGainDb';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   COMPRESSION_AUTO_MATCH_TOLERANCE,
@@ -125,7 +124,7 @@ type FieldInfoIconProps = {
   label?: string;
 };
 
-function FieldInfoIcon({ hint, label = 'Справка' }: FieldInfoIconProps) {
+const FieldInfoIcon = ({ hint, label = 'Справка' }: FieldInfoIconProps) => {
   return (
     <button
       type="button"
@@ -144,7 +143,7 @@ type DetailRowProps = {
   hint: string;
 };
 
-function DetailRow({ label, value, hint }: DetailRowProps) {
+const DetailRow = ({ label, value, hint }: DetailRowProps) => {
   return (
     <div className="track-loudness-popover__detail">
       <div className="track-loudness-popover__detail-row">

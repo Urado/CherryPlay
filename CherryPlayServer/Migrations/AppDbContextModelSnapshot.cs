@@ -83,6 +83,97 @@ namespace CherryPlayServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ConsentEventEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("decision");
+
+                    b.Property<string>("DocumentHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("document_hash");
+
+                    b.Property<DateTimeOffset>("EventAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("event_at");
+
+                    b.Property<Guid>("LegalDocumentVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("legal_document_version_id");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_consent_events");
+
+                    b.HasIndex("LegalDocumentVersionId")
+                        .HasDatabaseName("ix_consent_events_legal_document_version_id");
+
+                    b.HasIndex("SubjectId", "EventAt")
+                        .HasDatabaseName("ix_consent_events_subject_id_event_at");
+
+                    b.HasIndex("SubjectId", "LegalDocumentVersionId")
+                        .HasDatabaseName("ix_consent_events_subject_id_legal_document_version_id");
+
+                    b.ToTable("consent_events", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_consent_events_decision", "decision IN ('grant','withdraw','deny')");
+                        });
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.DesktopAuthCodeEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("OrganizerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organizer_id");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_desktop_auth_codes");
+
+                    b.HasIndex("OrganizerId")
+                        .HasDatabaseName("ix_desktop_auth_codes_organizer_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_desktop_auth_codes_token_hash");
+
+                    b.ToTable("desktop_auth_codes", (string)null);
+                });
+
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>
                 {
                     b.Property<Guid>("Id")
@@ -124,6 +215,95 @@ namespace CherryPlayServer.Migrations
                         .HasDatabaseName("ix_email_accounts_organizer_id");
 
                     b.ToTable("email_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.LegalDocumentVersionEf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("content_hash");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("document_type");
+
+                    b.Property<string>("DocumentVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("document_version");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_legal_document_versions");
+
+                    b.HasIndex("DocumentType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_legal_document_versions_one_active_per_type")
+                        .HasFilter("status = 'active'");
+
+                    b.HasIndex("DocumentType", "DocumentVersion")
+                        .IsUnique()
+                        .HasDatabaseName("ix_legal_document_versions_document_type_document_version");
+
+                    b.ToTable("legal_document_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_legal_document_versions_document_type", "document_type IN ('pd_consent_text','terms','privacy_policy','cookie_policy')");
+
+                            t.HasCheckConstraint("ck_legal_document_versions_status", "status IN ('draft','active','retired')");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            ContentHash = "1ec5bcae20671f7083e7a3a58525d7d628c7aa1b6b20c0462aea46a09ccd5f6f",
+                            DocumentType = "pd_consent_text",
+                            DocumentVersion = "1.0",
+                            EffectiveFrom = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "active"
+                        },
+                        new
+                        {
+                            Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                            ContentHash = "c9290febb6dce3229775dba33b7a766a09f769963f82331ccd34dc274f32334d",
+                            DocumentType = "terms",
+                            DocumentVersion = "1.0",
+                            EffectiveFrom = new DateTime(2026, 9, 21, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "active"
+                        },
+                        new
+                        {
+                            Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                            ContentHash = "pd-consent-hash-v1",
+                            DocumentType = "pd_consent_text",
+                            DocumentVersion = "v0",
+                            EffectiveFrom = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            EffectiveTo = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "retired"
+                        });
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.OAuthAccountEf", b =>
@@ -735,6 +915,37 @@ namespace CherryPlayServer.Migrations
                         .HasForeignKey("TargetOrganizerId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_admin_audit_log_organizers_target_organizer_id");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.ConsentEventEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.LegalDocumentVersionEf", "LegalDocumentVersion")
+                        .WithMany()
+                        .HasForeignKey("LegalDocumentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_consent_events_legal_document_versions_legal_document_versi");
+
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", null)
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_consent_events_organizers_subject_id");
+
+                    b.Navigation("LegalDocumentVersion");
+                });
+
+            modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.DesktopAuthCodeEf", b =>
+                {
+                    b.HasOne("CherryPlayServer.Infrastructure.Persistence.Entities.OrganizerEf", "Organizer")
+                        .WithMany()
+                        .HasForeignKey("OrganizerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_desktop_auth_codes_organizers_organizer_id");
+
+                    b.Navigation("Organizer");
                 });
 
             modelBuilder.Entity("CherryPlayServer.Infrastructure.Persistence.Entities.EmailAccountEf", b =>

@@ -1,4 +1,3 @@
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { ContainerZone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
@@ -9,6 +8,7 @@ import {
   canAddAdjacentWorkspaceToContainer,
   getContainerSpanSides,
 } from '@shared/utils/layoutWorkspaceOperations';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { WorkspaceLayoutEditAirControl } from './WorkspaceLayoutEditAirControl';
 import { AIR_DISABLED_HINT, getWorkspacePickerOptions } from './workspaceLayoutEditOptions';

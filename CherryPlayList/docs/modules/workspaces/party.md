@@ -6,7 +6,7 @@
 
 | Workspace         | ID                        | Тип             | UI (RU)                 | Назначение                                   |
 | ----------------- | ------------------------- | --------------- | ----------------------- | -------------------------------------------- |
-| **Party Editor**  | `party-editor-workspace`  | `party-editor`  | **Настройка вечеринки** | Форма, lifecycle, track display, auth/сервер |
+| **Party Editor**  | `party-editor-workspace`  | `party-editor`  | **Настройка вечеринки** | Форма, lifecycle, auth/сервер |
 | **Party Preview** | `party-preview-workspace` | `party-preview` | **Как видят гости**     | Превью страницы; demo-панель сценариев       |
 
 Константы и типы: [`workspace.ts`](../../../src/core/constants/workspace.ts). Регистрация обоих модулей: [`party/index.ts`](../../../src/workspaces/party/index.ts) (side-effect import из `entry.tsx`).
@@ -22,7 +22,7 @@
 | Файл                                                                                             | Роль                                                                                                                                                                                                                              |
 | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`partyWorkspaceStore.ts`](../../../src/workspaces/party/partyWorkspaceStore.ts)                 | **Production only:** поля формы, `serverUnreachable`, `themeAccess`, lifecycle-флаги, `isListedInCatalog`, ошибки сервера и т.п. Без полей preview-сценария и demo-overlay.                                                       |
-| [`partyProgramEndedStore.ts`](../../../src/workspaces/party/partyProgramEndedStore.ts)           | **Ephemeral:** `programEnded` + chip **«Архивировать»** (countdown) на пульте при **Конец**; меню chip: **Архивировать** → `archivePartyFromHeader` / **Ещё подождать** / **Скрыть**; не персистируется. См. [party-header-control-ux §7.6](../../party-header-control-ux.md#76-конец-программы--доиграл-последний-трек). |
+| [`partyProgramEndedStore.ts`](../../../src/workspaces/party/partyProgramEndedStore.ts)           | **Ephemeral:** `programEnded` + напоминание об архивации с countdown на пульте при **Конец**; закрытие скрывает напоминание и останавливает countdown. Само напоминание и состояние программы не персистируются. См. [party-header-control-ux §7.6](../../party-header-control-ux.md#76-конец-программы--доиграл-последний-трек). |
 | [`partySettingsUiStore.ts`](../../../src/workspaces/party/partySettingsUiStore.ts)               | **Ephemeral preview chrome:** `previewDesignOpen` — collapse одной панели дизайна в `party-preview` (≡). См. [party-header-control-ux §6](../../party-header-control-ux.md#6-настройки--модал--design-в-превью).                  |
 | [`partyPreviewScenarioStore.ts`](../../../src/workspaces/party/partyPreviewScenarioStore.ts)     | **Preview scenario:** локальная симуляция detached-превью (`isSynchronized`, overrides lifecycle/mock live/track/theme/connection break). По умолчанию `isSynchronized: true`.                                                    |
 | [`partyPreviewScenarioActions.ts`](../../../src/workspaces/party/partyPreviewScenarioActions.ts) | Продуктовые мутации сценария: `syncPreviewWithProduction()`, `detachPreview()`, `setPreviewLifecycleOverride`, `setPreviewMockLive`, `resetPreviewScenario()` и др. **Не** защищены `guardDemoMode()` — доступны в main player.   |
@@ -32,22 +32,23 @@
 | [`partyWorkspaceDemoActions.ts`](../../../src/workspaces/party/partyWorkspaceDemoActions.ts)     | Demo-оркестрация (editor fixtures, `demoResetToDefault`, link/project manipulation); защищена `guardDemoMode()`. Preview-сценарий делегирует в `partyPreviewScenarioActions`.                                                     |
 | [`usePartyWorkspace.ts`](../../../src/workspaces/party/usePartyWorkspace.ts)                     | `usePartyWorkspaceRuntime()` — эффекты, обработчики, derived (`previewPlaylistData`, `playbackState`, темы). Без импортов scenario store.                                                                                         |
 | [`partyWorkspaceReconnectRefs.ts`](../../../src/workspaces/party/partyWorkspaceReconnectRefs.ts) | Module-level reconnect timer и mount-count (один интервал на сессию при нескольких зонах)                                                                                                                                         |
-| [`partyThemeAccessLoad.ts`](../../../src/workspaces/party/partyThemeAccessLoad.ts)               | `loadPartyThemeAccess` / `invalidatePartyThemeAccessLoads` — fetch entitlement, post-await generation guard; при сбое — keep cache (`resolveThemeAccessAfterFetchFailure`); loading-flash только при `themeAccess === null`       |
-| [`partyWorkspaceUtils.ts`](../../../src/workspaces/party/partyWorkspaceUtils.ts)                 | Константы и нормализация (в т.ч. `RECONNECT_INTERVAL_MS`, `THEME_ACCESS_POLL_INTERVAL_MS`, `THEME_PICKER_UNAVAILABLE_MESSAGE`, `THEME_PICKER_ONLINE_OFF_MESSAGE`); `resolveCreateBlockedByTheme`, `resolveThemePickerHintMessage` |
+| [`partyThemeAccessLoad.ts`](../../../src/workspaces/party/partyThemeAccessLoad.ts)               | `loadPartyThemeAccess` / `invalidatePartyThemeAccessLoads` — fetch entitlement, post-await generation guard; возвращает `ThemeAccessLoadResult` (`ok` \| `skipped` \| `failed` \| `unreachable`); при сбое fetch — keep cache (`resolveThemeAccessAfterFetchFailure`), затем health → при недоступности `serverUnreachable` + `unreachable`; loading-flash только при `themeAccess === null` |
+| [`partyThemeAccessReconnect.ts`](../../../src/workspaces/party/partyThemeAccessReconnect.ts)     | `resolveUnlinkedThemeAccessReconnectAction` — по `ThemeAccessLoadResult` для unlinked draft: `unreachable` → start reconnect, `ok` → clear; linked party → `none`                                                                                                                                                                                                              |
+| [`partyWorkspaceUtils.ts`](../../../src/workspaces/party/partyWorkspaceUtils.ts)                 | Константы и нормализация (в т.ч. `RECONNECT_INTERVAL_MS`, `THEME_ACCESS_POLL_INTERVAL_MS`, `THEME_PICKER_UNAVAILABLE_MESSAGE`, `THEME_PICKER_ONLINE_OFF_MESSAGE`); `resolveCreateBlockedByTheme`, `resolveThemePickerHintMessage`                                                                                                                                               |
 
 **Границы состояния:**
 
 - **`projectStore`** — источник правды для плейлиста, `meta.linkedParty` (`{ id, shortCode }`), `meta.partyTrackDisplay`; `url` не персистируется, регенерируется через `partyService.getPartyUrl`.
 - **`partyService`** — граница API (без изменений контракта сервера).
 - **`partyWorkspaceStore`** — эфемерное production UI/runtime-состояние онлайн-вечеринки; `linkedParty` в store **не** дублируется.
-- **`partyProgramEndedStore`** — эфемерный `programEnded` + chip **«Архивировать»** на пульте (заменяет Играть / ↑ / ⚙, пока reminder visible; пункт меню **«Архивировать»** → `archivePartyFromHeader`); **не** персистируется; сброс при fresh project и runtime-условиях (см. матрицу сбросов / [§7.6](../../party-header-control-ux.md#76-конец-программы--доиграл-последний-трек)).
+- **`partyProgramEndedStore`** — эфемерный `programEnded` и countdown-напоминание на пульте (заменяет Играть / ↑ / ⚙, пока оно видно). Кнопка закрытия скрывает напоминание и останавливает countdown; нажатие на напоминание открывает встроенное подтверждение архивации. Store не персистируется; сброс происходит при fresh project и runtime-условиях (см. матрицу сбросов / [§7.6](../../party-header-control-ux.md#76-конец-программы--доиграл-последний-трек)).
 - **`partyPreviewScenarioStore`** — эфемерный локальный сценарий превью; **не** персистируется между перезапусками приложения.
 
 ### Доступ к темам (fallback copy)
 
 При сбое проверки entitlement текст для picker (когда онлайн включён, но кэш ещё не был получен) — `THEME_PICKER_UNAVAILABLE_MESSAGE`: **«Выбор недоступен — нет связи с сервером»**. При Online OFF — `THEME_PICKER_ONLINE_OFF_MESSAGE`: **«Включите «Онлайн» в настройках»** (не путать с no-server). При уже загруженном `themeAccess` сбой refresh **не** очищает entitlement-кэш; load идёт через общий `loadPartyThemeAccess` (post-await guard + generation; poll без loading-flash при кэше). Кнопки Create/Update/publish/lifecycle не гейтятся по `serverUnreachable` / отсутствию `themeAccess`. Сообщения «нет доступа» / пакет темы — через `buildThemeNotEntitledMessage` (`partyWorkspaceUtils.ts`). Для revoked/недоступных тем не используются сырые коды пакетов (например `revoked-current-theme`) и форматы вида «Доступно в пакете Недоступно»: показывается человекочитаемая формулировка **«Тема не доступна в ваших пакетах»** (B4). **B5:** если `themeAccess === null`, UI ограничивает picker (Basic + текущая `themeId`, dropdown disabled + hint); Create **не** disabled из‑за null/loading — блокировка Create по теме только когда `themeAccess` есть и текущая тема locked; на submit сервер валидирует entitlement (`ThemeNotEntitledError`). Опрос licenses: каждые **5 мин** (`THEME_ACCESS_POLL_INTERVAL_MS`) при `networkEnabled && isAuth`.
 
-Editor и Preview могут быть открыты одновременно: изменения в Editor (тема, кастомизация, track display) сразу видны в Preview через общий runtime (в режиме «Синхронизировано»).
+Editor и Preview могут быть открыты одновременно: изменения настроек вечеринки и панели отображения Preview сразу видны в Preview через общий runtime (в режиме «Синхронизировано»).
 
 ### Preview scenario store
 
@@ -132,9 +133,15 @@ Identity/reset key для автосброса формы и темы — тол
 
 - **PartyEditorView** ([`PartyEditorView.tsx`](../../../src/workspaces/party/PartyEditorView.tsx)) — **stub** для legacy custom layout с зоной `party-editor`: сообщение «настройки — ⚙ в шапке». Полные настройки — в `PartySettingsModal` (§5–§6 UX-дока).
 - **PartyPreviewView** ([`PartyPreviewView.tsx`](../../../src/workspaces/party/PartyPreviewView.tsx)) — баннеры connectivity, заголовок (sync/warning badges), rail ≡ + разворачиваемая панель дизайна (`PartyPreviewDesignNav` + `PartyPreviewDesignPanel`), [`PartyPreview`](../../../src/workspaces/party/PartyPreview.tsx) через `usePartyPreviewEffectiveState()`, [`PartyWorkspaceDemoPanel`](../../../src/workspaces/party/PartyWorkspaceDemoPanel.tsx) `mode="preview"`.
-- **PartySettingsModal** ([`PartySettingsModal.tsx`](../../../src/app/components/PartySettingsModal.tsx)) — центральный модал настроек вечеринки (одна колонка; все секции полей с `defaultExpanded`; открывается из пульта `openPartySettingsModal`). Контент — [`PartySettingsContent`](../../../src/workspaces/party/components/PartySettingsContent.tsx) + `usePartySettingsFormState`. **Поля** (info, карточка, дизайн, track display) доступны на любой фазе; блок **«Дополнительные данные»** временно скрыт ([`pasha_todo.md`](../../../../docs/archive/personal-todos/pasha_todo.md)). От фазы зависят только **действия** (Создать/Привязать / Save / Make ready / видимость / Copy URL / архив). `completed` — поля read-only.
+- **PartySettingsModal** ([`PartySettingsModal.tsx`](../../../src/app/components/PartySettingsModal.tsx)) — центральный модал настроек вечеринки (одна колонка; все секции полей с `defaultExpanded`; открывается из пульта `openPartySettingsModal`). Контент — [`PartySettingsContent`](../../../src/workspaces/party/components/PartySettingsContent.tsx) + `usePartySettingsFormState`. **Поля** (info, карточка, дизайн) доступны на любой фазе; настройки отображения плейлиста находятся в боковой панели Preview. Блок **«Дополнительные данные»** временно скрыт ([`pasha_todo.md`](../../../../docs/archive/personal-todos/pasha_todo.md)). От фазы зависят только **действия** (Создать/Привязать / Save / Make ready / видимость / Copy URL / архив). `completed` — поля read-only.
 
 Стили: `PartyEditorView.css`, `PartyPreviewView.css`; disabled-обёртка — `PartyViewWrapper.css`.
+
+### Панель дизайна в превью
+
+На широком workspace панель находится рядом с холстом и занимает от 220 до 360 px. При ширине контейнера превью до 620 px она открывается поверх холста справа от 56 px навигационной полосы; ширина ограничена доступным местом и 320 px. Панель можно свернуть кнопкой ≡, чтобы вернуть весь холст. Эти правила заданы в [`PartyPreviewView.css`](../../../src/workspaces/party/PartyPreviewView.css).
+
+Панель содержит отдельные разделы **«Стиль оформления»** и **«Отображение»**. В «Отображении» настраиваются глубина групп в плейлисте и обрезание ведущих символов в названиях треков. Глубина по умолчанию — 3: при превышении глубины верхние заголовки групп скрываются, а вложенные группы и треки поднимаются на освободившиеся уровни с сохранением порядка. Значение 0 скрывает все заголовки групп. Весенняя тема сохраняет собственную отрисовку и не использует настройку глубины.
 
 ## Отображение имён треков (party track display)
 
@@ -142,7 +149,7 @@ Identity/reset key для автосброса формы и темы — тол
 
 - **Не** относится к JSON `customizationSettings` Party API — отдельные проектные поля.
 - **Хранение:** `meta.partyTrackDisplay` в [`projectStore`](../../../src/shared/stores/projectStore.ts), в `.cherry` и persist.
-- **UI:** [`PartyTrackDisplaySection`](../../../src/workspaces/party/components/PartyTrackDisplaySection.tsx) в **PartyEditor**, заголовок — «Отображение треков»; live-превью на образце `01 — Название трека`.
+- **UI:** настройка доступна в панели **«Отображение»** превью; live-превью показывает результат на образце `01 — Название трека`.
 - **Преобразование:** [`partyUtils.ts`](../../../src/shared/utils/partyUtils.ts) (`normalizePartyTrackDisplaySettings`, `applyPartyTrackDisplayToTrackName`, `applyPartyTrackDisplayToComponentPlaylist`, `convertPlaylistForApi` / `convertAimpPlaylistForApi`). Исходные имена в проекте не меняются.
 
 | Поле                         | Назначение                                                                                                                            |
@@ -151,6 +158,8 @@ Identity/reset key для автосброса формы и темы — тол
 | `stripLeadingCharsMode`      | **`count`** — снять N ведущих **Unicode code points**; **`untilDelimiter`** — снять всё до первого символа-разделителя (включительно) |
 | `stripLeadingCharsCount`     | Число символов для режима `count`                                                                                                     |
 | `stripLeadingCharsDelimiter` | Один символ для `untilDelimiter`; по умолчанию пробел (`DEFAULT_PARTY_TRACK_STRIP_DELIMITER`)                                         |
+
+Глубина групп хранится в JSON вечеринки `customizationSettings.groupDisplayDepth` (целое от 0 до 10, default `3`); локальный черновик проекта сохраняется в `partyCustomizationSettings`. Настройка применяется к общей отрисовке тем Basic, Cyberpunk, Sakura и Art Deco. Spring остаётся без изменений.
 
 Подписи в UI: «Число символов» / «До символа», поле «Символ-разделитель». Если разделитель не найден — имя без изменений. **Обратная совместимость:** отсутствующие или legacy-поля нормализуются через `normalizePartyTrackDisplaySettings` (режим `count`, delimiter — пробел, count ≥ 0).
 
@@ -201,10 +210,10 @@ Identity/reset key для автосброса формы и темы — тол
 
 | Поверхность       | Где                                                               | Действия                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **«О вечеринке»** | секция формы в **модале настроек** (не отдельный destination CTA) | По фазе (левый кластер кнопок, как в dialog footer): **Создать** / **Привязать** (`draft-unlinked`); **Обновить**, legacy **Сделать доступной** (`draft-linked`); **Обновить**, каталог (`ready`); каталог (`completed`). **Скопировать URL** — компактный контроль у поля URL в «Информация о вечеринке» (не в футере действий; visibility: `showCopyUrl`). Visibility кнопок футера: `getPartyEditorActionVisibility`. **«В черновик»** нет — сервер запрещает `ready` → `draft` (**409**) |
-| **Design**        | секция «Дизайн» / «Стиль оформления»                              | Тема, customization; `PartyTrackDisplaySection` («Отображение треков») — в модале настроек **над** каталогом (после Design; intended order в превью: стиль → треки)                                                                                                                                                                                                                                                                                                                          |
-| **Archive**       | **«В архив»** в конце ряда действий модала; при **Конец** — пункт **«Архивировать»** в меню chip (`archivePartyFromHeader`) | Только при `ready` (`resolvePartyArchiveAvailability`: active / quiet / blockedByLive; confirm / alert). Модал: `PartyEditorDangerZone`. Пульт: `partyHeaderCommands.archivePartyFromHeader`. Unarchive **нет** в модале                                                                                                                                                                                                                                              |
-| **Пульт**         | AppHeader                                                         | CTA матрица (§7); Publish ↑ + ⚙ только при `linkedParty` (`publishPartyToSite` / модал настроек); при **Конец** + reminder — chip меню **Архивировать** → `archivePartyFromHeader`; Unarchive с confirm (только здесь для привязанного проекта)                                                                                                                                                                                                                                                                                                |
+| **«О вечеринке»** | секция формы в **модале настроек** (не отдельный destination CTA) | По фазе (левый кластер кнопок, как в dialog footer): **Создать** / **Привязать** (`draft-unlinked`); **Привязать**, **Обновить**, legacy **Сделать доступной** (`draft-linked`); **Привязать**, **Обновить**, каталог (`ready`); каталог (`completed`). **Скопировать URL** — компактный контроль у поля URL в «Информация о вечеринке» (не в футере действий; visibility: `showCopyUrl`). Visibility кнопок футера: `getPartyEditorActionVisibility`. **«В черновик»** нет — сервер запрещает `ready` → `draft` (**409**) |
+| **Design**        | секции «Стиль оформления» и «Отображение» в панели превью         | Тема и customization; глубина групп и обрезание ведущих символов названий треков находятся в «Отображении»                                                                                                                                                                                                                                                                                                                          |
+| **Archive**       | **«В архив»** в конце ряда действий модала; при **Конец** — countdown-напоминание на пульте | Только при `ready` (`resolvePartyArchiveAvailability`: active / quiet / blockedByLive; confirm / alert). Модал: `PartyEditorDangerZone`. Пульт: нажатие на напоминание открывает встроенное подтверждение; **Отмена** или Escape закрывают его без архивации, отмена возвращает фокус на кнопку. Unarchive **нет** в модале                                                                                                                                                                                                 |
+| **Пульт**         | AppHeader                                                         | CTA матрица (§7); Publish ↑ + ⚙ только при `linkedParty` (`publishPartyToSite` / модал настроек); при **Конец** и видимом reminder отображается countdown; закрытие скрывает reminder и останавливает его, подтверждение **Архивировать** вызывает `archivePartyFromHeader`; Unarchive с confirm (только здесь для привязанного проекта)                                                                                                                                                                                                 |
 
 Возврата в черновик нет (сервер запрещает `ready` → `draft`, **409**). `completed` **не** терминальное: `completed` → `ready` с пульта. Компонент [`PartyLifecycleControls`](../../../src/workspaces/party/components/PartyLifecycleControls.tsx) остаётся для **Мои вечеринки** (archive + legacy ready; `hideUnarchive`) и Web-подобных поверхностей — **не** primary chrome Editor.
 
@@ -233,21 +242,22 @@ Identity/reset key для автосброса формы и темы — тол
 
 | Блок                                                                       | Когда виден                                                                  | Содержание                                                                                              |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`HeaderPartyStatus`](../../../src/app/components/HeaderPartyStatus.tsx)   | только **Онлайн** (`enableStreaming`)                                        | 4-stage strip + крупный статус + CTA; Publish ↑ + ⚙ только при `linkedParty`; при **Конец** + visible reminder — chip **«Архивировать»** mm:ss [X] **вместо** Играть / ↑ / ⚙ (меню: **Архивировать** → `archivePartyFromHeader` / **Ещё подождать** / **Скрыть**) |
-| [`HeaderPlaybackPill`](../../../src/app/components/HeaderPlaybackPill.tsx) | `sessionState.mode === 'session'` и `streamingSource === 'cherryPlayPlayer'` | Трек, transport, громкость, индикатор SignalR                                                           |
+| [`HeaderPartyStatus`](../../../src/app/components/HeaderPartyStatus.tsx)   | только **Онлайн** (`enableStreaming`)                                        | 4-stage strip + крупный статус + CTA; Publish ↑ + ⚙ только при `linkedParty`; при **Конец** + visible reminder — countdown mm:ss и кнопка закрытия **вместо** Играть / ↑ / ⚙; нажатие на countdown открывает встроенное подтверждение архивации |
+| [`HeaderPlaybackPill`](../../../src/app/components/HeaderPlaybackPill.tsx) | `sessionState.mode === 'session'` и `streamingSource === 'cherryPlayPlayer'` | Трек, управление Play/Pause, время и состояние трансляции                                                           |
 
 **Пульт вечеринки (`header-party-control`) — as-built:**
 
 - Маппинг статуса: [GLOSSARY — header party-status](../../../../GLOSSARY.md#cherryplaylist-header-party-status) (`resolveHeaderPartyStatus`). Primary: **Не создана** / **Черновик** / **Ждёт начала** / **Идёт** / **В архиве**; overlays **Пауза** (только CherryPlay `playerAudioStore`) / **Конец**.
-- CTA: **Создать** / **К настройкам** → `openPartySettingsModal()` (**без** смены layout); **Играть** / **Остановить** → guide-панелька + 5s edge highlight; при **Конец** меню chip **«Архивировать»** → `archivePartyFromHeader`; **Вернуть из архива** → confirm (`unarchivePartyFromHeader`). Layout preset `party` — только guide **«Перейти»** (`setLayoutPreset('party')`), не Create/К настройкам/⚙. См. [party-header-control-ux §4](../../party-header-control-ux.md#4-пульт-в-шапке-форма).
+- CTA: **Создать** / **К настройкам** → `openPartySettingsModal()` (**без** смены layout); **Играть** / **Остановить** → guide-панелька + 5s edge highlight; при **Конец** countdown-напоминание открывает встроенное подтверждение архивации, а его кнопка закрытия скрывает напоминание и останавливает таймер; **Вернуть из архива** → confirm (`unarchivePartyFromHeader`). Layout preset `party` — только guide **«Перейти»** (`setLayoutPreset('party')`), не Create/К настройкам/⚙. См. [party-header-control-ux §4](../../party-header-control-ux.md#4-пульт-в-шапке-форма).
 - Publish ↑ и ⚙ **скрыты** при **Не создана** (нет `linkedParty`); CTA **«Создать»** остаётся. После link — снова видны.
+- Без `linkedParty` рядом с CTA показывается **«Привязать»**. Кнопка открывает [`LinkPartyModal`](../../../src/app/components/LinkPartyModal.tsx); при отсутствии авторизации предлагает войти в Account. В Account также доступны привязка существующей вечеринки, переход в веб-кабинет и выход.
 - Publish ↑ → `publishPartyToSite` (плейлист + метаданные + refresh theme access); подсветка **out-of-sync с сайтом** (плейлист+метаданные vs `lastSyncedPublishParts`; `usePartyPublishOutOfSync`) — **не** `meta.isDirty`; ON: linked + `ready`/`draft` + local ≠ lastSynced; OFF: synced / no link / archived / no baseline; baseline после create, publish, `loadPartyMetadata`, Save metadata, catalog toggle, live playlist PUT; disabled + причина offline / auth / no link / lifecycle (**не** unreachable).
 - ⚙ → тот же модал настроек (`openPartySettingsModal`), как Create/К настройкам.
 - Отдельной кнопки **«Играть для гостей»** на пульте **нет** (preset — **Рабочие окна** / guide **«Перейти»**).
 - При `serverUnreachable` — secondary **нет связи**; primary без изменений.
 - Детали: [party-header-control-ux.md](../../party-header-control-ux.md) (§4, §7).
 
-**Playback pill:** виден **только** в session. В prep **полностью скрыт**. Session pill **не** требует `enableStreaming`. Источник AIMP — CherryPlay pill не показывается.
+**Playback pill:** виден **только** в session. В prep **полностью скрыт**. Session pill **не** требует `enableStreaming`. Источник AIMP — CherryPlay pill не показывается. Строка состояния различает непривязанную вечеринку, отсутствие активной сессии и подключение к SignalR Hub: **«Связь есть»**, **«Подключение»**, **«Нет связи»**.
 
 |                              | Онлайн on            | Онлайн off          |
 | ---------------------------- | -------------------- | ------------------- |
@@ -258,9 +268,9 @@ Editor и шапка используют **одни** UI-метки enum `draft
 
 ## «Мои вечеринки»
 
-Секция **«Мои вечеринки»** в модалке аккаунта ([`AccountView`](../../../src/app/components/AccountView.tsx) → [`MyPartiesList`](../../../src/app/components/MyPartiesList.tsx)): тот же карточный `Disclosure`, что и «Информация об организаторе», **по умолчанию свёрнута**; кнопка **«Выйти»** — под обоими блоками. Отдельной кнопки в шапке и модалки `myParties` нет.
+Список вечеринок и управление ими доступны в веб-кабинете. Панель аккаунта закреплена под кнопкой в шапке и содержит три действия: **привязать существующую вечеринку**, **открыть кабинет на сайте** и **выйти**. Привязка открывает `LinkPartyModal` со списком вечеринок организатора (`GET /api/parties`).
 
-MVP-действия (список `GET /api/parties` — **включая** `draft`):
+MVP-действия веб-кабинета (список `GET /api/parties` — **включая** `draft`):
 
 | Действие              | Поведение                                                                                                                                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -271,7 +281,11 @@ MVP-действия (список `GET /api/parties` — **включая** `dr
 | **Вернуть из архива** | В списке **скрыто** (`hideUnarchive`); возврат привязанной вечеринки — только CTA пульта                                                                                                                                   |
 | Статусы в строке      | lifecycle badge (`resolvePartyLifecycleServerBadgeLabel`: **Черновик** / **Ждёт начала** / **В архиве**; для привязанной к проекту строки при активной session и lifecycle `ready` — **Идёт**) + каталог + **«Привязана»** |
 
-Без авторизации — stub без кнопки **«Войти»** (вход уже в `AccountView` выше). Секция видна при открытом Account; при выключенном онлайне загрузка и сетевые действия disabled со stub **«Онлайн-функции отключены»**. Подтверждение удаления — вложенный overlay поверх Account.
+Аккаунт в шапке открывает привязанную к кнопке панель. Вход, выход и переход в веб-кабинет доступны в ней; привязка существующей вечеринки выполняется в модале настроек вечеринки, где действие доступно при создании и редактировании.
+
+## Конфиденциальность и удаление аккаунта
+
+В List **нет** удаления аккаунта и отзыва согласий in-app. `AccountView` открывает `{webBaseUrl}/cabinet` во внешнем браузере. Контракт delete: [CONTRACTS.md](../../../../CONTRACTS.md) §3.3; Web UI: [pages.md](../../../../CherryPlayWeb/docs/pages.md).
 
 ## Обработка потери соединения
 
@@ -279,12 +293,14 @@ MVP-действия (список `GET /api/parties` — **включая** `dr
 
 ### Проверка доступности
 
-`partyService.checkServerReachable()` — HEAD к `/api/parties`, таймаут 5 с; `true` при статусе < 500.
+`partyService.checkServerReachable()` — **GET** `/api/health`, таймаут 5 с; `true` при `response.ok`.
 
 ### Поведение при недоступном сервере
 
 - **PartyEditor** — баннер `PartyConnectivityBanner` (`unreachable`) **внутри** shell; форма и фазовые действия остаются видимыми. Сетевые кнопки disabled **только** при Online OFF; при unreachable кнопки активны, ошибка — на submit.
+- Тот же баннер показывается в **модале настроек вечеринки** (`PartySettingsContent` / Create flow), чтобы cold-start без сайта не был «немым».
 - Интервал **60 с** (`RECONNECT_INTERVAL_MS` в `partyWorkspaceUtils`) и кнопка «Проверить сейчас» — через общий reconnect в `partyWorkspaceReconnectRefs` (не дублируется при двух зонах).
+- **Unlinked cold start:** если при Online ON загрузка theme access падает и `/api/health` недоступен — ставится `serverUnreachable` и стартует reconnect timer с `linkedParty=null`. По успешному health tick — refetch theme access и снятие баннера (create снова доступен без рестарта приложения).
 - **PartyPreview** — тот же баннер при `serverUnreachable`; при восстановлении сервера preview подхватывает актуальные данные из runtime.
 
 Полноэкранный `OnlineUnavailablePanel` в Editor **не** используется для обычной потери связи (остаётся для blocked-фаз: auth, outdated client и т.п.).

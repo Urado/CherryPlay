@@ -1,26 +1,26 @@
-import { IconButton } from '@cherryplay/components';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import CheckIcon from '@mui/icons-material/Check';
-import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { useWorkspaceActivation } from '@app/hooks/useWorkspaceActivation';
 import {
   requestCreateScratchWorkspace,
   requestToggleLayoutEditMode,
 } from '@app/hooks/useWorkspaceDirtyGuard';
+import { IconButton } from '@cherryplay/components';
 import {
   getLayoutPresetDescriptionRu,
   LAYOUT_PRESET_DISPLAY_NAMES_RU,
 } from '@core/constants/layoutPresetDisplayNames';
 import type { ActiveWorkspace, LayoutPreset } from '@core/types/workspacePreset';
 import { isUnnamedWorkspaceName, UNNAMED_WORKSPACE_NAME } from '@core/types/workspacePreset';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckIcon from '@mui/icons-material/Check';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { usePlatformCapabilities } from '@shared/platform';
 import { useLayoutStore, useSettingsStore } from '@shared/stores';
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 import { isPartyLayoutPresetDiscoverable } from '@shared/utils/aimpPresetVisibility';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { WorkspaceDeleteConfirmDialog } from './WorkspaceDeleteConfirmDialog';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
@@ -733,7 +733,7 @@ export const WorkspaceMenu: React.FC = () => {
         }
         variant="ghost"
         size="sm"
-      ></IconButton>
+       />
 
       <WorkspaceNameModal
         key={nameModalKey}

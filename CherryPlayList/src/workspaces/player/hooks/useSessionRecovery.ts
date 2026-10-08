@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 
 import { useProjectStore } from '@shared/stores';
 import {
@@ -8,6 +7,7 @@ import {
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { useSettingsStore } from '@shared/stores/settingsStore';
 import { logger } from '@shared/utils';
+import { useEffect, useRef } from 'react';
 
 /**
  * Silently restores the player to the last session track on mount.

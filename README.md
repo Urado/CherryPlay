@@ -37,7 +37,7 @@ Electron (organizer)  →  API + SignalR (.NET 9)  →  Web (guests)
 
 ![Guest party page](docs/resume/party-live.png)
 
-**Organizer (CherryPlayList web mode)**
+**Organizer (CherryPashka List web mode)**
 
 ![Desktop organizer](docs/resume/desktop-organizer.png)
 
@@ -46,7 +46,7 @@ Capture notes: [docs/resume/README.md](docs/resume/README.md).
 ## Projects
 
 - **CherryPlayServer** — Backend (.NET 9): REST + SignalR, EF/PostgreSQL, JWT/OAuth
-- **CherryPlayList** — Desktop (Electron) for organizers; optional AIMP via named pipe
+- **CherryPashka List** — Desktop (Electron) for organizers; project and technical name: `CherryPlayList`; optional AIMP via named pipe
 - **CherryPlayWeb** — Web app for guests (catalog + party pages)
 - **CherryPlayComponents** — React playlist/theme components
 - **CherryPlayAimpPlugin** — Native AIMP plugin (Windows x64): read-only NDJSON bridge `\\.\pipe\cherryplay-aimp-v1`
@@ -98,7 +98,7 @@ npm install
 npm run dev
 ```
 
-**Десктопное приложение (CherryPlayList):**
+**CherryPashka List (десктопное приложение):**
 
 ```bash
 cd CherryPlayList
@@ -138,6 +138,7 @@ npm run build
 - [DEV_SETUP.md](DEV_SETUP.md) — настройка окружения для разработки (порядок запуска, переменные)
 - [ENV.md](ENV.md) — справочник переменных окружения (бэкенд, фронт, БД, деплой; dev/prod)
 - [RELEASE_PLAN.md](RELEASE_PLAN.md) — план релиза v1, границы MVP, архитектура
+- [BETA_SCOPE.md](../CherryPlayKanban/BETA_SCOPE.md) — состав открытой беты в канбане, осознанно выключенные функции и ограничения (черновик)
 - [CONTRACTS.md](CONTRACTS.md) — REST API, SignalR Hub, DTO (Public и Organizer)
 - [GLOSSARY.md](GLOSSARY.md) — глоссарий терминов (shortCode, partyId, organizer, viewer и др.)
 - [QUICK_START.md](QUICK_START.md) — быстрый старт (локальная разработка)
@@ -178,6 +179,7 @@ CherryPlay/
 ├── SCRIPTS.md             # Скрипты для сборки компонентов
 ├── docker-compose.yml     # Docker Compose для production
 ├── docker-compose.debug.yml  # Docker Compose для отладки
+├── docker-compose.inmemory.yml  # Docker Compose без Postgres (UseInMemoryStorage)
 └── README.md              # Этот файл
 ```
 
@@ -281,6 +283,14 @@ docker-compose -f docker-compose.debug.yml logs -f server
 # Остановка debug контейнеров
 docker-compose -f docker-compose.debug.yml down
 ```
+
+### In-memory (без PostgreSQL)
+
+```bash
+docker compose -f docker-compose.inmemory.yml up --build
+```
+
+Сервер с `UseInMemoryStorage=true`: Postgres/migrate не нужны; данные сбрасываются при рестарте контейнера. API: http://localhost:5000, Web: http://localhost:3000. Legal consent (CP-066) работает и в InMemory, и в EF (`EfLegalConsentUnitOfWork`) — см. [CONTRACTS.md](CONTRACTS.md) §3.2.3.
 
 **Особенности debug режима:**
 

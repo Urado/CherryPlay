@@ -1,7 +1,7 @@
-import { createWithEqualityFn } from 'zustand/traditional';
 
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import { createWithEqualityFn } from 'zustand/traditional';
 
 import { demoPlaybackEngine } from '../audio/playback/playbackEngines';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
@@ -36,7 +36,16 @@ interface DemoPlayerState {
   error: string | null;
   isDisabled: boolean;
 
-  loadTrack: (track: Track, sourceWorkspaceId: WorkspaceId) => Promise<void>;
+  loadTrack: (
+    track: Track,
+    sourceWorkspaceId: WorkspaceId,
+    autoPlay?: boolean,
+  ) => Promise<number>;
+  shouldAutoPlayTrack: (
+    trackId: string,
+    sourceWorkspaceId: WorkspaceId,
+    generation: number,
+  ) => boolean;
   setActiveTrack: (track: Track, sourceWorkspaceId: WorkspaceId) => void;
   play: () => Promise<void>;
   pause: () => void;
@@ -100,6 +109,14 @@ const resetDemoPlayerErrorNotification = (): void => {
 };
 
 const playbackEngine = demoPlaybackEngine;
+let demoTrackLoadQueue: Promise<void> = Promise.resolve();
+let trackLoadGeneration = 0;
+let playbackIntentGeneration = 0;
+let pendingAutoPlay: {
+  generation: number;
+  trackId: string;
+  sourceWorkspaceId: WorkspaceId;
+} | null = null;
 const handleDemoPlayerDeviceNotFound = (): void => {
   useSettingsStore.getState().setDemoPlayerAudioDeviceId(null);
   useUIStore.getState().addNotification({
@@ -127,14 +144,17 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
   return {
     ...INITIAL_STATE,
 
-    loadTrack: async (track, sourceWorkspaceId) => {
+    loadTrack: async (track, sourceWorkspaceId, autoPlay = false) => {
+      const generation = ++trackLoadGeneration;
+      pendingAutoPlay = autoPlay ? { generation, trackId: track.id, sourceWorkspaceId } : null;
       if (isLocalFilePlaybackBlocked()) {
+        pendingAutoPlay = null;
         get().setActiveTrack(track, sourceWorkspaceId);
         set({
           error: DEMO_UNAVAILABLE_MESSAGE,
           status: 'error',
         });
-        return;
+        return generation;
       }
 
       const markTrackFound = (trackId: string) => {
@@ -144,38 +164,71 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
         getProjectStore(sourceWorkspaceId)?.getState().markTrackAsMissing?.(trackId, true);
       };
 
-      await loadTrackCore({
-        engine: playbackEngine,
-        track,
-        applyDevice,
-        getDeviceId: () => useSettingsStore.getState().demoPlayerAudioDeviceId,
-        markTrackFound,
-        resolvePrecheck: (activeTrack) =>
-          resolveTrackPrecheck({
-            track: activeTrack,
-            markTrackFound,
-            notifyMissingTrack,
-            handleError,
-          }),
-        onSuccess: (activeTrack, duration) => {
-          resetDemoPlayerErrorNotification();
-          set({
-            currentTrack: { ...activeTrack, isMissing: false },
-            sourceWorkspaceId,
-            status: 'paused',
-            position: 0,
-            duration,
-            error: null,
-          });
-        },
-        onFileNotFound: (activeTrack) => {
-          markTrackMissing(activeTrack.id);
-          notifyMissingTrack(activeTrack);
-        },
+      const loadOperation = demoTrackLoadQueue.then(async () => {
+        if (generation !== trackLoadGeneration) {
+          return;
+        }
+        await loadTrackCore({
+          engine: playbackEngine,
+          track,
+          applyDevice,
+          getDeviceId: () => useSettingsStore.getState().demoPlayerAudioDeviceId,
+          markTrackFound,
+          resolvePrecheck: (activeTrack) =>
+            resolveTrackPrecheck({
+              track: activeTrack,
+              markTrackFound,
+              notifyMissingTrack,
+              handleError,
+            }),
+          onSuccess: (activeTrack, duration) => {
+            if (generation !== trackLoadGeneration) {
+              return;
+            }
+            resetDemoPlayerErrorNotification();
+            set({
+              currentTrack: { ...activeTrack, isMissing: false },
+              sourceWorkspaceId,
+              status: pendingAutoPlay?.generation === generation ? 'loading' : 'paused',
+              position: 0,
+              duration,
+              error: null,
+            });
+          },
+          onFileNotFound: (activeTrack) => {
+            markTrackMissing(activeTrack.id);
+            notifyMissingTrack(activeTrack);
+          },
+        });
       });
+      demoTrackLoadQueue = loadOperation.then(
+        () => undefined,
+        () => undefined,
+      );
+
+      try {
+        await loadOperation;
+        if (generation === trackLoadGeneration && get().currentTrack?.id !== track.id) {
+          pendingAutoPlay = null;
+        }
+      } catch (error) {
+        if (generation === trackLoadGeneration) {
+          pendingAutoPlay = null;
+        }
+        throw error;
+      }
+      return generation;
     },
 
+    shouldAutoPlayTrack: (trackId, sourceWorkspaceId, generation) =>
+      pendingAutoPlay?.trackId === trackId &&
+      pendingAutoPlay.sourceWorkspaceId === sourceWorkspaceId &&
+      pendingAutoPlay.generation === generation,
+
     setActiveTrack: (track, sourceWorkspaceId) => {
+      trackLoadGeneration += 1;
+      playbackIntentGeneration += 1;
+      pendingAutoPlay = null;
       playbackEngine.stop();
       resetDemoPlayerErrorNotification();
       set({
@@ -193,6 +246,9 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
         return;
       }
 
+      const playIntent = ++playbackIntentGeneration;
+      const expectedLoadGeneration = trackLoadGeneration;
+      const autoPlayGeneration = pendingAutoPlay?.generation;
       try {
         await playTrackCore({
           engine: playbackEngine,
@@ -200,14 +256,29 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
           applyDevice,
           getDeviceId: () => useSettingsStore.getState().demoPlayerAudioDeviceId,
           syncDevice: syncDemoWithMainPlayer,
-          canPlay: () => !get().isDisabled,
+          canPlay: () =>
+            !get().isDisabled &&
+            playIntent === playbackIntentGeneration &&
+            expectedLoadGeneration === trackLoadGeneration &&
+            (autoPlayGeneration === undefined ||
+              pendingAutoPlay?.generation === autoPlayGeneration),
         });
       } catch (error) {
         throw error instanceof Error ? error : new Error('Failed to start playback');
+      } finally {
+        if (pendingAutoPlay?.generation === autoPlayGeneration) {
+          pendingAutoPlay = null;
+        }
       }
     },
 
     pause: () => {
+      const isAutoPlayPending = pendingAutoPlay !== null;
+      playbackIntentGeneration += 1;
+      pendingAutoPlay = null;
+      if (isAutoPlayPending && get().status === 'loading') {
+        set({ status: 'paused' });
+      }
       playbackEngine.pause();
     },
 
@@ -234,6 +305,9 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     },
 
     clear: () => {
+      trackLoadGeneration += 1;
+      playbackIntentGeneration += 1;
+      pendingAutoPlay = null;
       playbackEngine.stop();
       const preservedVolume = get().volume;
       resetDemoPlayerErrorNotification();
@@ -266,7 +340,7 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
 
     setDisabled: (disabled) => {
       set({ isDisabled: disabled });
-      if (disabled && get().status === 'playing') {
+      if (disabled && (get().status === 'playing' || pendingAutoPlay !== null)) {
         get().pause();
       }
     },
@@ -282,6 +356,12 @@ wirePlaybackEngine({
   engine: playbackEngine,
   getStatus: () => useDemoPlayerStore.getState().status,
   setStatus: (status) => {
+    if (status === 'paused' && useDemoPlayerStore.getState().status === 'idle') {
+      return;
+    }
+    if (status === 'paused' && pendingAutoPlay?.generation === trackLoadGeneration) {
+      return;
+    }
     if (status === 'playing') {
       resetDemoPlayerErrorNotification();
       useDemoPlayerStore.setState({ status, error: null });

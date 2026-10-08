@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 
+import {
+  areRequiredConsentsAccepted,
+  buildRequiredConsentInputs,
+} from '../../constants/legalDocuments';
 import {
   validateEmail,
   validateOrganizerName,
@@ -8,6 +12,8 @@ import {
 } from '../../core/utils/authValidation';
 import type { AuthService } from '../../types/auth';
 import { FormInput, FormButton, ErrorMessage } from '../UI';
+
+import { LegalConsentBlock } from './LegalConsentBlock';
 import './EmailAuthForm.css';
 
 export interface EmailAuthFormProps {
@@ -17,6 +23,7 @@ export interface EmailAuthFormProps {
   error?: string | null;
   onModeChange?: (mode: 'login' | 'register') => void;
   onSuccess?: () => void;
+  onDesktopAuthSuccess?: (code: string) => void;
   onError?: (error: string) => void;
   onForgotPassword?: () => void;
   showModeToggle?: boolean;
@@ -29,6 +36,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   error: externalError,
   onModeChange,
   onSuccess,
+  onDesktopAuthSuccess,
   onError,
   onForgotPassword,
   showModeToggle = true,
@@ -38,8 +46,11 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [pdConsentAccepted, setPdConsentAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const consentHintId = useId();
 
   const handleModeChange = (newMode: 'login' | 'register') => {
     setEmailMode(newMode);
@@ -48,6 +59,8 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setPdConsentAccepted(false);
+    setTermsAccepted(false);
     onModeChange?.(newMode);
   };
 
@@ -72,7 +85,17 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
     setLoading(true);
 
     try {
-      await authService.login(email, password);
+      const result = await authService.login(email, password);
+      if (onDesktopAuthSuccess) {
+        if (typeof result === 'string' && result.length > 0) {
+          onDesktopAuthSuccess(result);
+          return;
+        }
+        const err = 'Не удалось получить код для входа в приложение';
+        setError(err);
+        onError?.(err);
+        return;
+      }
       onSuccess?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ошибка при входе';
@@ -115,10 +138,29 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
       return;
     }
 
+    if (!areRequiredConsentsAccepted(pdConsentAccepted, termsAccepted)) {
+      const err =
+        'Нужно принять согласие на обработку персональных данных и пользовательское соглашение';
+      setError(err);
+      onError?.(err);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await authService.register(email, password, name.trim());
+      const consents = buildRequiredConsentInputs();
+      const result = await authService.register(email, password, name.trim(), consents);
+      if (onDesktopAuthSuccess) {
+        if (typeof result === 'string' && result.length > 0) {
+          onDesktopAuthSuccess(result);
+          return;
+        }
+        const err = 'Не удалось получить код для входа в приложение';
+        setError(err);
+        onError?.(err);
+        return;
+      }
       onSuccess?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Ошибка при регистрации';
@@ -131,6 +173,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
 
   const isLoading = externalLoading || loading;
   const displayError = externalError || error;
+  const consentsAccepted = areRequiredConsentsAccepted(pdConsentAccepted, termsAccepted);
 
   return (
     <div className="email-auth-form">
@@ -253,12 +296,27 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
             minLength={MIN_PASSWORD_LENGTH}
           />
 
+          <LegalConsentBlock
+            pdConsentAccepted={pdConsentAccepted}
+            termsAccepted={termsAccepted}
+            onPdConsentChange={setPdConsentAccepted}
+            onTermsChange={setTermsAccepted}
+            disabled={isLoading}
+          />
+
+          {!consentsAccepted && (
+            <p id={consentHintId} className="email-auth-form-consent-hint">
+              Отметьте оба согласия, чтобы продолжить
+            </p>
+          )}
+
           <FormButton
             type="submit"
             variant="primary"
             fullWidth
             loading={isLoading}
-            disabled={!name || !email || !password || !confirmPassword}
+            disabled={!name || !email || !password || !confirmPassword || !consentsAccepted}
+            aria-describedby={!consentsAccepted ? consentHintId : undefined}
           >
             Зарегистрироваться
           </FormButton>

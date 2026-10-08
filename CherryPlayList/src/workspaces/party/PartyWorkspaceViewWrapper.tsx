@@ -1,7 +1,7 @@
-import React from 'react';
 
 import { WorkspaceId } from '@core/types/workspace';
 import { getAppMode, isDemoFixturesMode } from '@shared/platform';
+import React from 'react';
 
 import { PartyEditorView } from './PartyEditorView';
 import { PartyPreviewView } from './PartyPreviewView';

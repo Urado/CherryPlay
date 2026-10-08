@@ -7,7 +7,7 @@ import { PlayerItem } from '../../types';
 
 import '../../components/Playlist/PlaylistItem.css';
 
-function PlayIcon(): React.ReactElement {
+const PlayIcon = (): React.ReactElement => {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5v14l11-7z" />
@@ -15,7 +15,7 @@ function PlayIcon(): React.ReactElement {
   );
 }
 
-function CheckIcon(): React.ReactElement {
+const CheckIcon = (): React.ReactElement => {
   return (
     <svg
       width="12"
@@ -33,34 +33,23 @@ function CheckIcon(): React.ReactElement {
   );
 }
 
-function CrossIcon(): React.ReactElement {
+const StopIcon = (): React.ReactElement => {
   return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="6" y="6" width="12" height="12" rx="1" />
     </svg>
   );
-}
+};
 
 export interface BasePlaylistItemProps {
   item: PlayerItem;
   index: number;
   level: number;
-  /** 1-based display number (excluding disabled); shown in circle for upcoming tracks */
   trackNumber?: number;
   isCurrent?: boolean;
   isPlayed?: boolean;
   isDisabled?: boolean;
+  groupStats?: { count: number; played: number; duration: number | null };
   children?: React.ReactNode;
 }
 
@@ -72,6 +61,7 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
   isCurrent = false,
   isPlayed = false,
   isDisabled = false,
+  groupStats,
   children,
 }) => {
   const [nameExpanded, setNameExpanded] = useState(false);
@@ -96,7 +86,7 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
         ? 'played'
         : 'upcoming';
 
-  const rowTitle = isDisabled ? 'Трек отменён' : undefined;
+  const rowTitle = isDisabled ? (isGroup ? 'Группа отменена' : 'Трек отменён') : undefined;
 
   const displayNumber =
     item.type === 'track' && !isDisabled && !isCurrent && !isPlayed
@@ -104,7 +94,7 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
       : null;
 
   const circleContent = isDisabled ? (
-    <CrossIcon />
+    <StopIcon />
   ) : isCurrent ? (
     <PlayIcon />
   ) : isPlayed ? (
@@ -113,22 +103,34 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
     displayNumber
   ) : null;
 
+  const nestStyle = { ['--party-playlist-item-nest' as string]: String(level) };
+
   return (
     <div
       className={`party-playlist-item ${isGroup ? 'party-playlist-item--group' : 'party-playlist-item--track'} ${
         isCurrent ? 'party-playlist-item--current' : ''
       } ${isPlayed ? 'party-playlist-item--played' : ''} ${isDisabled ? 'party-playlist-item--disabled' : ''}`}
-      style={{ paddingLeft: `${level * 20}px` }}
       title={rowTitle}
+      style={nestStyle}
     >
-      <div className="party-playlist-item-row">
-        <div className="party-playlist-item-state">
-          <div className="party-playlist-item-circle" data-state={dataState}>
-            {circleContent}
+      <div className="party-playlist-item-row" style={nestStyle}>
+        {item.type === 'track' || isDisabled ? (
+          <div className="party-playlist-item-state">
+            <div className="party-playlist-item-circle" data-state={dataState}>
+              {circleContent}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="party-playlist-item-state party-playlist-item-state--placeholder" aria-hidden />
+        )}
         <div className="party-playlist-item-info">
-          <div className="party-playlist-item-name-wrap">
+          <div
+            className={
+              isGroup && groupStats
+                ? 'party-playlist-item-name-wrap party-playlist-item-name-wrap--with-summary'
+                : 'party-playlist-item-name-wrap'
+            }
+          >
             <div
               ref={nameRef}
               className={`party-playlist-item-name${nameExpanded ? ' party-playlist-item-name--expanded' : ''}${
@@ -151,6 +153,16 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
                 {nameExpanded ? '×' : '…'}
               </button>
             )}
+            {isGroup && groupStats ? (
+              <div className="party-playlist-group-summary">
+                <span>
+                  {groupStats.played} из {groupStats.count}
+                </span>
+                {groupStats.count > 0 && groupStats.duration !== null ? (
+                  <span>{formatDuration(groupStats.duration)}</span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
         {displayDuration != null && (

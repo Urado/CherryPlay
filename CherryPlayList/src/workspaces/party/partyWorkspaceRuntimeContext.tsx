@@ -46,7 +46,7 @@ function setSharedRuntime(runtime: PartyWorkspaceRuntimeValue | null) {
   runtimeStoreListeners.forEach((listener) => listener());
 }
 
-function PartyWorkspaceRuntimeHost() {
+const PartyWorkspaceRuntimeHost = () => {
   const runtime = usePartyWorkspaceRuntime();
 
   useLayoutEffect(() => {
@@ -70,7 +70,7 @@ export function useSharedPartyWorkspaceRuntime(): PartyWorkspaceRuntimeValue | n
   );
 }
 
-export function PartyWorkspaceRuntimeEphemeralHost() {
+export const PartyWorkspaceRuntimeEphemeralHost = () => {
   const isHost = useIsElectedHost();
 
   return isHost ? <PartyWorkspaceRuntimeHost /> : null;
@@ -103,7 +103,7 @@ function useIsElectedHost(): boolean {
   return isHost;
 }
 
-export function PartyWorkspaceRuntimeProvider({ children }: { children: React.ReactNode }) {
+export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.ReactNode }) => {
   useSyncExternalStore(subscribeRuntimeStore, getRuntimeStoreEpoch, getRuntimeStoreEpoch);
   const isHost = useIsElectedHost();
   const runtime = runtimeStore.runtime;

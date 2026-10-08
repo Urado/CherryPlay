@@ -1,8 +1,8 @@
 import React from 'react';
 
+import type { PartyThemeId } from "..";
 import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
 import { getDefaultTimeZone } from '../../utils/timezoneUtils';
-import type { PartyThemeId } from '../index';
 
 import { FloatingPetals } from './FloatingPetals';
 import '../../components/PartyDisplay/PartyDisplay.css';
@@ -19,7 +19,7 @@ export interface PartyInfoDisplayData {
   schedule?: string | null;
   timeZone?: string | null;
   themeId: PartyThemeId;
-  customizationSettings?: Record<string, string | number>;
+  customizationSettings?: Record<string, unknown>;
 }
 
 export interface SpringCrossStepPartyInfoDisplayProps {

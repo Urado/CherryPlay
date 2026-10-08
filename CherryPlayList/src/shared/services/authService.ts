@@ -1,5 +1,6 @@
 import type {
   AuthService as IAuthService,
+  ConsentInput,
   OrganizerDto,
   AuthExchangeRequest,
   AuthExchangeResponse,
@@ -7,7 +8,7 @@ import type {
 } from '@cherryplay/components';
 import { AuthHttpError, FORGOT_PASSWORD_GENERIC_SUCCESS } from '@cherryplay/components';
 
-import { getServerUrl } from '../config/serverConfig';
+import { getServerUrl, getWebBaseUrl } from '../config/serverConfig';
 import {
   applyDemoAuthSession,
   DEMO_ACCESS_TOKEN,
@@ -15,10 +16,11 @@ import {
 } from '../demo/demoAuthFixture';
 import { isDemoAuthMode } from '../demo/guardDemoAuth';
 import { notifyDemoUnavailable } from '../demo/notifyDemoUnavailable';
-import { getPlatform, isPlatformInitialized } from '../platform';
+import { getAppMode, getPlatform, isPlatformInitialized } from '../platform';
 import { useAuthStore } from '../stores/authStore';
+import { isSessionAuthError } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
-import { handleAuthError } from '../utils/authErrorHandler';
+import { handleAuthError, SESSION_EXPIRED_USER_MESSAGE } from '../utils/authErrorHandler';
 import { clearAuthSession, setAuthSessionToken } from '../utils/authSession';
 import { isTokenExpired } from '../utils/tokenUtils';
 
@@ -59,9 +61,87 @@ async function throwAuthHttpError(response: Response): Promise<never> {
   throw new AuthHttpError(response.status, message);
 }
 
+export function buildDesktopAuthReturnTo(
+  isDev: boolean,
+  origin: string | undefined,
+  options?: { webDelivery?: boolean },
+): string {
+  if (isDev && origin) {
+    const base = `${origin}/auth/callback`;
+    return options?.webDelivery ? `${base}?delivery=web` : base;
+  }
+  return 'cherryplaylist://auth';
+}
+
 class AuthService implements IAuthService {
   private async getBaseUrl(): Promise<string> {
     return getServerUrl();
+  }
+
+  async startBrowserLogin(): Promise<void> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      console.info('[AuthService] Demo: browser login skipped, using demo organizer');
+      return;
+    }
+
+    const webBaseUrl = await getWebBaseUrl();
+    const returnTo = buildDesktopAuthReturnTo(
+      import.meta.env.DEV,
+      typeof window !== 'undefined' ? window.location.origin : undefined,
+      { webDelivery: getAppMode() === 'demo' },
+    );
+    const loginUrl = `${webBaseUrl.replace(/\/$/, '')}/login?client=desktop&return_to=${encodeURIComponent(returnTo)}`;
+
+    console.log('[AuthService] Starting browser login:', { webBaseUrl, loginUrl });
+
+    if (isPlatformInitialized()) {
+      const result = (await getPlatform().invoke('auth:openExternal', { url: loginUrl })) as
+        | { success: true }
+        | { success: false; error: string };
+
+      if (!result.success) {
+        console.error('[AuthService] Failed to open browser:', result.error);
+        throw new Error(result.error || 'Failed to open browser');
+      }
+
+      console.log('[AuthService] Browser opened successfully, waiting for auth callback...');
+      console.log(
+        '[AuthService] Expected callback:',
+        import.meta.env.DEV
+          ? 'cherryplaylist://auth?code=... or http://localhost:5173/auth/callback?code=...'
+          : 'cherryplaylist://auth?code=...',
+      );
+      return;
+    }
+
+    console.warn('[AuthService] Platform not available, using window.open fallback');
+    window.open(loginUrl, '_blank');
+  }
+
+  async exchangeDesktopCode(code: string): Promise<string> {
+    if (isDemoAuthMode()) {
+      applyDemoAuthSession();
+      return DEMO_ACCESS_TOKEN;
+    }
+    const baseUrl = await this.getBaseUrl();
+    const response = await apiFetch(`${baseUrl}/auth/desktop/exchange`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code,
+      }),
+      cache: 'no-cache',
+    });
+
+    if (!response.ok) {
+      await throwAuthHttpError(response);
+    }
+
+    const data = (await response.json()) as AuthExchangeResponse;
+    return data.accessToken;
   }
 
   async startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
@@ -97,10 +177,7 @@ class AuthService implements IAuthService {
       }
 
       console.log('[AuthService] Browser opened successfully, waiting for OAuth callback...');
-      console.log(
-        '[AuthService] Expected callback URL:',
-        isDev ? 'http://localhost:5174/auth/callback' : 'cherryplaylist://auth',
-      );
+      console.log('[AuthService] Expected callback URL: cherryplaylist://auth');
       return;
     }
 
@@ -123,7 +200,7 @@ class AuthService implements IAuthService {
         code,
         provider,
         deviceId,
-      } as AuthExchangeRequest),
+      }),
       cache: 'no-cache',
     });
 
@@ -148,8 +225,8 @@ class AuthService implements IAuthService {
     }
 
     if (isTokenExpired(token)) {
-      handleAuthError('Authentication token has expired. Please login again.');
-      throw new Error('Authentication token has expired');
+      handleAuthError('Authentication token has expired');
+      throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
     try {
@@ -163,17 +240,14 @@ class AuthService implements IAuthService {
       });
 
       if (!sessionCheckResponse.ok) {
-        if (sessionCheckResponse.status === 401) {
-          handleAuthError('Authentication token expired or invalid');
-          throw new Error('Authentication token expired or invalid');
+        if (isSessionAuthError(sessionCheckResponse.status)) {
+          handleAuthError(`Session check HTTP ${sessionCheckResponse.status}`);
+          throw new Error(SESSION_EXPIRED_USER_MESSAGE);
         }
         throw new Error('Session check failed');
       }
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message.includes('expired') || error.message.includes('invalid'))
-      ) {
+      if (error instanceof Error && error.message === SESSION_EXPIRED_USER_MESSAGE) {
         throw error;
       }
       throw new Error('Session check failed');
@@ -189,9 +263,9 @@ class AuthService implements IAuthService {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        handleAuthError('Authentication token expired or invalid');
-        throw new Error('Authentication token expired or invalid');
+      if (isSessionAuthError(response.status)) {
+        handleAuthError(`Organizer me HTTP ${response.status}`);
+        throw new Error(SESSION_EXPIRED_USER_MESSAGE);
       }
       const errorText = await response.text();
       throw new Error(`Failed to get organizer: ${errorText}`);
@@ -238,7 +312,12 @@ class AuthService implements IAuthService {
     return token;
   }
 
-  async register(email: string, password: string, name: string): Promise<string> {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+    _consents: ConsentInput[],
+  ): Promise<string> {
     if (isDemoAuthMode()) {
       applyDemoAuthSession();
       useAuthStore

@@ -47,10 +47,10 @@ class MockPlaybackEngine implements PlaybackEngine {
     if (!this.listeners[event]) {
       this.listeners[event] = new Set();
     }
-    this.listeners[event]!.add(listener as PlaybackEngineListener<PlaybackEngineEventName>);
+    this.listeners[event]!.add(listener);
 
     return () => {
-      this.listeners[event]?.delete(listener as PlaybackEngineListener<PlaybackEngineEventName>);
+      this.listeners[event]?.delete(listener);
     };
   }
 
@@ -64,7 +64,7 @@ class MockPlaybackEngine implements PlaybackEngine {
     }
 
     for (const listener of eventListeners) {
-      (listener as PlaybackEngineListener<K>)(payload);
+      (listener)(payload);
     }
   }
 }

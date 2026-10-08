@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
-
 import {
   useAimpStore,
   usePlayerAudioStore,
   useProjectStore,
   useSettingsStore,
 } from '@shared/stores';
+import { useEffect, useRef } from 'react';
+
 
 import { detectAimpLiveProgramEnded } from './detectAimpLiveProgramEnded';
 import {

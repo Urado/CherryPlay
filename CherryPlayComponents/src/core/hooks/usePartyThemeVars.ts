@@ -13,7 +13,7 @@ export function usePartyThemeVars(
     const metadata = getThemeMetadata(partyThemeId, customizationSettings);
 
     if (!metadata) {
-      return vars as React.CSSProperties;
+      return vars;
     }
 
     const mergedSettings =
@@ -44,6 +44,6 @@ export function usePartyThemeVars(
       vars[`--${key}`] = transformedValue;
     }
 
-    return vars as React.CSSProperties;
+    return vars;
   }, [partyThemeId, customizationSettings]);
 }

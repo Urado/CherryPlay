@@ -1,7 +1,7 @@
 import type { PartyThemeId, PartyViewerStatusId } from '@cherryplay/components';
+import type { PartyLifecycleState } from '@shared/services/partyService';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-import type { PartyLifecycleState } from '@shared/services/partyService';
 
 /**
  * Detached preview scenario state — local simulation overrides that do not affect

@@ -1,41 +1,28 @@
-import CloseIcon from '@mui/icons-material/Close';
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { archivePartyFromHeader } from './partyHeaderCommands';
 import {
   formatPartyProgramEndedReminderCountdown,
   usePartyProgramEndedStore,
 } from './partyProgramEndedStore';
+import { PARTY_ARCHIVE_CONFIRM_MESSAGE } from './resolvePartyArchiveAvailability';
 
-function useReminderClock(
-  isActive: boolean,
-  deadlineMs: number | null,
-  onDeadlineReached: (deadlineMs: number) => void,
-): number {
+function useReminderClock(isActive: boolean, deadlineMs: number | null): number {
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const notifiedDeadlineRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isActive) {
       return;
     }
 
-    const tick = () => {
-      const now = Date.now();
-      setNowMs(now);
-      if (deadlineMs != null && now >= deadlineMs && notifiedDeadlineRef.current !== deadlineMs) {
-        notifiedDeadlineRef.current = deadlineMs;
-        onDeadlineReached(deadlineMs);
-      }
-    };
-
+    const tick = () => setNowMs(Date.now());
     const immediateId = window.setTimeout(tick, 0);
     const intervalId = window.setInterval(tick, 1000);
     return () => {
       window.clearTimeout(immediateId);
       window.clearInterval(intervalId);
     };
-  }, [deadlineMs, isActive, onDeadlineReached]);
+  }, [deadlineMs, isActive]);
 
   return nowMs;
 }
@@ -43,52 +30,61 @@ function useReminderClock(
 export const PartyProgramEndedReminder: React.FC = () => {
   const reminderVisible = usePartyProgramEndedStore((state) => state.reminderVisible);
   const reminderDeadlineMs = usePartyProgramEndedStore((state) => state.reminderDeadlineMs);
-  const reminderMenuOpen = usePartyProgramEndedStore((state) => state.reminderMenuOpen);
-  const dismissPartyProgramEndedReminder = usePartyProgramEndedStore(
+  const dismissReminder = usePartyProgramEndedStore(
     (state) => state.dismissPartyProgramEndedReminder,
   );
-  const snoozePartyProgramEndedReminder = usePartyProgramEndedStore(
-    (state) => state.snoozePartyProgramEndedReminder,
-  );
-  const setReminderMenuOpen = usePartyProgramEndedStore((state) => state.setReminderMenuOpen);
-
-  const rootRef = useRef<HTMLDivElement>(null);
   const clockActive = reminderVisible && reminderDeadlineMs != null;
+  const nowMs = useReminderClock(clockActive, reminderDeadlineMs);
+  const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
+  const archiveTriggerRef = useRef<HTMLButtonElement>(null);
+  const archiveDialogRef = useRef<HTMLDivElement>(null);
+  const archiveCancelRef = useRef<HTMLButtonElement>(null);
 
-  const handleDeadlineReached = useCallback(
-    (_deadlineMs: number) => {
-      setReminderMenuOpen(true);
-    },
-    [setReminderMenuOpen],
-  );
-
-  const nowMs = useReminderClock(clockActive, reminderDeadlineMs, handleDeadlineReached);
-
-  useLayoutEffect(() => {
-    if (!reminderMenuOpen) {
+  useEffect(() => {
+    if (!archiveConfirmationOpen) {
       return;
     }
+
+    archiveCancelRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        setReminderMenuOpen(false);
-      }
-    };
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!target || rootRef.current?.contains(target)) {
+        setArchiveConfirmationOpen(false);
+        window.requestAnimationFrame(() => archiveTriggerRef.current?.focus());
         return;
       }
-      setReminderMenuOpen(false);
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const focusableElements = archiveDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusableElements?.length) {
+        event.preventDefault();
+        return;
+      }
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+      if (event.shiftKey && (activeElement === firstElement || !archiveDialogRef.current?.contains(activeElement))) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (
+        !event.shiftKey &&
+        (activeElement === lastElement || !archiveDialogRef.current?.contains(activeElement))
+      ) {
+        event.preventDefault();
+        firstElement.focus();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
-    const timer = window.setTimeout(() => window.addEventListener('click', handleClickOutside), 0);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.clearTimeout(timer);
-      window.removeEventListener('click', handleClickOutside);
-    };
-  }, [reminderMenuOpen, setReminderMenuOpen]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [archiveConfirmationOpen]);
+
+  const closeArchiveConfirmation = () => {
+    setArchiveConfirmationOpen(false);
+    window.requestAnimationFrame(() => archiveTriggerRef.current?.focus());
+  };
 
   if (!reminderVisible || reminderDeadlineMs == null) {
     return null;
@@ -99,8 +95,9 @@ export const PartyProgramEndedReminder: React.FC = () => {
   const countdown = formatPartyProgramEndedReminderCountdown(remainingMs);
 
   return (
-    <div ref={rootRef} className="header-party-control__reminder">
+    <div className="header-party-control__reminder">
       <button
+        ref={archiveTriggerRef}
         type="button"
         className={[
           'header-party-control__reminder-chip',
@@ -108,15 +105,9 @@ export const PartyProgramEndedReminder: React.FC = () => {
         ]
           .filter(Boolean)
           .join(' ')}
-        aria-expanded={reminderMenuOpen}
-        aria-haspopup="menu"
         aria-label={isDue ? 'Архивировать. Время вышло' : 'Архивировать. Таймер'}
-        title={
-          isDue
-            ? 'Архивировать: время вышло — выберите действие'
-            : 'Архивировать: программа закончилась'
-        }
-        onClick={() => setReminderMenuOpen(!reminderMenuOpen)}
+        title={isDue ? 'Архивировать: время вышло' : 'Архивировать: программа закончилась'}
+        onClick={() => setArchiveConfirmationOpen(true)}
       >
         <span className="header-party-control__reminder-label">Архивировать</span>
         <span className="header-party-control__reminder-time" aria-live="polite">
@@ -126,44 +117,53 @@ export const PartyProgramEndedReminder: React.FC = () => {
       <button
         type="button"
         className="header-party-control__reminder-dismiss"
-        title="Скрыть"
-        aria-label="Скрыть"
-        onClick={(event) => {
-          event.stopPropagation();
-          dismissPartyProgramEndedReminder();
-        }}
+        aria-label="Скрыть напоминание об архивировании"
+        title="Скрыть напоминание"
+        onClick={dismissReminder}
       >
-        <CloseIcon fontSize="inherit" />
+        ×
       </button>
-      {reminderMenuOpen ? (
-        <div className="header-party-control__reminder-menu" role="menu">
-          <button
-            type="button"
-            className="header-party-control__reminder-menu-item"
-            role="menuitem"
-            onClick={() => {
-              setReminderMenuOpen(false);
-              void archivePartyFromHeader();
-            }}
+      {archiveConfirmationOpen ? (
+        <div
+          className="header-party-control__archive-confirm-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeArchiveConfirmation();
+            }
+          }}
+          role="presentation"
+        >
+          <div
+            ref={archiveDialogRef}
+            className="header-party-control__archive-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="header-party-archive-confirm-title"
+            aria-describedby="header-party-archive-confirm-description"
           >
-            Архивировать
-          </button>
-          <button
-            type="button"
-            className="header-party-control__reminder-menu-item"
-            role="menuitem"
-            onClick={() => snoozePartyProgramEndedReminder()}
-          >
-            Ещё подождать
-          </button>
-          <button
-            type="button"
-            className="header-party-control__reminder-menu-item"
-            role="menuitem"
-            onClick={() => dismissPartyProgramEndedReminder()}
-          >
-            Скрыть
-          </button>
+            <h2 id="header-party-archive-confirm-title">Отправить вечеринку в архив?</h2>
+            <p id="header-party-archive-confirm-description">{PARTY_ARCHIVE_CONFIRM_MESSAGE}</p>
+            <div className="header-party-control__archive-confirm-actions">
+              <button
+                ref={archiveCancelRef}
+                type="button"
+                className="header-party-control__archive-confirm-cancel"
+                onClick={closeArchiveConfirmation}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="header-party-control__archive-confirm-submit"
+                onClick={() => {
+                  closeArchiveConfirmation();
+                  void archivePartyFromHeader();
+                }}
+              >
+                Архивировать
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

@@ -76,19 +76,7 @@ public class PartyService : IPartyService
         if (!access.IsAllowed)
             throw new ThemeNotEntitledException(selectedThemeId, access.RequiredPackageCodes);
 
-        _logger.LogInformation(
-            "Creating party: name={Name}, partyThemeId={PartyThemeId}, organizerId={OrganizerId}",
-            dto.Name,
-            dto.PartyThemeId,
-            organizerId);
-
-        var myParties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
-        var futureCount = myParties.Count(p => p.EventDateTime.HasValue && p.EventDateTime.Value > DateTime.UtcNow);
-        if (futureCount >= AuthConstants.MaxFuturePartiesPerOrganizer)
-        {
-            throw new PartyLimitReachedException(
-                $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
-        }
+        _logger.LogInformation("Creating party");
 
         var shortCode = await _shortCodeGenerator.GenerateUniqueShortCodeAsync(
             async code => await _partyRepository.GetByShortCodeAsync(code) == null);
@@ -122,20 +110,27 @@ public class PartyService : IPartyService
             PartyLifecycleState = PartyLifecycleState.Ready,
         };
 
-        await _partyRepository.AddAsync(party);
-
-        _logger.LogInformation(
-            "Party created and saved: id={PartyId}, shortCode={ShortCode}, organizerId={OrganizerId}",
-            party.Id,
-            party.ShortCode,
-            organizerId);
+        var wasAdded = await _partyRepository.AddIfFuturePartyLimitNotReachedAsync(
+            party,
+            DateTime.UtcNow,
+            AuthConstants.MaxFuturePartiesPerOrganizer);
+        if (!wasAdded)
+        {
+            throw new PartyLimitReachedException(
+                $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
+        }
 
         var savedParty = await _partyRepository.GetByIdAsync(party.Id);
         if (savedParty == null)
         {
-            _logger.LogError("Party was not saved correctly: id={PartyId}", party.Id);
+            _logger.LogError("Party was not saved correctly");
             throw new InvalidOperationException("Failed to save party");
         }
+
+        _logger.LogInformation(
+            "Party created and saved: organizerId={OrganizerId}, partyId={PartyId}",
+            organizerId,
+            party.Id);
 
         var state = await _streamingRepository.GetSessionStateAsync(party.Id);
         return savedParty.ToDto(state != null);
@@ -143,12 +138,12 @@ public class PartyService : IPartyService
 
     public async Task<PartyDto?> GetPartyAsync(Guid partyId)
     {
-        _logger.LogDebug("Getting party by id: {PartyId}", partyId);
+        _logger.LogDebug("Getting party by id");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogDebug("Party not found: {PartyId}", partyId);
+            _logger.LogDebug("Party not found");
             return null;
         }
 
@@ -164,12 +159,12 @@ public class PartyService : IPartyService
 
     public async Task<PartyDto?> GetPartyByShortCodeAsync(string shortCode)
     {
-        _logger.LogDebug("Getting party by shortCode: {ShortCode}", shortCode);
+        _logger.LogDebug("Getting party by shortCode");
 
         var party = await _partyRepository.GetByShortCodeAsync(shortCode);
         if (party == null)
         {
-            _logger.LogDebug("Party not found by shortCode: {ShortCode}", shortCode);
+            _logger.LogDebug("Party not found by shortCode");
             return null;
         }
 
@@ -205,11 +200,13 @@ public class PartyService : IPartyService
         }
         var organizerId = httpContext.RequireOrganizerId("list parties");
 
-        _logger.LogDebug("Getting parties for organizer: {OrganizerId}", organizerId);
+        _logger.LogDebug("Getting parties for organizer: organizerId={OrganizerId}", organizerId);
 
         var parties = await _partyRepository.GetByOrganizerIdAsync(organizerId);
-        _logger.LogDebug("Retrieved {Count} parties from repository for organizer {OrganizerId}",
-            parties.Count, organizerId);
+        _logger.LogDebug(
+            "Retrieved {Count} parties from repository: organizerId={OrganizerId}",
+            parties.Count,
+            organizerId);
 
         var sessionStates = await _streamingRepository.GetAllSessionStatesAsync();
         var stateLookup = sessionStates.ToDictionary(s => s.Key, s => s.Value);
@@ -219,11 +216,12 @@ public class PartyService : IPartyService
         {
             var hasActiveSession = stateLookup.ContainsKey(party.Id);
             dtos.Add(party.ToDto(hasActiveSession));
-            _logger.LogDebug("Party in list: id={PartyId}, shortCode={ShortCode}, name={Name}",
-                party.Id, party.ShortCode, party.Name);
         }
 
-        _logger.LogDebug("Found {Count} parties for organizer {OrganizerId}", dtos.Count, organizerId);
+        _logger.LogDebug(
+            "Found {Count} parties for organizer: organizerId={OrganizerId}",
+            dtos.Count,
+            organizerId);
         return dtos;
     }
 
@@ -303,7 +301,10 @@ public class PartyService : IPartyService
             party.DanceTags = NormalizeDanceTags(dto.DanceTags);
 
         await _partyRepository.UpdateAsync(party);
-        _logger.LogInformation("Party metadata updated: {PartyId}", partyId);
+        _logger.LogInformation(
+            "Party metadata updated: organizerId={OrganizerId}, partyId={PartyId}",
+            organizerId,
+            partyId);
     }
 
     public async Task DeletePartyAsync(Guid partyId)
@@ -318,7 +319,10 @@ public class PartyService : IPartyService
 
         await _streamingRepository.DeleteSessionStateAsync(partyId);
         await _partyRepository.DeleteAsync(partyId);
-        _logger.LogInformation("Party deleted: {PartyId}", partyId);
+        _logger.LogInformation(
+            "Party deleted: organizerId={OrganizerId}, partyId={PartyId}",
+            organizerId,
+            partyId);
     }
 
     public async Task UpdatePartyPlaylistAsync(Guid partyId, PartyPlaylistDto playlist)
@@ -335,12 +339,6 @@ public class PartyService : IPartyService
         }
         var organizerId = httpContext.RequireOrganizerId("update playlist");
 
-        _logger.LogInformation(
-            "Updating playlist for party: {PartyId}, totalTracks={TotalTracks}, organizerId={OrganizerId}",
-            partyId,
-            playlist.TotalTracks,
-            organizerId);
-
         await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
 
         if (playlist.TotalTracks > AuthConstants.MaxPlaylistTracks)
@@ -351,7 +349,7 @@ public class PartyService : IPartyService
         var party = await _partyRepository.GetByIdAsync(partyId);
         if (party == null)
         {
-            _logger.LogWarning("Party not found for playlist update: {PartyId}", partyId);
+            _logger.LogWarning("Party not found for playlist update");
             throw new PartyNotFoundException(partyId);
         }
 
@@ -359,7 +357,10 @@ public class PartyService : IPartyService
         await _partyRepository.UpdateAsync(party);
 
         await _playlistNotifier.NotifyPlaylistChangedAsync(partyId);
-        _logger.LogInformation("Playlist updated for party: {PartyId}", partyId);
+        _logger.LogInformation(
+            "Playlist updated for party: organizerId={OrganizerId}, partyId={PartyId}",
+            organizerId,
+            partyId);
     }
 
     public async Task<PartyDto> TransitionPartyLifecycleAsync(Guid partyId, PartyLifecycleState targetState) =>
@@ -400,10 +401,9 @@ public class PartyService : IPartyService
             party.PartyLifecycleState = targetState;
             await _partyRepository.UpdateAsync(party);
             _logger.LogInformation(
-                "Party lifecycle transitioned: {PartyId} {FromState} -> {ToState}",
-                partyId,
-                currentState,
-                targetState);
+                "Party lifecycle transitioned: organizerId={OrganizerId}, partyId={PartyId}",
+                organizerId,
+                partyId);
         }
 
         var sessionState = await _streamingRepository.GetSessionStateAsync(partyId);

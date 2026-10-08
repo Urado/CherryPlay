@@ -1,8 +1,7 @@
 import { Button } from '@cherryplay/components';
-import React from 'react';
-
 import type { ProjectSessionMode } from '@core/types/project';
 import type { PartyLifecycleState } from '@shared/services/partyService';
+import React from 'react';
 
 import { resolvePartyLifecycleServerBadgeLabel } from '../partyEditorPhase';
 

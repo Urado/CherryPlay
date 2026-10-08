@@ -1,6 +1,6 @@
+import type { WorkspaceId } from '@core/types/workspace';
 import React from 'react';
 
-import type { WorkspaceId } from '@core/types/workspace';
 
 import { FileBrowser } from './FileBrowser';
 

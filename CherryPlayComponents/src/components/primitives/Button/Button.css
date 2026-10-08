@@ -63,14 +63,14 @@
 }
 
 .cp-button--primary {
-  background: var(--cp-accent-primary);
-  border-color: var(--cp-accent-primary);
+  background: var(--accent-primary, #4a9eff);
+  border-color: var(--accent-primary, #4a9eff);
   color: var(--text-on-accent, #fff);
 }
 
 .cp-button--primary:hover:not(:disabled) {
-  background: var(--cp-accent-primary-hover);
-  border-color: var(--cp-accent-primary-hover);
+  background: var(--accent-primary-hover, #368eea);
+  border-color: var(--accent-primary-hover, #368eea);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--shadow);
 }
@@ -85,43 +85,42 @@
 
 .cp-button--secondary {
   background: var(--bg-tertiary);
-  border-color: var(--cp-ui-border);
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
 }
 
 .cp-button--secondary:hover:not(:disabled) {
   background: var(--bg-hover);
-  border-color: var(--cp-accent-primary);
+  border-color: var(--accent-primary, #4a9eff);
 }
 
 .cp-button--danger {
-  background: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  background: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
   color: var(--text-on-accent, #fff);
 }
 
 .cp-button--danger:hover:not(:disabled) {
-  background: var(--cp-accent-danger-hover);
-  border-color: var(--cp-accent-danger-hover);
+  background: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
+  border-color: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
 }
 
 .cp-button--danger:focus-visible {
-  outline: 2px solid var(--cp-accent-danger);
+  outline: 2px solid var(--state-error, #d32f2f);
   outline-offset: 2px;
 }
 
 .cp-button--ghost {
   background: transparent;
-  border-color: var(--cp-ui-border);
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
 }
 
 .cp-button--ghost:hover:not(:disabled) {
-  border-color: var(--cp-accent-primary);
-  color: var(--cp-accent-primary);
+  border-color: var(--accent-primary, #4a9eff);
+  color: var(--accent-primary, #4a9eff);
 }
 
-/* Opt out of resting/hover border chrome; keep 1px box so layout does not shift. */
 .cp-button--borderless {
   border-color: transparent;
 }
@@ -130,67 +129,65 @@
   border-color: transparent;
 }
 
-/* Resting tone for icon + border (orthogonal to filled variant="danger"). */
 .cp-button--tone-danger {
-  color: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  color: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
 }
 
 .cp-button--ghost.cp-button--tone-danger {
   background: transparent;
-  color: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  color: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
 }
 
 .cp-button--tone-danger:not(.cp-button--no-hover):hover:not(:disabled) {
-  color: var(--cp-accent-danger-hover);
-  border-color: var(--cp-accent-danger-hover);
+  color: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
+  border-color: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
 }
 
 .cp-button--tone-danger:focus-visible {
-  outline-color: var(--cp-accent-danger);
+  outline-color: var(--state-error, #d32f2f);
 }
 
-/* Keep hover chrome identical to resting (no bg wash / accent jump / lift). */
 .cp-button--no-hover:hover:not(:disabled) {
   transform: none;
   box-shadow: none;
 }
 
 .cp-button--primary.cp-button--no-hover:hover:not(:disabled) {
-  background: var(--cp-accent-primary);
-  border-color: var(--cp-accent-primary);
+  background: var(--accent-primary, #4a9eff);
+  border-color: var(--accent-primary, #4a9eff);
   color: var(--text-on-accent, #fff);
 }
 
 .cp-button--secondary.cp-button--no-hover:hover:not(:disabled) {
   background: var(--bg-tertiary);
-  border-color: var(--cp-ui-border);
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
 }
 
 .cp-button--danger.cp-button--no-hover:hover:not(:disabled) {
-  background: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  background: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
   color: var(--text-on-accent, #fff);
 }
 
 .cp-button--ghost.cp-button--no-hover:hover:not(:disabled) {
   background: transparent;
-  border-color: var(--cp-ui-border);
+  border-color: var(--ui-border, rgba(255, 255, 255, 0.15));
   color: var(--text-primary);
 }
 
 .cp-button--ghost.cp-button--tone-danger.cp-button--no-hover:not(.cp-button--fill-hover):hover:not(:disabled) {
   background: transparent;
-  border-color: var(--cp-accent-danger);
-  color: var(--cp-accent-danger);
+  border-color: var(--state-error, #d32f2f);
+  color: var(--state-error, #d32f2f);
 }
 
 .cp-button--secondary.cp-button--tone-danger.cp-button--no-hover:hover:not(:disabled) {
   background: var(--bg-tertiary);
-  border-color: var(--cp-accent-danger);
-  color: var(--cp-accent-danger);
+  border-color: var(--state-error, #d32f2f);
+  color: var(--state-error, #d32f2f);
 }
 
 .cp-button--borderless.cp-button--no-hover:hover:not(:disabled) {
@@ -205,23 +202,22 @@
   border-color: transparent;
 }
 
-/* Background fill modes (orthogonal to hoverable border/color chrome). */
 .cp-button--fill-hover.cp-button--tone-danger:hover:not(:disabled),
 .cp-button--ghost.cp-button--tone-danger.cp-button--no-hover.cp-button--fill-hover:hover:not(:disabled) {
-  background: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  background: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
   color: var(--text-primary, var(--text-on-accent, #fff));
 }
 
 .cp-button--fill-always.cp-button--tone-danger {
-  background: var(--cp-accent-danger);
-  border-color: var(--cp-accent-danger);
+  background: var(--state-error, #d32f2f);
+  border-color: var(--state-error, #d32f2f);
   color: var(--text-on-accent, #fff);
 }
 
 .cp-button--fill-always.cp-button--tone-danger:hover:not(:disabled) {
-  background: var(--cp-accent-danger-hover);
-  border-color: var(--cp-accent-danger-hover);
+  background: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
+  border-color: color-mix(in srgb, var(--state-error, #d32f2f) 85%, #000);
   color: var(--text-on-accent, #fff);
 }
 
@@ -245,7 +241,7 @@
 }
 
 .cp-button:focus-visible {
-  outline: 2px solid var(--cp-accent-primary);
+  outline: 2px solid var(--accent-primary, #4a9eff);
   outline-offset: 2px;
 }
 

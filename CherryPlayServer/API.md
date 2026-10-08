@@ -14,7 +14,9 @@
 | **REST Public** (эндпоинты по shortCode, GET /api/config)                                                   | §2.2                |
 | **SignalR viewer** (методы invoke, события on)                                                              | §2.3                |
 | **Auth** (email+пароль: login/register; forgot/reset/change-password; OAuth: VK/Mail.ru, exchange, logout; Telegram OAuth2 отложен) | §3.2                |
+| **Legal consent** (`POST /api/organizers`, `POST /api/oauth/accounts` one-shot, `GET`/`POST /api/consent-events`; always-on write-path gate `consent_required`) | §3.2.3              |
 | **Profile** (профиль организатора: GET me, PATCH profile)                                                   | §3.3                |
+| **DTO Legal consent** (`ConsentInputDto`, `ConsentEventDto`, register/oauth request/response)              | §6.9                |
 | **REST Organizer** (CRUD вечеринок, playlist, JWT)                                                          | §3.4                |
 | **SignalR organizer** (StartSession, EndSession, Update\*, JoinPartyAsOrganizer)                            | §3.5                |
 | **Theme access** (`GET /api/organizer/me/theme-access`)                                                     | §3.6                |

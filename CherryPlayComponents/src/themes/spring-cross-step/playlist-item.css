@@ -1,5 +1,3 @@
-/* Элемент плейлиста — по образцу из примера (playlist-item.tsx) */
-
 [data-theme='spring-cross-step'] .party-playlist-item,
 [data-theme='spring-cross-step'] .party-playlist-item--track,
 [data-theme='spring-cross-step'] .party-playlist-item--group {
@@ -43,7 +41,6 @@
   text-decoration-color: var(--text-tertiary);
 }
 
-/* Отменённые: линия зачёркивания всегда розовая (перекрывает played) */
 [data-theme='spring-cross-step']
   .party-playlist-item--disabled.party-playlist-item--played
   .party-playlist-item-name {
@@ -59,11 +56,15 @@
 }
 
 [data-theme='spring-cross-step'] .party-playlist-item--disabled {
-  opacity: 0.85;
-  pointer-events: auto; /* allow hover/tap for "Трек отменён" tooltip */
+  opacity: 1;
+  pointer-events: auto;
 }
 
-/* Отменённые треки: черта зачёркивания — розовая (--canceled-track), текст — бледный */
+[data-theme='spring-cross-step'] .party-playlist-item--disabled .party-playlist-item-info,
+[data-theme='spring-cross-step'] .party-playlist-item--disabled .party-playlist-item-duration {
+  opacity: 0.85;
+}
+
 [data-theme='spring-cross-step'] .party-playlist-item--disabled .party-playlist-item-name {
   color: var(--canceled-track-text);
   text-decoration: line-through;
@@ -71,7 +72,6 @@
   text-decoration-thickness: 1px;
 }
 
-/* Отменённые: время (длительность) тоже зачёркнуто розовой линией */
 [data-theme='spring-cross-step'] .party-playlist-item--disabled .party-playlist-item-duration {
   color: var(--canceled-track-text);
   text-decoration: line-through;
@@ -79,7 +79,6 @@
   text-decoration-thickness: 1px;
 }
 
-/* Левый блок: круг + название/артист (flex items-center gap-3 как в примере) */
 [data-theme='spring-cross-step'] .party-playlist-item-left {
   display: flex;
   align-items: center;
@@ -89,7 +88,6 @@
   justify-content: flex-start;
 }
 
-/* Обёртка круга: контекст позиционирования для тултипа "Трек отменён"; когда disabled — фокусируемая кнопка */
 [data-theme='spring-cross-step'] .party-playlist-item-circle-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -108,7 +106,6 @@
   border-radius: 50%;
 }
 
-/* Круг: 28×28, как в примере */
 [data-theme='spring-cross-step'] .party-playlist-item-circle {
   width: 28px;
   height: 28px;
@@ -140,7 +137,7 @@
 
 [data-theme='spring-cross-step'] .party-playlist-item-circle[data-state='disabled'] {
   background: var(--canceled-track);
-  color: var(--flower-white);
+  color: var(--canceled-track-icon);
 }
 
 [data-theme='spring-cross-step'] .party-playlist-item-info {
@@ -156,7 +153,6 @@
   flex-wrap: nowrap;
 }
 
-/* Название трека — одна строка по умолчанию; при обрезке в конце строки кликабельное … */
 [data-theme='spring-cross-step'] .party-playlist-item-name {
   font-size: 14px;
   font-weight: 500;
@@ -180,7 +176,6 @@
   text-overflow: unset;
 }
 
-/* Expand/collapse toggle: ellipsis (…) when collapsed, × when expanded — minimal, clickable */
 [data-theme='spring-cross-step'] .party-playlist-item-expand-btn {
   flex-shrink: 0;
   font-size: 14px;
@@ -208,7 +203,6 @@
   outline-offset: 2px;
 }
 
-/* Подзаголовок (артист / path) — fontSize 12, color text-tertiary, marginTop 1 как в примере */
 [data-theme='spring-cross-step'] .party-playlist-item-artist {
   font-size: 12px;
   color: var(--text-tertiary);
@@ -224,12 +218,11 @@
   margin-left: 12px;
 }
 
-/* Popup "Трек отменён" — над иконкой круга (внутри списка, для справки) */
 [data-theme='spring-cross-step'] .party-playlist-item-cancel-tooltip {
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--flower-white);
+  color: var(--canceled-track-icon);
   background: var(--canceled-track);
   border-radius: 4px;
   white-space: nowrap;
@@ -238,7 +231,6 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-/* Внутри списка: позиция над иконкой */
 [data-theme='spring-cross-step']
   .party-playlist-item-cancel-tooltip:not(.party-playlist-item-cancel-tooltip--portal) {
   position: absolute;
@@ -247,7 +239,52 @@
   transform: translateX(-50%) translateY(-4px);
 }
 
-/* Портал (в body): позиция задаётся inline, всегда поверх всего */
 [data-theme='spring-cross-step'] .party-playlist-item-cancel-tooltip--portal {
   position: fixed;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item--track {
+  width: auto;
+  margin: 4px 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item--group {
+  background: var(--bg-secondary);
+  border: 0;
+  border-radius: 11px 11px 0 0;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  cursor: default;
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item--group:hover {
+  background: var(--bg-secondary);
+}
+
+[data-theme='spring-cross-step'] .party-playlist-item--group .party-playlist-item-name {
+  font-weight: 650;
+}
+
+[data-theme='spring-cross-step']
+  .party-playlist-item--group:not(.party-playlist-item--disabled)
+  .party-playlist-item-circle-wrapper {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  [data-theme='spring-cross-step'] .party-playlist-item--track {
+    margin: 4px 6px;
+    padding: 10px 8px;
+  }
+
+  [data-theme='spring-cross-step'] .party-playlist-item--group {
+    padding: 10px;
+    border-radius: 9px 9px 0 0;
+  }
+
+  [data-theme='spring-cross-step'] .party-playlist-item-left {
+    gap: 8px;
+  }
 }

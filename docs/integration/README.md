@@ -12,9 +12,11 @@
 
 | Подсистема                      | Описание                                                                                                                                | Документ                                      |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **Accounts & Auth**             | Роли (organizer/viewer), JWT, вход по email+паролю и OAuth (VK, Mail.ru), сброс/смена пароля (Server + RuSender + Web/List/Components — shipped), хранение токенов в Desktop и Web; OAuth2 для Telegram и email-верификация при регистрации отложены | [Accounts and Auth](./accounts-and-auth.md)   |
+| **Accounts & Auth**             | Роли (organizer/viewer), JWT, вход по email+паролю и OAuth (VK, Mail.ru), Web register с consents (`POST /api/organizers` → login), OAuth one-shot (`/oauth/complete` → `POST /api/oauth/accounts`), сброс/смена пароля, self-service удаление аккаунта (`DELETE /api/organizer/account`, §3.3), хранение токенов в Desktop и Web; legal consent dual UoW + always-on gate (§3.2.3); OAuth2 для Telegram и email-верификация при регистрации отложены | [Accounts and Auth](./accounts-and-auth.md)   |
 | **Party Management**            | CRUD вечеринок, каталог, публикация плейлиста, лимиты, кабинет организатора                                                             | [Party Management](./party-management.md)     |
 | **Streaming**                   | Трансляция состояния воспроизведения и плейлиста (SignalR + REST), freeze при потере связи                                              | [Streaming](./streaming.md)                   |
+| **Контейнерные тесты backend** | Интеграционные HTTP/SignalR/PostgreSQL проверки, рестарт backend, CI и локальный запуск                                              | [Container Integration Tests](./container-integration-tests.md) |
+| **Каталог тест-кейсов backend** | Ожидаемые результаты и ссылки на тесты, сгруппированные по уровню                                                                    | [Backend Test Case Catalog](./backend-test-cases.md) |
 | **AIMP как источник стриминга** | Windows x64: стриминг из AIMP через named pipe, границы поддержки, протокол, операторский сценарий, troubleshooting                     | [AIMP Streaming](./aimp-streaming.md)         |
 | **Данные и контракты**          | Идентичность вечеринки (shortCode/partyId), DTO, REST и SignalR — ссылки на общую документацию                                          | [Data and Contracts](./data-and-contracts.md) |
 
@@ -26,7 +28,7 @@
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | **[ARCHITECTURE.md](../../ARCHITECTURE.md)**                           | Обзор: Electron → API+SignalR → Web; bounded contexts; dual InMemory / EF (`UseInMemoryStorage`).                             |
 | **[RELEASE_PLAN.md](../../RELEASE_PLAN.md)**                           | План релиза v1: цели, границы MVP, архитектура подсистем (§4), контракты (§6), эпики, критерии готовности.                    |
-| **[CONTRACTS.md](../../CONTRACTS.md)**                                 | Контракты Public (viewer) и Organizer: REST API, SignalR Hub (методы и события), DTO; роли; версионирование (§10).            |
+| **[CONTRACTS.md](../../CONTRACTS.md)**                                 | Контракты Public (viewer) и Organizer: REST API, SignalR Hub (методы и события), DTO; роли; профиль/удаление аккаунта §3.3; версионирование (§10). |
 | **[CherryPlayServer/DATABASE.md](../../CherryPlayServer/DATABASE.md)** | Схема БД: Organizer, Party, PartyPlaylist, SessionState; связи и политика удаления (по плану §3.2, §4).                       |
 | **[CherryPlayServer/README.md](../../CherryPlayServer/README.md)**     | Запуск сервера (.NET); default EF+PostgreSQL; optional `UseInMemoryStorage=true` (см. ARCHITECTURE).                          |
 | **[CherryPlayServer/API.md](../../CherryPlayServer/API.md)**           | Указатель на разделы CONTRACTS.md (REST, SignalR, DTO) для разработки сервера.                                                |

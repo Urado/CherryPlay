@@ -1,6 +1,4 @@
 import { type PlaybackState } from '@cherryplay/components';
-import { useMemo } from 'react';
-
 import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project';
 import { normalizeTrackKeyForComparison } from '@shared/contracts/aimp';
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
@@ -19,6 +17,7 @@ import {
   countTotalTracks,
   createAimpPlaybackStateDto,
 } from '@shared/utils';
+import { useMemo } from 'react';
 
 import { resolvePlaylistSource } from './partyWorkspacePlaylistSource';
 
@@ -109,12 +108,12 @@ export function usePartyPlaylistState() {
       aimpBridgeState.liveStreamStarted &&
       canUseAimpLiveSnapshots(aimpBridgeState)
     ) {
-      const dto = createAimpPlaybackStateDto(aimpBridgeState) as PlaybackState;
+      const dto = createAimpPlaybackStateDto(aimpBridgeState);
       const resolvedCurrentTrackId =
         dto.currentTrackId && aimpBridgeState.playlistSnapshot
           ? (() => {
-              const normalized = normalizeTrackKeyForComparison(dto.currentTrackId!);
-              const match = aimpBridgeState.playlistSnapshot!.tracks.find(
+              const normalized = normalizeTrackKeyForComparison(dto.currentTrackId);
+              const match = aimpBridgeState.playlistSnapshot.tracks.find(
                 (t) => normalizeTrackKeyForComparison(t.trackKey) === normalized,
               );
               return match ? match.trackKey : dto.currentTrackId;

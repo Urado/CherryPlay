@@ -213,7 +213,7 @@ export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorPro
     onCustomizationSettingsChange({
       ...customizationSettings,
       basicActiveUserPaletteId: null,
-      paletteId: catalogId as typeof basicPaletteSettings.paletteId,
+      paletteId: catalogId,
       customPalette: {
         accentPrimary: selectedPalette.accentPrimary,
         textPrimary: selectedPalette.textPrimary,

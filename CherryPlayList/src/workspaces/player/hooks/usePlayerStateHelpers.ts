@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
 
 import { isProjectGroup, ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { useProjectStore } from '@shared/stores';
+import { useCallback } from 'react';
 
 interface UsePlayerStateHelpersOptions {
   allTracks: Track[];

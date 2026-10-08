@@ -1,10 +1,12 @@
-# CherryPlayList
+# CherryPashka List
+
+CherryPashka List — отображаемое название desktop-приложения; техническое имя проекта остаётся CherryPlayList.
 
 Приложение для удобного создания плейлистов для вечеринок.
 
 ## Описание проекта
 
-CherryPlayList - это инструмент для создания и управления музыкальными плейлистами с интуитивным интерфейсом перетаскивания. Приложение позволяет быстро составлять последовательности треков из локальной библиотеки и экспортировать готовые плейлисты.
+CherryPashka List — приложение для создания и управления музыкальными плейлистами с интуитивным интерфейсом перетаскивания. Оно позволяет быстро составлять последовательности треков из локальной библиотеки и экспортировать готовые плейлисты.
 
 ## Основные функции
 
@@ -149,13 +151,15 @@ npm run dist:mac    # macOS
 npm run dist:linux  # Linux
 ```
 
-Готовый Windows-артефакт — **`CherryPlayList-{version}-x64.zip`** в `release/`. Готовый zip с GitHub Releases (без AIMP bridge в CI): см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробности сборки — [BUILD.md](BUILD.md).
+Готовый Windows-артефакт — **`CherryPashkaList-{version}-x64.zip`** в `release/`; после распаковки запустите **`CherryPashkaList.exe`**. Готовый zip с GitHub Releases: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробности сборки — [BUILD.md](BUILD.md).
 
-**Важно:** Перед сборкой добавьте иконки в папку `build/`:
+Иконки CherryPashka включены в папку `build/`:
 
 - `build/icon.ico` - для Windows
 - `build/icon.icns` - для macOS
 - `build/icon.png` - для Linux
+
+Общий PNG-мастер и обновление всех desktop/web форматов описаны в [build/README.md](build/README.md).
 
 ## Качество кода
 

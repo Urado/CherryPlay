@@ -48,9 +48,13 @@ CherryPlayServer supports **two storage modes** behind the same repository inter
 | Mode | When | Behavior |
 |------|------|----------|
 | **EF Core + PostgreSQL** (`UseInMemoryStorage=false`) | **Production** and normal local/Docker with DB | `AppDbContext` + EF repositories; migrations on startup when enabled. Schema: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md) |
-| **In-memory repositories** (`UseInMemoryStorage=true`) | Local/dev or tests **without** PostgreSQL | Singleton in-memory repos; same domain/API/SignalR surface; data is process-local and non-durable |
+| **In-memory repositories** (`UseInMemoryStorage=true`) | Local/dev or tests **without** PostgreSQL | Singleton in-memory repos; same domain/API/SignalR surface; data is process-local and non-durable. Compose: `docker-compose.inmemory.yml` |
 
 This is an **intentional** dual path — not a half-migration. Prod always uses PostgreSQL. Details and run notes: [CherryPlayServer/README.md](CherryPlayServer/README.md).
+
+**Legal consent (CP-066):** mutations go through `ILegalConsentUnitOfWork` — `InMemoryLegalConsentUnitOfWork` when `UseInMemoryStorage=true`, else `EfLegalConsentUnitOfWork` (Postgres tables `legal_document_versions`, `consent_events`). No public `GET` legal-documents catalog. `ConsentGateMiddleware` is always on for mutating organizer HTTP. OAuth one-shot: callback → SPA → `POST /api/oauth/accounts`. Contracts: [CONTRACTS.md](CONTRACTS.md) §3.2.3; schema: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
+
+**App unit of work / account delete (CP-040):** organizer account deletion runs in `IAppUnitOfWork` (`EfAppUnitOfWork` / `InMemoryAppUnitOfWork`): soft-delete organizer (`IsDeleted`) + profile scrub, hard-delete email/OAuth identities and sessions; parties remain. Consent withdraw is best-effort **outside** that UoW. Contract: [CONTRACTS.md](CONTRACTS.md) §3.3; schema notes: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
 
 ## Key entry points
 

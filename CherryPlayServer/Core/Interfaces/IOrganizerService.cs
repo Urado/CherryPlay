@@ -6,4 +6,5 @@ public interface IOrganizerService
 {
     Task<OrganizerDto?> GetByIdAsync(Guid organizerId);
     Task<OrganizerDto?> UpdateProfileAsync(Guid organizerId, UpdateOrganizerDto dto);
+    Task DeleteAccountAsync(Guid organizerId, CancellationToken cancellationToken = default);
 }

@@ -11,6 +11,7 @@ import { registerConfigHandlers } from './ipc/config.js';
 import { registerDialogHandlers } from './ipc/dialogs.js';
 import { registerExportHandlers } from './ipc/export.js';
 import { registerFileBrowserHandlers } from './ipc/fileBrowser.js';
+import { registerLegalHandlers } from './ipc/legal.js';
 import { registerPlaylistHandlers } from './ipc/playlist.js';
 import { registerProjectHandlers } from './ipc/project.js';
 import { registerSettingsBundleHandlers } from './ipc/settingsBundle.js';
@@ -23,6 +24,7 @@ import {
   registerCherryplayAudioProtocolHandler,
   registerCherryplayAudioScheme,
 } from './protocol/cherryplayAudio.js';
+import { getDevProjectRoot } from './utils/projectRoot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,13 +32,18 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+app.setName('CherryPashka List');
+const iconDirectory = app.isPackaged
+  ? path.join(process.resourcesPath, 'icons')
+  : path.join(getDevProjectRoot(), 'build');
+const windowIcon = path.join(iconDirectory, process.platform === 'win32' ? 'icon.ico' : 'icon.png');
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    // App-level floor only; the renderer refines this dynamically via
-    // `system:setMinimumWindowSize` using max(appFloor, layout-computed mins).
+    title: 'CherryPashka List',
+    icon: windowIcon,
     minWidth: APP_MIN_WINDOW_WIDTH,
     minHeight: APP_MIN_WINDOW_HEIGHT,
     webPreferences: {
@@ -61,17 +68,20 @@ function createWindow(): void {
   });
 }
 
-// Регистрация custom URL scheme для OAuth callback
 const PROTOCOL = 'cherryplaylist';
 
-// Регистрируем protocol только если приложение не упаковано или в dev режиме
-if (!app.isDefaultProtocolClient(PROTOCOL)) {
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else if (!app.isDefaultProtocolClient(PROTOCOL)) {
   app.setAsDefaultProtocolClient(PROTOCOL);
 }
 
 registerCherryplayAudioScheme();
 
 app.whenReady().then(() => {
+  app.dock?.setIcon(path.join(iconDirectory, 'icon.png'));
   registerCherryplayAudioProtocolHandler();
 
   Menu.setApplicationMenu(null);
@@ -96,6 +106,7 @@ app.whenReady().then(() => {
   registerAudioHandlers();
   registerDialogHandlers();
   registerSystemHandlers();
+  registerLegalHandlers();
   registerConfigHandlers();
   registerExportHandlers();
   registerProjectHandlers();
@@ -112,26 +123,21 @@ app.whenReady().then(() => {
   });
 });
 
-// Обработка OAuth callback через custom URL scheme
-// macOS
 app.on('open-url', (event, url) => {
   event.preventDefault();
   handleOAuthCallback(url, mainWindow);
 });
 
-// Windows/Linux - обрабатываем аргументы командной строки
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (_event, commandLine) => {
-    // Обрабатываем URL из второго экземпляра
     const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
     if (url) {
       handleOAuthCallback(url, mainWindow);
     }
-    // Фокусируемся на главном окне
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -139,7 +145,6 @@ if (!gotTheLock) {
   });
 }
 
-// Обрабатываем URL при запуске приложения (Windows/Linux)
 if (process.platform !== 'darwin') {
   const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
   if (url) {

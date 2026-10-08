@@ -197,10 +197,11 @@ public class PartyHubGracePeriodTests
         IServiceScopeFactory scopeFactory,
         int organizerOfflineGraceSeconds)
     {
+        var tokenService = new StubJwtService();
         return new PartyHub(
             new StubStreamingService(),
             new PartyIdValidator(),
-            new StubJwtService(),
+            tokenService,
             new StubPartyAccessService(),
             organizerTracker,
             partyRepository,
@@ -209,7 +210,8 @@ public class PartyHubGracePeriodTests
             hubContext,
             scopeFactory,
             Options.Create(new PartyDisplayStatusOptions { OrganizerOfflineGraceSeconds = organizerOfflineGraceSeconds }),
-            NullLogger<PartyHub>.Instance);
+            NullLogger<PartyHub>.Instance,
+            new ValidatedOrganizerSessionRepository(tokenService));
     }
 
     private static void AttachHubContext(

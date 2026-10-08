@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react'
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { usePartyState } from '../hooks/usePartyState';
@@ -16,11 +17,17 @@ import { useSignalR } from '../hooks/useSignalR';
 import { signalRService } from '../services/signalRService';
 import type { PartyDisplayStatusId, PlaybackStateDto, PlayerItemDto } from '../types/api';
 import { devLog, devWarn } from '../utils/logger';
+import {
+  applyOrganizerConnectionStatusChanged,
+  resolveShowPlayerByStatus,
+} from '../utils/partyViewReconnect';
 import { playbackStateFromDto } from '../utils/playbackState';
+import { playlistDataFromDto } from '../utils/playlistDataFromDto';
 import { resolveCurrentTrackIdFromPlaylist } from '../utils/trackKey';
+
+import { PartyViewBackLink } from './PartyViewBackLink';
 import './PartyView.css';
 
-const DISCONNECT_FREEZE_MS = 60_000;
 const SESSION_END_GRACE_MS = 1500;
 
 function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
@@ -36,29 +43,14 @@ function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
   return null;
 }
 
-function hasCachedSessionPlayback(
-  playbackState: PlaybackState | null,
-  isSessionActive: boolean,
-): boolean {
-  if (!playbackState) {
-    return false;
-  }
-  if (playbackState.currentTrackId) {
-    return true;
-  }
-  return isSessionActive || playbackState.mode === 'session';
-}
-
 interface PartyViewProps {
   shortCode?: string;
   isDemo?: boolean;
-  onBackToList?: () => void;
 }
 
 export const PartyView: React.FC<PartyViewProps> = ({
   shortCode,
   isDemo = false,
-  onBackToList,
 }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   const partyState = usePartyState({ shortCode, isDemo });
@@ -77,12 +69,23 @@ export const PartyView: React.FC<PartyViewProps> = ({
     partyDisplayStatus,
     apiReachable,
     loadPlaylist,
+    setPlaylist,
     setPlaybackState,
     setIsSessionActive,
     setPartyDisplayStatus,
     setApiReachable,
     setError,
   } = partyState;
+
+  useEffect(() => {
+    const displayTitle = partyTitle?.trim() || partyName?.trim();
+
+    if (displayTitle) {
+      document.title = displayTitle;
+    } else if (isDemo) {
+      document.title = 'Демо плейлист';
+    }
+  }, [isDemo, partyName, partyTitle]);
 
   const playbackStateRef = useRef<PlaybackState | null>(null);
   const playlistRef = useRef(playlist);
@@ -146,6 +149,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
             });
           }
         }
+        if (state.playlist) {
+          const playlistData = playlistDataFromDto(state.playlist);
+          setPlaylist(playlistData);
+          playlistRef.current = playlistData;
+        }
         setIsSessionActive(state.isSessionActive);
         setPartyDisplayStatus(state.partyDisplayStatus);
       }
@@ -155,7 +163,14 @@ export const PartyView: React.FC<PartyViewProps> = ({
         err instanceof Error ? err.message : err,
       );
     }
-  }, [shortCode, clearSessionTimers, setPlaybackState, setIsSessionActive, setPartyDisplayStatus]);
+  }, [
+    shortCode,
+    clearSessionTimers,
+    setPlaybackState,
+    setPlaylist,
+    setIsSessionActive,
+    setPartyDisplayStatus,
+  ]);
 
   const signalR = useSignalR({
     shortCode,
@@ -273,25 +288,34 @@ export const PartyView: React.FC<PartyViewProps> = ({
     onConnectionStatusChanged: useCallback(
       (_partyId: string, isOnline: boolean) => {
         devLog('[PartyView] Connection status changed:', _partyId, isOnline);
-        if (!isOnline) {
-          if (sessionEndGraceTimerRef.current !== null) {
-            clearTimeout(sessionEndGraceTimerRef.current);
-            sessionEndGraceTimerRef.current = null;
-          }
-          setIsSessionActive(false);
-          setIsDisconnectFreezeActive(true);
-          if (disconnectFreezeTimerRef.current !== null) {
-            clearTimeout(disconnectFreezeTimerRef.current);
-            disconnectFreezeTimerRef.current = null;
-          }
-          disconnectFreezeTimerRef.current = setTimeout(() => {
-            disconnectFreezeTimerRef.current = null;
-            setPlaybackState(null);
-            setIsDisconnectFreezeActive(false);
-          }, DISCONNECT_FREEZE_MS);
-        }
+        applyOrganizerConnectionStatusChanged({
+          isOnline,
+          clearSessionTimers,
+          setIsSessionActive,
+          setIsDisconnectFreezeActive,
+          setPlaybackState: (state) => setPlaybackState(state),
+          clearOfflineTimers: () => {
+            if (sessionEndGraceTimerRef.current !== null) {
+              clearTimeout(sessionEndGraceTimerRef.current);
+              sessionEndGraceTimerRef.current = null;
+            }
+            if (disconnectFreezeTimerRef.current !== null) {
+              clearTimeout(disconnectFreezeTimerRef.current);
+              disconnectFreezeTimerRef.current = null;
+            }
+          },
+          scheduleDisconnectFreeze: (fn, ms) => {
+            disconnectFreezeTimerRef.current = setTimeout(() => {
+              disconnectFreezeTimerRef.current = null;
+              fn();
+            }, ms);
+          },
+          onOrganizerOnline: () => {
+            void requestFullState();
+          },
+        });
       },
-      [setIsSessionActive, setPlaybackState],
+      [clearSessionTimers, setIsSessionActive, setPlaybackState, requestFullState],
     ),
     onPartyDisplayStatusChanged: useCallback(
       (_partyId: string, status: PartyDisplayStatusId) => {
@@ -425,13 +449,11 @@ export const PartyView: React.FC<PartyViewProps> = ({
     [partyDisplayStatus, signalR.connectionStatus, apiReachable, isDemo, playlist, playbackState],
   );
 
-  const showPlayerByStatus =
-    viewerStatus.id === 'live' ||
-    viewerStatus.id === 'organizer_offline' ||
-    viewerStatus.id === 'program_ended' ||
-    (isDisconnectFreezeActive && playbackState != null) ||
-    (viewerStatus.id === 'server_unreachable' &&
-      hasCachedSessionPlayback(playbackState, isSessionActive));
+  const showPlayerByStatus = resolveShowPlayerByStatus({
+    viewerStatusId: viewerStatus.id,
+    isDisconnectFreezeActive,
+    playbackState,
+  });
 
   const displayData: PartyDisplayData<PartyThemeId> = useMemo(() => {
     const pl = playlist || { items: [], totalDuration: 0, totalTracks: 0 };
@@ -478,7 +500,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (loading) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <LoadingSpinner message="Загрузка плейлиста..." />
       </div>
     );
@@ -486,7 +508,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (error) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <ErrorMessage message={error} onRetry={handleRetry} />
       </div>
     );
@@ -494,7 +516,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (!playlist) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <ErrorMessage message="Плейлист не найден" onRetry={handleRetry} />
       </div>
     );
@@ -505,15 +527,17 @@ export const PartyView: React.FC<PartyViewProps> = ({
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">
-            {onBackToList && (
-              <button
-                type="button"
-                className="party-view-back-btn"
-                onClick={onBackToList}
-                title="Список вечеринок"
+            {!isDemo && (
+              <PartyViewBackLink to={ROUTES.HOME} />
+            )}
+            {!isDemo && shortCode && (
+              <a
+                href={ROUTES.PARTY_QR(shortCode)}
+                className="party-view-info-btn"
+                title="QR-код вечеринки"
               >
-                ← Список вечеринок
-              </button>
+                QR-код
+              </a>
             )}
             {!isDemo && shortCode && partyInfoPageEnabled && (
               <a
@@ -534,6 +558,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
           />
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 };

@@ -10,7 +10,10 @@ import {
   PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
 import { BasicThemeCustomizationEditor } from './basic';
-import { BASIC_THEME_CUSTOMIZATION_OPTION_KEYS } from './basic/palette';
+import {
+  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
+  resolveBasicThemePalette,
+} from './basic/palette';
 import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
 import {
   DEFAULT_PARTY_THEME_ID,
@@ -38,6 +41,7 @@ export interface PartyThemeComponents {
     playedTrackIds?: string[];
     disabledTrackIds?: string[];
     disabledGroupIds?: string[];
+    groupDisplayDepth?: number;
     isSessionActive?: boolean;
     className?: string;
     themeId?: string;
@@ -63,8 +67,18 @@ export interface PartyTheme {
   name: string;
   description: string;
   cssPath: string;
+  qrStyle: PartyQrStyle;
+  qrImage?: string;
+  resolveQrStyle?: (settings?: Partial<Record<string, unknown>>) => PartyQrStyle;
   customizationOptions?: string[];
   components: PartyThemeComponents;
+}
+
+export interface PartyQrStyle {
+  foreground: string;
+  background: string;
+  accent: string;
+  frame: string;
 }
 
 export interface PartyThemeRegistry {
@@ -83,6 +97,9 @@ export interface CreatePartyThemeConfig {
   name: string;
   description: string;
   cssPath: string;
+  qrStyle: PartyQrStyle;
+  qrImage?: string;
+  resolveQrStyle?: (settings?: Partial<Record<string, unknown>>) => PartyQrStyle;
   customizationOptions?: string[];
   overrides?: Partial<PartyThemeComponents>;
 }
@@ -93,6 +110,9 @@ export function createPartyTheme(config: CreatePartyThemeConfig): PartyTheme {
     name: config.name,
     description: config.description,
     cssPath: config.cssPath,
+    qrStyle: config.qrStyle,
+    qrImage: config.qrImage,
+    resolveQrStyle: config.resolveQrStyle,
     customizationOptions: config.customizationOptions,
     components: {
       ...BASE_COMPONENTS,
@@ -107,6 +127,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Cyberpunk',
     description: 'Неоновая тема в стиле киберпанк',
     cssPath: './cyberpunk/index.css',
+    qrStyle: { foreground: '#00ff00', background: '#0a0a0a', accent: '#00ff88', frame: 'neon' },
     customizationOptions: [],
     overrides: {
       CustomizationEditor: CyberpunkThemeCustomizationEditor,
@@ -117,6 +138,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Sakura',
     description: 'Нежная пастельная тема',
     cssPath: './sakura/index.css',
+    qrStyle: { foreground: '#51213c', background: '#fff8fb', accent: '#df7fa5', frame: 'petal' },
     customizationOptions: [],
     overrides: {
       CustomizationEditor: SakuraThemeCustomizationEditor,
@@ -127,6 +149,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Art Deco',
     description: 'Элегантная тема в стиле ар-деко',
     cssPath: './art-deco/index.css',
+    qrStyle: { foreground: '#292015', background: '#fffaf0', accent: '#b58a3a', frame: 'deco' },
     customizationOptions: [],
     overrides: {
       CustomizationEditor: ArtDecoThemeCustomizationEditor,
@@ -137,6 +160,16 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Базовый',
     description: 'Простой и чистый стиль в духе приложения',
     cssPath: './basic/index.css',
+    qrStyle: { foreground: '#263143', background: '#f8fbff', accent: '#6179c8', frame: 'simple' },
+    resolveQrStyle: (settings) => {
+      const palette = resolveBasicThemePalette(settings).palette;
+      return {
+        foreground: palette.textPrimary,
+        background: palette.backgroundPrimary,
+        accent: palette.accentPrimary,
+        frame: 'simple',
+      };
+    },
     customizationOptions: [...BASIC_THEME_CUSTOMIZATION_OPTION_KEYS],
     overrides: {
       CustomizationEditor: BasicThemeCustomizationEditor,
@@ -147,6 +180,8 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
     name: 'Весенний кросс-степ',
     description: 'Светлая весенняя тема с зелёными акцентами и мягкими тонами',
     cssPath: './spring-cross-step/index.css',
+    qrStyle: { foreground: '#173b2b', background: '#f5fff6', accent: '#4a9a63', frame: 'spring' },
+    qrImage: '/images/spring-cross-step-poster.jpg',
     customizationOptions: [],
     overrides: {
       PartyDisplay: SpringCrossStepPartyDisplay,
@@ -164,9 +199,8 @@ export function getPartyTheme(partyThemeId: PartyThemeId): PartyTheme | undefine
   return PARTY_THEME_REGISTRY[partyThemeId];
 }
 
-export function applyPartyTheme(partyThemeId: PartyThemeId, element?: HTMLElement): void {
-  const target = element || document.documentElement;
-  target.setAttribute('data-theme', partyThemeId);
+export function applyPartyTheme(partyThemeId: PartyThemeId, element: HTMLElement): void {
+  element.setAttribute('data-theme', partyThemeId);
 }
 
 export function isValidPartyTheme(partyThemeId: string): partyThemeId is PartyThemeId {
@@ -179,6 +213,24 @@ export function getPartyThemeOrDefault(partyThemeId: string | undefined | null):
   }
   return PARTY_THEME_REGISTRY[DEFAULT_PARTY_THEME_ID];
 }
+
+export function resolvePartyQrStyle(
+  partyThemeId: string | undefined | null,
+  settings?: Partial<Record<string, unknown>>,
+): PartyQrStyle {
+  const theme = getPartyThemeOrDefault(partyThemeId);
+  return theme.resolveQrStyle?.(settings) ?? theme.qrStyle;
+}
+
+export const resolvePartyQrImage = (
+  partyThemeId: string,
+  settings?: Partial<Record<string, unknown>>,
+): string | undefined => {
+  const uploadedImage = settings?.qrLogoUrl;
+  return typeof uploadedImage === 'string' && uploadedImage.trim()
+    ? uploadedImage.trim()
+    : getPartyThemeOrDefault(partyThemeId).qrImage;
+};
 
 export {
   getThemeMetadata,

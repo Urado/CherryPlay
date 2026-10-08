@@ -26,9 +26,38 @@ export function subscribePartyPlaylistSync(
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
+  onSyncError?: (error: unknown) => void,
   onSynced?: (payload: PlaylistForApiPayload) => void,
 ): () => void {
   let isInitialCall = true;
+  let isSyncing = false;
+  let latestPayload: PlaylistForApiPayload | null = null;
+
+  const syncLatestPayload = async (): Promise<void> => {
+    if (isSyncing || !latestPayload) {
+      return;
+    }
+
+    isSyncing = true;
+    try {
+      while (latestPayload) {
+        const payload = latestPayload;
+        latestPayload = null;
+        try {
+          await syncPartyPlaylist(partyId, payload, onSynced);
+          onAfterSync();
+        } catch (error) {
+          console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
+          onSyncError?.(error);
+        }
+      }
+    } finally {
+      isSyncing = false;
+      if (latestPayload) {
+        void syncLatestPayload();
+      }
+    }
+  };
 
   return useProjectStore.subscribe(() => {
     if (isInitialCall) {
@@ -37,16 +66,20 @@ export function subscribePartyPlaylistSync(
     }
 
     const projectState = useProjectStore.getState();
+    if (
+      Object.prototype.hasOwnProperty.call(projectState, 'meta') &&
+      projectState.meta.linkedParty?.id !== partyId
+    ) {
+      return;
+    }
+
     console.log('[PartyPlaylistSync] Playlist changed:', {
       itemsCount: projectState.items.length,
       timestamp: new Date().toISOString(),
     });
 
-    const payload = getPayload();
-    void syncPartyPlaylist(partyId, payload, onSynced).catch((error) => {
-      console.error('[PartyPlaylistSync] ✗ Failed to update playlist:', error);
-    });
-    onAfterSync();
+    latestPayload = getPayload();
+    void syncLatestPayload();
   });
 }
 

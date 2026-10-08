@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CherryPlayServer", "CherryP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CherryPlayServer.Tests", "CherryPlayServer.Tests\CherryPlayServer.Tests.csproj", "{72E4274E-5F76-4654-B4FE-E425B3735C77}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CherryPlay.LegalPublish", "tools\CherryPlay.LegalPublish\CherryPlay.LegalPublish.csproj", "{5219468C-8ED5-44D2-8B26-6D64414BF538}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,8 +45,23 @@ Global
 		{72E4274E-5F76-4654-B4FE-E425B3735C77}.Release|x64.Build.0 = Release|Any CPU
 		{72E4274E-5F76-4654-B4FE-E425B3735C77}.Release|x86.ActiveCfg = Release|Any CPU
 		{72E4274E-5F76-4654-B4FE-E425B3735C77}.Release|x86.Build.0 = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|x64.Build.0 = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Debug|x86.Build.0 = Debug|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|x64.ActiveCfg = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|x64.Build.0 = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|x86.ActiveCfg = Release|Any CPU
+		{5219468C-8ED5-44D2-8B26-6D64414BF538}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5219468C-8ED5-44D2-8B26-6D64414BF538} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 EndGlobal

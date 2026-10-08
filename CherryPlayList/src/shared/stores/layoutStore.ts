@@ -1,6 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-import { persist } from 'zustand/middleware';
-import { createWithEqualityFn } from 'zustand/traditional';
 
 import { MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import { WorkspaceId } from '@core/types/workspace';
@@ -13,6 +10,9 @@ import type {
   WorkspaceRef,
 } from '@core/types/workspacePreset';
 import { allocateUnnamedWorkspaceName, DEFAULT_BUILTIN_PRESET } from '@core/types/workspacePreset';
+import { v4 as uuidv4 } from 'uuid';
+import { persist } from 'zustand/middleware';
+import { createWithEqualityFn } from 'zustand/traditional';
 
 import {
   PARTY_EDITOR_WORKSPACE_ID,

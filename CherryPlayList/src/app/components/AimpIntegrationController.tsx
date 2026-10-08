@@ -1,4 +1,3 @@
-import React, { useCallback, useEffect, useRef } from 'react';
 
 import {
   useAimpStore,
@@ -8,12 +7,17 @@ import {
   useSettingsStore,
   useUIStore,
 } from '@shared/stores';
-import { useAimpStreamingOrchestrator } from '@shared/streaming';
+import {
+  applySyncedPlaylistTrackIds,
+  useAimpStreamingOrchestrator,
+  type PlaylistForApiPayload,
+} from '@shared/streaming';
 import { getAimpAvailability, logger } from '@shared/utils';
 import {
   getCurrentPartyPublishSyncParts,
   markPartyPublishPlaylistSynced,
 } from '@workspaces/party/partyPublishSync';
+import React, { useCallback, useEffect, useRef } from 'react';
 
 export const AimpIntegrationController: React.FC = () => {
   const initialize = useAimpStore((state) => state.initialize);
@@ -29,13 +33,23 @@ export const AimpIntegrationController: React.FC = () => {
 
   const previousStreamingSourceRef = useRef<typeof streamingSource | null>(null);
 
-  const handlePlaylistSynced = useCallback(() => {
+  const handlePlaylistSynced = useCallback((payload: PlaylistForApiPayload) => {
     markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+    applySyncedPlaylistTrackIds(payload);
   }, []);
+
+  const handlePartyNotFound = useCallback(() => {
+    addNotification({
+      type: 'warning',
+      message: 'Подключённая вечеринка не найдена на сервере. Связь с проектом сохранена.',
+      duration: 5000,
+    });
+  }, [addNotification]);
 
   useAimpStreamingOrchestrator({
     partyId: linkedPartyId,
     hasHydrated,
+    onPartyNotFound: handlePartyNotFound,
     onPlaylistSynced: handlePlaylistSynced,
   });
 

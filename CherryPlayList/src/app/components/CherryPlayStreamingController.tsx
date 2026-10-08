@@ -1,12 +1,16 @@
 import * as signalR from '@microsoft/signalr';
-import React, { createContext, useCallback, useContext, useMemo } from 'react';
-
 import { useProjectStore, useUIStore } from '@shared/stores';
-import { useStreamingOrchestrator } from '@shared/streaming';
+import {
+  applySyncedPlaylistTrackIds,
+  useStreamingOrchestrator,
+  type PlaylistForApiPayload,
+} from '@shared/streaming';
+import { createCherryPlayStreamingErrorHandlers } from '@shared/streaming/cherryPlayStreamingErrors';
 import {
   getCurrentPartyPublishSyncParts,
   markPartyPublishPlaylistSynced,
 } from '@workspaces/party/partyPublishSync';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 
 interface CherryPlayStreamingConnectionValue {
   connectionState: signalR.HubConnectionState | null;
@@ -35,18 +39,43 @@ export const CherryPlayStreamingController: React.FC<CherryPlayStreamingControll
   const linkedPartyId = useProjectStore((state) => state.meta.linkedParty?.id ?? null);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const addNotification = useUIStore((state) => state.addNotification);
+  const reconnectRef = useRef(() => {});
+  const errorHandlersRef = useRef(createCherryPlayStreamingErrorHandlers(addNotification));
+
+  useEffect(() => {
+    errorHandlersRef.current = createCherryPlayStreamingErrorHandlers(addNotification, {
+      onReconnect: () => {
+        reconnectRef.current();
+      },
+    });
+  }, [addNotification]);
 
   const handlePartyNotFound = useCallback(() => {
-    useProjectStore.getState().setLinkedParty(null);
     addNotification({
       type: 'warning',
-      message: 'Подключённая вечеринка не найдена на сервере. Связь удалена.',
+      message: 'Подключённая вечеринка не найдена на сервере. Связь с проектом сохранена.',
       duration: 5000,
     });
   }, [addNotification]);
 
-  const handlePlaylistSynced = useCallback(() => {
+  const handlePlaylistSynced = useCallback((payload: PlaylistForApiPayload) => {
     markPartyPublishPlaylistSynced(getCurrentPartyPublishSyncParts().playlist);
+    applySyncedPlaylistTrackIds(payload);
+  }, []);
+
+  const handleConnectError = useCallback((error: unknown) => {
+    errorHandlersRef.current.onConnectError(error);
+  }, []);
+
+  const handlePublishError = useCallback(
+    (operation: 'playlistPublish' | 'fullStatePublish', error: unknown) => {
+      errorHandlersRef.current.onPublishError(operation, error);
+    },
+    [],
+  );
+
+  const handleReconnectionFailed = useCallback(() => {
+    errorHandlersRef.current.onReconnectionFailed();
   }, []);
 
   const { connectionState, reconnect } = useStreamingOrchestrator({
@@ -54,7 +83,14 @@ export const CherryPlayStreamingController: React.FC<CherryPlayStreamingControll
     sessionMode,
     onPartyNotFound: handlePartyNotFound,
     onPlaylistSynced: handlePlaylistSynced,
+    onConnectError: handleConnectError,
+    onPublishError: handlePublishError,
+    onReconnectionFailed: handleReconnectionFailed,
   });
+
+  useEffect(() => {
+    reconnectRef.current = reconnect;
+  }, [reconnect]);
 
   const value = useMemo(() => ({ connectionState, reconnect }), [connectionState, reconnect]);
 
