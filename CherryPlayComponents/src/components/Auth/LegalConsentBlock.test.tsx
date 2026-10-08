@@ -1,12 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { LEGAL_PD_CONSENT, LEGAL_TERMS } from '../../constants/legalDocuments';
+import {
+  LEGAL_PD_CONSENT,
+  LEGAL_TERMS,
+  type LegalDocumentDeployConfig,
+} from '../../constants/legalDocuments';
 
 import { LegalConsentBlock } from './LegalConsentBlock';
 
 describe('LegalConsentBlock', () => {
-  it('renders unchecked Habr-style checkboxes with current-path links', () => {
+  it('renders unchecked CP-036 copy, archive links, and accessible summaries', () => {
     const html = renderToStaticMarkup(
       <LegalConsentBlock
         pdConsentAccepted={false}
@@ -18,25 +22,15 @@ describe('LegalConsentBlock', () => {
 
     expect(html).toContain('data-legal-consent="pd"');
     expect(html).toContain('data-legal-consent="terms"');
-    expect(html).toContain(LEGAL_PD_CONSENT.currentPath);
-    expect(html).toContain(LEGAL_TERMS.currentPath);
-    expect(html).not.toContain(LEGAL_PD_CONSENT.archivePath);
-    expect(html).not.toContain(LEGAL_TERMS.archivePath);
-    expect(html).toContain('Я принимаю условия');
-    expect(html).toContain('Я даю согласие на обработку персональных данных');
-    expect(html).toContain('Пользовательского соглашения');
-    expect(html).toContain('текстом согласия');
+    expectConsentItem(html, 'terms', LEGAL_TERMS);
+    expectConsentItem(html, 'pd', LEGAL_PD_CONSENT);
     expect(html).toContain('rel="noopener noreferrer"');
-    expect(html).toContain('aria-label="Я принимаю условия Пользовательского соглашения"');
-    expect(html).toContain(
-      'aria-label="Я даю согласие на обработку персональных данных в соответствии с текстом согласия"',
-    );
     const labels = html.match(/<label[\s\S]*?<\/label>/g) ?? [];
     expect(labels.length).toBeGreaterThan(0);
     for (const label of labels) {
       expect(label).not.toContain('<a');
     }
-    expect(html.match(/checked/g)).toBeNull();
+    expect(html.match(/<input[^>]*\bchecked\b/g)).toBeNull();
   });
 
   it('marks both checkboxes checked when accepted', () => {
@@ -52,3 +46,27 @@ describe('LegalConsentBlock', () => {
     expect(html).toContain('checked');
   });
 });
+
+const expectConsentItem = (
+  html: string,
+  key: 'pd' | 'terms',
+  document: LegalDocumentDeployConfig,
+) => {
+  const input =
+    html.match(
+      new RegExp(
+        `<input id="([^"]+)"[^>]*data-legal-consent="${key}"[^>]*aria-describedby="([^"]+)"`,
+      ),
+    ) ?? [];
+  const inputId = input[1];
+  const summaryId = input[2];
+
+  expect(inputId).toBeDefined();
+  expect(summaryId).toBeDefined();
+  expect(html).toContain(`<label class="legal-consent-label" for="${inputId}">${document.checkboxLabel}</label>`);
+  expect(html).toContain(
+    `<p id="${summaryId}" class="legal-consent-summary">${document.summary}</p>`,
+  );
+  expect(html).toContain(`href="${document.archivePath}"`);
+  expect(html).not.toContain(`href="${document.currentPath}"`);
+};

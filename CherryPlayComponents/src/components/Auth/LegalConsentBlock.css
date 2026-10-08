@@ -39,7 +39,14 @@
   line-height: 1.4;
 }
 
+.legal-consent-summary {
+  margin: 4px 0;
+  white-space: pre-line;
+  color: var(--text-secondary, #666);
+}
+
 .legal-consent-link {
+  display: inline-block;
   color: var(--accent-primary, #2e7d4f);
   text-decoration: none;
 }

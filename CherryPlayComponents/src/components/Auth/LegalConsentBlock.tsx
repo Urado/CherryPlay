@@ -24,24 +24,20 @@ export const LegalConsentBlock: React.FC<LegalConsentBlockProps> = ({
         checked={termsAccepted}
         disabled={disabled}
         onChange={onTermsChange}
-        currentPath={LEGAL_TERMS.currentPath}
-        linkText="Пользовательского соглашения"
-        accessibleName="Я принимаю условия Пользовательского соглашения"
+        archivePath={LEGAL_TERMS.archivePath}
+        checkboxLabel={LEGAL_TERMS.checkboxLabel}
+        summary={LEGAL_TERMS.summary}
         consentKey="terms"
-      >
-        Я принимаю условия{' '}
-      </ConsentItem>
+      />
       <ConsentItem
         checked={pdConsentAccepted}
         disabled={disabled}
         onChange={onPdConsentChange}
-        currentPath={LEGAL_PD_CONSENT.currentPath}
-        linkText="текстом согласия"
-        accessibleName="Я даю согласие на обработку персональных данных в соответствии с текстом согласия"
+        archivePath={LEGAL_PD_CONSENT.archivePath}
+        checkboxLabel={LEGAL_PD_CONSENT.checkboxLabel}
+        summary={LEGAL_PD_CONSENT.summary}
         consentKey="pd"
-      >
-        Я даю согласие на обработку персональных данных в соответствии с{' '}
-      </ConsentItem>
+      />
     </div>
   );
 };
@@ -50,24 +46,23 @@ interface ConsentItemProps {
   checked: boolean;
   disabled: boolean;
   onChange: (accepted: boolean) => void;
-  currentPath: string;
-  linkText: string;
-  accessibleName: string;
+  archivePath: string;
+  checkboxLabel: string;
+  summary: string;
   consentKey: 'pd' | 'terms';
-  children: React.ReactNode;
 }
 
 const ConsentItem = ({
   checked,
   disabled,
   onChange,
-  currentPath,
-  linkText,
-  accessibleName,
+  archivePath,
+  checkboxLabel,
+  summary,
   consentKey,
-  children,
 }: ConsentItemProps) => {
   const id = useId();
+  const summaryId = useId();
 
   return (
     <div className="legal-consent-item">
@@ -78,22 +73,25 @@ const ConsentItem = ({
         checked={checked}
         disabled={disabled}
         data-legal-consent={consentKey}
-        aria-label={accessibleName}
+        aria-describedby={summaryId}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="legal-consent-label-text">
+      <div className="legal-consent-label-text">
         <label className="legal-consent-label" htmlFor={id}>
-          {children}
+          {checkboxLabel}
         </label>
+        <p id={summaryId} className="legal-consent-summary">
+          {summary}
+        </p>
         <a
           className="legal-consent-link"
-          href={currentPath}
+          href={archivePath}
           target="_blank"
           rel="noopener noreferrer"
         >
-          {linkText}
+          Полный текст
         </a>
-      </span>
+      </div>
     </div>
   );
 }
