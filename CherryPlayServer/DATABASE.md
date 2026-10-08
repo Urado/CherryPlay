@@ -266,19 +266,17 @@ _Связь с учётной записью: email+пароль (таблица
 
 ## PartyPlaylist (плейлист вечеринки)
 
-Хранит только отображаемые поля: id, name/title, duration, структура групп. **Без абсолютных путей к файлам.**
+Хранит отображаемые данные плейлиста (без абсолютных путей к файлам) в отдельной таблице `party_playlists`. Связь с `parties` — один-к-одному: `party_id` одновременно является первичным ключом и внешним ключом на `parties.id`.
 
-Вариант 1 — одна таблица с JSON:
+| Колонка          | Тип                         | Ограничения                         | Описание                                                                                                      |
+| --- | --- | --- | --- |
+| `party_id`       | uuid                        | PK, FK → `parties.id`, NOT NULL     | Идентификатор вечеринки; задаёт связь 1:1. FK использует `ON DELETE CASCADE` при физическом удалении вечеринки. |
+| `items`          | jsonb                       | NOT NULL                            | Массив `PlayerItem` в camelCase: `id`, `type` (`track` или `group`), `name`, `displayOrder`, `level`, необязательные `duration` и вложенный `items`. |
+| `total_duration` | integer                     | NOT NULL                            | Общая длительность в секундах.                                                                                |
+| `total_tracks`   | integer                     | NOT NULL                            | Количество треков.                                                                                           |
+| `updated_at`     | timestamp with time zone    | NULL                                | Время последней публикации (Publish).                                                                         |
 
-| Колонка         | Тип      | Ограничения    | Описание                                                                                            |
-| --------------- | -------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| `PartyId`       | GUID     | PK, FK → Party | Одна запись на вечеринку (1:1).                                                                     |
-| `Items`         | JSON     | NOT NULL       | Массив элементов: `{ id, type: "track" \| "group", name, displayOrder, level, duration?, items? }`. |
-| `TotalDuration` | int      | NOT NULL       | Общая длительность в секундах.                                                                      |
-| `TotalTracks`   | int      | NOT NULL       | Количество треков.                                                                                  |
-| `UpdatedAt`     | datetime | NULL           | Время последней публикации (Publish).                                                               |
-
-Вариант 2 — отдельная сущность в той же таблице Party (колонки `PlaylistItems` JSON, `PlaylistTotalDuration`, `PlaylistTotalTracks`) — на усмотрение реализации.
+Soft-deleted parties скрывают связанные плейлисты через EF query filter. Поскольку удаление вечеринки в v1 — soft delete, каскадный FK не удаляет плейлист в этом потоке; он срабатывает только при физическом удалении строки `parties`.
 
 ---
 
