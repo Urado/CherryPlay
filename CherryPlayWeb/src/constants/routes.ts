@@ -5,6 +5,7 @@ export const ROUTES = {
   FEEDBACK: '/feedback',
   PARTY_VIEW: (shortCode: string) => `/party/${shortCode}`,
   PARTY_INFO: (shortCode: string) => `/party/${shortCode}/info`,
+  PARTY_QR: (shortCode: string) => `/party/${shortCode}/qr`,
   LOGIN: '/login',
   REGISTER: '/register',
   OAUTH_COMPLETE: '/oauth/complete',

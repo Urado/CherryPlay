@@ -3,6 +3,7 @@ export * from './components/Playlist/PlaylistView';
 export * from './components/Playlist/PlaylistItem';
 export * from './components/Player/CurrentTrackDisplay';
 export * from './components/PartyInfoDisplay';
+export * from './components/PartyQrCode/PartyQrCode';
 export * from './components/Auth';
 export * from './components/UI';
 export * from './types';

@@ -17,6 +17,7 @@
 | `/feedback` | Обратная связь, email поддержки и прямая ссылка на сообщения ВКонтакте | `FeedbackPage` |
 | `/party/:shortCode` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
 | `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
+| `/party/:shortCode/qr` | QR-код для открытия вечеринки и скачивания PNG | `PartyQrPage` |
 | `/login` | Вход | `LoginPage` |
 | `/register` | Регистрация организатора (email + consents) | `RegisterPage` |
 | `/oauth/complete` | Завершение входа через OAuth или desktop callback | `OAuthCompletePage` |
@@ -47,7 +48,8 @@
 
 Для CP-087 ZIP собирается CI без AIMP bridge; его наличие не является условием для отображения загрузки.
 
-- **PartyView**: отображение плейлиста и состояния воспроизведения; «Назад» ведёт на `ROUTES.HOME` обычной ссылкой.
+- **PartyView**: отображение плейлиста и состояния воспроизведения; «Назад» ведёт на `ROUTES.HOME` обычной ссылкой. Кнопка «QR-код» рядом с «Назад» открывает `/party/:shortCode/qr`.
+- **PartyQrPage**: загружает публичные данные вечеринки, применяет её PartyTheme и показывает QR-код, ведущий на страницу этой вечеринки. Рендер и скачивание PNG выполняет `qr-code-styling`; quiet margin задан как 64 пикселя изображения, уровень коррекции ошибок — H. В центре QR-кода темы «Весенний кросс-степ» используется её постер; у остальных тем центр заполнен цветом фона QR. Во время генерации индикатор загрузки накладывается поверх квадратной области предпросмотра; область сразу занимает размеры готового предпросмотра и не схлопывается при ожидании QR-кода. Библиотека скрывает точки QR-кода под центральным изображением.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
 - **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
 - **RegisterPage:** `EmailAuthForm` mode `register` + legal checkboxes; API — `POST /api/organizers` (+ consents) → `POST /auth/login` ([accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.3). При `?client=desktop` — **replace-redirect** на `/login?client=desktop` (сохраняет `return_to` / `next`); отдельной desktop-регистрации на `/register` нет.

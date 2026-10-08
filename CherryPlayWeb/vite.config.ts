@@ -37,6 +37,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@cherryplay/components'],
+    include: ['@cherryplay/components > qr-code-styling'],
   },
   server: {
     port: 3000,

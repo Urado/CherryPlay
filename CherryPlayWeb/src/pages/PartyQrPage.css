@@ -1,0 +1,156 @@
+.party-qr-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary, #202020);
+  background: var(--bg-primary, #ffffff);
+}
+
+.party-qr-page-header {
+  display: flex;
+  padding: 1rem 2rem;
+}
+
+.party-qr-page-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem 3rem;
+}
+
+.party-qr-page-description {
+  margin: 0;
+  color: var(--text-secondary, #555555);
+  text-align: center;
+}
+
+.party-qr-page-error {
+  color: var(--state-error, #b42318);
+}
+
+.party-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(100%, 44rem);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.party-qr-code-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 2.25rem;
+  border: 1px solid var(--border-color, #d5d5d5);
+  border-radius: 1.25rem;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 12%);
+  box-sizing: border-box;
+}
+
+.party-qr-code-title {
+  max-width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: clamp(1.25rem, 4vw, 2rem);
+}
+
+.party-qr-code-preview {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+.party-qr-code-canvas,
+.party-qr-code-canvas > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.party-qr-code-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-primary, #202020);
+  font-weight: 600;
+}
+
+.party-qr-code-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: party-qr-code-spin 0.8s linear infinite;
+}
+
+@keyframes party-qr-code-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .party-qr-code-spinner {
+    animation: none;
+  }
+}
+
+.party-qr-code-download {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--border-color, #777777);
+  border-radius: 0.75rem;
+  background: var(--accent-primary, #405fc4);
+  color: var(--text-on-accent, #ffffff);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.party-qr-code-download:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+[data-qr-frame='neon'] .party-qr-code-card {
+  box-shadow: 0 0 1rem rgb(255 67 208 / 28%);
+}
+
+[data-qr-frame='petal'] .party-qr-code-card {
+  border-radius: 2rem 1rem 2rem 1rem;
+}
+
+[data-qr-frame='deco'] .party-qr-code-card {
+  border: 3px double var(--border-color, #b58a3a);
+}
+
+[data-qr-frame='spring'] .party-qr-code-card {
+  border-radius: 2rem;
+}
+
+@media (max-width: 600px) {
+  .party-qr-page-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .party-qr-code-card {
+    padding: 1rem;
+  }
+}

@@ -530,6 +530,15 @@ export const PartyView: React.FC<PartyViewProps> = ({
             {!isDemo && (
               <PartyViewBackLink to={ROUTES.HOME} />
             )}
+            {!isDemo && shortCode && (
+              <a
+                href={ROUTES.PARTY_QR(shortCode)}
+                className="party-view-info-btn"
+                title="QR-код вечеринки"
+              >
+                QR-код
+              </a>
+            )}
             {!isDemo && shortCode && partyInfoPageEnabled && (
               <a
                 href={ROUTES.PARTY_INFO(shortCode)}

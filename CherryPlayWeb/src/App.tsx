@@ -28,6 +28,7 @@ import { LoginPage } from './pages/LoginPage';
 import { OAuthCompletePage } from './pages/OAuthCompletePage';
 import { PartyInfoPage } from './pages/PartyInfoPage';
 import { PartyListPage } from './pages/PartyListPage';
+import { PartyQrPage } from './pages/PartyQrPage';
 import { PartyView } from './pages/PartyView';
 import { RegisterPage } from './pages/RegisterPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
@@ -58,6 +59,10 @@ const getDocumentTitle = (pathname: string): string => {
 
   if (/^\/party\/[^/]+\/info$/.test(normalizedPath)) {
     return 'Информация о вечеринке';
+  }
+
+  if (/^\/party\/[^/]+\/qr$/.test(normalizedPath)) {
+    return 'QR-код вечеринки';
   }
 
   if (/^\/party\/[^/]+$/.test(normalizedPath)) {
@@ -122,6 +127,7 @@ const AppShell = () => {
         </Route>
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
+        <Route path="/party/:shortCode/qr" element={<PartyQrPage />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
       {consentGateOpen ? null : <CookieNotice />}

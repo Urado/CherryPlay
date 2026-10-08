@@ -24,7 +24,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "luxon": "^3.4.4"
+    "luxon": "^3.4.4",
+    "qr-code-styling": "^1.9.2"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
