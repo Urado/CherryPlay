@@ -27,7 +27,8 @@ public class InMemoryPasswordResetTokenRepository : IPasswordResetTokenRepositor
     public Task InvalidateUnusedByEmailAccountIdAsync(Guid emailAccountId)
     {
         var now = DateTime.UtcNow;
-        foreach (var token in _tokens.Values.Where(t => t.EmailAccountId == emailAccountId && t.UsedAt == null))
+        foreach (var token in _tokens.Values.Where(t =>
+            t.EmailAccountId == emailAccountId && t.UsedAt == null && t.ExpiresAt > now))
         {
             token.UsedAt = now;
         }

@@ -38,7 +38,7 @@ public class EfPasswordResetTokenRepository : IPasswordResetTokenRepository
     {
         var now = DateTime.UtcNow;
         await _context.PasswordResetTokens
-            .Where(e => e.EmailAccountId == emailAccountId && e.UsedAt == null)
+            .Where(e => e.EmailAccountId == emailAccountId && e.UsedAt == null && e.ExpiresAt > now)
             .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.UsedAt, now));
     }
 
