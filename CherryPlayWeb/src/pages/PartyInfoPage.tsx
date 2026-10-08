@@ -5,6 +5,7 @@ import {
   getDefaultTimeZone,
   PartyInfoDisplay,
   isValidPartyTheme,
+  usePartyThemeVars,
 } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
@@ -48,9 +49,14 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
     }
   }, [party]);
 
+  const themeId = party && isValidPartyTheme(party.partyThemeId)
+    ? party.partyThemeId
+    : DEFAULT_PARTY_THEME_ID;
+  const themeVars = usePartyThemeVars(themeId, party?.customizationSettings);
+
   if (loading) {
     return (
-      <div className="party-info-page">
+      <div className="party-info-page" data-theme={themeId} style={themeVars}>
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
             <Button
@@ -72,7 +78,7 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
 
   if (error || !party) {
     return (
-      <div className="party-info-page">
+      <div className="party-info-page" data-theme={themeId} style={themeVars}>
         <div className="party-info-page-header">
           <div className="party-info-page-header-controls">
             <Button
@@ -100,12 +106,8 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
     );
   }
 
-  const themeId = isValidPartyTheme(party.partyThemeId)
-    ? party.partyThemeId
-    : DEFAULT_PARTY_THEME_ID;
-
   return (
-    <div className="party-info-page" data-theme={themeId}>
+    <div className="party-info-page" data-theme={themeId} style={themeVars}>
       <div className="party-info-page-header">
         <div className="party-info-page-header-controls">
           <Button

@@ -8,7 +8,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { useConsentGate } from '../contexts/ConsentGateContext';
@@ -210,7 +209,6 @@ export const LoginPage = () => {
             <div className="login-page-notice">Проверяем сессию…</div>
           </div>
         </div>
-        <SiteFooter />
       </div>
     );
   }
@@ -255,7 +253,6 @@ export const LoginPage = () => {
             </FormButton>
           </div>
         </div>
-        <SiteFooter />
       </div>
     );
   }
@@ -295,7 +292,6 @@ export const LoginPage = () => {
           className="login-page-form"
         />
       </div>
-      <SiteFooter />
     </div>
   );
 };

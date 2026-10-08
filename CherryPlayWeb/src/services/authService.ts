@@ -17,6 +17,14 @@ import {
   isDesktopClientMode,
 } from '../utils/desktopClientMode';
 
+export const AUTH_STATE_CHANGED_EVENT = 'cherryplay:auth-state-changed';
+
+const notifyAuthStateChanged = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
+  }
+};
+
 async function readAuthErrorMessage(response: Response): Promise<string> {
   try {
     const text = await response.text();
@@ -100,10 +108,11 @@ class AuthService implements IAuthService {
       await throwAuthHttpError(response);
     }
 
-    if (desktopMode) {
-      const data = (await response.json()) as DesktopAuthCodeResponse;
-      return data.code;
-    }
+    const desktopCode = desktopMode
+      ? ((await response.json()) as DesktopAuthCodeResponse).code
+      : undefined;
+    notifyAuthStateChanged();
+    return desktopCode;
   }
 
   async register(
@@ -226,6 +235,8 @@ class AuthService implements IAuthService {
     } catch (error) {
       console.error('Error during logout:', error);
     }
+
+    notifyAuthStateChanged();
   }
 
   async issueDesktopAuthCode(): Promise<string> {

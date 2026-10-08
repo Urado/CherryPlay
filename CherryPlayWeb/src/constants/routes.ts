@@ -1,6 +1,7 @@
 export const ROUTES = {
   HOME: '/',
   DOWNLOAD: '/download',
+  FIRST_RUN_GUIDE: '/guide/first-run',
   FEEDBACK: '/feedback',
   PARTY_VIEW: (shortCode: string) => `/party/${shortCode}`,
   PARTY_INFO: (shortCode: string) => `/party/${shortCode}/info`,

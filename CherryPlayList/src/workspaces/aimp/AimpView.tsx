@@ -154,7 +154,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
       }
     }
     if (bridgeState.connection.phase === 'listening') {
-      messages.push('CherryPlayList слушает pipe, но AIMP плагин ещё не подключён.');
+      messages.push('CherryPashka List слушает pipe, но AIMP плагин ещё не подключён.');
     }
     if (bridgeState.connection.phase === 'disconnected' && availability.available) {
       messages.push('Ожидается запуск AIMP плагина и handshake с приложением.');

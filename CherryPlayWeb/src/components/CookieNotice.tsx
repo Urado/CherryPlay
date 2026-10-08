@@ -1,3 +1,4 @@
+import { Button } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -33,19 +34,30 @@ export const CookieNotice = () => {
     try {
       localStorage.setItem(STORAGE_KEY, '1');
     } catch {
-      /* ignore quota / private mode */
+      setDismissed(true);
     }
     setDismissed(true);
   };
 
   return (
-    <div className="cookie-notice" role="region" aria-label="Уведомление о cookie">
+    <div
+      className="cookie-notice"
+      data-shell-theme="dark"
+      role="region"
+      aria-label="Уведомление о cookie"
+    >
       <p className="cookie-notice-text">
         Используем необходимые cookie для входа. <Link to={ROUTES.COOKIES}>Политика cookie</Link>
       </p>
-      <button type="button" className="cookie-notice-dismiss" onClick={dismiss}>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="cookie-notice-dismiss"
+        onClick={dismiss}
+      >
         Понятно
-      </button>
+      </Button>
     </div>
   );
 };

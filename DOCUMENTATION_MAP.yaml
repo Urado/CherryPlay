@@ -3,10 +3,10 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-05"
+updated: "2026-10-07"
 summary:
-  total_md_files: 115
-  project_documentation: 87
+  total_md_files: 116
+  project_documentation: 88
   not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
@@ -203,6 +203,8 @@ project_documentation:
         title: "Обзор библиотеки компонентов"
       - path: CherryPlayComponents/src/themes/README.md
         title: "Темы компонентов"
+      - path: CherryPlayComponents/docs/SHELL_THEME.md
+        title: "Контракт оболочечной темы и инвентаризация токенов"
 
   cherryplay_aimp_plugin:
     description: "Нативный плагин AIMP (Windows x64)"

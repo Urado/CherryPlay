@@ -13,7 +13,6 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
@@ -217,7 +216,6 @@ export const OAuthCompletePage = () => {
             </FormButton>
           </div>
         </div>
-        <SiteFooter />
       </div>
     );
   }
@@ -240,7 +238,6 @@ export const OAuthCompletePage = () => {
             </FormButton>
           </div>
         </div>
-        <SiteFooter />
       </div>
     );
   }
@@ -295,7 +292,6 @@ export const OAuthCompletePage = () => {
           )}
         </div>
       </div>
-      <SiteFooter />
     </div>
   );
 };

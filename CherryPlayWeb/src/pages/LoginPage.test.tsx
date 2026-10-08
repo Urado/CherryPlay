@@ -169,7 +169,6 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByRole('button', { name: 'Войти' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Войти другим аккаунтом' })).toBeTruthy();
     expect(screen.queryByTestId('auth-form')).toBeNull();
-    expect(screen.getByRole('navigation', { name: 'Юридические документы' })).toBeTruthy();
   });
 
   it('falls back to form when checkAuth returns null', async () => {

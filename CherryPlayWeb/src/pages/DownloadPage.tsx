@@ -1,7 +1,7 @@
+import { ButtonLink } from '@cherryplay/components';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { getLatestDesktopRelease, type DesktopRelease } from '../services/desktopReleaseService';
 import './DownloadPage.css';
@@ -60,21 +60,24 @@ export const DownloadPage = () => {
           {!loading && release && (
             <div className="download-release">
               <p className="download-version">Версия {release.version}</p>
-              <a className="download-button" href={release.downloadUrl}>
+              <ButtonLink
+                className="download-button"
+                href={release.downloadUrl}
+                variant="primary"
+              >
                 Скачать для Windows
-              </a>
+              </ButtonLink>
               <p className="download-file-details">ZIP-архив · Windows x64</p>
             </div>
           )}
-          <a className="download-guide-link" href="/first-run-guide.html">
+          <Link className="download-guide-link" to={ROUTES.FIRST_RUN_GUIDE}>
             <span className="download-guide-title">Впервые запускаете CherryPlayList?</span>
             <span className="download-guide-description">
               Откройте краткую инструкцию по установке и первому эфиру
             </span>
-          </a>
+          </Link>
         </section>
       </main>
-      <SiteFooter />
     </div>
   );
 };

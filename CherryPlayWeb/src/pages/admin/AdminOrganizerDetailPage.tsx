@@ -1,3 +1,4 @@
+import { Button, ErrorMessage, FormSelect, FormTextarea } from '@cherryplay/components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -293,15 +294,11 @@ export const AdminOrganizerDetailPage = () => {
       </div>
 
       {revokePersistenceWarning && (
-        <div className="admin-error" role="alert">
-          {revokePersistenceWarning}
-        </div>
+        <ErrorMessage message={revokePersistenceWarning} />
       )}
 
       {error && (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
+        <ErrorMessage message={error} />
       )}
 
       {loading ? (
@@ -310,9 +307,9 @@ export const AdminOrganizerDetailPage = () => {
         <section className="admin-card" aria-live="polite">
           <p>Не удалось загрузить карточку организатора.</p>
           <div className="admin-modal__actions admin-modal__actions--start">
-            <button type="button" onClick={() => void load()}>
+            <Button variant="primary" size="sm" type="button" onClick={() => void load()}>
               Повторить
-            </button>
+            </Button>
           </div>
         </section>
       ) : !organizer ? (
@@ -331,9 +328,15 @@ export const AdminOrganizerDetailPage = () => {
           <section className="admin-card">
             <div className="admin-card__header">
               <h3>Активные доступы</h3>
-              <button ref={grantOpenButtonRef} type="button" onClick={() => setGrantOpen(true)}>
+              <Button
+                ref={grantOpenButtonRef}
+                variant="primary"
+                size="sm"
+                type="button"
+                onClick={() => setGrantOpen(true)}
+              >
                 Выдать пакет
-              </button>
+              </Button>
             </div>
             {activeEntitlements.length ? (
               <ul className="admin-entitlement-list">
@@ -346,12 +349,14 @@ export const AdminOrganizerDetailPage = () => {
                         {entitlement.note ? ` · ${entitlement.note}` : ''}
                       </div>
                     </div>
-                    <button
+                    <Button
+                      variant="danger"
+                      size="sm"
                       type="button"
                       onClick={() => openRevocation(entitlement)}
                     >
                       Отозвать
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -389,23 +394,28 @@ export const AdminOrganizerDetailPage = () => {
                       ))}
                       {revocationHistoryErrors[entitlement.id] && (
                         <div>
-                          <p className="admin-error" role="alert">
-                            {revocationHistoryErrors[entitlement.id]}
-                          </p>
-                          <button
+                          <ErrorMessage message={revocationHistoryErrors[entitlement.id]} />
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             type="button"
                             disabled={revocationHistoryLoadingIds[entitlement.id]}
                             onClick={() => void loadRevocationHistory([entitlement.id])}
                           >
                             Повторить загрузку истории
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
                     {readPendingRevocation(entitlement.id) && (
-                      <button type="button" onClick={() => openRevocation(entitlement)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        type="button"
+                        onClick={() => openRevocation(entitlement)}
+                      >
                         Повторить отзыв
-                      </button>
+                      </Button>
                     )}
                   </li>
                 ))}
@@ -426,27 +436,30 @@ export const AdminOrganizerDetailPage = () => {
             aria-labelledby={grantModalTitleId}
           >
             <h3 id={grantModalTitleId}>Выдать пакет</h3>
-            <label>
-              Пакет
-              <select value={grantPackageId} onChange={(e) => setGrantPackageId(e.target.value)}>
+            <FormSelect
+              label="Пакет"
+              id="admin-grant-package"
+              value={grantPackageId}
+              onChange={(e) => setGrantPackageId(e.target.value)}
+            >
                 {packages.map((pkg) => (
                   <option key={pkg.id} value={pkg.id}>
                     {pkg.name} ({pkg.code}) — {pkg.themeIds.join(', ')}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label>
-              Note (опционально)
-              <textarea value={grantNote} onChange={(e) => setGrantNote(e.target.value)} rows={4} />
-            </label>
-            {grantError && (
-              <div className="admin-error" role="alert">
-                {grantError}
-              </div>
-            )}
+            </FormSelect>
+            <FormTextarea
+              label="Примечание (опционально)"
+              id="admin-grant-note"
+              value={grantNote}
+              onChange={(e) => setGrantNote(e.target.value)}
+              rows={4}
+            />
+            {grantError && <ErrorMessage message={grantError} />}
             <div className="admin-modal__actions">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 type="button"
                 onClick={() => {
                   setGrantOpen(false);
@@ -455,8 +468,10 @@ export const AdminOrganizerDetailPage = () => {
                 }}
               >
                 Отмена
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 type="button"
                 disabled={granting || !grantPackageId}
                 onClick={async () => {
@@ -479,7 +494,7 @@ export const AdminOrganizerDetailPage = () => {
                 }}
               >
                 {granting ? 'Выдача…' : 'Выдать'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -497,9 +512,9 @@ export const AdminOrganizerDetailPage = () => {
             <p>
               {revokeEntitlement.packageName} ({revokeEntitlement.packageCode})
             </p>
-            <label>
-              Note (опционально)
-              <textarea
+            <FormTextarea
+                label="Примечание (опционально)"
+                id="admin-revoke-note"
                 value={revokeNote}
                 onChange={(e) => {
                   setRevokeNote(e.target.value);
@@ -509,14 +524,11 @@ export const AdminOrganizerDetailPage = () => {
                 rows={4}
                 disabled={revocationPending}
               />
-            </label>
-            {revokeError && (
-              <div className="admin-error" role="alert">
-                {revokeError}
-              </div>
-            )}
+            {revokeError && <ErrorMessage message={revokeError} />}
             <div className="admin-modal__actions">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 type="button"
                 onClick={() => {
                   setRevokeEntitlement(null);
@@ -528,8 +540,10 @@ export const AdminOrganizerDetailPage = () => {
                 disabled={revoking}
               >
                 Отмена
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
                 type="button"
                 disabled={revoking}
                 onClick={async () => {
@@ -574,7 +588,7 @@ export const AdminOrganizerDetailPage = () => {
                 }}
               >
                 {revoking ? 'Отзыв…' : revocationPending ? 'Повторить отзыв' : 'Отозвать'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

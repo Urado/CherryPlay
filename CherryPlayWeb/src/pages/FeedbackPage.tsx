@@ -30,7 +30,7 @@ export const FeedbackPage = () => {
           <h2 id="feedback-community-title">Напишите нам во ВКонтакте</h2>
           <p>Откройте диалог с сообществом, чтобы задать вопрос или сообщить о проблеме.</p>
           <a
-            className="feedback-page__vk-message-link"
+            className="cp-button cp-button--secondary cp-button--sm feedback-page__vk-message-link"
             href={VK_MESSAGE_URL}
             target="_blank"
             rel="noopener noreferrer"

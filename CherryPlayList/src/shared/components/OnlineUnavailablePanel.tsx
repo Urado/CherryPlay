@@ -24,7 +24,7 @@ export const OnlineUnavailablePanel: React.FC<OnlineUnavailablePanelProps> = ({
     const versionHint =
       requiredVersion !== null
         ? `Требуется версия ${requiredVersion} или новее.`
-        : 'Установите новую версию CherryPlayList.';
+        : 'Установите новую версию CherryPashka List.';
 
     return (
       <div className="online-unavailable-panel">

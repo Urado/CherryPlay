@@ -1,4 +1,6 @@
-# CherryPlayList
+# CherryPashka List
+
+CherryPashka List — отображаемое название desktop-приложения; техническое имя проекта остаётся CherryPlayList.
 
 Приложение для удобного создания плейлистов для вечеринок.
 

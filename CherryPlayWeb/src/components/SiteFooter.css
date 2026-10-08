@@ -29,12 +29,11 @@
 }
 
 .site-footer-nav a:focus-visible {
-  outline: 2px solid var(--accent-primary, #00ff88);
+  outline: 2px solid var(--accent-primary, #4a9eff);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
-/* Cookie bar is fixed; keep footer links above it without empty page gap. */
 body.has-cookie-notice .site-footer {
   padding-bottom: 80px;
 }

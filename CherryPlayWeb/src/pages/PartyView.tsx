@@ -500,7 +500,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (loading) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <LoadingSpinner message="Загрузка плейлиста..." />
       </div>
     );
@@ -508,7 +508,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (error) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <ErrorMessage message={error} onRetry={handleRetry} />
       </div>
     );
@@ -516,7 +516,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
 
   if (!playlist) {
     return (
-      <div className="party-view">
+      <div className="party-view" data-theme={themeId} style={themeVars}>
         <ErrorMessage message="Плейлист не найден" onRetry={handleRetry} />
       </div>
     );

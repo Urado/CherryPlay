@@ -32,6 +32,7 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+app.setName('CherryPashka List');
 const iconDirectory = app.isPackaged
   ? path.join(process.resourcesPath, 'icons')
   : path.join(getDevProjectRoot(), 'build');
@@ -41,6 +42,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: 'CherryPashka List',
     icon: windowIcon,
     minWidth: APP_MIN_WINDOW_WIDTH,
     minHeight: APP_MIN_WINDOW_HEIGHT,

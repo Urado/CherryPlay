@@ -29,10 +29,9 @@
   height: var(--cp-icon-size-lg);
 }
 
-/* Circular outline: square box so border-radius 50% is a true circle. */
 .cp-icon--circle {
   box-sizing: border-box;
-  border: 1px solid var(--cp-ui-border);
+  border: 1px solid var(--ui-border, rgba(255, 255, 255, 0.15));
   border-radius: 50%;
   padding: 2px;
   line-height: 1;

@@ -1,28 +1,15 @@
-/**
- * Shell Palette (Палитра оболочки)
- * Единая нейтральная тёмная палитра для оболочки приложения
- * Используется в CherryPlayWeb и CherryPlayList для всех элементов UI,
- * кроме контента вечеринки с PartyTheme
- */
-
-:root {
-  /* Background Colors */
+[data-shell-theme='dark'] {
+  color-scheme: dark;
   --bg-primary: #1e1e1e;
   --bg-secondary: #252525;
   --bg-tertiary: #2a2a2a;
   --bg-hover: #323232;
-
-  /* Text Colors */
   --text-primary: #fff;
   --text-secondary: #b0b0b0;
   --text-tertiary: rgba(255, 255, 255, 0.5);
   --text-disabled: #666;
   --text-on-accent: #fff;
-
-  /* Border Colors */
   --border-color: rgba(255, 255, 255, 0.1);
-
-  /* State Colors (нейтральные) */
   --state-error: #d32f2f;
   --state-error-bg: rgba(255, 255, 255, 0.08);
   --state-error-text: rgba(255, 255, 255, 0.9);
@@ -30,25 +17,17 @@
   --state-warning: #ff9800;
   --state-info: #2196f3;
   --selected-bg: #3a4a5a;
-  --selected-border: rgba(255, 255, 255, 0.2);
-
-  /* Border Radius */
+  --selected-border: #6495ed;
+  --accent-primary: #4a9eff;
+  --accent-primary-hover: #368eea;
+  --accent-primary-light: rgba(74, 158, 255, 0.15);
+  --accent-secondary: #6495ed;
+  --ui-border: #3a3a3a;
+  --ui-shadow: rgba(0, 0, 0, 0.3);
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-
-  /* Shadow */
   --shadow: rgba(0, 0, 0, 0.3);
-
-  /* Primitive — accent (shell; apps may override --accent-primary) */
-  --cp-accent-primary: var(--accent-primary, #667eea);
-  --cp-accent-primary-hover: var(--accent-primary-hover, #5568d3);
-  --cp-accent-secondary: var(--accent-secondary, #6495ed);
-  --cp-accent-danger: var(--state-error, #d32f2f);
-  --cp-accent-danger-hover: color-mix(in srgb, var(--cp-accent-danger) 85%, #000);
-  --cp-ui-border: var(--ui-border, rgba(255, 255, 255, 0.15));
-
-  /* Primitive — button */
   --cp-button-height-sm: 32px;
   --cp-button-height-md: 40px;
   --cp-button-padding-x-sm: 12px;
@@ -59,13 +38,9 @@
   --cp-button-gap: 8px;
   --cp-button-icon-only-size-sm: 32px;
   --cp-button-icon-only-size-md: 40px;
-
-  /* Primitive — icon */
   --cp-icon-size-sm: 16px;
   --cp-icon-size-md: 20px;
   --cp-icon-size-lg: 24px;
-
-  /* Primitive — playback transport */
   --cp-playback-control-size-sm: 30px;
   --cp-playback-control-size-md: 36px;
   --cp-playback-control-size-md-emphasis: 40px;

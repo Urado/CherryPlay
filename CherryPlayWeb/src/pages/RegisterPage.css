@@ -1,5 +1,6 @@
 .register-page {
-  min-height: 100vh;
+  min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
@@ -21,11 +22,6 @@
   .register-page-body {
     justify-content: flex-start;
   }
-}
-
-.register-page .site-footer {
-  margin-top: 0;
-  flex-shrink: 0;
 }
 
 .register-container {
@@ -153,7 +149,6 @@
   text-decoration: underline;
 }
 
-/* Align LegalConsentBlock with Web dark-green accent tokens */
 .register-page .legal-consent-checkbox {
   accent-color: var(--accent-primary);
 }

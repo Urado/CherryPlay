@@ -1,6 +1,5 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { resolveLegalDocument, type LegalDocKey } from '../content/legal/documents';
 import type { LegalBlock } from '../content/legal/parseLegalMarkdown';
@@ -91,7 +90,6 @@ export const LegalDocumentPage = ({ docKey }: { docKey?: LegalDocKey }) => {
         </p>
         <div className="legal-page-body">{doc.blocks.map(renderBlock)}</div>
       </main>
-      <SiteFooter />
     </div>
   );
 };

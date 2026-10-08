@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import { CookieNotice } from './components/CookieNotice';
+import { SiteLayout } from './components/SiteLayout';
 import { ROUTES } from './constants/routes';
 import { AppConfigProvider } from './contexts/AppConfigContext';
 import { ClientOutdatedProvider } from './contexts/ClientOutdatedContext';
@@ -19,6 +20,7 @@ import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
 import { CabinetPage } from './pages/CabinetPage';
 import { DownloadPage } from './pages/DownloadPage';
 import { FeedbackPage } from './pages/FeedbackPage';
+import { FirstRunGuidePage } from './pages/FirstRunGuidePage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LegalDocumentPage } from './pages/LegalDocumentPage';
 import { LegalOperatorPage } from './pages/LegalOperatorPage';
@@ -35,6 +37,7 @@ import './App.css';
 const PAGE_TITLES: Record<string, string> = {
   [ROUTES.HOME]: 'Вечеринки',
   ['/download']: 'Скачать приложение',
+  [ROUTES.FIRST_RUN_GUIDE]: 'Первый запуск CherryPlayList',
   [ROUTES.FEEDBACK]: 'Обратная связь',
   [ROUTES.LOGIN]: 'Вход',
   [ROUTES.REGISTER]: 'Регистрация',
@@ -87,38 +90,38 @@ const AppShell = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    document.title = getDocumentTitle(pathname);
+    document.title = `${getDocumentTitle(pathname)} — CherryPashkaParty`;
   }, [pathname]);
 
   return (
     <>
       <Routes>
-        <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
-        <Route path={ROUTES.DOWNLOAD} element={<DownloadPage />} />
-        <Route path={ROUTES.FEEDBACK} element={<FeedbackPage />} />
+        <Route element={<SiteLayout />}>
+          <Route path={ROUTES.HOME} element={<CatalogOrRedirect />} />
+          <Route path={ROUTES.DOWNLOAD} element={<DownloadPage />} />
+          <Route path={ROUTES.FIRST_RUN_GUIDE} element={<FirstRunGuidePage />} />
+          <Route path={ROUTES.FEEDBACK} element={<FeedbackPage />} />
+          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+          <Route path={ROUTES.OAUTH_COMPLETE} element={<OAuthCompletePage />} />
+          <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+          <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+          <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
+          <Route path={ROUTES.CABINET} element={<CabinetPage />} />
+          <Route path={ROUTES.ADMIN_ROOT} element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />} />
+          <Route path={ROUTES.ADMIN_ORGANIZERS} element={<AdminOrganizersPage />} />
+          <Route path="/admin/organizers/:id" element={<AdminOrganizerDetailPage />} />
+          <Route path={ROUTES.PRIVACY} element={<LegalDocumentPage docKey="privacy" />} />
+          <Route path="/privacy/v/:version" element={<LegalDocumentPage docKey="privacy" />} />
+          <Route path={ROUTES.CONSENT} element={<LegalDocumentPage docKey="consent" />} />
+          <Route path="/consent/v/:version" element={<LegalDocumentPage docKey="consent" />} />
+          <Route path={ROUTES.TERMS} element={<LegalDocumentPage docKey="terms" />} />
+          <Route path="/terms/v/:version" element={<LegalDocumentPage docKey="terms" />} />
+          <Route path={ROUTES.COOKIES} element={<LegalDocumentPage docKey="cookies" />} />
+          <Route path="/cookies/v/:version" element={<LegalDocumentPage docKey="cookies" />} />
+          <Route path={ROUTES.LEGAL} element={<LegalOperatorPage />} />
+        </Route>
         <Route path="/party/:shortCode" element={<PartyViewByRoute />} />
         <Route path="/party/:shortCode/info" element={<PartyInfoPage />} />
-        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
-        <Route path={ROUTES.OAUTH_COMPLETE} element={<OAuthCompletePage />} />
-        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
-        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
-        <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
-        <Route path={ROUTES.CABINET} element={<CabinetPage />} />
-        <Route
-          path={ROUTES.ADMIN_ROOT}
-          element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />}
-        />
-        <Route path={ROUTES.ADMIN_ORGANIZERS} element={<AdminOrganizersPage />} />
-        <Route path="/admin/organizers/:id" element={<AdminOrganizerDetailPage />} />
-        <Route path={ROUTES.PRIVACY} element={<LegalDocumentPage docKey="privacy" />} />
-        <Route path="/privacy/v/:version" element={<LegalDocumentPage docKey="privacy" />} />
-        <Route path={ROUTES.CONSENT} element={<LegalDocumentPage docKey="consent" />} />
-        <Route path="/consent/v/:version" element={<LegalDocumentPage docKey="consent" />} />
-        <Route path={ROUTES.TERMS} element={<LegalDocumentPage docKey="terms" />} />
-        <Route path="/terms/v/:version" element={<LegalDocumentPage docKey="terms" />} />
-        <Route path={ROUTES.COOKIES} element={<LegalDocumentPage docKey="cookies" />} />
-        <Route path="/cookies/v/:version" element={<LegalDocumentPage docKey="cookies" />} />
-        <Route path={ROUTES.LEGAL} element={<LegalOperatorPage />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
       {consentGateOpen ? null : <CookieNotice />}

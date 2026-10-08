@@ -1,5 +1,7 @@
 import {
   Button,
+  FormInput,
+  FormSelect,
   IconButton,
   formatDateInTimeZone,
   getDefaultTimeZone,
@@ -7,18 +9,15 @@ import {
   sortPartiesByEventDateDesc,
 } from '@cherryplay/components';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 import { ErrorMessage } from '../components/ErrorMessage';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import { useConsentGate } from '../contexts/ConsentGateContext';
-import { authService } from '../services/authService';
+import { useSiteAuth } from '../contexts/SiteAuthContext';
 import { partyApiService } from '../services/partyApiService';
-import type { OrganizerDto, PublicPartyListItemDto } from '../types/api';
-import { devLog } from '../utils/logger';
+import type { PublicPartyListItemDto } from '../types/api';
 
 import { PartyListCardLink } from './PartyListCardLink';
 import './PartyListPage.css';
@@ -91,21 +90,14 @@ const getPartyDateTimeRange = (party: PublicPartyListItemDto): string | null => 
   return `${date} ${timeRange}`;
 };
 
-const DownloadAppLink = () => (
-  <Link to={ROUTES.DOWNLOAD} className="party-view-back-btn">
-    Скачать приложение
-  </Link>
-);
-
 export const PartyListPage: React.FC = () => {
   const { partyInfoPageEnabled } = useAppConfig();
   const { ensureConsents } = useConsentGate();
+  const { organizer, checked: authChecked } = useSiteAuth();
   void partyInfoPageEnabled;
   const [parties, setParties] = useState<PublicPartyListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [organizer, setOrganizer] = useState<OrganizerDto | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [filters, setFilters] = useState<PartyFilters>({
     dateFrom: '',
     dateTo: '',
@@ -133,22 +125,10 @@ export const PartyListPage: React.FC = () => {
   }, [loadParties]);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const currentOrganizer = await authService.checkAuth();
-        setOrganizer(currentOrganizer);
-        if (currentOrganizer) {
-          await ensureConsents();
-        }
-      } catch (err) {
-        devLog('[PartyListPage] Auth check failed (non-critical):', err);
-        setOrganizer(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-    checkAuth();
-  }, [ensureConsents]);
+    if (authChecked && organizer) {
+      void ensureConsents();
+    }
+  }, [authChecked, ensureConsents, organizer]);
 
   const handleRetry = () => {
     loadParties();
@@ -235,9 +215,6 @@ export const PartyListPage: React.FC = () => {
   if (loading) {
     return (
       <div className="party-list-page">
-        <div className="party-list-container party-list-header-actions">
-          <DownloadAppLink />
-        </div>
         <LoadingSpinner message="Загрузка списка вечеринок..." />
       </div>
     );
@@ -246,9 +223,6 @@ export const PartyListPage: React.FC = () => {
   if (error) {
     return (
       <div className="party-list-page">
-        <div className="party-list-container party-list-header-actions">
-          <DownloadAppLink />
-        </div>
         <ErrorMessage message={error} onRetry={handleRetry} />
       </div>
     );
@@ -260,20 +234,6 @@ export const PartyListPage: React.FC = () => {
         <div className="party-list-header">
           <h1 className="party-list-title">Вечеринки</h1>
           <div className="party-list-header-actions">
-            {!authLoading &&
-              (organizer ? (
-                <Link to={ROUTES.CABINET} className="party-view-back-btn">
-                  Кабинет
-                </Link>
-              ) : (
-                <Link to={ROUTES.LOGIN} className="party-view-back-btn">
-                  Вход
-                </Link>
-              ))}
-            <DownloadAppLink />
-            <Link to={ROUTES.FEEDBACK} className="party-view-back-btn">
-              Обратная связь
-            </Link>
             <IconButton
               className="party-list-refresh-btn"
               variant="secondary"
@@ -327,8 +287,9 @@ export const PartyListPage: React.FC = () => {
           {isFiltersExpanded && (
             <div className="party-list-filters-content">
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дата от</label>
-                <input
+                <FormInput
+                  id="party-filter-date-from"
+                  label="Дата от"
                   type="date"
                   className="party-list-filters-input"
                   value={filters.dateFrom}
@@ -337,8 +298,9 @@ export const PartyListPage: React.FC = () => {
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дата до</label>
-                <input
+                <FormInput
+                  id="party-filter-date-to"
+                  label="Дата до"
                   type="date"
                   className="party-list-filters-input"
                   value={filters.dateTo}
@@ -346,28 +308,30 @@ export const PartyListPage: React.FC = () => {
                 />
               </div>
 
-              <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Дни недели</label>
+              <div className="party-list-filters-group" role="group" aria-label="Дни недели">
+                <span className="party-list-filters-label">Дни недели</span>
                 <div className="party-list-filters-days">
                   {dayNames.map((name, index) => (
-                    <button
+                    <Button
                       key={index}
-                      type="button"
                       className={`party-list-filters-day ${
                         filters.daysOfWeek.includes(index) ? 'party-list-filters-day--active' : ''
                       }`}
+                      variant={filters.daysOfWeek.includes(index) ? 'primary' : 'secondary'}
+                      size="sm"
+                      aria-pressed={filters.daysOfWeek.includes(index)}
                       onClick={() => handleDayOfWeekToggle(index)}
                     >
                       {name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Таймзона</label>
-                <select
-                  className="party-list-filters-input"
+                <FormSelect
+                  id="party-filter-time-zone"
+                  label="Таймзона"
                   value={filters.timeZone}
                   onChange={(e) => setFilters((prev) => ({ ...prev, timeZone: e.target.value }))}
                 >
@@ -377,13 +341,13 @@ export const PartyListPage: React.FC = () => {
                       {tz.label}
                     </option>
                   ))}
-                </select>
+                </FormSelect>
               </div>
 
               <div className="party-list-filters-group">
-                <label className="party-list-filters-label">Город</label>
-                <select
-                  className="party-list-filters-input"
+                <FormSelect
+                  id="party-filter-city"
+                  label="Город"
                   value={filters.city}
                   onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
                 >
@@ -393,7 +357,7 @@ export const PartyListPage: React.FC = () => {
                       {city}
                     </option>
                   ))}
-                </select>
+                </FormSelect>
               </div>
             </div>
           )}
@@ -482,7 +446,6 @@ export const PartyListPage: React.FC = () => {
           </div>
         )}
       </div>
-      <SiteFooter />
     </div>
   );
 };

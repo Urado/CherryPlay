@@ -15,6 +15,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(clientVersion),
   },
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
       '@cherryplay/components': cherryPlayComponentsSrc,
       '@cherryplay/themes': path.resolve(cherryPlayComponentsSrc, 'themes'),

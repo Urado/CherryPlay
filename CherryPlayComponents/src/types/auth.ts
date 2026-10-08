@@ -3,6 +3,7 @@ import type { ConsentInput } from '../constants/legalDocuments';
 export interface OrganizerDto {
   id: string;
   name: string;
+  role?: 'organizer' | 'admin';
   logoUrl?: string | null;
   links?: Record<string, string> | null;
   defaultPartyThemeId?: string | null;

@@ -285,7 +285,8 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
             <span className="party-editor-dropdown-arrow">{isDropdownOpen ? '▲' : '▼'}</span>
           </div>
         </button>
-        {dropdownMenu && createPortal(dropdownMenu, document.body)}
+        {dropdownMenu &&
+          createPortal(<div data-theme={effectiveThemeId}>{dropdownMenu}</div>, document.body)}
       </div>
       {showApplyButton && (
         <Button

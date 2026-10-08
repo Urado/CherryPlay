@@ -165,9 +165,8 @@ export function getPartyTheme(partyThemeId: PartyThemeId): PartyTheme | undefine
   return PARTY_THEME_REGISTRY[partyThemeId];
 }
 
-export function applyPartyTheme(partyThemeId: PartyThemeId, element?: HTMLElement): void {
-  const target = element || document.documentElement;
-  target.setAttribute('data-theme', partyThemeId);
+export function applyPartyTheme(partyThemeId: PartyThemeId, element: HTMLElement): void {
+  element.setAttribute('data-theme', partyThemeId);
 }
 
 export function isValidPartyTheme(partyThemeId: string): partyThemeId is PartyThemeId {

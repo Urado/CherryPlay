@@ -1,4 +1,4 @@
-import { LegalConsentBlock, areRequiredConsentsAccepted } from '@cherryplay/components';
+import { Button, LegalConsentBlock, areRequiredConsentsAccepted } from '@cherryplay/components';
 import {
   createContext,
   useCallback,
@@ -147,6 +147,7 @@ const ConsentGateOverlay = ({
     <div
       ref={dialogRef}
       className="consent-gate-backdrop"
+      data-shell-theme="dark"
       role="dialog"
       aria-modal="true"
       aria-labelledby="consent-gate-title"
@@ -176,31 +177,34 @@ const ConsentGateOverlay = ({
 
         <div className="consent-gate-actions">
           {needsRefresh ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
               className="consent-gate-primary"
               onClick={() => window.location.reload()}
             >
               Обновить страницу
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
               className="consent-gate-primary"
               disabled={!canContinue || loggingOut}
               onClick={() => void handleContinue()}
             >
               {submitting ? 'Сохранение…' : 'Продолжить'}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="secondary"
             className="consent-gate-secondary"
             disabled={submitting || loggingOut}
             onClick={() => void handleLogout()}
           >
             {loggingOut ? 'Выход…' : 'Выйти'}
-          </button>
+          </Button>
           <Link
             className="consent-gate-tertiary"
             to={ROUTES.LEGAL}

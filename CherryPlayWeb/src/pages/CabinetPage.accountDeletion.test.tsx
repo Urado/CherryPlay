@@ -48,7 +48,7 @@ vi.mock('../services/partyApiService', () => ({
 vi.mock('../contexts/ConsentGateContext', () => ({
   useConsentGate: () => ({
     isOpen: false,
-    ensureConsents: (...args: unknown[]) => ensureConsentsMock(...args),
+    ensureConsents: ensureConsentsMock,
     openWithMissing: vi.fn(),
   }),
 }));
@@ -193,7 +193,6 @@ describe('CabinetPage account deletion / privacy UX', () => {
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog).toBeTruthy();
     expect(screen.getByText('Удалить аккаунт?')).toBeTruthy();
-    // Warning lives under #root, which is inert/aria-hidden while the dialog is open.
     expect(screen.getByRole('status', { hidden: true }).textContent).toContain('необратимо');
 
     fireEvent.click(screen.getByRole('button', { name: 'Удалить навсегда' }));

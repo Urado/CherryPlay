@@ -2,7 +2,6 @@ import { EmailAuthForm } from '@cherryplay/components';
 import { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { SiteFooter } from '../components/SiteFooter';
 import { ROUTES } from '../constants/routes';
 import { authService } from '../services/authService';
 import { isDesktopClientQueryValue } from '../utils/desktopClientMode';
@@ -63,7 +62,6 @@ export const RegisterPage = () => {
           </div>
         </div>
       </div>
-      <SiteFooter />
     </div>
   );
 };

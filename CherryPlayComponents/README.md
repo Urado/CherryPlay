@@ -137,7 +137,7 @@ import { Button } from '@cherryplay/components';
 
 При `iconOnly={true}` обязательны `aria-label` или `aria-labelledby`; иначе в dev-режиме `console.warn`. Для icon-only кнопок предпочтительнее `IconButton`.
 
-`borderless={true}` добавляет класс `cp-button--borderless` — убирает resting/hover border chrome (оставляет 1px transparent box, без сдвига layout). По умолчанию у `ghost`/`secondary` **есть** resting border (`--cp-ui-border`).
+`borderless={true}` добавляет класс `cp-button--borderless` — убирает resting/hover border chrome (оставляет 1px transparent box, без сдвига layout). По умолчанию у `ghost`/`secondary` **есть** resting border (`--ui-border`).
 
 Пример тихого delete: `<Button variant="ghost" tone="danger" hoverable={false} />` — красные icon/border без hover wash.
 
@@ -155,27 +155,18 @@ CSS-классы: `cp-button`, `cp-button--{variant}`, `cp-button--{size}`, оп
 
 #### Дефолтные кнопки shell (out of the box) {#default-shell-buttons}
 
-`Button`, `ButtonLink` и `IconButton` поставляются с **готовыми стилями по умолчанию**: после импорта `primitives.css` компоненты выглядят единообразно **без** локального CSS на каждую кнопку. Это слой **оболочки приложения** (модалки, кабинет, заголовок, редактор вечеринки) — **не** PartyTheme.
+`Button`, `ButtonLink` и `IconButton` поставляются с готовыми стилями. Импорт `primitives.css` подключает их CSS, а атрибут `data-shell-theme="dark"` на корне документа включает общую палитру. Локальный CSS для каждой кнопки не нужен.
 
-**Граница изоляции:** контент вечеринки внутри `PartyDisplay` живёт в изолированных PartyTheme (`data-theme`, `themes/index.css`). Темы **не обязаны** использовать `cp-button` или shell-токены; контракт примитивов на них не распространяется. См. [THEMES.md](../THEMES.md).
+PartyTheme задаёт собственные значения на `data-theme` и не обязан использовать shell-примитивы. Если оболочечный примитив размещён внутри PartyTheme, его семантические токены читаются на элементе и получают локальные значения темы. Для портального контента сохраняйте тематическую обёртку с `data-theme`. Атрибут оболочки `data-shell-theme` не заменяет `data-theme`. Подробнее: [контракт оболочки и PartyTheme](docs/SHELL_THEME.md) и [THEMES.md](../THEMES.md).
 
-| `variant` | Назначение | Дефолт (если приложение не переопределяет токены) |
+| `variant` | Назначение | Токены и значение в общей тёмной теме |
 | --------- | ---------- | ------------------------------------------------- |
-| `primary` | Главное действие (Сохранить, Подтвердить) | Заливка `--cp-accent-primary` (пакетный fallback `#667eea`) |
-| `secondary` | Вторичное действие | Фон `--bg-tertiary`, border `--cp-ui-border`; hover: `--bg-hover` + accent border (`--cp-accent-primary`) |
-| `danger` | Деструктивное действие | Заливка `--cp-accent-danger` = `var(--state-error, #d32f2f)`; переопределите `--state-error` на `:root` при необходимости |
-| `ghost` | Тихое / icon-close / tertiary | Прозрачный фон + resting border `--cp-ui-border`; hover: accent border и цвет (`--cp-accent-primary`), **не** `--bg-hover`. Без обводки — `borderless` |
+| `primary` | Главное действие (Сохранить, Подтвердить) | `--accent-primary` (`#4a9eff`), при наведении `--accent-primary-hover` (`#368eea`) |
+| `secondary` | Вторичное действие | Фон `--bg-tertiary`, граница `--ui-border`; при наведении `--bg-hover` и акцентная граница |
+| `danger` | Деструктивное действие | Заливка и граница `--state-error` (`#d32f2f`) |
+| `ghost` | Тихое / icon-close / tertiary | Прозрачный фон и граница `--ui-border`; при наведении акцентные граница и текст. Без обводки — `borderless` |
 
-Размеры: `sm` (32px), `md` (40px); icon-only — квадрат с тем же размером. Токены задаются в `shell-palette.css` (`--cp-button-*`, `--cp-accent-*`).
-
-**Акцент primary:** пакетный дефолт `#667eea` (`--cp-accent-primary` → `var(--accent-primary, #667eea)`). Потребители переопределяют `--accent-primary` на `:root`:
-
-| Приложение | Файл | `--accent-primary` |
-| ---------- | ---- | -------------------- |
-| CherryPlayWeb | `src/index.css` | `#00ff88` |
-| CherryPlayList | `src/styles/variables.css` | `#4a9eff` |
-
-Примитивы подхватывают значение через `--cp-accent-primary` / `--cp-accent-primary-hover`. Без переопределения остаётся пакетный `#667eea`.
+Размеры: `sm` (32px), `md` (40px); icon-only — квадрат с тем же размером. `shell-palette.css` задаёт общие цвета и геометрию (`--accent-*`, `--state-error`, `--ui-border`, `--cp-button-*`). Приложения могут переопределять эти токены внутри корня с `data-shell-theme="dark"`; PartyTheme задаёт свои значения локально на `data-theme`.
 
 ### ButtonLink
 
@@ -249,7 +240,7 @@ import { Icon, IconButton, InfoIcon } from '@cherryplay/components';
 | `aria-hidden` | `boolean` | `true` |
 | `children` | `ReactNode` (обязателен) | — |
 
-При `shape="circle"`: квадратный hit-box (`width` = `height` по size-токену), `border: 1px solid var(--cp-ui-border)`, `border-radius: 50%`, glyph по центру (класс `cp-icon--circle`).
+При `shape="circle"`: квадратный hit-box (`width` = `height` по size-токену), `border: 1px solid var(--ui-border)`, `border-radius: 50%`, glyph по центру (класс `cp-icon--circle`).
 
 | `InfoIcon` prop | Тип | По умолчанию |
 | --------------- | --- | ------------ |
@@ -301,7 +292,7 @@ CSS-классы: `cp-playback-control`, `cp-playback-control--{size}`, `cp-play
 
 ### Подключение CSS
 
-Примитивы требуют явного импорта стилей **один раз** на уровне shell (точка входа приложения или главный CSS-бандл). Файл `primitives.css` агрегирует палитру и стили компонентов.
+Примитивы требуют явного импорта CSS один раз на уровне приложения. Файл `primitives.css` агрегирует палитру и стили компонентов. Для стандартной тёмной палитры также задайте `data-shell-theme="dark"` на документе или другом корневом элементе приложения.
 
 **Монорепозиторий** (Vite alias `@cherryplay/components` → `src/`):
 
@@ -313,7 +304,9 @@ import '@cherryplay/components/styles/primitives.css';
 
 CherryPlayList импортирует только `primitives.css` до локальных стилей, так как он уже включает shell palette tokens — см. [DEV_SETUP.md](../DEV_SETUP.md).
 
-Без импорта CSS токены (`--cp-button-*`, `--cp-icon-size-*`) и классы `cp-button` / `cp-disclosure` / `cp-icon` не применятся.
+CherryPlayList хранит локальные токены отступов, типографики и режима настройки окон в `src/styles/variables.css`; общие цвета приходят из палитры Components. В CherryPlayWeb локальная таблица переопределений акцента не требуется. Оба приложения задают `data-shell-theme="dark"` в `index.html`.
+
+Без импорта CSS классы примитивов останутся без оформления. Без `data-shell-theme="dark"` компоненты не получат значения общей палитры; потребители могут задать собственные значения CSS-переменных на корне темы.
 
 > **Примечание:** в `package.json` задан `exports`: `"."` → `dist/index`, `"./styles/*"` → `./dist/styles/*`. Канонический импорт CSS — `@cherryplay/components/styles/primitives.css`. В монорепозитории потребители также могут резолвить пакет через Vite/tsconfig alias на `CherryPlayComponents/src/`.
 
@@ -446,9 +439,9 @@ CherryPlayComponents/
 
 ### Палитра оболочки и примитивы
 
-Единая нейтральная тёмная палитра для оболочки (кабинет, список, логин, редактор вечеринки) — `src/styles/shell-palette.css`. Стили UI-примитивов подключаются через `src/styles/primitives.css` (см. раздел [UI-примитивы](#ui-примитивы-shell)).
+Общая тёмная палитра с синим акцентом для оболочки (кабинет, список, логин, редактор вечеринки) — `src/styles/shell-palette.css`. Токены активируются атрибутом `data-shell-theme="dark"`. Стили UI-примитивов подключаются через `src/styles/primitives.css` (см. раздел [UI-примитивы](#ui-примитивы-shell)); архитектурный контракт и инвентаризация описаны в [SHELL_THEME.md](docs/SHELL_THEME.md).
 
-Палитра оболочки определяет CSS переменные на `:root`:
+Палитра оболочки определяет CSS переменные на `[data-shell-theme="dark"]`:
 
 - `--bg-primary`, `--bg-secondary`, `--bg-tertiary`, `--bg-hover` — цвета фона
 - `--text-primary`, `--text-secondary`, `--text-tertiary` — цвета текста
@@ -456,11 +449,11 @@ CherryPlayComponents/
 - `--radius-sm`, `--radius-md`, `--radius-lg` — радиусы скругления
 - `--state-error-bg`, `--state-error-text` — состояния ошибок
 - `--cp-button-*`, `--cp-icon-size-*` — токены примитивов (высота, padding, размеры иконок)
-- `--cp-accent-primary` → `var(--accent-primary, #667eea)`; `--cp-accent-danger` → `var(--state-error, #d32f2f)` — акценты кнопок (переопределяются на `:root` потребителя)
+- Акценты примитивов читают `--accent-primary`, `--accent-primary-hover`, `--state-error` и `--ui-border` непосредственно на элементе кнопки, поэтому локальные значения PartyTheme сохраняют приоритет.
 
 ### PartyTheme (изолированный слой)
 
-PartyTheme **не использует** `cp-button` и не зависит от `primitives.css`. Каждая тема определяет свои CSS переменные через атрибут `data-theme`:
+PartyTheme не зависит от оболочечной палитры. Каждая тема определяет свои CSS переменные через отдельный атрибут `data-theme`:
 
 - `--bg-primary`, `--bg-secondary`, `--bg-tertiary` - цвета фона
 - `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
@@ -468,6 +461,8 @@ PartyTheme **не использует** `cp-button` и не зависит от
 - `--border-color` - цвет границ
 
 Настройки кастомизации передаются через `customizationSettings` в `PartyDisplayData` и автоматически преобразуются в CSS переменные через хук `usePartyThemeVars`.
+
+Оболочечный примитив, если он используется внутри PartyTheme, разрешает семантические CSS-переменные на самом элементе кнопки. Для портального контента тема должна сохранить собственную обёртку `data-theme`; `data-shell-theme` остаётся маркером оболочки.
 
 ## Сборка
 

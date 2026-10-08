@@ -50,7 +50,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isDemoMode) {
-      document.title = 'CherryPlayList (Demo)';
+      document.title = 'CherryPashka List (Demo)';
     }
 
     initializeProjectStoreHistory();

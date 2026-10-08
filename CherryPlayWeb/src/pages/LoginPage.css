@@ -1,5 +1,6 @@
 .login-page {
-  min-height: 100vh;
+  min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
@@ -17,18 +18,13 @@
   box-sizing: border-box;
 }
 
-.login-page .site-footer {
-  margin-top: 0;
-  flex-shrink: 0;
-}
-
 .login-page-notice {
   max-width: 500px;
   width: 100%;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 255, 136, 0.35);
-  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid var(--accent-primary);
+  background: var(--accent-primary-light);
   color: var(--accent-primary);
   font-size: 14px;
   text-align: center;
@@ -149,7 +145,7 @@
 .login-page-form .auth-form-tab--active,
 .login-page-form .email-auth-form-tab--active {
   color: var(--text-primary);
-  border-bottom-color: rgba(0, 255, 136, 0.6);
+  border-bottom-color: var(--accent-primary);
 }
 
 .login-container h1 {
@@ -386,8 +382,8 @@
 }
 
 .login-page-form .password-auth-form-success {
-  background: rgba(0, 255, 136, 0.1);
-  border-color: rgba(0, 255, 136, 0.35);
+  background: var(--accent-primary-light);
+  border-color: var(--accent-primary);
   color: var(--accent-primary);
 }
 

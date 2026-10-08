@@ -105,3 +105,5 @@ applyPartyTheme('sakura', element);
 - `--text-primary`, `--text-secondary`, `--text-tertiary` - цвета текста
 - `--accent-primary` - цвет акцента
 - `--border-color` - цвет границ
+
+Оболочка PartyTheme должна быть локальным элементом компонента или страницы. `applyPartyTheme` требует явный целевой элемент и не меняет `document.documentElement`. Общие примитивы внутри PartyTheme читают переменные этой темы, включая границы, состояния и текст на акценте. Если themed UI использует портал в `document.body`, сохраните атрибут `data-theme` на обёртке портального содержимого. Тема `spring-cross-step` уже делает это для подсказки отменённого трека.

@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Краткая инструкция первого запуска CherryPlayList и выхода в эфир на ChrerryPashkaParty."
+      content="Краткая инструкция первого запуска CherryPlayList и выхода в эфир на CherryPashkaParty."
     />
-    <title>Первый запуск — ChrerryPashkaParty</title>
+    <title>Первый запуск — CherryPashkaParty</title>
+    <script>
+      if (window.location.protocol !== 'file:') {
+        window.location.replace(
+          new URL(`/guide/first-run${window.location.search}${window.location.hash}`, window.location.href).href,
+        );
+      }
+    </script>
     <style>
       :root {
         color-scheme: dark;
@@ -140,7 +147,7 @@
   <body>
     <main>
       <header>
-        <p class="eyebrow">ChrerryPashkaParty</p>
+        <p class="eyebrow">CherryPashkaParty</p>
         <h1>Первый запуск CherryPlayList</h1>
         <p class="intro">
           Создайте вечеринку, опубликуйте плейлист и поделитесь ссылкой с гостями. Для эфира
@@ -154,7 +161,7 @@
           <h2>1. Скачайте и распакуйте приложение</h2>
           <ol>
             <li>
-              Откройте <a href="https://cherrypashkaparty.ru/download">страницу загрузки ChrerryPashkaParty</a>
+              Откройте <a href="https://cherrypashkaparty.ru/download">страницу загрузки CherryPashkaParty</a>
               и скачайте ZIP для Windows.
             </li>
             <li>В Проводнике нажмите ZIP правой кнопкой мыши → <strong>Извлечь всё…</strong>.</li>

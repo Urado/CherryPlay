@@ -72,27 +72,16 @@ export const CabinetPartyList = ({
         >
           <div className="cabinet-party-main">
             <span className="cabinet-party-name">{party.name}</span>
-            <span className="cabinet-party-short">/{party.shortCode}</span>
             <Link
               to={ROUTES.PARTY_VIEW(party.shortCode)}
               target="_blank"
               rel="noopener noreferrer"
-              className="cabinet-party-link"
+              className="cabinet-party-short cabinet-party-link"
+              aria-label={`Открыть вечеринку «${party.name}»`}
             >
-              Открыть
+              /{party.shortCode}
             </Link>
           </div>
-          <PartyLifecycleControls
-            partyLifecycleState={party.partyLifecycleState}
-            isTransitioning={transitioningPartyId === party.id}
-            pendingTransition={transitioningPartyId === party.id ? transitioningTargetState : null}
-            disabled={
-              deletingPartyId === party.id ||
-              togglingPartyId === party.id ||
-              (expandedPartyId === party.id && savingEdit)
-            }
-            onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
-          />
           <div className="cabinet-party-actions">
             {canToggleCatalogVisibility(party.partyLifecycleState) && (
               <label
@@ -108,6 +97,20 @@ export const CabinetPartyList = ({
                 В каталоге
               </label>
             )}
+            <PartyLifecycleControls
+              partyLifecycleState={party.partyLifecycleState}
+              describedById="cabinet-lifecycle-overview"
+              isTransitioning={transitioningPartyId === party.id}
+              pendingTransition={
+                transitioningPartyId === party.id ? transitioningTargetState : null
+              }
+              disabled={
+                deletingPartyId === party.id ||
+                togglingPartyId === party.id ||
+                (expandedPartyId === party.id && savingEdit)
+              }
+              onTransition={(targetState) => onLifecycleTransition(party.id, targetState)}
+            />
             <Button
               type="button"
               variant="secondary"
@@ -121,6 +124,7 @@ export const CabinetPartyList = ({
               type="button"
               variant="danger"
               size="sm"
+              className="cabinet-party-delete"
               loading={deletingPartyId === party.id}
               loadingLabel="Удаление…"
               onClick={() =>

@@ -47,6 +47,8 @@
 
 **`index.css`** — импорт остальных CSS темы; переменные `[data-theme="<theme-id>"]` (фон, текст, акценты, границы, при необходимости `--canceled-track`, `--canceled-track-text`); стили для `.party-display`, заголовка по центру (`.party-display-header`, `.party-display-header-text`, `.party-display-title`), `.party-display-session-indicator`, `.party-display-session-dot`, `.party-playlist-view`, `.party-current-track-display`; скругления блоков плеера и плейлиста (по 8px), gap между ними — в общем CSS или в теме.
 
+Задайте на `[data-theme="<theme-id>"]` также значения семантических алиасов, используемых общими примитивами: `--ui-border`, `--state-error`, `--text-on-accent`, `--accent-primary-hover`, `--bg-disabled` и `--shadow`. Свяжите их с цветами темы. PartyTheme применяется к локальному корню элемента, а не к `document.documentElement`; для тематического портала добавьте собственную обёртку с `data-theme`. Это сохраняет цвета для кнопок, полей, сообщений и ссылок внутри каждой из зарегистрированных тем.
+
 **`playlist.css`** — контейнер плейлиста (border-radius 8px), шапка (иконка, «Плейлист», статистика), список и пустое состояние, вложенные группы. Медиа-запрос для ширины ≤480px по шапке — как в эталоне выше.
 
 **`playlist-item.css`** — строка элемента (базово, hover, current, played, disabled), круг с иконкой/номером (`data-state`), обёртка имени с кликабельной кнопкой разворота и длительностью в конце строки, тултип «Трек отменён». Отступы и размеры — по эталонной сетке. Левая граница-индикатор — цвет для current/played.

@@ -1,3 +1,4 @@
+import { DEFAULT_PARTY_THEME_ID, isValidPartyTheme } from '@cherryplay/components';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -76,6 +77,7 @@ export interface HeaderPartyStatusProps {
 
 export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled = false }) => {
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
+  const projectThemeId = useProjectStore((state) => state.meta.partyThemeId);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
   const lastSyncedPublishParts = usePartyWorkspaceStore((state) => state.lastSyncedPublishParts);
@@ -95,6 +97,9 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   );
   const { networkEnabled } = useOnlineNetworkPolicy();
   const hasLinkedParty = Boolean(linkedParty);
+  const guideThemeId = projectThemeId && isValidPartyTheme(projectThemeId)
+    ? projectThemeId
+    : DEFAULT_PARTY_THEME_ID;
   const publishOutOfSync = usePartyPublishOutOfSync(hasLinkedParty);
 
   const ctaRef = useRef<HTMLButtonElement>(null);
@@ -567,6 +572,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
 
       {panelOpen && guideAnchorRect ? (
         <PartyGoToPlayGuidePanel
+          themeId={guideThemeId}
           anchorRect={guideAnchorRect}
           showGoButton={showGoButton}
           startLabel={panelStartLabel}

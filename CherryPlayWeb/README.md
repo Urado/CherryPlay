@@ -45,7 +45,7 @@ npm run dev
 **Порядок импорта** в `src/main.tsx` (важен для каскада):
 
 1. `@cherryplay/components/styles/primitives.css` — shell palette и стили примитивов
-2. `./index.css` — локальные переопределения (`--accent-primary: #00ff88` и др.)
+2. `./index.css` — базовые стили приложения
 
 Пример:
 
@@ -55,7 +55,7 @@ import './index.css';
 ```
 
 - `primitives.css` подключает базовые токены и классы примитивов (`cp-button`, `cp-button--icon-only`, `cp-disclosure`, `cp-icon`) и shell palette из пакета компонентов.
-- **Дефолтные кнопки shell:** `Button` / `ButtonLink` / `IconButton` из пакета уже стилизованы (пакетный primary `#667eea`; в Web переопределён на `#00ff88` через `index.css`). Варианты `primary`/`secondary`/`danger`/`ghost`. Кастомный CSS на каждую кнопку не нужен. Контент `PartyDisplay` в PartyTheme на этот контракт **не распространяется** — см. [CherryPlayComponents/README.md](../CherryPlayComponents/README.md#default-shell-buttons).
+- **Дефолтные кнопки shell:** `Button` / `ButtonLink` / `IconButton` из пакета используют общий синий акцент `#4a9eff`. Атрибут `data-shell-theme="dark"` на документе включает shell-палитру. PartyTheme продолжает использовать отдельный `data-theme`; см. [контракт оболочки и PartyTheme](../CherryPlayComponents/docs/SHELL_THEME.md).
 - Локальные стили приложения должны переопределять примитивы только **после** импорта `primitives.css`.
 - Если импорт убрать, shared-кнопки и иконки рендерятся без ожидаемого внешнего вида и без корректных токенов палитры.
 

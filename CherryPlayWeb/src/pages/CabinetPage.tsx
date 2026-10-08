@@ -6,7 +6,7 @@ import {
   type OrganizerDto,
 } from '@cherryplay/components';
 import { getDefaultTimeZone, sortPartiesByEventDateDesc } from '@cherryplay/components';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { ConfirmActionDialog } from '../components/ConfirmActionDialog';
@@ -62,7 +62,9 @@ export const CabinetPage = () => {
   const [parties, setParties] = useState<PartyDto[]>([]);
   const [loadingParties, setLoadingParties] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [partiesOpen, setPartiesOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState<'parties' | 'account'>(() =>
+    location.hash === '#account' ? 'account' : 'parties',
+  );
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createForm, setCreateForm] = useState<CreatePartyDto>(emptyForm);
   const [creating, setCreating] = useState(false);
@@ -78,7 +80,6 @@ export const CabinetPage = () => {
   const [themeSelectionError, setThemeSelectionError] = useState<string | null>(null);
   const [lockedThemeCtaUrl, setLockedThemeCtaUrl] = useState<string | null>(null);
   const [deniedToastMessage, setDeniedToastMessage] = useState<string | null>(null);
-  const [accountOpen, setAccountOpen] = useState(() => location.hash === '#account');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -86,7 +87,7 @@ export const CabinetPage = () => {
   const [consentEvents, setConsentEvents] = useState<ConsentEventDto[] | null>(null);
   const [consentUnavailable, setConsentUnavailable] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
-  const accountSectionRef = useRef<HTMLDetailsElement>(null);
+  const accountSectionRef = useRef<HTMLDivElement>(null);
   const deleteAccountDescId = useId();
   const deleteAccountWarningId = useId();
   const { data: themeAccess, error: themeAccessError } = useThemeAccess(
@@ -108,11 +109,50 @@ export const CabinetPage = () => {
   }, []);
 
   useEffect(() => {
-    if (location.hash === '#account') {
-      setAccountOpen(true);
-      accountSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!loading && organizer && location.hash === '#account') {
+      setActiveSection('account');
+      accountSectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     }
-  }, [location.hash]);
+  }, [location.hash, loading, organizer]);
+
+  const handleSectionChange = (section: 'parties' | 'account') => {
+    setActiveSection(section);
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: section === 'account' ? '#account' : '',
+      },
+      { replace: true },
+    );
+  };
+
+  const handleSectionKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    section: 'parties' | 'account',
+  ) => {
+    const sections = ['parties', 'account'] as const;
+    const currentIndex = sections.indexOf(section);
+    const nextIndex =
+      event.key === 'ArrowRight' || event.key === 'ArrowDown'
+        ? (currentIndex + 1) % sections.length
+        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+          ? (currentIndex - 1 + sections.length) % sections.length
+          : event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? sections.length - 1
+              : -1;
+
+    if (nextIndex < 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextSection = sections[nextIndex];
+    handleSectionChange(nextSection);
+    document.getElementById(`cabinet-tab-${nextSection}`)?.focus();
+  };
 
   const loadConsentEvents = useCallback(async () => {
     try {
@@ -128,7 +168,7 @@ export const CabinetPage = () => {
   useEffect(() => {
     const loadOrganizer = async () => {
       try {
-        const currentOrganizer = (await authService.checkAuth());
+        const currentOrganizer = await authService.checkAuth();
         if (!currentOrganizer) {
           navigate(ROUTES.LOGIN);
           return;
@@ -407,19 +447,9 @@ export const CabinetPage = () => {
         <div className="cabinet-header">
           <h1>Мой кабинет</h1>
           <div className="cabinet-header-actions">
-            {organizer.role === 'admin' && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate(ROUTES.ADMIN_ORGANIZERS)}
-              >
-                Админка
-              </Button>
-            )}
             <Button
               type="button"
-              variant="danger"
+              variant="secondary"
               size="sm"
               className="logout-button"
               onClick={handleLogout}
@@ -463,219 +493,257 @@ export const CabinetPage = () => {
           </div>
         </section>
 
-        <details
-          className="cabinet-accordion"
-          open={partiesOpen}
-          onToggle={(e) => setPartiesOpen(e.currentTarget.open)}
-          aria-labelledby="cabinet-parties-heading"
-        >
-          <summary className="cabinet-accordion-summary">
-            <span className="cabinet-accordion-summary-row">
-              <h2 id="cabinet-parties-heading" className="cabinet-section-title">
-                Мои вечеринки
-              </h2>
-              <Button
-                type="button"
-                variant={showCreateForm ? 'secondary' : 'primary'}
-                size="sm"
-                className="cabinet-create-party-btn"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setPartiesOpen(true);
-                  setEditingParty(null);
-                  setShowCreateForm(!showCreateForm);
-                  if (showCreateForm) setCreateForm(emptyForm);
-                }}
-              >
-                {showCreateForm ? 'Отмена' : 'Создать вечеринку'}
-              </Button>
-            </span>
-          </summary>
-
-          <div className="cabinet-accordion-body">
-            {error && (
-              <div className="cabinet-error" role="alert">
-                {error}
-              </div>
-            )}
-            {themeSelectionError && lockedThemeCtaUrl && (
-              <div className="cabinet-error" role="alert">
-                <div>{themeSelectionError}</div>
-                <a href={lockedThemeCtaUrl} target="_blank" rel="noopener noreferrer">
-                  Написать администратору
-                </a>
-              </div>
-            )}
-            {themeSelectionError && !lockedThemeCtaUrl && (
-              <div className="cabinet-error" role="alert">
-                {themeSelectionError}
-              </div>
-            )}
-
-            {showCreateForm && (
-              <CabinetPartyForm
-                editingParty={null}
-                editForm={editForm}
-                createForm={createForm}
-                setEditForm={setEditForm}
-                setCreateForm={setCreateForm}
-                savingEdit={false}
-                creating={creating}
-                themeAccess={themeAccess}
-                themeAccessError={themeAccessError}
-                onSelectLockedTheme={handleSelectLockedTheme}
-                onSubmit={handleCreateSubmit}
-                onCancel={() => {
-                  setShowCreateForm(false);
-                  setCreateForm(emptyForm);
-                }}
-              />
-            )}
-
-            {loadingParties ? (
-              <p className="cabinet-loading">Загрузка списка…</p>
-            ) : (
-              <CabinetPartyList
-                parties={parties}
-                togglingPartyId={togglingPartyId}
-                deletingPartyId={deletingPartyId}
-                expandedPartyId={expandedPartyId}
-                editingParty={editingParty}
-                editForm={editForm}
-                setEditForm={setEditForm}
-                savingEdit={savingEdit}
-                themeAccess={themeAccess}
-                themeAccessError={themeAccessError}
-                onSelectLockedTheme={handleSelectLockedTheme}
-                onEdit={handleEditOpen}
-                onEditSubmit={handleEditSubmit}
-                onEditCancel={handleEditCancel}
-                onToggleCatalog={handleToggleCatalog}
-                onDeleteConfirm={handleDeleteConfirm}
-                transitioningPartyId={transitioningPartyId}
-                transitioningTargetState={transitioningTargetState}
-                onLifecycleTransition={handleLifecycleTransition}
-              />
-            )}
-            {!loadingParties && parties.length === 0 && !showCreateForm && !expandedPartyId && (
-              <p className="cabinet-empty">Нет вечеринок. Создайте первую.</p>
-            )}
-          </div>
-        </details>
-
-        <details
-          ref={accountSectionRef}
-          id="account"
-          className="cabinet-accordion cabinet-account-section"
-          aria-labelledby="cabinet-account-heading"
-          open={accountOpen}
-          onToggle={(event) => setAccountOpen((event.target as HTMLDetailsElement).open)}
-        >
-          <summary className="cabinet-accordion-summary">
-            <h2 id="cabinet-account-heading" className="cabinet-section-title">
+        <div className="cabinet-workspace">
+          <div className="cabinet-sidebar" role="tablist" aria-label="Разделы кабинета">
+            <button
+              type="button"
+              id="cabinet-tab-parties"
+              role="tab"
+              aria-controls="cabinet-parties-panel"
+              aria-selected={activeSection === 'parties'}
+              tabIndex={activeSection === 'parties' ? 0 : -1}
+              className={`cabinet-sidebar-button ${activeSection === 'parties' ? 'is-active' : ''}`}
+              onClick={() => handleSectionChange('parties')}
+              onKeyDown={(event) => handleSectionKeyDown(event, 'parties')}
+            >
+              <span>Вечеринки</span>
+              <span className="cabinet-sidebar-count">{parties.length}</span>
+            </button>
+            <button
+              type="button"
+              id="cabinet-tab-account"
+              role="tab"
+              aria-controls="account"
+              aria-selected={activeSection === 'account'}
+              tabIndex={activeSection === 'account' ? 0 : -1}
+              className={`cabinet-sidebar-button ${activeSection === 'account' ? 'is-active' : ''}`}
+              onClick={() => handleSectionChange('account')}
+              onKeyDown={(event) => handleSectionKeyDown(event, 'account')}
+            >
               Аккаунт
-            </h2>
-          </summary>
-          <div className="cabinet-accordion-body">
-            <ChangePasswordForm
-              authService={authService}
-              onSuccess={handleChangePasswordSuccess}
-              layout="embedded"
-            />
+            </button>
+          </div>
 
-            <section className="cabinet-privacy" aria-labelledby="cabinet-privacy-heading">
-              <h3 id="cabinet-privacy-heading" className="cabinet-privacy-title">
-                Конфиденциальность
-              </h3>
-              <p className="cabinet-privacy-text">
-                Запросы субъекта ПДн (доступ, уточнение, отзыв, уничтожение) — через{' '}
-                <Link to={ROUTES.LEGAL}>реквизиты и контакты</Link> или письмо на{' '}
-                <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`}>{PRIVACY_CONTACT_EMAIL}</a>.
-              </p>
-
-              {consentUnavailable && (
-                <p className="cabinet-privacy-text cabinet-privacy-text--muted">
-                  Журнал согласий сейчас недоступен на сервере. Отзыв — через privacy-канал.
-                </p>
-              )}
-
-              {consentEvents && (
-                <div className="cabinet-privacy-consents">
-                  <p className="cabinet-privacy-text">Принятые документы (последнее решение):</p>
-                  <ul className="cabinet-privacy-list">
-                    {REQUIRED_CONSENT_DOCUMENTS.map((doc) => {
-                      const latest = consentEvents
-                        .filter((event) => event.legalDocumentVersionId === doc.versionId)
-                        .sort(
-                          (a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime(),
-                        )[0];
-                      return (
-                        <li key={doc.versionId}>
-                          {doc.title}: {formatConsentDecisionLabel(latest?.decision)}
-                          {latest ? ` (${new Date(latest.eventAt).toLocaleDateString()})` : ''}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    loading={withdrawing}
-                    disabled={withdrawing || deletingAccount}
-                    onClick={openWithdrawDialog}
-                  >
-                    Отозвать активные согласия
-                  </Button>
-                </div>
-              )}
-
-              {privacyError && (
-                <p className="cabinet-privacy-error" role="alert">
-                  {privacyError}
-                </p>
-              )}
-
-              <div className="cabinet-privacy-delete">
-                <p id={deleteAccountDescId} className="cabinet-privacy-text">
-                  Удаление аккаунта обезличивает профиль; вечеринки могут остаться в каталоге без
-                  ваших контактов. Вход станет невозможен.
-                </p>
-                {deleteDialogOpen && (
-                  <p
-                    id={deleteAccountWarningId}
-                    className="cabinet-privacy-warning"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    Подтвердите удаление в диалоге: действие необратимо.
+          <div className="cabinet-panels">
+            <section
+              id="cabinet-parties-panel"
+              role="tabpanel"
+              aria-labelledby="cabinet-tab-parties"
+              tabIndex={0}
+              className="cabinet-panel cabinet-parties-panel"
+              hidden={activeSection !== 'parties'}
+            >
+              <div className="cabinet-panel-heading">
+                <div className="cabinet-panel-title-group">
+                  <h2 id="cabinet-parties-heading" className="cabinet-section-title">
+                    Мои вечеринки
+                  </h2>
+                  <p id="cabinet-lifecycle-overview" className="cabinet-panel-description">
+                    Статус вечеринки и видимость в каталоге настраиваются отдельно.
                   </p>
-                )}
-                <div className="cabinet-privacy-delete-actions">
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    loading={deletingAccount}
-                    disabled={deletingAccount}
-                    aria-describedby={
-                      deleteDialogOpen
-                        ? `${deleteAccountDescId} ${deleteAccountWarningId}`
-                        : deleteAccountDescId
-                    }
-                    onClick={() => {
-                      setPrivacyError(null);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    Удалить аккаунт
-                  </Button>
                 </div>
+                <Button
+                  type="button"
+                  variant={showCreateForm ? 'secondary' : 'primary'}
+                  size="sm"
+                  className="cabinet-create-party-btn"
+                  onClick={() => {
+                    setEditingParty(null);
+                    setShowCreateForm(!showCreateForm);
+                    if (showCreateForm) setCreateForm(emptyForm);
+                  }}
+                >
+                  {showCreateForm ? 'Отмена' : 'Создать вечеринку'}
+                </Button>
+              </div>
+
+              <div className="cabinet-accordion-body">
+                {error && (
+                  <div className="cabinet-error" role="alert">
+                    {error}
+                  </div>
+                )}
+                {themeSelectionError && lockedThemeCtaUrl && (
+                  <div className="cabinet-error" role="alert">
+                    <div>{themeSelectionError}</div>
+                    <a href={lockedThemeCtaUrl} target="_blank" rel="noopener noreferrer">
+                      Написать администратору
+                    </a>
+                  </div>
+                )}
+                {themeSelectionError && !lockedThemeCtaUrl && (
+                  <div className="cabinet-error" role="alert">
+                    {themeSelectionError}
+                  </div>
+                )}
+
+                {showCreateForm && (
+                  <CabinetPartyForm
+                    editingParty={null}
+                    editForm={editForm}
+                    createForm={createForm}
+                    setEditForm={setEditForm}
+                    setCreateForm={setCreateForm}
+                    savingEdit={false}
+                    creating={creating}
+                    themeAccess={themeAccess}
+                    themeAccessError={themeAccessError}
+                    onSelectLockedTheme={handleSelectLockedTheme}
+                    onSubmit={handleCreateSubmit}
+                    onCancel={() => {
+                      setShowCreateForm(false);
+                      setCreateForm(emptyForm);
+                    }}
+                  />
+                )}
+
+                {loadingParties ? (
+                  <p className="cabinet-loading">Загрузка списка…</p>
+                ) : (
+                  <CabinetPartyList
+                    parties={parties}
+                    togglingPartyId={togglingPartyId}
+                    deletingPartyId={deletingPartyId}
+                    expandedPartyId={expandedPartyId}
+                    editingParty={editingParty}
+                    editForm={editForm}
+                    setEditForm={setEditForm}
+                    savingEdit={savingEdit}
+                    themeAccess={themeAccess}
+                    themeAccessError={themeAccessError}
+                    onSelectLockedTheme={handleSelectLockedTheme}
+                    onEdit={handleEditOpen}
+                    onEditSubmit={handleEditSubmit}
+                    onEditCancel={handleEditCancel}
+                    onToggleCatalog={handleToggleCatalog}
+                    onDeleteConfirm={handleDeleteConfirm}
+                    transitioningPartyId={transitioningPartyId}
+                    transitioningTargetState={transitioningTargetState}
+                    onLifecycleTransition={handleLifecycleTransition}
+                  />
+                )}
+                {!loadingParties && parties.length === 0 && !showCreateForm && !expandedPartyId && (
+                  <p className="cabinet-empty">Нет вечеринок. Создайте первую.</p>
+                )}
+              </div>
+            </section>
+
+            <section
+              id="account"
+              ref={accountSectionRef}
+              role="tabpanel"
+              aria-labelledby="cabinet-tab-account"
+              tabIndex={0}
+              className="cabinet-panel cabinet-account-section"
+              hidden={activeSection !== 'account'}
+            >
+              <h2 id="cabinet-account-heading" className="cabinet-section-title">
+                Аккаунт
+              </h2>
+              <div className="cabinet-accordion-body">
+                <ChangePasswordForm
+                  authService={authService}
+                  onSuccess={handleChangePasswordSuccess}
+                  layout="embedded"
+                />
+
+                <section className="cabinet-privacy" aria-labelledby="cabinet-privacy-heading">
+                  <h3 id="cabinet-privacy-heading" className="cabinet-privacy-title">
+                    Конфиденциальность
+                  </h3>
+                  <p className="cabinet-privacy-text">
+                    Запросы субъекта ПДн (доступ, уточнение, отзыв, уничтожение) — через{' '}
+                    <Link to={ROUTES.LEGAL}>реквизиты и контакты</Link> или письмо на{' '}
+                    <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`}>{PRIVACY_CONTACT_EMAIL}</a>.
+                  </p>
+
+                  {consentUnavailable && (
+                    <p className="cabinet-privacy-text cabinet-privacy-text--muted">
+                      Журнал согласий сейчас недоступен на сервере. Отзыв — через privacy-канал.
+                    </p>
+                  )}
+
+                  {consentEvents && (
+                    <div className="cabinet-privacy-consents">
+                      <p className="cabinet-privacy-text">
+                        Принятые документы (последнее решение):
+                      </p>
+                      <ul className="cabinet-privacy-list">
+                        {REQUIRED_CONSENT_DOCUMENTS.map((doc) => {
+                          const latest = consentEvents
+                            .filter((event) => event.legalDocumentVersionId === doc.versionId)
+                            .sort(
+                              (a, b) =>
+                                new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime(),
+                            )[0];
+                          return (
+                            <li key={doc.versionId}>
+                              {doc.title}: {formatConsentDecisionLabel(latest?.decision)}
+                              {latest ? ` (${new Date(latest.eventAt).toLocaleDateString()})` : ''}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        loading={withdrawing}
+                        disabled={withdrawing || deletingAccount}
+                        onClick={openWithdrawDialog}
+                      >
+                        Отозвать активные согласия
+                      </Button>
+                    </div>
+                  )}
+
+                  {privacyError && (
+                    <p className="cabinet-privacy-error" role="alert">
+                      {privacyError}
+                    </p>
+                  )}
+
+                  <div className="cabinet-privacy-delete">
+                    <p id={deleteAccountDescId} className="cabinet-privacy-text">
+                      Удаление аккаунта обезличивает профиль; вечеринки могут остаться в каталоге
+                      без ваших контактов. Вход станет невозможен.
+                    </p>
+                    {deleteDialogOpen && (
+                      <p
+                        id={deleteAccountWarningId}
+                        className="cabinet-privacy-warning"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        Подтвердите удаление в диалоге: действие необратимо.
+                      </p>
+                    )}
+                    <div className="cabinet-privacy-delete-actions">
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        loading={deletingAccount}
+                        disabled={deletingAccount}
+                        aria-describedby={
+                          deleteDialogOpen
+                            ? `${deleteAccountDescId} ${deleteAccountWarningId}`
+                            : deleteAccountDescId
+                        }
+                        onClick={() => {
+                          setPrivacyError(null);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        Удалить аккаунт
+                      </Button>
+                    </div>
+                  </div>
+                </section>
               </div>
             </section>
           </div>
-        </details>
+        </div>
       </div>
 
       <ConfirmActionDialog

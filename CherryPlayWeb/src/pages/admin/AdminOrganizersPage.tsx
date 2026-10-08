@@ -1,3 +1,4 @@
+import { Button, ErrorMessage, FormInput } from '@cherryplay/components';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -84,19 +85,18 @@ export const AdminOrganizersPage = () => {
       </div>
 
       <div className="admin-toolbar">
-        <input
+        <FormInput
+          label="Поиск организаторов"
+          id="admin-organizer-search"
           type="search"
           value={queryInput}
           onChange={(e) => setQueryInput(e.target.value)}
           placeholder="Поиск по имени или email"
-          aria-label="Поиск организаторов"
         />
       </div>
 
       {error && (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
+        <ErrorMessage message={error} />
       )}
 
       {loading ? (
@@ -142,25 +142,29 @@ export const AdminOrganizersPage = () => {
       )}
 
       <div className="admin-pagination">
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           type="button"
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page <= 1 || loading}
           aria-label="Предыдущая страница"
         >
           ←
-        </button>
+        </Button>
         <span>
           Страница {page} из {totalPages}
         </span>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           type="button"
           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           disabled={page >= totalPages || loading}
           aria-label="Следующая страница"
         >
           →
-        </button>
+        </Button>
       </div>
     </div>
   );
