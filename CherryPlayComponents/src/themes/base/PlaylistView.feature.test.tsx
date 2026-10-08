@@ -142,7 +142,7 @@ describe('base PlaylistView group display', () => {
 
     const rows = Array.from(
       document.querySelectorAll('.party-playlist-item--track > .party-playlist-item-row'),
-    ) as HTMLElement[];
+    );
     expect(rows).toHaveLength(2);
     expect(rows[0]?.style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
     expect(rows[1]?.style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
