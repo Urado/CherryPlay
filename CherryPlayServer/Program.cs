@@ -17,8 +17,8 @@ using CherryPlayServer.Core.Authorization;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Options;
 using CherryPlayServer.Infrastructure.Health;
+using CherryPlayServer.Infrastructure.OpenApi;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -36,7 +36,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options => options.DocumentFilter<MetricsEndpointDocumentFilter>());
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", timeout: TimeSpan.FromSeconds(3));
 builder.Services.AddSignalR();
@@ -368,19 +368,12 @@ app.UseAuthorization();
 app.UseMiddleware<ConsentGateMiddleware>();
 
 app.MapControllers();
-app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
-{
-    ResponseWriter = async (context, report) =>
-    {
-        context.Response.ContentType = "application/json";
-        var status = report.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
-            ? "Healthy"
-            : "Unhealthy";
-        await context.Response.WriteAsync($"{{\"status\":\"{status}\"}}");
-    }
-});
 app.MapHub<PartyHub>("/partyHub").RequireRateLimiting("signalr");
-app.MapMetrics();
+app.MapMetrics().WithMetadata(
+    new HttpMethodMetadata(["GET"]),
+    new EndpointNameMetadata("GetMetrics"),
+    new EndpointSummaryAttribute("Get Prometheus metrics"),
+    new EndpointDescriptionAttribute("Returns application and runtime metrics in Prometheus exposition format."));
 
 app.Run();
 

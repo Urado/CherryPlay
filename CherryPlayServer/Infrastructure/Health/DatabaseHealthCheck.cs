@@ -11,6 +11,7 @@ public sealed class DatabaseHealthCheck(AppDbContext dbContext) : IHealthCheck
     {
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
             return canConnect
                 ? HealthCheckResult.Healthy()
