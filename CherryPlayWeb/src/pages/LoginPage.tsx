@@ -35,7 +35,7 @@ const DesktopReturnToAppNotice = ({ returnUrl }: { returnUrl: string }) => {
         </div>
         <p className="login-page-return-fallback">
           Если приложение не открылось автоматически,{' '}
-          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashka List</a>.
+          <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashkaParty</a>.
         </p>
       </div>
     </div>
@@ -129,7 +129,7 @@ export const LoginPage = () => {
     const shouldClearPassword = passwordChangedNotice && state?.passwordChanged;
     const shouldClearDeleted = accountDeletedNotice && state?.accountDeleted;
     if (!shouldClearPassword && !shouldClearDeleted) return;
-    navigate(location.pathname, { replace: true });
+    void navigate(location.pathname, { replace: true });
   }, [accountDeletedNotice, location.pathname, location.state, navigate, passwordChangedNotice]);
 
   const handleLoginSuccess = async () => {
@@ -142,7 +142,7 @@ export const LoginPage = () => {
     if (consentResult === 'logout') {
       return;
     }
-    navigate(ROUTES.CABINET);
+    await navigate(ROUTES.CABINET);
   };
 
   const handleDesktopAuthSuccess = async (code: string) => {
@@ -225,7 +225,7 @@ export const LoginPage = () => {
             </div>
           )}
           <div className="login-page-session-continue login-page-form">
-            <h1 className="login-page-session-continue-title">Вход в CherryPashka List</h1>
+            <h1 className="login-page-session-continue-title">Вход в CherryPashkaParty</h1>
             <p className="login-page-session-continue-description">
               Вы уже вошли в CherryPlay. Нажмите «Войти», чтобы открыть приложение.
             </p>
@@ -282,7 +282,9 @@ export const LoginPage = () => {
           description="Войдите, чтобы управлять вечеринками"
           authService={authService}
           oauthEnabled={oauthEnabled}
-          onLoginSuccess={handleLoginSuccess}
+          onLoginSuccess={() => {
+            void handleLoginSuccess();
+          }}
           onDesktopAuthSuccess={
             desktopMode
               ? (code) => {
@@ -290,7 +292,9 @@ export const LoginPage = () => {
                 }
               : undefined
           }
-          onForgotPassword={() => navigate(ROUTES.FORGOT_PASSWORD)}
+          onForgotPassword={() => {
+            void navigate(ROUTES.FORGOT_PASSWORD);
+          }}
           className="login-page-form"
         />
       </div>

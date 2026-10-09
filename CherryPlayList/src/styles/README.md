@@ -31,7 +31,7 @@ src/styles/
 
 Все стили импортируются через `src/styles/index.css` в `App.tsx`.
 
-Shell palette активируется атрибутом `data-shell-theme="dark"` в `index.html`. `entry.tsx` импортирует сначала `styles/index.css`, чей первый импорт — `@cherryplay/components/styles/primitives.css`, затем компонентные стили и после них PartyTheme. Общие токены подключаются до локальных таблиц приложения. `variables.css` содержит только токены CherryPashka List для типографики, отступов и режима настройки окон. `src/theme/theme.ts` и `src/theme/generateCSS.ts` не подключены к runtime и не являются источниками отображаемых цветов.
+Shell palette активируется атрибутом `data-shell-theme="dark"` в `index.html`. `entry.tsx` импортирует сначала `styles/index.css`, чей первый импорт — `@cherryplay/components/styles/primitives.css`, затем компонентные стили и после них PartyTheme. Общие токены подключаются до локальных таблиц приложения. `variables.css` содержит только токены CherryPashkaParty для типографики, отступов и режима настройки окон. `src/theme/theme.ts` и `src/theme/generateCSS.ts` не подключены к runtime и не являются источниками отображаемых цветов.
 
 PartyTheme подключается отдельно через `@cherryplay/components/themes/index.css`; атрибут `data-theme` задаёт независимые цвета каждой PartyTheme. Порталы с тематическим содержимым должны иметь собственную обёртку с `data-theme`. Shell-токены не должны заменять переменные PartyTheme.
 

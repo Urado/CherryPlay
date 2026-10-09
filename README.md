@@ -37,7 +37,7 @@ Electron (organizer)  →  API + SignalR (.NET 9)  →  Web (guests)
 
 ![Guest party page](docs/resume/party-live.png)
 
-**Organizer (CherryPashka List web mode)**
+**Organizer (CherryPashkaParty web mode)**
 
 ![Desktop organizer](docs/resume/desktop-organizer.png)
 
@@ -46,7 +46,7 @@ Capture notes: [docs/resume/README.md](docs/resume/README.md).
 ## Projects
 
 - **CherryPlayServer** — Backend (.NET 9): REST + SignalR, EF/PostgreSQL, JWT/OAuth
-- **CherryPashka List** — Desktop (Electron) for organizers; project and technical name: `CherryPlayList`; optional AIMP via named pipe
+- **CherryPashkaParty** — Desktop (Electron) for organizers; project and technical name: `CherryPlayList`; optional AIMP via named pipe
 - **CherryPlayWeb** — Web app for guests (catalog + party pages)
 - **CherryPlayComponents** — React playlist/theme components
 - **CherryPlayAimpPlugin** — Native AIMP plugin (Windows x64): read-only NDJSON bridge `\\.\pipe\cherryplay-aimp-v1`
@@ -98,7 +98,7 @@ npm install
 npm run dev
 ```
 
-**CherryPashka List (десктопное приложение):**
+**CherryPashkaParty (десктопное приложение):**
 
 ```bash
 cd CherryPlayList

@@ -55,9 +55,9 @@ async function removePath(target, attempts = 8) {
 function collectTargets(version) {
   const dirs = ['win-unpacked', 'linux-unpacked', 'mac', 'mac-arm64', 'mac-universal'];
   const artifacts = [
-    `CherryPashkaList-${version}-x64.zip`,
-    `CherryPashkaList-${version}-x64-mac.zip`,
-    `CherryPashkaList-${version}-arm64-mac.zip`,
+    `CherryPashkaParty-${version}-x64.zip`,
+    `CherryPashkaParty-${version}-x64-mac.zip`,
+    `CherryPashkaParty-${version}-arm64-mac.zip`,
     `CherryPlayList-${version}-x64.zip`,
     `CherryPlayList-${version}-x64.dmg`,
     `CherryPlayList-${version}-arm64.dmg`,

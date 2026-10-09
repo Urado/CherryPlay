@@ -10,14 +10,14 @@ const buildRelease = (tagName: string, options?: { prerelease?: boolean; assetVe
   tag_name: tagName,
   assets: [
     {
-      name: options?.assetName ?? `CherryPashkaList-${options?.assetVersion ?? tagName.replace(/^player-v/, '')}-x64.zip`,
+      name: options?.assetName ?? `CherryPashkaParty-${options?.assetVersion ?? tagName.replace(/^player-v/, '')}-x64.zip`,
       browser_download_url: options?.downloadUrl ?? 'https://github.com/Urado/CherryPlay/releases/download/player.zip',
     },
   ],
 });
 
 const buildResponse = (ok: boolean, body: unknown): Response =>
-  ({ ok, json: async () => body }) as Response;
+  ({ ok, json: () => Promise.resolve(body) }) as Response;
 
 describe('desktopUpdateService', () => {
   it('compares stable and prerelease semantic versions', () => {
@@ -57,7 +57,7 @@ describe('desktopUpdateService', () => {
       buildRelease(`web-v${index}.0.0`),
     );
     const fetchReleases = jest
-      .fn()
+      .fn<Promise<Response>, [RequestInfo | URL, RequestInit?]>()
       .mockResolvedValueOnce(buildResponse(true, firstPage))
       .mockResolvedValueOnce(buildResponse(true, [buildRelease('player-v1.0.0')]));
 
@@ -65,16 +65,10 @@ describe('desktopUpdateService', () => {
       success: true,
       update: { version: '1.0.0' },
     });
-    expect(fetchReleases).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining('per_page=100&page=1'),
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    );
-    expect(fetchReleases).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining('per_page=100&page=2'),
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    );
+    expect(fetchReleases.mock.calls[0][0]).toContain('per_page=100&page=1');
+    expect(fetchReleases.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(fetchReleases.mock.calls[1][0]).toContain('per_page=100&page=2');
+    expect(fetchReleases.mock.calls[1][1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('traverses more than ten full pages before selecting the highest release', async () => {

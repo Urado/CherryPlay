@@ -1264,7 +1264,7 @@ Plugin exports an object with methods `init(api)` and `destroy()`. API includes 
 - `primitives.css` already includes shell palette tokens and is sufficient for correct `cp-button` + `cp-button--icon-only` appearance.
 - CherryPlayList imports shared `primitives.css` before app-specific variables; shared colors are defined by the Components shell palette and `variables.css` contains List-only tokens.
 - `entry.tsx` imports PartyTheme styles after the shared shell and List styles. Registered PartyThemes provide local aliases for shared primitive colors; themed portal content carries an explicit `data-theme` wrapper. `applyPartyTheme` requires a root element and never sets the document theme.
-- The desktop display name is **CherryPashka List**. Project, package, storage, deep-link, API, and release asset identifiers retain their existing technical names.
+- The desktop display name is **CherryPashkaParty**. The project name and technical identifiers such as storage and deep-link names retain their existing values, including `CherryPlayList`.
 
 ### 9.1.1 Theme System
 

@@ -32,17 +32,17 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-app.setName('CherryPashka List');
+app.setName('CherryPashkaParty');
 const iconDirectory = app.isPackaged
   ? path.join(process.resourcesPath, 'icons')
   : path.join(getDevProjectRoot(), 'build');
 const windowIcon = path.join(iconDirectory, process.platform === 'win32' ? 'icon.ico' : 'icon.png');
 
-function createWindow(): void {
+const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: 'CherryPashka List',
+    title: 'CherryPashkaParty',
     icon: windowIcon,
     minWidth: APP_MIN_WINDOW_WIDTH,
     minHeight: APP_MIN_WINDOW_HEIGHT,
@@ -56,17 +56,17 @@ function createWindow(): void {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    void mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
     const indexHtmlPath = path.join(app.getAppPath(), 'dist/index.html');
-    mainWindow.loadFile(indexHtmlPath);
+    void mainWindow.loadFile(indexHtmlPath);
   }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-}
+};
 
 const PROTOCOL = 'cherryplaylist';
 
@@ -80,7 +80,7 @@ if (process.defaultApp) {
 
 registerCherryplayAudioScheme();
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   app.dock?.setIcon(path.join(iconDirectory, 'icon.png'));
   registerCherryplayAudioProtocolHandler();
 

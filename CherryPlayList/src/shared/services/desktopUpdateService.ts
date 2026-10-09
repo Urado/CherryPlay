@@ -20,7 +20,9 @@ interface GitHubRelease {
 const RELEASES_URL = 'https://api.github.com/repos/Urado/CherryPlay/releases?per_page=100';
 const REQUEST_TIMEOUT_MS = 10_000;
 const TAG_PATTERN = /^player-v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
-const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
+const CORE_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const VERSION_WITH_PRERELEASE_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-(.*)$/;
+const PRERELEASE_PATTERN = /^[0-9A-Za-z.-]+$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -38,11 +40,13 @@ const isRelease = (value: unknown): value is GitHubRelease =>
   value.assets.every(isAsset);
 
 const parseVersion = (version: string): { core: string[]; prerelease: string[] } | null => {
-  const match = VERSION_PATTERN.exec(version);
+  const match = CORE_VERSION_PATTERN.exec(version) ?? VERSION_WITH_PRERELEASE_PATTERN.exec(version);
   if (!match) return null;
+  const prerelease = match[4];
+  if (prerelease !== undefined && (!prerelease || !PRERELEASE_PATTERN.test(prerelease))) return null;
   return {
     core: [match[1], match[2], match[3]],
-    prerelease: match[4] ? match[4].split('.') : [],
+    prerelease: prerelease ? prerelease.split('.') : [],
   };
 };
 
@@ -122,7 +126,7 @@ export const checkLatestDesktopUpdate = async (
       const match = TAG_PATTERN.exec(release.tag_name);
       if (!match) return [];
       const version = `${match[1]}.${match[2]}.${match[3]}`;
-      const assetNames = [`CherryPashkaList-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+      const assetNames = [`CherryPashkaParty-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
       if (!release.assets.some((asset) => assetNames.includes(asset.name) && isTrustedDownloadUrl(asset.browser_download_url))) return [];
       return [{ version }];
     });

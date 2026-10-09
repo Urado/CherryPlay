@@ -8,8 +8,8 @@ const makeRelease = (overrides: Record<string, unknown> = {}) => ({
   published_at: '2026-10-01T12:00:00Z',
   assets: [
     {
-      name: 'CherryPashkaList-0.6.4-x64.zip',
-      browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.6.4/CherryPashkaList-0.6.4-x64.zip',
+      name: 'CherryPashkaParty-0.6.4-x64.zip',
+      browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.6.4/CherryPashkaParty-0.6.4-x64.zip',
     },
   ],
   ...overrides,
@@ -28,8 +28,8 @@ describe('getLatestDesktopRelease', () => {
           published_at: '2026-10-02T12:00:00Z',
           assets: [
             {
-              name: 'CherryPashkaList-0.7.0-x64.zip',
-              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.7.0/CherryPashkaList-0.7.0-x64.zip',
+              name: 'CherryPashkaParty-0.7.0-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.7.0/CherryPashkaParty-0.7.0-x64.zip',
             },
           ],
         }),
@@ -38,8 +38,8 @@ describe('getLatestDesktopRelease', () => {
           published_at: '2026-09-02T12:00:00Z',
           assets: [
             {
-              name: 'CherryPashkaList-0.9.0-x64.zip',
-              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPashkaList-0.9.0-x64.zip',
+              name: 'CherryPashkaParty-0.9.0-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPashkaParty-0.9.0-x64.zip',
             },
           ],
         }),
@@ -48,8 +48,8 @@ describe('getLatestDesktopRelease', () => {
           published_at: '2026-10-04T12:00:00Z',
           assets: [
             {
-              name: 'CherryPashkaList-0.7.1-x64.zip',
-              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPashkaList-0.7.1-x64.zip',
+              name: 'CherryPashkaParty-0.7.1-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPashkaParty-0.7.1-x64.zip',
             },
           ],
         }),
@@ -61,7 +61,7 @@ describe('getLatestDesktopRelease', () => {
     await expect(getLatestDesktopRelease(fetchReleases)).resolves.toEqual({
       version: '0.9.0',
       downloadUrl:
-        'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPashkaList-0.9.0-x64.zip',
+        'https://github.com/Urado/CherryPlay/releases/download/player-v0.9.0/CherryPashkaParty-0.9.0-x64.zip',
     });
   });
 
@@ -160,8 +160,8 @@ describe('getLatestDesktopRelease', () => {
           tag_name: 'player-v1.0.0',
           assets: [
             {
-              name: 'CherryPashkaList-0.9.9-x64.zip',
-              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPashkaList-0.9.9-x64.zip',
+              name: 'CherryPashkaParty-0.9.9-x64.zip',
+              browser_download_url: 'https://github.com/Urado/CherryPlay/releases/download/player-v1.0.0/CherryPashkaParty-0.9.9-x64.zip',
             },
           ],
         }),
@@ -189,8 +189,8 @@ describe('getLatestDesktopRelease', () => {
         makeRelease({
           assets: [
             {
-              name: 'CherryPashkaList-0.6.4-x64.zip',
-              browser_download_url: 'https://example.com/CherryPashkaList-0.6.4-x64.zip',
+              name: 'CherryPashkaParty-0.6.4-x64.zip',
+              browser_download_url: 'https://example.com/CherryPashkaParty-0.6.4-x64.zip',
             },
           ],
         }),

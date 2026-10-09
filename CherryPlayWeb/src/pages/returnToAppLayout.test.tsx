@@ -49,7 +49,7 @@ const renderAt = (path: string, page: ReactNode, route: string) => {
 const expectCenteredReturnLayout = (pageClass: string, bodyClass: string) => {
   const notice = screen.getByRole('status');
   const fallback = screen.getByRole('link', {
-    name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
+    name: 'нажмите здесь, чтобы вернуться в CherryPashkaParty',
   });
   expect(notice.matches(`.${pageClass} > .${bodyClass} > [role="status"]`)).toBe(true);
   expect(

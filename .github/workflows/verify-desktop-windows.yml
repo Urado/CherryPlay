@@ -86,13 +86,13 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           shopt -s nullglob
-          expected="release/CherryPashkaList-${EXPECTED_VERSION}-x64.zip"
+          expected="release/CherryPashkaParty-${EXPECTED_VERSION}-x64.zip"
           if [ ! -f "${expected}" ]; then
             echo "ERROR: Expected zip not found: ${expected}"
             ls -la release/ || true
             exit 1
           fi
-          ZIP="release/CherryPashkaList-${BASE_VERSION}-pr-${PR_NUMBER}-x64.zip"
+          ZIP="release/CherryPashkaParty-${BASE_VERSION}-pr-${PR_NUMBER}-x64.zip"
           mv "${expected}" "${ZIP}"
           ZIP_NAME="$(basename "${ZIP}")"
           ARTIFACT_NAME="${ZIP_NAME%.zip}"
