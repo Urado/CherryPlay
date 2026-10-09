@@ -15,6 +15,8 @@ export interface DirectoryItem {
 
 export type AppMode = 'electron' | 'demo' | 'capacitor';
 
+export type DemoAimpPlaylistSize = 'small' | 'medium' | 'large';
+
 export type InvokeChannel =
   | 'fileBrowser:listDirectory'
   | 'fileBrowser:statFile'
@@ -73,6 +75,7 @@ export interface PlatformAimpApi {
     sourceSelection: AimpSourceSelection,
   ) => Promise<IPCResponse<AimpBridgeState>>;
   setLiveStreamStarted: (liveStreamStarted: boolean) => Promise<IPCResponse<AimpBridgeState>>;
+  setDemoPlaylistSize?: (size: DemoAimpPlaylistSize) => Promise<IPCResponse<AimpBridgeState>>;
   onStateChanged: (listener: (state: AimpBridgeState) => void) => () => void;
   onLog: (listener: (entry: AimpLogEntry) => void) => () => void;
 }

@@ -1,4 +1,3 @@
-
 import {
   useAimpStore,
   usePlayerAudioStore,
@@ -19,14 +18,15 @@ import type {
   PartyEditorFieldValues,
 } from './components/partyEditorRuntimeTypes';
 import { resolvePartyEditorPhase, shouldShowPartyTrackDisplaySection } from './partyEditorPhase';
+import { resolvePartyPlaybackSourceState } from './partyPlaybackSource';
 import type { PartyWorkspaceRuntimeValue } from './partyWorkspaceRuntimeContext';
 import { resolveCreateBlockedByTheme } from './partyWorkspaceUtils';
 import { resolvePartyArchiveAvailability } from './resolvePartyArchiveAvailability';
 
-export function usePartySettingsFormState(
+export const usePartySettingsFormState = (
   runtime: PartyWorkspaceRuntimeValue,
   options?: { networkEnabledOverride?: boolean },
-) {
+) => {
   const { networkEnabled: policyNetworkEnabled } = useOnlineNetworkPolicy();
   const isNetworkEnabledForEditor = options?.networkEnabledOverride ?? policyNetworkEnabled;
 
@@ -96,10 +96,7 @@ export function usePartySettingsFormState(
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
-  const aimpLiveStreamStarted = useAimpStore((state) => state.bridgeState.liveStreamStarted);
-  const aimpPlaybackStatus = useAimpStore(
-    (state) => state.bridgeState.playbackSnapshot?.status ?? null,
-  );
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
 
   const phaseResult = resolvePartyEditorPhase({
     isAuth,
@@ -129,11 +126,11 @@ export function usePartySettingsFormState(
 
   const archiveAvailability = resolvePartyArchiveAvailability({
     partyLifecycleState,
-    sessionMode,
-    playbackStatus: sessionMode === 'session' ? playbackStatus : null,
-    aimpLiveStreamStarted,
-    aimpPlaybackStatus,
-    streamingSource,
+    playbackSourceState: resolvePartyPlaybackSourceState(streamingSource, {
+      sessionMode,
+      playerPlaybackStatus: playbackStatus,
+      aimpBridgeState,
+    }),
   });
 
   const editorFields: PartyEditorFieldValues = useMemo(
@@ -283,4 +280,4 @@ export function usePartySettingsFormState(
     handleCatalogVisibilityChange,
     handleLifecycleTransition,
   };
-}
+};

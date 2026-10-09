@@ -1548,6 +1548,20 @@
   overflow: hidden;
 }
 
+.aimp-connection-indicator--small {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+}
+
+.aimp-connection-indicator--small .streaming-connection-indicator__dot {
+  width: 6px;
+  height: 6px;
+}
+
 .streaming-connection-indicator__hit {
   display: inline-flex;
   align-items: center;

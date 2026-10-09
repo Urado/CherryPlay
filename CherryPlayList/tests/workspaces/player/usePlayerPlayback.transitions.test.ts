@@ -56,7 +56,12 @@ jest.mock('@shared/hooks/usePlaybackPreview', () => ({
 }));
 
 jest.mock('@shared/stores', () => ({
-  usePlayerAudioStore: () => mockAudioState,
+  usePlayerAudioStore: Object.assign(() => mockAudioState, {
+    getState: () => mockAudioState,
+  }),
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+  },
   useProjectStore: Object.assign(
     (selector: (state: typeof mockProjectState) => unknown) => selector(mockProjectState),
     { getState: () => mockProjectState },

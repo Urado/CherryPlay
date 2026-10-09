@@ -1,8 +1,11 @@
-import { Button, Icon } from '@cherryplay/components';
+import { Button } from '@cherryplay/components';
 import { WorkspaceId } from '@core/types/workspace';
 import ListIcon from '@mui/icons-material/List';
 import { EmptyState, ItemList, ListRowCompound } from '@shared/components';
-import { type AimpPlaylistTrackDto } from '@shared/contracts/aimp';
+import { type AimpDisconnectReason, type AimpPlaylistTrackDto } from '@shared/contracts/aimp';
+import { isDemoFixturesMode, isDemoLiveMode } from '@shared/platform/demoLiveMode';
+import type { DemoAimpPlaylistSize } from '@shared/platform/types';
+import { aimpService } from '@shared/services/aimpService';
 import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import {
   canAdvanceAimpPlayback,
@@ -27,19 +30,51 @@ interface AimpPlaylistRowProps {
   isActive: boolean;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  disconnected: 'Отключено',
-  listening: 'Ожидание плагина',
-  connected: 'Подключено',
-  stale: 'Соединение устарело',
+const DEMO_PLAYLIST_SIZE_OPTIONS: Array<{
+  size: DemoAimpPlaylistSize;
+  count: number;
+  label: string;
+}> = [
+  { size: 'small', count: 3, label: '3 трека' },
+  { size: 'medium', count: 25, label: '25 треков' },
+  { size: 'large', count: 100, label: '100 треков' },
+];
+const DISCONNECT_NOTICE_DURATION_MS = 30000;
+
+const getAimpDisconnectMessage = (reason: AimpDisconnectReason | null): string | null => {
+  if (!reason) {
+    return null;
+  }
+
+  if (reason.code === 'clientGoodbye') {
+    if (reason.detail?.includes('reason=appClosing')) {
+      return 'AIMP завершил работу. Запустите его снова, чтобы восстановить подключение.';
+    }
+    if (reason.detail?.includes('reason=pluginShutdown')) {
+      return 'Плагин AIMP отключился. Проверьте, что плеер работает и плагин включён.';
+    }
+    return 'Плагин AIMP отключился. Проверьте, что плеер работает и плагин подключён.';
+  }
+
+  if (reason.code === 'heartbeatTimeout') {
+    return 'Давно не получали данные от AIMP. Проверьте, что плеер работает и плагин подключён.';
+  }
+
+  if (reason.code === 'protocolVersionMismatch') {
+    return 'Версия плагина AIMP не подходит к приложению. Обновите плагин.';
+  }
+
+  if (reason.code === 'malformedPayload') {
+    return 'Не удалось прочитать данные плагина AIMP. Проверьте, что установлена актуальная версия плагина.';
+  }
+
+  return 'Соединение с AIMP прервано. Проверьте, что плеер работает и плагин подключён.';
 };
 
-const PUBLISHING_STATUS_LABELS: Record<string, string> = {
-  idle: 'Не подготовлен',
-  connecting: 'Подключение',
-  ready: 'Готов',
-  error: 'Ошибка',
-};
+const getAimpProtocolErrorMessage = (hasError: boolean): string | null =>
+  hasError
+    ? 'Не удалось обменяться данными с плагином AIMP. Проверьте его подключение и версию.'
+    : null;
 
 const AimpPlaylistRow: React.FC<AimpPlaylistRowProps> = ({ track, index, isActive }) => {
   const displayName =
@@ -67,7 +102,7 @@ const AimpPlaylistRow: React.FC<AimpPlaylistRowProps> = ({ track, index, isActiv
   );
 };
 
-function useProgressClock(isActive: boolean): number {
+const useProgressClock = (isActive: boolean): number => {
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -85,18 +120,71 @@ function useProgressClock(isActive: boolean): number {
   }, [isActive]);
 
   return nowMs;
-}
+};
 
 export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
   const bridgeState = useAimpStore((state) => state.bridgeState);
   const publishingBridgeReady = useAimpStore((state) => state.publishingBridgeReady);
   const publishingPath = useAimpStore((state) => state.publishingPath);
   const setLiveStreamStarted = useAimpStore((state) => state.setLiveStreamStarted);
+  const setBridgeState = useAimpStore((state) => state.setBridgeState);
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const linkedPartyId = useProjectStore((state) => state.meta.linkedParty?.id ?? null);
   const addNotification = useUIStore((state) => state.addNotification);
   const [isSubmittingLiveStream, setIsSubmittingLiveStream] = useState(false);
+  const [isChangingDemoPlaylistSize, setIsChangingDemoPlaylistSize] = useState(false);
+  const [isDisconnectNoticeExpired, setIsDisconnectNoticeExpired] = useState(false);
+  const disconnectOccurredAt = bridgeState.connection.disconnectReason?.occurredAt ?? null;
+  const isDemoMode = isDemoFixturesMode() || isDemoLiveMode();
+  const playlistTrackCount = bridgeState.playlistSnapshot?.trackCount ?? 0;
+  const playlistSize =
+    DEMO_PLAYLIST_SIZE_OPTIONS.find((option) => option.count === playlistTrackCount)?.size ??
+    'small';
+
+  const handleDemoPlaylistSizeChange = async (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ): Promise<void> => {
+    setIsChangingDemoPlaylistSize(true);
+    try {
+      const nextState = await aimpService.setDemoPlaylistSize(
+        event.currentTarget.value as DemoAimpPlaylistSize,
+      );
+      setBridgeState(nextState);
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Не удалось изменить демо-плейлист AIMP',
+      });
+    } finally {
+      setIsChangingDemoPlaylistSize(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!disconnectOccurredAt) {
+      setIsDisconnectNoticeExpired(false);
+      return;
+    }
+
+    const occurredAtMs = Date.parse(disconnectOccurredAt);
+    if (Number.isNaN(occurredAtMs)) {
+      setIsDisconnectNoticeExpired(true);
+      return;
+    }
+
+    const elapsedMs = Date.now() - occurredAtMs;
+    const remainingMs = DISCONNECT_NOTICE_DURATION_MS - elapsedMs;
+    if (remainingMs <= 0) {
+      setIsDisconnectNoticeExpired(true);
+      return;
+    }
+
+    setIsDisconnectNoticeExpired(false);
+    const timeoutId = window.setTimeout(() => setIsDisconnectNoticeExpired(true), remainingMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [disconnectOccurredAt]);
 
   const availability = getAimpAvailability(bridgeState);
   const currentTrack = getAimpCurrentTrack(bridgeState);
@@ -115,31 +203,108 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     publishingBridgeReady &&
     canStartAimpLiveStream(bridgeState);
   const degraded = isAimpDegraded(bridgeState);
-  const connectionLabel =
-    STATUS_LABELS[bridgeState.connection.phase] ?? bridgeState.connection.phase;
-  const publishPathLabel = PUBLISHING_STATUS_LABELS[publishingPath.status] ?? publishingPath.status;
-  const pluginVersionLabel = bridgeState.pluginMetadata?.pluginVersion
-    ? `Plugin v${bridgeState.pluginMetadata.pluginVersion}`
-    : 'Plugin version unavailable';
-  const playlistNameLabel = bridgeState.playlistSnapshot?.playlistName ?? 'No snapshot yet';
+  const disconnectReasonMessage = isDisconnectNoticeExpired
+    ? null
+    : getAimpDisconnectMessage(bridgeState.connection.disconnectReason);
+  const protocolErrorMessage = getAimpProtocolErrorMessage(
+    bridgeState.connection.protocolError !== null,
+  );
+  const aimpConnectionStatus =
+    bridgeState.connection.phase === 'connected'
+      ? { name: 'AIMP', label: 'Подключён', state: 'connected' }
+      : bridgeState.connection.phase === 'listening'
+        ? { name: 'AIMP', label: 'Ожидаем подключения', state: 'connecting' }
+        : bridgeState.connection.phase === 'stale'
+          ? { name: 'AIMP', label: 'Нет свежих данных', state: 'connecting' }
+          : { name: 'AIMP', label: 'Отключён', state: 'disconnected' };
+  const serverConnectionStatus = !enableStreaming
+    ? { name: 'Сервер', label: 'Онлайн выключен', state: 'disconnected' }
+    : linkedPartyId === null
+      ? { name: 'Сервер', label: 'Вечеринка не привязана', state: 'disconnected' }
+      : publishingPath.status === 'ready'
+        ? { name: 'Сервер', label: 'На связи', state: 'connected' }
+        : publishingPath.status === 'reconnecting'
+          ? { name: 'Сервер', label: 'Восстанавливаем связь', state: 'connecting' }
+          : publishingPath.status === 'connecting'
+            ? { name: 'Сервер', label: 'Подключаемся', state: 'connecting' }
+            : publishingPath.status === 'error'
+              ? { name: 'Сервер', label: 'Нет связи', state: 'disconnected' }
+              : { name: 'Сервер', label: 'Не подключён', state: 'disconnected' };
+  const connectionIndicators = (
+    <div
+      aria-label="Состояние подключений"
+      style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}
+    >
+      {[aimpConnectionStatus, serverConnectionStatus].map((status) => (
+        <span
+          key={status.name}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}
+          role="status"
+          title={`${status.name}: ${status.label}`}
+          aria-label={`${status.name}: ${status.label}`}
+        >
+          <span
+            className="streaming-connection-indicator__label"
+            style={{ textAlign: 'right', fontSize: 9, lineHeight: 1, cursor: 'help' }}
+            title={`${status.name}: ${status.label}`}
+          >
+            {status.name}
+          </span>
+          <span
+            className={`streaming-connection-indicator__dot streaming-connection-indicator__dot--${status.state}`}
+            aria-hidden="true"
+            style={{ width: 9, height: 9 }}
+          />
+        </span>
+      ))}
+    </div>
+  );
 
   const startActionMessages = useMemo(() => {
     if (bridgeState.liveStreamStarted) {
-      return [];
+      if (bridgeState.connection.phase === 'connected') {
+        return [];
+      }
+      return [
+        protocolErrorMessage ??
+          disconnectReasonMessage ??
+          'Нет связи с AIMP. Проверьте плеер и плагин, чтобы обновить трансляцию.',
+      ];
+    }
+
+    if (!availability.available) {
+      return availability.gatingReasons.map((reason) => reason.message);
+    }
+
+    if (bridgeState.connection.phase !== 'connected') {
+      if (protocolErrorMessage) {
+        return [protocolErrorMessage];
+      }
+      if (disconnectReasonMessage) {
+        return [disconnectReasonMessage];
+      }
+      if (bridgeState.connection.phase === 'listening') {
+        return ['Ожидаем подключение AIMP. Убедитесь, что плеер запущен и плагин установлен.'];
+      }
+      if (bridgeState.connection.phase === 'stale') {
+        return ['Нет свежих данных от AIMP. Проверьте, что плеер работает и плагин подключён.'];
+      }
+      return ['AIMP не подключён. Запустите плеер и проверьте подключение плагина.'];
     }
 
     const messages: string[] = [];
     if (!enableStreaming) {
-      messages.push('Сначала включите онлайн в настройках.');
+      messages.push('Включите «Онлайн» в настройках, чтобы начать трансляцию.');
     }
     if (!embedded && streamingSource !== 'aimp') {
-      messages.push('Выберите AIMP как источник в зоне плеера.');
+      messages.push('Выберите AIMP в качестве источника проигрывания.');
     }
-    if (!availability.available) {
-      availability.gatingReasons.forEach((reason) => messages.push(reason.message));
-    }
-    if (linkedPartyId === null) {
-      messages.push('Для публикации нужна созданная или привязанная вечеринка.');
+    if (bridgeState.playlistSnapshot === null || bridgeState.playbackSnapshot === null) {
+      messages.push('Подключение есть. Ожидаем плейлист и данные о текущем треке из AIMP.');
+    } else if (linkedPartyId === null) {
+      messages.push(
+        'Создайте вечеринку или привяжите существующую, чтобы показывать музыку гостям.',
+      );
     }
     if (
       enableStreaming &&
@@ -153,21 +318,6 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
         messages.push(publishingPath.error);
       }
     }
-    if (bridgeState.connection.phase === 'listening') {
-      messages.push('CherryPashka List слушает pipe, но AIMP плагин ещё не подключён.');
-    }
-    if (bridgeState.connection.phase === 'disconnected' && availability.available) {
-      messages.push('Ожидается запуск AIMP плагина и handshake с приложением.');
-    }
-    if (bridgeState.connection.phase === 'stale') {
-      messages.push(
-        'Последние данные AIMP устарели. Дождитесь нового heartbeat или переподключения.',
-      );
-    }
-    if (bridgeState.playlistSnapshot === null || bridgeState.playbackSnapshot === null) {
-      messages.push('Для старта нужны актуальные playlist и playback snapshots от AIMP.');
-    }
-
     return [...new Set(messages)];
   }, [
     availability.available,
@@ -180,6 +330,8 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     publishingPath.status,
     streamingSource,
     embedded,
+    disconnectReasonMessage,
+    protocolErrorMessage,
   ]);
 
   const handleToggleLiveStream = async () => {
@@ -233,15 +385,21 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
     : bridgeState.liveStreamStarted
       ? 'Выключить онлайн'
       : 'Включить онлайн';
+  const isLiveStreamButtonDisabled =
+    isSubmittingLiveStream || (!bridgeState.liveStreamStarted && !canStartLiveStreamNow);
+  const liveStreamButtonDisabledReason = isSubmittingLiveStream
+    ? 'Подождите, пока завершится изменение состояния онлайна.'
+    : !bridgeState.liveStreamStarted && !canStartLiveStreamNow
+      ? startActionMessages.join(' ') ||
+        'Проверьте подключение AIMP, привязку вечеринки и готовность сервера.'
+      : undefined;
 
   return (
     <div
       className={embedded ? 'aimp-view aimp-view--embedded' : 'aimp-view'}
       style={{
         display: 'grid',
-        gridTemplateRows: embedded
-          ? 'auto auto minmax(0, 1fr) auto'
-          : 'auto auto minmax(0, 1fr) auto',
+        gridTemplateRows: 'auto minmax(0, 1fr) auto',
         gap: 12,
         height: '100%',
         minHeight: 0,
@@ -262,61 +420,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
                 </div>
               </div>
             </div>
-            <details style={{ position: 'relative', flexShrink: 0 }}>
-              <summary
-                style={{
-                  listStyle: 'none',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-secondary)',
-                }}
-                title="Диагностика AIMP bridge"
-                aria-label="Показать диагностику AIMP bridge"
-              >
-                <Icon size="md" shape="circle" aria-hidden>
-                  i
-                </Icon>
-              </summary>
-              <div
-                className="app-card"
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: 'calc(100% + 6px)',
-                  zIndex: 10,
-                  width: 'min(320px, calc(100vw - 24px))',
-                  padding: 10,
-                  borderRadius: 10,
-                  display: 'grid',
-                  gap: 4,
-                  fontSize: '0.8rem',
-                }}
-              >
-                <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
-                </div>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
-                </div>
-                <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
-                </div>
-                <div style={{ color: 'var(--text-secondary)' }}>
-                  Protocol: {bridgeState.protocolVersion}
-                </div>
-                <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
-                {publishingPath.error && (
-                  <div style={{ color: 'var(--color-danger, #ff8a80)' }}>
-                    {publishingPath.error}
-                  </div>
-                )}
-              </div>
-            </details>
+            {connectionIndicators}
           </div>
         </div>
       ) : (
@@ -324,8 +428,9 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
           style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 8,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 12,
           }}
         >
           <div>
@@ -334,59 +439,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
               Мониторинг AIMP и онлайн для гостей.
             </div>
           </div>
-          <details style={{ position: 'relative', flexShrink: 0 }}>
-            <summary
-              style={{
-                listStyle: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-secondary)',
-              }}
-              title="Диагностика AIMP bridge"
-              aria-label="Показать диагностику AIMP bridge"
-            >
-              <Icon size="md" shape="circle" aria-hidden>
-                i
-              </Icon>
-            </summary>
-            <div
-              className="app-card"
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 6px)',
-                zIndex: 10,
-                width: 'min(320px, calc(100vw - 24px))',
-                padding: 10,
-                borderRadius: 10,
-                display: 'grid',
-                gap: 4,
-                fontSize: '0.8rem',
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>{connectionLabel}</div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                Listening: {bridgeState.connection.appListening ? 'yes' : 'no'}
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                Plugin: {bridgeState.connection.pluginConnected ? 'yes' : 'no'}
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>Publish: {publishPathLabel}</div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                Live: {bridgeState.liveStreamStarted ? 'yes' : 'no'}
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                Protocol: {bridgeState.protocolVersion}
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>Playlist: {playlistNameLabel}</div>
-              <div style={{ color: 'var(--text-secondary)' }}>{pluginVersionLabel}</div>
-              {publishingPath.error && (
-                <div style={{ color: 'var(--color-danger, #ff8a80)' }}>{publishingPath.error}</div>
-              )}
-            </div>
-          </details>
+          {connectionIndicators}
         </div>
       )}
 
@@ -396,34 +449,52 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
             Playlist{' '}
             {bridgeState.playlistSnapshot ? `(${bridgeState.playlistSnapshot.trackCount})` : ''}
           </div>
-          <Button
-            type="button"
-            className="modal-button"
-            onClick={handleToggleLiveStream}
-            disabled={
-              isSubmittingLiveStream || (!bridgeState.liveStreamStarted && !canStartLiveStreamNow)
-            }
-            variant="primary"
-            size="sm"
-            data-party-header-guide-target={
-              bridgeState.liveStreamStarted ? 'stop-playback' : 'start-playback'
-            }
-          >
-            {liveStreamButtonLabel}
-          </Button>
+          {isDemoMode && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+              <span>Демо</span>
+              <select
+                aria-label="Размер демо-плейлиста"
+                value={playlistSize}
+                onChange={(event) => {
+                  void handleDemoPlaylistSizeChange(event);
+                }}
+                disabled={isChangingDemoPlaylistSize}
+              >
+                {DEMO_PLAYLIST_SIZE_OPTIONS.map((option) => (
+                  <option key={option.size} value={option.size}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <span title={liveStreamButtonDisabledReason} style={{ display: 'inline-flex' }}>
+            <Button
+              type="button"
+              className="modal-button"
+              onClick={() => {
+                void handleToggleLiveStream();
+              }}
+              disabled={isLiveStreamButtonDisabled}
+              variant="primary"
+              size="sm"
+              data-party-header-guide-target={
+                bridgeState.liveStreamStarted ? 'stop-playback' : 'start-playback'
+              }
+            >
+              {liveStreamButtonLabel}
+            </Button>
+          </span>
         </div>
 
-        {(degraded || startActionMessages.length > 0) && (
+        {(startActionMessages.length > 0 || (degraded && protocolErrorMessage !== null)) && (
           <div
             className={`aimp-view__playlist-banner ${
               degraded ? 'aimp-view__playlist-banner--degraded' : 'aimp-view__playlist-banner--info'
             }`}
           >
-            {degraded && bridgeState.connection.disconnectReason?.message && (
-              <div>{bridgeState.connection.disconnectReason.message}</div>
-            )}
-            {degraded && bridgeState.connection.protocolError?.message && (
-              <div>{bridgeState.connection.protocolError.message}</div>
+            {degraded && bridgeState.connection.phase === 'connected' && protocolErrorMessage && (
+              <div>{protocolErrorMessage}</div>
             )}
             {startActionMessages.map((message) => (
               <div key={message}>{message}</div>
@@ -445,7 +516,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
             <AimpPlaylistRow
               key={`${track.trackKey}-${index}`}
               track={track}
-              index={index + 1}
+              index={index}
               isActive={track.trackKey === currentTrack?.trackKey}
             />
           ))}
@@ -459,6 +530,8 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
           borderRadius: 10,
           display: 'grid',
           gap: 8,
+          alignSelf: 'end',
+          height: 'fit-content',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>

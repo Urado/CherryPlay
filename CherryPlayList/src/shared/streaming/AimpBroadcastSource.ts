@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import {
   canAdvanceAimpPlayback,
   canStartAimpLiveStream,
+  canUseAimpLiveSnapshots,
   createAimpPlaybackStateDto,
   getAimpEffectiveProgressMs,
   getAimpPlaybackPublishKey,
@@ -72,9 +73,12 @@ export class AimpBroadcastSource implements PlaybackBroadcastSource {
   }
 
   isLiveSessionActive(): boolean {
-    const { bridgeState, publishingBridgeReady } = useAimpStore.getState();
+    const { bridgeState } = useAimpStore.getState();
     return (
-      bridgeState.liveStreamStarted && publishingBridgeReady && canStartAimpLiveStream(bridgeState)
+      bridgeState.liveStreamStarted &&
+      bridgeState.sourceSelection === 'aimp' &&
+      bridgeState.environment.eligible &&
+      canUseAimpLiveSnapshots(bridgeState)
     );
   }
 

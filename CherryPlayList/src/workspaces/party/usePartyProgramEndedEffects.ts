@@ -1,13 +1,16 @@
+import { isProjectTrack, type ProjectItem } from '@core/types/project';
 import {
   useAimpStore,
   usePlayerAudioStore,
   useProjectStore,
   useSettingsStore,
 } from '@shared/stores';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-
-import { detectAimpLiveProgramEnded } from './detectAimpLiveProgramEnded';
+import {
+  getPartyPlaybackSourceAdapter,
+  resolvePartyPlaybackSourceState,
+} from './partyPlaybackSource';
 import {
   clearPartyProgramEnded,
   markPartyProgramEnded,
@@ -15,25 +18,25 @@ import {
 } from './partyProgramEndedStore';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 
-function collectActiveTrackIds(
-  items: ReadonlyArray<{ id: string; type: string }>,
+const collectActiveTrackIds = (
+  items: ReadonlyArray<ProjectItem>,
   disabledTrackIds: ReadonlyArray<string>,
-): string[] {
+): string[] => {
   const disabled = new Set(disabledTrackIds);
   return items
-    .filter((item) => item.type === 'track' && !disabled.has(item.id))
+    .filter((item) => isProjectTrack(item) && !disabled.has(item.id))
     .map((item) => item.id);
-}
+};
 
-function isReadyLivePartyContext(): boolean {
+const isReadyLivePartyContext = (sessionActive: boolean): boolean => {
   const project = useProjectStore.getState();
-  if (project.sessionState.mode !== 'session' || !project.meta.linkedParty) {
+  if (!sessionActive || !project.meta.linkedParty) {
     return false;
   }
   return usePartyWorkspaceStore.getState().partyLifecycleState === 'ready';
-}
+};
 
-export function usePartyProgramEndedEffects(): void {
+export const usePartyProgramEndedEffects = (): void => {
   const programEnded = usePartyProgramEndedStore((state) => state.programEnded);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
@@ -44,21 +47,31 @@ export function usePartyProgramEndedEffects(): void {
   const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
 
-  const playlistSignature = `${items.map((item) => `${item.type}:${item.id}`).join('|')}#${disabledTrackIds.join(',')}`;
-  const aimpPlaylistRevision = aimpBridgeState.playlistSnapshot?.revision ?? null;
-  const aimpTrackCount = aimpBridgeState.playlistSnapshot?.trackCount ?? 0;
-  const aimpPlaybackStatus = aimpBridgeState.playbackSnapshot?.status ?? null;
-  const aimpLive = aimpBridgeState.liveStreamStarted;
+  const playlistSignature = `${items.map((item) => item.id).join('|')}#${disabledTrackIds.join(',')}`;
+  const playbackSourceContext = useMemo(
+    () => ({
+      sessionMode,
+      playerPlaybackStatus: playbackStatus,
+      aimpBridgeState,
+    }),
+    [sessionMode, playbackStatus, aimpBridgeState],
+  );
+  const playbackSourceAdapter = getPartyPlaybackSourceAdapter(streamingSource);
+  const playbackSourceState = resolvePartyPlaybackSourceState(
+    streamingSource,
+    playbackSourceContext,
+  );
+  const snapshotPlayback = playbackSourceAdapter.completionDetection === 'playback-snapshot';
 
   const prevPlaylistSignatureRef = useRef(playlistSignature);
-  const prevAimpTrackCountRef = useRef(aimpTrackCount);
-  const sawAimpPlayingRef = useRef(false);
+  const prevSnapshotTrackCountRef = useRef(playbackSourceState.playlistTrackCount);
+  const sawSnapshotPlayingRef = useRef(false);
 
   useEffect(() => {
-    if (sessionMode !== 'session') {
+    if (!playbackSourceState.sessionActive) {
       clearPartyProgramEnded();
     }
-  }, [sessionMode]);
+  }, [playbackSourceState.sessionActive]);
 
   useEffect(() => {
     if (partyLifecycleState === 'completed' || !linkedParty) {
@@ -67,28 +80,13 @@ export function usePartyProgramEndedEffects(): void {
   }, [partyLifecycleState, linkedParty]);
 
   useEffect(() => {
-    if (!aimpLive && streamingSource === 'aimp') {
-      clearPartyProgramEnded();
-    }
-  }, [aimpLive, streamingSource]);
-
-  useEffect(() => {
     if (!programEnded) {
       return;
     }
-    if (playbackStatus === 'playing') {
+    if (playbackSourceState.playbackStatus === 'playing') {
       clearPartyProgramEnded();
     }
-  }, [programEnded, playbackStatus]);
-
-  useEffect(() => {
-    if (!programEnded) {
-      return;
-    }
-    if (streamingSource === 'aimp' && aimpPlaybackStatus === 'playing') {
-      clearPartyProgramEnded();
-    }
-  }, [programEnded, streamingSource, aimpPlaybackStatus]);
+  }, [programEnded, playbackSourceState.playbackStatus]);
 
   useEffect(() => {
     if (!programEnded) {
@@ -110,42 +108,47 @@ export function usePartyProgramEndedEffects(): void {
 
   useEffect(() => {
     if (!programEnded) {
-      prevAimpTrackCountRef.current = aimpTrackCount;
+      prevSnapshotTrackCountRef.current = playbackSourceState.playlistTrackCount;
       return;
     }
-    if (streamingSource !== 'aimp') {
+    if (!snapshotPlayback) {
       return;
     }
-    if (aimpTrackCount > prevAimpTrackCountRef.current) {
+    if (playbackSourceState.playlistTrackCount > prevSnapshotTrackCountRef.current) {
       clearPartyProgramEnded();
     }
-    prevAimpTrackCountRef.current = aimpTrackCount;
-  }, [programEnded, streamingSource, aimpTrackCount, aimpPlaylistRevision]);
+    prevSnapshotTrackCountRef.current = playbackSourceState.playlistTrackCount;
+  }, [programEnded, snapshotPlayback, playbackSourceState.playlistTrackCount]);
 
   useEffect(() => {
-    if (streamingSource !== 'aimp' || !aimpLive) {
-      sawAimpPlayingRef.current = false;
+    if (!snapshotPlayback || !playbackSourceState.sessionActive) {
+      sawSnapshotPlayingRef.current = false;
       return;
     }
-    if (aimpPlaybackStatus === 'playing') {
-      sawAimpPlayingRef.current = true;
+    if (playbackSourceState.playbackStatus === 'playing') {
+      sawSnapshotPlayingRef.current = true;
       return;
     }
-    if (!sawAimpPlayingRef.current || programEnded || !isReadyLivePartyContext()) {
+    if (
+      !sawSnapshotPlayingRef.current ||
+      programEnded ||
+      !isReadyLivePartyContext(playbackSourceState.sessionActive)
+    ) {
       return;
     }
-    if (detectAimpLiveProgramEnded(aimpBridgeState)) {
+    if (playbackSourceAdapter.detectProgramEnded(playbackSourceContext)) {
       markPartyProgramEnded();
     }
   }, [
-    streamingSource,
-    aimpLive,
-    aimpPlaybackStatus,
-    aimpBridgeState,
+    snapshotPlayback,
+    playbackSourceState.sessionActive,
+    playbackSourceState.playbackStatus,
     programEnded,
-    aimpPlaylistRevision,
     linkedParty,
     partyLifecycleState,
     sessionMode,
+    playbackSourceState.playlistRevision,
+    playbackSourceAdapter,
+    playbackSourceContext,
   ]);
-}
+};

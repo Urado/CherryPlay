@@ -17,17 +17,18 @@ export interface PartyLifecycleControlsProps {
   onTransition: (targetState: PartyLifecycleState) => void;
   layout?: 'default' | 'header';
   sessionMode?: ProjectSessionMode;
+  playbackIsLive?: boolean;
   slot?: PartyLifecycleControlSlot;
   hideUnarchive?: boolean;
 }
 
-function isLoadingForTarget(
+const isLoadingForTarget = (
   target: PartyLifecycleState,
   isTransitioning: boolean,
   pendingTransition?: PartyLifecycleState | null,
-): boolean {
+): boolean => {
   return isTransitioning && pendingTransition === target;
-}
+};
 
 export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   partyLifecycleState,
@@ -37,6 +38,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
   onTransition,
   layout = 'default',
   sessionMode,
+  playbackIsLive,
   slot = 'all',
   hideUnarchive = false,
 }) => {
@@ -121,7 +123,7 @@ export const PartyLifecycleControls: React.FC<PartyLifecycleControlsProps> = ({
       <div className="party-lifecycle-header">
         <span className="party-lifecycle-header-label">Статус вечеринки</span>
         <span className={`party-lifecycle-badge party-lifecycle-badge--${partyLifecycleState}`}>
-          {resolvePartyLifecycleServerBadgeLabel(partyLifecycleState, sessionMode)}
+          {resolvePartyLifecycleServerBadgeLabel(partyLifecycleState, sessionMode, playbackIsLive)}
         </span>
       </div>
       <p className="party-lifecycle-hint">

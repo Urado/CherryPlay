@@ -1,8 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 
-import type { Track } from '../../../src/core/types/track';
-
-const mockTrack: Track = {
+const mockTrack = {
   id: 'track-1',
   name: 'Last track',
   path: 'last-track.mp3',
@@ -14,16 +12,16 @@ let mockOnTrackEnded: (() => Promise<void>) | undefined;
 const mockAudioState = {
   currentTrack: mockTrack,
   status: 'ended',
-  loadTrack: jest.fn(async (_track: Track) => 1),
-  play: jest.fn(async () => undefined),
+  loadTrack: jest.fn((_track: typeof mockTrack) => Promise.resolve(1)),
+  play: jest.fn(() => Promise.resolve()),
   setOnTrackEnded: jest.fn((callback: (() => Promise<void>) | undefined) => {
     mockOnTrackEnded = callback;
   }),
   setPauseTimer: jest.fn((_callback: () => void, _delayMs: number) => undefined),
   clearPauseTimer: jest.fn(() => undefined),
   stop: jest.fn(() => undefined),
-  shouldAutoPlayTrack: jest.fn((trackId: string, generation: number) =>
-    trackId === 'track-2' && generation === 1,
+  shouldAutoPlayTrack: jest.fn(
+    (trackId: string, generation: number) => trackId === 'track-2' && generation === 1,
   ),
 };
 
@@ -45,6 +43,9 @@ jest.mock('@shared/stores', () => ({
   usePlayerAudioStore: Object.assign(() => mockAudioState, {
     getState: () => mockAudioState,
   }),
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+  },
   useProjectStore: Object.assign(
     (selector: (state: typeof mockProjectState) => unknown) => selector(mockProjectState),
     { getState: () => mockProjectState },
@@ -68,7 +69,7 @@ describe('usePlayerPlayback final track transitions', () => {
     mockOnTrackEnded = undefined;
   });
 
-  const createOptions = (nextTrack: Track | null) => ({
+  const createOptions = (nextTrack: typeof mockTrack | null) => ({
     allTracks: [mockTrack],
     getEffectiveTrackSettings: () => ({ actionAfterTrack: 'next', pauseBetweenTracks: 0 }),
     getNextActiveTrack: () => nextTrack,

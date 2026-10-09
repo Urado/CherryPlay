@@ -1,4 +1,3 @@
-import { DEFAULT_PARTY_THEME_ID, isValidPartyTheme } from '@cherryplay/components';
 import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -9,6 +8,7 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
   useAuthStore,
+  useAimpStore,
   useLayoutStore,
   usePlayerAudioStore,
   useProjectStore,
@@ -35,6 +35,7 @@ import {
   runPartyHeaderGuideHighlight,
   waitForPartyHeaderGuideTarget,
 } from '../../workspaces/party/partyHeaderGoToPlayGuide';
+import { resolvePartyPlaybackSourceState } from '../../workspaces/party/partyPlaybackSource';
 import { PartyProgramEndedReminder } from '../../workspaces/party/PartyProgramEndedReminder';
 import { usePartyProgramEndedStore } from '../../workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '../../workspaces/party/partyWorkspaceStore';
@@ -77,7 +78,6 @@ export interface HeaderPartyStatusProps {
 
 export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled = false }) => {
   const linkedParty = useProjectStore((state) => state.meta.linkedParty);
-  const projectThemeId = useProjectStore((state) => state.meta.partyThemeId);
   const sessionMode = useProjectStore((state) => state.sessionState.mode);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
   const lastSyncedPublishParts = usePartyWorkspaceStore((state) => state.lastSyncedPublishParts);
@@ -88,6 +88,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   );
   const streamingSource = useSettingsStore((state) => state.streamingSource);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
   const programEnded = usePartyProgramEndedStore((state) => state.programEnded);
   const reminderVisible = usePartyProgramEndedStore((state) => state.reminderVisible);
   const reminderDeadlineMs = usePartyProgramEndedStore((state) => state.reminderDeadlineMs);
@@ -97,9 +98,6 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
   );
   const { networkEnabled } = useOnlineNetworkPolicy();
   const hasLinkedParty = Boolean(linkedParty);
-  const guideThemeId = projectThemeId && isValidPartyTheme(projectThemeId)
-    ? projectThemeId
-    : DEFAULT_PARTY_THEME_ID;
   const publishOutOfSync = usePartyPublishOutOfSync(hasLinkedParty);
 
   const ctaRef = useRef<HTMLButtonElement>(null);
@@ -118,8 +116,13 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     partyLifecycleState,
     sessionMode,
     serverUnreachable,
-    playbackStatus: sessionMode === 'session' ? playbackStatus : null,
-    programEnded: sessionMode === 'session' && programEnded,
+    playbackSourceState: resolvePartyPlaybackSourceState(streamingSource, {
+      sessionMode,
+      playerPlaybackStatus: playbackStatus,
+      aimpBridgeState,
+      programEnded,
+    }),
+    programEnded,
   });
 
   const activeStageIndex = resolveHeaderPartyControlActiveStageIndex(status.primary);
@@ -173,7 +176,10 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
     isOutOfSync: publishOutOfSync,
   });
   const publishDisabled =
-    publishBlockedByLayout || publishBusy || publishHasNoPendingChanges || publishDisabledReason != null;
+    publishBlockedByLayout ||
+    publishBusy ||
+    publishHasNoPendingChanges ||
+    publishDisabledReason != null;
   const publishActionTitle = 'Обновить плейлист и настройки, которые видят гости';
   const publishTitle = publishBusy
     ? 'Обновление на сайте…'
@@ -526,9 +532,7 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
                     className={[
                       'header-button header-party-control__icon-button',
                       publishOutOfSync ? 'header-party-control__icon-button--dirty' : '',
-                      publishHasNoPendingChanges
-                        ? 'header-party-control__icon-button--synced'
-                        : '',
+                      publishHasNoPendingChanges ? 'header-party-control__icon-button--synced' : '',
                       publishDisabledReason && !publishBusy && !publishBlockedByLayout
                         ? 'header-party-control__icon-button--blocked'
                         : '',
@@ -572,7 +576,6 @@ export const HeaderPartyStatus: React.FC<HeaderPartyStatusProps> = ({ disabled =
 
       {panelOpen && guideAnchorRect ? (
         <PartyGoToPlayGuidePanel
-          themeId={guideThemeId}
           anchorRect={guideAnchorRect}
           showGoButton={showGoButton}
           startLabel={panelStartLabel}

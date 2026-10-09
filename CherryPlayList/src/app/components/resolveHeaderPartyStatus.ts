@@ -6,6 +6,7 @@ import type { PartyLifecycleState } from '@shared/services/partyService';
 import { getLayoutPresetFromLayout } from '@shared/utils/layoutPreset';
 import { collectWorkspaceTypes } from '@shared/utils/layoutWorkspaceOperations';
 import { resolvePartyLifecycleDisplayLabel } from '@workspaces/party/partyLifecycleLabels';
+import type { PartyPlaybackSourceState } from '@workspaces/party/partyPlaybackSource';
 
 import { HEADER_PARTY_STATUS_UNREACHABLE_LABEL } from './headerPartyStatusVisuals';
 
@@ -14,7 +15,7 @@ export interface HeaderPartyStatusInput {
   partyLifecycleState: PartyLifecycleState | null;
   sessionMode: ProjectSessionMode;
   serverUnreachable: boolean;
-  playbackStatus?: StorePlaybackStatus | null;
+  playbackSourceState: PartyPlaybackSourceState;
   programEnded?: boolean;
 }
 
@@ -25,19 +26,19 @@ export interface HeaderPartyStatusDisplay {
 
 const ONLINE_PARTY_LAYOUT_PRESETS: ReadonlySet<LayoutPreset> = new Set(['party', 'aimp-party']);
 
-export function isOnlinePartyLayoutPreset(preset: LayoutPreset | null | undefined): boolean {
+export const isOnlinePartyLayoutPreset = (preset: LayoutPreset | null | undefined): boolean => {
   return preset != null && ONLINE_PARTY_LAYOUT_PRESETS.has(preset);
-}
+};
 
-export function layoutHasOnlinePartyZones(layout: Layout): boolean {
+export const layoutHasOnlinePartyZones = (layout: Layout): boolean => {
   const types = collectWorkspaceTypes(layout.rootZone);
   return types.has('party-preview');
-}
+};
 
-export function isAlreadyOnOnlinePartyLayout(
+export const isAlreadyOnOnlinePartyLayout = (
   activeWorkspace: ActiveWorkspace,
   layout: Layout,
-): boolean {
+): boolean => {
   if (activeWorkspace.kind === 'builtin' && isOnlinePartyLayoutPreset(activeWorkspace.preset)) {
     return true;
   }
@@ -45,28 +46,35 @@ export function isAlreadyOnOnlinePartyLayout(
     return true;
   }
   return layoutHasOnlinePartyZones(layout);
-}
+};
 
-export function resolveHeaderPartyStatus(input: HeaderPartyStatusInput): HeaderPartyStatusDisplay {
-  const basePrimary = resolvePartyLifecycleDisplayLabel({
-    linkedParty: input.linkedParty ?? null,
-    partyLifecycleState: input.partyLifecycleState,
-    sessionMode: input.sessionMode,
-  });
+export const resolveHeaderPartyStatus = (
+  input: HeaderPartyStatusInput,
+): HeaderPartyStatusDisplay => {
+  const basePrimary =
+    input.linkedParty &&
+    input.partyLifecycleState === 'ready' &&
+    input.playbackSourceState.headerActive
+      ? 'Идёт'
+      : resolvePartyLifecycleDisplayLabel({
+          linkedParty: input.linkedParty ?? null,
+          partyLifecycleState: input.partyLifecycleState,
+          sessionMode: input.sessionMode,
+        });
   const primary = resolveHeaderPartyPlaybackOverlay(
     basePrimary,
-    input.playbackStatus,
+    input.playbackSourceState.headerPlaybackStatus,
     input.programEnded === true,
   );
 
   return withUnreachableOverlay({ primary }, input.serverUnreachable);
-}
+};
 
-function resolveHeaderPartyPlaybackOverlay(
+const resolveHeaderPartyPlaybackOverlay = (
   primary: string,
   playbackStatus: StorePlaybackStatus | null | undefined,
   programEnded: boolean,
-): string {
+): string => {
   if (primary !== 'Идёт') {
     return primary;
   }
@@ -77,14 +85,14 @@ function resolveHeaderPartyPlaybackOverlay(
     return 'Пауза';
   }
   return primary;
-}
+};
 
-function withUnreachableOverlay(
+const withUnreachableOverlay = (
   display: HeaderPartyStatusDisplay,
   serverUnreachable: boolean,
-): HeaderPartyStatusDisplay {
+): HeaderPartyStatusDisplay => {
   if (!serverUnreachable) {
     return display;
   }
   return { primary: display.primary, secondary: HEADER_PARTY_STATUS_UNREACHABLE_LABEL };
-}
+};

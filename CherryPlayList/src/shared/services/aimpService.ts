@@ -1,6 +1,7 @@
 import type { AimpBridgeState, AimpLogEntry, AimpSourceSelection } from '../contracts/aimp';
 import { getPlatform, isPlatformInitialized } from '../platform';
 import { getPlatformCapabilities } from '../platform/platformCapabilities';
+import type { DemoAimpPlaylistSize } from '../platform/types';
 import { useUIStore } from '../stores/uiStore';
 import { logger } from '../utils/logger';
 
@@ -49,6 +50,15 @@ class AimpService {
   async setLiveStreamStarted(liveStreamStarted: boolean): Promise<AimpBridgeState> {
     this.assertAimpAvailable();
     return this.unwrapResponse(getPlatform().aimp.setLiveStreamStarted(liveStreamStarted));
+  }
+
+  async setDemoPlaylistSize(size: DemoAimpPlaylistSize): Promise<AimpBridgeState> {
+    this.assertAimpAvailable();
+    const setDemoPlaylistSize = getPlatform().aimp.setDemoPlaylistSize;
+    if (!setDemoPlaylistSize) {
+      throw new Error('AIMP playlist size simulation is only available in web demo');
+    }
+    return this.unwrapResponse(setDemoPlaylistSize(size));
   }
 
   subscribe(listener: (state: AimpBridgeState) => void): () => void {

@@ -1,16 +1,12 @@
-import type { AimpPlaybackStatus } from '@shared/contracts/aimp';
-import type { StorePlaybackStatus } from '@shared/contracts/storePlaybackStatus';
 import type { PartyLifecycleState } from '@shared/services/partyService';
+
+import type { PartyPlaybackSourceState } from './partyPlaybackSource';
 
 export type PartyArchiveAvailabilityMode = 'active' | 'quiet' | 'blockedByLive' | 'hidden';
 
 export interface PartyArchiveAvailabilityInput {
   partyLifecycleState: PartyLifecycleState | null | undefined;
-  sessionMode: string;
-  playbackStatus?: StorePlaybackStatus | null;
-  aimpLiveStreamStarted?: boolean;
-  aimpPlaybackStatus?: AimpPlaybackStatus | null;
-  streamingSource?: string;
+  playbackSourceState: PartyPlaybackSourceState;
 }
 
 export interface PartyArchiveAvailability {
@@ -28,9 +24,9 @@ export const PARTY_ARCHIVE_CONFIRM_MESSAGE =
 export const PARTY_ARCHIVE_LIVE_BLOCKED_EXPLANATION =
   'Сначала остановите проигрывание или выключите онлайн — нельзя отправить в архив во время эфира';
 
-export function resolvePartyArchiveAvailability(
+export const resolvePartyArchiveAvailability = (
   input: PartyArchiveAvailabilityInput,
-): PartyArchiveAvailability {
+): PartyArchiveAvailability => {
   if (input.partyLifecycleState !== 'ready') {
     return {
       mode: 'hidden',
@@ -42,20 +38,10 @@ export function resolvePartyArchiveAvailability(
     };
   }
 
-  const isAimpLive = input.streamingSource === 'aimp' && input.aimpLiveStreamStarted === true;
-  const isAimpStopped = isAimpLive && input.aimpPlaybackStatus === 'stopped';
-  const isAimpPaused = isAimpLive && input.aimpPlaybackStatus === 'paused';
-  const isAimpPlaying = isAimpLive && !isAimpPaused && !isAimpStopped;
-  const isCherryPlayPlaying =
-    input.streamingSource !== 'aimp' &&
-    input.sessionMode === 'session' &&
-    input.playbackStatus === 'playing';
-  const isCherryPlayPaused =
-    input.streamingSource !== 'aimp' &&
-    input.sessionMode === 'session' &&
-    input.playbackStatus === 'paused';
-
-  if (isAimpPlaying || isCherryPlayPlaying) {
+  if (
+    input.playbackSourceState.archiveActivity === 'playing' ||
+    input.playbackSourceState.archiveActivity === 'live'
+  ) {
     return {
       mode: 'blockedByLive',
       showDangerSection: true,
@@ -66,7 +52,7 @@ export function resolvePartyArchiveAvailability(
     };
   }
 
-  if (isAimpPaused || isCherryPlayPaused) {
+  if (input.playbackSourceState.archiveActivity === 'paused') {
     return {
       mode: 'quiet',
       showDangerSection: true,
@@ -85,4 +71,4 @@ export function resolvePartyArchiveAvailability(
     isBlockedByLive: false,
     blockedExplanation: null,
   };
-}
+};

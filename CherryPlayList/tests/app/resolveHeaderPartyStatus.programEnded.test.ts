@@ -3,6 +3,18 @@ import {
   resolveHeaderPartyControlCtaLabel,
 } from '../../src/app/components/headerPartyStatusVisuals';
 import { resolveHeaderPartyStatus } from '../../src/app/components/resolveHeaderPartyStatus';
+import { createInitialAimpBridgeState } from '../../src/shared/contracts/aimp';
+import { resolvePartyPlaybackSourceState } from '../../src/workspaces/party/partyPlaybackSource';
+
+const cherryPlayPlaybackSourceState = (
+  sessionMode: 'preparation' | 'session',
+  status: 'playing' | 'paused' = 'playing',
+) =>
+  resolvePartyPlaybackSourceState('cherryPlayPlayer', {
+    sessionMode,
+    playerPlaybackStatus: status,
+    aimpBridgeState: createInitialAimpBridgeState(),
+  });
 
 describe('resolveHeaderPartyStatus programEnded overlay', () => {
   const readySession = {
@@ -16,7 +28,7 @@ describe('resolveHeaderPartyStatus programEnded overlay', () => {
     expect(
       resolveHeaderPartyStatus({
         ...readySession,
-        playbackStatus: 'paused',
+        playbackSourceState: cherryPlayPlaybackSourceState('session', 'paused'),
         programEnded: true,
       }),
     ).toEqual({ primary: 'Конец' });
@@ -25,12 +37,12 @@ describe('resolveHeaderPartyStatus programEnded overlay', () => {
   it('prefers Конец over Пауза when both paused and programEnded', () => {
     const withEnd = resolveHeaderPartyStatus({
       ...readySession,
-      playbackStatus: 'paused',
+      playbackSourceState: cherryPlayPlaybackSourceState('session', 'paused'),
       programEnded: true,
     });
     const pausedOnly = resolveHeaderPartyStatus({
       ...readySession,
-      playbackStatus: 'paused',
+      playbackSourceState: cherryPlayPlaybackSourceState('session', 'paused'),
       programEnded: false,
     });
     expect(withEnd.primary).toBe('Конец');
@@ -44,6 +56,7 @@ describe('resolveHeaderPartyStatus programEnded overlay', () => {
         partyLifecycleState: 'ready',
         sessionMode: 'preparation',
         serverUnreachable: false,
+        playbackSourceState: cherryPlayPlaybackSourceState('preparation'),
         programEnded: true,
       }),
     ).toEqual({ primary: 'Ждёт начала' });

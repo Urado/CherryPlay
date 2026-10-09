@@ -15,21 +15,28 @@ import {
   resolveDemoPathForFile,
   statDemoPath,
 } from './fixtures/fileBrowserTree';
-import type { IPCResponse, PlatformAPI } from './types';
+import type { DemoAimpPlaylistSize, IPCResponse, PlatformAPI } from './types';
 
 const DEMO_DIALOG_FIXTURE_PATH = '/demo/exports/output.cherry';
 const DEMO_OPEN_DIALOG_PATH = DEMO_MUSIC_ROOT;
-function getDemoWebBaseUrl(): string | null {
+const getDemoWebBaseUrl = (): string | null => {
   try {
-    const configuredWebBaseUrl = import.meta.env.VITE_WEB_BASE_URL || '';
-    const override = typeof process === 'undefined' ? undefined : process.env.VITE_WEB_BASE_URL;
+    const configuredWebBaseUrlValue: unknown = import.meta.env.VITE_WEB_BASE_URL;
+    const configuredWebBaseUrl =
+      typeof configuredWebBaseUrlValue === 'string' ? configuredWebBaseUrlValue : '';
+    const overrideValue =
+      typeof process === 'undefined'
+        ? undefined
+        : (process.env as Record<string, unknown>).VITE_WEB_BASE_URL;
+    const override = typeof overrideValue === 'string' ? overrideValue : undefined;
     return resolveLegalWebBaseUrl(configuredWebBaseUrl, override);
   } catch {
     return null;
   }
-}
+};
 
-function createDemoAimpApi(): PlatformAPI['aimp'] {
+const createDemoAimpApi = (): PlatformAPI['aimp'] => {
+  let playlistSize: DemoAimpPlaylistSize = 'small';
   let state = createDemoAimpBridgeState('cherryPlayPlayer');
 
   const response = (next: AimpBridgeState): IPCResponse<AimpBridgeState> => ({
@@ -38,19 +45,28 @@ function createDemoAimpApi(): PlatformAPI['aimp'] {
   });
 
   return {
-    getState: async () => response(state),
-    setSourceSelection: async (sourceSelection: AimpSourceSelection) => {
-      state = createDemoAimpBridgeState(sourceSelection, state.liveStreamStarted);
-      return response(state);
+    getState: () => Promise.resolve(response(state)),
+    setSourceSelection: (sourceSelection: AimpSourceSelection) => {
+      state = createDemoAimpBridgeState(sourceSelection, state.liveStreamStarted, playlistSize);
+      return Promise.resolve(response(state));
     },
-    setLiveStreamStarted: async (liveStreamStarted: boolean) => {
-      state = createDemoAimpBridgeState(state.sourceSelection, liveStreamStarted);
-      return response(state);
+    setDemoPlaylistSize: (size: DemoAimpPlaylistSize) => {
+      playlistSize = size;
+      state = createDemoAimpBridgeState(
+        state.sourceSelection,
+        state.liveStreamStarted,
+        playlistSize,
+      );
+      return Promise.resolve(response(state));
+    },
+    setLiveStreamStarted: (liveStreamStarted: boolean) => {
+      state = createDemoAimpBridgeState(state.sourceSelection, liveStreamStarted, playlistSize);
+      return Promise.resolve(response(state));
     },
     onStateChanged: () => () => undefined,
     onLog: () => () => undefined,
   };
-}
+};
 
 export class WebDemoPlatform implements PlatformAPI {
   readonly aimp = createDemoAimpApi();
@@ -66,7 +82,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload).path === 'string'
+          typeof payload.path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -80,7 +96,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload).path === 'string'
+          typeof payload.path === 'string'
             ? (payload as { path: string }).path
             : '';
         const stat = statDemoPath(path);
@@ -98,7 +114,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'path' in payload &&
-          typeof (payload).path === 'string'
+          typeof payload.path === 'string'
             ? (payload as { path: string }).path
             : DEMO_MUSIC_ROOT;
         return Promise.resolve({
@@ -154,7 +170,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'name' in payload &&
-          typeof (payload).name === 'string'
+          typeof payload.name === 'string'
             ? (payload as { name: string }).name
             : 'home';
         if (name === 'music') {
@@ -174,7 +190,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'url' in payload &&
-          typeof (payload).url === 'string'
+          typeof payload.url === 'string'
             ? (payload as { url: string }).url
             : undefined;
         if (url && /^https?:\/\//i.test(url)) {
@@ -216,7 +232,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'serverUrl' in payload &&
-          typeof (payload).serverUrl === 'string'
+          typeof payload.serverUrl === 'string'
             ? (payload as { serverUrl: string }).serverUrl
             : getDemoServerUrl();
         setDemoServerUrl(serverUrl);
@@ -237,7 +253,7 @@ export class WebDemoPlatform implements PlatformAPI {
           typeof payload === 'object' &&
           payload !== null &&
           'url' in payload &&
-          typeof (payload).url === 'string'
+          typeof payload.url === 'string'
             ? (payload as { url: string }).url
             : undefined;
         if (url && typeof window !== 'undefined') {

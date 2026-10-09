@@ -1,17 +1,47 @@
+import { createInitialAimpBridgeState } from '../../src/shared/contracts/aimp';
+import { resolvePartyPlaybackSourceState } from '../../src/workspaces/party/partyPlaybackSource';
 import { resolvePartyArchiveAvailability } from '../../src/workspaces/party/resolvePartyArchiveAvailability';
+
+const playbackSourceState = (
+  streamingSource: 'cherryPlayPlayer' | 'aimp',
+  sessionMode: 'preparation' | 'session',
+  status?: 'playing' | 'paused' | 'stopped',
+) => {
+  const bridgeState = createInitialAimpBridgeState();
+  return resolvePartyPlaybackSourceState(streamingSource, {
+    sessionMode,
+    playerPlaybackStatus: status === 'playing' || status === 'paused' ? status : 'idle',
+    aimpBridgeState: {
+      ...bridgeState,
+      sourceSelection: streamingSource,
+      liveStreamStarted: streamingSource === 'aimp' && status !== undefined,
+      playbackSnapshot: status
+        ? {
+            revision: 1,
+            status,
+            currentTrackKey: null,
+            positionMs: 0,
+            isMuted: false,
+            receivedAt: '',
+            sentAt: '',
+          }
+        : null,
+    },
+  });
+};
 
 describe('resolvePartyArchiveAvailability', () => {
   it('hides danger section when not ready', () => {
     expect(
       resolvePartyArchiveAvailability({
         partyLifecycleState: 'completed',
-        sessionMode: 'preparation',
+        playbackSourceState: playbackSourceState('cherryPlayPlayer', 'preparation'),
       }).showDangerSection,
     ).toBe(false);
     expect(
       resolvePartyArchiveAvailability({
         partyLifecycleState: 'draft',
-        sessionMode: 'preparation',
+        playbackSourceState: playbackSourceState('cherryPlayPlayer', 'preparation'),
       }).mode,
     ).toBe('hidden');
   });
@@ -19,9 +49,7 @@ describe('resolvePartyArchiveAvailability', () => {
   it('blocks archive while CherryPlay session is playing', () => {
     const result = resolvePartyArchiveAvailability({
       partyLifecycleState: 'ready',
-      sessionMode: 'session',
-      playbackStatus: 'playing',
-      streamingSource: 'cherryplay',
+      playbackSourceState: playbackSourceState('cherryPlayPlayer', 'session', 'playing'),
     });
     expect(result.mode).toBe('blockedByLive');
     expect(result.canArchive).toBe(false);
@@ -31,9 +59,7 @@ describe('resolvePartyArchiveAvailability', () => {
   it('quiets archive while CherryPlay session is paused', () => {
     const result = resolvePartyArchiveAvailability({
       partyLifecycleState: 'ready',
-      sessionMode: 'session',
-      playbackStatus: 'paused',
-      streamingSource: 'cherryplay',
+      playbackSourceState: playbackSourceState('cherryPlayPlayer', 'session', 'paused'),
     });
     expect(result.mode).toBe('quiet');
     expect(result.canArchive).toBe(true);
@@ -43,10 +69,7 @@ describe('resolvePartyArchiveAvailability', () => {
   it('blocks archive while AIMP live stream is playing', () => {
     const result = resolvePartyArchiveAvailability({
       partyLifecycleState: 'ready',
-      sessionMode: 'preparation',
-      streamingSource: 'aimp',
-      aimpLiveStreamStarted: true,
-      aimpPlaybackStatus: 'playing',
+      playbackSourceState: playbackSourceState('aimp', 'preparation', 'playing'),
     });
     expect(result.mode).toBe('blockedByLive');
   });
@@ -54,10 +77,7 @@ describe('resolvePartyArchiveAvailability', () => {
   it('quiets archive while AIMP live stream is paused', () => {
     const result = resolvePartyArchiveAvailability({
       partyLifecycleState: 'ready',
-      sessionMode: 'preparation',
-      streamingSource: 'aimp',
-      aimpLiveStreamStarted: true,
-      aimpPlaybackStatus: 'paused',
+      playbackSourceState: playbackSourceState('aimp', 'preparation', 'paused'),
     });
     expect(result.mode).toBe('quiet');
     expect(result.canArchive).toBe(true);
@@ -67,8 +87,7 @@ describe('resolvePartyArchiveAvailability', () => {
   it('allows archive after stop / idle ready', () => {
     const result = resolvePartyArchiveAvailability({
       partyLifecycleState: 'ready',
-      sessionMode: 'preparation',
-      streamingSource: 'cherryplay',
+      playbackSourceState: playbackSourceState('cherryPlayPlayer', 'preparation'),
     });
     expect(result.mode).toBe('active');
     expect(result.canArchive).toBe(true);

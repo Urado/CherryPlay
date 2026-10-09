@@ -23,6 +23,13 @@ After any changes to TypeScript/JavaScript/React files (.ts, .tsx, .js, .jsx) in
 
 All changes must comply with the project's ESLint and Prettier rules. When needed, fix formatting automatically via `lint:fix`.
 
+## Warnings in changed files
+
+- Every TypeScript/JavaScript/React file changed in a task must finish with **zero ESLint warnings and zero errors**, including warnings that existed before the task.
+- Run ESLint directly on the changed source files to verify their warning count; the project-wide `lint:fix` run alone is not sufficient because it may report warnings from unrelated files.
+- Fix the underlying cause of each warning. Do not suppress a rule or add a disable directive solely to make the warning count zero.
+- After the targeted check, run the applicable project `lint:fix` command above and re-run targeted ESLint if it changes the files.
+
 ## Checks before finishing a task
 
 Before closing out a task, ensure that:

@@ -1,8 +1,9 @@
 import * as signalR from '@microsoft/signalr';
 import { useEffect, useRef } from 'react';
 
-import { useSettingsStore } from '../stores';
+import { signalRService } from '../services/signalRService';
 import { useAimpStore } from '../stores/aimpStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import {
   formatAimpPublishingPathError,
   shouldApplyAimpDisconnectedPublishingError,
@@ -20,7 +21,9 @@ export interface UseAimpStreamingOrchestratorOptions {
   onPlaylistSynced?: (payload: PlaylistForApiPayload) => void;
 }
 
-export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestratorOptions): void {
+export const useAimpStreamingOrchestrator = (
+  options: UseAimpStreamingOrchestratorOptions,
+): void => {
   const { partyId, hasHydrated, onPartyNotFound, onPlaylistSynced } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
@@ -99,6 +102,31 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
   }, [orchestratorActive, partyId, enableStreaming, setPublishingPathState, streamingSource]);
 
   useEffect(() => {
+    if (!orchestratorActive) {
+      return;
+    }
+
+    const updateReconnectingState = (): void => {
+      const connectionState = signalRService.getConnectionState();
+      if (connectionState === signalR.HubConnectionState.Reconnecting) {
+        setPublishingPathState('reconnecting');
+      } else if (connectionState === signalR.HubConnectionState.Disconnected) {
+        const currentStatus = useAimpStore.getState().publishingPath.status;
+        if (currentStatus === 'ready' || currentStatus === 'reconnecting') {
+          setPublishingPathState(
+            'error',
+            formatAimpPublishingPathError('verifyPartyExists', new Error('disconnected')),
+          );
+        }
+      }
+    };
+
+    updateReconnectingState();
+    const intervalId = window.setInterval(updateReconnectingState, 500);
+    return () => window.clearInterval(intervalId);
+  }, [orchestratorActive, setPublishingPathState]);
+
+  useEffect(() => {
     if (!orchestratorActive || !partyId) {
       return;
     }
@@ -120,4 +148,4 @@ export function useAimpStreamingOrchestrator(options: UseAimpStreamingOrchestrat
 
     streamingOrchestrator.syncAimpFrozenState(enableStreaming);
   }, [bridgeState, enableStreaming, orchestratorActive, partyId, publishingBridgeReady]);
-}
+};
