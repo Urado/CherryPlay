@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System;
+using CherryPlayServer.Core;
 using CherryPlayServer.Core.Entities;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
@@ -80,7 +81,8 @@ public class InMemoryPartyRepository : IPartyRepository
         lock (organizerLock)
         {
             var futureCount = _parties.Values.Count(item =>
-                item.OrganizerId == party.OrganizerId && item.EventDateTime > nowUtc);
+                item.OrganizerId == party.OrganizerId &&
+                PartyFutureLimit.CountsAsFuture(item.EventDateTime, nowUtc));
             if (futureCount >= limit)
             {
                 return Task.FromResult(false);
@@ -94,6 +96,40 @@ public class InMemoryPartyRepository : IPartyRepository
 
     public Task UpdateAsync(Party party)
     {
+        ApplyUpdate(party);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> UpdateIfFuturePartyLimitNotReachedAsync(
+        Party party,
+        DateTime? previousEventDateTime,
+        DateTime nowUtc,
+        int limit)
+    {
+        _ = previousEventDateTime;
+        var organizerLock = _organizerLocks.GetOrAdd(party.OrganizerId, _ => new object());
+        lock (organizerLock)
+        {
+            if (_parties.TryGetValue(party.Id, out var stored) &&
+                PartyFutureLimit.EntersFutureSet(stored.EventDateTime, party.EventDateTime, nowUtc))
+            {
+                var futureCount = _parties.Values.Count(item =>
+                    item.OrganizerId == party.OrganizerId &&
+                    item.Id != party.Id &&
+                    PartyFutureLimit.CountsAsFuture(item.EventDateTime, nowUtc));
+                if (futureCount >= limit)
+                {
+                    return Task.FromResult(false);
+                }
+            }
+
+            ApplyUpdate(party);
+            return Task.FromResult(true);
+        }
+    }
+
+    private void ApplyUpdate(Party party)
+    {
         if (_parties.TryGetValue(party.Id, out var existingParty) &&
             !string.Equals(existingParty.ShortCode, party.ShortCode, StringComparison.OrdinalIgnoreCase))
         {
@@ -102,7 +138,6 @@ public class InMemoryPartyRepository : IPartyRepository
 
         _parties.AddOrUpdate(party.Id, party, (key, oldValue) => party);
         _shortCodeIndex[party.ShortCode] = party.Id;
-        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Guid id)

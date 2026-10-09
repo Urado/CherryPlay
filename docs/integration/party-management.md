@@ -39,7 +39,7 @@
 - По умолчанию вечеринка **unlisted** (доступна только по ссылке); при create можно сразу включить каталог (чекбокс).
 - Включение в **каталог** — решение организатора (toggle в кабинете, Editor, **Мои вечеринки**) при `ready` и `completed`.
 - Публичный список вечеринок: GET `/api/parties/public/list` — только с `isListedInCatalog=true` **и** не `draft` (см. `PublicPartyQueryService`, [CONTRACTS.md](../../CONTRACTS.md) §2, [DATABASE.md](../../CherryPlayServer/DATABASE.md)). Empty-state hint на странице каталога Web указывает создать вечеринку в CherryPlayList.
-- Антиспам: rate limiting на публичные ручки и Hub; лимит «будущих» вечеринок на организатора — `AuthConstants.MaxFuturePartiesPerOrganizer` = 2, **только при create** (`PartyService`; update `EventDateTime` не перепроверяет) — по плану §4.2, [CONTRACTS.md](../../CONTRACTS.md) §8.
+- Антиспам: rate limiting на публичные ручки и Hub; лимит «будущих» вечеринок на организатора — `AuthConstants.MaxFuturePartiesPerOrganizer` = 2 на create и на переход даты в будущее, только при `PartyLimits:EnforceFuturePartyLimit` = true (в поставке false, отказ не применяется) — [CONTRACTS.md](../../CONTRACTS.md) §3.4.
 
 ### Карточка вечеринки в каталоге
 
@@ -47,7 +47,7 @@
 
 ## Лимиты v1
 
-- `AuthConstants.MaxFuturePartiesPerOrganizer` = **2**: при `POST /api/parties` считаются вечеринки организатора с `EventDateTime > UtcNow`; при достижении лимита create отклоняется. Проверка **create-only** (`PartyService`); смена даты через update лимит не пересчитывает. Повышение — вручную, без админки.
+- `AuthConstants.MaxFuturePartiesPerOrganizer` = **2**. Слот занимает вечеринка без `EventDateTime` и вечеринка с `EventDateTime > UtcNow`. Сервер отклоняет create/update только при `PartyLimits:EnforceFuturePartyLimit` = true; в поставке ключ false, поэтому лимит не применяется. При включённом флаге `POST /api/parties` при уже занятых 2 слотах отклоняется, включая создание без даты. `PUT` перепроверяет лимит, когда дата из прошлого становится будущей; вечеринка, которая уже в слоте, при смене будущей даты повторно не считается. Отказ — **403** `future_party_limit_reached` ([CONTRACTS.md](../../CONTRACTS.md) §1.1, §3.4). Повышение — вручную, без админки.
 
 ## Страницы для зрителей
 

@@ -3,6 +3,7 @@ using CherryPlayServer.Core.Exceptions;
 using CherryPlayServer.Core.Extensions;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Mappings;
+using CherryPlayServer.Core.Options;
 using CherryPlayServer.Core.Validators;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Enums;
@@ -11,6 +12,7 @@ using CherryPlayServer.Models;
 using static CherryPlayServer.Core.PartyConstants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace CherryPlayServer.Core.Services;
 
@@ -25,6 +27,7 @@ public class PartyService : IPartyService
     private readonly IPartyAccessService _partyAccessService;
     private readonly IThemeAccessService _themeAccessService;
     private readonly ILogger<PartyService> _logger;
+    private readonly IOptions<PartyLimitOptions>? _partyLimitOptions;
 
     public PartyService(
         IPartyRepository partyRepository,
@@ -34,7 +37,8 @@ public class PartyService : IPartyService
         IPartyPlaylistNotifier playlistNotifier,
         IPartyAccessService partyAccessService,
         IThemeAccessService themeAccessService,
-        ILogger<PartyService> logger)
+        ILogger<PartyService> logger,
+        IOptions<PartyLimitOptions>? partyLimitOptions = null)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
@@ -44,6 +48,7 @@ public class PartyService : IPartyService
         _partyAccessService = partyAccessService ?? throw new ArgumentNullException(nameof(partyAccessService));
         _themeAccessService = themeAccessService ?? throw new ArgumentNullException(nameof(themeAccessService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _partyLimitOptions = partyLimitOptions;
     }
 
     public async Task<PartyDto> CreatePartyAsync(CreatePartyDto dto)
@@ -110,14 +115,20 @@ public class PartyService : IPartyService
             PartyLifecycleState = PartyLifecycleState.Ready,
         };
 
-        var wasAdded = await _partyRepository.AddIfFuturePartyLimitNotReachedAsync(
-            party,
-            DateTime.UtcNow,
-            AuthConstants.MaxFuturePartiesPerOrganizer);
-        if (!wasAdded)
+        if (EnforceFuturePartyLimit)
         {
-            throw new PartyLimitReachedException(
-                $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
+            var wasAdded = await _partyRepository.AddIfFuturePartyLimitNotReachedAsync(
+                party,
+                DateTime.UtcNow,
+                AuthConstants.MaxFuturePartiesPerOrganizer);
+            if (!wasAdded)
+            {
+                ThrowFuturePartyLimitReached();
+            }
+        }
+        else
+        {
+            await _partyRepository.AddAsync(party);
         }
 
         var savedParty = await _partyRepository.GetByIdAsync(party.Id);
@@ -240,14 +251,15 @@ public class PartyService : IPartyService
         var organizerId = httpContext.RequireOrganizerId("update party");
         await _partyAccessService.EnsurePartyOwnershipAsync(partyId, organizerId);
 
-        var party = await _partyRepository.GetByIdAsync(partyId);
-        if (party == null)
+        var storedParty = await _partyRepository.GetByIdAsync(partyId);
+        if (storedParty == null)
         {
             throw new PartyNotFoundException(partyId);
         }
 
         ValidatePartyCardFields(dto.ShortDescription, dto.DanceTags, nameof(dto));
 
+        var party = CopyParty(storedParty);
         if (dto.Name != null)
             party.Name = dto.Name;
         if (dto.Title != null)
@@ -257,7 +269,7 @@ public class PartyService : IPartyService
         if (dto.PartyThemeId.HasValue)
         {
             var newThemeId = dto.PartyThemeId.Value.ToStringValue();
-            if (!string.Equals(newThemeId, party.PartyThemeId.ToStringValue(), StringComparison.Ordinal))
+            if (!string.Equals(newThemeId, storedParty.PartyThemeId.ToStringValue(), StringComparison.Ordinal))
             {
                 var access = await _themeAccessService.CheckThemeAccessAsync(organizerId, newThemeId);
                 if (!access.IsAllowed)
@@ -300,7 +312,22 @@ public class PartyService : IPartyService
         if (dto.DanceTags != null)
             party.DanceTags = NormalizeDanceTags(dto.DanceTags);
 
-        await _partyRepository.UpdateAsync(party);
+        if (EnforceFuturePartyLimit)
+        {
+            var wasUpdated = await _partyRepository.UpdateIfFuturePartyLimitNotReachedAsync(
+                party,
+                storedParty.EventDateTime,
+                DateTime.UtcNow,
+                AuthConstants.MaxFuturePartiesPerOrganizer);
+            if (!wasUpdated)
+            {
+                ThrowFuturePartyLimitReached();
+            }
+        }
+        else
+        {
+            await _partyRepository.UpdateAsync(party);
+        }
         _logger.LogInformation(
             "Party metadata updated: organizerId={OrganizerId}, partyId={PartyId}",
             organizerId,
@@ -420,6 +447,40 @@ public class PartyService : IPartyService
             (PartyLifecycleState.Completed, PartyLifecycleState.Ready) => true,
             _ => false,
         };
+
+    private bool EnforceFuturePartyLimit =>
+        _partyLimitOptions?.Value is { EnforceFuturePartyLimit: true };
+
+    private static void ThrowFuturePartyLimitReached() =>
+        throw new PartyLimitReachedException(
+            $"Limit of {AuthConstants.MaxFuturePartiesPerOrganizer} future parties per organizer reached.");
+
+    private static Party CopyParty(Party party) => new()
+    {
+        Id = party.Id,
+        OrganizerId = party.OrganizerId,
+        Name = party.Name,
+        Title = party.Title,
+        Subtitle = party.Subtitle,
+        ShortCode = party.ShortCode,
+        PartyThemeId = party.PartyThemeId,
+        CustomizationSettings = party.CustomizationSettings,
+        Playlist = party.Playlist,
+        CreatedAt = party.CreatedAt,
+        EventDateTime = party.EventDateTime,
+        EventEndDateTime = party.EventEndDateTime,
+        IsListedInCatalog = party.IsListedInCatalog,
+        Description = party.Description,
+        Place = party.Place,
+        City = party.City,
+        Schedule = party.Schedule,
+        TimeZone = party.TimeZone,
+        ShortDescription = party.ShortDescription,
+        ExternalLinkUrl = party.ExternalLinkUrl,
+        ExternalLinkText = party.ExternalLinkText,
+        DanceTags = party.DanceTags,
+        PartyLifecycleState = party.PartyLifecycleState,
+    };
 
     private static void ValidatePartyCardFields(string? shortDescription, List<string>? danceTags, string paramName)
     {

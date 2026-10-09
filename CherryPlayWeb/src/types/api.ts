@@ -181,6 +181,7 @@ export interface ApiErrorPayload {
   message?: string;
   detail?: string;
   error?: string;
+  limit?: number;
   themeId?: string;
   requiredPackageCodes?: string[];
   existingEntitlementId?: string;

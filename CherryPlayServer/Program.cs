@@ -173,6 +173,8 @@ builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTr
 builder.Services.AddSingleton<SignalRConnectionMetrics>();
 builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));
+builder.Services.Configure<CherryPlayServer.Core.Options.PartyLimitOptions>(
+    builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyLimitOptions.SectionName));
 builder.Services.Configure<CherryPlayServer.Core.Options.ClientCompatibilityOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.ClientCompatibilityOptions.SectionName));
 builder.Services.AddSingleton<IPartyDisplayStatusService, PartyDisplayStatusService>();
