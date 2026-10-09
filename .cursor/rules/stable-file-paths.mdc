@@ -1,0 +1,21 @@
+---
+description: Resolve repository and resource file paths independently of the process working directory
+globs: '**/*.{js,jsx,ts,tsx,mjs,cjs}'
+alwaysApply: false
+---
+
+# Stable File Paths
+
+- For paths to files located beside or relative to a source module, derive the path from that module's URL or directory, not from the process working directory.
+- For repository contract tests, resolve every fixture and repository file from the test module location so the test passes when launched from the repository root, a package directory, or CI.
+- Use `process.cwd()` only when the CLI contract explicitly defines paths relative to the caller's working directory. Keep that behavior explicit and test it from the documented invocation directory.
+- Before adding or changing file reads, search nearby tests and scripts for relative path assumptions and run the affected command from each supported working directory.
+
+```js
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
+const fixture = path.resolve(moduleDirectory, '../fixtures/sample.json');
+const contents = await readFile(fixture, 'utf8');
+```
