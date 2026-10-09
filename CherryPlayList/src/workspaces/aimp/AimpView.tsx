@@ -6,7 +6,13 @@ import { type AimpDisconnectReason, type AimpPlaylistTrackDto } from '@shared/co
 import { isDemoFixturesMode, isDemoLiveMode } from '@shared/platform/demoLiveMode';
 import type { DemoAimpPlaylistSize } from '@shared/platform/types';
 import { aimpService } from '@shared/services/aimpService';
-import { useAimpStore, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import {
+  useAimpStore,
+  useAuthStore,
+  useProjectStore,
+  useSettingsStore,
+  useUIStore,
+} from '@shared/stores';
 import {
   canAdvanceAimpPlayback,
   canStartAimpLiveStream,
@@ -18,6 +24,8 @@ import {
   isAimpDegraded,
 } from '@shared/utils';
 import React, { useEffect, useMemo, useState } from 'react';
+
+import { resolveAimpServerConnectionStatus } from './resolveAimpServerConnectionStatus';
 interface AimpViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
@@ -130,6 +138,7 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
   const setBridgeState = useAimpStore((state) => state.setBridgeState);
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const linkedPartyId = useProjectStore((state) => state.meta.linkedParty?.id ?? null);
   const addNotification = useUIStore((state) => state.addNotification);
   const [isSubmittingLiveStream, setIsSubmittingLiveStream] = useState(false);
@@ -217,19 +226,12 @@ export const AimpView: React.FC<AimpViewProps> = ({ embedded = false }) => {
         : bridgeState.connection.phase === 'stale'
           ? { name: 'AIMP', label: 'Нет свежих данных', state: 'connecting' }
           : { name: 'AIMP', label: 'Отключён', state: 'disconnected' };
-  const serverConnectionStatus = !enableStreaming
-    ? { name: 'Сервер', label: 'Онлайн выключен', state: 'disconnected' }
-    : linkedPartyId === null
-      ? { name: 'Сервер', label: 'Вечеринка не привязана', state: 'disconnected' }
-      : publishingPath.status === 'ready'
-        ? { name: 'Сервер', label: 'На связи', state: 'connected' }
-        : publishingPath.status === 'reconnecting'
-          ? { name: 'Сервер', label: 'Восстанавливаем связь', state: 'connecting' }
-          : publishingPath.status === 'connecting'
-            ? { name: 'Сервер', label: 'Подключаемся', state: 'connecting' }
-            : publishingPath.status === 'error'
-              ? { name: 'Сервер', label: 'Нет связи', state: 'disconnected' }
-              : { name: 'Сервер', label: 'Не подключён', state: 'disconnected' };
+  const serverConnectionStatus = resolveAimpServerConnectionStatus({
+    isAuthenticated,
+    enableStreaming,
+    linkedPartyId,
+    publishingPathStatus: publishingPath.status,
+  });
   const connectionIndicators = (
     <div
       aria-label="Состояние подключений"
