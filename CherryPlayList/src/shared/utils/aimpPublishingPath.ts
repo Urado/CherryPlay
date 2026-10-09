@@ -1,4 +1,4 @@
-export type AimpPublishingPathStatus = 'idle' | 'connecting' | 'ready' | 'error';
+export type AimpPublishingPathStatus = 'idle' | 'connecting' | 'reconnecting' | 'ready' | 'error';
 
 export interface AimpPublishingPathState {
   status: AimpPublishingPathStatus;
@@ -11,21 +11,19 @@ export interface AimpPublishingBridgeServices {
   joinPartyAsOrganizer: (partyId: string) => Promise<void>;
 }
 
-function getErrorMessage(error: unknown): string {
+const getErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : 'Unknown error';
-}
+};
 
-export function createAimpPublishingPathState(
+export const createAimpPublishingPathState = (
   status: AimpPublishingPathStatus,
   error: string | null = null,
-): AimpPublishingPathState {
-  return {
-    status,
-    error,
-  };
-}
+): AimpPublishingPathState => ({
+  status,
+  error,
+});
 
-export function formatAimpPublishingPathError(
+export const formatAimpPublishingPathError = (
   operation:
     | 'checkPartyExists'
     | 'verifyPartyExists'
@@ -34,7 +32,7 @@ export function formatAimpPublishingPathError(
     | 'playlistPublish'
     | 'fullStatePublish',
   error?: unknown,
-): string {
+): string => {
   switch (operation) {
     case 'checkPartyExists':
       return 'Linked Party was not found on the server, so the AIMP publish path cannot start.';
@@ -57,19 +55,18 @@ export function formatAimpPublishingPathError(
     default:
       return `AIMP publishing failed: ${getErrorMessage(error)}`;
   }
-}
+};
 
-/** Keep a more specific connect / not-found error instead of a generic Disconnected overwrite. */
-export function shouldApplyAimpDisconnectedPublishingError(
+export const shouldApplyAimpDisconnectedPublishingError = (
   currentStatus: AimpPublishingPathStatus,
-): boolean {
+): boolean => {
   return currentStatus !== 'error';
-}
+};
 
-export async function startAimpPublishingBridge(
+export const startAimpPublishingBridge = async (
   partyId: string,
   services: AimpPublishingBridgeServices,
-): Promise<AimpPublishingPathState> {
+): Promise<AimpPublishingPathState> => {
   let exists: boolean;
   try {
     exists = await services.checkPartyExists(partyId);
@@ -103,4 +100,4 @@ export async function startAimpPublishingBridge(
   }
 
   return createAimpPublishingPathState('ready');
-}
+};

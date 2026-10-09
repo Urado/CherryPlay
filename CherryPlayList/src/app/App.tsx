@@ -50,7 +50,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isDemoMode) {
-      document.title = 'CherryPashka List (Demo)';
+      document.title = 'CherryPashkaParty (Demo)';
     }
 
     initializeProjectStoreHistory();
@@ -107,7 +107,7 @@ const App: React.FC = () => {
       }
     };
 
-    checkAuthOnStart();
+    void checkAuthOnStart();
   }, [accessToken, isDemoMode, supportsRealAuth]);
 
   useTrackItemSize();

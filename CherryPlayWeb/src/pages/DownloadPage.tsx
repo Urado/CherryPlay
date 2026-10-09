@@ -42,10 +42,10 @@ export const DownloadPage = () => {
           К вечеринкам
         </Link>
         <section className="download-card">
-          <p className="download-eyebrow">CherryPlay для Windows</p>
+          <p className="download-eyebrow">CherryPashkaParty для Windows</p>
           <h1 id="download-title">Скачать приложение</h1>
           <p className="download-description">
-            Установите CherryPashka List, чтобы создавать вечеринки и управлять музыкой.
+            Установите CherryPashkaParty, чтобы создавать вечеринки и управлять музыкой.
           </p>
           {loading && (
             <p className="download-status" role="status" aria-live="polite">
@@ -71,7 +71,7 @@ export const DownloadPage = () => {
             </div>
           )}
           <Link className="download-guide-link" to={ROUTES.FIRST_RUN_GUIDE}>
-            <span className="download-guide-title">Впервые запускаете CherryPashka List?</span>
+            <span className="download-guide-title">Впервые запускаете CherryPashkaParty?</span>
             <span className="download-guide-description">
               Откройте краткую инструкцию по установке и первому эфиру
             </span>

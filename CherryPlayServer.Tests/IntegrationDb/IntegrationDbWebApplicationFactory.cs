@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using CherryPlayServer.Core.Interfaces;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CherryPlayServer.Tests.IntegrationDb;
 
@@ -27,12 +30,16 @@ public sealed class IntegrationDbWebApplicationFactory : WebApplicationFactory<P
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
-        // UseSetting applies before Program.cs reads configuration during service registration.
         builder.UseSetting("UseInMemoryStorage", "false");
         builder.UseSetting("Database:AutoMigrateOnStartup", "true");
         builder.UseSetting("ConnectionStrings:DefaultConnection", _connectionString);
         builder.UseSetting("JWT_SECRET_KEY", "integration-tests-secret-key-minimum-32-characters");
         builder.UseSetting("Auth:OAuthEnabled", "false");
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IDesktopUpdateVersionService>();
+            services.AddSingleton<IDesktopUpdateVersionService, DesktopUpdateVersionServiceStub>();
+        });
     }
 
     public async Task WaitUntilDatabaseReachableAsync(CancellationToken cancellationToken = default)

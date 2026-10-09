@@ -26,9 +26,9 @@ type OAuthCompleteProviderId = 'vk' | 'mailru';
 
 const OAUTH_COMPLETE_PROVIDERS: readonly OAuthCompleteProviderId[] = ['vk', 'mailru'];
 
-function isOAuthCompleteProviderId(value: string | null): value is OAuthCompleteProviderId {
+const isOAuthCompleteProviderId = (value: string | null): value is OAuthCompleteProviderId => {
   return value !== null && (OAUTH_COMPLETE_PROVIDERS as readonly string[]).includes(value);
-}
+};
 
 export const OAuthCompletePage = () => {
   const navigate = useNavigate();
@@ -90,7 +90,7 @@ export const OAuthCompletePage = () => {
   }, [searchParams]);
 
   const stripSensitiveQuery = useCallback(() => {
-    navigate({ pathname: ROUTES.OAUTH_COMPLETE, search: '' }, { replace: true });
+    void navigate({ pathname: ROUTES.OAUTH_COMPLETE, search: '' }, { replace: true });
   }, [navigate]);
 
   const finishSuccess = useCallback(async () => {
@@ -117,7 +117,7 @@ export const OAuthCompletePage = () => {
       return;
     }
 
-    navigate(ROUTES.CABINET, { replace: true });
+    await navigate(ROUTES.CABINET, { replace: true });
   }, [ensureConsents, navigate, stripSensitiveQuery]);
 
   const completeWithConsents = useCallback(
@@ -197,7 +197,7 @@ export const OAuthCompletePage = () => {
           </div>
           <p className="oauth-complete-page-return-fallback">
             Если приложение не открылось автоматически,{' '}
-            <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashka List</a>.
+            <a href={returnUrl}>нажмите здесь, чтобы вернуться в CherryPashkaParty</a>.
           </p>
         </div>
       </div>
@@ -213,7 +213,7 @@ export const OAuthCompletePage = () => {
             <p className="oauth-complete-page-error" role="alert">
               {error ?? 'Не удалось подтвердить согласия. Войдите снова.'}
             </p>
-            <FormButton type="button" fullWidth onClick={() => navigate(ROUTES.LOGIN)}>
+            <FormButton type="button" fullWidth onClick={() => void navigate(ROUTES.LOGIN)}>
               Вернуться ко входу
             </FormButton>
           </div>
@@ -235,7 +235,7 @@ export const OAuthCompletePage = () => {
                   ? 'Неподдерживаемый провайдер OAuth.'
                   : 'Отсутствует код авторизации. Начните вход заново.'}
             </p>
-            <FormButton type="button" fullWidth onClick={() => navigate(ROUTES.LOGIN)}>
+            <FormButton type="button" fullWidth onClick={() => void navigate(ROUTES.LOGIN)}>
               Вернуться ко входу
             </FormButton>
           </div>

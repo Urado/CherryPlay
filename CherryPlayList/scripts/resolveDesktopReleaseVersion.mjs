@@ -72,7 +72,7 @@ export const getLatestDesktopReleaseVersion = async ({
     const match = typeof release.tag_name === 'string' ? playerTagPattern.exec(release.tag_name) : null;
     if (!match) return [];
     const version = `${match[1]}.${match[2]}.${match[3]}`;
-    const expectedZips = [`CherryPashkaList-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+    const expectedZips = [`CherryPashkaParty-${version}-x64.zip`];
     if (!Array.isArray(release.assets) || !release.assets.some((asset) => expectedZips.includes(asset?.name))) return [];
     return [version];
   });
@@ -80,14 +80,10 @@ export const getLatestDesktopReleaseVersion = async ({
   return candidates.sort(compareVersions).at(-1) ?? '0.0.0';
 };
 
-export const stampDesktopPackageVersion = async (packagePath, lockPath, version) => {
-  const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
-  const lockJson = JSON.parse(await readFile(lockPath, 'utf8'));
+export const stampDesktopPackageVersion = (packageJson, lockJson, version) => {
   packageJson.version = version;
   lockJson.version = version;
   if (lockJson.packages?.['']) lockJson.packages[''].version = version;
-  await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
-  await writeFile(lockPath, `${JSON.stringify(lockJson, null, 2)}\n`);
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -99,11 +95,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.stdout.write(`${version}\n`);
   } else {
     const [packagePath, lockPath] = process.argv.slice(2);
+    if (packagePath !== 'package.json' || lockPath !== 'package-lock.json') {
+      throw new Error('Desktop package paths must be package.json and package-lock.json');
+    }
     const eventName = process.env.EVENT_NAME;
     const tagName = process.env.TAG_NAME ?? '';
     const isPrerelease = process.env.IS_PRERELEASE === 'true';
     const isDraft = process.env.IS_DRAFT === 'true';
-    const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
+    const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+    const lockJson = JSON.parse(await readFile('package-lock.json', 'utf8'));
     const version = resolveDesktopReleaseVersion({
       eventName,
       tagName,
@@ -111,8 +111,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       isDraft,
       packageVersion: packageJson.version,
     });
-    if (tagName.startsWith('player-')) await stampDesktopPackageVersion(packagePath, lockPath, version);
-    const updatedPackage = JSON.parse(await readFile(packagePath, 'utf8'));
+    if (tagName.startsWith('player-')) {
+      stampDesktopPackageVersion(packageJson, lockJson, version);
+      await writeFile('package.json', `${JSON.stringify(packageJson, null, 2)}\n`);
+      await writeFile('package-lock.json', `${JSON.stringify(lockJson, null, 2)}\n`);
+    }
+    const updatedPackage = JSON.parse(await readFile('package.json', 'utf8'));
     if (updatedPackage.version !== version) {
       throw new Error(`Desktop package version '${updatedPackage.version}' does not match release version '${version}'`);
     }

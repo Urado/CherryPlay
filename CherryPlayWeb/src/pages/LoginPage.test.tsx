@@ -2,15 +2,15 @@
  * @vitest-environment jsdom
  */
 import { AuthHttpError } from '@cherryplay/components';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LoginPage } from './LoginPage';
 
-const checkAuthMock = vi.fn();
-const issueDesktopAuthCodeMock = vi.fn();
+const checkAuthMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const issueDesktopAuthCodeMock = vi.fn<(...args: unknown[]) => Promise<string>>();
 
 vi.mock('../services/authService', () => ({
   authService: {
@@ -30,7 +30,7 @@ vi.mock('../contexts/AppConfigContext', () => ({
   }),
 }));
 
-const ensureConsentsMock = vi.fn();
+const ensureConsentsMock = vi.fn<(...args: unknown[]) => Promise<'ok' | 'logout' | 'error'>>();
 
 vi.mock('../contexts/ConsentGateContext', () => ({
   useConsentGate: () => ({
@@ -93,7 +93,7 @@ vi.mock('@cherryplay/components', async (importOriginal) => {
   };
 });
 
-function renderLogin(path: string) {
+const renderLogin = (path: string) => {
   return render(
     createElement(
       MemoryRouter,
@@ -105,7 +105,7 @@ function renderLogin(path: string) {
       ),
     ),
   );
-}
+};
 
 describe('LoginPage desktop SSO', () => {
   beforeEach(() => {
@@ -118,7 +118,6 @@ describe('LoginPage desktop SSO', () => {
   });
 
   afterEach(() => {
-    cleanup();
     sessionStorage.clear();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -143,7 +142,7 @@ describe('LoginPage desktop SSO', () => {
 
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashkaParty',
     });
     expect(fallback.getAttribute('href')).toContain('code=url-code-1');
     expect(screen.queryByTestId('auth-form')).toBeNull();
@@ -162,9 +161,7 @@ describe('LoginPage desktop SSO', () => {
 
     expect(await screen.findByText('Проверяем сессию…')).toBeTruthy();
 
-    await act(async () => {
-      resolveAuth({ id: '1', name: 'Org', createdAt: '2020-01-01' });
-    });
+    act(() => resolveAuth({ id: '1', name: 'Org', createdAt: '2020-01-01' }));
 
     expect(await screen.findByRole('button', { name: 'Войти' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Войти другим аккаунтом' })).toBeTruthy();
@@ -221,7 +218,7 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     expect(issueDesktopAuthCodeMock).toHaveBeenCalledTimes(1);
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashkaParty',
     });
     expect(fallback.getAttribute('href')).toContain('code=issued-code');
   });
@@ -263,7 +260,7 @@ describe('LoginPage desktop SSO', () => {
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
     expect(ensureConsentsMock).toHaveBeenCalledTimes(1);
     const fallback = screen.getByRole('link', {
-      name: 'нажмите здесь, чтобы вернуться в CherryPashka List',
+      name: 'нажмите здесь, чтобы вернуться в CherryPashkaParty',
     });
     expect(fallback.getAttribute('href')).toContain('code=form-success-code');
   });
@@ -285,9 +282,7 @@ describe('LoginPage desktop SSO', () => {
     expect(screen.queryByText('Возвращаемся в приложение…')).toBeNull();
     expect(screen.getByTestId('auth-form')).toBeTruthy();
 
-    await act(async () => {
-      resolveConsents('ok');
-    });
+    act(() => resolveConsents('ok'));
 
     expect(await screen.findByText('Возвращаемся в приложение…')).toBeTruthy();
   });

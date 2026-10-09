@@ -15,6 +15,7 @@ import { applySyncedPlaylistTrackIds, getOnlineNetworkPolicy } from '@shared/str
 import { sanitizeExternalUrl } from '@shared/utils';
 import { isSessionExpiredError } from '@shared/utils/authErrorHandler';
 
+import { resolvePartyPlaybackSourceState } from './partyPlaybackSource';
 import {
   getCurrentPartyPublishSyncParts,
   markPartyPublishFullySynced,
@@ -28,21 +29,19 @@ import {
   hasNoPendingPartyPublishChanges,
   resolveHeaderPartyPublishDisabledReason,
 } from './resolveHeaderPartyPublishDisabledReason';
-import {
-  resolvePartyArchiveAvailability,
-} from './resolvePartyArchiveAvailability';
+import { resolvePartyArchiveAvailability } from './resolvePartyArchiveAvailability';
 
-function getPartyStore() {
+const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
-}
+};
 
-function isNetworkEnabledNow(): boolean {
+const isNetworkEnabledNow = (): boolean => {
   return getOnlineNetworkPolicy({
     enableStreaming: useSettingsStore.getState().enableStreaming,
   }).networkEnabled;
-}
+};
 
-function buildPlaylistParamsFromStores() {
+const buildPlaylistParamsFromStores = () => {
   const project = useProjectStore.getState();
   return {
     streamingSource: useSettingsStore.getState().streamingSource,
@@ -50,9 +49,9 @@ function buildPlaylistParamsFromStores() {
     items: project.items,
     partyTrackDisplay: project.meta.partyTrackDisplay,
   };
-}
+};
 
-async function handleThemeNotEntitled(error: ThemeNotEntitledError): Promise<void> {
+const handleThemeNotEntitled = (error: ThemeNotEntitledError): void => {
   const store = getPartyStore();
   const message = buildThemeNotEntitledMessage(error, store.themeAccess);
   const safeContactUrl = sanitizeExternalUrl(store.themeAccess?.contactUrl);
@@ -65,13 +64,13 @@ async function handleThemeNotEntitled(error: ThemeNotEntitledError): Promise<voi
     message,
     safeContactUrl,
   });
-}
+};
 
-export async function refreshPartyThemeAccess(forceRefresh = false): Promise<void> {
+export const refreshPartyThemeAccess = async (forceRefresh = false): Promise<void> => {
   await loadPartyThemeAccess(forceRefresh);
-}
+};
 
-export async function publishPartyToSite(): Promise<void> {
+export const publishPartyToSite = async (): Promise<void> => {
   const store = getPartyStore();
   const ui = useUIStore.getState();
   const networkEnabled = isNetworkEnabledNow();
@@ -136,7 +135,7 @@ export async function publishPartyToSite(): Promise<void> {
       return;
     }
     if (isThemeNotEntitledError(error)) {
-      await handleThemeNotEntitled(error);
+      handleThemeNotEntitled(error);
       return;
     }
     ui.addNotification({
@@ -146,13 +145,13 @@ export async function publishPartyToSite(): Promise<void> {
   } finally {
     store.setIsPublishing(false);
   }
-}
+};
 
-export async function publishPartyFromHeader(): Promise<void> {
+export const publishPartyFromHeader = async (): Promise<void> => {
   await publishPartyToSite();
-}
+};
 
-export async function unarchivePartyFromHeader(): Promise<void> {
+export const unarchivePartyFromHeader = async (): Promise<void> => {
   const store = getPartyStore();
   const ui = useUIStore.getState();
   const networkEnabled = isNetworkEnabledNow();
@@ -210,9 +209,9 @@ export async function unarchivePartyFromHeader(): Promise<void> {
     store.setIsTransitioningLifecycle(false);
     store.setPendingLifecycleTransition(null);
   }
-}
+};
 
-export async function archivePartyFromHeader(): Promise<void> {
+export const archivePartyFromHeader = async (): Promise<void> => {
   const store = getPartyStore();
   const ui = useUIStore.getState();
   const networkEnabled = isNetworkEnabledNow();
@@ -255,11 +254,11 @@ export async function archivePartyFromHeader(): Promise<void> {
   const aimpBridge = useAimpStore.getState().bridgeState;
   const availability = resolvePartyArchiveAvailability({
     partyLifecycleState: store.partyLifecycleState,
-    sessionMode,
-    playbackStatus: sessionMode === 'session' ? playbackStatus : null,
-    aimpLiveStreamStarted: aimpBridge.liveStreamStarted,
-    aimpPlaybackStatus: aimpBridge.playbackSnapshot?.status ?? null,
-    streamingSource,
+    playbackSourceState: resolvePartyPlaybackSourceState(streamingSource, {
+      sessionMode,
+      playerPlaybackStatus: playbackStatus,
+      aimpBridgeState: aimpBridge,
+    }),
   });
 
   if (availability.isBlockedByLive) {
@@ -298,4 +297,4 @@ export async function archivePartyFromHeader(): Promise<void> {
     store.setIsTransitioningLifecycle(false);
     store.setPendingLifecycleTransition(null);
   }
-}
+};

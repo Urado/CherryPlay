@@ -8,10 +8,10 @@
 
 1. **Server Tests** (`tests.yml`) — .NET-тесты на PR в `main`/`develop` и после push в `main`
 2. **Verify Docker Build** (`verify-docker-build.yml`) — на PR проверяет, что образы `server`/`web` собираются (`push: false`, без публикации в GHCR)
-3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` выбирает наибольшую версию опубликованного Desktop prerelease с тегом `player-vX.Y.Z` и точным ZIP `CherryPashkaList-X.Y.Z-x64.zip`; если такого релиза нет, использует `0.0.0`. Package version сборки — **`{base}-pr-{PR}`**, ZIP и Actions artifact называются **`CherryPashkaList-{base}-pr-{PR}-x64.zip`** и **`CherryPashkaList-{base}-pr-{PR}-x64`**. Комментарий бота показывает версию пакета и имя ZIP.
+3. **Verify Desktop Windows** (`verify-desktop-windows.yml`) — на PR в `main`/`develop` при изменениях в `CherryPlayList`/`CherryPlayComponents` выбирает наибольшую версию опубликованного Desktop prerelease с тегом `player-vX.Y.Z` и точным ZIP `CherryPashkaParty-X.Y.Z-x64.zip`; если такого релиза нет, использует `0.0.0`. Package version сборки — **`{base}-pr-{PR}`**, ZIP и Actions artifact называются **`CherryPashkaParty-{base}-pr-{PR}-x64.zip`** и **`CherryPashkaParty-{base}-pr-{PR}-x64`**. Бот показывает версию пакета и имя ZIP.
 4. **Build & Push Images** (`build-images.yml`) — собирает и пушит образы в GHCR при push в `main`/`develop`
 5. **Release and Deploy** (`release-and-deploy.yml`) — собирает образы с тегами версий и деплоит на сервер при **публикации** релиза (`release: published`) или вручную (`workflow_dispatch` + tag)
-6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает ZIP приложения CherryPashka List и загружает его в GitHub Release. Для `player-vX.Y.Z` тег задаёт версию Desktop: workflow записывает версию в `package.json` и `package-lock.json`, затем проверяет ZIP.
+6. **Release Desktop Windows** (`release-desktop-windows.yml`) — независимо собирает ZIP приложения CherryPashkaParty и загружает его в GitHub Release. Для `player-vX.Y.Z` тег задаёт версию Desktop: workflow записывает версию в `package.json` и `package-lock.json`, затем проверяет ZIP.
 
 При публикации GitHub Release (не draft) workflows **5** и **6** запускаются **параллельно** и не зависят друг от друга: сбой desktop-сборки не блокирует деплой сервера, и наоборот. Desktop-workflow не требует дополнительных Secrets (достаточно `GITHUB_TOKEN`). Draft → Publish тоже даёт `published`; событие `created` для draft GitHub не шлёт в Actions.
 
@@ -214,7 +214,7 @@ Prometheus хранит данные до 168 часов и ограничива
 
 Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (события ASP.NET Core ниже `Warning` отфильтрованы). Штатные прикладные события могут включать внутренние `OrganizerId` и `PartyId`; email, имя, пароль, токены, содержимое запросов и плейлистов в эти события не включаются. Alloy дополнительно очищает email, IP-адреса и распространённые секреты в URL перед отправкой записей в Loki.
 
-На одной VM установлены предварительные memory caps: PostgreSQL 1 GiB, backend 1 GiB, web 256 MiB, pgAdmin 256 MiB, Prometheus 256 MiB, Loki 256 MiB, Grafana 256 MiB, Alloy 128 MiB и exporters по 128 MiB — всего 3.625 GiB верхней границы; совокупные CPU caps — 5.5 cores. Caps для вспомогательных сервисов снижены, чтобы ограничить общий аппетит стека на VM с неизвестным размером; это лимиты, не резервирование. Фактический объём CPU, RAM и свободного диска VM пока неизвестен. Prometheus, Loki и Alloy доступны только внутренней Docker-сети. Контейнерные resource metrics отключены: сбор через cAdvisor потребовал бы доступа к Docker socket API, что добавило бы риск управления Docker daemon; в этом Compose оставлены метрики хоста, backend и PostgreSQL. Node-exporter собирает метрики хоста без privileged-режима.
+На одной VM установлены предварительные memory caps: PostgreSQL 1 GiB, backend 1 GiB, web 256 MiB, pgAdmin 256 MiB, Prometheus 256 MiB, Loki 256 MiB, Grafana 768 MiB, Alloy 128 MiB и exporters по 128 MiB — всего 4.125 GiB верхней границы; совокупные CPU caps — 5.5 cores. Это лимиты, не резервирование. Общий объём RAM VM — 3.8 GiB; caps являются верхними границами, поэтому фактическое потребление следует контролировать на хосте. Prometheus, Loki и Alloy доступны только внутренней Docker-сети. Контейнерные resource metrics отключены: сбор через cAdvisor потребовал бы доступа к Docker socket API, что добавило бы риск управления Docker daemon; в этом Compose оставлены метрики хоста, backend и PostgreSQL. Node-exporter собирает метрики хоста без privileged-режима.
 
 ### Автоматическая сборка при изменениях
 
@@ -247,32 +247,34 @@ Backend пишет структурированные JSON-логи с уров�
 
 Для сайта и сервера публикуйте стабильный релиз с тегом `vX.Y.Z` (например, `v1.0.0`) без отметки prerelease. `release-and-deploy.yml` проверяет формат тега и использует его версию как `ClientCompatibility.ServerVersion` в образе сервера и как версию совместимости в сборке web-образа; неподдерживаемый тег останавливает workflow до сборки образов. Порог `ClientCompatibility.Desktop.MinVersion` остаётся отдельной настройкой: сервер возвращает `426 client_outdated` клиентам ниже этого порога.
 
-Релиз приложения публикуйте как prerelease с тегом строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`): три числовых компонента, без prerelease-суффикса. Для такого тега `release-and-deploy.yml` пропускает сборку образов и деплой, а `release-desktop-windows.yml` записывает версию тега в `CherryPlayList/package.json` и `package-lock.json`, собирает ZIP `CherryPashkaList-X.Y.Z-x64.zip` и проверяет его версию. Уведомление Desktop и страница загрузки сайта находят релизы по новому имени ZIP и выбирают наибольшую SemVer-версию. Обновление скачивается вручную через `/download`, автоустановки нет.
+Релиз приложения публикуйте как prerelease с тегом строго в формате `player-vX.Y.Z` (например, `player-v0.7.0`): три числовых компонента, без prerelease-суффикса. Для такого тега `release-and-deploy.yml` пропускает сборку образов и деплой, а `release-desktop-windows.yml` записывает версию тега в `CherryPlayList/package.json` и `package-lock.json`, собирает ZIP `CherryPashkaParty-X.Y.Z-x64.zip` и проверяет его версию. Уведомление Desktop и страница загрузки сайта находят релизы по имени ZIP `CherryPashkaParty` и выбирают наибольшую SemVer-версию. Обновление скачивается вручную через `/download`, автоустановки нет.
 
-### Скачать CherryPashka List для Windows
+### Скачать CherryPashkaParty для Windows
 
 #### Из pull request (до релиза)
 
-На PR с изменениями в List/Components или `CherryPlayAimpPlugin/**` workflow **Verify Desktop Windows** берёт `{base}` из наибольшего опубликованного prerelease Desktop тега `player-vX.Y.Z`, если есть ZIP с тем же номером версии; иначе `{base}` равен `0.0.0`. Package version внутри сборки — `{base}-pr-{N}`, имя ZIP и artifact — **`CherryPashkaList-{base}-pr-{N}-x64.zip`** / **`CherryPashkaList-{base}-pr-{N}-x64`**. Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
+На PR с изменениями в List/Components или `CherryPlayAimpPlugin/**` workflow **Verify Desktop Windows** берёт `{base}` из наибольшего опубликованного prerelease Desktop тега `player-vX.Y.Z`, если есть ZIP с тем же номером версии; иначе `{base}` равен `0.0.0`. Package version внутри сборки — `{base}-pr-{N}`, имя ZIP и artifact — **`CherryPashkaParty-{base}-pr-{N}-x64.zip`** / **`CherryPashkaParty-{base}-pr-{N}-x64`**. Скачать: PR → комментарий бота или Checks → run → **Artifacts**. Retention 14 дней. Релизные assets — без суффикса `-pr-*`.
 
 #### Из GitHub Release
 
-После успешного desktop-workflow на Release появляется артефакт **`CherryPashkaList-{version}-x64.zip`**. После распаковки запускается `CherryPashkaList.exe`. Для `player-vX.Y.Z` версия `{version}` — `X.Y.Z` из тега, записанная workflow в `package.json` и `package-lock.json`; в иных случаях workflow использует версию пакета из коммита.
+После успешного desktop-workflow на Release появляется артефакт **`CherryPashkaParty-{version}-x64.zip`**. После распаковки запускается `CherryPashkaParty.exe`. Для `player-vX.Y.Z` версия `{version}` — `X.Y.Z` из тега, записанная workflow в `package.json` и `package-lock.json`; в иных случаях workflow использует версию пакета из коммита.
 
 URL для **последнего стабильного** (non-prerelease) релиза:
 
 ```text
-https://github.com/<owner>/<repo>/releases/latest/download/CherryPashkaList-{appVersion}-x64.zip
+https://github.com/<owner>/<repo>/releases/latest/download/CherryPashkaParty-{appVersion}-x64.zip
 ```
 
-Пример: в `package.json` версия `0.7.0`, zip лежит на последнем non-prerelease → `…/releases/latest/download/CherryPashkaList-0.7.0-x64.zip`. `/latest/` указывает только на последний **non-prerelease**; prerelease тоже получает zip-asset, но не через `/latest/`. В имени файла — версия приложения.
+Пример: в `package.json` версия `0.7.0`, zip лежит на последнем non-prerelease → `…/releases/latest/download/CherryPashkaParty-0.7.0-x64.zip`. `/latest/` указывает только на последний **non-prerelease**; prerelease тоже получает zip-asset, но не через `/latest/`. В имени файла — версия приложения.
 
-Страница [`/download`](../CherryPlayWeb/docs/pages.md#страница-загрузки-приложения) и Desktop уведомление используют публичный GitHub Releases API и опубликованные prerelease с тегом строго в формате `player-vX.Y.Z` (три числовых компонента без prerelease-суффикса), у которых ZIP точно совпадает с версией тега (`CherryPashkaList-X.Y.Z-x64.zip`). Оба выбирают наибольшую SemVer-версию. Страница показывает версию из тега и ведёт прямо на asset. Desktop при запуске и не чаще раза в 24 часа сравнивает установленную версию с выбранным релизом. Проверка откладывается на время активной связанной сессии; сетевой сбой не блокирует приложение и повторяется через пять минут. Мягкое уведомление показывается в шапке и может быть закрыто для этой версии. Скачивание и запуск выполняются пользователем вручную.
+Страница [`/download`](../CherryPlayWeb/docs/pages.md#страница-загрузки-приложения) и **Electron** обращаются к публичному GitHub Releases API напрямую: опубликованные prerelease с тегом `player-vX.Y.Z` и ZIP `CherryPashkaParty-X.Y.Z-x64.zip`, наибольшая SemVer. Страница показывает версию из тега и ведёт на asset. Electron при запуске и не чаще раза в 24 часа сравнивает установленную версию с выбранным релизом; проверка откладывается на время активной связанной сессии; сетевой сбой не блокирует приложение и повторяется через пять минут. Мягкое уведомление в шапке можно закрыть для этой версии. Скачивание и запуск — вручную.
+
+**Browser Live** не ходит в GitHub сам: берёт `desktopUpdateVersion` из `GET /api/config`, а сервер подтягивает ту же логику подходящего Desktop-релиза с GitHub (кэш/таймаут — [OPS.md](../CherryPlayServer/OPS.md#предупреждение-о-прекращении-поддержки-desktop)). Оператор `LatestVersion` не задаёт; публикация Desktop не требует релиза сайта.
 
 Чтобы выпустить обновление приложения для этой страницы:
 
 1. Создайте GitHub Release с тегом `player-vX.Y.Z`, отметьте его как prerelease и опубликуйте.
-2. Дождитесь успешного `Release Desktop Windows` и проверьте, что в релиз добавлен ZIP `CherryPashkaList-X.Y.Z-x64.zip`, совпадающий с версией в `player-vX.Y.Z`.
+2. Дождитесь успешного `Release Desktop Windows` и проверьте, что в релиз добавлен ZIP `CherryPashkaParty-X.Y.Z-x64.zip`, совпадающий с версией в `player-vX.Y.Z`.
 3. Откройте `/download` и убедитесь, что показана эта версия и кнопка начинает загрузку ZIP.
 
 Тег `player-vX.Y.Z` задаёт версию приложения и ZIP. Windows ZIP для релизов и PR собирается с AIMP bridge и manifest из закоммиченной `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`. CI не загружает AIMP SDK и не компилирует bridge; мейнтейнер собирает DLL локально и коммитит её вместе с изменениями плагина. Оба desktop workflow проверяют, что итоговый ZIP содержит DLL и manifest. Инструкции локальной сборки и обновления DLL: [CherryPlayAimpPlugin/README.md](../CherryPlayAimpPlugin/README.md) и [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md).
@@ -288,6 +290,16 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPashkaList-{app
 
 - Для каждого Windows ZIP staging добавляет нативный AIMP bridge и manifest. Если `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll` отсутствует, сборка завершится ошибкой. Проверка состава ZIP описана в [CherryPlayList/BUILD.md](../CherryPlayList/BUILD.md); ручная проверка совместимости на Windows 10/11 выполняется отдельно.
 
+### Предупреждение о будущем прекращении поддержки приложения
+
+После публикации доступного Desktop-обновления, совместимого с текущим сервером, оператор может объявить будущий минимум приложения и целевой релиз сайта/сервера через `ClientCompatibility:Desktop:NextMinVersion` и `NextServerVersion`. Настройка, ограничения и проверка описаны в [CherryPlayServer/OPS.md](../CherryPlayServer/OPS.md#предупреждение-о-прекращении-поддержки-desktop). При выпуске целевого релиза оператор поднимает действующий `MinVersion` и очищает оба `Next*` поля; объявление автоматически порог не меняет.
+
+Desktop получает объявление из `/api/config` при запуске после загрузки настроек и затем каждые пять минут: только в Electron, при включённом «Онлайн», доступной сети по `navigator.onLine` и отсутствии активной связанной сессии. Запрос ограничен десятью секундами и отменяется при прекращении проверки. Сбой сохраняет последнее успешное объявление в текущем запуске приложения; успешный ответ с `null` удаляет его. На диск объявление не сохраняется.
+
+Browser Live использует `desktopUpdateVersion` из `/api/config` (сервер → GitHub); клиент показывает уведомление только если версия выше собственной. Предупреждение совместимости (`desktopCompatibilityWarning` / `Next*`) проверяется в том же опросе `/api/config`. Electron для обновления приложения может по-прежнему ходить в GitHub напрямую (см. выше).
+
+В шапке предупреждение показывается только приложениям ниже будущего минимума по major/minor; patch и prerelease-суффикс текущей версии не влияют на сравнение. Приоритет: обязательное обновление после `426` → предупреждение о будущем прекращении поддержки → обычная новая версия. Предупреждение можно скрыть до следующего запуска для пары объявленных версий; перемонтирование шапки его не возвращает, а обычное уведомление не подменяет скрытое предупреждение. Во время активной связанной сессии необязательные уведомления и проверки конфигурации откладываются. Кнопка «Скачать обновление» открывает `/download`; установку и перезапуск выполняет пользователь.
+
 ### Откат на предыдущую версию
 
 Выполните [операторский чеклист беты](BETA_RELEASE_RUNBOOK.md#откат-приложения). Откат приложения не отменяет миграции БД; восстановление схемы и данных описано отдельно в [runbook](BETA_RELEASE_RUNBOOK.md#откат-схемы-и-данных-бд).
@@ -302,7 +314,7 @@ https://github.com/<owner>/<repo>/releases/latest/download/CherryPashkaList-{app
     verify-desktop-windows.yml    # Проверка Windows zip CherryPlayList на PR (artifact)
     build-images.yml              # Build & Push Images → GHCR (push в main/develop)
     release-and-deploy.yml        # Docker-образы и деплой при релизе
-    release-desktop-windows.yml   # Windows ZIP CherryPashka List → asset Release
+    release-desktop-windows.yml   # Windows ZIP CherryPashkaParty → asset Release
   FIRST_DEPLOY.md                 # Инструкция для первого деплоя
   nginx-cherryplay-https.conf    # Конфиг Nginx для HTTPS (копируется на сервер при деплое)
 scripts/

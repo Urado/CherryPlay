@@ -20,9 +20,9 @@ export const PARTY_LIFECYCLE_SERVER_BADGE_LABELS: Record<PartyLifecycleState, st
   completed: 'В архиве',
 };
 
-export function resolvePartyLifecycleDisplayLabel(
+export const resolvePartyLifecycleDisplayLabel = (
   input: ResolvePartyLifecycleDisplayLabelInput,
-): PartyLifecycleDisplayLabel {
+): PartyLifecycleDisplayLabel => {
   if (!input.linkedParty) {
     return 'Не создана';
   }
@@ -35,14 +35,15 @@ export function resolvePartyLifecycleDisplayLabel(
     return input.sessionMode === 'session' ? 'Идёт' : 'Ждёт начала';
   }
   return 'Черновик';
-}
+};
 
-export function resolvePartyLifecycleServerBadgeLabel(
+export const resolvePartyLifecycleServerBadgeLabel = (
   lifecycle: PartyLifecycleState,
   sessionMode?: ProjectSessionMode,
-): string {
-  if (lifecycle === 'ready' && sessionMode === 'session') {
+  playbackIsLive?: boolean,
+): string => {
+  if (lifecycle === 'ready' && (playbackIsLive ?? sessionMode === 'session')) {
     return 'Идёт';
   }
   return PARTY_LIFECYCLE_SERVER_BADGE_LABELS[lifecycle];
-}
+};

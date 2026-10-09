@@ -1,25 +1,40 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
-import { usePlayerAudioStore, useProjectStore, useSettingsStore } from '@shared/stores';
+import {
+  useAimpStore,
+  usePlayerAudioStore,
+  useProjectStore,
+  useSettingsStore,
+} from '@shared/stores';
+import {
+  getPartyPlaybackSourceAdapter,
+  resolvePartyPlaybackSourceState,
+} from '@workspaces/party/partyPlaybackSource';
 import { markPartyProgramEnded } from '@workspaces/party/partyProgramEndedStore';
 import { usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
 import { useCallback, useEffect, useRef } from 'react';
 
-function tryMarkPartyProgramEndedFromCherryPlay(): void {
-  if (useSettingsStore.getState().streamingSource === 'aimp') {
+const tryMarkPartyProgramEndedFromCherryPlay = (): void => {
+  const streamingSource = useSettingsStore.getState().streamingSource;
+  const project = useProjectStore.getState();
+  const adapter = getPartyPlaybackSourceAdapter(streamingSource);
+  const playbackSourceState = resolvePartyPlaybackSourceState(streamingSource, {
+    sessionMode: project.sessionState.mode,
+    playerPlaybackStatus: usePlayerAudioStore.getState().status,
+    aimpBridgeState: useAimpStore.getState().bridgeState,
+  });
+  if (adapter.completionDetection !== 'track-event') {
     return;
   }
-  const project = useProjectStore.getState();
-  if (project.sessionState.mode !== 'session' || !project.meta.linkedParty) {
+  if (!playbackSourceState.sessionActive || !project.meta.linkedParty) {
     return;
   }
   if (usePartyWorkspaceStore.getState().partyLifecycleState !== 'ready') {
     return;
   }
   markPartyProgramEnded();
-}
+};
 
 interface UsePlayerPlaybackOptions {
   allTracks: Track[];
@@ -33,7 +48,7 @@ interface UsePlayerPlaybackOptions {
   setCurrentTrack: (trackId: string | null) => void;
 }
 
-export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
+export const usePlayerPlayback = (options: UsePlayerPlaybackOptions) => {
   const {
     allTracks,
     getEffectiveTrackSettings,
@@ -117,10 +132,10 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           markSkippedDisabledTracks(currentIndex, nextIndex);
           await loadPlayerTrack(nextTrack);
           setCurrentTrack(nextTrack.id);
-          setPauseTimer(async () => {
+          setPauseTimer(() => {
             const currentState = playerStateRef.current;
             if (currentState.status === 'paused' && currentState.currentTrackId === nextTrack.id) {
-              await playPlayer();
+              void playPlayer();
             }
           }, settings.pauseBetweenTracks * 1000);
         } else {
@@ -134,11 +149,7 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
           markSkippedDisabledTracks(currentIndex, nextIndex);
           const loadGeneration = await loadPlayerTrack(nextTrack, true);
           setCurrentTrack(nextTrack.id);
-          if (
-            usePlayerAudioStore
-              .getState()
-              .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
-          ) {
+          if (usePlayerAudioStore.getState().shouldAutoPlayTrack(nextTrack.id, loadGeneration)) {
             await playPlayer();
           }
         } else {
@@ -185,11 +196,7 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
         markSkippedDisabledTracks(currentIndex, nextIndex);
         const loadGeneration = await loadPlayerTrack(nextTrack, true);
         setCurrentTrack(nextTrack.id);
-        if (
-          usePlayerAudioStore
-            .getState()
-            .shouldAutoPlayTrack(nextTrack.id, loadGeneration)
-        ) {
+        if (usePlayerAudioStore.getState().shouldAutoPlayTrack(nextTrack.id, loadGeneration)) {
           await playPlayer();
         }
       } else {
@@ -216,7 +223,9 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
 
   useEffect(() => {
     if (!isPreparationMode) {
-      setOnTrackEnded(handleTrackEnded);
+      setOnTrackEnded(() => {
+        void handleTrackEnded();
+      });
     } else {
       setOnTrackEnded(undefined);
     }
@@ -232,4 +241,4 @@ export function usePlayerPlayback(options: UsePlayerPlaybackOptions) {
     activeTrackId,
     playerStatus,
   };
-}
+};

@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
+using CherryPlayServer.Core.Interfaces;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace CherryPlayServer.Tests;
 
@@ -15,5 +19,10 @@ public sealed class SessionParityWebApplicationFactory : WebApplicationFactory<P
         builder.UseSetting("UseInMemoryStorage", "true");
         builder.UseSetting("JWT_SECRET_KEY", JwtSecret);
         builder.UseSetting("Auth:OAuthEnabled", "false");
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IDesktopUpdateVersionService>();
+            services.AddSingleton<IDesktopUpdateVersionService, DesktopUpdateVersionServiceStub>();
+        });
     }
 }

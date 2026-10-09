@@ -121,7 +121,7 @@ export const PartyListPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadParties();
+    void loadParties();
   }, [loadParties]);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export const PartyListPage: React.FC = () => {
   }, [authChecked, ensureConsents, organizer]);
 
   const handleRetry = () => {
-    loadParties();
+    void loadParties();
   };
 
   const filteredParties = useMemo(() => {
@@ -252,7 +252,7 @@ export const PartyListPage: React.FC = () => {
                   />
                 </svg>
               }
-              onClick={loadParties}
+              onClick={() => void loadParties()}
               title="Обновить список"
               aria-label="Обновить список"
             />
@@ -366,7 +366,7 @@ export const PartyListPage: React.FC = () => {
         {parties.length === 0 ? (
           <div className="party-list-empty">
             <p>Нет доступных вечеринок</p>
-            <p className="party-list-empty-hint">Создайте вечеринку в приложении CherryPashka List</p>
+            <p className="party-list-empty-hint">Создайте вечеринку в приложении CherryPashkaParty</p>
           </div>
         ) : filteredParties.length === 0 ? (
           <div className="party-list-empty">

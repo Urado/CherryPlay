@@ -118,8 +118,8 @@
   },
   "build": {
     "appId": "com.cherryplaylist.app",
-    "productName": "CherryPashka List",
-    "executableName": "CherryPashkaList",
+    "productName": "CherryPashkaParty",
+    "executableName": "CherryPashkaParty",
     "copyright": "Copyright © 2024",
     "directories": {
       "output": "release",
@@ -220,17 +220,17 @@
         }
       ],
       "icon": "build/icon.ico",
-      "artifactName": "CherryPashkaList-${version}-${arch}.${ext}"
+      "artifactName": "CherryPashkaParty-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CherryPashka List"
+      "shortcutName": "CherryPashkaParty"
     },
     "mac": {
-      "artifactName": "CherryPashkaList-${version}-${arch}-mac.${ext}",
+      "artifactName": "CherryPashkaParty-${version}-${arch}-mac.${ext}",
       "target": [
         {
           "target": "dmg",

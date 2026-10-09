@@ -17,14 +17,14 @@ jobs:
   build-and-push:
     name: Build and Push Tagged Images
     if: ${{ !(github.event_name == 'release' && startsWith(github.event.release.tag_name, 'player-')) && !(github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.tag, 'player-')) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
 
@@ -107,12 +107,12 @@ jobs:
   deploy:
     name: Deploy to Server
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ !(github.event_name == 'release' && startsWith(github.event.release.tag_name, 'player-')) && !(github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.tag, 'player-')) && (github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false) }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0

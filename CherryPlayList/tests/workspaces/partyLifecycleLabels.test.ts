@@ -1,8 +1,10 @@
 import { resolveHeaderPartyStatus } from '../../src/app/components/resolveHeaderPartyStatus';
+import { createInitialAimpBridgeState } from '../../src/shared/contracts/aimp';
 import {
   resolvePartyLifecycleDisplayLabel,
   resolvePartyLifecycleServerBadgeLabel,
 } from '../../src/workspaces/party/partyLifecycleLabels';
+import { resolvePartyPlaybackSourceState } from '../../src/workspaces/party/partyPlaybackSource';
 
 describe('resolvePartyLifecycleDisplayLabel', () => {
   it('returns Не создана when there is no linked party', () => {
@@ -54,12 +56,20 @@ describe('resolvePartyLifecycleDisplayLabel', () => {
 });
 
 describe('resolveHeaderPartyStatus', () => {
+  const playbackSourceState = (sessionMode: 'preparation' | 'session') =>
+    resolvePartyPlaybackSourceState('cherryPlayPlayer', {
+      sessionMode,
+      playerPlaybackStatus: 'playing',
+      aimpBridgeState: createInitialAimpBridgeState(),
+    });
+
   it('treats linked party with null lifecycle as Черновик', () => {
     expect(
       resolveHeaderPartyStatus({
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: null,
         sessionMode: 'preparation',
+        playbackSourceState: playbackSourceState('preparation'),
         serverUnreachable: false,
       }),
     ).toEqual({ primary: 'Черновик' });
@@ -71,6 +81,7 @@ describe('resolveHeaderPartyStatus', () => {
         linkedParty: null,
         partyLifecycleState: null,
         sessionMode: 'preparation',
+        playbackSourceState: playbackSourceState('preparation'),
         serverUnreachable: true,
       }),
     ).toEqual({ primary: 'Не создана', secondary: 'нет связи' });
@@ -82,6 +93,7 @@ describe('resolveHeaderPartyStatus', () => {
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: 'ready',
         sessionMode: 'preparation',
+        playbackSourceState: playbackSourceState('preparation'),
         serverUnreachable: true,
       }),
     ).toEqual({ primary: 'Ждёт начала', secondary: 'нет связи' });
@@ -93,6 +105,7 @@ describe('resolveHeaderPartyStatus', () => {
         linkedParty: { id: 'p1', shortCode: 'abc' },
         partyLifecycleState: 'ready',
         sessionMode: 'session',
+        playbackSourceState: playbackSourceState('session'),
         serverUnreachable: false,
       }),
     ).toEqual({ primary: 'Идёт' });

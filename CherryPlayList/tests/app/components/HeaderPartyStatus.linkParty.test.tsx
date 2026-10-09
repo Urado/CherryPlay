@@ -1,3 +1,4 @@
+import { HeaderPartyStatus } from '@app/components/HeaderPartyStatus';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
@@ -7,8 +8,12 @@ const mockAddNotification = jest.fn();
 const mockAuthenticated = { value: true };
 const mockPublishState = { synced: false };
 const mockUiState = {
-  openModal: (...args: unknown[]) => mockOpenModal(...args),
-  addNotification: (...args: unknown[]) => mockAddNotification(...args),
+  openModal: (...args: unknown[]) => {
+    mockOpenModal(...args);
+  },
+  addNotification: (...args: unknown[]) => {
+    mockAddNotification(...args);
+  },
 };
 
 jest.mock('@shared/stores', () => {
@@ -34,6 +39,7 @@ jest.mock('@shared/stores', () => {
   const settingsState = { streamingSource: 'cherryPlayPlayer' };
   const layoutState = { setLayoutPreset: jest.fn() };
   const playerState = { status: 'idle' };
+  const aimpState = { bridgeState: { liveStreamStarted: false } };
   const useUIStore = Object.assign(
     (selector: (state: typeof mockUiState) => unknown) => selector(mockUiState),
     { getState: () => mockUiState },
@@ -45,15 +51,24 @@ jest.mock('@shared/stores', () => {
     useSettingsStore: (selector: (state: typeof settingsState) => unknown) =>
       selector(settingsState),
     useLayoutStore: (selector: (state: typeof layoutState) => unknown) => selector(layoutState),
-    usePlayerAudioStore: (selector: (state: typeof playerState) => unknown) => selector(playerState),
-    useAuthStore: (selector: (state: { accessToken: string | null; organizer: object | null }) => unknown) =>
-      selector({ accessToken: mockAuthenticated.value ? 'token' : null, organizer: mockAuthenticated.value ? {} : null }),
+    usePlayerAudioStore: (selector: (state: typeof playerState) => unknown) =>
+      selector(playerState),
+    useAimpStore: (selector: (state: typeof aimpState) => unknown) => selector(aimpState),
+    useAuthStore: (
+      selector: (state: { accessToken: string | null; organizer: object | null }) => unknown,
+    ) =>
+      selector({
+        accessToken: mockAuthenticated.value ? 'token' : null,
+        organizer: mockAuthenticated.value ? {} : null,
+      }),
     useUIStore,
     openPartySettingsModal: jest.fn(),
   };
 });
 
-jest.mock('@shared/streaming', () => ({ useOnlineNetworkPolicy: () => ({ networkEnabled: true }) }));
+jest.mock('@shared/streaming', () => ({
+  useOnlineNetworkPolicy: () => ({ networkEnabled: true }),
+}));
 jest.mock('../../../src/workspaces/party/usePartyPublishOutOfSync', () => ({
   usePartyPublishOutOfSync: () => false,
 }));
@@ -68,11 +83,24 @@ jest.mock('../../../src/workspaces/party/PartyProgramEndedReminder', () => ({
   PartyProgramEndedReminder: () => null,
 }));
 jest.mock('../../../src/workspaces/party/partyProgramEndedStore', () => ({
-  usePartyProgramEndedStore: (selector: (state: { programEnded: boolean; reminderVisible: boolean; reminderDeadlineMs: number | null }) => unknown) =>
-    selector({ programEnded: false, reminderVisible: false, reminderDeadlineMs: null }),
+  usePartyProgramEndedStore: (
+    selector: (state: {
+      programEnded: boolean;
+      reminderVisible: boolean;
+      reminderDeadlineMs: number | null;
+    }) => unknown,
+  ) => selector({ programEnded: false, reminderVisible: false, reminderDeadlineMs: null }),
 }));
 jest.mock('../../../src/workspaces/party/partyWorkspaceStore', () => ({
-  usePartyWorkspaceStore: (selector: (state: { partyLifecycleState: 'ready' | null; lastSyncedPublishParts: { playlist: string; metadata: string } | null; serverUnreachable: boolean; isPublishing: boolean; isTransitioningLifecycle: boolean }) => unknown) =>
+  usePartyWorkspaceStore: (
+    selector: (state: {
+      partyLifecycleState: 'ready' | null;
+      lastSyncedPublishParts: { playlist: string; metadata: string } | null;
+      serverUnreachable: boolean;
+      isPublishing: boolean;
+      isTransitioningLifecycle: boolean;
+    }) => unknown,
+  ) =>
     selector({
       get partyLifecycleState() {
         return mockPublishState.synced ? 'ready' : null;
@@ -97,8 +125,6 @@ jest.mock('../../../src/workspaces/party/partyHeaderGoToPlayGuide', () => ({
   runPartyHeaderGuideHighlight: jest.fn(),
   waitForPartyHeaderGuideTarget: jest.fn(),
 }));
-
-import { HeaderPartyStatus } from '@app/components/HeaderPartyStatus';
 
 describe('HeaderPartyStatus party linking', () => {
   beforeEach(() => {

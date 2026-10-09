@@ -7,7 +7,7 @@ export const FirstRunGuidePage = () => (
   <main className="first-run-guide-page" aria-labelledby="first-run-guide-title">
     <header className="first-run-guide-header">
       <p className="first-run-guide-eyebrow">CherryPashkaParty</p>
-      <h1 id="first-run-guide-title">Первый запуск CherryPashka List</h1>
+      <h1 id="first-run-guide-title">Первый запуск CherryPashkaParty</h1>
       <p className="first-run-guide-intro">
         Создайте вечеринку, опубликуйте плейлист и поделитесь ссылкой с гостями. Для эфира
         используйте встроенный проигрыватель или подключите AIMP.
@@ -29,7 +29,7 @@ export const FirstRunGuidePage = () => (
             В Проводнике нажмите ZIP правой кнопкой мыши → <strong>Извлечь всё…</strong>.
           </li>
           <li>
-            Откройте распакованную папку и запустите <strong>CherryPashkaList.exe</strong>.
+            Откройте распакованную папку и запустите <strong>CherryPashkaParty.exe</strong>.
           </li>
         </ol>
         <p className="first-run-guide-muted">
@@ -40,7 +40,7 @@ export const FirstRunGuidePage = () => (
       <section className="first-run-guide-section">
         <h2>2. Выберите проигрыватель</h2>
         <p>
-          Для эфира можно использовать встроенный проигрыватель CherryPashka List или подключить AIMP.
+          Для эфира можно использовать встроенный проигрыватель CherryPashkaParty или подключить AIMP.
           Инструкция по подключению AIMP приведена ниже.
         </p>
       </section>
@@ -57,13 +57,13 @@ export const FirstRunGuidePage = () => (
             <span className="first-run-guide-choice">Зарегистрироваться</span>.
           </li>
           <li>
-            Вернитесь в CherryPashka List, откройте аккаунт и нажмите{' '}
+            Вернитесь в CherryPashkaParty, откройте аккаунт и нажмите{' '}
             <span className="first-run-guide-choice">Войти через браузер</span>.
           </li>
           <li>
             В открывшемся браузере выберите <strong>Email / Пароль</strong>, введите email и пароль
             и нажмите <span className="first-run-guide-choice">Войти</span>. Браузер вернёт вас в
-            приложение; если этого не произошло, нажмите ссылку возврата в CherryPashka List на
+            приложение; если этого не произошло, нажмите ссылку возврата в CherryPashkaParty на
             странице входа.
           </li>
         </ol>
@@ -115,7 +115,7 @@ export const FirstRunGuidePage = () => (
         </ol>
         <p className="first-run-guide-callout">
           Гости получают плейлист и состояние воспроизведения. Звук на сайт не передаётся: музыку
-          слышат в AIMP или CherryPashka List у организатора.
+          слышат в AIMP или CherryPashkaParty у организатора.
         </p>
       </section>
 
@@ -131,9 +131,13 @@ export const FirstRunGuidePage = () => (
           </li>
           <li>Закройте AIMP, если он запущен.</li>
           <li>
-            В распакованной папке CherryPashka List скопируйте папку{' '}
-            <strong>CherryPlayAimpBridge</strong> целиком в подпапку <strong>Plugins</strong>{' '}
-            каталога установки AIMP. Если Windows запросит права, подтвердите копирование.
+            В распакованной папке CherryPashkaParty найдите папку{' '}
+            <strong>CherryPlayAimpBridge</strong> и скопируйте её целиком в{' '}
+            <code>C:\Program Files\AIMP\Plugins</code>. Это обычная папка установки AIMP; если он
+            установлен в другом месте, используйте подпапку <strong>Plugins</strong> в его каталоге.
+            После копирования путь обычно выглядит так:{' '}
+            <code>C:\Program Files\AIMP\Plugins\CherryPlayAimpBridge</code>. Если Windows запросит
+            права, подтвердите копирование.
           </li>
           <li>Запустите AIMP заново и добавьте музыку в его плейлист.</li>
         </ol>
@@ -155,28 +159,28 @@ export const FirstRunGuidePage = () => (
             отображается в её настройках.
           </li>
           <li>
-            <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPashka List для
+            <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPashkaParty для
             Windows x64. Проверьте, что в папке приложения есть{' '}
             <strong>CherryPlayAimpBridge</strong> с файлом <strong>manifest.json</strong>, затем
-            перезапустите CherryPashka List.
+            перезапустите CherryPashkaParty.
           </li>
           <li>
             <strong>Плагин не подключается:</strong> убедитесь, что запущен AIMP x64, а{' '}
             <strong>CherryPlayAimpBridge.dll</strong> находится в папке Plugins этой установки. В
-            CherryPashka List выберите AIMP в настройке «Источник проигрывания» и дождитесь состояния
+            CherryPashkaParty выберите AIMP в настройке «Источник проигрывания» и дождитесь состояния
             «Подключено». Если состояние не меняется, полностью перезапустите AIMP.
           </li>
           <li>
             <strong>Подключение устарело:</strong> перезапустите AIMP. Если это не помогло,
-            перезапустите CherryPashka List и дождитесь повторного подключения плагина.
+            перезапустите CherryPashkaParty и дождитесь повторного подключения плагина.
           </li>
           <li>
             <strong>AIMP подключён, но список пуст:</strong> выберите в AIMP активный плейлист с
-            треками и дождитесь обновления списка в CherryPashka List.
+            треками и дождитесь обновления списка в CherryPashkaParty.
           </li>
           <li>
             <strong>«Включить онлайн» недоступно:</strong> сначала создайте или привяжите вечеринку,
-            включите «Онлайн» в настройках CherryPashka List и дождитесь подключения плагина и списка
+            включите «Онлайн» в настройках CherryPashkaParty и дождитесь подключения плагина и списка
             треков.
           </li>
         </ul>

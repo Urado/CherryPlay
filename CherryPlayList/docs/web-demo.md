@@ -50,6 +50,12 @@
 
 Подробнее: [Platform layer](./modules/platform/README.md), [Settings Store](./modules/stores/settings-store.md), [Streaming](./modules/systems/streaming.md).
 
+### Предупреждение о прекращении совместимости
+
+В **Browser Live** шапка показывает предупреждение из `GET /api/config`, поле `desktopCompatibilityWarning`, если версия приложения ниже будущего минимума по major/minor. Предупреждение остаётся под строкой проекта. Уведомление о новой сборке берёт `desktopUpdateVersion` из того же ответа: сервер сам выбирает подходящий GitHub Desktop-релиз (не конфиг оператора); Browser Live в GitHub не ходит. Версия может быть `null` или появиться после заполнения серверного кэша. В **Fixtures** проверки и уведомления отключены. Контракт и ops: [CONTRACTS.md](../../CONTRACTS.md) §2.2 и [OPS.md](../../CherryPlayServer/OPS.md#предупреждение-о-прекращении-поддержки-desktop).
+
+Проверка `/api/config` начинается после загрузки настроек и повторяется каждые пять минут при включённом **«Онлайн»**, `navigator.onLine === true` и отсутствии активной связанной сессии. При выключении «Онлайн», потере сети или активной связанной сессии уведомления скрыты, а проверка остановлена. Кнопка **«Скачать обновление»** открывает страницу `/download` сайта для ручного скачивания приложения. Закрытие предупреждения совместимости действует до перезагрузки страницы для пары объявленных версий; уведомление о новой сборке запоминает скрытую версию. Обязательное обновление после `426` имеет приоритет.
+
 ---
 
 ## Vite dev proxy и CherryPlayServer
@@ -162,7 +168,7 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 | **Сохранение проекта**     | **«Не доступно в демо»**                                                                                                                             | То же                                                                                                          |
 | **Реальное аудио**         | Превью/демо-плеер — **«Не доступно в демо»**                                                                                                         | То же                                                                                                          |
 | **Коллекции (Collection)** | Экспорт JSON / копирование / импорт — **«Не доступно в демо»**                                                                                       | То же                                                                                                          |
-| **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`, фикстурный плейлист); desktop без изменений                                                         | То же                                                                                                          |
+| **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`); размеры фикстурного плейлиста — 3, 25 или 100 треков через диагностику AIMP; desktop без изменений | То же                                                                                                          |
 | **Loudness**               | ✓ UI + simulated scan (фикстуры); без FFmpeg; без реального local playback                                                                           | То же                                                                                                          |
 | **Party**                  | Старт без link (**Не создана**); фикстура `DEMODK` через demo-сценарии; без live REST/SignalR                      | REST/SignalR к серверу при Online ON                                                                           |
 | **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Browser SSO как Desktop (`BrowserLoginPanel` → Web `:3000`); callback через `BroadcastChannel`                 |

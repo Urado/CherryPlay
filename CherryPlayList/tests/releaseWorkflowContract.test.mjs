@@ -1,7 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -9,8 +7,6 @@ import {
   getLatestDesktopReleaseVersion,
   stampDesktopPackageVersion,
 } from '../scripts/resolveDesktopReleaseVersion.mjs';
-
-const repositoryRoot = path.resolve(import.meta.dirname, '../..');
 
 test('desktop player tags require strict stable SemVer and a prerelease release', () => {
   assert.equal(
@@ -43,7 +39,7 @@ test('desktop player tags require strict stable SemVer and a prerelease release'
 
 test('latest matching published Desktop release is selected across paginated results', async () => {
   const older = { prerelease: true, draft: false, tag_name: 'player-v0.6.4', assets: [{ name: 'CherryPlayList-0.6.4-x64.zip' }] };
-  const latest = { prerelease: true, draft: false, tag_name: 'player-v0.9.0', assets: [{ name: 'CherryPashkaList-0.9.0-x64.zip' }] };
+  const latest = { prerelease: true, draft: false, tag_name: 'player-v0.9.0', assets: [{ name: 'CherryPashkaParty-0.9.0-x64.zip' }] };
   const pages = [
     [...Array.from({ length: 99 }, () => ({})), older],
     [
@@ -81,35 +77,29 @@ test('latest Desktop release selection falls back to 0.0.0 when no tag has its e
   assert.equal(await getLatestDesktopReleaseVersion({ repository: 'Urado/CherryPlay', fetchImpl }), '0.0.0');
 });
 
-test('desktop version stamping updates package and lock root versions', async () => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'cherryplay-release-'));
-  const packagePath = path.join(directory, 'package.json');
-  const lockPath = path.join(directory, 'package-lock.json');
-  await writeFile(packagePath, JSON.stringify({ name: 'cherryplaylist', version: '0.6.4' }));
-  await writeFile(lockPath, JSON.stringify({ version: '0.6.4', packages: { '': { version: '0.6.4' } } }));
-  try {
-    await stampDesktopPackageVersion(packagePath, lockPath, '1.2.3');
-    assert.equal(JSON.parse(await readFile(packagePath, 'utf8')).version, '1.2.3');
-    const lock = JSON.parse(await readFile(lockPath, 'utf8'));
-    assert.equal(lock.version, '1.2.3');
-    assert.equal(lock.packages[''].version, '1.2.3');
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
+test('desktop version stamping updates package and lock root versions', () => {
+  const packageJson = { name: 'cherryplaylist', version: '0.6.4' };
+  const lockJson = { version: '0.6.4', packages: { '': { version: '0.6.4' } } };
+
+  stampDesktopPackageVersion(packageJson, lockJson, '1.2.3');
+
+  assert.equal(packageJson.version, '1.2.3');
+  assert.equal(lockJson.version, '1.2.3');
+  assert.equal(lockJson.packages[''].version, '1.2.3');
 });
 
 test('release workflows verify ZIP naming, stable tags, prerelease status, and compatibility build args', async () => {
-  const desktopWorkflow = await readFile(path.join(repositoryRoot, '.github/workflows/release-desktop-windows.yml'), 'utf8');
-  const pullRequestWorkflow = await readFile(path.join(repositoryRoot, '.github/workflows/verify-desktop-windows.yml'), 'utf8');
-  const serverWorkflow = await readFile(path.join(repositoryRoot, '.github/workflows/release-and-deploy.yml'), 'utf8');
-  const serverDockerfile = await readFile(path.join(repositoryRoot, 'CherryPlayServer/Dockerfile'), 'utf8');
-  const webDockerfile = await readFile(path.join(repositoryRoot, 'CherryPlayWeb/Dockerfile'), 'utf8');
-  const appsettings = await readFile(path.join(repositoryRoot, 'CherryPlayServer/appsettings.json'), 'utf8');
-  const desktopPackage = JSON.parse(await readFile(path.join(repositoryRoot, 'CherryPlayList/package.json'), 'utf8'));
+  const desktopWorkflow = await readFile('../.github/workflows/release-desktop-windows.yml', 'utf8');
+  const pullRequestWorkflow = await readFile('../.github/workflows/verify-desktop-windows.yml', 'utf8');
+  const serverWorkflow = await readFile('../.github/workflows/release-and-deploy.yml', 'utf8');
+  const serverDockerfile = await readFile('../CherryPlayServer/Dockerfile', 'utf8');
+  const webDockerfile = await readFile('../CherryPlayWeb/Dockerfile', 'utf8');
+  const appsettings = await readFile('../CherryPlayServer/appsettings.json', 'utf8');
+  const desktopPackage = JSON.parse(await readFile('./package.json', 'utf8'));
 
   assert.match(desktopWorkflow, /resolveDesktopReleaseVersion\.mjs package\.json package-lock\.json/);
   assert.match(desktopWorkflow, /gh release view "\$\{TAG_NAME\}" --json isPrerelease,isDraft/);
-  assert.match(desktopWorkflow, /ZIP="release\/CherryPashkaList-\$\{VERSION\}-x64\.zip"/);
+  assert.match(desktopWorkflow, /ZIP="release\/CherryPashkaParty-\$\{VERSION\}-x64\.zip"/);
   assert.match(desktopWorkflow, /\[ ! -f "\$\{ZIP\}" \]/);
   assert.match(serverWorkflow, /\^v\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\\\.\(0\|\[1-9\]\[0-9\]\*\)\$/);
   assert.equal((serverWorkflow.match(/CLIENT_COMPATIBILITY_SERVER_VERSION=\$\{\{ steps\.version\.outputs\.server_version \}\}/g) ?? []).length, 2);
@@ -122,11 +112,11 @@ test('release workflows verify ZIP naming, stable tags, prerelease status, and c
   assert.match(appsettings, /"MinVersion":\s*"0\.6\.4"/);
   assert.match(pullRequestWorkflow, /VERSION="\$\{BASE\}-pr-\$\{PR_NUMBER\}"/);
   assert.match(pullRequestWorkflow, /resolveDesktopReleaseVersion\.mjs --latest-release/);
-  assert.match(pullRequestWorkflow, /ZIP="release\/CherryPashkaList-\$\{BASE_VERSION\}-pr-\$\{PR_NUMBER\}-x64\.zip"/);
+  assert.match(pullRequestWorkflow, /ZIP="release\/CherryPashkaParty-\$\{BASE_VERSION\}-pr-\$\{PR_NUMBER\}-x64\.zip"/);
   assert.match(pullRequestWorkflow, /mv "\$\{expected\}" "\$\{ZIP\}"/);
   assert.match(pullRequestWorkflow, /zip_path=CherryPlayList\/\$\{ZIP\}/);
   assert.match(pullRequestWorkflow, /ARTIFACT_NAME="\$\{ZIP_NAME%\.zip\}"/);
   assert.match(pullRequestWorkflow, /App package version \*\*\\`\$\{appVersion\}\\`\*\*; ZIP filename \*\*\\`\$\{zipName\}\\`\*\*; Actions artifact \*\*\\`\$\{artifactName\}\\`\*\*/);
-  assert.equal(desktopPackage.build.executableName, 'CherryPashkaList');
-  assert.equal(desktopPackage.build.win.artifactName, 'CherryPashkaList-${version}-${arch}.${ext}');
+  assert.equal(desktopPackage.build.executableName, 'CherryPashkaParty');
+  assert.equal(desktopPackage.build.win.artifactName, 'CherryPashkaParty-${version}-${arch}.${ext}');
 });

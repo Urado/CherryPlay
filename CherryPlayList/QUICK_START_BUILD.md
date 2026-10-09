@@ -34,4 +34,4 @@ npm run dist:linux    # Linux
 npm run dist:all      # Все платформы
 ```
 
-Windows output: `release/CherryPashkaList-{version}-x64.zip`. После распаковки запустите `CherryPashkaList.exe`. Скачать с Releases — [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробнее: [BUILD.md](BUILD.md).
+Windows output: `release/CherryPashkaParty-{version}-x64.zip`. После распаковки запустите `CherryPashkaParty.exe`. Скачать с Releases — [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md). Подробнее: [BUILD.md](BUILD.md).

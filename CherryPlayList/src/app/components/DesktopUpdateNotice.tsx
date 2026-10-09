@@ -1,13 +1,24 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { APP_VERSION } from '@shared/config';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
-import { getPlatform, getPlatformAppMode, isPlatformInitialized } from '@shared/platform';
+import {
+  isDesktopCompatibilitySupported,
+  useDesktopCompatibilityWarning,
+} from '@shared/hooks/useDesktopCompatibilityWarning';
+import {
+  getPlatform,
+  getPlatformAppMode,
+  isPlatformInitialized,
+} from '@shared/platform/platformContext';
+import { isDesktopCompatibilityAffected } from '@shared/services/desktopCompatibilityService';
 import {
   checkLatestDesktopUpdate,
   compareDesktopVersions,
   getDesktopDownloadPageUrl,
 } from '@shared/services/desktopUpdateService';
-import { useClientOutdatedStore, useProjectStore } from '@shared/stores';
+import { useClientOutdatedStore } from '@shared/stores/clientOutdatedStore';
+import { useProjectStore } from '@shared/stores/projectStore';
+import { useUIStore } from '@shared/stores/uiStore';
 import React, { useEffect, useRef, useState } from 'react';
 
 import './DesktopUpdateNotice.css';
@@ -43,12 +54,25 @@ const persistRetryTime = (timestamp: number): void => {
   }
 };
 
-export const DesktopUpdateNotice: React.FC = () => {
+interface DesktopUpdateNoticeProps {
+  children?: (notices: {
+    releaseNotice: React.ReactNode;
+    compatibilityNotice: React.ReactNode;
+  }) => React.ReactNode;
+}
+
+export const DesktopUpdateNotice: React.FC<DesktopUpdateNoticeProps> = ({ children }) => {
   const isPartySessionActive = useProjectStore(
     (state) => state.sessionState.mode === 'session' && Boolean(state.meta.linkedParty),
   );
   const isRequired = useClientOutdatedStore((state) => state.isOutdated);
   const requiredVersion = useClientOutdatedStore((state) => state.requiredVersion);
+  const compatibility = useDesktopCompatibilityWarning(isPartySessionActive);
+  const addNotification = useUIStore((state) => state.addNotification);
+  const appMode = getPlatformAppMode();
+  const isElectron = isPlatformInitialized() && appMode === 'electron';
+  const isBrowserLive =
+    isPlatformInitialized() && appMode === 'demo' && isDesktopCompatibilitySupported();
   const [availableVersion, setAvailableVersion] = useState<string | null>(null);
   const [dismissedVersion, setDismissedVersion] = useState(() => {
     try {
@@ -61,15 +85,12 @@ export const DesktopUpdateNotice: React.FC = () => {
   const nextRetryAt = useRef(0);
 
   useEffect(() => {
-    if (!isPlatformInitialized() || getPlatformAppMode() !== 'electron') return undefined;
+    if (!isElectron) return undefined;
 
     let mounted = true;
     const checkUpdate = async () => {
       if (isPartySessionActive) return;
-      const lastChecked = Math.max(
-        lastCheckedAt.current,
-        readStoredTimestamp(LAST_CHECKED_KEY),
-      );
+      const lastChecked = Math.max(lastCheckedAt.current, readStoredTimestamp(LAST_CHECKED_KEY));
       const nextRetry = Math.max(nextRetryAt.current, readStoredTimestamp(NEXT_RETRY_KEY));
       const now = Date.now();
       if (now - lastChecked < CHECK_INTERVAL_MS || now < nextRetry) return;
@@ -97,7 +118,7 @@ export const DesktopUpdateNotice: React.FC = () => {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, [isPartySessionActive]);
+  }, [isElectron, isPartySessionActive]);
 
   const openDownloadPage = async () => {
     try {
@@ -106,52 +127,129 @@ export const DesktopUpdateNotice: React.FC = () => {
         url: getDesktopDownloadPageUrl(webBaseUrl),
       });
     } catch {
-      return;
+      addNotification({
+        type: 'error',
+        message: 'Не удалось открыть страницу загрузки',
+      });
     }
   };
 
-  const dismiss = () => {
-    if (!availableVersion) return;
-    setDismissedVersion(availableVersion);
+  const dismiss = (version = availableVersion) => {
+    if (!version) return;
+    setDismissedVersion(version);
     try {
-      window.localStorage.setItem(DISMISSED_VERSION_KEY, availableVersion);
+      window.localStorage.setItem(DISMISSED_VERSION_KEY, version);
     } catch {
       return;
     }
   };
 
-  if (!isPlatformInitialized() || getPlatformAppMode() !== 'electron') return null;
+  const renderNotices = (
+    releaseNotice: React.ReactNode = null,
+    compatibilityNotice: React.ReactNode = null,
+  ) => {
+    if (children) return children({ releaseNotice, compatibilityNotice });
+    if (releaseNotice && compatibilityNotice) {
+      return (
+        <div className="desktop-update-notices">
+          {compatibilityNotice}
+          {releaseNotice}
+        </div>
+      );
+    }
+    return compatibilityNotice ?? releaseNotice;
+  };
+
+  if (!isDesktopCompatibilitySupported()) return renderNotices();
 
   if (isRequired) {
-    return (
+    return renderNotices(
+      null,
       <div className="desktop-update-notice desktop-update-notice--required" role="alert">
         <span>
           Требуется обновление приложения{requiredVersion ? ` до ${requiredVersion}` : ''}.
         </span>
-        <button type="button" className="desktop-update-notice__download" onClick={() => void openDownloadPage()}>
+        <button
+          type="button"
+          className="desktop-update-notice__download"
+          onClick={() => void openDownloadPage()}
+        >
           Скачать обновление
         </button>
-      </div>
+      </div>,
     );
   }
 
-  if (isPartySessionActive) return null;
-  if (!availableVersion || dismissedVersion === availableVersion) return null;
-
-  return (
-    <div className="desktop-update-notice" role="status" aria-live="polite">
-      <span>Доступна новая версия: {availableVersion}</span>
-      <button type="button" className="desktop-update-notice__download" onClick={() => void openDownloadPage()}>
-        Скачать
-      </button>
-      <button
-        type="button"
-        className="desktop-update-notice__dismiss"
-        onClick={dismiss}
-        aria-label="Скрыть уведомление об обновлении"
-      >
-        <CloseIcon fontSize="small" />
-      </button>
-    </div>
+  if (isPartySessionActive) return renderNotices();
+  const showCompatibilityWarning = Boolean(
+    compatibility.warning &&
+    isDesktopCompatibilityAffected(String(APP_VERSION), compatibility.warning.minVersion),
   );
+  const releaseVersion = isBrowserLive ? compatibility.updateVersion : availableVersion;
+  const releaseComparison = releaseVersion
+    ? compareDesktopVersions(releaseVersion, String(APP_VERSION))
+    : null;
+  const showReleaseNotice = Boolean(
+    releaseVersion &&
+    releaseComparison !== null &&
+    releaseComparison > 0 &&
+    dismissedVersion !== releaseVersion &&
+    (!isBrowserLive || compatibility.canCheck),
+  );
+  const compatibilityNotice =
+    showCompatibilityWarning && !compatibility.dismissed ? (
+      <div
+        className="desktop-update-notice desktop-update-notice--compatibility"
+        role="status"
+        aria-live="polite"
+      >
+        <span>
+          С версии сайта {compatibility.warning?.serverVersion} нужны приложения от{' '}
+          {compatibility.warning?.minVersion}. У вас {APP_VERSION}.
+        </span>
+        <button
+          type="button"
+          className="desktop-update-notice__download"
+          onClick={() => void openDownloadPage()}
+        >
+          Скачать обновление
+        </button>
+        <button
+          type="button"
+          className="desktop-update-notice__dismiss"
+          onClick={compatibility.dismiss}
+          aria-label="Скрыть предупреждение до следующего запуска"
+        >
+          <CloseIcon fontSize="small" />
+        </button>
+      </div>
+    ) : null;
+  const releaseNotice =
+    showReleaseNotice && (!showCompatibilityWarning || isBrowserLive) ? (
+      <div
+        className="desktop-update-notice desktop-update-notice--release"
+        role="status"
+        aria-live="polite"
+      >
+        <button
+          type="button"
+          className="desktop-update-notice__download"
+          onClick={() => void openDownloadPage()}
+          aria-label={`Скачать обновление ${releaseVersion}`}
+          title="Скачать новую версию приложения"
+        >
+          {children ? `Обновление ${releaseVersion}` : `Доступна новая версия: ${releaseVersion}`}
+        </button>
+        <button
+          type="button"
+          className="desktop-update-notice__dismiss"
+          onClick={() => dismiss(releaseVersion)}
+          aria-label="Скрыть уведомление об обновлении"
+        >
+          <CloseIcon fontSize="small" />
+        </button>
+      </div>
+    ) : null;
+
+  return renderNotices(releaseNotice, compatibilityNotice);
 };

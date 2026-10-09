@@ -63,12 +63,12 @@ npm run dist:all
 
 Локально соберите AIMP bridge по инструкции в [CherryPlayAimpPlugin/README.md](../CherryPlayAimpPlugin/README.md) и скопируйте Release x64 DLL в `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`. Коммитьте DLL вместе с изменениями исходников плагина. GitHub Actions использует эту закоммиченную DLL: CI не скачивает AIMP SDK и не компилирует нативный плагин. В Windows ZIP staging помещает bridge и manifest в каталог плагинов CherryPlayList.
 
-Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPashkaList-{version}-x64.zip`), не NSIS и не portable exe. После распаковки пользователь запускает `CherryPashkaList.exe`. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
+Целевой артефакт Windows в `package.json` (`build.win`): **zip** x64 (`CherryPashkaParty-{version}-x64.zip`), не NSIS и не portable exe. После распаковки пользователь запускает `CherryPashkaParty.exe`. Блок `"nsis"` в `package.json` есть, но **неактивен** (win target — только zip).
 
 ### Packaging hygiene
 
 - Перед `electron-builder` скрипты `dist*` вызывают `npm run clean:pack` (`scripts/clean-pack.mjs`): идемпотентно удаляет типичные outputs electron-builder под `release/` для текущей версии (`win-unpacked` / `linux-unpacked` / `mac*`, zip/dmg/AppImage/deb и т.п.), чтобы не было гонок rename/`ENOENT` на полуудалённом дереве. Весь `release/` целиком не чистится.
-- Запускайте **один** electron-builder за раз; параллельные сборки дают `ENOENT rename electron.exe → CherryPashkaList.exe` и сбои `7za`.
+- Запускайте **один** electron-builder за раз; параллельные сборки дают `ENOENT rename electron.exe → CherryPashkaParty.exe` и сбои `7za`.
 - Для `file:../CherryPlayComponents` electron-builder **не** опирается на npm `"files"` linked-пакета при сборке asar: обрезку дают явные исключения в `CherryPlayList` `build.files` (`src`, nested `node_modules`, scripts, конфиги, тесты). Поле `"files": ["dist"]` в `CherryPlayComponents/package.json` остаётся полезным для `npm pack` / publish, но само по себе Windows pack не сужает.
 
 ## Результат сборки
@@ -77,9 +77,9 @@ npm run dist:all
 
 ### Windows
 
-- `CherryPashkaList-{version}-x64.zip` — zip-дистрибутив (64-bit); внутри находится `CherryPashkaList.exe`
+- `CherryPashkaParty-{version}-x64.zip` — zip-дистрибутив (64-bit); внутри находится `CherryPashkaParty.exe`
 
-Опубликованные GitHub Release builds и PR verification запускают `dist:win:ci`: staging использует только committed DLL из `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`, затем electron-builder собирает ZIP. При отсутствии DLL workflow завершается ошибкой. После сборки оба workflow проверяют, что архив содержит `CherryPlayAimpBridge/CherryPlayAimpBridge.dll` и `CherryPlayAimpBridge/manifest.json`. PR verify запускается при изменениях в `CherryPlayList/**`, `CherryPlayComponents/**`, `CherryPlayAimpPlugin/**`, `eslint-config-cherryplay/**` или самом workflow. Для prerelease-тега `player-vX.Y.Z` workflow записывает версию в package-файлы и сверяет имя ZIP `CherryPashkaList-X.Y.Z-x64.zip`. PR в `main`/`develop` получает ZIP как Actions artifact `CherryPashkaList-{base}-pr-{PR}-x64`; его скачивает автор PR.
+Опубликованные GitHub Release builds и PR verification запускают `dist:win:ci`: staging использует только committed DLL из `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`, затем electron-builder собирает ZIP. При отсутствии DLL workflow завершается ошибкой. После сборки оба workflow проверяют, что архив содержит `CherryPlayAimpBridge/CherryPlayAimpBridge.dll` и `CherryPlayAimpBridge/manifest.json`. PR verify запускается при изменениях в `CherryPlayList/**`, `CherryPlayComponents/**`, `CherryPlayAimpPlugin/**`, `eslint-config-cherryplay/**` или самом workflow. Для prerelease-тега `player-vX.Y.Z` workflow записывает версию в package-файлы и сверяет имя ZIP `CherryPashkaParty-X.Y.Z-x64.zip`. PR в `main`/`develop` получает ZIP как Actions artifact `CherryPashkaParty-{base}-pr-{PR}-x64`; его скачивает автор PR.
 
 Скачать последний стабильный zip: см. [.github/DEPLOYMENT.md](../.github/DEPLOYMENT.md) (раздел «Скачать Windows desktop»).
 
@@ -87,8 +87,8 @@ npm run dist:all
 
 - `CherryPlayList-{version}-x64.dmg` - DMG образ (Intel)
 - `CherryPlayList-{version}-arm64.dmg` - DMG образ (Apple Silicon)
-- `CherryPashkaList-{version}-x64-mac.zip` - ZIP архив (Intel)
-- `CherryPashkaList-{version}-arm64-mac.zip` - ZIP архив (Apple Silicon)
+- `CherryPashkaParty-{version}-x64-mac.zip` - ZIP архив (Intel)
+- `CherryPashkaParty-{version}-arm64-mac.zip` - ZIP архив (Apple Silicon)
 
 ### Linux
 

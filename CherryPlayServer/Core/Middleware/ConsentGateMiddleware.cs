@@ -54,6 +54,14 @@ public class ConsentGateMiddleware
 
     private static bool ShouldEnforce(HttpContext context)
     {
+        if (
+            HttpMethods.IsDelete(context.Request.Method)
+            && context.Request.Path.Equals("/api/organizer/account", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return false;
+        }
+
         if (!MutatingMethods.Contains(context.Request.Method))
         {
             return false;

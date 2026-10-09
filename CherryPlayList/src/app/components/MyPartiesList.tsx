@@ -32,6 +32,7 @@ import {
   resolvePartyCatalogToggleHint,
 } from '@workspaces/party/partyCatalogLabels';
 import { resolvePartyLifecycleServerBadgeLabel } from '@workspaces/party/partyEditorPhase';
+import { resolvePartyPlaybackSourceState } from '@workspaces/party/partyPlaybackSource';
 import { markPartyPublishCatalogVisibilitySynced } from '@workspaces/party/partyPublishSync';
 import { partyWorkspaceOneShotGuards } from '@workspaces/party/partyWorkspaceReconnectRefs';
 import { resetPartyLinkState, usePartyWorkspaceStore } from '@workspaces/party/partyWorkspaceStore';
@@ -41,14 +42,14 @@ import {
 } from '@workspaces/party/resolvePartyArchiveAvailability';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-function syncLinkedPartyWorkspaceFields(party: PartyDto): void {
+const syncLinkedPartyWorkspaceFields = (party: PartyDto): void => {
   const store = usePartyWorkspaceStore.getState();
   if (party.name) {
     store.setPartyName(party.name);
   }
   store.setPartyLifecycleState(party.partyLifecycleState);
   store.setIsListedInCatalog(party.isListedInCatalog ?? false);
-}
+};
 
 export const MyPartiesList: React.FC = () => {
   const { addNotification } = useUIStore();
@@ -58,10 +59,12 @@ export const MyPartiesList: React.FC = () => {
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
   const playbackStatus = usePlayerAudioStore((state) => state.status);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
-  const aimpLiveStreamStarted = useAimpStore((state) => state.bridgeState.liveStreamStarted);
-  const aimpPlaybackStatus = useAimpStore(
-    (state) => state.bridgeState.playbackSnapshot?.status ?? null,
-  );
+  const aimpBridgeState = useAimpStore((state) => state.bridgeState);
+  const playbackSourceState = resolvePartyPlaybackSourceState(streamingSource, {
+    sessionMode,
+    playerPlaybackStatus: playbackStatus,
+    aimpBridgeState,
+  });
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
   const { networkEnabled } = useOnlineNetworkPolicy();
@@ -254,11 +257,7 @@ export const MyPartiesList: React.FC = () => {
       if (isCurrentLinked) {
         const availability = resolvePartyArchiveAvailability({
           partyLifecycleState: party.partyLifecycleState,
-          sessionMode,
-          playbackStatus: sessionMode === 'session' ? playbackStatus : null,
-          aimpLiveStreamStarted,
-          aimpPlaybackStatus,
-          streamingSource,
+          playbackSourceState,
         });
         if (availability.isBlockedByLive) {
           window.alert(
@@ -374,6 +373,7 @@ export const MyPartiesList: React.FC = () => {
                               {resolvePartyLifecycleServerBadgeLabel(
                                 party.partyLifecycleState,
                                 isLinked ? sessionMode : undefined,
+                                isLinked ? playbackSourceState.headerActive : undefined,
                               )}
                             </span>
                             {isLinked && (
@@ -389,6 +389,7 @@ export const MyPartiesList: React.FC = () => {
                             partyLifecycleState={party.partyLifecycleState}
                             layout="header"
                             sessionMode={isLinked ? sessionMode : undefined}
+                            playbackIsLive={isLinked ? playbackSourceState.headerActive : undefined}
                             hideUnarchive
                             isTransitioning={transitioningId === party.id}
                             pendingTransition={
@@ -499,7 +500,7 @@ export const MyPartiesList: React.FC = () => {
                 icon={<CloseIcon />}
                 variant="ghost"
                 size="md"
-               />
+              />
             </div>
 
             <div className="modal-body">
