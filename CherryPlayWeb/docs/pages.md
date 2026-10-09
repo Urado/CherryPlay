@@ -11,7 +11,7 @@
 | Путь | Страница | Компонент |
 |------|---------|-----------|
 | `/` | Каталог вечеринок (или редирект с `?party=...`) | `PartyListPage` / `CatalogOrRedirect` |
-| `/download` | Загрузка CherryPlay для Windows | `DownloadPage` |
+| `/download` | Загрузка CherryPashkaParty для Windows | `DownloadPage` |
 | `/guide/first-run` | Первый запуск CherryPashkaParty | `FirstRunGuidePage` |
 | `/first-run-guide.html` | Совместимый адрес инструкции | Перенаправление на `/guide/first-run`; при открытии локального HTML-файла сохраняется офлайн-страница |
 | `/feedback` | Обратная связь, email поддержки и прямая ссылка на сообщения ВКонтакте | `FeedbackPage` |

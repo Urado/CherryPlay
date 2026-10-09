@@ -42,7 +42,7 @@ export const DownloadPage = () => {
           К вечеринкам
         </Link>
         <section className="download-card">
-          <p className="download-eyebrow">CherryPlay для Windows</p>
+          <p className="download-eyebrow">CherryPashkaParty для Windows</p>
           <h1 id="download-title">Скачать приложение</h1>
           <p className="download-description">
             Установите CherryPashkaParty, чтобы создавать вечеринки и управлять музыкой.
