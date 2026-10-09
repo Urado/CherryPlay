@@ -1,39 +1,48 @@
 using System.Text.Json.Serialization;
+using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CherryPlayServer.Controllers;
 
-/// <summary>
-/// Public app config for clients (e.g. feature flags like OAuth visibility).
-/// Does not affect server behavior; used only to hide/show UI.
-/// </summary>
 [ApiController]
 [Route("api/config")]
 public class ConfigController : ControllerBase
 {
     private readonly IConfiguration _configuration;
+    private readonly IDesktopCompatibilityWarningService _compatibilityWarningService;
+    private readonly IDesktopUpdateVersionService _desktopUpdateVersionService;
 
-    public ConfigController(IConfiguration configuration)
+    public ConfigController(
+        IConfiguration configuration,
+        IDesktopCompatibilityWarningService compatibilityWarningService,
+        IDesktopUpdateVersionService desktopUpdateVersionService)
     {
         _configuration = configuration;
+        _compatibilityWarningService = compatibilityWarningService;
+        _desktopUpdateVersionService = desktopUpdateVersionService;
     }
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<ActionResult<AppConfigResponse>> Get(CancellationToken cancellationToken)
     {
         var oauthEnabled = _configuration.GetValue("Auth:OAuthEnabled", false);
         var partyInfoPageEnabled = _configuration.GetValue("Features:PartyInfoPageEnabled", false);
         var adminContactUrl = Environment.GetEnvironmentVariable("ADMIN_CONTACT_URL")
             ?? _configuration["Admin:ContactUrl"]
             ?? "https://vk.com/<owner>";
-        return Ok(new AppConfigResponse(oauthEnabled, partyInfoPageEnabled, adminContactUrl));
+        return Ok(new AppConfigResponse(
+            oauthEnabled,
+            partyInfoPageEnabled,
+            adminContactUrl,
+            _compatibilityWarningService.GetWarning(),
+            await _desktopUpdateVersionService.GetLatestVersionAsync(cancellationToken)));
     }
 }
 
-/// <summary>
-/// Response for GET /api/config. Property name is explicitly camelCase for client contract (see CONTRACTS.md §2.2).
-/// </summary>
 public record AppConfigResponse(
     [property: JsonPropertyName("oauthEnabled")] bool OAuthEnabled,
     [property: JsonPropertyName("partyInfoPageEnabled")] bool PartyInfoPageEnabled,
-    [property: JsonPropertyName("adminContactUrl")] string AdminContactUrl);
+    [property: JsonPropertyName("adminContactUrl")] string AdminContactUrl,
+    [property: JsonPropertyName("desktopCompatibilityWarning")] DesktopCompatibilityWarning? DesktopCompatibilityWarning = null,
+    [property: JsonPropertyName("desktopUpdateVersion")] string? DesktopUpdateVersion = null);

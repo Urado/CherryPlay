@@ -41,6 +41,14 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", timeout: TimeSpan.FromSeconds(3));
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(GitHubDesktopReleaseSource.HttpClientName, client =>
+{
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("CherryPlayServer/1.0");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<IDesktopReleaseSource, GitHubDesktopReleaseSource>();
+builder.Services.AddSingleton<IDesktopUpdateVersionService, DesktopUpdateVersionService>();
 builder.Services.UseHttpClientMetrics();
 builder.Services.AddHttpClient("RuSender", client =>
 {
@@ -168,6 +176,7 @@ builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptio
 builder.Services.Configure<CherryPlayServer.Core.Options.ClientCompatibilityOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.ClientCompatibilityOptions.SectionName));
 builder.Services.AddSingleton<IPartyDisplayStatusService, PartyDisplayStatusService>();
+builder.Services.AddSingleton<IDesktopCompatibilityWarningService, DesktopCompatibilityWarningService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IJwtService, JwtService>();

@@ -87,30 +87,32 @@ const getZipRelease = (release: GitHubRelease): DesktopRelease | null => {
   const tagMatch = TAG_PATTERN.exec(release.tag_name);
   if (!tagMatch) return null;
   const version = `${tagMatch[1]}.${tagMatch[2]}.${tagMatch[3]}`;
-  const zipNames = [`CherryPashkaParty-${version}-x64.zip`];
-  const asset = release.assets.find((candidate) => zipNames.includes(candidate.name));
-  let downloadUrl: URL;
-  try {
-    downloadUrl = new URL(asset?.browser_download_url ?? '');
-  } catch {
-    return null;
-  }
-  if (
-    !asset ||
-    downloadUrl.protocol !== 'https:' ||
-    downloadUrl.hostname !== 'github.com' ||
-    downloadUrl.username !== '' ||
-    downloadUrl.password !== '' ||
-    downloadUrl.port !== '' ||
-    downloadUrl.pathname !==
-      `/Urado/CherryPlay/releases/download/player-v${version}/${asset?.name}` ||
-    downloadUrl.search !== '' ||
-    downloadUrl.hash !== ''
-  ) {
-    return null;
-  }
+  const zipNames = [`CherryPashkaParty-${version}-x64.zip`, `CherryPashkaList-${version}-x64.zip`];
+  for (const asset of release.assets) {
+    if (!zipNames.includes(asset.name)) continue;
+    let downloadUrl: URL;
+    try {
+      downloadUrl = new URL(asset.browser_download_url);
+    } catch {
+      continue;
+    }
+    if (
+      downloadUrl.protocol !== 'https:' ||
+      downloadUrl.hostname !== 'github.com' ||
+      downloadUrl.username !== '' ||
+      downloadUrl.password !== '' ||
+      downloadUrl.port !== '' ||
+      downloadUrl.pathname !==
+        `/Urado/CherryPlay/releases/download/player-v${version}/${asset.name}` ||
+      downloadUrl.search !== '' ||
+      downloadUrl.hash !== ''
+    ) {
+      continue;
+    }
 
-  return { version, downloadUrl: asset.browser_download_url };
+    return { version, downloadUrl: asset.browser_download_url };
+  }
+  return null;
 };
 
 export const getLatestDesktopRelease = async (

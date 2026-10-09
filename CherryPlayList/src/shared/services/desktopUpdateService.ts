@@ -43,7 +43,8 @@ const parseVersion = (version: string): { core: string[]; prerelease: string[] }
   const match = CORE_VERSION_PATTERN.exec(version) ?? VERSION_WITH_PRERELEASE_PATTERN.exec(version);
   if (!match) return null;
   const prerelease = match[4];
-  if (prerelease !== undefined && (!prerelease || !PRERELEASE_PATTERN.test(prerelease))) return null;
+  if (prerelease !== undefined && (!prerelease || !PRERELEASE_PATTERN.test(prerelease)))
+    return null;
   return {
     core: [match[1], match[2], match[3]],
     prerelease: prerelease ? prerelease.split('.') : [],
@@ -59,11 +60,19 @@ const compareNumericIdentifiers = (left: string, right: string): number => {
   return normalizedLeft === normalizedRight ? 0 : normalizedLeft < normalizedRight ? -1 : 1;
 };
 
-const isTrustedDownloadUrl = (value: string): boolean => {
-  if (!/^https:\/\/github\.com\//.test(value)) return false;
+const isTrustedDownloadUrl = (value: string, version: string, assetName: string): boolean => {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && url.hostname === 'github.com' && !url.username && !url.password;
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'github.com' &&
+      url.username === '' &&
+      url.password === '' &&
+      url.port === '' &&
+      url.pathname === `/Urado/CherryPlay/releases/download/player-v${version}/${assetName}` &&
+      url.search === '' &&
+      url.hash === ''
+    );
   } catch {
     return false;
   }
@@ -126,8 +135,18 @@ export const checkLatestDesktopUpdate = async (
       const match = TAG_PATTERN.exec(release.tag_name);
       if (!match) return [];
       const version = `${match[1]}.${match[2]}.${match[3]}`;
-      const assetNames = [`CherryPashkaParty-${version}-x64.zip`];
-      if (!release.assets.some((asset) => assetNames.includes(asset.name) && isTrustedDownloadUrl(asset.browser_download_url))) return [];
+      const assetNames = [
+        `CherryPashkaParty-${version}-x64.zip`,
+        `CherryPashkaList-${version}-x64.zip`,
+      ];
+      if (
+        !release.assets.some(
+          (asset) =>
+            assetNames.includes(asset.name) &&
+            isTrustedDownloadUrl(asset.browser_download_url, version, asset.name),
+        )
+      )
+        return [];
       return [{ version }];
     });
     const update = candidates.reduce<DesktopUpdate | null>((latest, candidate) => {

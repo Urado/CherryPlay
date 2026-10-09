@@ -1,4 +1,3 @@
-
 import {
   type ProjectItem,
   type ProjectMeta,
@@ -29,7 +28,10 @@ import {
   useUIStore,
 } from '@shared/stores';
 import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
-import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
+import {
+  runNewProjectWithSessionGuard,
+  stopLocalPlayerSession,
+} from '@shared/utils/newProjectSessionGuard';
 import { isProjectBindingCurrent } from '@shared/utils/projectBinding';
 import { canDiscardUnsavedProjectChanges } from '@shared/utils/projectNavigationGuard';
 import { runProjectSaveTransaction } from '@shared/utils/projectSaveTransaction';
@@ -46,26 +48,26 @@ import { SaveProjectAsModal } from './SaveProjectAsModal';
 import { LAYOUT_EDIT_DISABLED_TITLE } from './workspaceLayoutEditOptions';
 import { WorkspaceMenu } from './WorkspaceMenu';
 
-function layoutEditControlTitle(defaultTitle: string, isLayoutEditMode: boolean): string {
+const layoutEditControlTitle = (defaultTitle: string, isLayoutEditMode: boolean): string => {
   return isLayoutEditMode ? LAYOUT_EDIT_DISABLED_TITLE : defaultTitle;
-}
+};
 
-function caughtErrorMessage(error: unknown): string {
+const caughtErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
   return 'Неизвестная ошибка';
-}
+};
 
-function confirmDiscardUnsavedChanges(): boolean {
+const confirmDiscardUnsavedChanges = (): boolean => {
   return window.confirm('В проекте есть несохранённые изменения. Продолжить и отбросить их?');
-}
+};
 
-function directoryOfProjectFile(filePath: string): string {
+const directoryOfProjectFile = (filePath: string): string => {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
-}
+};
 
-function projectStateDataForSave(params: {
+const projectStateDataForSave = (params: {
   name: string;
   items: ProjectItem[];
   settings: ProjectSettings;
@@ -76,7 +78,7 @@ function projectStateDataForSave(params: {
     ProjectMeta,
     'linkedParty' | 'partyTrackDisplay' | 'partyThemeId' | 'partyCustomizationSettings'
   >;
-}): ProjectStateData {
+}): ProjectStateData => {
   const { name, items, settings, trackSettings, groupSettings, sessionState, meta } = params;
   const linkedParty = meta.linkedParty
     ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
@@ -93,7 +95,7 @@ function projectStateDataForSave(params: {
     partyThemeId: meta.partyThemeId,
     partyCustomizationSettings: meta.partyCustomizationSettings,
   };
-}
+};
 
 export const AppHeader: React.FC = () => {
   usePartyProgramEndedEffects();
@@ -257,7 +259,14 @@ export const AppHeader: React.FC = () => {
         console.error('Failed to end server session before creating a new project', error);
       },
     });
-  }, [meta.isDirty, meta.linkedParty, sessionState.mode, newProject, enableStreaming, addNotification]);
+  }, [
+    meta.isDirty,
+    meta.linkedParty,
+    sessionState.mode,
+    newProject,
+    enableStreaming,
+    addNotification,
+  ]);
 
   const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
     setIsSaving(true);
@@ -570,200 +579,207 @@ export const AppHeader: React.FC = () => {
 
   return (
     <div className="app-header">
-      <div className="app-header-toolbar">
-        <div className="app-header-left">
-          <div className="app-header-top-row">
-            <div className="app-header-file-cluster">
-              <div className="project-menu" ref={projectMenuRef}>
-                <button
-                  ref={projectMenuTriggerRef}
-                  type="button"
-                  id={projectMenuTriggerId}
-                  className="project-menu__trigger header-button"
-                  onClick={() => setProjectMenuOpen((o) => !o)}
-                  onKeyDown={onProjectMenuTriggerKeyDown}
-                  aria-haspopup="menu"
-                  aria-expanded={projectMenuOpen}
-                  aria-controls={projectMenuPanelId}
-                  aria-busy={isSaving}
-                  aria-label="Файл"
-                  disabled={isLayoutEditMode}
-                  title={layoutEditControlTitle(
-                    'Файл (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
-                    isLayoutEditMode,
-                  )}
-                >
-                  {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
-                  <InsertDriveFileOutlinedIcon
-                    className="header-button__icon header-button__icon--compact"
-                    aria-hidden
-                  />
-                </button>
-                {projectMenuOpen && (
-                  <div
-                    ref={projectMenuPanelRef}
-                    id={projectMenuPanelId}
-                    className="project-menu__panel"
-                    role="menu"
-                    tabIndex={-1}
-                    aria-labelledby={projectMenuTriggerId}
-                    onKeyDown={onProjectMenuKeyDown}
-                  >
+      <DesktopUpdateNotice>
+        {({ releaseNotice, compatibilityNotice }) => (
+          <div className="app-header-toolbar">
+            <div className="app-header-left">
+              <div className="app-header-top-row">
+                <div className="app-header-file-cluster">
+                  <div className="project-menu" ref={projectMenuRef}>
                     <button
+                      ref={projectMenuTriggerRef}
                       type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleNew();
-                      }}
-                    >
-                      Новый проект
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleLoad();
-                      }}
-                    >
-                      Открыть проект…
-                    </button>
-                    {usesFixtureFileBrowser && (
-                      <button
-                        type="button"
-                        className="project-menu__item"
-                        role="menuitem"
-                        disabled={isSaving}
-                        title="Загружает учебный демо-проект, не настоящую вечеринку"
-                        onClick={() => {
-                          closeProjectMenu();
-                          void handleLoadDemoProject();
-                        }}
-                      >
-                        Учебный демо-проект…
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      title="Экспортирует файлы плейлиста в выбранную папку"
-                      onClick={() => {
-                        closeProjectMenu();
-                        handleExport();
-                      }}
-                    >
-                      Экспорт
-                    </button>
-                    <button
-                      type="button"
-                      className="project-menu__item"
-                      role="menuitem"
-                      disabled={isSaving}
-                      onClick={() => {
-                        closeProjectMenu();
-                        void handleSave();
-                      }}
-                    >
-                      {isSaving ? (
-                        <span className="project-menu__item-with-loader">
-                          <span
-                            className="project-menu__save-spinner"
-                            aria-label="Сохранение…"
-                            role="status"
-                          />
-                          Сохранить проект
-                        </span>
-                      ) : (
-                        'Сохранить проект'
+                      id={projectMenuTriggerId}
+                      className="project-menu__trigger header-button"
+                      onClick={() => setProjectMenuOpen((o) => !o)}
+                      onKeyDown={onProjectMenuTriggerKeyDown}
+                      aria-haspopup="menu"
+                      aria-expanded={projectMenuOpen}
+                      aria-controls={projectMenuPanelId}
+                      aria-busy={isSaving}
+                      aria-label="Файл"
+                      disabled={isLayoutEditMode}
+                      title={layoutEditControlTitle(
+                        'Файл (Ctrl+N, Ctrl+O, Ctrl+S, Ctrl+Shift+S)',
+                        isLayoutEditMode,
                       )}
+                    >
+                      {isSaving && <span className="project-menu__trigger-spinner" aria-hidden />}
+                      <InsertDriveFileOutlinedIcon
+                        className="header-button__icon header-button__icon--compact"
+                        aria-hidden
+                      />
                     </button>
-                    {meta.filePath ? (
-                      <button
-                        type="button"
-                        className="project-menu__item"
-                        role="menuitem"
-                        disabled={isSaving}
-                        onClick={() => {
-                          closeProjectMenu();
-                          openSaveAsModal();
-                        }}
+                    {projectMenuOpen && (
+                      <div
+                        ref={projectMenuPanelRef}
+                        id={projectMenuPanelId}
+                        className="project-menu__panel"
+                        role="menu"
+                        tabIndex={-1}
+                        aria-labelledby={projectMenuTriggerId}
+                        onKeyDown={onProjectMenuKeyDown}
                       >
-                        Сохранить как…
-                      </button>
-                    ) : null}
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            handleNew();
+                          }}
+                        >
+                          Новый проект
+                        </button>
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleLoad();
+                          }}
+                        >
+                          Открыть проект…
+                        </button>
+                        {usesFixtureFileBrowser && (
+                          <button
+                            type="button"
+                            className="project-menu__item"
+                            role="menuitem"
+                            disabled={isSaving}
+                            title="Загружает учебный демо-проект, не настоящую вечеринку"
+                            onClick={() => {
+                              closeProjectMenu();
+                              void handleLoadDemoProject();
+                            }}
+                          >
+                            Учебный демо-проект…
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          title="Экспортирует файлы плейлиста в выбранную папку"
+                          onClick={() => {
+                            closeProjectMenu();
+                            handleExport();
+                          }}
+                        >
+                          Экспорт
+                        </button>
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          disabled={isSaving}
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleSave();
+                          }}
+                        >
+                          {isSaving ? (
+                            <span className="project-menu__item-with-loader">
+                              <span
+                                className="project-menu__save-spinner"
+                                aria-label="Сохранение…"
+                                role="status"
+                              />
+                              Сохранить проект
+                            </span>
+                          ) : (
+                            'Сохранить проект'
+                          )}
+                        </button>
+                        {meta.filePath ? (
+                          <button
+                            type="button"
+                            className="project-menu__item"
+                            role="menuitem"
+                            disabled={isSaving}
+                            onClick={() => {
+                              closeProjectMenu();
+                              openSaveAsModal();
+                            }}
+                          >
+                            Сохранить как…
+                          </button>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <button
-                className="header-button"
-                onClick={handleSettings}
-                disabled={isLayoutEditMode}
-                aria-label="Настройки"
-                title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
-              >
-                <SettingsIcon className="header-button__icon" aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="header-button"
-                onClick={() => void handleFeedback()}
-                aria-label="Обратная связь"
-                title="Обратная связь"
-              >
-                <ContactSupportOutlinedIcon className="header-button__icon" aria-hidden />
-              </button>
-            </div>
-
-            {enableStreaming ? (
-              <div className="app-header-account-cluster">
-                <AccountPopover
-                  isAuthenticated={isAuthenticated}
-                  organizerName={organizer?.name}
-                  disabled={isLayoutEditMode}
-                />
-              </div>
-            ) : null}
-          </div>
-
-          <div className="app-header-project-row">
-            <div className="app-header-project-main">
-              <div className="app-header-project-name">
-                <span className="app-header-project-name__eyebrow">Проект</span>
-                <div className="app-header-project-name__row">
-                  <ProjectNameInput
+                  <button
+                    className="header-button"
+                    onClick={handleSettings}
                     disabled={isLayoutEditMode}
-                    title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
-                  />
-                  {meta.isDirty && (
-                    <span className="dirty-indicator" title="Есть несохранённые изменения">
-                      *
-                    </span>
-                  )}
+                    aria-label="Настройки"
+                    title={layoutEditControlTitle('Настройки', isLayoutEditMode)}
+                  >
+                    <SettingsIcon className="header-button__icon" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    className="header-button"
+                    onClick={() => void handleFeedback()}
+                    aria-label="Обратная связь"
+                    title="Обратная связь"
+                  >
+                    <ContactSupportOutlinedIcon className="header-button__icon" aria-hidden />
+                  </button>
                 </div>
-              </div>
 
-              {showHeaderPlaybackPillRow ? (
-                <div className="app-header-playback-pill-row">
-                  {showHeaderPartyStatus ? <HeaderPartyStatus disabled={isLayoutEditMode} /> : null}
-                  {showHeaderPlaybackPill ? (
-                    <HeaderPlaybackPill disabled={isLayoutEditMode} />
+                <div className="app-header-account-cluster">
+                  {releaseNotice}
+                  {enableStreaming ? (
+                    <AccountPopover
+                      isAuthenticated={isAuthenticated}
+                      organizerName={organizer?.name}
+                      disabled={isLayoutEditMode}
+                    />
                   ) : null}
                 </div>
-              ) : null}
-            </div>
+              </div>
 
-            <WorkspaceMenu />
+              <div className="app-header-project-row">
+                <div className="app-header-project-main">
+                  <div className="app-header-project-name">
+                    <span className="app-header-project-name__eyebrow">Проект</span>
+                    <div className="app-header-project-name__row">
+                      <ProjectNameInput
+                        disabled={isLayoutEditMode}
+                        title={layoutEditControlTitle('Название проекта', isLayoutEditMode)}
+                      />
+                      {meta.isDirty && (
+                        <span className="dirty-indicator" title="Есть несохранённые изменения">
+                          *
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {showHeaderPlaybackPillRow ? (
+                    <div className="app-header-playback-pill-row">
+                      {showHeaderPartyStatus ? (
+                        <HeaderPartyStatus disabled={isLayoutEditMode} />
+                      ) : null}
+                      {showHeaderPlaybackPill ? (
+                        <HeaderPlaybackPill disabled={isLayoutEditMode} />
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                <WorkspaceMenu />
+              </div>
+              {compatibilityNotice}
+            </div>
           </div>
-          <DesktopUpdateNotice />
-        </div>
-      </div>
+        )}
+      </DesktopUpdateNotice>
 
       <SaveProjectAsModal
         key={saveAsModalKey}
