@@ -42,14 +42,14 @@ describe('desktopUpdateService', () => {
     });
   });
 
-  it('accepts the legacy archive name for an existing release', async () => {
+  it('rejects a release with the old technical archive name', async () => {
     const fetchReleases = jest.fn().mockResolvedValue(
       buildResponse(true, [
         buildRelease('player-v0.8.0', { assetName: 'CherryPlayList-0.8.0-x64.zip' }),
       ]),
     );
 
-    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toEqual({ version: '0.8.0' });
+    await expect(getLatestDesktopUpdate(fetchReleases)).resolves.toBeNull();
   });
 
   it('checks later GitHub pages before choosing the highest matching release', async () => {

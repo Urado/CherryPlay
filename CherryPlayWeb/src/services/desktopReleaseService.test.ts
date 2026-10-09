@@ -65,7 +65,7 @@ describe('getLatestDesktopRelease', () => {
     });
   });
 
-  it('accepts the legacy archive name for an existing release', async () => {
+  it('rejects a release with the old technical archive name', async () => {
     const fetchReleases = vi.fn().mockResolvedValue(
       createResponse([
         makeRelease({
@@ -79,10 +79,9 @@ describe('getLatestDesktopRelease', () => {
       ]),
     );
 
-    await expect(getLatestDesktopRelease(fetchReleases)).resolves.toEqual({
-      version: '0.6.4',
-      downloadUrl: 'https://github.com/Urado/CherryPlay/releases/download/player-v0.6.4/CherryPlayList-0.6.4-x64.zip',
-    });
+    await expect(getLatestDesktopRelease(fetchReleases)).rejects.toThrow(
+      'Сейчас нет доступной бета-версии приложения. Попробуйте позже.',
+    );
   });
 
   it('reports an HTTP failure', async () => {

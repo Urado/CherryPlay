@@ -87,7 +87,7 @@ const getZipRelease = (release: GitHubRelease): DesktopRelease | null => {
   const tagMatch = TAG_PATTERN.exec(release.tag_name);
   if (!tagMatch) return null;
   const version = `${tagMatch[1]}.${tagMatch[2]}.${tagMatch[3]}`;
-  const zipNames = [`CherryPashkaParty-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+  const zipNames = [`CherryPashkaParty-${version}-x64.zip`];
   const asset = release.assets.find((candidate) => zipNames.includes(candidate.name));
   let downloadUrl: URL;
   try {

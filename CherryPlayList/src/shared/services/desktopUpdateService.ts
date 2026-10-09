@@ -126,7 +126,7 @@ export const checkLatestDesktopUpdate = async (
       const match = TAG_PATTERN.exec(release.tag_name);
       if (!match) return [];
       const version = `${match[1]}.${match[2]}.${match[3]}`;
-      const assetNames = [`CherryPashkaParty-${version}-x64.zip`, `CherryPlayList-${version}-x64.zip`];
+      const assetNames = [`CherryPashkaParty-${version}-x64.zip`];
       if (!release.assets.some((asset) => assetNames.includes(asset.name) && isTrustedDownloadUrl(asset.browser_download_url))) return [];
       return [{ version }];
     });
