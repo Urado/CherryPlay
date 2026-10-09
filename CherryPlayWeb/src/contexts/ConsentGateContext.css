@@ -5,9 +5,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
   padding: 16px;
+  border: 0;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
+  color: var(--text-primary);
 }
 
 .consent-gate-modal {
@@ -63,7 +71,8 @@
 }
 
 .consent-gate-primary,
-.consent-gate-secondary {
+.consent-gate-secondary,
+.consent-gate-danger {
   width: 100%;
 }
 
@@ -81,6 +90,7 @@
 
 .consent-gate-primary:focus-visible,
 .consent-gate-secondary:focus-visible,
+.consent-gate-danger:focus-visible,
 .consent-gate-tertiary:focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;

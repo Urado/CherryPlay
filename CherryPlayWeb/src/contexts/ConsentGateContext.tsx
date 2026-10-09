@@ -12,7 +12,10 @@ import {
 } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { ConfirmActionDialog } from '../components/ConfirmActionDialog';
 import { ROUTES } from '../constants/routes';
+import { clearThemeAccessCache } from '../hooks/useThemeAccess';
+import { deleteOrganizerAccount } from '../services/accountApiService';
 import { authService } from '../services/authService';
 import {
   buildConsentInputsForMissing,
@@ -40,7 +43,7 @@ interface ConsentGateContextValue {
 
 const ConsentGateContext = createContext<ConsentGateContextValue>({
   isOpen: false,
-  ensureConsents: async () => 'ok',
+  ensureConsents: () => Promise.resolve('ok'),
   openWithMissing: () => undefined,
 });
 
@@ -52,11 +55,13 @@ const ConsentGateOverlay = ({
   onClose: (reason: 'granted' | 'logout') => void;
 }) => {
   const navigate = useNavigate();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [pdConsentAccepted, setPdConsentAccepted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsRefresh, setNeedsRefresh] = useState(false);
 
@@ -73,7 +78,7 @@ const ConsentGateOverlay = ({
     (firstCheckbox ?? dialog).focus();
   }, []);
 
-  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+  const trapFocus = (event: KeyboardEvent<HTMLDialogElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
@@ -135,7 +140,7 @@ const ConsentGateOverlay = ({
       await authService.logout();
       clearConsentGateNotifier();
       onClose('logout');
-      navigate(ROUTES.LOGIN);
+      await navigate(ROUTES.LOGIN);
     } catch {
       setError('Не удалось выйти из аккаунта');
     } finally {
@@ -143,22 +148,38 @@ const ConsentGateOverlay = ({
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    setError(null);
+    try {
+      await deleteOrganizerAccount();
+      clearThemeAccessCache();
+      await authService.logout();
+      onClose('logout');
+      await navigate(ROUTES.LOGIN, { replace: true, state: { accountDeleted: true } });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось удалить аккаунт');
+      setDeletingAccount(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
-    <div
+    <dialog
+      open
       ref={dialogRef}
       className="consent-gate-backdrop"
       data-shell-theme="dark"
-      role="dialog"
       aria-modal="true"
       aria-labelledby="consent-gate-title"
       aria-describedby="consent-gate-description"
-      tabIndex={-1}
       onKeyDown={trapFocus}
     >
       <div className="consent-gate-modal">
         <h2 id="consent-gate-title">Подтвердите согласия</h2>
         <p id="consent-gate-description">
-          Чтобы продолжить работу, подтвердите актуальные политики сервиса.
+          Чтобы продолжить работу, подтвердите актуальные политики сервиса. Можно выйти или
+          удалить аккаунт без их принятия.
         </p>
 
         <LegalConsentBlock
@@ -166,7 +187,7 @@ const ConsentGateOverlay = ({
           termsAccepted={termsAccepted}
           onPdConsentChange={setPdConsentAccepted}
           onTermsChange={setTermsAccepted}
-          disabled={submitting || loggingOut}
+          disabled={submitting || loggingOut || deletingAccount}
         />
 
         {error ? (
@@ -190,7 +211,7 @@ const ConsentGateOverlay = ({
               type="button"
               variant="primary"
               className="consent-gate-primary"
-              disabled={!canContinue || loggingOut}
+              disabled={!canContinue || loggingOut || deletingAccount}
               onClick={() => void handleContinue()}
             >
               {submitting ? 'Сохранение…' : 'Продолжить'}
@@ -200,10 +221,19 @@ const ConsentGateOverlay = ({
             type="button"
             variant="secondary"
             className="consent-gate-secondary"
-            disabled={submitting || loggingOut}
+            disabled={submitting || loggingOut || deletingAccount}
             onClick={() => void handleLogout()}
           >
             {loggingOut ? 'Выход…' : 'Выйти'}
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            className="consent-gate-danger"
+            disabled={submitting || loggingOut || deletingAccount}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Удалить аккаунт
           </Button>
           <Link
             className="consent-gate-tertiary"
@@ -216,7 +246,20 @@ const ConsentGateOverlay = ({
           </Link>
         </div>
       </div>
-    </div>
+      <ConfirmActionDialog
+        open={deleteDialogOpen}
+        title="Удалить аккаунт?"
+        description="Профиль будет обезличен, вход станет невозможен. Вечеринки могут остаться в каталоге без ваших контактов. Это действие необратимо."
+        confirmLabel="Удалить навсегда"
+        confirming={deletingAccount}
+        onCancel={() => {
+          if (!deletingAccount) {
+            setDeleteDialogOpen(false);
+          }
+        }}
+        onConfirm={() => void handleDeleteAccount()}
+      />
+    </dialog>
   );
 };
 
@@ -309,10 +352,10 @@ export const ConsentGateProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export function useConsentGate(): ConsentGateContextValue {
+export const useConsentGate = (): ConsentGateContextValue => {
   return useContext(ConsentGateContext);
-}
+};
 
-export function useConsentGateOpen(): boolean {
+export const useConsentGateOpen = (): boolean => {
   return useContext(ConsentGateContext).isOpen;
-}
+};
