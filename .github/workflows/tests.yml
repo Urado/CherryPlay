@@ -11,6 +11,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  release-workflow-contract:
+    name: Release Workflow Contracts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run release workflow contract tests
+        run: node --test CherryPlayList/tests/releaseWorkflowContract.test.mjs
+
   detect-integrationdb-changes:
     name: Detect IntegrationDb-relevant changes
     runs-on: ubuntu-24.04
