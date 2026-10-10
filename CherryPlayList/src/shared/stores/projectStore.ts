@@ -69,7 +69,7 @@ type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
 
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
 
-function enqueueLoudnessScanForTracks(tracks: Track[]): void {
+const enqueueLoudnessScanForTracks = (tracks: Track[]): void => {
   void import('./settingsStore').then(({ useSettingsStore }) => {
     if (!useSettingsStore.getState().loudnessNormalizationEnabled) {
       return;
@@ -78,7 +78,7 @@ function enqueueLoudnessScanForTracks(tracks: Track[]): void {
       void loudnessService.scanTracks(tracks);
     });
   });
-}
+};
 
 interface ProjectState {
   name: string;
@@ -181,6 +181,7 @@ interface ProjectState {
   resetSession: () => void;
   markTrackAsPlayed: (trackId: string) => void;
   markTracksAsPlayed: (trackIds: string[]) => void;
+  unmarkTracksAsPlayed: (trackIds: string[]) => void;
   setCurrentTrack: (trackId: string | null) => void;
   isTrackPlayed: (trackId: string) => boolean;
   toggleTrackDisabled: (trackId: string) => void;
@@ -1128,6 +1129,22 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         get().markAsDirty();
       },
 
+      unmarkTracksAsPlayed: (trackIds) => {
+        if (trackIds.length === 0) return;
+        set((state) => {
+          const toRemove = new Set(trackIds);
+          const playedTrackIds = state.sessionState.playedTrackIds.filter((id) => !toRemove.has(id));
+          if (playedTrackIds.length === state.sessionState.playedTrackIds.length) return state;
+          return {
+            sessionState: {
+              ...state.sessionState,
+              playedTrackIds,
+            },
+          };
+        });
+        get().markAsDirty();
+      },
+
       setCurrentTrack: (trackId) => {
         set((state) => ({
           sessionState: {
@@ -1281,7 +1298,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
   ),
 );
 
-export function initializeProjectStoreHistory(): void {
+export const initializeProjectStoreHistory = (): void => {
   registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as unknown as ProjectStore);
 
   registerExternalApplyHandler((workspaceId, command, mode) => {
@@ -1290,6 +1307,6 @@ export function initializeProjectStoreHistory(): void {
     }
     return false;
   });
-}
+};
 
 export { PROJECT_WORKSPACE_ID };
