@@ -738,8 +738,10 @@
 
 .party-editor-custom-color-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .party-editor-custom-color-label {
@@ -750,9 +752,11 @@
 
 .party-editor-custom-color-controls {
   display: flex;
+  flex: 1 1 160px;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .party-editor-custom-color-picker {
@@ -768,6 +772,8 @@
 .party-editor-custom-color-hex-input {
   flex: 1;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .party-editor-button:not(.cp-button) {

@@ -235,7 +235,7 @@ describe('DemoPlayer component', () => {
     render(<DemoPlayer controller={controller} interactionBlocked notify={jest.fn()} />);
 
     const timeline = screen.getByRole('slider', {
-      name: 'Позиция воспроизведения предпросмотра',
+      name: 'Позиция воспроизведения предпрослушивания',
     });
     expect(timeline).toHaveValue('42');
     expect(timeline).toBeDisabled();

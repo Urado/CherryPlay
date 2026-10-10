@@ -247,7 +247,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
               '--demo-range-progress': `${timelineProgressPercent}%`,
             } as React.CSSProperties
           }
-          aria-label="Позиция воспроизведения предпросмотра"
+          aria-label="Позиция воспроизведения предпрослушивания"
           aria-valuemin={0}
           aria-valuemax={timeline.resolvedDuration}
           aria-valuenow={timeline.displayPosition}
@@ -271,7 +271,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
                 '--demo-range-progress': `${volumeProgressPercent}%`,
               } as React.CSSProperties
             }
-            aria-label="Громкость предпросмотра"
+            aria-label="Громкость предпрослушивания"
             aria-valuemin={0}
             aria-valuemax={1}
             aria-valuenow={volume}

@@ -14,6 +14,7 @@ describe('header playback transmission', () => {
       }),
     ).toBe('unlinked');
     expect(resolveHeaderPlaybackTransmissionLabel('unlinked', true)).toBe('Вечеринка не привязана');
+    expect(resolveHeaderPlaybackTransmissionLabel('unlinked', true, false)).toBeNull();
   });
 
   it('uses simple connection-state labels', () => {
