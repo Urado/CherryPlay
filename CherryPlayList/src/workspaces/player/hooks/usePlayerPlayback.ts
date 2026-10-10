@@ -1,5 +1,5 @@
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
-import { Track } from '@core/types/track';
+import type { ProgramTrack } from '@core/types/project';
 import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
 import {
   useAimpStore,
@@ -37,12 +37,12 @@ const tryMarkPartyProgramEndedFromCherryPlay = (): void => {
 };
 
 interface UsePlayerPlaybackOptions {
-  allTracks: Track[];
+  allTracks: ProgramTrack[];
   getEffectiveTrackSettings: (trackId: string) => {
     actionAfterTrack: string;
     pauseBetweenTracks: number;
   };
-  getNextActiveTrack: () => Track | null;
+  getNextActiveTrack: () => ProgramTrack | null;
   markTrackAsPlayed: (trackId: string) => void;
   markSkippedDisabledTracks: (fromIndex: number, toIndex: number) => void;
   setCurrentTrack: (trackId: string | null) => void;

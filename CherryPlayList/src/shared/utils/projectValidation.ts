@@ -8,6 +8,7 @@ import {
   ProjectSessionState,
   ProjectSettings,
   ProjectTrackSettings,
+  SavedProjectEmptyTrack,
   SavedProjectGroup,
   SavedProjectItem,
   SavedProjectTrack,
@@ -200,6 +201,35 @@ function validateSavedTrack(
   return true;
 }
 
+function validateSavedEmptyTrack(item: unknown, errors: string[]): item is SavedProjectEmptyTrack {
+  if (!isObject(item)) {
+    errors.push('Empty track item is not an object');
+    return false;
+  }
+
+  if (item.type !== 'emptyTrack') {
+    errors.push(`Expected emptyTrack type, got: ${item.type}`);
+    return false;
+  }
+
+  if (!isString(item.id) || item.id.length === 0) {
+    errors.push('Empty track missing valid id');
+    return false;
+  }
+
+  if (!isString(item.name)) {
+    errors.push(`Empty track ${item.id} missing valid name`);
+    return false;
+  }
+
+  if (!isNumber(item.duration) || item.duration <= 0) {
+    errors.push(`Empty track ${item.id} has invalid duration`);
+    return false;
+  }
+
+  return true;
+}
+
 function validateSavedGroup(item: unknown, errors: string[]): item is SavedProjectGroup {
   if (!isObject(item)) {
     errors.push('Group item is not an object');
@@ -248,6 +278,8 @@ function validateSavedItem(
 
   if (item.type === 'track') {
     return validateSavedTrack(item, errors, warnings);
+  } else if (item.type === 'emptyTrack') {
+    return validateSavedEmptyTrack(item, errors);
   } else if (item.type === 'group') {
     return validateSavedGroup(item, errors);
   } else {
@@ -356,6 +388,12 @@ function validateTrackSettings(
     if (value.actionAfterTrack === null || isValidActionAfterTrack(value.actionAfterTrack)) {
       settings.actionAfterTrack =
         value.actionAfterTrack as ProjectTrackSettings['actionAfterTrack'];
+    }
+
+    if (value.hiddenFromSite === null || isBoolean(value.hiddenFromSite)) {
+      settings.hiddenFromSite = value.hiddenFromSite;
+    } else if (value.hiddenFromSite !== undefined) {
+      warnings.push(`Invalid hiddenFromSite for track ${key}, skipping`);
     }
 
     result[key] = settings;

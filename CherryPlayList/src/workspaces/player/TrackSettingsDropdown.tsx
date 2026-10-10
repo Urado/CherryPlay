@@ -37,6 +37,8 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
       ? localPauseBetweenTracks
       : defaultPauseBetweenTracks;
 
+  const hiddenFromSite = currentSettings.hiddenFromSite === true;
+
   const applyImmediate = useCallback(
     (action: ActionAfterTrack | 'default', pauseSec?: number) => {
       const pause =
@@ -49,6 +51,13 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     },
     [trackId, defaultPauseBetweenTracks, effectivePause, setTrackSettings],
   );
+
+  const toggleHiddenFromSite = useCallback(() => {
+    setTrackSettings(trackId, {
+      hiddenFromSite: hiddenFromSite ? null : true,
+    });
+    onClose();
+  }, [hiddenFromSite, onClose, setTrackSettings, trackId]);
 
   const handleSelect = useCallback(
     (value: ActionAfterTrack | 'default') => {
@@ -168,6 +177,16 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
               )}
             </li>
           ))}
+          <li className="track-settings-dropdown__item">
+            <button
+              type="button"
+              className={`track-settings-dropdown__row track-settings-dropdown__btn ${hiddenFromSite ? 'track-settings-dropdown__row--active' : ''}`}
+              onClick={toggleHiddenFromSite}
+              title="Не показывать этот элемент в программе на сайте"
+            >
+              {hiddenFromSite ? 'Показывать на сайте' : 'Скрыть с сайта'}
+            </button>
+          </li>
         </ul>
       </div>
     </div>

@@ -2,6 +2,16 @@ import type { Track, TrackLoudness } from './track';
 
 export type ActionAfterTrack = 'next' | 'pauseAndNext' | 'pause';
 
+export interface EmptyTrack {
+  id: string;
+  kind: 'emptyTrack';
+  name: string;
+  duration: number;
+}
+
+export type ProgramTrack = Track | EmptyTrack;
+export type ProgramPlayableItem = ProgramTrack;
+
 export type ProjectSessionMode = 'preparation' | 'session';
 
 export interface ProjectGroup {
@@ -10,19 +20,22 @@ export interface ProjectGroup {
   items: ProjectItem[];
 }
 
-export type ProjectItem = Track | ProjectGroup;
+export type ProjectItem = ProgramTrack | ProjectGroup;
 
-export function isProjectGroup(item: ProjectItem): item is ProjectGroup {
-  return 'items' in item;
-}
+export const isProjectGroup = (item: ProjectItem): item is ProjectGroup => 'items' in item;
 
-export function isProjectTrack(item: ProjectItem): item is Track {
-  return !isProjectGroup(item);
-}
+export const isEmptyTrack = (item: ProjectItem | ProgramTrack): item is EmptyTrack =>
+  !isProjectGroup(item) && 'kind' in item && item.kind === 'emptyTrack';
+
+export const isAudioTrack = (item: ProjectItem | ProgramTrack): item is Track =>
+  !isProjectGroup(item) && !isEmptyTrack(item);
+
+export const isProjectTrack = (item: ProjectItem): item is ProgramTrack => !isProjectGroup(item);
 
 export interface ProjectTrackSettings {
   pauseBetweenTracks?: number | null;
   actionAfterTrack?: ActionAfterTrack | null;
+  hiddenFromSite?: boolean | null;
 }
 
 export interface ProjectGroupSettings {
@@ -89,6 +102,13 @@ export interface SavedProjectTrack {
   loudness?: TrackLoudness;
 }
 
+export interface SavedProjectEmptyTrack {
+  type: 'emptyTrack';
+  id: string;
+  name: string;
+  duration: number;
+}
+
 export interface SavedProjectGroup {
   type: 'group';
   id: string;
@@ -96,7 +116,7 @@ export interface SavedProjectGroup {
   items: string[];
 }
 
-export type SavedProjectItem = SavedProjectTrack | SavedProjectGroup;
+export type SavedProjectItem = SavedProjectTrack | SavedProjectEmptyTrack | SavedProjectGroup;
 
 export interface ProjectFile {
   version: '2.0';

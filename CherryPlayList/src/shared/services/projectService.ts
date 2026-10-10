@@ -1,5 +1,6 @@
 import {
   DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+  isEmptyTrack,
   isProjectGroup,
   isProjectTrack,
   LinkedParty,
@@ -11,6 +12,7 @@ import {
   ProjectSessionState,
   ProjectSettings,
   ProjectTrackSettings,
+  SavedProjectEmptyTrack,
   SavedProjectGroup,
   SavedProjectItem,
   SavedProjectTrack,
@@ -82,6 +84,9 @@ async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: strin
   const processItems = async (projectItems: ProjectItem[]): Promise<void> => {
     for (const item of projectItems) {
       if (isProjectTrack(item)) {
+        if (isEmptyTrack(item)) {
+          continue;
+        }
         if (isRelativePath(item.path)) {
           item.path = resolveRelativePath(baseDir, item.path);
         }
@@ -183,15 +188,25 @@ class ProjectService {
     const processItems = (items: ProjectItem[]): void => {
       items.forEach((item) => {
         if (isProjectTrack(item)) {
-          const savedTrack: SavedProjectTrack = {
-            type: 'track',
-            id: item.id,
-            path: item.path,
-            name: item.name,
-            duration: item.duration,
-            ...(item.loudness !== undefined ? { loudness: item.loudness } : {}),
-          };
-          savedItems.push(savedTrack);
+          if (isEmptyTrack(item)) {
+            const savedEmptyTrack: SavedProjectEmptyTrack = {
+              type: 'emptyTrack',
+              id: item.id,
+              name: item.name,
+              duration: item.duration,
+            };
+            savedItems.push(savedEmptyTrack);
+          } else {
+            const savedTrack: SavedProjectTrack = {
+              type: 'track',
+              id: item.id,
+              path: item.path,
+              name: item.name,
+              duration: item.duration,
+              ...(item.loudness !== undefined ? { loudness: item.loudness } : {}),
+            };
+            savedItems.push(savedTrack);
+          }
         } else if (isProjectGroup(item)) {
           processItems(item.items);
 
@@ -272,6 +287,13 @@ class ProjectService {
           ...(normalizedLoudness !== undefined ? { loudness: normalizedLoudness } : {}),
         };
         return track;
+      } else if (savedItem.type === 'emptyTrack') {
+        return {
+          id: savedItem.id,
+          kind: 'emptyTrack',
+          name: savedItem.name,
+          duration: savedItem.duration,
+        };
       } else if (savedItem.type === 'group') {
         const children: ProjectItem[] = [];
         savedItem.items.forEach((childId) => {

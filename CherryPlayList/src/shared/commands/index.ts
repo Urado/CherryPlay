@@ -37,3 +37,4 @@ export {
 export { MoveItemCommand, MoveItemsCommand } from './moveItemsCommand';
 export { CreateGroupCommand, UngroupCommand, RenameGroupCommand } from './groupCommands';
 export { SetNameCommand } from './nameCommand';
+export { UpdateProgramLeafCommand } from './updateProgramLeafCommand';

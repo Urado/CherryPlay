@@ -20,6 +20,12 @@ export const LinkPartyModal: React.FC = () => {
   const { modal, closeModal, addNotification } = useUIStore();
   const items = useProjectStore((state) => state.items);
   const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
+  const trackSettings = useProjectStore((state) => state.trackSettings);
+  const projectSettings = useProjectStore((state) => state.settings);
+  const groupSettings = useProjectStore((state) => state.groupSettings);
+  const getItemPath = useProjectStore((state) => state.getItemPath);
+  const findItemById = useProjectStore((state) => state.findItemById);
+  const sessionState = useProjectStore((state) => state.sessionState);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
   const markAsDirty = useProjectStore((state) => state.markAsDirty);
 
@@ -72,7 +78,22 @@ export const LinkPartyModal: React.FC = () => {
       markAsDirty();
 
       if (uploadPlaylist && items.length > 0) {
-        const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
+        const disabledTrackIds = new Set(sessionState.disabledTrackIds);
+        const disabledGroupIds = new Set(sessionState.disabledGroupIds);
+        const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay, {
+          trackSettings,
+          projectSettings,
+          groupSettings,
+          getItemPath,
+          findItemById,
+          isTrackDisabled: (trackId) => {
+            if (disabledTrackIds.has(trackId)) {
+              return true;
+            }
+            const path = getItemPath(trackId);
+            return path.some((segmentId) => disabledGroupIds.has(segmentId));
+          },
+        });
         await partyService.updatePartyPlaylist(party.id, playlistForApi);
         applySyncedPlaylistTrackIds(playlistForApi);
       }

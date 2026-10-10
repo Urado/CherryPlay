@@ -1,5 +1,5 @@
-import { ProjectItem, isProjectGroup } from '@core/types/project';
-import { Track } from '@core/types/track';
+import { ProjectItem, isAudioTrack, isEmptyTrack, isProjectGroup } from '@core/types/project';
+import type { ProgramTrack } from '@core/types/project';
 import FolderIcon from '@mui/icons-material/Folder';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -10,7 +10,7 @@ import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItem
 import { useItemDragOver } from '../ItemList';
 import { ListRowCompound } from '../ListRow';
 
-function pluralize(count: number, one: string, few: string, many: string): string {
+const pluralize = (count: number, one: string, few: string, many: string): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
@@ -24,7 +24,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
     return few;
   }
   return many;
-}
+};
 
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 
@@ -58,10 +58,11 @@ export interface ProjectItemRowProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, id: string) => void;
   onDragEnd: (e: React.DragEvent) => void;
-  onPlay?: (track: Track) => Promise<void> | void;
+  onPlay?: (track: ProgramTrack) => Promise<void> | void;
   onPause?: () => void;
   onToggleDisabled?: (itemId: string) => void;
   onRenameGroup?: (groupId: string, newName: string) => void;
+  onRenameProgramLeaf?: (itemId: string, newName: string) => void;
   onUngroupGroup?: (groupId: string) => void;
   onOpenSettings?: (itemId: string) => void;
   onTrackActions?: (itemId: string, anchorRect: DOMRect) => void;
@@ -100,6 +101,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   onPause,
   onToggleDisabled,
   onRenameGroup,
+  onRenameProgramLeaf,
   onUngroupGroup,
   onOpenSettings,
   onTrackActions,
@@ -108,6 +110,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   loudnessControls,
 }) => {
   const isGroup = isProjectGroup(item);
+  const isEmpty = !isGroup && isEmptyTrack(item);
   const track = isGroup ? null : item;
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -135,19 +138,35 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   };
 
   const handleStartEdit = (e: React.MouseEvent) => {
-    if (!isGroup || !onRenameGroup || isLocked) return;
-    e.stopPropagation();
-    setIsEditingName(true);
-    setEditingName(item.name);
+    if (isLocked) return;
+    if (isGroup && onRenameGroup) {
+      e.stopPropagation();
+      setIsEditingName(true);
+      setEditingName(item.name);
+      return;
+    }
+    if (isEmpty && onRenameProgramLeaf) {
+      e.stopPropagation();
+      setIsEditingName(true);
+      setEditingName(item.name);
+    }
   };
 
   const handleSaveName = () => {
-    if (!isGroup || !onRenameGroup) return;
     const trimmedName = editingName.trim();
-    if (trimmedName && trimmedName !== item.name) {
-      onRenameGroup(item.id, trimmedName);
+    if (isGroup && onRenameGroup) {
+      if (trimmedName && trimmedName !== item.name) {
+        onRenameGroup(item.id, trimmedName);
+      }
+      setIsEditingName(false);
+      return;
     }
-    setIsEditingName(false);
+    if (isEmpty && onRenameProgramLeaf) {
+      if (trimmedName && trimmedName !== item.name) {
+        onRenameProgramLeaf(item.id, trimmedName);
+      }
+      setIsEditingName(false);
+    }
   };
 
   const handleRowClick = (e: React.MouseEvent) => {
@@ -184,7 +203,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   const groupDisplayName = isGroup
     ? `${item.name} (${itemCount} ${pluralize(itemCount, 'элемент', 'элемента', 'элементов')})`
     : '';
-  const trackDisplayName = track?.name || '';
+  const trackDisplayName = isEmpty ? `[Пустой] ${track?.name || ''}` : track?.name || '';
 
   const displayDuration = isGroup
     ? groupDuration !== undefined && groupDuration > 0
@@ -299,7 +318,7 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onDragEnd={onDragEnd}
-      className={isGroup ? 'playlist-item--group' : ''}
+      className={isGroup ? 'playlist-item--group' : isEmpty ? 'playlist-item--empty-track' : ''}
       data-item-id={item.id}
     >
       {showPlayButton && track && onPlay && (
@@ -323,16 +342,36 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       )}
 
       <ListRowCompound.Content
-        editable={isGroup && !!onRenameGroup && !isLocked}
-        onDoubleClick={isGroup ? handleStartEdit : undefined}
+        editable={Boolean(
+          !isLocked && ((isGroup && onRenameGroup) || (isEmpty && onRenameProgramLeaf)),
+        )}
+        onDoubleClick={isGroup || isEmpty ? handleStartEdit : undefined}
         title={
-          isGroup && onRenameGroup && !isLocked ? 'Двойной клик для переименования' : undefined
+          !isLocked && ((isGroup && onRenameGroup) || (isEmpty && onRenameProgramLeaf))
+            ? 'Двойной клик для переименования'
+            : undefined
         }
       >
-        {isGroup ? renderGroupNameContent() : trackDisplayName}
+        {isGroup ? (
+          renderGroupNameContent()
+        ) : isEditingName && isEmpty ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onBlur={handleSaveName}
+            onKeyDown={handleNameKeyDown}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="playlist-item-group-name-input"
+          />
+        ) : (
+          trackDisplayName
+        )}
       </ListRowCompound.Content>
 
-      {!isGroup && track && track.isMissing && (
+      {!isGroup && track && isAudioTrack(track) && track.isMissing && (
         <span
           className="playlist-item-missing-dot"
           title={`Файл не найден: ${track.path}`}

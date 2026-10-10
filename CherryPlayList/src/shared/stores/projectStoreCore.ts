@@ -1,4 +1,10 @@
-import { isProjectGroup, isProjectTrack, ProjectGroup, ProjectItem } from '@core/types/project';
+import {
+  isProjectGroup,
+  isProjectTrack,
+  ProjectGroup,
+  ProjectItem,
+  type ProgramTrack,
+} from '@core/types/project';
 import { Track, type TrackLoudness } from '@core/types/track';
 
 export interface ItemPositionInfo {
@@ -81,8 +87,8 @@ export function findItemWithParent(items: ProjectItem[], itemId: string): ItemPo
   return null;
 }
 
-export function getAllTracksRecursive(items: ProjectItem[]): Track[] {
-  const tracks: Track[] = [];
+export function getAllTracksRecursive(items: ProjectItem[]): ProgramTrack[] {
+  const tracks: ProgramTrack[] = [];
   for (const item of items) {
     if (isProjectTrack(item)) {
       tracks.push(item);
@@ -91,6 +97,22 @@ export function getAllTracksRecursive(items: ProjectItem[]): Track[] {
     }
   }
   return tracks;
+}
+
+export function updateProgramLeafInItems(
+  items: ProjectItem[],
+  itemId: string,
+  updater: (leaf: ProgramTrack) => ProgramTrack,
+): ProjectItem[] {
+  return items.map((item) => {
+    if (isProjectTrack(item) && item.id === itemId) {
+      return updater(item);
+    }
+    if (isProjectGroup(item)) {
+      return { ...item, items: updateProgramLeafInItems(item.items, itemId, updater) };
+    }
+    return item;
+  });
 }
 
 export function getFlatItemList(items: ProjectItem[]): FlatListItem[] {

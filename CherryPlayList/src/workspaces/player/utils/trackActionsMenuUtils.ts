@@ -1,9 +1,8 @@
-import { isProjectGroup, ProjectItem } from '@core/types/project';
-import { Track } from '@core/types/track';
+import { isProjectGroup, ProjectItem, type ProgramTrack } from '@core/types/project';
 
 export const getActionsTargetTrackId = (
   item: ProjectItem,
-  getAllTracksInOrder: (items: ProjectItem[]) => Track[],
+  getAllTracksInOrder: (items: ProjectItem[]) => ProgramTrack[],
 ): string | undefined => {
   if (isProjectGroup(item)) {
     return getAllTracksInOrder([item])[0]?.id;

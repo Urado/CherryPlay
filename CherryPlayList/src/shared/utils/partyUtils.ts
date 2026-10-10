@@ -2,10 +2,20 @@ import { PlayerItem as ComponentPlayerItem } from '@cherryplay/components/types'
 import {
   DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
   type PartyTrackDisplaySettings,
+  type ProjectGroupSettings,
   ProjectItem,
+  type ProjectSettings,
+  type ProjectTrackSettings,
   isProjectGroup,
   isProjectTrack,
 } from '@core/types/project';
+
+import {
+  calculateProgramTimelineDuration,
+  collectProgramTracksInOrder,
+  filterProjectItemsForSite,
+  getEffectiveTrackSettingsForProject,
+} from './programTrackUtils';
 
 /**
  * Интерфейс для PlayerItem без path (для API)
@@ -239,20 +249,59 @@ export function calculatePlaylistMetadata(items: ProjectItem[]): {
 /**
  * Преобразует плейлист в формат для API с вычислением метаданных
  */
+export interface ConvertPlaylistForApiOptions {
+  trackSettings?: Map<string, ProjectTrackSettings>;
+  projectSettings?: ProjectSettings;
+  groupSettings?: Map<string, ProjectGroupSettings>;
+  getItemPath?: (trackId: string) => string[];
+  findItemById?: (id: string) => ProjectItem | null;
+  isTrackDisabled?: (trackId: string) => boolean;
+}
+
 export function convertPlaylistForApi(
   items: ProjectItem[],
   trackDisplay?: PartyTrackDisplaySettings,
+  options?: ConvertPlaylistForApiOptions,
 ): {
   items: PlayerItemForApi[];
   totalTracks: number;
   totalDuration: number;
 } {
-  const apiItems = convertToApiPlayerItems(items, trackDisplay);
-  const metadata = calculatePlaylistMetadata(items);
+  const visibleItems =
+    options?.trackSettings !== undefined
+      ? filterProjectItemsForSite(items, options.trackSettings)
+      : items;
+  const apiItems = convertToApiPlayerItems(visibleItems, trackDisplay);
+
+  const canComputeTimeline =
+    options?.projectSettings !== undefined &&
+    options.trackSettings !== undefined &&
+    options.groupSettings !== undefined &&
+    options.getItemPath !== undefined &&
+    options.findItemById !== undefined;
+
+  let totalDuration: number;
+  if (canComputeTimeline) {
+    const orderedTracks = collectProgramTracksInOrder(visibleItems);
+    const isTrackDisabled = options.isTrackDisabled ?? (() => false);
+    totalDuration = calculateProgramTimelineDuration(orderedTracks, {
+      isTrackDisabled,
+      getEffectiveTrackSettings: (trackId) =>
+        getEffectiveTrackSettingsForProject(trackId, {
+          settings: options.projectSettings!,
+          trackSettings: options.trackSettings!,
+          groupSettings: options.groupSettings!,
+          getItemPath: options.getItemPath!,
+          findItemById: options.findItemById!,
+        }),
+    });
+  } else {
+    totalDuration = calculateTotalDuration(visibleItems);
+  }
 
   return {
     items: apiItems,
-    totalTracks: metadata.totalTracks,
-    totalDuration: metadata.totalDuration,
+    totalTracks: countTotalTracks(visibleItems),
+    totalDuration,
   };
 }

@@ -1,9 +1,18 @@
+import { isAudioTrack, isEmptyTrack, type ProgramPlayableItem } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import { wireLoudnessPlaybackSync } from '../audio/playback/loudnessPlaybackSync';
 import { mainPlaybackEngine } from '../audio/playback/playbackEngines';
+import {
+  isSilenceProgramPlaybackTrack,
+  loadSilenceProgramTrack,
+  pauseSilenceProgramPlayback,
+  playSilenceProgramPlayback,
+  seekSilenceProgramPlayback,
+  stopSilenceProgramPlayback,
+  wireSilenceProgramPlayback,
+} from '../audio/playback/silenceProgramPlayback';
 import {
   isDemoLiveMockPlaybackEnabled,
   loadDemoLiveMockTrack,
@@ -33,7 +42,7 @@ import { useUIStore } from './uiStore';
 export type PlayerAudioStatus = PlaybackStoreStatus;
 
 interface PlayerAudioState {
-  currentTrack: Track | null;
+  currentTrack: ProgramPlayableItem | null;
   status: PlayerAudioStatus;
   position: number;
   duration: number;
@@ -41,7 +50,7 @@ interface PlayerAudioState {
   error: string | null;
   onTrackEnded?: () => void;
 
-  loadTrack: (track: Track, autoPlay?: boolean) => Promise<number>;
+  loadTrack: (track: ProgramPlayableItem, autoPlay?: boolean) => Promise<number>;
   shouldAutoPlayTrack: (trackId: string, generation: number) => boolean;
   play: () => Promise<void>;
   pause: () => void;
@@ -89,7 +98,10 @@ const INITIAL_STATE: Omit<
   onTrackEnded: undefined,
 };
 
-const notifyMissingTrack = (track: Track): void => {
+const notifyMissingTrack = (track: ProgramPlayableItem): void => {
+  if (isEmptyTrack(track)) {
+    return;
+  }
   useUIStore.getState().addNotification({
     type: 'warning',
     message: formatMissingTrackMessage(track.name, track.path),
@@ -145,10 +157,32 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
       pendingAutoPlay = autoPlay ? { generation, trackId: track.id } : null;
       if (isDemoLiveMockPlaybackEnabled()) {
         clearPauseTimer();
-        loadDemoLiveMockTrack(track);
+        loadDemoLiveMockTrack(track as Track);
         if (autoPlay) {
           set({ status: 'loading' });
         }
+        return generation;
+      }
+
+      if (isEmptyTrack(track)) {
+        clearPauseTimer();
+        stopSilenceProgramPlayback();
+        playbackEngine.stop();
+        loadSilenceProgramTrack(track);
+        if (generation !== trackLoadGeneration) {
+          return generation;
+        }
+        set({
+          currentTrack: track,
+          status: pendingAutoPlay?.generation === generation ? 'loading' : 'paused',
+          position: 0,
+          duration: track.duration,
+          error: null,
+        });
+        return generation;
+      }
+
+      if (!isAudioTrack(track)) {
         return generation;
       }
 
@@ -210,6 +244,16 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
         return;
       }
 
+      if (isSilenceProgramPlaybackTrack(get().currentTrack)) {
+        clearPauseTimer();
+        set({ status: 'playing', error: null });
+        playSilenceProgramPlayback();
+        if (pendingAutoPlay?.generation === autoPlayGeneration) {
+          pendingAutoPlay = null;
+        }
+        return;
+      }
+
       try {
         await playTrackCore({
           engine: playbackEngine,
@@ -243,6 +287,11 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
         pauseDemoLiveMockPlayback();
         return;
       }
+      if (isSilenceProgramPlaybackTrack(get().currentTrack)) {
+        pauseSilenceProgramPlayback();
+        set({ status: 'paused' });
+        return;
+      }
       playbackEngine.pause();
     },
 
@@ -255,6 +304,7 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
         set({ status: 'idle', position: 0, error: null });
         return;
       }
+      stopSilenceProgramPlayback();
       playbackEngine.stop();
       set({ status: 'idle', position: 0, error: null });
     },
@@ -269,8 +319,14 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
         return;
       }
 
-      const { currentTrack, duration } = get();
+      const { currentTrack, duration, status } = get();
       if (!currentTrack) {
+        return;
+      }
+
+      if (isSilenceProgramPlaybackTrack(currentTrack)) {
+        const clamped = seekSilenceProgramPlayback(positionSeconds, duration);
+        set({ position: clamped, status: status === 'ended' ? 'paused' : status });
         return;
       }
 
@@ -300,6 +356,7 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
         set({ ...INITIAL_STATE, volume: preservedVolume });
         return;
       }
+      stopSilenceProgramPlayback();
       playbackEngine.stop();
       const preservedVolume = get().volume;
       set({ ...INITIAL_STATE, volume: preservedVolume });
@@ -353,6 +410,24 @@ export const usePlayerAudioStore = createWithEqualityFn<PlayerAudioState>((set, 
       syncMainWithDemoPlayer(deviceId);
     },
   };
+});
+
+wireSilenceProgramPlayback({
+  getState: () => {
+    const state = usePlayerAudioStore.getState();
+    return {
+      status: state.status,
+      position: state.position,
+      duration: state.duration,
+      currentTrack: state.currentTrack,
+    };
+  },
+  setPosition: (positionSeconds) => {
+    usePlayerAudioStore.getState().setPosition(positionSeconds);
+  },
+  handleEnded: () => {
+    usePlayerAudioStore.getState().handleEnded();
+  },
 });
 
 wireLoudnessPlaybackSync();
