@@ -1,3 +1,5 @@
+import type { ProjectItem, ProjectTrackSettings } from '@core/types/project';
+
 import {
   calculateProgramTimelineDuration,
   collectProgramTracksInOrder,
@@ -5,7 +7,6 @@ import {
   filterProjectItemsForSite,
   resolveGuestSitePlaybackPresentation,
 } from '../../src/shared/utils/programTrackUtils';
-import type { ProjectItem, ProjectTrackSettings } from '@core/types/project';
 
 describe('programTrackUtils', () => {
   it('filters hidden tracks from site publication tree', () => {
