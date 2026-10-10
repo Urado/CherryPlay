@@ -497,10 +497,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
         }
         if (useDemoPlayerStore.getState().isDisabled) {
           pause();
-          useDemoPlayerStore.setState({
-            error: 'Воспроизведение невозможно: используется то же устройство, что и плеер',
-            status: 'error',
-          });
+          const { error, status } = useDemoPlayerStore.getState();
+          if (status === 'error') {
+            useDemoPlayerStore.setState({ error: null, status: 'paused' });
+          } else if (error) {
+            useDemoPlayerStore.setState({ error: null });
+          }
           return;
         }
         if (

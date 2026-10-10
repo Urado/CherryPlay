@@ -1,4 +1,4 @@
-import { PlaybackControlButton } from '@cherryplay/components';
+import { Button, PlaybackControlButton } from '@cherryplay/components';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
@@ -6,6 +6,11 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
 import { Track } from '../../core/types/track';
+import {
+  DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL,
+  DEMO_SHARED_OUTPUT_CONFLICT_MESSAGE,
+  openDemoAudioDeviceSettings,
+} from '../demo/demoSharedOutputConflict';
 import { usePlaybackTimeline } from '../hooks/usePlaybackTimeline';
 import { useDemoPlayerStore } from '../stores/demoPlayerStore';
 import type { PlayerStatus } from '../stores/demoPlayerStore';
@@ -103,7 +108,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
     duration,
     volume,
     error,
-    isDisabled: storeIsDisabled,
+    isDisabled: sharedOutputBlocked,
     play,
     pause,
     seek,
@@ -111,8 +116,8 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
     clear,
   } = player;
   const isPlaying = status === 'playing';
-  const playbackBlocked = storeIsDisabled || !currentTrack || Boolean(error);
-  const isDisabled = interactionBlocked || playbackBlocked;
+  const playbackBlocked = !currentTrack || Boolean(error);
+  const isDisabled = interactionBlocked || sharedOutputBlocked || playbackBlocked;
   const resolvedDuration =
     (Number.isFinite(duration) && duration > 0 ? duration : currentTrack?.duration) ?? 0;
   const timeline = usePlaybackTimeline({
@@ -182,12 +187,12 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
         'demo-player',
         className,
         isDisabled ? 'demo-player--disabled' : null,
-        storeIsDisabled ? 'demo-player--blocked' : null,
+        sharedOutputBlocked ? 'demo-player--blocked' : null,
         interactionBlocked ? 'demo-player--interaction-blocked' : null,
       ]
         .filter(Boolean)
         .join(' '),
-    [className, interactionBlocked, isDisabled, storeIsDisabled],
+    [className, interactionBlocked, isDisabled, sharedOutputBlocked],
   );
 
   const timelineProgressPercent = useMemo(() => {
@@ -199,17 +204,37 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
 
   const volumeProgressPercent = useMemo(() => Math.min(100, Math.max(0, volume * 100)), [volume]);
 
+  if (sharedOutputBlocked) {
+    return (
+      <div className={containerClassName}>
+        <div className="demo-player__info-row">
+          <div className="demo-player__info">
+            <div className="demo-player__title">{currentTrack?.name ?? 'Нет активного трека'}</div>
+          </div>
+        </div>
+        <div className="demo-player__blocked-state">
+          <p className="demo-player__blocked-message">{DEMO_SHARED_OUTPUT_CONFLICT_MESSAGE}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="demo-player__blocked-action"
+            onClick={openDemoAudioDeviceSettings}
+            disabled={interactionBlocked}
+          >
+            {DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={containerClassName}>
       <div className="demo-player__info-row">
         <div className="demo-player__info">
           <div className="demo-player__title">{currentTrack?.name ?? 'Нет активного трека'}</div>
           {error ? <div className="demo-player__error">{error}</div> : null}
-          {storeIsDisabled && !error ? (
-            <div className="demo-player__warning">
-              Воспроизведение невозможно: используется то же устройство, что и плеер
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -221,13 +246,7 @@ export const DemoPlayer: React.FC<DemoPlayerProps> = ({
             void handleToggle();
           }}
           disabled={isDisabled}
-          title={
-            storeIsDisabled
-              ? 'Воспроизведение невозможно (то же устройство, что у плеера)'
-              : isPlaying
-                ? 'Пауза'
-                : 'Воспроизвести'
-          }
+          title={isPlaying ? 'Пауза' : 'Воспроизвести'}
           aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}
         />
         <span className="demo-player__time">{formatPlayerTime(timeline.displayPosition)}</span>
