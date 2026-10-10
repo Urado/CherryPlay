@@ -1,5 +1,5 @@
 
-import { ActionAfterTrack } from '@core/types/project';
+import { ActionAfterTrack, isEmptyTrack } from '@core/types/project';
 import { useProjectStore } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -18,7 +18,10 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
   anchorRect,
   onClose,
 }) => {
-  const { settings, getTrackSettings, setTrackSettings } = useProjectStore();
+  const { settings, getTrackSettings, setTrackSettings, findItemById, updateProgramLeaf } =
+    useProjectStore();
+  const programLeaf = findItemById(trackId);
+  const isEmpty = programLeaf != null && isEmptyTrack(programLeaf);
 
   const { defaultPauseBetweenTracks, defaultActionAfterTrack } = settings;
   const currentSettings = getTrackSettings(trackId);
@@ -177,6 +180,29 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
               )}
             </li>
           ))}
+          {isEmpty && (
+            <li className="track-settings-dropdown__item">
+              <div className="track-settings-dropdown__row">
+                <span className="track-settings-dropdown__row-action">Длительность</span>
+                <input
+                  type="number"
+                  className="track-settings-dropdown__input"
+                  value={programLeaf.duration}
+                  min={1}
+                  step={1}
+                  onChange={(e) => {
+                    const sec = Number(e.target.value);
+                    if (Number.isFinite(sec) && sec > 0) {
+                      updateProgramLeaf(trackId, { duration: sec });
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Длительность пустого трека в секундах"
+                />
+                <span className="track-settings-dropdown__suffix">сек</span>
+              </div>
+            </li>
+          )}
           <li className="track-settings-dropdown__item">
             <button
               type="button"
