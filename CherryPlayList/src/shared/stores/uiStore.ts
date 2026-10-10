@@ -58,6 +58,7 @@ interface UIState {
   activeSource: 'fileBrowser' | 'playlists' | 'db';
   modal: ModalType;
   modalReturnTo: 'partySettings' | null;
+  settingsFocusElementId: string | null;
   trackSettingsContext: TrackSettingsModalContext;
   notifications: Notification[];
   fileBrowserFocusRequest: {
@@ -71,6 +72,8 @@ interface UIState {
 
   setActiveSource: (source: 'fileBrowser' | 'playlists' | 'db') => void;
   openModal: (type: ModalType) => void;
+  openSettingsModal: (focusElementId?: string) => void;
+  clearSettingsFocusElementId: () => void;
   openLinkPartyModal: (returnTo?: 'partySettings') => void;
   openPartySettingsModal: () => void;
   closeModal: () => void;
@@ -93,6 +96,7 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   activeSource: 'fileBrowser',
   modal: null,
   modalReturnTo: null,
+  settingsFocusElementId: null,
   trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
   notifications: [],
   fileBrowserFocusRequest: null,
@@ -102,21 +106,38 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   setActiveSource: (source) => set({ activeSource: source }),
 
-  openModal: (type) => set({ modal: type, modalReturnTo: null }),
+  openModal: (type) =>
+    set({ modal: type, modalReturnTo: null, settingsFocusElementId: null }),
 
-  openLinkPartyModal: (returnTo) => set({ modal: 'linkParty', modalReturnTo: returnTo ?? null }),
+  openSettingsModal: (focusElementId) =>
+    set({
+      modal: 'settings',
+      modalReturnTo: null,
+      settingsFocusElementId: focusElementId ?? null,
+    }),
 
-  openPartySettingsModal: () => set({ modal: 'partySettings', modalReturnTo: null }),
+  clearSettingsFocusElementId: () => set({ settingsFocusElementId: null }),
+
+  openLinkPartyModal: (returnTo) =>
+    set({ modal: 'linkParty', modalReturnTo: returnTo ?? null, settingsFocusElementId: null }),
+
+  openPartySettingsModal: () =>
+    set({ modal: 'partySettings', modalReturnTo: null, settingsFocusElementId: null }),
 
   closeModal: () =>
     set((state) => ({
       modal: state.modal === 'linkParty' ? state.modalReturnTo : null,
       modalReturnTo: null,
+      settingsFocusElementId: null,
       trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
     })),
 
   openTrackSettingsModal: (context) =>
-    set({ modal: 'trackSettings', trackSettingsContext: context }),
+    set({
+      modal: 'trackSettings',
+      trackSettingsContext: context,
+      settingsFocusElementId: null,
+    }),
 
   addNotification: (notification) => {
     const id = `notification-${Date.now()}-${Math.random()}`;
@@ -223,6 +244,6 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   acknowledgeFileBrowserFocus: () => set({ fileBrowserFocusRequest: null }),
 }));
 
-export function openPartySettingsModal(): void {
+export const openPartySettingsModal = (): void => {
   useUIStore.getState().openPartySettingsModal();
-}
+};

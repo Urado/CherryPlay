@@ -29,7 +29,8 @@ const DIVIDER_INTERVALS = [
 ];
 
 export const SettingsModal: React.FC = () => {
-  const { modal, closeModal, addNotification } = useUIStore();
+  const { modal, closeModal, addNotification, settingsFocusElementId, clearSettingsFocusElementId } =
+    useUIStore();
   const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
@@ -119,6 +120,20 @@ export const SettingsModal: React.FC = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [modal]);
+
+  useEffect(() => {
+    if (modal !== 'settings' || !settingsFocusElementId || loadingDevices) {
+      return undefined;
+    }
+
+    const focusTarget = document.getElementById(settingsFocusElementId);
+    if (focusTarget instanceof HTMLElement) {
+      focusTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      focusTarget.focus({ preventScroll: true });
+    }
+    clearSettingsFocusElementId();
+    return undefined;
+  }, [modal, settingsFocusElementId, loadingDevices, clearSettingsFocusElementId]);
 
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {

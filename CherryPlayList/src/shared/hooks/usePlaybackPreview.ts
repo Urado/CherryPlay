@@ -3,9 +3,11 @@ import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useMemo } from 'react';
 
+import { isDemoSharedOutputConflictError } from '../demo/demoSharedOutputConflict';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
-import { useLayoutStore, useSettingsStore } from '../stores';
+import { useLayoutStore } from '../stores/layoutStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useDemoPlayerStore, PlayerStatus } from '../stores/demoPlayerStore';
 import { collectWorkspaceTypes } from '../utils/layoutWorkspaceOperations';
 import { logger } from '../utils/logger';
@@ -23,9 +25,9 @@ export interface UsePlaybackPreviewReturn {
   isPlaying: (trackId: string) => boolean;
 }
 
-export function usePlaybackPreview({
+export const usePlaybackPreview = ({
   workspaceId,
-}: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn {
+}: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn => {
   const {
     currentTrack,
     status: playerStatus,
@@ -66,13 +68,15 @@ export function usePlaybackPreview({
           loadGeneration = await loadTrack(track, workspaceId, true);
         }
 
-        const { isDisabled } = useDemoPlayerStore.getState();
+        const { isDisabled, error, status } = useDemoPlayerStore.getState();
         if (isDisabled) {
           pause();
-          useDemoPlayerStore.setState({
-            error: 'Воспроизведение невозможно: используется то же устройство, что и плеер',
-            status: 'error',
-          });
+          if (isDemoSharedOutputConflictError(error) || status === 'error') {
+            useDemoPlayerStore.setState({
+              error: null,
+              status: status === 'error' ? 'paused' : status,
+            });
+          }
           return;
         }
 
@@ -138,4 +142,4 @@ export function usePlaybackPreview({
     isActive,
     isPlaying,
   };
-}
+};
