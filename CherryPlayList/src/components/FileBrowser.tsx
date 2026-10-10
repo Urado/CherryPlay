@@ -239,14 +239,19 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  const browsableItems = useMemo(
+    () => items.filter((item) => fileService.isListableInFileBrowser(item)),
+    [items],
+  );
+
   const filteredItems = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
-      return items;
+      return browsableItems;
     }
 
     const query = debouncedSearchQuery.toLowerCase();
-    return items.filter((item) => item.name.toLowerCase().includes(query));
-  }, [items, debouncedSearchQuery]);
+    return browsableItems.filter((item) => item.name.toLowerCase().includes(query));
+  }, [browsableItems, debouncedSearchQuery]);
 
   const fileBrowserSelectionItems = useMemo(
     () => filteredItems.map((item) => ({ id: item.path })),
@@ -416,6 +421,8 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
           setSelectedPaths((prev) => new Set([...prev, ...range]));
         }
       }
+    } else if (selectedPaths.has(path) && selectedPaths.size === 1) {
+      setSelectedPaths(new Set());
     } else {
       setSelectedPaths(new Set([path]));
     }
@@ -497,10 +504,12 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
         }
         if (useDemoPlayerStore.getState().isDisabled) {
           pause();
-          useDemoPlayerStore.setState({
-            error: 'Воспроизведение невозможно: используется то же устройство, что и плеер',
-            status: 'error',
-          });
+          const { error, status } = useDemoPlayerStore.getState();
+          if (status === 'error') {
+            useDemoPlayerStore.setState({ error: null, status: 'paused' });
+          } else if (error) {
+            useDemoPlayerStore.setState({ error: null });
+          }
           return;
         }
         if (

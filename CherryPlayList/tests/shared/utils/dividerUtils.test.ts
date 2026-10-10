@@ -1,13 +1,13 @@
 import type { Track } from '@core/types/track';
 import { describe, expect, it, jest } from '@jest/globals';
 
-
 import {
   calculatePlannedEndMarker,
   calculateProjectedEndTime,
   calculateQueueEndMarker,
   formatTimeFromDuration,
   formatTimeFromTimestamp,
+  getHourDividerKindsAfterTrackRow,
   getPriorityHourDividerKind,
   type DividerCalculationContext,
 } from '../../../src/shared/utils/dividerUtils';
@@ -64,6 +64,20 @@ describe('getPriorityHourDividerKind', () => {
 
   it('returns null when nothing applies', () => {
     expect(getPriorityHourDividerKind(false, false, false)).toBeNull();
+  });
+});
+
+describe('getHourDividerKindsAfterTrackRow', () => {
+  it('returns both planned and queue when they coincide on one row', () => {
+    expect(getHourDividerKindsAfterTrackRow(true, true, true)).toEqual([
+      'planned-end',
+      'queue-end',
+    ]);
+  });
+
+  it('returns single kind when only one applies', () => {
+    expect(getHourDividerKindsAfterTrackRow(true, false, true)).toEqual(['planned-end']);
+    expect(getHourDividerKindsAfterTrackRow(false, true, true)).toEqual(['queue-end']);
   });
 });
 
@@ -131,7 +145,6 @@ describe('calculateQueueEndMarker', () => {
     jest.useRealTimers();
     expect(marker).not.toBeNull();
     expect(marker!.trackId).toBe('b');
-    // 70s left on a + 200s on b = 270s
     expect(marker!.sessionEndTimestamp).toBe(new Date('2026-04-26T12:04:30.000Z').getTime());
   });
 
@@ -174,8 +187,8 @@ describe('calculateProjectedEndTime (session)', () => {
   });
 });
 
-describe('calculatePlannedEndMarker (session: label time matches segment boundary when plan inside track)', () => {
-  it('when plan falls inside first unplayed track, time is track end on timeline (like interval dividers)', () => {
+describe('calculatePlannedEndMarker (session: plan line before containing track, label shows plan time)', () => {
+  it('when plan falls inside first unplayed track, anchor is before track and time is planned instant', () => {
     jest.useFakeTimers();
     const t0 = new Date('2026-04-26T12:00:00.000Z').getTime();
     jest.setSystemTime(t0);
@@ -192,14 +205,14 @@ describe('calculatePlannedEndMarker (session: label time matches segment boundar
     );
     jest.useRealTimers();
     expect(m).not.toBeNull();
-    expect(m!.time).toBe(t0 + 100_000);
+    expect(m!.trackId).toBeNull();
+    expect(m!.time).toBe(plannedEndTime);
   });
 
-  it('when plan falls in second track, time is that track end; anchor is previous', () => {
+  it('when plan falls in second track, anchor is previous track and time is planned instant', () => {
     jest.useFakeTimers();
     const t0 = new Date('2026-04-26T12:00:00.000Z').getTime();
     jest.setSystemTime(t0);
-    // first track 60s: [t0, t0+60s); second 60s: [t0+60s, t0+120s)
     const plannedEndTime = t0 + 90_000;
     const tracks = [makeTrack('a', 60), makeTrack('b', 60)];
     const m = calculatePlannedEndMarker(
@@ -214,14 +227,34 @@ describe('calculatePlannedEndMarker (session: label time matches segment boundar
     jest.useRealTimers();
     expect(m).not.toBeNull();
     expect(m!.trackId).toBe('a');
-    expect(m!.time).toBe(t0 + 120_000);
+    expect(m!.time).toBe(plannedEndTime);
   });
 
-  it('with currentTrackPosition drift, label time is segment end (not raw planned instant)', () => {
+  it('when plan equals track end, anchor is that track', () => {
     jest.useFakeTimers();
     const t0 = new Date('2026-04-26T12:00:00.000Z').getTime();
     jest.setSystemTime(t0);
-    // Track wall span [t0-30, t0+30]; planned 20s from track start = t0 -10s
+    const plannedEndTime = t0 + 100_000;
+    const tracks = [makeTrack('a', 100)];
+    const m = calculatePlannedEndMarker(
+      baseContext({
+        mode: 'session',
+        tracks,
+        activeTrackId: 'a',
+        isTrackPlayed: () => false,
+      }),
+      plannedEndTime,
+    );
+    jest.useRealTimers();
+    expect(m).not.toBeNull();
+    expect(m!.trackId).toBe('a');
+    expect(m!.time).toBe(plannedEndTime);
+  });
+
+  it('with currentTrackPosition drift, label time is planned instant inside shifted segment', () => {
+    jest.useFakeTimers();
+    const t0 = new Date('2026-04-26T12:00:00.000Z').getTime();
+    jest.setSystemTime(t0);
     const plannedEndTime = t0 - 10_000;
     const tracks = [makeTrack('a', 60)];
     const m = calculatePlannedEndMarker(
@@ -236,6 +269,6 @@ describe('calculatePlannedEndMarker (session: label time matches segment boundar
     );
     jest.useRealTimers();
     expect(m).not.toBeNull();
-    expect(m!.time).toBe(t0 + 30_000);
+    expect(m!.time).toBe(plannedEndTime);
   });
 });

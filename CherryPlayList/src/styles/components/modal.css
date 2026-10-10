@@ -63,12 +63,32 @@
   margin-bottom: 0;
 }
 
-.settings-version {
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--ui-border);
+.settings-backup-description {
+  margin: 0 0 var(--spacing-md);
   font-size: var(--font-size-small);
   color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.settings-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.settings-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: stretch;
+}
+
+.settings-legal-links .modal-button {
+  flex: 1 1 12rem;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
 }
 
 .settings-label {

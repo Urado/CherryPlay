@@ -1,5 +1,6 @@
 import { ProjectItem, isProjectGroup } from '@core/types/project';
 import { Track } from '@core/types/track';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -134,11 +135,17 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
     onToggleDisabled?.(item.id);
   };
 
-  const handleStartEdit = (e: React.MouseEvent) => {
-    if (!isGroup || !onRenameGroup || isLocked) return;
-    e.stopPropagation();
+  const beginGroupRename = useCallback(() => {
+    if (!isGroup || !onRenameGroup || isLocked) {
+      return;
+    }
     setIsEditingName(true);
     setEditingName(item.name);
+  }, [isGroup, isLocked, item.name, onRenameGroup]);
+
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    beginGroupRename();
   };
 
   const handleSaveName = () => {
@@ -326,7 +333,9 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
         editable={isGroup && !!onRenameGroup && !isLocked}
         onDoubleClick={isGroup ? handleStartEdit : undefined}
         title={
-          isGroup && onRenameGroup && !isLocked ? 'Двойной клик для переименования' : undefined
+          isGroup && onRenameGroup && !isLocked
+            ? 'Двойной клик или карандаш для переименования'
+            : undefined
         }
       >
         {isGroup ? renderGroupNameContent() : trackDisplayName}
@@ -366,6 +375,22 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       )}
 
       <ListRowCompound.Actions>
+        {isGroup && onRenameGroup && !isLocked && !isEditingName ? (
+          <ListRowCompound.ActionButton
+            className="playlist-item-group-rename-btn"
+            allowWhenPlayedLocked
+            aria-label="Переименовать группу"
+            title="Переименовать"
+            onClick={(e) => {
+              e.stopPropagation();
+              beginGroupRename();
+            }}
+            icon={<EditOutlinedIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
+        ) : null}
+
         {showSettingsButton &&
           (settingsButton ||
             (onOpenSettings && (

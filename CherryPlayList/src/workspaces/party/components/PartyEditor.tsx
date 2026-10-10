@@ -152,27 +152,25 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
       ) : null}
 
       {showDesign ? (
-        <>
-          {designPreviewHint}
-          <PartyDesignSection
-            themeId={themeId}
-            customizationSettings={customizationSettings}
-            onThemeIdChange={onThemeIdChange}
-            onCustomizationSettingsChange={onCustomizationSettingsChange}
-            readOnly={isReadOnly}
-            lockedThemes={lockedThemes}
-            visibleThemeIds={visibleThemeIds}
-            hasThemeAccess={hasThemeAccess}
-            networkEnabled={designNetworkEnabled}
-            isThemeAccessLoading={isThemeAccessLoading}
-            themeAccessErrorMessage={themeAccessErrorMessage}
-            defaultExpanded={defaultExpanded}
-            showNoAccessibleThemesHint={
-              !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0
-            }
-            selectedLockedTheme={selectedLockedTheme}
-          />
-        </>
+        <PartyDesignSection
+          themeId={themeId}
+          customizationSettings={customizationSettings}
+          onThemeIdChange={onThemeIdChange}
+          onCustomizationSettingsChange={onCustomizationSettingsChange}
+          readOnly={isReadOnly}
+          lockedThemes={lockedThemes}
+          visibleThemeIds={visibleThemeIds}
+          hasThemeAccess={hasThemeAccess}
+          networkEnabled={designNetworkEnabled}
+          isThemeAccessLoading={isThemeAccessLoading}
+          themeAccessErrorMessage={themeAccessErrorMessage}
+          defaultExpanded={defaultExpanded}
+          showNoAccessibleThemesHint={
+            !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0
+          }
+          selectedLockedTheme={selectedLockedTheme}
+          designPreviewHint={designPreviewHint}
+        />
       ) : null}
 
       {showAbout ? (
