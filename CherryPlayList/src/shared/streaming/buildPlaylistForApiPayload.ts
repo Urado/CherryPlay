@@ -1,4 +1,10 @@
-import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project';
+import type {
+  PartyTrackDisplaySettings,
+  ProjectGroupSettings,
+  ProjectItem,
+  ProjectSettings,
+  ProjectTrackSettings,
+} from '@core/types/project';
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
 import { convertAimpPlaylistForApi, convertPlaylistForApi } from '@shared/utils';
 
@@ -25,13 +31,37 @@ export function buildPlaylistForApiPayload(params: {
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
+  trackSettings?: Map<string, ProjectTrackSettings>;
+  projectSettings?: ProjectSettings;
+  groupSettings?: Map<string, ProjectGroupSettings>;
+  getItemPath?: (trackId: string) => string[];
+  findItemById?: (id: string) => ProjectItem | null;
+  isTrackDisabled?: (trackId: string) => boolean;
 }): PlaylistForApiPayload {
-  const { streamingSource, aimpPlaylistSnapshot, items, partyTrackDisplay } = params;
+  const {
+    streamingSource,
+    aimpPlaylistSnapshot,
+    items,
+    partyTrackDisplay,
+    trackSettings,
+    projectSettings,
+    groupSettings,
+    getItemPath,
+    findItemById,
+    isTrackDisabled,
+  } = params;
   if (
     resolvePlaylistSource({ streamingSource, aimpPlaylistSnapshot }) === 'aimp' &&
     aimpPlaylistSnapshot
   ) {
     return convertAimpPlaylistForApi(aimpPlaylistSnapshot, partyTrackDisplay);
   }
-  return convertPlaylistForApi(items, partyTrackDisplay);
+  return convertPlaylistForApi(items, partyTrackDisplay, {
+    trackSettings,
+    projectSettings,
+    groupSettings,
+    getItemPath,
+    findItemById,
+    isTrackDisabled,
+  });
 }

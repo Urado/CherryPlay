@@ -1,5 +1,5 @@
 
-import { ActionAfterTrack } from '@core/types/project';
+import { ActionAfterTrack, isEmptyTrack } from '@core/types/project';
 import { useProjectStore } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -18,7 +18,10 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
   anchorRect,
   onClose,
 }) => {
-  const { settings, getTrackSettings, setTrackSettings } = useProjectStore();
+  const { settings, getTrackSettings, setTrackSettings, findItemById, updateProgramLeaf } =
+    useProjectStore();
+  const programLeaf = findItemById(trackId);
+  const isEmpty = programLeaf != null && isEmptyTrack(programLeaf);
 
   const { defaultPauseBetweenTracks, defaultActionAfterTrack } = settings;
   const currentSettings = getTrackSettings(trackId);
@@ -37,6 +40,8 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
       ? localPauseBetweenTracks
       : defaultPauseBetweenTracks;
 
+  const hiddenFromSite = currentSettings.hiddenFromSite === true;
+
   const applyImmediate = useCallback(
     (action: ActionAfterTrack | 'default', pauseSec?: number) => {
       const pause =
@@ -49,6 +54,13 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     },
     [trackId, defaultPauseBetweenTracks, effectivePause, setTrackSettings],
   );
+
+  const toggleHiddenFromSite = useCallback(() => {
+    setTrackSettings(trackId, {
+      hiddenFromSite: hiddenFromSite ? null : true,
+    });
+    onClose();
+  }, [hiddenFromSite, onClose, setTrackSettings, trackId]);
 
   const handleSelect = useCallback(
     (value: ActionAfterTrack | 'default') => {
@@ -168,6 +180,39 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
               )}
             </li>
           ))}
+          {isEmpty && (
+            <li className="track-settings-dropdown__item">
+              <div className="track-settings-dropdown__row">
+                <span className="track-settings-dropdown__row-action">Длительность</span>
+                <input
+                  type="number"
+                  className="track-settings-dropdown__input"
+                  value={programLeaf.duration}
+                  min={1}
+                  step={1}
+                  onChange={(e) => {
+                    const sec = Number(e.target.value);
+                    if (Number.isFinite(sec) && sec > 0) {
+                      updateProgramLeaf(trackId, { duration: sec });
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  title="Длительность пустого трека в секундах"
+                />
+                <span className="track-settings-dropdown__suffix">сек</span>
+              </div>
+            </li>
+          )}
+          <li className="track-settings-dropdown__item">
+            <button
+              type="button"
+              className={`track-settings-dropdown__row track-settings-dropdown__btn ${hiddenFromSite ? 'track-settings-dropdown__row--active' : ''}`}
+              onClick={toggleHiddenFromSite}
+              title="Не показывать этот элемент в программе на сайте"
+            >
+              {hiddenFromSite ? 'Показывать на сайте' : 'Скрыть с сайта'}
+            </button>
+          </li>
         </ul>
       </div>
     </div>

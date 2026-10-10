@@ -1,7 +1,13 @@
 
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
-import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
-import { Track } from '@core/types/track';
+import {
+  isAudioTrack,
+  isProjectGroup,
+  isProjectTrack,
+  ProjectItem,
+  ActionAfterTrack,
+  type ProgramTrack,
+} from '@core/types/project';
 import {
   ItemList,
   DropIndicator,
@@ -80,7 +86,7 @@ interface PlayerTracksListProps {
   handleToggleDisabled: (itemId: string) => void;
   handleUngroupGroup: (groupId: string) => void;
   handleOpenTrackSettings: (itemId: string) => void;
-  startTrackPlayback: (track: Track) => Promise<void> | void;
+  startTrackPlayback: (track: ProgramTrack) => Promise<void> | void;
   pausePlayback: () => void;
   serverTrackIds?: Set<string> | null;
   jumpToTrack?: (trackId: string) => Promise<void>;
@@ -122,7 +128,14 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   serverTrackIds = null,
   jumpToTrack,
 }) => {
-  const { getGroupSettings, getTrackSettings } = useProjectStore();
+  const { getGroupSettings, getTrackSettings, updateProgramLeaf } = useProjectStore();
+
+  const handleRenameProgramLeaf = useCallback(
+    (itemId: string, newName: string) => {
+      updateProgramLeaf(itemId, { name: newName });
+    },
+    [updateProgramLeaf],
+  );
 
   const duplicateTrackIds = useMemo(
     () => getDuplicateTrackIdsFromDisplayItems(displayItems),
@@ -341,13 +354,18 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
                 onPause={pausePlayback}
                 onToggleDisabled={handleToggleDisabled}
                 onRenameGroup={setGroupName}
+                onRenameProgramLeaf={handleRenameProgramLeaf}
                 onUngroupGroup={handleUngroupGroup}
                 settingsButton={renderSettingsButton(item, isGroup)}
                 onTrackActions={(itemId, rect) =>
                   setTrackActionsDropdown({ trackId: itemId, anchorRect: rect })
                 }
                 trackActionsDisabled={trackActionsDisabled}
-                loudnessControls={track ? <TrackLoudnessRowControls track={track} /> : undefined}
+                loudnessControls={
+                  track && isAudioTrack(track) ? (
+                    <TrackLoudnessRowControls track={track} />
+                  ) : undefined
+                }
               />
               <HourDividerAfterTrackRow
                 hasPlannedEndDivider={hasPlannedEndDivider}

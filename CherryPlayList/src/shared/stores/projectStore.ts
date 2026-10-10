@@ -5,9 +5,12 @@ import {
   DEFAULT_PROJECT_META,
   DEFAULT_PROJECT_SETTINGS,
   DEFAULT_SESSION_STATE,
+  isAudioTrack,
+  isEmptyTrack,
   isProjectGroup,
   isProjectTrack,
   LinkedParty,
+  type ProgramTrack,
   PartyTrackDisplaySettings,
   ProjectGroup,
   ProjectGroupSettings,
@@ -28,6 +31,7 @@ import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/reset
 import {
   HistoryCommand,
   ItemsState,
+  AddItemsAtPositionsCommand,
   AddItemsCommand,
   RemoveItemsCommand,
   RemoveNestedItemCommand,
@@ -37,10 +41,12 @@ import {
   UngroupCommand,
   RenameGroupCommand,
   SetNameCommand,
+  UpdateProgramLeafCommand,
 } from '../commands';
 import { electronStorage } from '../storage/electronStorage';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 import { normalizePartyTrackDisplaySettings } from '../utils/partyUtils';
+import { createEmptyTrack } from '../utils/programTrackUtils';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
 import {
@@ -58,6 +64,8 @@ import {
   removeItemsById,
   collectItemsById,
   insertIntoGroup,
+  insertItemAtPath,
+  updateProgramLeafInItems,
 } from './projectStoreCore';
 import {
   registerExternalApplyHandler,
@@ -129,11 +137,21 @@ interface ProjectState {
 
   addItem: (item: Omit<Track, 'id'>, index?: number) => void;
   addItems: (items: Omit<Track, 'id'>[], index?: number) => void;
+  addEmptyTrack: (options?: {
+    afterItemId?: string;
+    index?: number;
+    name?: string;
+    duration?: number;
+  }) => string;
+  updateProgramLeaf: (
+    itemId: string,
+    patch: Partial<Pick<ProgramTrack, 'name' | 'duration'>>,
+  ) => void;
   removeItem: (id: string) => void;
   moveItem: (fromIndex: number, toIndex: number) => void;
   findItemById: (id: string) => ProjectItem | null;
   findItemIndex: (id: string) => number;
-  getAllTracksInOrder: (items?: ProjectItem[]) => Track[];
+  getAllTracksInOrder: (items?: ProjectItem[]) => ProgramTrack[];
   getItemPath: (itemId: string) => string[];
   updateTrackDuration: (id: string, duration: number) => void;
   updateTrackLoudness: (trackId: string, loudness: TrackLoudness) => void;
@@ -404,6 +422,81 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         enqueueLoudnessScanForTracks(itemsWithIds);
       },
 
+      addEmptyTrack: (options) => {
+        const state = get();
+        const emptyTrack = createEmptyTrack({
+          name: options?.name,
+          duration: options?.duration,
+          id: uuidv4(),
+        });
+
+        let parentPath: string[] = [];
+        let insertIndex = options?.index ?? state.items.length;
+
+        if (options?.afterItemId) {
+          const anchor = findItemWithParent(state.items, options.afterItemId);
+          if (anchor) {
+            parentPath = anchor.parentPath;
+            insertIndex = anchor.indexInParent + 1;
+          }
+        }
+
+        set((s) => {
+          if (parentPath.length === 0) {
+            const newItems = [...s.items];
+            newItems.splice(insertIndex, 0, emptyTrack);
+            return { items: newItems };
+          }
+          return {
+            items: insertItemAtPath(s.items, emptyTrack, parentPath, insertIndex),
+          };
+        });
+
+        if (!state._skipHistory) {
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new AddItemsAtPositionsCommand([{ item: emptyTrack, parentPath, index: insertIndex }]),
+              `Add "${emptyTrack.name}"`,
+            );
+        }
+
+        get().markAsDirty();
+        return emptyTrack.id;
+      },
+
+      updateProgramLeaf: (itemId, patch) => {
+        const state = get();
+        const item = state.findItemById(itemId);
+        if (!item || !isProjectTrack(item)) {
+          return;
+        }
+
+        const before = cloneItem(item) as ProgramTrack;
+        const after: ProgramTrack = {
+          ...item,
+          ...(patch.name !== undefined ? { name: patch.name } : {}),
+          ...(patch.duration !== undefined ? { duration: patch.duration } : {}),
+        };
+
+        set((s) => ({
+          items: updateProgramLeafInItems(s.items, itemId, () => after),
+        }));
+
+        if (!state._skipHistory) {
+          useGlobalHistoryStore
+            .getState()
+            .pushCommand(
+              PROJECT_WORKSPACE_ID,
+              new UpdateProgramLeafCommand(itemId, before, after),
+              `Update "${after.name}"`,
+            );
+        }
+
+        get().markAsDirty();
+      },
+
       removeItem: (id) => {
         const state = get();
         const itemInfo = findItemWithParent(state.items, id);
@@ -528,7 +621,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
       updateTrackManualGain: (trackId, manualGainDb) => {
         const item = get().findItemById(trackId);
-        if (!item || !isProjectTrack(item)) {
+        if (!item || !isAudioTrack(item)) {
           return;
         }
 
@@ -547,7 +640,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
       updateTrackManualCompression: (trackId, manualCompressionStrength) => {
         const item = get().findItemById(trackId);
-        if (!item || !isProjectTrack(item)) {
+        if (!item || !isAudioTrack(item)) {
           return;
         }
 

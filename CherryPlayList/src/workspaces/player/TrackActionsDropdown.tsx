@@ -1,4 +1,4 @@
-import { isProjectGroup } from '@core/types/project';
+import { isProjectGroup, isProjectTrack } from '@core/types/project';
 import { usePlayerAudioStore, useProjectStore, useUIStore } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useEffect, useRef } from 'react';
@@ -26,6 +26,7 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
   const playedTrackIds = useProjectStore((state) => state.sessionState.playedTrackIds);
   const findItemById = useProjectStore((state) => state.findItemById);
   const getAllTracksInOrder = useProjectStore((state) => state.getAllTracksInOrder);
+  const addEmptyTrack = useProjectStore((state) => state.addEmptyTrack);
   const audioTrackId = usePlayerAudioStore((state) => state.currentTrack?.id ?? null);
   const sessionTrackId = useProjectStore((state) => state.sessionState.currentTrackId);
   const audioTrack = useProjectStore((state) =>
@@ -36,9 +37,9 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
   );
   const addNotification = useUIStore((state) => state.addNotification);
   const activeTrackId =
-    audioTrack && 'path' in audioTrack
+    audioTrack && isProjectTrack(audioTrack)
       ? audioTrackId
-      : sessionTrack && 'path' in sessionTrack
+      : sessionTrack && isProjectTrack(sessionTrack)
         ? sessionTrackId
         : null;
 
@@ -106,6 +107,19 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
               </button>
             </li>
           )}
+          <li className="track-actions-dropdown__item">
+            <button
+              type="button"
+              className="track-actions-dropdown__btn"
+              onClick={() => {
+                addEmptyTrack({ afterItemId: trackId });
+                addNotification({ type: 'success', message: 'Пустой трек добавлен' });
+                onClose();
+              }}
+            >
+              Добавить пустой трек после
+            </button>
+          </li>
           {onJumpToTrack && actionTrackId ? (
             <li className="track-actions-dropdown__item">
               <button
