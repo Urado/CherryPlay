@@ -140,7 +140,7 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
         <IconButton
           type="button"
           className="demo-player-panel__grip"
-          aria-label="Перетащить панель предпросмотра"
+          aria-label="Перетащить панель предпрослушивания"
           title="Перетащить панель (стрелки; Shift+стрелки — большой шаг)"
           onKeyDown={handleGripKeyDown}
           disabled={isLayoutBlocked}
@@ -153,8 +153,8 @@ export const DemoPlayerShell: React.FC<DemoPlayerShellProps> = ({ contentContain
         <IconButton
           type="button"
           className="demo-player-panel__close"
-          aria-label="Закрыть панель предпросмотра"
-          title="Закрыть панель и остановить предпросмотр"
+          aria-label="Закрыть панель предпрослушивания"
+          title="Закрыть панель и остановить предпрослушивание"
           onClick={handleCloseFloatingPanel}
           disabled={isLayoutBlocked}
           variant="ghost"

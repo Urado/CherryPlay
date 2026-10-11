@@ -24,6 +24,7 @@ export interface PartyDesignSectionProps {
   themeAccessErrorMessage?: string | null;
   showNoAccessibleThemesHint?: boolean;
   selectedLockedTheme?: PartyDesignLockedThemeInfo | null;
+  designPreviewHint?: React.ReactNode;
 }
 
 export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
@@ -41,9 +42,11 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
   themeAccessErrorMessage = null,
   showNoAccessibleThemesHint = false,
   selectedLockedTheme = null,
+  designPreviewHint = null,
 }) => {
   return (
     <PartyEditorAccordion title="Стиль оформления" defaultExpanded={defaultExpanded}>
+      {designPreviewHint}
       <PartyDesignSettingsBlock
         themeId={themeId}
         customizationSettings={customizationSettings}

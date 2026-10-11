@@ -2,7 +2,6 @@
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import { APP_VERSION } from '@shared/config';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
 import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
@@ -30,7 +29,8 @@ const DIVIDER_INTERVALS = [
 ];
 
 export const SettingsModal: React.FC = () => {
-  const { modal, closeModal, addNotification } = useUIStore();
+  const { modal, closeModal, addNotification, settingsFocusElementId, clearSettingsFocusElementId } =
+    useUIStore();
   const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
@@ -120,6 +120,20 @@ export const SettingsModal: React.FC = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [modal]);
+
+  useEffect(() => {
+    if (modal !== 'settings' || !settingsFocusElementId || loadingDevices) {
+      return undefined;
+    }
+
+    const focusTarget = document.getElementById(settingsFocusElementId);
+    if (focusTarget instanceof HTMLElement) {
+      focusTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      focusTarget.focus({ preventScroll: true });
+    }
+    clearSettingsFocusElementId();
+    return undefined;
+  }, [modal, settingsFocusElementId, loadingDevices, clearSettingsFocusElementId]);
 
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
@@ -501,7 +515,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="player-audio-device">
-                Куда играет CherryPlay
+                Основное воспроизведение
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -540,7 +554,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="demo-player-audio-device">
-                Куда играет прослушивание файлов
+                Предпрослушивание
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -583,12 +597,16 @@ export const SettingsModal: React.FC = () => {
               className="settings-section-title"
               style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
             >
-              Резервная копия настроек
+              Резервная копия настроек приложения
             </div>
 
+            <p className="settings-description settings-backup-description">
+              Сохраняет настройки приложения (аудио, интерфейс, онлайн) в JSON. Файл проекта (.cherry)
+              сохраняется отдельно через меню проекта.
+            </p>
+
             <div
-              className="settings-group"
-              style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+              className="settings-group settings-backup-actions"
             >
               <Button
                 type="button"
@@ -639,7 +657,7 @@ export const SettingsModal: React.FC = () => {
               Правовая информация
             </div>
 
-            <div className="settings-group">
+            <div className="settings-group settings-legal-links">
               <Button
                 type="button"
                 className="modal-button"
@@ -661,8 +679,6 @@ export const SettingsModal: React.FC = () => {
                 Реквизиты и контакты
               </Button>
             </div>
-
-            <div className="settings-version">Версия {APP_VERSION}</div>
           </div>
 
           <div className="modal-footer">

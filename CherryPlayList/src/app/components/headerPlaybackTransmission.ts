@@ -25,7 +25,11 @@ export function resolveHeaderPlaybackTransmissionState(
 export function resolveHeaderPlaybackTransmissionLabel(
   state: HeaderPlaybackTransmissionState,
   sessionActive: boolean,
-): string {
+  networkEnabled = true,
+): string | null {
+  if (!networkEnabled && state === 'unlinked') {
+    return null;
+  }
   switch (state) {
     case 'unlinked':
       return 'Вечеринка не привязана';

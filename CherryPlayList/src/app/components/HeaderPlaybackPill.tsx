@@ -57,7 +57,11 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
       connectionState === signalR.HubConnectionState.Connecting ||
       connectionState === signalR.HubConnectionState.Reconnecting,
   });
-  const transmissionLabel = resolveHeaderPlaybackTransmissionLabel(transmissionState, sessionActive);
+  const transmissionLabel = resolveHeaderPlaybackTransmissionLabel(
+    transmissionState,
+    sessionActive,
+    networkEnabled,
+  );
 
   const handleToggle = useCallback(() => {
     void togglePlayPause({
@@ -114,13 +118,15 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
               : '\u00a0'}
           </span>
         </div>
-        <span
-          className="playback-pill__transmission"
-          data-state={transmissionState}
-          title={transmissionLabel}
-        >
-          {transmissionLabel}
-        </span>
+        {transmissionLabel ? (
+          <span
+            className="playback-pill__transmission"
+            data-state={transmissionState}
+            title={transmissionLabel}
+          >
+            {transmissionLabel}
+          </span>
+        ) : null}
       </div>
 
       {linkedParty ? (

@@ -49,6 +49,8 @@ export {
   calculateProjectedEndTime,
   calculatePlannedEndMarker,
   getPriorityHourDividerKind,
+  getHourDividerKindsAfterTrackRow,
+  type HourDividerKind,
   type DividerCalculationContext,
   type StartPosition,
   type DividerMarkers,

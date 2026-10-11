@@ -709,6 +709,17 @@ export const AppHeader: React.FC = () => {
                             Сохранить как…
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleFeedback();
+                          }}
+                        >
+                          Сообщить о проблеме или предложить идею
+                        </button>
                       </div>
                     )}
                   </div>

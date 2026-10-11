@@ -1,22 +1,52 @@
-import { getPriorityHourDividerKind } from '@shared/utils';
+import {
+  getHourDividerKindsAfterTrackRow,
+  type HourDividerKind,
+} from '@shared/utils';
 import React from 'react';
-
 
 export interface HourDividerAfterTrackRowProps {
   hasPlannedEndDivider: boolean;
   hasQueueEndDivider: boolean;
   showIntervalDivider: boolean;
-  /** Track id for interval/hour divider label; required when showIntervalDivider is true */
   intervalTrackId: string | undefined;
   formatPlannedEndTimelineLabel: () => string;
   formatQueueEndTimelineLabel: () => string;
   formatDividerLabel: (trackId: string) => string;
 }
 
-/**
- * Одна отсечка после строки трека (приоритет: план — конец очереди — интервал).
- * Общая разметка для плеера и плейлиста.
- */
+function labelForHourDividerKind(
+  kind: HourDividerKind,
+  intervalTrackId: string | undefined,
+  formatPlannedEndTimelineLabel: () => string,
+  formatQueueEndTimelineLabel: () => string,
+  formatDividerLabel: (trackId: string) => string,
+): string {
+  if (kind === 'planned-end') {
+    return formatPlannedEndTimelineLabel();
+  }
+  if (kind === 'queue-end') {
+    return formatQueueEndTimelineLabel();
+  }
+  if (!intervalTrackId) {
+    return '';
+  }
+  return formatDividerLabel(intervalTrackId);
+}
+
+const HourDividerRow = ({
+  kind,
+  label,
+}: {
+  kind: HourDividerKind;
+  label: string;
+}): React.ReactElement => {
+  return (
+    <div className={`playlist-hour-divider playlist-hour-divider--${kind}`}>
+      <span className="playlist-hour-divider-label">{label}</span>
+    </div>
+  );
+}
+
 export const HourDividerAfterTrackRow = ({
   hasPlannedEndDivider,
   hasQueueEndDivider,
@@ -26,36 +56,40 @@ export const HourDividerAfterTrackRow = ({
   formatQueueEndTimelineLabel,
   formatDividerLabel,
 }: HourDividerAfterTrackRowProps): React.ReactElement | null => {
-  const kind = getPriorityHourDividerKind(
+  const kinds = getHourDividerKindsAfterTrackRow(
     hasPlannedEndDivider,
     hasQueueEndDivider,
     showIntervalDivider,
   );
-  if (kind === null) {
+  if (kinds.length === 0) {
     return null;
   }
 
-  let dividerLabel: string;
-  if (kind === 'planned-end') {
-    dividerLabel = formatPlannedEndTimelineLabel();
-  } else if (kind === 'queue-end') {
-    dividerLabel = formatQueueEndTimelineLabel();
-  } else {
-    if (!intervalTrackId) {
-      return null;
-    }
-    dividerLabel = formatDividerLabel(intervalTrackId);
-  }
-  if (!dividerLabel) {
+  const rows = kinds
+    .map((kind) => ({
+      kind,
+      label: labelForHourDividerKind(
+        kind,
+        intervalTrackId,
+        formatPlannedEndTimelineLabel,
+        formatQueueEndTimelineLabel,
+        formatDividerLabel,
+      ),
+    }))
+    .filter((row) => row.label.length > 0);
+
+  if (rows.length === 0) {
     return null;
   }
 
   return (
-    <div className={`playlist-hour-divider playlist-hour-divider--${kind}`}>
-      <span className="playlist-hour-divider-label">{dividerLabel}</span>
-    </div>
+    <>
+      {rows.map((row) => (
+        <HourDividerRow key={row.kind} kind={row.kind} label={row.label} />
+      ))}
+    </>
   );
-}
+};
 
 export interface HourDividerListBottomProps {
   showPlannedEndDividerAtListBottom: boolean;
@@ -65,10 +99,6 @@ export interface HourDividerListBottomProps {
   formatQueueEndTimelineLabel: () => string;
 }
 
-/**
- * Отсечки внизу списка, когда обе привязки ушли в «хвост» (position === null):
- * показываем обе подряд, без приоритета planned над queue-end — иначе теряется маркер конца очереди.
- */
 export const HourDividerListBottom = ({
   showPlannedEndDividerAtListBottom,
   displayItemsLength,
@@ -97,4 +127,4 @@ export const HourDividerListBottom = ({
       )}
     </>
   );
-}
+};

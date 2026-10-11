@@ -7,6 +7,11 @@ import React from 'react';
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
+    Button: ({
+      children,
+      ...props
+    }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; size?: string }) =>
+      ReactActual.createElement('button', { type: 'button', ...props }, children),
     PlaybackControlButton: ({
       children: _children,
       control: _control,
@@ -52,6 +57,20 @@ jest.mock('../../src/shared/utils/togglePlayPause', () => ({
 }));
 
 import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
+import {
+  DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL,
+  DEMO_SHARED_OUTPUT_CONFLICT_MESSAGE,
+} from '../../src/shared/demo/demoSharedOutputConflict';
+
+const mockOpenDemoAudioDeviceSettings = jest.fn();
+
+jest.mock('../../src/shared/demo/demoSharedOutputConflict', () => {
+  const actual = jest.requireActual('../../src/shared/demo/demoSharedOutputConflict');
+  return {
+    ...actual,
+    openDemoAudioDeviceSettings: (...args: unknown[]) => mockOpenDemoAudioDeviceSettings(...args),
+  };
+});
 
 const mockAddNotification = jest.fn();
 
@@ -134,6 +153,7 @@ const createController = (overrides: Partial<DemoPlayerController> = {}): DemoPl
 beforeEach(() => {
   mockUseDemoPlayerStore.mockReturnValue(createController());
   mockAddNotification.mockClear();
+  mockOpenDemoAudioDeviceSettings.mockClear();
 });
 
 describe('DemoPlayer component', () => {
@@ -224,6 +244,41 @@ describe('DemoPlayer component', () => {
     expect(controller.clear).toHaveBeenCalledTimes(1);
   });
 
+  it('shows unified shared-output conflict state without timeline controls', () => {
+    const controller = createController({
+      currentTrack: createTrack(),
+      position: 42,
+      duration: 200,
+      status: 'paused',
+      isDisabled: true,
+    });
+
+    render(<DemoPlayer controller={controller} notify={jest.fn()} />);
+
+    expect(screen.getByText(DEMO_SHARED_OUTPUT_CONFLICT_MESSAGE)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('slider', { name: 'Позиция воспроизведения предпросмотра' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Воспроизвести')).not.toBeInTheDocument();
+  });
+
+  it('opens audio device settings from shared-output conflict action', () => {
+    const controller = createController({
+      currentTrack: createTrack(),
+      isDisabled: true,
+    });
+
+    render(<DemoPlayer controller={controller} notify={jest.fn()} />);
+    fireEvent.click(
+      screen.getByRole('button', { name: DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL }),
+    );
+
+    expect(mockOpenDemoAudioDeviceSettings).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps timeline value when interactionBlocked without playback block', () => {
     const controller = createController({
       currentTrack: createTrack(),
@@ -235,7 +290,7 @@ describe('DemoPlayer component', () => {
     render(<DemoPlayer controller={controller} interactionBlocked notify={jest.fn()} />);
 
     const timeline = screen.getByRole('slider', {
-      name: 'Позиция воспроизведения предпросмотра',
+      name: 'Позиция воспроизведения предпрослушивания',
     });
     expect(timeline).toHaveValue('42');
     expect(timeline).toBeDisabled();

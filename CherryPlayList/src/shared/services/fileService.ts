@@ -61,6 +61,10 @@ class FileService {
     return (AUDIO_EXTENSIONS as readonly string[]).includes(ext);
   }
 
+  isListableInFileBrowser(item: { path: string; isDirectory: boolean }): boolean {
+    return item.isDirectory || this.isValidAudioFile(item.path);
+  }
+
   /**
    * Read file metadata (optional, for future use)
    */
