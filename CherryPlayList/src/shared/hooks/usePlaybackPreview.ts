@@ -6,9 +6,9 @@ import { useCallback, useMemo } from 'react';
 import { isDemoSharedOutputConflictError } from '../demo/demoSharedOutputConflict';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
+import { useDemoPlayerStore, PlayerStatus } from '../stores/demoPlayerStore';
 import { useLayoutStore } from '../stores/layoutStore';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useDemoPlayerStore, PlayerStatus } from '../stores/demoPlayerStore';
 import { collectWorkspaceTypes } from '../utils/layoutWorkspaceOperations';
 import { logger } from '../utils/logger';
 
