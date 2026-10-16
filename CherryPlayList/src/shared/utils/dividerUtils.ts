@@ -180,6 +180,10 @@ export function calculateDividerMarkers(
 
   const startPosition = calculateStartPosition(context);
   const { startFromIndex, currentRealTime } = startPosition;
+  const sessionPlannedEndTime =
+    plannedEndTime !== null && plannedEndTime !== undefined && currentRealTime !== null
+      ? getNextPlannedEndTime(plannedEndTime, currentRealTime)
+      : plannedEndTime;
 
   if (context.mode === 'session' && currentRealTime !== null) {
     nextEvenTime = calculateNextEvenTime(currentRealTime, hourDividerInterval);
@@ -233,13 +237,13 @@ export function calculateDividerMarkers(
         }
 
         if (
-          plannedEndTime !== null &&
-          plannedEndTime !== undefined &&
+          sessionPlannedEndTime !== null &&
+          sessionPlannedEndTime !== undefined &&
           plannedEndMarker === null &&
           context.mode === 'session'
         ) {
           const position = findPlannedEndPosition(
-            plannedEndTime,
+            sessionPlannedEndTime,
             trackStartRealTime,
             trackEndRealTime,
             previousTrack,
@@ -490,6 +494,37 @@ function findPlannedEndPosition(
   return null;
 }
 
+export function getNextPlannedEndTime(plannedEndTime: number, currentTime: number): number {
+  const plannedTime = new Date(plannedEndTime);
+  const currentDate = new Date(currentTime);
+  const isSameLocalDate =
+    plannedTime.getFullYear() === currentDate.getFullYear() &&
+    plannedTime.getMonth() === currentDate.getMonth() &&
+    plannedTime.getDate() === currentDate.getDate();
+
+  if (isSameLocalDate) {
+    return plannedEndTime;
+  }
+
+  const searchStart = Math.floor(currentTime / 60_000) * 60_000;
+  const searchLimitMinutes = 8 * 24 * 60;
+
+  for (let minuteOffset = 0; minuteOffset <= searchLimitMinutes; minuteOffset++) {
+    const candidate = new Date(searchStart + minuteOffset * 60_000);
+    candidate.setSeconds(plannedTime.getSeconds(), plannedTime.getMilliseconds());
+
+    if (
+      candidate.getTime() >= currentTime &&
+      candidate.getHours() === plannedTime.getHours() &&
+      candidate.getMinutes() === plannedTime.getMinutes()
+    ) {
+      return candidate.getTime();
+    }
+  }
+
+  throw new RangeError('No upcoming local occurrence of planned end time');
+}
+
 export function calculateProjectedEndTime(context: DividerCalculationContext): number | null {
   const { mode } = context;
 
@@ -531,6 +566,8 @@ export function calculatePlannedEndMarker(
     return null;
   }
 
+  const sessionPlannedEndTime = getNextPlannedEndTime(plannedEndTime, currentRealTime);
+
   let accumulatedDuration = 0;
   let previousTrack: Track | null = null;
 
@@ -556,7 +593,7 @@ export function calculatePlannedEndMarker(
     const trackEndRealTime = trackStartRealTime + fullTrackDuration * 1000;
 
     const position = findPlannedEndPosition(
-      plannedEndTime,
+      sessionPlannedEndTime,
       trackStartRealTime,
       trackEndRealTime,
       previousTrack,
