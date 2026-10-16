@@ -1,8 +1,10 @@
 
+import { IconButton } from '@cherryplay/components';
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   ItemList,
   DropIndicator,
@@ -213,7 +215,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     let total = 0;
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
-      if (isTrackOrGroupDisabled(track.id)) {
+      const isDisabled =
+        sessionState.disabledTrackIds.includes(track.id) ||
+        sessionState.disabledGroupIds.some((groupId) => getItemPath(track.id).includes(groupId));
+      if (isDisabled) {
         continue;
       }
       total += track.duration || 0;
@@ -227,10 +232,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     return total;
   }, [
     tracks,
-    isTrackOrGroupDisabled,
     getEffectiveTrackSettings,
     sessionState.disabledTrackIds,
     sessionState.disabledGroupIds,
+    getItemPath,
   ]);
 
   const canCreateGroup = useMemo(() => {
@@ -287,6 +292,27 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     });
   }, [tracks.length, sessionState.mode, newProject, enableStreaming, addNotification]);
 
+  const handleExportTracksToText = useCallback(() => {
+    try {
+      if (tracks.length === 0) {
+        return;
+      }
+
+      const fileContent = tracks.map((track) => track.name).join('\n');
+      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${name || 'tracks'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      logger.error('Failed to export tracks to text file', error);
+    }
+  }, [tracks, name]);
+
   useListShortcuts({
     'list.undo': undo,
     'list.redo': redo,
@@ -311,6 +337,18 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
         canCreateGroup={canCreateGroup}
         onCreateGroup={handleCreateGroup}
         onClearAll={handleClearAll}
+        extraActions={
+          <IconButton
+            onClick={handleExportTracksToText}
+            className="playlist-header-action-icon"
+            title="Список треков в файл…"
+            disabled={tracks.length === 0}
+            aria-label="Список треков в файл"
+            icon={<TextSnippetIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
+        }
       />
 
       <ItemList
