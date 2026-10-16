@@ -1,11 +1,13 @@
 import { toggleSessionPlayPause } from '@shared/utils/togglePlayPause';
 import { useEffect, useMemo, useRef } from 'react';
 
-
 import { shortcutManager } from './ShortcutManager';
 import type { ShortcutHandlers, ShortcutId, UseShortcutsOptions } from './shortcutTypes';
 
-export const useShortcuts = (handlers: ShortcutHandlers, options: UseShortcutsOptions = {}): void => {
+export const useShortcuts = (
+  handlers: ShortcutHandlers,
+  options: UseShortcutsOptions = {},
+): void => {
   const { enabled = true } = options;
 
   const registeredIds = useRef<Set<ShortcutId>>(new Set());

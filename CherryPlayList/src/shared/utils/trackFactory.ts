@@ -8,7 +8,7 @@ export const extractName = (path: string): string => {
   const segments = path.split(/[/\\]/);
   const fallback = 'Unknown';
   return segments[segments.length - 1] || fallback;
-}
+};
 
 export const createTrackDraft = (path: string): TrackDraft => {
   return {
@@ -16,15 +16,15 @@ export const createTrackDraft = (path: string): TrackDraft => {
     name: extractName(path),
     duration: undefined,
   };
-}
+};
 
 export const createTrackDrafts = (paths: string[]): TrackDraft[] => {
   return paths.map(createTrackDraft);
-}
+};
 
 export const createTrackWithId = (track: TrackDraft): Track => {
   return {
     ...track,
     id: uuidv4(),
   };
-}
+};

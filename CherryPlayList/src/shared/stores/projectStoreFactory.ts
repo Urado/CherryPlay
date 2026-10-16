@@ -23,7 +23,6 @@ import { StoreApi, UseBoundStore } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn, useStoreWithEqualityFn } from 'zustand/traditional';
 
-
 import {
   HistoryCommand,
   ItemsState,
@@ -928,7 +927,7 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
   }
 
   return createWithEqualityFn<ProjectStoreState>(storeCreator);
-}
+};
 
 export const ensureProjectStore = (options: ProjectStoreOptions): ProjectStore => {
   const existing = projectStores.get(options.workspaceId);
@@ -940,7 +939,7 @@ export const ensureProjectStore = (options: ProjectStoreOptions): ProjectStore =
   projectStores.set(options.workspaceId, store);
 
   return store;
-}
+};
 
 const getStoreForWorkspace = (workspaceId: WorkspaceId): ProjectStore | undefined => {
   const store = projectStores.get(workspaceId);
@@ -949,23 +948,23 @@ const getStoreForWorkspace = (workspaceId: WorkspaceId): ProjectStore | undefine
     return projectStores.get(DEFAULT_PLAYLIST_WORKSPACE_ID);
   }
   return undefined;
-}
+};
 
 export const getProjectStore = (workspaceId: WorkspaceId): ProjectStore | undefined => {
   return getStoreForWorkspace(workspaceId);
-}
+};
 
 export const removeProjectStore = (workspaceId: WorkspaceId): void => {
   projectStores.delete(workspaceId);
-}
+};
 
 export const getAllProjectStoreIds = (): WorkspaceId[] => {
   return Array.from(projectStores.keys());
-}
+};
 
 export const registerProjectStore = (workspaceId: WorkspaceId, store: ProjectStore): void => {
   projectStores.set(workspaceId, store);
-}
+};
 
 export const useProjectStoreSelector = <T>(
   workspaceId: WorkspaceId,
@@ -977,7 +976,7 @@ export const useProjectStoreSelector = <T>(
     throw new Error(`Project store ${workspaceId} is not registered`);
   }
   return useStoreWithEqualityFn(store, selector, equalityFn);
-}
+};
 
 let externalApplyHandler:
   | ((workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean)
@@ -987,7 +986,7 @@ export const registerExternalApplyHandler = (
   handler: (workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean,
 ): void => {
   externalApplyHandler = handler;
-}
+};
 
 export const initializeGlobalHistory = (): void => {
   useGlobalHistoryStore.getState().registerApplyCommand((workspaceId, command, mode) => {
@@ -1003,4 +1002,4 @@ export const initializeGlobalHistory = (): void => {
     console.error(`Store not found for workspace: ${workspaceId}`);
     return false;
   });
-}
+};

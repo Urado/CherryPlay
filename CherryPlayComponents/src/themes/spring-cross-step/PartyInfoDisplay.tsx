@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { PartyThemeId } from "..";
+import type { PartyThemeId } from '..';
 import { usePartyThemeVars } from '../../core/hooks/usePartyThemeVars';
 import { getDefaultTimeZone } from '../../utils/timezoneUtils';
 

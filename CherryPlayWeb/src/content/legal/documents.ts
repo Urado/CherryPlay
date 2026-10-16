@@ -1,4 +1,8 @@
-import { markdownBodyToParagraphs, parseLegalMarkdown, type LegalBlock } from './parseLegalMarkdown';
+import {
+  markdownBodyToParagraphs,
+  parseLegalMarkdown,
+  type LegalBlock,
+} from './parseLegalMarkdown';
 import consentMd from './v1.0/consent.md?raw';
 import cookiesMd from './v1.0/cookies.md?raw';
 import packManifest from './v1.0/manifest.json';

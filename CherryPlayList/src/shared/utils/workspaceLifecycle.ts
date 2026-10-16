@@ -25,7 +25,7 @@ const getNextCollectionNumber = (collectionNames: string[]): number => {
   }
 
   return collectionNames.length + 1;
-}
+};
 
 export const setupCollectionZoneForPreset = (zone: WorkspaceZone, name: string): void => {
   const { workspaceId, workspaceType, id: zoneId } = zone;
@@ -42,7 +42,7 @@ export const setupCollectionZoneForPreset = (zone: WorkspaceZone, name: string):
   const uiStore = useUIStore.getState();
   uiStore.addWorkspace({ id: workspaceId, type: workspaceType, name, zoneId });
   uiStore.setWorkspaceZoneId(workspaceId, zoneId);
-}
+};
 
 export const prepareWorkspaceInstance = (zone: WorkspaceZone): void => {
   const { workspaceId, workspaceType, id: zoneId } = zone;
@@ -76,7 +76,7 @@ export const prepareWorkspaceInstance = (zone: WorkspaceZone): void => {
   if (workspaceType.startsWith('test')) {
     registerWorkspaceType(workspaceId, workspaceType);
   }
-}
+};
 
 export const cleanupWorkspaceInstance = (zone: WorkspaceZone): void => {
   if (zone.workspaceType === 'collection') {
@@ -96,4 +96,4 @@ export const cleanupWorkspaceInstance = (zone: WorkspaceZone): void => {
   if (zone.workspaceType.startsWith('test')) {
     unregisterWorkspaceType(zone.workspaceId);
   }
-}
+};

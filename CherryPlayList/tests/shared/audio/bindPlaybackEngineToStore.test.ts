@@ -64,7 +64,7 @@ class MockPlaybackEngine implements PlaybackEngine {
     }
 
     for (const listener of eventListeners) {
-      (listener)(payload);
+      listener(payload);
     }
   }
 }

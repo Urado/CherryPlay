@@ -14,7 +14,6 @@ import type {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
-
 interface UseDemoPlayerFloatingBoundsParams {
   contentContainerRef: RefObject<HTMLElement | null>;
   demoPlayerFloatingPosition: DemoPlayerFloatingPosition | null;

@@ -1,4 +1,3 @@
-
 import {
   InvalidPartyLifecycleTransitionError,
   ThemeNotEntitledError,

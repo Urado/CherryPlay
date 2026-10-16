@@ -13,9 +13,10 @@ vi.mock('@cherryplay/components', () => ({
   Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button {...props}>{children}</button>
   ),
-  IconButton: ({ 'aria-label': ariaLabel, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button aria-label={ariaLabel} {...props} />
-  ),
+  IconButton: ({
+    'aria-label': ariaLabel,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button aria-label={ariaLabel} {...props} />,
   PartyDisplay: () => <div>Party display</div>,
   formatDateInTimeZone: () => '2026-10-06',
   getDefaultTimeZone: () => 'UTC',

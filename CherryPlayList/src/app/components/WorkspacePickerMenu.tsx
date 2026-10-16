@@ -2,7 +2,6 @@ import type { LayoutEditAirSide } from '@shared/utils/layoutWorkspaceOperations'
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-
 import type { WorkspacePickerOption } from './workspaceLayoutEditOptions';
 
 const PICKER_GAP_PX = 6;

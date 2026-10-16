@@ -15,7 +15,11 @@ export const registerLegalHandlers = (): void => {
       }
 
       const webBaseUrl = new URL(getConfiguredWebBaseUrl());
-      if (!['http:', 'https:'].includes(webBaseUrl.protocol) || webBaseUrl.username || webBaseUrl.password) {
+      if (
+        !['http:', 'https:'].includes(webBaseUrl.protocol) ||
+        webBaseUrl.username ||
+        webBaseUrl.password
+      ) {
         throw new Error('Invalid configured web base URL');
       }
 
@@ -25,7 +29,10 @@ export const registerLegalHandlers = (): void => {
       await shell.openExternal(webBaseUrl.toString());
       return { success: true };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to open legal page' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to open legal page',
+      };
     }
   });
 };

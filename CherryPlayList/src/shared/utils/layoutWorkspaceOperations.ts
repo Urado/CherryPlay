@@ -1,4 +1,3 @@
-
 import { MAX_LAYOUT_DEPTH, MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import {
   DEFAULT_DEMO_PLAYER_WORKSPACE_ID,
@@ -369,7 +368,10 @@ export const canAddInitialWorkspace = (
   return addInitialWorkspaceToLayout(workspaceType, currentLayoutViewport).ok;
 };
 
-const logMinSizeViolation = (proposedRoot: Zone | null, viewport: LayoutViewportSize | null): void => {
+const logMinSizeViolation = (
+  proposedRoot: Zone | null,
+  viewport: LayoutViewportSize | null,
+): void => {
   if (!proposedRoot || !viewport) {
     logger.warn(
       '[layout mins] Нельзя добавить workspace: размер области layout неизвестен (viewport=null), ' +
@@ -565,7 +567,10 @@ export type RemoveWorkspaceResult =
   | { ok: true; layout: Layout; removedZone: WorkspaceZone }
   | { ok: false; reason: 'not_found' };
 
-export const removeWorkspaceFromLayout = (layout: Layout, zoneId: ZoneId): RemoveWorkspaceResult => {
+export const removeWorkspaceFromLayout = (
+  layout: Layout,
+  zoneId: ZoneId,
+): RemoveWorkspaceResult => {
   const zone = findZoneById(layout.rootZone, zoneId);
   if (!zone || zone.type !== 'workspace') {
     return { ok: false, reason: 'not_found' };

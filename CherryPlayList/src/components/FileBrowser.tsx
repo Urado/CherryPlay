@@ -541,7 +541,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             icon={<ArrowBackIcon />}
             variant="ghost"
             size="sm"
-           />
+          />
           <IconButton
             className="nav-button"
             onClick={handleUp}
@@ -552,7 +552,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             icon={<ArrowUpwardIcon />}
             variant="ghost"
             size="sm"
-           />
+          />
           <div className="breadcrumbs" ref={breadcrumbsContainerRef}>
             <div className="breadcrumbs-inner" ref={breadcrumbsContentRef}>
               {overflowIndex > 0 && (
@@ -630,7 +630,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                 icon={<ClearIcon />}
                 variant="ghost"
                 size="sm"
-               />
+              />
             ) : (
               filteredItems.length > 0 && (
                 <IconButton
@@ -643,7 +643,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
                   icon={<SelectAllIcon />}
                   variant="ghost"
                   size="sm"
-                 />
+                />
               )
             )}
             <Button

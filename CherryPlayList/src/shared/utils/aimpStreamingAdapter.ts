@@ -31,9 +31,11 @@ const convertDurationMsToSeconds = (durationMs?: number): number => {
   }
 
   return Math.max(0, Math.round(durationMs / 1000));
-}
+};
 
-export const getAimpAvailability = (state: Pick<AimpBridgeState, 'environment'>): AimpAvailability => {
+export const getAimpAvailability = (
+  state: Pick<AimpBridgeState, 'environment'>,
+): AimpAvailability => {
   const gatingReasons = state.environment.gatingReasons.filter(
     (reason) => reason.code !== 'sourceNotAimp',
   );
@@ -42,7 +44,7 @@ export const getAimpAvailability = (state: Pick<AimpBridgeState, 'environment'>)
     available: gatingReasons.length === 0,
     gatingReasons,
   };
-}
+};
 
 export const isAimpDegraded = (state: Pick<AimpBridgeState, 'connection'>): boolean => {
   return (
@@ -50,7 +52,7 @@ export const isAimpDegraded = (state: Pick<AimpBridgeState, 'connection'>): bool
     state.connection.protocolError !== null ||
     state.connection.disconnectReason !== null
   );
-}
+};
 
 export const getAimpCurrentTrack = (
   state: Pick<AimpBridgeState, 'playlistSnapshot' | 'playbackSnapshot'>,
@@ -68,7 +70,7 @@ export const getAimpCurrentTrack = (
       (track) => normalizeTrackKeyForComparison(track.trackKey) === normalizedKey,
     ) ?? null
   );
-}
+};
 
 export const getAimpEffectiveProgressMs = (
   state: Pick<AimpBridgeState, 'connection' | 'playbackSnapshot'>,
@@ -92,7 +94,7 @@ export const getAimpEffectiveProgressMs = (
   }
 
   return Math.max(0, progressMs);
-}
+};
 
 export const createAimpPlaybackStateDto = (
   state: Pick<
@@ -128,7 +130,7 @@ export const createAimpPlaybackStateDto = (
     disabledGroupIds: [],
     lastUpdatedAt: new Date(nowMs).toISOString(),
   };
-}
+};
 
 const getAimpTrackDisplayName = (track: AimpPlaylistTrackDto): string => {
   if (track.artist && track.artist.trim().length > 0) {
@@ -136,7 +138,7 @@ const getAimpTrackDisplayName = (track: AimpPlaylistTrackDto): string => {
   }
 
   return track.title;
-}
+};
 
 export const convertAimpPlaylistForApi = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
@@ -167,13 +169,13 @@ export const convertAimpPlaylistForApi = (
       0,
     ),
   };
-}
+};
 
 export const canUseAimpLiveSnapshots = (
   state: Pick<AimpBridgeState, 'playlistSnapshot' | 'playbackSnapshot'>,
 ): boolean => {
   return hasUsableAimpLiveStreamSnapshots(state.playlistSnapshot, state.playbackSnapshot);
-}
+};
 
 export const canStartAimpLiveStream = (
   state: Pick<
@@ -194,7 +196,7 @@ export const canStartAimpLiveStream = (
     state.pluginMetadata !== null &&
     canUseAimpLiveSnapshots(state)
   );
-}
+};
 
 export const getAimpPlaylistPublishKey = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'playlistId' | 'revision'> | null,
@@ -204,7 +206,7 @@ export const getAimpPlaylistPublishKey = (
   }
 
   return `${playlistSnapshot.playlistId}:${playlistSnapshot.revision}`;
-}
+};
 
 export const getAimpPlaybackPublishKey = (
   state: Pick<
@@ -219,11 +221,11 @@ export const getAimpPlaybackPublishKey = (
     currentTrackKey: state.playbackSnapshot?.currentTrackKey ?? null,
     liveStreamStarted: state.liveStreamStarted,
   });
-}
+};
 
 export const canAdvanceAimpPlayback = (
   connectionPhase: AimpConnectionPhase,
   playbackStatus: AimpPlaybackStatus | null | undefined,
 ): boolean => {
   return connectionPhase === 'connected' && playbackStatus === 'playing';
-}
+};

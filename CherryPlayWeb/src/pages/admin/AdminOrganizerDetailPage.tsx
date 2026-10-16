@@ -92,7 +92,9 @@ export const AdminOrganizerDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revocations, setRevocations] = useState<Record<string, EntitlementRevocationDto[]>>({});
-  const [revocationHistoryErrors, setRevocationHistoryErrors] = useState<Record<string, string>>({});
+  const [revocationHistoryErrors, setRevocationHistoryErrors] = useState<Record<string, string>>(
+    {},
+  );
   const [revocationHistoryLoadingIds, setRevocationHistoryLoadingIds] = useState<
     Record<string, boolean>
   >({});
@@ -293,13 +295,9 @@ export const AdminOrganizerDetailPage = () => {
         <h1>Карточка организатора</h1>
       </div>
 
-      {revokePersistenceWarning && (
-        <ErrorMessage message={revokePersistenceWarning} />
-      )}
+      {revokePersistenceWarning && <ErrorMessage message={revokePersistenceWarning} />}
 
-      {error && (
-        <ErrorMessage message={error} />
-      )}
+      {error && <ErrorMessage message={error} />}
 
       {loading ? (
         <p>Загрузка…</p>
@@ -442,11 +440,11 @@ export const AdminOrganizerDetailPage = () => {
               value={grantPackageId}
               onChange={(e) => setGrantPackageId(e.target.value)}
             >
-                {packages.map((pkg) => (
-                  <option key={pkg.id} value={pkg.id}>
-                    {pkg.name} ({pkg.code}) — {pkg.themeIds.join(', ')}
-                  </option>
-                ))}
+              {packages.map((pkg) => (
+                <option key={pkg.id} value={pkg.id}>
+                  {pkg.name} ({pkg.code}) — {pkg.themeIds.join(', ')}
+                </option>
+              ))}
             </FormSelect>
             <FormTextarea
               label="Примечание (опционально)"
@@ -476,22 +474,22 @@ export const AdminOrganizerDetailPage = () => {
                 disabled={granting || !grantPackageId}
                 onClick={() => {
                   void (async () => {
-                  setGranting(true);
-                  setGrantError(null);
-                  try {
-                    await adminApiService.grantEntitlement(id, {
-                      packageId: grantPackageId,
-                      note: grantNote.trim() || undefined,
-                    });
-                    setGrantOpen(false);
-                    setGrantNote('');
-                    grantOpenButtonRef.current?.focus();
-                    await load();
-                  } catch (err) {
-                    setGrantError(extractApiErrorMessage(err, 'Ошибка выдачи пакета'));
-                  } finally {
-                    setGranting(false);
-                  }
+                    setGranting(true);
+                    setGrantError(null);
+                    try {
+                      await adminApiService.grantEntitlement(id, {
+                        packageId: grantPackageId,
+                        note: grantNote.trim() || undefined,
+                      });
+                      setGrantOpen(false);
+                      setGrantNote('');
+                      grantOpenButtonRef.current?.focus();
+                      await load();
+                    } catch (err) {
+                      setGrantError(extractApiErrorMessage(err, 'Ошибка выдачи пакета'));
+                    } finally {
+                      setGranting(false);
+                    }
                   })();
                 }}
               >
@@ -515,17 +513,17 @@ export const AdminOrganizerDetailPage = () => {
               {revokeEntitlement.packageName} ({revokeEntitlement.packageCode})
             </p>
             <FormTextarea
-                label="Примечание (опционально)"
-                id="admin-revoke-note"
-                value={revokeNote}
-                onChange={(e) => {
-                  setRevokeNote(e.target.value);
-                  setRevokeError(null);
-                  if (!revocationPending) setRevocationRequestId(crypto.randomUUID());
-                }}
-                rows={4}
-                disabled={revocationPending}
-              />
+              label="Примечание (опционально)"
+              id="admin-revoke-note"
+              value={revokeNote}
+              onChange={(e) => {
+                setRevokeNote(e.target.value);
+                setRevokeError(null);
+                if (!revocationPending) setRevocationRequestId(crypto.randomUUID());
+              }}
+              rows={4}
+              disabled={revocationPending}
+            />
             {revokeError && <ErrorMessage message={revokeError} />}
             <div className="admin-modal__actions">
               <Button
@@ -550,44 +548,42 @@ export const AdminOrganizerDetailPage = () => {
                 disabled={revoking}
                 onClick={() => {
                   void (async () => {
-                  setRevoking(true);
-                  setRevokeError(null);
-                  const savedRequest = readPendingRevocation(revokeEntitlement.id);
-                  const request =
-                    savedRequest ??
-                    {
+                    setRevoking(true);
+                    setRevokeError(null);
+                    const savedRequest = readPendingRevocation(revokeEntitlement.id);
+                    const request = savedRequest ?? {
                       id: revocationRequestId ?? crypto.randomUUID(),
                       entitlementId: revokeEntitlement.id,
                       note: revokeNote.trim() || undefined,
                     };
-                  try {
-                    const persisted = persistPendingRevocation(request);
-                    setRevokePersistenceWarning(
-                      persisted
-                        ? null
-                        : 'Браузер не сохранил запрос отзыва. Повторить его можно в этом окне; после перезагрузки восстановление запроса не гарантируется.',
-                    );
-                    setRevocationRequestId(request.id);
-                    setRevokeNote(request.note ?? '');
-                    setRevocationPending(true);
-                    await adminApiService.revokeEntitlement(request);
-                    clearPendingRevocation(revokeEntitlement.id);
-                    setRevokeEntitlement(null);
-                    setRevokeNote('');
-                    setRevocationRequestId(null);
-                    setRevocationPending(false);
-                    revokeOpenButtonRef.current?.focus();
-                    await load();
-                  } catch (err) {
-                    setRevokeError(extractApiErrorMessage(err, 'Ошибка отзыва'));
-                    if (isDefinitiveRevocationRejection(err)) {
+                    try {
+                      const persisted = persistPendingRevocation(request);
+                      setRevokePersistenceWarning(
+                        persisted
+                          ? null
+                          : 'Браузер не сохранил запрос отзыва. Повторить его можно в этом окне; после перезагрузки восстановление запроса не гарантируется.',
+                      );
+                      setRevocationRequestId(request.id);
+                      setRevokeNote(request.note ?? '');
+                      setRevocationPending(true);
+                      await adminApiService.revokeEntitlement(request);
                       clearPendingRevocation(revokeEntitlement.id);
-                      setRevocationRequestId(crypto.randomUUID());
+                      setRevokeEntitlement(null);
+                      setRevokeNote('');
+                      setRevocationRequestId(null);
                       setRevocationPending(false);
+                      revokeOpenButtonRef.current?.focus();
+                      await load();
+                    } catch (err) {
+                      setRevokeError(extractApiErrorMessage(err, 'Ошибка отзыва'));
+                      if (isDefinitiveRevocationRejection(err)) {
+                        clearPendingRevocation(revokeEntitlement.id);
+                        setRevocationRequestId(crypto.randomUUID());
+                        setRevocationPending(false);
+                      }
+                    } finally {
+                      setRevoking(false);
                     }
-                  } finally {
-                    setRevoking(false);
-                  }
                   })();
                 }}
               >

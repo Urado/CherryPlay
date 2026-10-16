@@ -10,10 +10,7 @@ import {
   PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
 import { BasicThemeCustomizationEditor } from './basic';
-import {
-  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
-  resolveBasicThemePalette,
-} from './basic/palette';
+import { BASIC_THEME_CUSTOMIZATION_OPTION_KEYS, resolveBasicThemePalette } from './basic/palette';
 import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
 import {
   DEFAULT_PARTY_THEME_ID,
@@ -207,9 +204,7 @@ export const isValidPartyTheme = (partyThemeId: string): partyThemeId is PartyTh
   return partyThemeId in PARTY_THEME_REGISTRY;
 };
 
-export const getPartyThemeOrDefault = (
-  partyThemeId: string | undefined | null,
-): PartyTheme => {
+export const getPartyThemeOrDefault = (partyThemeId: string | undefined | null): PartyTheme => {
   if (partyThemeId && isValidPartyTheme(partyThemeId)) {
     return PARTY_THEME_REGISTRY[partyThemeId];
   }

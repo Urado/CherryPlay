@@ -19,7 +19,7 @@ const providerElectionListeners = new Set<() => void>();
 
 const notifyProviderElection = () => {
   providerElectionListeners.forEach((listener) => listener());
-}
+};
 
 const runtimeStore = {
   runtime: null as PartyWorkspaceRuntimeValue | null,
@@ -31,11 +31,11 @@ const runtimeStoreListeners = new Set<() => void>();
 const subscribeRuntimeStore = (listener: () => void) => {
   runtimeStoreListeners.add(listener);
   return () => runtimeStoreListeners.delete(listener);
-}
+};
 
 const getRuntimeStoreEpoch = () => {
   return runtimeStore.epoch;
-}
+};
 
 const setSharedRuntime = (runtime: PartyWorkspaceRuntimeValue | null) => {
   if (runtimeStore.runtime === runtime) {
@@ -44,7 +44,7 @@ const setSharedRuntime = (runtime: PartyWorkspaceRuntimeValue | null) => {
   runtimeStore.runtime = runtime;
   runtimeStore.epoch += 1;
   runtimeStoreListeners.forEach((listener) => listener());
-}
+};
 
 const PartyWorkspaceRuntimeHost = () => {
   const runtime = usePartyWorkspaceRuntime();
@@ -60,7 +60,7 @@ const PartyWorkspaceRuntimeHost = () => {
   }, []);
 
   return null;
-}
+};
 
 export const useSharedPartyWorkspaceRuntime = (): PartyWorkspaceRuntimeValue | null => {
   return useSyncExternalStore(
@@ -68,13 +68,13 @@ export const useSharedPartyWorkspaceRuntime = (): PartyWorkspaceRuntimeValue | n
     () => runtimeStore.runtime,
     () => runtimeStore.runtime,
   );
-}
+};
 
 export const PartyWorkspaceRuntimeEphemeralHost = () => {
   const isHost = useIsElectedHost();
 
   return isHost ? <PartyWorkspaceRuntimeHost /> : null;
-}
+};
 
 const useIsElectedHost = (): boolean => {
   const providerIdRef = useRef(Symbol('party-workspace-runtime-provider'));
@@ -101,7 +101,7 @@ const useIsElectedHost = (): boolean => {
   }, []);
 
   return isHost;
-}
+};
 
 export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.ReactNode }) => {
   useSyncExternalStore(subscribeRuntimeStore, getRuntimeStoreEpoch, getRuntimeStoreEpoch);
@@ -118,7 +118,7 @@ export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.Re
       ) : null}
     </>
   );
-}
+};
 
 export const usePartyWorkspaceRuntimeContext = (): PartyWorkspaceRuntimeValue => {
   const context = useContext(PartyWorkspaceRuntimeContext);
@@ -128,4 +128,4 @@ export const usePartyWorkspaceRuntimeContext = (): PartyWorkspaceRuntimeValue =>
     );
   }
   return context;
-}
+};

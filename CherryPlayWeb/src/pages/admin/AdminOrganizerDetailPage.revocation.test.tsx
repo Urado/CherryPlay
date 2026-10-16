@@ -20,9 +20,8 @@ vi.mock('../../hooks/useRequireAdmin', () => ({
 const apiMocks = vi.hoisted(() => ({
   getOrganizerById: vi.fn<(organizerId: string) => Promise<AdminOrganizerDetailDto>>(),
   getThemePackages: vi.fn<() => Promise<ThemePackageListResponse>>(),
-  grantEntitlement: vi.fn<
-    (organizerId: string, request: GrantEntitlementRequest) => Promise<EntitlementDto>
-  >(),
+  grantEntitlement:
+    vi.fn<(organizerId: string, request: GrantEntitlementRequest) => Promise<EntitlementDto>>(),
   revokeEntitlement: vi.fn<(request: CreateEntitlementRevocationRequest) => Promise<void>>(),
 }));
 
@@ -118,20 +117,26 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
     await waitFor(() => expect(revokeEntitlement).toHaveBeenCalledTimes(2));
     expect(revokeEntitlement.mock.calls[1]?.[0]).toEqual(firstRequest);
     await waitFor(() =>
-      expect(window.sessionStorage.getItem(`admin-entitlement-revocation:${entitlement.id}`)).toBeNull(),
+      expect(
+        window.sessionStorage.getItem(`admin-entitlement-revocation:${entitlement.id}`),
+      ).toBeNull(),
     );
   });
 
   it.each([400, 422])('uses a new UUID after a definitive %s rejection', async (status) => {
     const revokeEntitlement = apiMocks.revokeEntitlement;
-    revokeEntitlement.mockRejectedValueOnce(Object.assign(new Error('Проверка запроса не пройдена'), { status }));
+    revokeEntitlement.mockRejectedValueOnce(
+      Object.assign(new Error('Проверка запроса не пройдена'), { status }),
+    );
     revokeEntitlement.mockResolvedValueOnce(undefined);
 
     renderPage();
     const dialog = await openRevocationDialog();
     fireEvent.click(getConfirmButton(dialog));
     await within(dialog).findByRole('alert');
-    expect(window.sessionStorage.getItem(`admin-entitlement-revocation:${entitlement.id}`)).toBeNull();
+    expect(
+      window.sessionStorage.getItem(`admin-entitlement-revocation:${entitlement.id}`),
+    ).toBeNull();
 
     fireEvent.click(getConfirmButton(dialog));
     await waitFor(() => expect(revokeEntitlement).toHaveBeenCalledTimes(2));

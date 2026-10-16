@@ -1,4 +1,3 @@
-
 import { ContainerZone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutContainerAirPickerKey } from '@shared/stores/layoutStore';

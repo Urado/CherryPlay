@@ -14,7 +14,7 @@ export const isStreamingNetworkEnabled = (
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
 ): boolean => {
   return settings.enableStreaming;
-}
+};
 
 export const isStreamingHubAllowed = (
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
@@ -26,13 +26,13 @@ export const isStreamingHubAllowed = (
     return false;
   }
   return getPlatformCapabilities().supportsRealAuth;
-}
+};
 
 export const isPartyDiscoverabilityEnabled = (
   _settings?: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
 ): boolean => {
   return true;
-}
+};
 
 export const getOnlineNetworkPolicy = (
   settings: StreamingNetworkPolicySettings,
@@ -41,4 +41,4 @@ export const getOnlineNetworkPolicy = (
     networkEnabled: isStreamingNetworkEnabled(settings),
     partyDiscoverabilityEnabled: isPartyDiscoverabilityEnabled(settings),
   };
-}
+};

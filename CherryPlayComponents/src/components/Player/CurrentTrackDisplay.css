@@ -51,7 +51,7 @@
 
 .party-current-track-adjacent-name--expanded {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   text-align: right;
   overflow: visible;
   text-overflow: unset;
@@ -122,7 +122,7 @@
 
 .party-current-track-name--expanded {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   overflow: visible;
   text-overflow: unset;
 }

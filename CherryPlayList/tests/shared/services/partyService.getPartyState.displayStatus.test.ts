@@ -75,10 +75,10 @@ describe('partyService.getPartyState — partyDisplayStatus wire values', () => 
     const [requestUrl, request] = fetchMock.mock.calls[0];
     expect(requestUrl).toBe(`${API_URL}/parties/public/${SHORT_CODE}/state`);
     expect(request).toMatchObject({
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
-      });
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-cache',
+    });
   });
 
   it("parses partyDisplayStatus 'scheduled' from public state endpoint", async () => {

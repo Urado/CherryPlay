@@ -140,7 +140,7 @@ export const getAuthHttpStatus = (error: unknown): number | undefined => {
     return error.status;
   }
   if (error !== null && typeof error === 'object' && 'status' in error) {
-    const status = (error).status;
+    const status = error.status;
     if (typeof status === 'number' && Number.isFinite(status)) {
       return status;
     }
@@ -153,7 +153,7 @@ export const getAuthErrorMessage = (error: unknown): string => {
     return error.message;
   }
   if (error !== null && typeof error === 'object' && 'message' in error) {
-    const message = (error).message;
+    const message = error.message;
     if (typeof message === 'string') {
       return message;
     }

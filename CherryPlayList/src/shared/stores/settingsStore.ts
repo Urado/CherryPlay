@@ -3,7 +3,6 @@ import type { WorkspaceId } from '@core/types/workspace';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import type { AimpSourceSelection } from '../contracts/aimp';
 import {
   clampLoudnessQuietGapRangeLu,

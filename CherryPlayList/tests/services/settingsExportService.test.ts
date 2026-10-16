@@ -28,7 +28,7 @@ import {
 } from '../../src/shared/stores/layoutStore';
 import { useSettingsStore } from '../../src/shared/stores/settingsStore';
 
-const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 const resetStores = () => {
   useSettingsStore.setState({

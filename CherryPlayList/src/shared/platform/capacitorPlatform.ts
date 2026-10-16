@@ -6,7 +6,7 @@ const getWindowApi = (): NonNullable<typeof window.api> | undefined => {
     return window.api;
   }
   return undefined;
-}
+};
 
 const createUnavailableAimpApi = (): PlatformAPI['aimp'] => {
   return {
@@ -16,7 +16,7 @@ const createUnavailableAimpApi = (): PlatformAPI['aimp'] => {
     onStateChanged: () => () => undefined,
     onLog: () => () => undefined,
   };
-}
+};
 
 export class CapacitorPlatform implements PlatformAPI {
   getPathForFile(file: File): string {

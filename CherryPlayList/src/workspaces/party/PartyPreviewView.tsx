@@ -150,10 +150,7 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
         ) : null}
         <div className="party-preview-layout__main">
           <PartyPreviewDesignPanel hidden={!previewDesignOpen} />
-          <PartyPreviewDisplayPanel
-            themeId={effectiveThemeId}
-            hidden={!previewDisplayOpen}
-          />
+          <PartyPreviewDisplayPanel themeId={effectiveThemeId} hidden={!previewDisplayOpen} />
           <div className="party-preview-layout__canvas">
             <div className="party-preview-view-content">
               <PartyPreview

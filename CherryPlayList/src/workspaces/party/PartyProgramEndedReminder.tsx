@@ -66,7 +66,10 @@ export const PartyProgramEndedReminder: React.FC = () => {
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
-      if (event.shiftKey && (activeElement === firstElement || !archiveDialogRef.current?.contains(activeElement))) {
+      if (
+        event.shiftKey &&
+        (activeElement === firstElement || !archiveDialogRef.current?.contains(activeElement))
+      ) {
         event.preventDefault();
         lastElement.focus();
       } else if (

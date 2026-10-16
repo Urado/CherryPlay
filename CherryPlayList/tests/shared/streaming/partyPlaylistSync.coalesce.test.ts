@@ -23,7 +23,10 @@ jest.mock('../../../src/shared/stores/projectStore', () => ({
 }));
 
 jest.mock('../../../src/shared/stores/aimpStore', () => ({
-  useAimpStore: { getState: () => ({ bridgeState: { liveStreamStarted: false } }), subscribe: () => () => undefined },
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+    subscribe: () => () => undefined,
+  },
 }));
 
 import { subscribePartyPlaylistSync } from '../../../src/shared/streaming/partyPlaylistSync';
@@ -44,17 +47,38 @@ describe('subscribePartyPlaylistSync coalescing', () => {
   it('serializes rapid updates and publishes the final duplicate-name snapshot', async () => {
     let resolveFirst: (() => void) | undefined;
     mockUpdatePartyPlaylist
-      .mockImplementationOnce(() => new Promise<void>((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
       .mockResolvedValue(undefined);
     let latest = makePayload('first');
     const onAfterSync = jest.fn();
     const onSynced = jest.fn();
-    const unsubscribe = subscribePartyPlaylistSync('party', () => latest, onAfterSync, undefined, onSynced);
+    const unsubscribe = subscribePartyPlaylistSync(
+      'party',
+      () => latest,
+      onAfterSync,
+      undefined,
+      onSynced,
+    );
 
     listeners[0]();
-    latest = { ...makePayload('second'), items: [...makePayload('first').items, ...makePayload('second').items] };
+    latest = {
+      ...makePayload('second'),
+      items: [...makePayload('first').items, ...makePayload('second').items],
+    };
     listeners[0]();
-    latest = { ...makePayload('third'), items: [...makePayload('first').items, ...makePayload('second').items, ...makePayload('third').items] };
+    latest = {
+      ...makePayload('third'),
+      items: [
+        ...makePayload('first').items,
+        ...makePayload('second').items,
+        ...makePayload('third').items,
+      ],
+    };
     listeners[0]();
 
     expect(mockUpdatePartyPlaylist).toHaveBeenCalledTimes(1);

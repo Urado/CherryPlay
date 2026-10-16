@@ -142,7 +142,10 @@ class SignalRService {
     }
 
     await this.waitForConnection();
-    const result = await this.connection.invoke<PartyStateDto | null>('RequestFullState', shortCode);
+    const result = await this.connection.invoke<PartyStateDto | null>(
+      'RequestFullState',
+      shortCode,
+    );
     devLog('[SignalR Web] Received full state:', shortCode, !!result?.playbackState);
     if (import.meta.env.DEV && result != null) {
       console.log('[SignalR] RequestFullState result:', {

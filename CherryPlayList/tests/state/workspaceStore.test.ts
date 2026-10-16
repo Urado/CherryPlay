@@ -24,7 +24,7 @@ const getCollectionWorkspaceIds = (
   return collectWorkspaceZones(layout.rootZone)
     .filter((zone) => zone.workspaceType === 'collection')
     .map((zone) => zone.workspaceId);
-}
+};
 
 const resetStore = () => {
   const defaults = createDefaultWorkspacePersistSlice();

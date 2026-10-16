@@ -80,11 +80,7 @@ export const TrackActionsDropdown: React.FC<TrackActionsDropdownProps> = ({
   });
 
   const content = (
-    <div
-      ref={panelRef}
-      className="track-actions-dropdown"
-      style={style}
-    >
+    <div ref={panelRef} className="track-actions-dropdown" style={style}>
       <div className="track-actions-dropdown__body">
         <ul className="track-actions-dropdown__list">
           {canAddNext && actionTrackId && (

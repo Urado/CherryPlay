@@ -48,10 +48,7 @@ interface PartyViewProps {
   isDemo?: boolean;
 }
 
-export const PartyView: React.FC<PartyViewProps> = ({
-  shortCode,
-  isDemo = false,
-}) => {
+export const PartyView: React.FC<PartyViewProps> = ({ shortCode, isDemo = false }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   const partyState = usePartyState({ shortCode, isDemo });
   const {
@@ -270,7 +267,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onStateChanged: useCallback(
       (_partyId: string) => {
-         void requestFullState();
+        void requestFullState();
       },
       [requestFullState],
     ),
@@ -527,9 +524,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">
-            {!isDemo && (
-              <PartyViewBackLink to={ROUTES.HOME} />
-            )}
+            {!isDemo && <PartyViewBackLink to={ROUTES.HOME} />}
             {!isDemo && shortCode && (
               <a
                 href={ROUTES.PARTY_QR(shortCode)}

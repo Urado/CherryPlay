@@ -125,11 +125,11 @@ describe('base PlaylistView group display', () => {
       track('Second', 1, 120),
       track('Cancelled', 2, 300),
     ]);
-    render(
-      <PlaylistView playlist={playlist(items)} disabledTrackIds={['Cancelled']} />,
-    );
+    render(<PlaylistView playlist={playlist(items)} disabledTrackIds={['Cancelled']} />);
 
-    const summary = screen.getByText('Known durations').closest('.party-playlist-item')
+    const summary = screen
+      .getByText('Known durations')
+      .closest('.party-playlist-item')
       ?.querySelector('.party-playlist-group-summary');
     expect(summary?.textContent).toContain('3:00');
   });
@@ -146,9 +146,7 @@ describe('base PlaylistView group display', () => {
     expect(rows).toHaveLength(2);
     expect((rows[0] as HTMLElement).style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
     expect((rows[1] as HTMLElement).style.getPropertyValue('--party-playlist-item-nest')).toBe('1');
-    expect(getComputedStyle(rows[0]).paddingLeft).toBe(
-      getComputedStyle(rows[1]).paddingLeft,
-    );
+    expect(getComputedStyle(rows[0]).paddingLeft).toBe(getComputedStyle(rows[1]).paddingLeft);
   });
 
   it('excludes disabled groups and propagates their state to visible tracks', () => {

@@ -15,7 +15,7 @@ const errorDetail = (error: unknown): string => {
     return error;
   }
   return '';
-}
+};
 
 export const mapCherryPlayStreamingErrorPhrase = (error: unknown): string => {
   const detail = errorDetail(error).toLowerCase();
@@ -55,11 +55,11 @@ export const mapCherryPlayStreamingErrorPhrase = (error: unknown): string => {
     return 'нет соединения';
   }
   return 'неизвестная ошибка';
-}
+};
 
 export const formatCherryPlayConnectError = (error: unknown): string => {
   return `Не удалось подключиться к трансляции: ${mapCherryPlayStreamingErrorPhrase(error)}`;
-}
+};
 
 export const formatCherryPlayPublishError = (
   operation: CherryPlayPublishOperation,
@@ -70,7 +70,7 @@ export const formatCherryPlayPublishError = (
     return `Не удалось синхронизировать плейлист на сервер: ${phrase}`;
   }
   return `Не удалось опубликовать состояние трансляции: ${phrase}`;
-}
+};
 
 export type CherryPlayStreamingNotify = (notification: {
   type: 'error' | 'warning';
@@ -134,4 +134,4 @@ export const createCherryPlayStreamingErrorHandlers = (
       });
     },
   };
-}
+};

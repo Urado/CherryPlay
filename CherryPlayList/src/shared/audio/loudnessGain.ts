@@ -21,7 +21,10 @@ export const resolveAutoGainDb = (
   return computeAutoGainDb(loudness.integratedLufs, loudness.truePeakDb, targetLufs);
 };
 
-export const getEffectiveGainDb = (track: Track, settings: LoudnessSettings): number | undefined => {
+export const getEffectiveGainDb = (
+  track: Track,
+  settings: LoudnessSettings,
+): number | undefined => {
   const loudness = track.loudness;
   if (!loudness) {
     return undefined;

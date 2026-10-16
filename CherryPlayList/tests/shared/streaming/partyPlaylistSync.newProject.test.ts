@@ -26,7 +26,10 @@ jest.mock('../../../src/shared/stores/projectStore', () => ({
 }));
 
 jest.mock('../../../src/shared/stores/aimpStore', () => ({
-  useAimpStore: { getState: () => ({ bridgeState: { liveStreamStarted: false } }), subscribe: () => () => undefined },
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+    subscribe: () => () => undefined,
+  },
 }));
 
 import { subscribePartyPlaylistSync } from '../../../src/shared/streaming/partyPlaylistSync';

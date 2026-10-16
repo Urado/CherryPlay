@@ -25,7 +25,7 @@ export const findItemRecursive = (items: ProjectItem[], id: string): ProjectItem
     }
   }
   return null;
-}
+};
 
 export const getItemPathRecursive = (
   items: ProjectItem[],
@@ -45,9 +45,12 @@ export const getItemPathRecursive = (
     }
   }
   return null;
-}
+};
 
-export const findItemWithParent = (items: ProjectItem[], itemId: string): ItemPositionInfo | null => {
+export const findItemWithParent = (
+  items: ProjectItem[],
+  itemId: string,
+): ItemPositionInfo | null => {
   const rootIndex = items.findIndex((item) => item.id === itemId);
   if (rootIndex !== -1) {
     return {
@@ -79,7 +82,7 @@ export const findItemWithParent = (items: ProjectItem[], itemId: string): ItemPo
   }
 
   return null;
-}
+};
 
 export const getAllTracksRecursive = (items: ProjectItem[]): Track[] => {
   const tracks: Track[] = [];
@@ -91,7 +94,7 @@ export const getAllTracksRecursive = (items: ProjectItem[]): Track[] => {
     }
   }
   return tracks;
-}
+};
 
 export const getFlatItemList = (items: ProjectItem[]): FlatListItem[] => {
   const result: FlatListItem[] = [];
@@ -108,7 +111,7 @@ export const getFlatItemList = (items: ProjectItem[]): FlatListItem[] => {
 
   traverse(items, []);
   return result;
-}
+};
 
 export const collectAllItemIds = (item: ProjectItem): string[] => {
   const ids = [item.id];
@@ -118,7 +121,7 @@ export const collectAllItemIds = (item: ProjectItem): string[] => {
     }
   }
   return ids;
-}
+};
 
 export const removeItemFromItems = (items: ProjectItem[], itemId: string): ProjectItem[] => {
   return items
@@ -132,7 +135,7 @@ export const removeItemFromItems = (items: ProjectItem[], itemId: string): Proje
       }
       return item;
     });
-}
+};
 
 export const updateTrackInItems = (
   items: ProjectItem[],
@@ -148,7 +151,7 @@ export const updateTrackInItems = (
     }
     return item;
   });
-}
+};
 
 export const updateTrackLoudnessInItems = (
   items: ProjectItem[],
@@ -164,7 +167,7 @@ export const updateTrackLoudnessInItems = (
     }
     return item;
   });
-}
+};
 
 export const markTrackMissingInItems = (
   items: ProjectItem[],
@@ -180,7 +183,7 @@ export const markTrackMissingInItems = (
     }
     return item;
   });
-}
+};
 
 export const updateGroupInItems = (
   items: ProjectItem[],
@@ -199,7 +202,7 @@ export const updateGroupInItems = (
     }
     return item;
   });
-}
+};
 
 export const insertItemAtPath = (
   items: ProjectItem[],
@@ -235,7 +238,7 @@ export const insertItemAtPath = (
     }
     return existingItem;
   });
-}
+};
 
 export const removeItemAtPath = (
   items: ProjectItem[],
@@ -274,7 +277,7 @@ export const removeItemAtPath = (
     }
     return existingItem;
   });
-}
+};
 
 export const removeItemsById = (items: ProjectItem[], itemIds: string[]): ProjectItem[] => {
   const idsSet = new Set(itemIds);
@@ -289,7 +292,7 @@ export const removeItemsById = (items: ProjectItem[], itemIds: string[]): Projec
       }
       return item;
     });
-}
+};
 
 export const collectItemsById = (items: ProjectItem[], itemIds: string[]): ProjectItem[] => {
   const result: ProjectItem[] = [];
@@ -316,7 +319,7 @@ export const collectItemsById = (items: ProjectItem[], itemIds: string[]): Proje
   }
 
   return result;
-}
+};
 
 export const insertIntoGroup = (
   items: ProjectItem[],
@@ -339,4 +342,4 @@ export const insertIntoGroup = (
     }
     return item;
   });
-}
+};

@@ -85,9 +85,7 @@ export const listConsentEvents = async (): Promise<ConsentEventDto[]> => {
   return handleApiResponse<ConsentEventDto[]>(response, 'Не удалось загрузить согласия');
 };
 
-export const createConsentEvents = async (
-  consents: ConsentInput[],
-): Promise<ConsentEventDto[]> => {
+export const createConsentEvents = async (consents: ConsentInput[]): Promise<ConsentEventDto[]> => {
   const body: CreateConsentEventsRequest = { events: consents };
   const response = await apiFetch(getApiUrl(API_ENDPOINTS.CONSENT_EVENTS), {
     method: 'POST',

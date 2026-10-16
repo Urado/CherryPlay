@@ -15,8 +15,9 @@ describe('party QR theme configuration', () => {
 
   it('keeps a theme asset in the theme descriptor and prioritizes an uploaded logo', () => {
     expect(resolvePartyQrImage('spring-cross-step')).toBe('/images/spring-cross-step-poster.jpg');
-    expect(resolvePartyQrImage('spring-cross-step', { qrLogoUrl: ' https://example.test/logo.png ' }))
-      .toBe('https://example.test/logo.png');
+    expect(
+      resolvePartyQrImage('spring-cross-step', { qrLogoUrl: ' https://example.test/logo.png ' }),
+    ).toBe('https://example.test/logo.png');
     expect(resolvePartyQrImage('basic')).toBeUndefined();
   });
 

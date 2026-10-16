@@ -11,30 +11,30 @@ export type ThemeAccessLoadResult = 'ok' | 'skipped' | 'failed' | 'unreachable';
 
 const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
-}
+};
 
 const isThemeAccessSessionActive = (): boolean => {
   const networkEnabled = getOnlineNetworkPolicy({
     enableStreaming: useSettingsStore.getState().enableStreaming,
   }).networkEnabled;
   return networkEnabled && useAuthStore.getState().isAuthenticated();
-}
+};
 
 const clearThemeAccessState = (): void => {
   const store = getPartyStore();
   store.setThemeAccess(null);
   store.setThemeAccessErrorMessage(null);
   store.setIsThemeAccessLoading(false);
-}
+};
 
 export const invalidatePartyThemeAccessLoads = (): void => {
   themeAccessLoadGeneration += 1;
   clearThemeAccessState();
-}
+};
 
 export const shouldShowThemeAccessLoading = (themeAccess: ThemeAccessDto | null): boolean => {
   return themeAccess === null;
-}
+};
 
 export const loadPartyThemeAccess = async (
   forceRefresh = false,
@@ -97,4 +97,4 @@ export const loadPartyThemeAccess = async (
       getPartyStore().setIsThemeAccessLoading(false);
     }
   }
-}
+};

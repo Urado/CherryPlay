@@ -25,7 +25,7 @@ jest.mock('@shared/services/authService', () => ({
   },
 }));
 
-const createDeferred = <T,>() => {
+const createDeferred = <T>() => {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
   const promise = new Promise<T>((res, rej) => {
@@ -172,9 +172,7 @@ describe('authCallbackBootstrap', () => {
     expect(getBrowserLoginFlowState().status).toBe('failed');
     expect(getBrowserLoginFlowState().error).toContain('Время ожидания истекло');
     expect(
-      useUIStore
-        .getState()
-        .notifications.some((n) => n.message.includes('Время ожидания истекло')),
+      useUIStore.getState().notifications.some((n) => n.message.includes('Время ожидания истекло')),
     ).toBe(true);
 
     resetAuthCallbackBootstrapForTests();
@@ -198,9 +196,9 @@ describe('authCallbackBootstrap', () => {
       status: 'failed',
       error: 'Code already used',
     });
-    expect(
-      useUIStore.getState().notifications.some((n) => n.message === 'Code already used'),
-    ).toBe(true);
+    expect(useUIStore.getState().notifications.some((n) => n.message === 'Code already used')).toBe(
+      true,
+    );
 
     resetAuthCallbackBootstrapForTests();
     secondWait.reject(new Error('stop'));

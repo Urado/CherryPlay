@@ -19,7 +19,7 @@ export const findZoneById = (root: Zone, targetId: ZoneId): Zone | null => {
   }
 
   return null;
-}
+};
 
 export const findParentZone = (
   root: Zone,
@@ -40,7 +40,7 @@ export const findParentZone = (
   }
 
   return null;
-}
+};
 
 export const countZones = (root: Zone): number => {
   if (root.type === 'workspace') {
@@ -48,14 +48,14 @@ export const countZones = (root: Zone): number => {
   }
 
   return 1 + root.zones.reduce((sum, zone) => sum + countZones(zone), 0);
-}
+};
 
 export const calculateMinSizePercent = (containerSize: number): number => {
   if (containerSize <= 0) {
     return 0;
   }
   return (10 / containerSize) * 100;
-}
+};
 
 export const updateZoneInTree = (root: Zone, zoneId: ZoneId, updated: Zone): Zone => {
   if (root.id === zoneId) {
@@ -70,7 +70,7 @@ export const updateZoneInTree = (root: Zone, zoneId: ZoneId, updated: Zone): Zon
   }
 
   return root;
-}
+};
 
 export const replaceZoneInTree = updateZoneInTree;
 
@@ -80,7 +80,7 @@ export const updateContainerInTree = (
   updated: ContainerZone,
 ): Zone => {
   return updateZoneInTree(root, containerId, updated);
-}
+};
 
 export const getMaxDepth = (root: Zone, currentDepth: number = 0): number => {
   if (root.type === 'workspace') {
@@ -94,7 +94,7 @@ export const getMaxDepth = (root: Zone, currentDepth: number = 0): number => {
   }
 
   return maxDepth;
-}
+};
 
 export const validateLayout = (
   root: Zone,
@@ -149,7 +149,7 @@ export const validateLayout = (
   };
 
   return validateZone(root);
-}
+};
 
 export const cleanupContainers = (root: Zone): Zone => {
   if (root.type === 'workspace') {
@@ -171,7 +171,7 @@ export const cleanupContainers = (root: Zone): Zone => {
     ...root,
     zones: cleanedZones,
   };
-}
+};
 
 export const syncContainerChildSizes = (container: ContainerZone): ContainerZone => {
   return {
@@ -183,4 +183,4 @@ export const syncContainerChildSizes = (container: ContainerZone): ContainerZone
       return syncContainerChildSizes(zone);
     }),
   };
-}
+};

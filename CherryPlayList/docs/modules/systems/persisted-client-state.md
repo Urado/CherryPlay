@@ -71,13 +71,13 @@
 
 Изменения дерева layout **не привязаны к файлу проекта** (`.cherry`). Сохраняются на уровне приложения:
 
-| Метод                              | Когда                                                                                          |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…»; builtin — structure-only upsert override / no-op |
-| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`                                            |
-| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **scratch** — новая запись в **Мои** («Без имени» / «Без имени N»)                       |
+| Метод                              | Когда                                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…»; builtin — structure-only upsert override / no-op                                         |
+| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`                                                                                    |
+| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **scratch** — новая запись в **Мои** («Без имени» / «Без имени N»)                                                               |
 | `clearBuiltinOverride(preset)`     | Удалить override из map; если preset **активен** — пересобрать live layout фабрикой; иначе только map. UI — **«Сбросить к исходному»** |
-| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)                                                    |
+| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)                                                                                            |
 
 Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет. Builtin **не** форкается в «Без имени». Исторические «Без имени» от старого auto-fork **не мигрируются**.
 

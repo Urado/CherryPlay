@@ -85,10 +85,7 @@ export const ICON_ONLY_ACCESSIBLE_NAME_WARNING =
 
 export const BUTTON_LOADING_LABEL_DEFAULT = 'Загрузка...';
 
-export const hasIconOnlyAccessibleName = (
-  ariaLabel?: string,
-  ariaLabelledBy?: string,
-): boolean => {
+export const hasIconOnlyAccessibleName = (ariaLabel?: string, ariaLabelledBy?: string): boolean => {
   return Boolean(ariaLabel || ariaLabelledBy);
 };
 
@@ -148,7 +145,7 @@ const ButtonLoadingSpinner = (): React.ReactElement => {
       </svg>
     </span>
   );
-}
+};
 
 export const ButtonInnerContent = ({
   children,
@@ -187,4 +184,4 @@ export const ButtonInnerContent = ({
       )}
     </>
   );
-}
+};

@@ -12,25 +12,25 @@ import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 
 const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
-}
+};
 
 const getProjectStore = () => {
   return useProjectStore.getState();
-}
+};
 
 const guardDemoMode = (): boolean => {
   return isDemoFixturesMode(getAppMode());
-}
+};
 
 const clearEditorDemoOverrides = (): void => {
   resetEditorDemoState();
-}
+};
 
 const clearPartyNotFoundProductionFlags = (partyExistsOnServer: boolean): void => {
   const store = getPartyStore();
   store.setServerError(null);
   store.setPartyVerified(partyExistsOnServer);
-}
+};
 
 export const demoSetUnlinkedDraft = (): void => {
   if (!guardDemoMode()) return;
@@ -39,7 +39,7 @@ export const demoSetUnlinkedDraft = (): void => {
   getProjectStore().setLinkedParty(null);
   demoSetPartyLifecycleState('draft');
   getPartyStore().setPartyLifecycleState(null);
-}
+};
 
 export const demoSetLinkedLifecycle = (lifecycle: PartyLifecycleState): void => {
   if (!guardDemoMode()) return;
@@ -48,7 +48,7 @@ export const demoSetLinkedLifecycle = (lifecycle: PartyLifecycleState): void => 
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
   demoSetPartyLifecycleState(lifecycle);
   getPartyStore().setPartyLifecycleState(lifecycle);
-}
+};
 
 export const demoSetBlockedOverride = (reason: PartyEditorBlockedReason): void => {
   if (!guardDemoMode()) return;
@@ -59,7 +59,7 @@ export const demoSetBlockedOverride = (reason: PartyEditorBlockedReason): void =
   }
   store.setServerError(null);
   usePartyEditorDemoStore.getState().setBlockedOverride(reason);
-}
+};
 
 export const demoSetPartyNotFound = (): void => {
   if (!guardDemoMode()) return;
@@ -68,7 +68,7 @@ export const demoSetPartyNotFound = (): void => {
   store.setServerError(ERROR_PARTY_NOT_FOUND);
   store.setPartyVerified(false);
   usePartyEditorDemoStore.getState().setBlockedOverride('party-not-found');
-}
+};
 
 export const demoResetToDefault = (): void => {
   if (!guardDemoMode()) return;
@@ -78,4 +78,4 @@ export const demoResetToDefault = (): void => {
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
   demoSetPartyLifecycleState('ready');
   getPartyStore().setPartyLifecycleState('ready');
-}
+};

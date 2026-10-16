@@ -18,9 +18,7 @@ export interface MergePartyViewerStatusInput {
   playbackState?: PlaybackState | null;
 }
 
-export const mergePartyViewerStatus = (
-  input: MergePartyViewerStatusInput,
-): PartyViewerStatus => {
+export const mergePartyViewerStatus = (input: MergePartyViewerStatusInput): PartyViewerStatus => {
   const { serverStatus, connectionStatus, apiReachable, playlist, playbackState } = input;
 
   if (serverStatus === 'party_ended') {

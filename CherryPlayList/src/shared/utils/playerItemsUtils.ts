@@ -47,12 +47,12 @@ const flattenItemsRecursive = (
   }
 
   return { result, nextTrackIndex: currentTrackIndex, nextFlatIndex: currentFlatIndex };
-}
+};
 
 export const flattenItemsForDisplay = (items: ProjectItem[]): DisplayItem[] => {
   const { result } = flattenItemsRecursive(items, 0, 0, 0, null);
   return result;
-}
+};
 
 const getAllTracksFromGroup = (group: ProjectGroup): Track[] => {
   const tracks: Track[] = [];
@@ -64,7 +64,7 @@ const getAllTracksFromGroup = (group: ProjectGroup): Track[] => {
     }
   }
   return tracks;
-}
+};
 
 export const getGroupItemCount = (group: ProjectGroup): number => {
   let count = 0;
@@ -75,12 +75,12 @@ export const getGroupItemCount = (group: ProjectGroup): number => {
     }
   }
   return count;
-}
+};
 
 export const getGroupTotalDuration = (group: ProjectGroup): number => {
   const tracks = getAllTracksFromGroup(group);
   return tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-}
+};
 
 export const getTracksFromDisplayItems = (displayItems: DisplayItem[]): Track[] => {
   const tracks: Track[] = [];
@@ -90,7 +90,7 @@ export const getTracksFromDisplayItems = (displayItems: DisplayItem[]): Track[] 
     }
   }
   return tracks;
-}
+};
 
 export const getGroupWithNestedIds = (groupId: string, displayItems: DisplayItem[]): string[] => {
   const ids: string[] = [];
@@ -117,7 +117,7 @@ export const getGroupWithNestedIds = (groupId: string, displayItems: DisplayItem
   }
 
   return ids;
-}
+};
 
 export const expandSelectionWithGroupContents = (
   selectedIds: Set<string>,
@@ -149,4 +149,4 @@ export const expandSelectionWithGroupContents = (
   }
 
   return expandedIds;
-}
+};

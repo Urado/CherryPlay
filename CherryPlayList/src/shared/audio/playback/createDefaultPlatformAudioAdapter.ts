@@ -59,7 +59,9 @@ export const createDefaultPlatformAudioAdapter = (): PlatformAudioAdapter => {
         return;
       }
 
-      const targetWithSinkId = target as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> };
+      const targetWithSinkId = target as AudioContext & {
+        setSinkId?: (sinkId: string) => Promise<void>;
+      };
       if (typeof targetWithSinkId.setSinkId === 'function') {
         const sinkId = deviceId ?? 'default';
         await targetWithSinkId.setSinkId(sinkId);

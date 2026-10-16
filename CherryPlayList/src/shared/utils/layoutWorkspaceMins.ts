@@ -22,7 +22,7 @@ export interface WindowChromeInsets {
 
 export const normalizeWorkspaceType = (workspaceType: string): string => {
   return workspaceType === 'aimp' ? 'player' : workspaceType;
-}
+};
 
 export const getWorkspaceMinSize = (workspaceType: string): WorkspaceMinSize => {
   const normalizedType = normalizeWorkspaceType(workspaceType);
@@ -37,7 +37,7 @@ export const getWorkspaceMinSize = (workspaceType: string): WorkspaceMinSize => 
   }
 
   return { minWidth: module.minWidth, minHeight: module.minHeight };
-}
+};
 
 export interface WorkspaceTypeWithMins extends WorkspaceMinSize {
   type: string;
@@ -49,20 +49,20 @@ export const getAllRegisteredWorkspaceTypesWithMins = (): WorkspaceTypeWithMins[
     minWidth: module.minWidth,
     minHeight: module.minHeight,
   }));
-}
+};
 
 const getMinAlongSplitAxis = (size: WorkspaceMinSize, direction: SplitDirection): number => {
   return direction === 'horizontal' ? size.minWidth : size.minHeight;
-}
+};
 
 const getMinAlongCrossAxis = (size: WorkspaceMinSize, direction: SplitDirection): number => {
   return direction === 'horizontal' ? size.minHeight : size.minWidth;
-}
+};
 
 const getChildMinPixelsAlongSplitAxis = (child: Zone, direction: SplitDirection): number => {
   const childSize = computeMinLayoutSize(child);
   return getMinAlongSplitAxis(childSize, direction);
-}
+};
 
 export const computeMinLayoutSize = (rootZone: Zone): WorkspaceMinSize => {
   if (rootZone.type === 'workspace') {
@@ -97,7 +97,7 @@ export const computeMinLayoutSize = (rootZone: Zone): WorkspaceMinSize => {
     minWidth: crossAxisMax,
     minHeight: splitAxisTotal,
   };
-}
+};
 
 export const getMinSizePercentsForContainer = (
   containerZone: ContainerZone,
@@ -115,11 +115,11 @@ export const getMinSizePercentsForContainer = (
     const minPixels = getChildMinPixelsAlongSplitAxis(child, containerZone.direction);
     return (minPixels / splitAxisSize) * 100;
   });
-}
+};
 
 const roundPx = (value: number): number => {
   return Math.round(value * 100) / 100;
-}
+};
 
 export const explainMinLayoutSize = (
   rootZone: Zone,
@@ -191,13 +191,16 @@ export const explainMinLayoutSize = (
   }
 
   return { size, lines };
-}
+};
 
-export const computeMinWindowSize = (layout: Layout, chrome: WindowChromeInsets): WorkspaceMinSize => {
+export const computeMinWindowSize = (
+  layout: Layout,
+  chrome: WindowChromeInsets,
+): WorkspaceMinSize => {
   const layoutMins = computeMinLayoutSize(layout.rootZone);
 
   return {
     minWidth: chrome.left + chrome.right + layoutMins.minWidth,
     minHeight: chrome.top + chrome.bottom + layoutMins.minHeight,
   };
-}
+};

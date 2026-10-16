@@ -8,8 +8,7 @@
 
 .party-editor-shell-header {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   gap: var(--spacing-xs) var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);

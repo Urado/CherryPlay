@@ -57,7 +57,10 @@ const getPluginsBasePaths = (): string[] => {
         path.join(path.dirname(process.execPath), 'plugins'),
         path.join(process.resourcesPath, 'plugins'),
       ]
-    : [path.join(fs.realpathSync.native(process.cwd()), 'plugins'), path.join(app.getAppPath(), 'plugins')];
+    : [
+        path.join(fs.realpathSync.native(process.cwd()), 'plugins'),
+        path.join(app.getAppPath(), 'plugins'),
+      ];
 
   return [...new Set(pluginsBasePaths)];
 };
@@ -352,19 +355,15 @@ export class AimpIntegrationService {
       logger.error('[AIMP] Named-pipe server error', error);
       this.transientGatingReason = {
         code: 'pipeListenFailed',
-        message: `Failed to listen on AIMP named pipe: ${(error).message}`,
+        message: `Failed to listen on AIMP named pipe: ${error.message}`,
       };
       this.refreshEnvironmentEligibility();
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP named-pipe server failed to listen.',
-        details: (error).message,
+        details: error.message,
       };
-      this.stopListening(
-        'listenFailed',
-        'Named-pipe server listen failed',
-        (error).message,
-      );
+      this.stopListening('listenFailed', 'Named-pipe server listen failed', error.message);
       this.emitState();
     });
 
@@ -475,9 +474,9 @@ export class AimpIntegrationService {
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP client socket error',
-        details: (error).message,
+        details: error.message,
       };
-      this.closeClient('transportError', 'AIMP client socket error', (error).message);
+      this.closeClient('transportError', 'AIMP client socket error', error.message);
     });
 
     socket.on('close', (hadError: boolean) => {
@@ -992,7 +991,9 @@ export class AimpIntegrationService {
   }
 }
 
-const isObjectWithProtocolVersion = (value: unknown): value is {
+const isObjectWithProtocolVersion = (
+  value: unknown,
+): value is {
   protocolVersion: string;
 } => {
   return (
@@ -1003,7 +1004,9 @@ const isObjectWithProtocolVersion = (value: unknown): value is {
   );
 };
 
-const isHelloHandshakeCandidate = (value: unknown): value is {
+const isHelloHandshakeCandidate = (
+  value: unknown,
+): value is {
   type: 'hello';
 } => {
   return typeof value === 'object' && value !== null && 'type' in value && value.type === 'hello';

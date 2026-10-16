@@ -9,7 +9,6 @@ import type { DemoPlayerFloatingPosition } from '@shared/stores/settingsStore';
 import { useCallback, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 
-
 interface UseDemoPlayerFloatingDragParams {
   isLayoutBlocked: boolean;
   resolvedFloatingPosition: DemoPlayerFloatingPosition | null;

@@ -79,13 +79,13 @@ export const applyDemoBlockedOverride = (
     isBlocked: true,
     effectiveLifecycle: unblocked.effectiveLifecycle,
   };
-}
+};
 
 export const shouldPreserveShellContentWhenBlocked = (
   demoBlockedOverride: PartyEditorBlockedReason | null,
 ): boolean => {
   return demoBlockedOverride != null;
-}
+};
 
 export const resolvePartyEditorPhase = (
   input: ResolvePartyEditorPhaseInput,
@@ -137,7 +137,7 @@ export const resolvePartyEditorPhase = (
   }
 
   return applyPartyNotFoundBlocking(result, input);
-}
+};
 
 const applyPartyNotFoundBlocking = (
   result: PartyEditorPhaseResult,
@@ -156,8 +156,8 @@ const applyPartyNotFoundBlocking = (
     isBlocked: true,
     blockedReason: 'party-not-found',
   };
-}
+};
 
 export const shouldShowPartyTrackDisplaySection = (phase: PartyEditorPhase | null): boolean => {
   return phase != null && phase !== 'completed';
-}
+};

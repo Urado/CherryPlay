@@ -13,12 +13,12 @@ export const shouldBlockSharedOutput = (
 ): boolean => {
   const devicesMatch = deviceIdA === deviceIdB;
   return devicesMatch && sessionMode === 'session';
-}
+};
 
 const getSessionMode = (): ProjectSessionMode => {
   const playerProjectStore = getProjectStore(DEFAULT_PLAYER_WORKSPACE_ID);
   return playerProjectStore?.getState().sessionState?.mode ?? 'preparation';
-}
+};
 
 interface SyncConflictParams {
   targetDeviceId: string | null;
@@ -47,7 +47,7 @@ const syncSharedOutputConflict = ({
   }
 
   setTargetDisabled(false);
-}
+};
 
 export const syncDemoWithMainPlayer = (demoDeviceId: string | null): void => {
   const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
@@ -59,7 +59,7 @@ export const syncDemoWithMainPlayer = (demoDeviceId: string | null): void => {
     pauseTarget: demoStore.pause,
     setTargetDisabled: demoStore.setDisabled,
   });
-}
+};
 
 export const syncMainWithDemoPlayer = (playerDeviceId: string | null): void => {
   const demoPlayerDeviceId = useSettingsStore.getState().demoPlayerAudioDeviceId;
@@ -71,4 +71,4 @@ export const syncMainWithDemoPlayer = (playerDeviceId: string | null): void => {
     pauseTarget: demoPlayerState.pause,
     setTargetDisabled: demoPlayerState.setDisabled,
   });
-}
+};

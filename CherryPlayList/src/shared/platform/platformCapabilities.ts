@@ -62,11 +62,11 @@ export const derivePlatformCapabilities = (mode: AppMode): PlatformCapabilities 
       return _exhaustive;
     }
   }
-}
+};
 
 export const refreshPlatformCapabilities = (mode: AppMode): void => {
   cachedCapabilities = derivePlatformCapabilities(mode);
-}
+};
 
 export const getPlatformCapabilities = (): PlatformCapabilities => {
   if (!cachedCapabilities) {
@@ -75,8 +75,8 @@ export const getPlatformCapabilities = (): PlatformCapabilities => {
     );
   }
   return cachedCapabilities;
-}
+};
 
 export const resetPlatformCapabilitiesForTests = (): void => {
   cachedCapabilities = null;
-}
+};

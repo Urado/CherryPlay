@@ -17,7 +17,7 @@ export const isOsNativeFileDataTransfer = (
     return false;
   }
   return dataTransfer.files.length > 0;
-}
+};
 
 const getPathForFileSafe = (
   file: File,
@@ -36,7 +36,7 @@ const getPathForFileSafe = (
     return normalizeFileBrowserPath(legacy);
   }
   return undefined;
-}
+};
 
 export const collectNativePathsFromDataTransfer = (
   dataTransfer: DataTransfer,
@@ -58,7 +58,7 @@ export const collectNativePathsFromDataTransfer = (
     }
   }
   return dedupePathOrder(out);
-}
+};
 
 const dedupePathOrder = (paths: string[]): string[] => {
   const seen = new Set<string>();
@@ -71,7 +71,7 @@ const dedupePathOrder = (paths: string[]): string[] => {
     result.push(p);
   }
   return result;
-}
+};
 
 export type PathStat = { isDirectory: boolean };
 
@@ -118,7 +118,7 @@ export const classifyNativePathsWithStat = async (
     inputCount: absolutePaths.length,
     statFailureCount,
   };
-}
+};
 
 const toStringArray = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
@@ -139,7 +139,7 @@ export const tryParseInternalFileBrowserPayload = (
     if (!parsed || typeof parsed !== 'object' || !('type' in parsed)) {
       return null;
     }
-    const t = (parsed).type;
+    const t = parsed.type;
     if (t === 'fileBrowser') {
       const o = parsed as { paths?: unknown; directories?: unknown };
       return {
@@ -157,7 +157,7 @@ export const tryParseInternalFileBrowserPayload = (
     return null;
   }
   return null;
-}
+};
 
 export const getPathForFileInRenderer = (file: File): string | undefined => {
   if (isPlatformInitialized()) {
@@ -172,4 +172,4 @@ export const getPathForFileInRenderer = (file: File): string | undefined => {
     return legacy;
   }
   return undefined;
-}
+};

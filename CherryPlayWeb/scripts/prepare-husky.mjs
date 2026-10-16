@@ -1,7 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
-const isCI = process.env.CI === 'true' || process.env.DOCKER === 'true' || process.env.NODE_ENV === 'production';
+const isCI =
+  process.env.CI === 'true' ||
+  process.env.DOCKER === 'true' ||
+  process.env.NODE_ENV === 'production';
 const hasGit = existsSync('.git');
 
 if (isCI || !hasGit) {

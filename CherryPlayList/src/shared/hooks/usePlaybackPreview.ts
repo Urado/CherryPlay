@@ -1,4 +1,3 @@
-
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useMemo } from 'react';
@@ -79,9 +78,7 @@ export const usePlaybackPreview = ({
 
         if (
           loadGeneration !== undefined &&
-          !useDemoPlayerStore
-            .getState()
-            .shouldAutoPlayTrack(track.id, workspaceId, loadGeneration)
+          !useDemoPlayerStore.getState().shouldAutoPlayTrack(track.id, workspaceId, loadGeneration)
         ) {
           return;
         }

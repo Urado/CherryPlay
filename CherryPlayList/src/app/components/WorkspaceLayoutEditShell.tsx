@@ -1,4 +1,3 @@
-
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { WorkspaceZone, Zone } from '@core/types/layout';
 import CloseIcon from '@mui/icons-material/Close';

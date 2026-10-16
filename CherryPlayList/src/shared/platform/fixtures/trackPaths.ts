@@ -50,12 +50,12 @@ const pathByBaseName = new Map<string, string>(
 
 const normalizeLookupKey = (fileName: string): string => {
   return fileName.trim().toLowerCase();
-}
+};
 
 export const getDemoTrackPathByFileName = (fileName: string): string | undefined => {
   const key = normalizeLookupKey(fileName);
   return pathByFileName.get(key) ?? pathByBaseName.get(key);
-}
+};
 
 export const resolveDemoPathForFileName = (fileName: string): string => {
   const known = getDemoTrackPathByFileName(fileName);
@@ -63,7 +63,7 @@ export const resolveDemoPathForFileName = (fileName: string): string => {
     return known;
   }
   return `/demo/music/${fileName}`;
-}
+};
 
 export const resolveDemoPathForFile = (file: File): string => {
   const fromName = getDemoTrackPathByFileName(file.name);
@@ -89,8 +89,8 @@ export const resolveDemoPathForFile = (file: File): string => {
   }
 
   return resolveDemoPathForFileName(file.name);
-}
+};
 
 export const listDemoAudioFilePaths = (): string[] => {
   return DEMO_AUDIO_FILES.map((file) => file.path);
-}
+};

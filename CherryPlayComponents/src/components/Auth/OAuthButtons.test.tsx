@@ -4,11 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  LEGAL_PD_CONSENT,
-  LEGAL_TERMS,
-  type ConsentInput,
-} from '../../constants/legalDocuments';
+import { LEGAL_PD_CONSENT, LEGAL_TERMS, type ConsentInput } from '../../constants/legalDocuments';
 import { OAUTH_PENDING_CONSENTS_STORAGE_KEY } from '../../constants/oauthPendingConsents';
 import type { AuthService } from '../../types/auth';
 

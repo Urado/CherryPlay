@@ -1,4 +1,3 @@
-
 import { isProjectGroup, ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { useProjectStore } from '@shared/stores';

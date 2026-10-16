@@ -42,7 +42,7 @@ export const createSimpleLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 const createCollectionsVerticalLayout = (): Layout => {
   const playlistZoneId = uuidv4();
@@ -108,7 +108,7 @@ const createCollectionsVerticalLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 export const createCollectionsLayout = (): Layout => {
   const playlistZoneId = uuidv4();
@@ -185,7 +185,7 @@ export const createCollectionsLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 export const createComplexLayout = (): Layout => {
   const playlistZoneId = uuidv4();
@@ -315,7 +315,7 @@ export const createComplexLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 export const createPlayerLayout = (): Layout => {
   const playerZoneId = uuidv4();
@@ -347,7 +347,7 @@ export const createPlayerLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 export const createPartyLayout = (): Layout => {
   const playerZoneId = uuidv4();
@@ -379,11 +379,11 @@ export const createPartyLayout = (): Layout => {
     },
     version: 1,
   };
-}
+};
 
 const createAimpPartyLayout = (): Layout => {
   return createPartyLayout();
-}
+};
 
 export const createLayoutByPreset = (preset: LayoutPreset): Layout => {
   switch (preset) {
@@ -404,8 +404,8 @@ export const createLayoutByPreset = (preset: LayoutPreset): Layout => {
     default:
       return createSimpleLayout();
   }
-}
+};
 
 export const createInitialLayout = (): Layout => {
   return createCollectionsVerticalLayout();
-}
+};

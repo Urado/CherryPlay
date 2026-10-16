@@ -33,7 +33,9 @@ describe('useStreamingOrchestrator server reachability polling', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.spyOn(partyService, 'checkServerReachable').mockResolvedValue(true);
-    jest.spyOn(signalRService, 'getConnectionState').mockReturnValue(signalR.HubConnectionState.Connected);
+    jest
+      .spyOn(signalRService, 'getConnectionState')
+      .mockReturnValue(signalR.HubConnectionState.Connected);
   });
 
   afterEach(() => {

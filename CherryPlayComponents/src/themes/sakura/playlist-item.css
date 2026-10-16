@@ -89,11 +89,8 @@
 }
 
 [data-theme='sakura'] .party-playlist-item-row {
-  padding-left: 8px;
+  padding: 8px;
   gap: 12px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-right: 8px;
 }
 
 [data-theme='sakura'] .party-playlist-item-name {
@@ -154,15 +151,11 @@
   .party-playlist-group-items
   > .party-playlist-item
   > .party-playlist-item-content::after,
-[data-theme='sakura']
-  .party-playlist-group-items
-  > .party-playlist-item--played::before,
+[data-theme='sakura'] .party-playlist-group-items > .party-playlist-item--played::before,
 [data-theme='sakura']
   .party-playlist-group-items
   > .party-playlist-item--played:not(:last-child)::before,
-[data-theme='sakura']
-  .party-playlist-group-items
-  > .party-playlist-item--played:last-child::before,
+[data-theme='sakura'] .party-playlist-group-items > .party-playlist-item--played:last-child::before,
 [data-theme='sakura']
   .party-playlist-group-items
   > .party-playlist-item--played
@@ -208,7 +201,7 @@
 
   [data-theme='sakura'] .party-playlist-item--current {
     padding: 12px 6px;
-    margin: 8px 8px;
+    margin: 8px;
   }
 
   [data-theme='sakura'] .party-playlist-item-row {

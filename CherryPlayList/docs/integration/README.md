@@ -5,6 +5,7 @@
 → **[docs/integration/](../../../docs/integration/)** — обзор подсистем, роли, ссылки на контракты и БД.
 
 В том числе:
+
 - [Accounts and Auth](../../../docs/integration/accounts-and-auth.md)
 - [Party Management](../../../docs/integration/party-management.md)
 - [Streaming](../../../docs/integration/streaming.md)

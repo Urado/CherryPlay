@@ -29,11 +29,7 @@ const ProjectNameInputComponent = ({ disabled, title }: ProjectNameInputProps) =
       disabled={disabled || projectStoreLoading}
       aria-label="Название проекта"
       aria-busy={projectStoreLoading}
-      title={
-        projectStoreLoading
-          ? 'Загрузка проекта…'
-          : title
-      }
+      title={projectStoreLoading ? 'Загрузка проекта…' : title}
     />
   );
 };

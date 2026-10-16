@@ -11,9 +11,7 @@ import { useSettingsStore } from '../../src/shared/stores/settingsStore';
 
 const originalFetch = global.fetch;
 const fetchMock = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>();
-const invokeMock = jest.fn(() =>
-  Promise.resolve({ success: true, data: 'https://server.test' }),
-);
+const invokeMock = jest.fn(() => Promise.resolve({ success: true, data: 'https://server.test' }));
 const platform = { invoke: invokeMock } as unknown as PlatformAPI;
 
 describe('useDesktopCompatibilityWarning updateVersion cache', () => {

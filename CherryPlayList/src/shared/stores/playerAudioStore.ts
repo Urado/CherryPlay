@@ -1,7 +1,6 @@
 import { Track } from '@core/types/track';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import { wireLoudnessPlaybackSync } from '../audio/playback/loudnessPlaybackSync';
 import { mainPlaybackEngine } from '../audio/playback/playbackEngines';
 import {

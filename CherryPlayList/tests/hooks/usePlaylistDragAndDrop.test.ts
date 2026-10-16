@@ -88,9 +88,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   useDragDropStore.getState().clearDragState();
   mockStatFile.mockReset();
-  mockStatFile.mockImplementation((path: string) => Promise.resolve({
-    isDirectory: /[/\\]dir$/i.test(path) || path.includes('__dir__') || path.endsWith('Folder'),
-  }));
+  mockStatFile.mockImplementation((path: string) =>
+    Promise.resolve({
+      isDirectory: /[/\\]dir$/i.test(path) || path.includes('__dir__') || path.endsWith('Folder'),
+    }),
+  );
 });
 
 describe('usePlaylistDragAndDrop', () => {

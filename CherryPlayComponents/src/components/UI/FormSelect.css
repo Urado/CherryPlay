@@ -1,4 +1,4 @@
-@import './FormField.css';
+@import url('./FormField.css');
 
 .form-select {
   width: 100%;

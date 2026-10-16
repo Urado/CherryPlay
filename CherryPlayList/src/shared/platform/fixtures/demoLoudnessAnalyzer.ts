@@ -59,21 +59,21 @@ export const DEMO_LOUDNESS_PROFILES: Readonly<Record<string, DemoLoudnessProfile
 
 const normalizePath = (path: string): string => {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '') || '/';
-}
+};
 
 const findDemoAudioFile = (path: string) => {
   const key = normalizePath(path);
   return DEMO_AUDIO_FILES.find((file) => normalizePath(file.path) === key);
-}
+};
 
 export const hasDemoLoudnessProfile = (path: string): boolean => {
   return normalizePath(path) in DEMO_LOUDNESS_PROFILES;
-}
+};
 
 export const getDemoLoudnessProfile = (path: string): DemoLoudnessProfile | null => {
   const key = normalizePath(path);
   return DEMO_LOUDNESS_PROFILES[key] ?? null;
-}
+};
 
 export const resolveDemoAnalyzeTargetLufs = (
   targetLufs: unknown,
@@ -89,7 +89,7 @@ export const resolveDemoAnalyzeTargetLufs = (
     resolved = targetLufs;
   }
   return { ok: true, targetLufs: resolved };
-}
+};
 
 export const analyzeDemoLoudness = (
   path: string,
@@ -112,7 +112,7 @@ export const analyzeDemoLoudness = (
     fileMtime: DEMO_AUDIO_FILE_MTIME_MS,
     algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
   };
-}
+};
 
 export const statDemoAudioFile = (path: string): AudioFileStat | null => {
   const file = findDemoAudioFile(path);
@@ -124,14 +124,14 @@ export const statDemoAudioFile = (path: string): AudioFileStat | null => {
     mtimeMs: DEMO_AUDIO_FILE_MTIME_MS,
     size: file.size,
   };
-}
+};
 
 export const handleDemoAnalyzeLoudness = (payload: unknown): IPCResponse<LoudnessAnalyzeResult> => {
   const path =
     typeof payload === 'object' &&
     payload !== null &&
     'path' in payload &&
-    typeof (payload).path === 'string'
+    typeof payload.path === 'string'
       ? (payload as { path: string }).path
       : '';
 
@@ -158,7 +158,7 @@ export const handleDemoAnalyzeLoudness = (payload: unknown): IPCResponse<Loudnes
 
   const target = resolveDemoAnalyzeTargetLufs(
     typeof payload === 'object' && payload !== null && 'targetLufs' in payload
-      ? (payload).targetLufs
+      ? payload.targetLufs
       : undefined,
   );
   if (!target.ok) {
@@ -180,14 +180,14 @@ export const handleDemoAnalyzeLoudness = (payload: unknown): IPCResponse<Loudnes
     success: true,
     data,
   };
-}
+};
 
 export const handleDemoStatAudioFile = (payload: unknown): IPCResponse<AudioFileStat> => {
   const path =
     typeof payload === 'object' &&
     payload !== null &&
     'path' in payload &&
-    typeof (payload).path === 'string'
+    typeof payload.path === 'string'
       ? (payload as { path: string }).path
       : '';
 
@@ -210,4 +210,4 @@ export const handleDemoStatAudioFile = (payload: unknown): IPCResponse<AudioFile
     success: true,
     data: stat,
   };
-}
+};

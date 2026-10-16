@@ -2,7 +2,6 @@ import type { PartyThemeId, PartyViewerStatusId } from '@cherryplay/components';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 export interface PartyPreviewScenarioState {
   isSynchronized: boolean;
   mockLiveEnabled: boolean;

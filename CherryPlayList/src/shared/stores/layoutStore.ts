@@ -1,4 +1,3 @@
-
 import { MAX_ZONES_PER_CONTAINER } from '@core/constants/layoutConstraints';
 import { WorkspaceId } from '@core/types/workspace';
 import type {
@@ -75,7 +74,9 @@ const cloneLayout = (layout: Layout): Layout => {
   return JSON.parse(JSON.stringify(layout)) as Layout;
 };
 
-const syncActiveUserWorkspaceLayoutInSlice = (slice: WorkspacePersistSlice): WorkspacePersistSlice => {
+const syncActiveUserWorkspaceLayoutInSlice = (
+  slice: WorkspacePersistSlice,
+): WorkspacePersistSlice => {
   if (slice.activeWorkspace.kind !== 'user') {
     return slice;
   }

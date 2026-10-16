@@ -1,4 +1,3 @@
-
 import { useProjectStore } from '@shared/stores';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { logger } from '@shared/utils';

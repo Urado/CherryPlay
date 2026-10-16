@@ -1,4 +1,3 @@
-
 export interface TokenPayload {
   organizerId: string;
   name: string;
@@ -20,7 +19,7 @@ export const constantTimeStringEqual = (a: string, b: string): boolean => {
   }
 
   return mismatch === 0;
-}
+};
 
 const isTokenPayload = (value: unknown): value is TokenPayload =>
   typeof value === 'object' &&
@@ -50,7 +49,7 @@ export const decodeToken = (token: string): TokenPayload | null => {
     console.error('[TokenUtils] Failed to decode token:', error);
     return null;
   }
-}
+};
 
 export const isTokenExpired = (token: string): boolean => {
   if (token.startsWith('demo.cherryplaylist.')) {
@@ -65,7 +64,7 @@ export const isTokenExpired = (token: string): boolean => {
   const now = Date.now();
 
   return now >= expirationTime - 60000;
-}
+};
 
 export const isTokenExpiringSoon = (token: string, daysThreshold: number = 7): boolean => {
   const payload = decodeToken(token);
@@ -78,7 +77,7 @@ export const isTokenExpiringSoon = (token: string, daysThreshold: number = 7): b
   const thresholdTime = daysThreshold * 24 * 60 * 60 * 1000;
 
   return expirationTime - now <= thresholdTime;
-}
+};
 
 export const getDaysUntilExpiration = (token: string): number | null => {
   const payload = decodeToken(token);
@@ -95,4 +94,4 @@ export const getDaysUntilExpiration = (token: string): number | null => {
   }
 
   return Math.ceil(diff / (24 * 60 * 60 * 1000));
-}
+};

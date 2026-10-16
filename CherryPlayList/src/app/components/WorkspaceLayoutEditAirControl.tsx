@@ -2,7 +2,6 @@ import AddIcon from '@mui/icons-material/Add';
 import type { LayoutEditAirSide } from '@shared/utils/layoutWorkspaceOperations';
 import React, { useRef } from 'react';
 
-
 import type { WorkspacePickerOption } from './workspaceLayoutEditOptions';
 import { useWorkspacePickerMenu, WorkspacePickerMenu } from './WorkspacePickerMenu';
 

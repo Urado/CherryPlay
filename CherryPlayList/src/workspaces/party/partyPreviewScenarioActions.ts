@@ -74,8 +74,7 @@ export const setPreviewConnectionBreak = (scenario: PreviewConnectionScenario): 
 export const setPreviewTheme = (themeId: PartyThemeId): void => {
   const store = getScenarioStore();
   const customizationSettingsOverride =
-    store.customizationSettingsOverride ??
-    (getDefaultCustomizationSettings(themeId));
+    store.customizationSettingsOverride ?? getDefaultCustomizationSettings(themeId);
 
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,

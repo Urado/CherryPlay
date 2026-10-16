@@ -86,20 +86,20 @@ const data: PartyDisplayData = {
 
 Общие React-компоненты для оболочки приложения (не PartyTheme). Экспортируются из `@cherryplay/components` вместе с формами и `PartyDisplay`.
 
-| Компонент | Назначение |
-| --------- | ---------- |
-| `Button` | Кнопки shell UI: модалки, кабинет, заголовок, редактор вечеринки |
-| `ButtonLink` | Стилизованная ссылка `<a>` с классами `cp-button` (кабинет, party shell) |
-| `Disclosure` | Раскрывающиеся секции (аккордеон) |
-| `Icon` | Обёртка для иконки с нормализованным размером; glyph передаётся через `children` (класс `cp-icon`); опция `shape="circle"` — круглая обводка |
-| `InfoIcon` | Компактный help-маркер «i» с круглой обводкой (`Icon` + `shape="circle"`) |
-| `IconButton` | Кнопка только с иконкой (`aria-label` обязателен) |
-| `PlaybackControlButton` | Круглая transport-кнопка play/pause/stop/next/error для плееров |
+| Компонент               | Назначение                                                                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                | Кнопки shell UI: модалки, кабинет, заголовок, редактор вечеринки                                                                             |
+| `ButtonLink`            | Стилизованная ссылка `<a>` с классами `cp-button` (кабинет, party shell)                                                                     |
+| `Disclosure`            | Раскрывающиеся секции (аккордеон)                                                                                                            |
+| `Icon`                  | Обёртка для иконки с нормализованным размером; glyph передаётся через `children` (класс `cp-icon`); опция `shape="circle"` — круглая обводка |
+| `InfoIcon`              | Компактный help-маркер «i» с круглой обводкой (`Icon` + `shape="circle"`)                                                                    |
+| `IconButton`            | Кнопка только с иконкой (`aria-label` обязателен)                                                                                            |
+| `PlaybackControlButton` | Круглая transport-кнопка play/pause/stop/next/error для плееров                                                                              |
 
 ### Legacy wrappers (обратная совместимость)
 
-| Компонент | Назначение |
-| --------- | ---------- |
+| Компонент    | Назначение                                                                                                                              |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `FormButton` | Legacy-обёртка над `Button` (auth-формы); `outline` → `ghost`; добавляет класс `form-button`. Новый shell UI — через `Button` напрямую. |
 
 ### FormButton
@@ -111,10 +111,10 @@ import { FormButton } from '@cherryplay/components';
 <FormButton variant="outline">Отмена</FormButton>
 ```
 
-| Prop | Значения | По умолчанию |
-| ---- | -------- | ------------ |
-| `variant` | `primary`, `secondary`, `outline` (`outline` → `ghost` у `Button`) | `primary` |
-| `loading`, `fullWidth` | `boolean` | `false` |
+| Prop                   | Значения                                                           | По умолчанию |
+| ---------------------- | ------------------------------------------------------------------ | ------------ |
+| `variant`              | `primary`, `secondary`, `outline` (`outline` → `ghost` у `Button`) | `primary`    |
+| `loading`, `fullWidth` | `boolean`                                                          | `false`      |
 
 **Не поддерживается:** `size`, `danger`, `iconOnly`, `startIcon`, `endIcon` — для этих случаев используйте `Button` напрямую.
 
@@ -130,16 +130,16 @@ import { Button } from '@cherryplay/components';
 <Button variant="ghost" startIcon={<CloseIcon />}>Закрыть</Button>
 ```
 
-| Prop | Значения | По умолчанию |
-| ---- | -------- | ------------ |
-| `variant` | `primary`, `secondary`, `danger`, `ghost` | `primary` |
-| `size` | `sm`, `md` | `md` |
-| `tone` | `neutral`, `danger` — resting цвет icon/border (`cp-button--tone-*`); ортогонален заливному `variant="danger"` | `neutral` |
-| `hoverable` | `boolean` — при `false` hover не меняет chrome (`cp-button--no-hover`) | `true` |
-| `filled` | `none`, `hover`, `always` — заливка фона (`cp-button--fill-*`); с `tone="danger"` — красная заливка на hover или всегда | `none` |
-| `loading`, `fullWidth`, `iconOnly`, `borderless` | `boolean` | `false` |
-| `loadingLabel` | `string` — текст метки при `loading` вместо `children` | `'Загрузка...'` |
-| `startIcon`, `endIcon` | `ReactNode` | — |
+| Prop                                             | Значения                                                                                                                | По умолчанию    |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `variant`                                        | `primary`, `secondary`, `danger`, `ghost`                                                                               | `primary`       |
+| `size`                                           | `sm`, `md`                                                                                                              | `md`            |
+| `tone`                                           | `neutral`, `danger` — resting цвет icon/border (`cp-button--tone-*`); ортогонален заливному `variant="danger"`          | `neutral`       |
+| `hoverable`                                      | `boolean` — при `false` hover не меняет chrome (`cp-button--no-hover`)                                                  | `true`          |
+| `filled`                                         | `none`, `hover`, `always` — заливка фона (`cp-button--fill-*`); с `tone="danger"` — красная заливка на hover или всегда | `none`          |
+| `loading`, `fullWidth`, `iconOnly`, `borderless` | `boolean`                                                                                                               | `false`         |
+| `loadingLabel`                                   | `string` — текст метки при `loading` вместо `children`                                                                  | `'Загрузка...'` |
+| `startIcon`, `endIcon`                           | `ReactNode`                                                                                                             | —               |
 
 При `iconOnly={true}` обязательны `aria-label` или `aria-labelledby`; иначе в dev-режиме `console.warn`. Для icon-only кнопок предпочтительнее `IconButton`.
 
@@ -153,11 +153,11 @@ CSS-классы: `cp-button`, `cp-button--{variant}`, `cp-button--{size}`, оп
 
 **Shared chrome (`buttonShared.tsx`):** `Button` и `ButtonLink` делят слой разметки и chrome-props (в т.ч. `startIcon` / `endIcon`).
 
-| API | Status |
-| --- | ------ |
-| Типы `ButtonChromeProps`, `ButtonVariant`, `ButtonSize`, `ButtonTone`, `ButtonFill` | **Публичные** — реэкспорт через `Button` (`@cherryplay/components`) |
-| `BUTTON_CHROME_DEFAULTS`, `resolveChromeProps`, `ButtonInnerContent` | **Internal** — только внутри модуля Button; из package index не реэкспортируются |
-| `cn` (`src/utils/cn.ts`) | **Internal** — не в package index |
+| API                                                                                 | Status                                                                           |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Типы `ButtonChromeProps`, `ButtonVariant`, `ButtonSize`, `ButtonTone`, `ButtonFill` | **Публичные** — реэкспорт через `Button` (`@cherryplay/components`)              |
+| `BUTTON_CHROME_DEFAULTS`, `resolveChromeProps`, `ButtonInnerContent`                | **Internal** — только внутри модуля Button; из package index не реэкспортируются |
+| `cn` (`src/utils/cn.ts`)                                                            | **Internal** — не в package index                                                |
 
 #### Дефолтные кнопки shell (out of the box) {#default-shell-buttons}
 
@@ -165,12 +165,12 @@ CSS-классы: `cp-button`, `cp-button--{variant}`, `cp-button--{size}`, оп
 
 PartyTheme задаёт собственные значения на `data-theme` и не обязан использовать shell-примитивы. Если оболочечный примитив размещён внутри PartyTheme, его семантические токены читаются на элементе и получают локальные значения темы. Для портального контента сохраняйте тематическую обёртку с `data-theme`. Атрибут оболочки `data-shell-theme` не заменяет `data-theme`. Подробнее: [контракт оболочки и PartyTheme](docs/SHELL_THEME.md) и [THEMES.md](../THEMES.md).
 
-| `variant` | Назначение | Токены и значение в общей тёмной теме |
-| --------- | ---------- | ------------------------------------------------- |
-| `primary` | Главное действие (Сохранить, Подтвердить) | `--accent-primary` (`#4a9eff`), при наведении `--accent-primary-hover` (`#368eea`) |
-| `secondary` | Вторичное действие | Фон `--bg-tertiary`, граница `--ui-border`; при наведении `--bg-hover` и акцентная граница |
-| `danger` | Деструктивное действие | Заливка и граница `--state-error` (`#d32f2f`) |
-| `ghost` | Тихое / icon-close / tertiary | Прозрачный фон и граница `--ui-border`; при наведении акцентные граница и текст. Без обводки — `borderless` |
+| `variant`   | Назначение                                | Токены и значение в общей тёмной теме                                                                       |
+| ----------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `primary`   | Главное действие (Сохранить, Подтвердить) | `--accent-primary` (`#4a9eff`), при наведении `--accent-primary-hover` (`#368eea`)                          |
+| `secondary` | Вторичное действие                        | Фон `--bg-tertiary`, граница `--ui-border`; при наведении `--bg-hover` и акцентная граница                  |
+| `danger`    | Деструктивное действие                    | Заливка и граница `--state-error` (`#d32f2f`)                                                               |
+| `ghost`     | Тихое / icon-close / tertiary             | Прозрачный фон и граница `--ui-border`; при наведении акцентные граница и текст. Без обводки — `borderless` |
 
 Размеры: `sm` (32px), `md` (40px); icon-only — квадрат с тем же размером. `shell-palette.css` задаёт общие цвета и геометрию (`--accent-*`, `--state-error`, `--ui-border`, `--cp-button-*`). Приложения могут переопределять эти токены внутри корня с `data-shell-theme="dark"`; PartyTheme задаёт свои значения локально на `data-theme`.
 
@@ -185,16 +185,16 @@ import { ButtonLink } from '@cherryplay/components';
 <ButtonLink href="/settings" variant="ghost" startIcon={<SettingsIcon />}>Настройки</ButtonLink>
 ```
 
-| Prop | Значения | По умолчанию |
-| ---- | -------- | ------------ |
-| `variant` | `primary`, `secondary`, `danger`, `ghost` | `primary` |
-| `size` | `sm`, `md` | `md` |
-| `tone` | `neutral`, `danger` | `neutral` |
-| `hoverable` | `boolean` | `true` |
-| `filled` | `none`, `hover`, `always` | `none` |
-| `fullWidth`, `iconOnly`, `disabled`, `borderless` | `boolean` | `false` |
-| `startIcon`, `endIcon` | `ReactNode` | — |
-| `href` | `string` | — (обязателен для навигации) |
+| Prop                                              | Значения                                  | По умолчанию                 |
+| ------------------------------------------------- | ----------------------------------------- | ---------------------------- |
+| `variant`                                         | `primary`, `secondary`, `danger`, `ghost` | `primary`                    |
+| `size`                                            | `sm`, `md`                                | `md`                         |
+| `tone`                                            | `neutral`, `danger`                       | `neutral`                    |
+| `hoverable`                                       | `boolean`                                 | `true`                       |
+| `filled`                                          | `none`, `hover`, `always`                 | `none`                       |
+| `fullWidth`, `iconOnly`, `disabled`, `borderless` | `boolean`                                 | `false`                      |
+| `startIcon`, `endIcon`                            | `ReactNode`                               | —                            |
+| `href`                                            | `string`                                  | — (обязателен для навигации) |
 
 **Не поддерживается:** `loading` — для индикатора загрузки используйте `Button`.
 
@@ -209,18 +209,18 @@ import { Disclosure } from '@cherryplay/components';
 
 <Disclosure title="Плейлист" variant="card" defaultExpanded summary="12 треков">
   …
-</Disclosure>
+</Disclosure>;
 ```
 
-| Prop | Тип | По умолчанию |
-| ---- | ---- | ------------ |
-| `title` | `string` (обязателен) | — |
-| `children` | `ReactNode` (обязателен) | — |
-| `className` | `string` | `''` |
-| `variant` | `flat`, `card` | `flat` |
-| `defaultExpanded` | `boolean` | `false` |
-| `summary` | `ReactNode` — краткий текст в заголовке при свёрнутом состоянии | — |
-| `expanded`, `onExpandedChange` | контролируемый режим | — |
+| Prop                           | Тип                                                             | По умолчанию |
+| ------------------------------ | --------------------------------------------------------------- | ------------ |
+| `title`                        | `string` (обязателен)                                           | —            |
+| `children`                     | `ReactNode` (обязателен)                                        | —            |
+| `className`                    | `string`                                                        | `''`         |
+| `variant`                      | `flat`, `card`                                                  | `flat`       |
+| `defaultExpanded`              | `boolean`                                                       | `false`      |
+| `summary`                      | `ReactNode` — краткий текст в заголовке при свёрнутом состоянии | —            |
+| `expanded`, `onExpandedChange` | контролируемый режим                                            | —            |
 
 Панель остаётся в DOM; в свёрнутом состоянии скрыта через `hidden` и `aria-hidden` (связь `aria-controls` остаётся валидной). ARIA: `aria-expanded`, `aria-controls`, клавиатурный toggle.
 
@@ -238,40 +238,40 @@ import { Icon, IconButton, InfoIcon } from '@cherryplay/components';
 <IconButton icon={<CloseIcon fontSize="inherit" />} aria-label="Закрыть" variant="ghost" size="sm" />
 ```
 
-| `Icon` prop | Тип | По умолчанию |
-| ----------- | --- | ------------ |
-| `size` | `sm`, `md`, `lg` | `md` |
-| `shape` | `none`, `circle` | `none` |
-| `className` | `string` | — |
-| `aria-hidden` | `boolean` | `true` |
-| `children` | `ReactNode` (обязателен) | — |
+| `Icon` prop   | Тип                      | По умолчанию |
+| ------------- | ------------------------ | ------------ |
+| `size`        | `sm`, `md`, `lg`         | `md`         |
+| `shape`       | `none`, `circle`         | `none`       |
+| `className`   | `string`                 | —            |
+| `aria-hidden` | `boolean`                | `true`       |
+| `children`    | `ReactNode` (обязателен) | —            |
 
 При `shape="circle"`: квадратный hit-box (`width` = `height` по size-токену), `border: 1px solid var(--ui-border)`, `border-radius: 50%`, glyph по центру (класс `cp-icon--circle`).
 
-| `InfoIcon` prop | Тип | По умолчанию |
-| --------------- | --- | ------------ |
-| `title` | `string` | — (обязателен; tooltip и `aria-label`) |
-| `size` | `sm`, `md`, `lg` | `sm` |
-| `className` | `string` | — |
-| остальные | HTML-атрибуты `span` | — |
+| `InfoIcon` prop | Тип                  | По умолчанию                           |
+| --------------- | -------------------- | -------------------------------------- |
+| `title`         | `string`             | — (обязателен; tooltip и `aria-label`) |
+| `size`          | `sm`, `md`, `lg`     | `sm`                                   |
+| `className`     | `string`             | —                                      |
+| остальные       | HTML-атрибуты `span` | —                                      |
 
-| `Icon` size | px | Типичное использование |
-| ----------- | -- | ---------------------- |
-| `sm` | 16 | Действия в строках, закрытие |
-| `md` | 20 | Тулбар, уведомления |
-| `lg` | 24 | Пустые состояния, акцент |
+| `Icon` size | px  | Типичное использование       |
+| ----------- | --- | ---------------------------- |
+| `sm`        | 16  | Действия в строках, закрытие |
+| `md`        | 20  | Тулбар, уведомления          |
+| `lg`        | 24  | Пустые состояния, акцент     |
 
-| `IconButton` prop | Значения | По умолчанию |
-| ----------------- | -------- | ------------ |
-| `icon` | `ReactNode` | — (обязателен) |
-| `aria-label` | `string` | — (обязателен) |
-| `variant` | `primary`, `secondary`, `danger`, `ghost` | `primary` |
-| `size` | `sm`, `md` | `md` |
-| `tone` | `neutral`, `danger` (pass-through на `Button`) | `neutral` |
-| `hoverable` | `boolean` (pass-through на `Button`) | `true` |
-| `filled` | `none`, `hover`, `always` (pass-through на `Button`) | `none` |
-| `iconSize` | `sm`, `md`, `lg` — размер glyph внутри кнопки | по `size` (`sm` → `sm`, `md` → `md`) |
-| `loading`, `fullWidth`, `disabled`, `borderless` | `boolean` | `false` |
+| `IconButton` prop                                | Значения                                             | По умолчанию                         |
+| ------------------------------------------------ | ---------------------------------------------------- | ------------------------------------ |
+| `icon`                                           | `ReactNode`                                          | — (обязателен)                       |
+| `aria-label`                                     | `string`                                             | — (обязателен)                       |
+| `variant`                                        | `primary`, `secondary`, `danger`, `ghost`            | `primary`                            |
+| `size`                                           | `sm`, `md`                                           | `md`                                 |
+| `tone`                                           | `neutral`, `danger` (pass-through на `Button`)       | `neutral`                            |
+| `hoverable`                                      | `boolean` (pass-through на `Button`)                 | `true`                               |
+| `filled`                                         | `none`, `hover`, `always` (pass-through на `Button`) | `none`                               |
+| `iconSize`                                       | `sm`, `md`, `lg` — размер glyph внутри кнопки        | по `size` (`sm` → `sm`, `md` → `md`) |
+| `loading`, `fullWidth`, `disabled`, `borderless` | `boolean`                                            | `false`                              |
 
 ### PlaybackControlButton
 
@@ -285,12 +285,12 @@ import { PlaybackControlButton } from '@cherryplay/components';
 <PlaybackControlButton control="error" title="Ошибка воспроизведения" disabled />
 ```
 
-| Prop | Значения | По умолчанию |
-| ---- | -------- | ------------ |
-| `control` | `play`, `pause`, `stop`, `next`, `error` | — (обязателен) |
-| `size` | `sm` (30px), `md` (36px; play/pause/error — 40px) | `md` |
-| `title`, `aria-label` | `string` | `aria-label` → `title` → дефолт по `control` |
-| `disabled`, `onClick`, `className` | стандартные атрибуты `<button>` | — |
+| Prop                               | Значения                                          | По умолчанию                                 |
+| ---------------------------------- | ------------------------------------------------- | -------------------------------------------- |
+| `control`                          | `play`, `pause`, `stop`, `next`, `error`          | — (обязателен)                               |
+| `size`                             | `sm` (30px), `md` (36px; play/pause/error — 40px) | `md`                                         |
+| `title`, `aria-label`              | `string`                                          | `aria-label` → `title` → дефолт по `control` |
+| `disabled`, `onClick`, `className` | стандартные атрибуты `<button>`                   | —                                            |
 
 CSS-классы: `cp-playback-control`, `cp-playback-control--{size}`, `cp-playback-control--emphasis` (крупнее play/pause/error на `md`), `cp-playback-control--error`.
 
@@ -324,14 +324,14 @@ CherryPlayList хранит локальные токены отступов, т
 
 **Вне MVP (post-backlog):**
 
-| Область | Причина отложения |
-| ------- | ----------------- |
-| Полный sweep MUI-иконок (~37 файлов в List) | Постепенная замена на `Icon` |
-| Admin-страницы Web (`AdminPages.css`) | Отдельная VS Code-подобная тема |
-| Player transport / volume (`PlayerControls`, `HeaderPlaybackPill`, `DemoPlayer`) | Круглые domain-контролы |
-| `AimpView` `<details>` | Локальные dropdown-паттерны |
-| SVG иконки PartyTheme (`base/`, `spring-cross-step/`) | Тематические ассеты, не shell |
-| `OAuthButtons` | Брендинг провайдеров |
+| Область                                                                          | Причина отложения               |
+| -------------------------------------------------------------------------------- | ------------------------------- |
+| Полный sweep MUI-иконок (~37 файлов в List)                                      | Постепенная замена на `Icon`    |
+| Admin-страницы Web (`AdminPages.css`)                                            | Отдельная VS Code-подобная тема |
+| Player transport / volume (`PlayerControls`, `HeaderPlaybackPill`, `DemoPlayer`) | Круглые domain-контролы         |
+| `AimpView` `<details>`                                                           | Локальные dropdown-паттерны     |
+| SVG иконки PartyTheme (`base/`, `spring-cross-step/`)                            | Тематические ассеты, не shell   |
+| `OAuthButtons`                                                                   | Брендинг провайдеров            |
 
 ## Типы
 

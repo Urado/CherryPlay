@@ -8,7 +8,6 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import { getGroupDisplayDepth, withGroupDisplayDepth } from './partyWorkspaceUtils';
 
-
 export type PartyPublishSyncParts = {
   playlist: string;
   metadata: string;
@@ -160,9 +159,7 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
       return {
         customizationSettings: withGroupDisplayDepth(
           customizationSettings,
-          customizationSettings.groupDisplayDepth === undefined
-            ? state.groupDisplayDepth
-            : depth,
+          customizationSettings.groupDisplayDepth === undefined ? state.groupDisplayDepth : depth,
         ),
         groupDisplayDepth:
           customizationSettings.groupDisplayDepth === undefined ? state.groupDisplayDepth : depth,
@@ -239,8 +236,8 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
 
 export const resetPartyWorkspaceState = (): void => {
   usePartyWorkspaceStore.getState().resetPartyWorkspaceState();
-}
+};
 
 export const resetPartyLinkState = (): void => {
   usePartyWorkspaceStore.getState().resetPartyLinkState();
-}
+};

@@ -29,7 +29,10 @@ const isTitleLikeHeading = (line: string): { level: 2 | 3; text: string } | null
     return null;
   }
 
-  return { level: hasSubsection ? 3 : 2, text: `${numbered[1]}${hasSubsection ? `.${numbered[2]}` : ''}. ${title}` };
+  return {
+    level: hasSubsection ? 3 : 2,
+    text: `${numbered[1]}${hasSubsection ? `.${numbered[2]}` : ''}. ${title}`,
+  };
 };
 
 const isUnorderedItem = (line: string): string | null => {
@@ -151,6 +154,8 @@ export const parseLegalMarkdown = (body: string): LegalBlock[] => {
 
 export const markdownBodyToParagraphs = (body: string): string[] => {
   return parseLegalMarkdown(body)
-    .filter((block): block is Extract<LegalBlock, { type: 'paragraph' }> => block.type === 'paragraph')
+    .filter(
+      (block): block is Extract<LegalBlock, { type: 'paragraph' }> => block.type === 'paragraph',
+    )
     .map((block) => block.text);
 };

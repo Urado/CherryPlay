@@ -28,7 +28,9 @@ jest.mock('@cherryplay/components', () => {
 });
 
 jest.mock('@shared/components', () => ({ OnlineUnavailablePanel: () => null }));
-jest.mock('@shared/demo/demoAuthFixture', () => ({ DEMO_ORGANIZER_DTO: { id: 'demo', name: 'Demo' } }));
+jest.mock('@shared/demo/demoAuthFixture', () => ({
+  DEMO_ORGANIZER_DTO: { id: 'demo', name: 'Demo' },
+}));
 jest.mock('@shared/platform', () => ({
   getAppMode: () => 'production',
   getPlatform: () => ({ invoke: (...args: unknown[]) => mockInvoke(...args) }),
@@ -84,7 +86,9 @@ describe('AccountView actions', () => {
     render(<AccountView />);
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Привязать существующую вечеринку' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Привязать существующую вечеринку' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть кабинет на сайте' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeVisible();
   });

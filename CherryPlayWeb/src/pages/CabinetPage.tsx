@@ -286,7 +286,7 @@ export const CabinetPage = () => {
     void (async () => {
       clearThemeAccessCache();
       await authService.logout();
-    void navigate(ROUTES.LOGIN, { replace: true, state: { passwordChanged: true } });
+      void navigate(ROUTES.LOGIN, { replace: true, state: { passwordChanged: true } });
     })();
   };
 

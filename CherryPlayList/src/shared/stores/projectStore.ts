@@ -23,7 +23,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/resetPartyWorkspaceForFreshProject';
 import {
   HistoryCommand,

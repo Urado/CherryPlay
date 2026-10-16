@@ -67,9 +67,9 @@ describe('nativeDataTransferPaths', () => {
   });
 
   it('classifyNativePathsWithStat splits files and directories', async () => {
-    const stat = jest.fn().mockImplementation((p: string) =>
-      Promise.resolve({ isDirectory: p === 'C:/Folder' }),
-    );
+    const stat = jest
+      .fn()
+      .mockImplementation((p: string) => Promise.resolve({ isDirectory: p === 'C:/Folder' }));
     const r = await classifyNativePathsWithStat(['C:/a.mp3', 'C:/Folder'], stat);
     expect(r.files).toEqual(['C:/a.mp3']);
     expect(r.directories).toEqual(['C:/Folder']);

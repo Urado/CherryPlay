@@ -1,4 +1,3 @@
-
 import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
 import * as signalR from '@microsoft/signalr';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -57,7 +56,10 @@ export const HeaderPlaybackPill: React.FC<HeaderPlaybackPillProps> = ({ disabled
       connectionState === signalR.HubConnectionState.Connecting ||
       connectionState === signalR.HubConnectionState.Reconnecting,
   });
-  const transmissionLabel = resolveHeaderPlaybackTransmissionLabel(transmissionState, sessionActive);
+  const transmissionLabel = resolveHeaderPlaybackTransmissionLabel(
+    transmissionState,
+    sessionActive,
+  );
 
   const handleToggle = useCallback(() => {
     void togglePlayPause({

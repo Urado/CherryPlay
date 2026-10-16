@@ -11,10 +11,9 @@ const beginBrowserLoginFlow = jest.fn<void, unknown[]>();
 const completeBrowserLoginFlow = jest.fn<void, unknown[]>();
 const failBrowserLoginFlow = jest.fn<void, unknown[]>();
 const resetBrowserLoginFlow = jest.fn<void, unknown[]>();
-const getBrowserLoginFlowState = jest.fn<
-  { status: 'idle' | 'waiting'; error: string | null },
-  []
->(() => ({ status: 'idle', error: null }));
+const getBrowserLoginFlowState = jest.fn<{ status: 'idle' | 'waiting'; error: string | null }, []>(
+  () => ({ status: 'idle', error: null }),
+);
 const subscribeBrowserLoginFlow = jest.fn((_listener: () => void) => {
   return () => undefined;
 });

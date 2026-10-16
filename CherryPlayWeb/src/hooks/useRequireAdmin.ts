@@ -16,7 +16,7 @@ export const useRequireAdmin = () => {
 
     const check = async () => {
       try {
-        const organizer = (await authService.checkAuth());
+        const organizer = await authService.checkAuth();
 
         if (cancelled) return;
 

@@ -21,7 +21,7 @@ export const isDesktopAuthCodeMessage = (data: unknown): data is DesktopAuthCode
     typeof record.code === 'string' &&
     record.code.trim().length > 0
   );
-}
+};
 
 export const readPendingDesktopAuthCode = (): string | null => {
   try {
@@ -30,11 +30,11 @@ export const readPendingDesktopAuthCode = (): string | null => {
   } catch {
     return null;
   }
-}
+};
 
 export const writePendingDesktopAuthCode = (code: string): void => {
   localStorage.setItem(DESKTOP_AUTH_PENDING_CODE_KEY, code.trim());
-}
+};
 
 export const clearPendingDesktopAuthCode = (): void => {
   try {
@@ -42,4 +42,4 @@ export const clearPendingDesktopAuthCode = (): void => {
   } catch {
     return;
   }
-}
+};

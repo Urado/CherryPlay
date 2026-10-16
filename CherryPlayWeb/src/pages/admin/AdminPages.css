@@ -5,6 +5,7 @@
   margin: 0 auto;
   padding: 26px 22px 42px;
   color: var(--text-primary);
+
   --admin-bg: var(--bg-primary);
   --admin-surface: var(--bg-secondary);
   --admin-surface-elevated: var(--bg-tertiary);

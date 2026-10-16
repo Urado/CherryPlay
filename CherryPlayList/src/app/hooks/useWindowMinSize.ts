@@ -1,4 +1,3 @@
-
 import type { Layout } from '@core/types/layout';
 import { APP_MIN_WINDOW_WIDTH, APP_MIN_WINDOW_HEIGHT } from '@shared/contracts/windowMins';
 import { getAppMode } from '@shared/platform';

@@ -6,7 +6,10 @@ import {
   initializeGlobalHistory,
   removeProjectStore,
 } from '../../../src/shared/stores/projectStoreFactory';
-import { clearExpiredAuthSession, setAuthSessionToken } from '../../../src/shared/utils/authSession';
+import {
+  clearExpiredAuthSession,
+  setAuthSessionToken,
+} from '../../../src/shared/utils/authSession';
 import { runProjectSaveTransaction } from '../../../src/shared/utils/projectSaveTransaction';
 
 const mockInvoke = jest.fn();

@@ -12,7 +12,10 @@ const getWebBaseUrlMock = jest.fn<Promise<string>, unknown[]>();
 const getServerUrlMock = jest.fn<Promise<string>, unknown[]>();
 const apiFetchMock = jest.fn<Promise<Response>, [string, RequestInit?]>();
 const mockWindowOpen = jest.fn();
-const invokeMock = jest.fn<Promise<{ success: boolean; error?: string }>, [string, { url: string }] >();
+const invokeMock = jest.fn<
+  Promise<{ success: boolean; error?: string }>,
+  [string, { url: string }]
+>();
 
 jest.mock('@shared/config/serverConfig', () => {
   const actual = jest.requireActual<typeof import('@shared/config/serverConfig')>(
@@ -89,15 +92,15 @@ describe('authService browser SSO', () => {
 
       const call = invokeMock.mock.calls[0] as [string, { url: string }];
       expect(call[0]).toBe('auth:openExternal');
-      expect(call[1].url).toMatch(
-        /^https:\/\/web\.example\.com\/login\?client=desktop&return_to=/,
-      );
+      expect(call[1].url).toMatch(/^https:\/\/web\.example\.com\/login\?client=desktop&return_to=/);
       const url = call[1].url;
       expect(url).toContain(`return_to=${encodeURIComponent('cherryplaylist://auth')}`);
     });
 
     it('throws when auth:openExternal fails', async () => {
-      (window as unknown as { api: { invoke: typeof invokeMock } }).api.invoke.mockResolvedValueOnce({
+      (
+        window as unknown as { api: { invoke: typeof invokeMock } }
+      ).api.invoke.mockResolvedValueOnce({
         success: false,
         error: 'blocked by OS',
       });

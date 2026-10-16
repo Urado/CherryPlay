@@ -3,7 +3,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useModalKeyboard } from '@shared/hooks';
 import React, { useId, useState, useCallback } from 'react';
 
-
 export type WorkspaceNameModalMode = 'save-as' | 'rename';
 
 export interface WorkspaceNameModalProps {

@@ -12,6 +12,9 @@ export const isGainOverridden = (
   return Math.abs(effectiveGainDb - autoGainDb) >= GAIN_AUTO_MATCH_TOLERANCE_DB;
 };
 
-export const isCompressionOverridden = (effectiveStrength: number, autoStrength: number): boolean => {
+export const isCompressionOverridden = (
+  effectiveStrength: number,
+  autoStrength: number,
+): boolean => {
   return Math.abs(effectiveStrength - autoStrength) >= COMPRESSION_AUTO_MATCH_TOLERANCE;
 };

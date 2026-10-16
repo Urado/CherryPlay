@@ -112,7 +112,10 @@ const AppShell = () => {
           <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
           <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
           <Route path={ROUTES.CABINET} element={<CabinetPage />} />
-          <Route path={ROUTES.ADMIN_ROOT} element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />} />
+          <Route
+            path={ROUTES.ADMIN_ROOT}
+            element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />}
+          />
           <Route path={ROUTES.ADMIN_ORGANIZERS} element={<AdminOrganizersPage />} />
           <Route path="/admin/organizers/:id" element={<AdminOrganizerDetailPage />} />
           <Route path={ROUTES.PRIVACY} element={<LegalDocumentPage docKey="privacy" />} />

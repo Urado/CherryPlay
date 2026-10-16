@@ -2,7 +2,10 @@ const mockNotifications = [{ id: 'notice-1', type: 'success', message: 'Доба
 
 jest.mock('../../../src/shared/stores/uiStore', () => ({
   useUIStore: (
-    selector?: (state: { notifications: typeof mockNotifications; removeNotification: () => void }) => unknown,
+    selector?: (state: {
+      notifications: typeof mockNotifications;
+      removeNotification: () => void;
+    }) => unknown,
   ) => {
     const state = { notifications: mockNotifications, removeNotification: jest.fn() };
     return selector ? selector(state) : state;

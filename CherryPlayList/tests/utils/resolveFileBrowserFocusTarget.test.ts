@@ -5,7 +5,10 @@ import {
 import type { Layout } from '../../src/core/types/layout';
 import { resolveFileBrowserFocusTarget } from '../../src/shared/utils/resolveFileBrowserFocusTarget';
 
-const createTwoFileBrowserLayout = (firstWorkspaceId: string, secondWorkspaceId: string): Layout => {
+const createTwoFileBrowserLayout = (
+  firstWorkspaceId: string,
+  secondWorkspaceId: string,
+): Layout => {
   return {
     version: 1,
     rootZone: {

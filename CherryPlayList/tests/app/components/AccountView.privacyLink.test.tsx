@@ -84,11 +84,7 @@ jest.mock('@shared/services/authService', () => ({
 
 jest.mock('@shared/stores', () => ({
   useClientOutdatedStore: () => ({ isOutdated: false, requiredVersion: null }),
-  useUIStore: (
-    selector: (s: {
-      addNotification: typeof addNotificationMock;
-    }) => unknown,
-  ) =>
+  useUIStore: (selector: (s: { addNotification: typeof addNotificationMock }) => unknown) =>
     selector({
       addNotification: addNotificationMock,
     }),
@@ -136,7 +132,9 @@ describe('AccountView privacy link', () => {
     render(<AccountView onClose={onCloseMock} />);
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Привязать существующую вечеринку' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Привязать существующую вечеринку' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть кабинет на сайте' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeVisible();
   });

@@ -25,19 +25,21 @@ export const resolvePartyHeaderGuideTargetKind = (input: {
     return PARTY_HEADER_GUIDE_TARGET_RESUME;
   }
   return PARTY_HEADER_GUIDE_TARGET_START;
-}
+};
 
 export const resolvePartyHeaderGuideStartLabel = (streamingSource: string): string => {
   return streamingSource === 'aimp' ? 'Включить онлайн' : 'Начать проигрывание';
-}
+};
 
 export const resolvePartyHeaderGuideStopLabel = (streamingSource: string): string => {
   return streamingSource === 'aimp' ? 'Выключить онлайн' : 'Остановить проигрывание';
-}
+};
 
-export const findPartyHeaderGuideTarget = (kind: PartyHeaderGuideTargetKind): HTMLElement | null => {
+export const findPartyHeaderGuideTarget = (
+  kind: PartyHeaderGuideTargetKind,
+): HTMLElement | null => {
   return document.querySelector<HTMLElement>(`[${PARTY_HEADER_GUIDE_TARGET_ATTR}="${kind}"]`);
-}
+};
 
 let highlightTimeoutId: number | null = null;
 let highlightedElement: HTMLElement | null = null;
@@ -51,7 +53,7 @@ export const clearPartyHeaderGuideHighlight = (): void => {
     highlightedElement.classList.remove(PARTY_HEADER_GUIDE_HIGHLIGHT_CLASS);
     highlightedElement = null;
   }
-}
+};
 
 export const runPartyHeaderGuideHighlight = (target: HTMLElement): void => {
   clearPartyHeaderGuideHighlight();
@@ -61,7 +63,7 @@ export const runPartyHeaderGuideHighlight = (target: HTMLElement): void => {
   highlightTimeoutId = window.setTimeout(() => {
     clearPartyHeaderGuideHighlight();
   }, PARTY_HEADER_GUIDE_HIGHLIGHT_MS);
-}
+};
 
 export const waitForPartyHeaderGuideTarget = (
   kind: PartyHeaderGuideTargetKind,
@@ -115,4 +117,4 @@ export const waitForPartyHeaderGuideTarget = (
 
     tryFind();
   });
-}
+};

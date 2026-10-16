@@ -1,9 +1,7 @@
 import type { PartyViewerStatusId, PlaybackState } from '@cherryplay/components';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
-export const isPlaybackLiveActive = (
-  playbackState: PlaybackState | null | undefined,
-): boolean => {
+export const isPlaybackLiveActive = (playbackState: PlaybackState | null | undefined): boolean => {
   if (playbackState == null) {
     return false;
   }

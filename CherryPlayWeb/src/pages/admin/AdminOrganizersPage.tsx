@@ -95,9 +95,7 @@ export const AdminOrganizersPage = () => {
         />
       </div>
 
-      {error && (
-        <ErrorMessage message={error} />
-      )}
+      {error && <ErrorMessage message={error} />}
 
       {loading ? (
         <p>Загрузка…</p>

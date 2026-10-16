@@ -45,11 +45,11 @@ export const clampLoudnessQuietGapRangeLu = (value: number): number => {
     MAX_LOUDNESS_QUIET_GAP_RANGE_LU,
     Math.max(MIN_LOUDNESS_QUIET_GAP_RANGE_LU, value),
   );
-}
+};
 
 export const clampLoudnessTargetLufs = (value: number): number => {
   return Math.min(MAX_TARGET_LUFS, Math.max(MIN_TARGET_LUFS, value));
-}
+};
 
 export const computeAutoGainDb = (
   integratedLufs: number,
@@ -60,7 +60,7 @@ export const computeAutoGainDb = (
   const lufsGainDb = targetLufs - integratedLufs;
   const headroomCapDb = headroomDbTp - truePeakDb;
   return Math.min(lufsGainDb, headroomCapDb);
-}
+};
 
 export const resolveQuietGapRangePercent = (value: number): number => {
   const clamped = clampLoudnessQuietGapRangeLu(value);
@@ -69,7 +69,7 @@ export const resolveQuietGapRangePercent = (value: number): number => {
       (MAX_LOUDNESS_QUIET_GAP_RANGE_LU - MIN_LOUDNESS_QUIET_GAP_RANGE_LU)) *
     100
   );
-}
+};
 
 export type LoudnessSettings = {
   loudnessNormalizationEnabled: boolean;

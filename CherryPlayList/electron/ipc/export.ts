@@ -23,7 +23,10 @@ export interface ExportResult {
   failed: Array<{ path: string; error: string }>;
 }
 
-const exportWithNumberPrefix = async (tracks: Track[], targetPath: string): Promise<ExportResult> => {
+const exportWithNumberPrefix = async (
+  tracks: Track[],
+  targetPath: string,
+): Promise<ExportResult> => {
   const result: ExportResult = {
     successful: [],
     failed: [],

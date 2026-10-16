@@ -14,7 +14,10 @@ const NON_SESSION_FORBIDDEN_CODES = new Set([
   'admin_only',
 ]);
 
-export const handleApiResponse = async <T>(response: Response, defaultMessage: string): Promise<T> => {
+export const handleApiResponse = async <T>(
+  response: Response,
+  defaultMessage: string,
+): Promise<T> => {
   if (!response.ok) {
     const error = await createApiError(response, defaultMessage);
 
@@ -48,7 +51,7 @@ export const handleApiResponse = async <T>(response: Response, defaultMessage: s
   } catch (e) {
     throw new Error(`Failed to parse JSON response: ${e instanceof Error ? e.message : String(e)}`);
   }
-}
+};
 
 export const createApiError = async (
   response: Response,
@@ -91,7 +94,7 @@ export const createApiError = async (
     statusText: response.statusText,
     code,
   };
-}
+};
 
 export const parseApiErrorPayload = async <T>(response: Response): Promise<T | null> => {
   try {
@@ -101,7 +104,7 @@ export const parseApiErrorPayload = async <T>(response: Response): Promise<T | n
   } catch {
     return null;
   }
-}
+};
 
 export const isSessionAuthError = (status: number, code?: string): boolean => {
   if (status === 401) {
@@ -114,8 +117,8 @@ export const isSessionAuthError = (status: number, code?: string): boolean => {
     return false;
   }
   return true;
-}
+};
 
 export const isAuthError = (status: number, code?: string): boolean => {
   return isSessionAuthError(status, code);
-}
+};

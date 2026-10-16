@@ -9,7 +9,6 @@ export const isDefinitivePartyExistenceError = (error: unknown): boolean => {
   }
   const message = error.message;
   return (
-    message.includes('необходимо войти') ||
-    message.includes('Некорректный идентификатор вечеринки')
+    message.includes('необходимо войти') || message.includes('Некорректный идентификатор вечеринки')
   );
 };

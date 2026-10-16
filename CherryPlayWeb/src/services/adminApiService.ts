@@ -119,15 +119,12 @@ class AdminApiService {
   }
 
   async revokeEntitlement(request: CreateEntitlementRevocationRequest): Promise<void> {
-    const response = await apiFetch(
-      getApiUrl(API_ENDPOINTS.ADMIN.ENTITLEMENT_REVOCATIONS),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(request),
-      },
-    );
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.ENTITLEMENT_REVOCATIONS), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(request),
+    });
 
     if (!response.ok) {
       const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());

@@ -3,7 +3,6 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { ListRowCompound } from '@shared/components/ListRow';
 import React from 'react';
 
-
 export interface FileBrowserItem {
   name: string;
   path: string;

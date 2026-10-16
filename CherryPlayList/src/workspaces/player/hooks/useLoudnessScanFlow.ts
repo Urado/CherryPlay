@@ -1,4 +1,3 @@
-
 import type { Track } from '@core/types/track';
 import { getPlatformCapabilities } from '@shared/platform';
 import {

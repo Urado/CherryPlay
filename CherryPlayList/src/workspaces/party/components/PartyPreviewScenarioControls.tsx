@@ -3,7 +3,6 @@ import { Button, Disclosure } from '@cherryplay/components';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 import React, { useMemo } from 'react';
 
-
 import {
   resetPreviewScenario,
   setPreviewConnectionBreak,

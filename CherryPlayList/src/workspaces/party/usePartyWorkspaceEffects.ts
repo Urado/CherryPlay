@@ -153,11 +153,7 @@ export const usePartyWorkspaceEffects = (isAuth: boolean, networkEnabled: boolea
         return false;
       }
     },
-    [
-      networkEnabled,
-      setPartyCustomizationSettingsInMeta,
-      setPartyThemeIdInMeta,
-    ],
+    [networkEnabled, setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
   const restoreAfterReconnect = useCallback(
@@ -404,11 +400,7 @@ export const usePartyWorkspaceEffects = (isAuth: boolean, networkEnabled: boolea
     store.setCustomizationSettings(
       resolveLoadedCustomizationSettings(resolvedThemeId, meta.partyCustomizationSettings),
     );
-  }, [
-    meta.partyThemeId,
-    meta.partyCustomizationSettings,
-    projectIdentityKey,
-  ]);
+  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
 
   useEffect(() => {
     if (networkEnabled) {

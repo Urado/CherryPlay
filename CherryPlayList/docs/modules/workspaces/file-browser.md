@@ -12,11 +12,11 @@
 
 Зона `fileBrowser` в layout — полноценный **`IWorkspaceModule`** в `workspaceRegistry`:
 
-| | |
-| --- | --- |
-| **Модуль** | `src/workspaces/fileBrowser/index.ts` — `type: 'fileBrowser'`, компонент `FileBrowserWorkspaceView` (`SourcesPanel` + заголовок панели) |
-| **Регистрация** | Side-effect импорт `@workspaces/fileBrowser` в `src/entry.tsx` (как у `playlist`, `collection`, …) |
-| **Рендер** | `WorkspaceRenderer` по `workspaceType` из реестра (без отдельной ветки `if (fileBrowser)`) |
+|                 |                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Модуль**      | `src/workspaces/fileBrowser/index.ts` — `type: 'fileBrowser'`, компонент `FileBrowserWorkspaceView` (`SourcesPanel` + заголовок панели) |
+| **Регистрация** | Side-effect импорт `@workspaces/fileBrowser` в `src/entry.tsx` (как у `playlist`, `collection`, …)                                      |
+| **Рендер**      | `WorkspaceRenderer` по `workspaceType` из реестра (без отдельной ветки `if (fileBrowser)`)                                              |
 
 **Минимальные размеры зоны** (placeholder, см. [Layout System — минимальные размеры](../systems/layout-system.md)): **`minWidth` 240**, **`minHeight` 200** — на контракте модуля; enforcement через split clamp и add-adjacent check, не через CSS.
 
@@ -24,13 +24,13 @@
 
 ## Multi-instance (MVP)
 
-| Аспект | Поведение |
-|--------|-----------|
-| **Props** | `FileBrowser({ workspaceId })`, `SourcesPanel({ workspaceId })` |
-| **Текущая папка** | `settingsStore.fileBrowserPathsByWorkspaceId[workspaceId]` — см. [Settings Store](../stores/settings-store.md) |
-| **История «Назад»** | Локальный state в каждом `FileBrowser` (не persist) |
-| **Focus «Показать в файлах»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md) |
-| **Удаление зоны** | `cleanupWorkspaceInstance` удаляет запись пути из map |
+| Аспект                        | Поведение                                                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Props**                     | `FileBrowser({ workspaceId })`, `SourcesPanel({ workspaceId })`                                                |
+| **Текущая папка**             | `settingsStore.fileBrowserPathsByWorkspaceId[workspaceId]` — см. [Settings Store](../stores/settings-store.md) |
+| **История «Назад»**           | Локальный state в каждом `FileBrowser` (не persist)                                                            |
+| **Focus «Показать в файлах»** | Один инстанс по `targetWorkspaceId` — см. [UI Store](../stores/ui-store.md)                                    |
+| **Удаление зоны**             | `cleanupWorkspaceInstance` удаляет запись пути из map                                                          |
 
 **Вне MVP:** переключатель источников (playlists/db) per-zone, отдельные заголовки зон («Файлы 1/2»), path в узле layout tree.
 

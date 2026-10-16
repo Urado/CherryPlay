@@ -1,4 +1,3 @@
-
 export interface AudioDevice {
   deviceId: string;
   label: string;
@@ -7,7 +6,7 @@ export interface AudioDevice {
 
 export const isSinkIdSupported = (): boolean => {
   return typeof HTMLAudioElement !== 'undefined' && 'setSinkId' in HTMLAudioElement.prototype;
-}
+};
 
 export const getAudioOutputDevices = async (): Promise<AudioDevice[]> => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -35,11 +34,11 @@ export const getAudioOutputDevices = async (): Promise<AudioDevice[]> => {
     console.error('Failed to enumerate audio devices', error);
     return [];
   }
-}
+};
 
 export const getDefaultDeviceId = (): string => {
   return 'default';
-}
+};
 
 const isDeviceNotFoundError = (error: unknown): boolean => {
   if (error instanceof DOMException) {
@@ -49,7 +48,7 @@ const isDeviceNotFoundError = (error: unknown): boolean => {
     return error.message.includes('not found') || error.message.includes('NotFoundError');
   }
   return false;
-}
+};
 
 export const setAudioSinkId = async (
   audioElement: HTMLAudioElement,
@@ -62,9 +61,9 @@ export const setAudioSinkId = async (
   const targetDeviceId = deviceId || getDefaultDeviceId();
 
   try {
-    await (audioElement as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(
-      targetDeviceId,
-    );
+    await (
+      audioElement as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> }
+    ).setSinkId(targetDeviceId);
   } catch (error) {
     if (isDeviceNotFoundError(error) && targetDeviceId !== getDefaultDeviceId()) {
       try {
@@ -81,4 +80,4 @@ export const setAudioSinkId = async (
     console.error('Failed to set audio sink ID', error);
     throw error;
   }
-}
+};

@@ -1,4 +1,4 @@
-@import '../primitives/Button/Button.css';
+@import url('../primitives/Button/Button.css');
 
 .form-button--outline.cp-button--ghost {
   background: transparent;

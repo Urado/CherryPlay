@@ -2,7 +2,7 @@ import type { Zone } from '../../core/types/layout';
 
 const formatSizePercent = (size: number): string => {
   return size.toFixed(2);
-}
+};
 
 export const getLayoutStructureSignature = (zone: Zone): string => {
   if (zone.type === 'workspace') {
@@ -10,7 +10,7 @@ export const getLayoutStructureSignature = (zone: Zone): string => {
   }
 
   return `${zone.direction}(${zone.zones.map(getLayoutStructureSignature).join(',')})`;
-}
+};
 
 export const getLayoutStructureDirtySignature = (zone: Zone): string => {
   if (zone.type === 'workspace') {
@@ -18,7 +18,7 @@ export const getLayoutStructureDirtySignature = (zone: Zone): string => {
   }
 
   return `${zone.direction}(${zone.zones.map(getLayoutStructureDirtySignature).join(',')})`;
-}
+};
 
 export const getLayoutZoneSignature = (zone: Zone): string => {
   if (zone.type === 'workspace') {
@@ -27,4 +27,4 @@ export const getLayoutZoneSignature = (zone: Zone): string => {
 
   const sizesPart = zone.sizes.map(formatSizePercent).join(',');
   return `${zone.direction}[${sizesPart}](${zone.zones.map(getLayoutZoneSignature).join(',')})`;
-}
+};

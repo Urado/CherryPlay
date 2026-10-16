@@ -28,8 +28,7 @@
 }
 
 .party-editor-label--row {
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: space-between;
 }
@@ -292,14 +291,15 @@
   z-index: 1000;
   max-height: 400px;
   overflow-y: auto;
-  animation: dropdownFadeIn 0.2s ease;
+  animation: dropdown-fade-in 0.2s ease;
 }
 
-@keyframes dropdownFadeIn {
+@keyframes dropdown-fade-in {
   from {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -649,7 +649,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .party-editor-family-accent {
@@ -810,8 +810,7 @@
   padding-top: 0;
   border-top: none;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: flex-start;
   gap: var(--spacing-sm, 8px);
@@ -839,8 +838,7 @@
   padding-top: 0;
   border-top: none;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;

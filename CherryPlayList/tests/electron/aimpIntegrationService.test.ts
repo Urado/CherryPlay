@@ -111,7 +111,7 @@ class FakeServer extends EventEmitter {
 
   listen(pathToListen: net.ListenOptions | string, callback?: () => void): this {
     this.listenPath =
-      typeof pathToListen === 'string' ? pathToListen : JSON.stringify(pathToListen) ?? '';
+      typeof pathToListen === 'string' ? pathToListen : (JSON.stringify(pathToListen) ?? '');
     callback?.();
     return this;
   }
@@ -175,7 +175,7 @@ describe('AimpIntegrationService lifecycle', () => {
       return targetPath.toString().endsWith(manifestSuffix) && mode !== 'missing';
     });
 
-    readFileSyncSpy.mockImplementation(((targetPath: fs.PathOrFileDescriptor) => {
+    readFileSyncSpy.mockImplementation((targetPath: fs.PathOrFileDescriptor) => {
       const normalizedPath = targetPath.toString();
       if (!normalizedPath.endsWith(manifestSuffix)) {
         return originalReadFileSync(targetPath, 'utf8');
@@ -193,7 +193,7 @@ describe('AimpIntegrationService lifecycle', () => {
       }
 
       return JSON.stringify(validManifest);
-    }));
+    });
   };
 
   const createService = (): void => {

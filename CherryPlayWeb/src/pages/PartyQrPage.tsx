@@ -20,9 +20,8 @@ export const PartyQrPage = () => {
   const [party, setParty] = useState<PublicPartyDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const themeId = party && isValidPartyTheme(party.partyThemeId)
-    ? party.partyThemeId
-    : DEFAULT_PARTY_THEME_ID;
+  const themeId =
+    party && isValidPartyTheme(party.partyThemeId) ? party.partyThemeId : DEFAULT_PARTY_THEME_ID;
   const themeVars = usePartyThemeVars(themeId, party?.customizationSettings);
 
   useEffect(() => {
@@ -56,20 +55,30 @@ export const PartyQrPage = () => {
   }, [party]);
 
   const title = party?.title?.trim() || party?.name || 'Вечеринка';
-  const partyUrl = shortCode ? new URL(ROUTES.PARTY_VIEW(shortCode), window.location.origin).toString() : '';
+  const partyUrl = shortCode
+    ? new URL(ROUTES.PARTY_VIEW(shortCode), window.location.origin).toString()
+    : '';
 
   return (
     <div className="party-qr-page" data-theme={themeId} style={themeVars}>
       <header className="party-qr-page-header">
         {shortCode && (
-          <Link to={ROUTES.PARTY_VIEW(shortCode)} className="party-view-back-btn" title="К вечеринке">
+          <Link
+            to={ROUTES.PARTY_VIEW(shortCode)}
+            className="party-view-back-btn"
+            title="К вечеринке"
+          >
             ← К вечеринке
           </Link>
         )}
       </header>
       <main className="party-qr-page-main">
         {loading && <p>Загрузка…</p>}
-        {!loading && error && <p className="party-qr-page-error" role="alert">{error}</p>}
+        {!loading && error && (
+          <p className="party-qr-page-error" role="alert">
+            {error}
+          </p>
+        )}
         {!loading && !error && party && (
           <>
             <p className="party-qr-page-description">Отсканируйте код, чтобы открыть вечеринку</p>

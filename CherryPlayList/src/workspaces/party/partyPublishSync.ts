@@ -54,7 +54,7 @@ export const buildPartyPublishMetadataSignature = (store: PartyPublishMetadataSl
     danceTags: store.danceTags,
     isListedInCatalog: store.isListedInCatalog,
   });
-}
+};
 
 export const buildPartyPublishPlaylistSignature = (params: {
   streamingSource: string;
@@ -63,7 +63,7 @@ export const buildPartyPublishPlaylistSignature = (params: {
   partyTrackDisplay: PartyTrackDisplaySettings;
 }): string => {
   return JSON.stringify(buildPlaylistForApi(params));
-}
+};
 
 export const buildPartyPublishSyncParts = (params: {
   store: PartyPublishMetadataSlice;
@@ -76,7 +76,7 @@ export const buildPartyPublishSyncParts = (params: {
     playlist: buildPartyPublishPlaylistSignature(params),
     metadata: buildPartyPublishMetadataSignature(params.store),
   };
-}
+};
 
 export const getCurrentPartyPublishSyncParts = (): PartyPublishSyncParts => {
   const store = usePartyWorkspaceStore.getState();
@@ -88,7 +88,7 @@ export const getCurrentPartyPublishSyncParts = (): PartyPublishSyncParts => {
     items: project.items,
     partyTrackDisplay: project.meta.partyTrackDisplay,
   });
-}
+};
 
 export const resolveHeaderPartyPublishHighlight = (input: {
   hasLinkedParty: boolean;
@@ -109,13 +109,13 @@ export const resolveHeaderPartyPublishHighlight = (input: {
     input.lastSynced.playlist !== input.current.playlist ||
     input.lastSynced.metadata !== input.current.metadata
   );
-}
+};
 
 export const markPartyPublishFullySynced = (parts?: PartyPublishSyncParts): void => {
   usePartyWorkspaceStore
     .getState()
     .setLastSyncedPublishParts(parts ?? getCurrentPartyPublishSyncParts());
-}
+};
 
 export const markPartyPublishMetadataSynced = (metadataSignature?: string): void => {
   const store = usePartyWorkspaceStore.getState();
@@ -128,7 +128,7 @@ export const markPartyPublishMetadataSynced = (metadataSignature?: string): void
     playlist: previous.playlist,
     metadata: metadataSignature ?? buildPartyPublishMetadataSignature(store),
   });
-}
+};
 
 export const markPartyPublishCatalogVisibilitySynced = (listed: boolean): void => {
   const store = usePartyWorkspaceStore.getState();
@@ -151,7 +151,7 @@ export const markPartyPublishCatalogVisibilitySynced = (listed: boolean): void =
       isListedInCatalog: listed,
     }),
   });
-}
+};
 
 export const markPartyPublishPlaylistSynced = (playlistSignature: string): void => {
   const store = usePartyWorkspaceStore.getState();
@@ -168,8 +168,8 @@ export const markPartyPublishPlaylistSynced = (playlistSignature: string): void 
     playlist: playlistSignature,
     metadata: previous.metadata,
   });
-}
+};
 
 export const clearPartyPublishSync = (): void => {
   usePartyWorkspaceStore.getState().setLastSyncedPublishParts(null);
-}
+};

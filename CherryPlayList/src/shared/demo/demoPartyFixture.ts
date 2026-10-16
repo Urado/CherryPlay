@@ -52,7 +52,7 @@ const buildDemoParty = (overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
     danceTags: overrides.danceTags,
     isListedInCatalog: overrides.isListedInCatalog ?? false,
   };
-}
+};
 
 let demoPartySnapshot: PartyDto = buildDemoParty({
   name: 'Demo Party',
@@ -61,7 +61,7 @@ let demoPartySnapshot: PartyDto = buildDemoParty({
 
 export const getDemoPartySnapshot = (): PartyDto => {
   return { ...demoPartySnapshot };
-}
+};
 
 export const demoCreateParty = (data: CreatePartyDto): PartyDto => {
   demoPartySnapshot = buildDemoParty({
@@ -83,7 +83,7 @@ export const demoCreateParty = (data: CreatePartyDto): PartyDto => {
     isListedInCatalog: data.isListedInCatalog ?? false,
   });
   return getDemoPartySnapshot();
-}
+};
 
 export const demoUpdateParty = (partyId: string, data: UpdatePartyDto): void => {
   if (partyId !== DEMO_PARTY_ID) {
@@ -94,9 +94,7 @@ export const demoUpdateParty = (partyId: string, data: UpdatePartyDto): void => 
     title: data.title ?? demoPartySnapshot.title,
     subtitle: data.subtitle ?? demoPartySnapshot.subtitle,
     partyThemeId: data.partyThemeId ?? demoPartySnapshot.partyThemeId,
-    customizationSettings:
-      (data.customizationSettings) ??
-      demoPartySnapshot.customizationSettings,
+    customizationSettings: data.customizationSettings ?? demoPartySnapshot.customizationSettings,
     partyLifecycleState: demoPartySnapshot.partyLifecycleState,
     description: data.description ?? demoPartySnapshot.description,
     place: data.place ?? demoPartySnapshot.place,
@@ -109,7 +107,7 @@ export const demoUpdateParty = (partyId: string, data: UpdatePartyDto): void => 
     danceTags: data.danceTags ?? demoPartySnapshot.danceTags,
     isListedInCatalog: data.isListedInCatalog ?? demoPartySnapshot.isListedInCatalog ?? false,
   });
-}
+};
 
 export const demoSetPartyLifecycleState = (targetState: PartyLifecycleState): PartyDto => {
   demoPartySnapshot = {
@@ -117,7 +115,7 @@ export const demoSetPartyLifecycleState = (targetState: PartyLifecycleState): Pa
     partyLifecycleState: targetState,
   };
   return getDemoPartySnapshot();
-}
+};
 
 export const demoTransitionPartyLifecycle = (targetState: PartyLifecycleState): PartyDto => {
   const currentState = demoPartySnapshot.partyLifecycleState;
@@ -132,7 +130,7 @@ export const demoTransitionPartyLifecycle = (targetState: PartyLifecycleState): 
     );
   }
   return demoSetPartyLifecycleState(targetState);
-}
+};
 
 export const DEMO_THEME_ACCESS: ThemeAccessDto = {
   grantedThemeIds: [DEFAULT_PARTY_THEME_ID, 'cyberpunk', 'retro'],
@@ -147,8 +145,8 @@ export const getDemoPartyState = (): PartyStateDto => {
     playlist: { items: [], totalDuration: 0, totalTracks: 0 },
     serverTrackIds: [],
   };
-}
+};
 
 export const getDemoPartyPublicUrl = (shortCode: string): string => {
   return `https://demo.cherryplay.local/party/${shortCode}`;
-}
+};

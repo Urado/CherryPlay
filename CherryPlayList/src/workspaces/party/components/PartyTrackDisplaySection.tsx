@@ -1,4 +1,3 @@
-
 import type { PartyTrackDisplaySettings, PartyTrackStripLeadingMode } from '@core/types/project';
 import { applyPartyTrackDisplayToTrackName } from '@shared/utils/partyUtils';
 import React, { useMemo } from 'react';

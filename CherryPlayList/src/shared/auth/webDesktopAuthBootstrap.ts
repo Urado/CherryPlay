@@ -22,7 +22,7 @@ const waitForAuthStoreHydration = async (): Promise<void> => {
       resolve();
     });
   });
-}
+};
 
 const takeDesktopAuthCodeFromUrl = (): string | null => {
   if (typeof window === 'undefined') {
@@ -37,7 +37,7 @@ const takeDesktopAuthCodeFromUrl = (): string | null => {
   window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   clearPendingDesktopAuthCode();
   return code.trim();
-}
+};
 
 export const readDesktopAuthBootstrapError = (): string | null => {
   try {
@@ -46,7 +46,7 @@ export const readDesktopAuthBootstrapError = (): string | null => {
   } catch {
     return null;
   }
-}
+};
 
 export const clearDesktopAuthBootstrapError = (): void => {
   try {
@@ -54,7 +54,7 @@ export const clearDesktopAuthBootstrapError = (): void => {
   } catch {
     return;
   }
-}
+};
 
 const writeDesktopAuthBootstrapError = (message: string): void => {
   try {
@@ -62,7 +62,7 @@ const writeDesktopAuthBootstrapError = (message: string): void => {
   } catch {
     return;
   }
-}
+};
 
 export const consumeWebDesktopAuthCodeAtBootstrap = async (): Promise<void> => {
   const code = takeDesktopAuthCodeFromUrl();
@@ -93,4 +93,4 @@ export const consumeWebDesktopAuthCodeAtBootstrap = async (): Promise<void> => {
         : 'Не удалось войти. Код мог истечь или уже был использован.';
     writeDesktopAuthBootstrapError(message);
   }
-}
+};

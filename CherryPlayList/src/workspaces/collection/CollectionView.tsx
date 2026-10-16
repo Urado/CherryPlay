@@ -1,4 +1,3 @@
-
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';

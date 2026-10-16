@@ -38,7 +38,7 @@ export const findStartIndex = (
   }
 
   return 0;
-}
+};
 
 export const calculateStartPosition = (context: DividerCalculationContext): StartPosition => {
   const { tracks, activeTrackId, mode, isTrackDisabled, isTrackPlayed } = context;
@@ -58,7 +58,7 @@ export const calculateStartPosition = (context: DividerCalculationContext): Star
     currentTimeOffset,
     currentRealTime,
   };
-}
+};
 
 export const calculateNextEvenTime = (currentTime: number, hourDividerInterval: number): number => {
   const currentDate = new Date(currentTime);
@@ -74,7 +74,7 @@ export const calculateNextEvenTime = (currentTime: number, hourDividerInterval: 
   nextEvenDate.setMilliseconds(0);
 
   return nextEvenDate.getTime();
-}
+};
 
 const getSessionOrFullTrackDurationSeconds = (
   context: DividerCalculationContext,
@@ -92,7 +92,7 @@ const getSessionOrFullTrackDurationSeconds = (
     return full;
   }
   return Math.max(0, full - Math.min(pos, full));
-}
+};
 
 const shiftAccumulatedForSessionCurrentTrackStart = (
   context: DividerCalculationContext,
@@ -112,7 +112,7 @@ const shiftAccumulatedForSessionCurrentTrackStart = (
   }
   const full = context.calculateTrackDurationWithPause(track);
   return accumulatedDuration - Math.min(pos, full);
-}
+};
 
 export const calculateAccumulatedDuration = (
   tracks: Track[],
@@ -140,7 +140,7 @@ export const calculateAccumulatedDuration = (
   }
 
   return accumulatedDuration;
-}
+};
 
 export interface DividerMarkers {
   markers: Map<string, number | null>; // trackId -> timestamp или null
@@ -262,16 +262,16 @@ export const calculateDividerMarkers = (
     nextEvenTime,
     plannedEndMarker,
   };
-}
+};
 
 const padTimePart = (value: number): string => {
   return Math.max(0, Math.floor(value)).toString().padStart(2, '0');
-}
+};
 
 export const formatTimeFromTimestamp = (timestamp: number): string => {
   const date = new Date(timestamp);
   return `${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}:${padTimePart(date.getSeconds())}`;
-}
+};
 
 export const formatTimeFromDuration = (durationSeconds: number): string => {
   const total = Math.max(0, Math.floor(durationSeconds));
@@ -279,7 +279,7 @@ export const formatTimeFromDuration = (durationSeconds: number): string => {
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
   return `${padTimePart(hours)}:${padTimePart(minutes)}:${padTimePart(seconds)}`;
-}
+};
 
 export const calculateSimpleDividerMarkers = (
   tracks: Track[],
@@ -298,7 +298,7 @@ export const calculateSimpleDividerMarkers = (
   });
 
   return markers;
-}
+};
 
 export const formatSimpleDividerLabel = (tracks: Track[], index: number): string => {
   const accumulatedDuration = tracks
@@ -306,7 +306,7 @@ export const formatSimpleDividerLabel = (tracks: Track[], index: number): string
     .reduce((sum, track) => sum + (track.duration || 0), 0);
 
   return formatTimeFromDuration(accumulatedDuration);
-}
+};
 
 export const getPriorityHourDividerKind = (
   hasPlannedEndDivider: boolean,
@@ -323,7 +323,7 @@ export const getPriorityHourDividerKind = (
     return 'interval';
   }
   return null;
-}
+};
 
 export const calculateTrackAnchorDividerPosition = <T extends { id: string }>(
   anchor: { trackId: string | null } | null,
@@ -347,7 +347,7 @@ export const calculateTrackAnchorDividerPosition = <T extends { id: string }>(
 
   const trackDisplayIndex = trackIdToDisplayIndex.get(anchor.trackId);
   return trackDisplayIndex !== undefined ? trackDisplayIndex : null;
-}
+};
 
 export const calculatePlannedEndDividerPosition = <T extends { id: string }>(
   dividerMarkers: DividerMarkers,
@@ -359,7 +359,7 @@ export const calculatePlannedEndDividerPosition = <T extends { id: string }>(
     displayItems,
     isPlayerTrack,
   );
-}
+};
 
 export interface QueueEndMarker {
   trackId: string;
@@ -367,7 +367,9 @@ export interface QueueEndMarker {
   preparationDurationSeconds: number | null;
 }
 
-export const calculateQueueEndMarker = (context: DividerCalculationContext): QueueEndMarker | null => {
+export const calculateQueueEndMarker = (
+  context: DividerCalculationContext,
+): QueueEndMarker | null => {
   const { tracks, mode } = context;
   if (tracks.length === 0) {
     return null;
@@ -424,7 +426,7 @@ export const calculateQueueEndMarker = (context: DividerCalculationContext): Que
     sessionEndTimestamp: currentRealTime + accumulatedDuration * 1000,
     preparationDurationSeconds: null,
   };
-}
+};
 
 export const calculateQueueEndDividerPosition = <T extends { id: string }>(
   queueEndMarker: QueueEndMarker | null,
@@ -439,7 +441,7 @@ export const calculateQueueEndDividerPosition = <T extends { id: string }>(
     displayItems,
     isPlayerTrack,
   );
-}
+};
 
 const findPlannedEndPosition = (
   plannedEndTime: number,
@@ -462,7 +464,7 @@ const findPlannedEndPosition = (
   }
 
   return null;
-}
+};
 
 export const calculateProjectedEndTime = (context: DividerCalculationContext): number | null => {
   const { mode } = context;
@@ -486,7 +488,7 @@ export const calculateProjectedEndTime = (context: DividerCalculationContext): n
   );
 
   return currentRealTime + remainingDuration * 1000;
-}
+};
 
 export const calculatePlannedEndMarker = (
   context: DividerCalculationContext,
@@ -543,4 +545,4 @@ export const calculatePlannedEndMarker = (
   }
 
   return null;
-}
+};

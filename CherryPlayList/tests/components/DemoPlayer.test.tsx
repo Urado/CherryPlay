@@ -3,7 +3,6 @@ import type { Track } from '@core/types/track';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {

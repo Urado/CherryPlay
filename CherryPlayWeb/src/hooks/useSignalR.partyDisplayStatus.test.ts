@@ -41,7 +41,7 @@ describe('useSignalR onPartyDisplayStatusChanged wiring', () => {
     mockIsServiceConnected.mockReturnValue(false);
     mockOnPartyDisplayStatusChanged.mockImplementation(
       (handler: (partyId: string, status: PartyDisplayStatusId) => void) => {
-      registeredHandler = handler;
+        registeredHandler = handler;
       },
     );
   });

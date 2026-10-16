@@ -11,9 +11,10 @@ vi.mock('@cherryplay/components', () => ({
   ),
   FormInput: () => null,
   FormSelect: () => null,
-  IconButton: ({ 'aria-label': ariaLabel, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button aria-label={ariaLabel} {...props} />
-  ),
+  IconButton: ({
+    'aria-label': ariaLabel,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button aria-label={ariaLabel} {...props} />,
   formatDateInTimeZone: () => '2026-10-06',
   getDefaultTimeZone: () => 'UTC',
   getPopularTimeZones: () => [],
@@ -71,16 +72,21 @@ describe('party list organizer name', () => {
     expect(await screen.findByText('Организатор: Cherry Dance')).toBeTruthy();
   });
 
-  it.each([undefined, null, '', '   '])('omits an absent or blank organizer name (%s)', async (organizerName) => {
-    getAllParties.mockResolvedValue([createParty(organizerName)]);
+  it.each([undefined, null, '', '   '])(
+    'omits an absent or blank organizer name (%s)',
+    async (organizerName) => {
+      getAllParties.mockResolvedValue([createParty(organizerName)]);
 
-    render(
-      <MemoryRouter>
-        <PartyListPage />
-      </MemoryRouter>,
-    );
+      render(
+        <MemoryRouter>
+          <PartyListPage />
+        </MemoryRouter>,
+      );
 
-    expect(await screen.findByRole('link', { name: 'Открыть вечеринку: Spring Party' })).toBeTruthy();
-    expect(screen.queryByText(/Организатор:/)).toBeNull();
-  });
+      expect(
+        await screen.findByRole('link', { name: 'Открыть вечеринку: Spring Party' }),
+      ).toBeTruthy();
+      expect(screen.queryByText(/Организатор:/)).toBeNull();
+    },
+  );
 });

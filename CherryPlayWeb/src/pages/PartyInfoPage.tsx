@@ -49,9 +49,8 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
     }
   }, [party]);
 
-  const themeId = party && isValidPartyTheme(party.partyThemeId)
-    ? party.partyThemeId
-    : DEFAULT_PARTY_THEME_ID;
+  const themeId =
+    party && isValidPartyTheme(party.partyThemeId) ? party.partyThemeId : DEFAULT_PARTY_THEME_ID;
   const themeVars = usePartyThemeVars(themeId, party?.customizationSettings);
 
   if (loading) {

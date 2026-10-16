@@ -83,7 +83,15 @@ export const LinkPartyModal: React.FC = () => {
         setLinkingId(null);
       }
     },
-    [addNotification, closeModal, items, markAsDirty, partyTrackDisplay, setLinkedParty, uploadPlaylist],
+    [
+      addNotification,
+      closeModal,
+      items,
+      markAsDirty,
+      partyTrackDisplay,
+      setLinkedParty,
+      uploadPlaylist,
+    ],
   );
 
   if (modal !== 'linkParty') {
@@ -168,7 +176,9 @@ export const LinkPartyModal: React.FC = () => {
                         <Button
                           type="button"
                           className="modal-button link-party-modal-link-btn"
-          onClick={() => { void handleLink(party); }}
+                          onClick={() => {
+                            void handleLink(party);
+                          }}
                           disabled={linkingId !== null}
                           loading={linkingId === party.id}
                           loadingLabel="Привязка..."

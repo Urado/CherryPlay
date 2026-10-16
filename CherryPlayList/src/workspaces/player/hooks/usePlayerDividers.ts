@@ -1,4 +1,3 @@
-
 import { isProjectTrack, type ProjectItem, type ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { useProjectStore, useSettingsStore } from '@shared/stores';
@@ -62,7 +61,8 @@ export const usePlayerDividers = (options: UsePlayerDividersOptions) => {
     [disabledTrackIds, disabledGroupIds, isTrackOrGroupDisabled],
   );
 
-  const dividerCalculationContext: DividerCalculationContext = useMemo(() => ({
+  const dividerCalculationContext: DividerCalculationContext = useMemo(
+    () => ({
       tracks: allTracks,
       activeTrackId: activePlayerTrackId ?? null,
       currentTrackPosition,
@@ -78,7 +78,8 @@ export const usePlayerDividers = (options: UsePlayerDividersOptions) => {
         }
         return duration;
       },
-    }), [
+    }),
+    [
       allTracks,
       activePlayerTrackId,
       currentTrackPosition,
@@ -87,7 +88,8 @@ export const usePlayerDividers = (options: UsePlayerDividersOptions) => {
       isDividerTrackDisabled,
       isTrackPlayed,
       getEffectiveTrackSettings,
-    ]);
+    ],
+  );
 
   const dividerMarkersResult = useMemo(() => {
     if (!showHourDividers || hourDividerInterval <= 0 || allTracks.length === 0) {

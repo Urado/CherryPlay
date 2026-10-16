@@ -24,7 +24,7 @@ import { normalizeLoadedLoudness } from './loudnessService';
 const pathDirname = (filePath: string): string => {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
-}
+};
 
 const resolveRelativePath = (baseDir: string, relativePath: string): string => {
   const normalizedBase = baseDir.replace(/\\/g, '/');
@@ -56,7 +56,7 @@ const resolveRelativePath = (baseDir: string, relativePath: string): string => {
   }
 
   return resolved;
-}
+};
 
 const isRelativePath = (filePath: string): boolean => {
   return (
@@ -65,7 +65,7 @@ const isRelativePath = (filePath: string): boolean => {
     filePath.startsWith('.\\') ||
     filePath.startsWith('..\\')
   );
-}
+};
 
 const checkFileExists = async (filePath: string): Promise<boolean> => {
   try {
@@ -74,7 +74,7 @@ const checkFileExists = async (filePath: string): Promise<boolean> => {
   } catch {
     return false;
   }
-}
+};
 
 const resolveAndCheckTracks = async (
   items: ProjectItem[],
@@ -98,7 +98,7 @@ const resolveAndCheckTracks = async (
   };
 
   await processItems(items);
-}
+};
 
 export interface ProjectStateData {
   name: string;

@@ -14,7 +14,7 @@ interface ClientOutdatedPayload {
 const hasHeaderKey = (headers: Record<string, string>, name: string): boolean => {
   const lower = name.toLowerCase();
   return Object.keys(headers).some((key) => key.toLowerCase() === lower);
-}
+};
 
 const mergeClientVersionHeaders = (init?: RequestInit): Record<string, string> => {
   const merged: Record<string, string> = {};
@@ -39,7 +39,7 @@ const mergeClientVersionHeaders = (init?: RequestInit): Record<string, string> =
   }
 
   return merged;
-}
+};
 
 const handleClientOutdatedResponse = async (response: Response): Promise<void> => {
   if (response.status !== CLIENT_OUTDATED_STATUS) {
@@ -50,7 +50,7 @@ const handleClientOutdatedResponse = async (response: Response): Promise<void> =
   if (payload?.code === CLIENT_OUTDATED_CODE) {
     notifyClientOutdated(payload.requiredVersion);
   }
-}
+};
 
 export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const response = await fetch(input, {
@@ -61,4 +61,4 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Pr
   await handleClientOutdatedResponse(response);
 
   return response;
-}
+};

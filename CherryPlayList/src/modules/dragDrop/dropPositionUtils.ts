@@ -32,7 +32,10 @@ export const collectFlatIndicesForItem = (
   return indices;
 };
 
-export const collectAllFlatIndices = (rootIds: string[], displayItems: DisplayItem[]): Set<number> => {
+export const collectAllFlatIndices = (
+  rootIds: string[],
+  displayItems: DisplayItem[],
+): Set<number> => {
   const allIndices = new Set<number>();
 
   for (const id of rootIds) {
@@ -82,7 +85,10 @@ export const getRootIdsForDrag = (
   });
 };
 
-export const isDropInsideDragged = (targetFlatIndex: number, allFlatIndices: Set<number>): boolean => {
+export const isDropInsideDragged = (
+  targetFlatIndex: number,
+  allFlatIndices: Set<number>,
+): boolean => {
   return allFlatIndices.has(targetFlatIndex);
 };
 

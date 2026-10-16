@@ -178,7 +178,9 @@
   color: var(--text-primary);
 }
 
-.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover:not(.cp-button--fill-hover):hover:not(:disabled) {
+.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover:not(.cp-button--fill-hover):hover:not(
+    :disabled
+  ) {
   background: transparent;
   border-color: var(--state-error, #d32f2f);
   color: var(--state-error, #d32f2f);
@@ -203,7 +205,9 @@
 }
 
 .cp-button--fill-hover.cp-button--tone-danger:hover:not(:disabled),
-.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover.cp-button--fill-hover:hover:not(:disabled) {
+.cp-button--ghost.cp-button--tone-danger.cp-button--no-hover.cp-button--fill-hover:hover:not(
+    :disabled
+  ) {
   background: var(--state-error, #d32f2f);
   border-color: var(--state-error, #d32f2f);
   color: var(--text-primary, var(--text-on-accent, #fff));

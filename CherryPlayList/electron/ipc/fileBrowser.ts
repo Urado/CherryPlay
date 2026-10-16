@@ -52,7 +52,9 @@ const listDirectory = async (dirPath: string): Promise<DirectoryItem[]> => {
   }
 };
 
-const statFile = async (filePath: string): Promise<{
+const statFile = async (
+  filePath: string,
+): Promise<{
   size: number;
   modified: number;
   isDirectory: boolean;

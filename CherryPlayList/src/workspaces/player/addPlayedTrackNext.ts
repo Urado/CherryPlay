@@ -51,7 +51,12 @@ const resolveInsertSlot = (
   items: ProjectItem[],
   getItemPath: (id: string) => string[],
   activeTrackId: string | null,
-): { parentId: string | null; parentPath: string[]; insertIndex: number; anchorKey: string } | null => {
+): {
+  parentId: string | null;
+  parentPath: string[];
+  insertIndex: number;
+  anchorKey: string;
+} | null => {
   const activePath = activeTrackId ? getItemPath(activeTrackId) : [];
   const activePathExists = Boolean(activeTrackId && activePath.length > 0);
   const anchorKey = activePath[activePath.length - 1] ?? 'queue-start';

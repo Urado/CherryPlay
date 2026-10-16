@@ -54,12 +54,12 @@ const readResponseErrorMessage = async (response: Response): Promise<string> => 
   } catch {
     return '';
   }
-}
+};
 
 const throwAuthHttpError = async (response: Response): Promise<never> => {
   const message = await readResponseErrorMessage(response);
   throw new AuthHttpError(response.status, message);
-}
+};
 
 export const buildDesktopAuthReturnTo = (
   isDev: boolean,
@@ -71,7 +71,7 @@ export const buildDesktopAuthReturnTo = (
     return options?.webDelivery ? `${base}?delivery=web` : base;
   }
   return 'cherryplaylist://auth';
-}
+};
 
 class AuthService implements IAuthService {
   private async getBaseUrl(): Promise<string> {

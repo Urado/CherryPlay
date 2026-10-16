@@ -11,7 +11,7 @@ export const setPlatform = (api: PlatformAPI, mode: AppMode): void => {
   platformInstance = api;
   currentAppMode = mode;
   refreshPlatformCapabilities(mode);
-}
+};
 
 export const getPlatform = (): PlatformAPI => {
   if (!platformInstance) {
@@ -20,18 +20,18 @@ export const getPlatform = (): PlatformAPI => {
     );
   }
   return platformInstance;
-}
+};
 
 export const getPlatformAppMode = (): AppMode | null => {
   return currentAppMode;
-}
+};
 
 export const isPlatformInitialized = (): boolean => {
   return platformInstance !== null;
-}
+};
 
 export const resetPlatformForTests = (): void => {
   platformInstance = null;
   currentAppMode = null;
   resetPlatformCapabilitiesForTests();
-}
+};

@@ -1,4 +1,3 @@
-
 import { useProjectStore } from '@shared/stores';
 import {
   syncDemoWithMainPlayer,

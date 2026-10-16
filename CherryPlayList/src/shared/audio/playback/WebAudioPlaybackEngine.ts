@@ -222,7 +222,9 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       this.ensureGraph();
       if (
         this.audioContext &&
-        typeof (this.audioContext as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> }).setSinkId === 'function'
+        typeof (
+          this.audioContext as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> }
+        ).setSinkId === 'function'
       ) {
         const contextWithSinkId = this.audioContext as AudioContext & {
           setSinkId: (targetSinkId: string) => Promise<void>;

@@ -16,7 +16,9 @@ export interface CopyCollectionTracksParams {
   folderName: string;
 }
 
-export const exportCollectionAsJson = async (params: ExportCollectionJsonParams): Promise<boolean> => {
+export const exportCollectionAsJson = async (
+  params: ExportCollectionJsonParams,
+): Promise<boolean> => {
   if (!guardNativeFileOperation()) {
     return false;
   }
@@ -45,7 +47,9 @@ export const exportCollectionAsJson = async (params: ExportCollectionJsonParams)
   return true;
 };
 
-export const copyCollectionTracksToFolder = async (params: CopyCollectionTracksParams): Promise<{
+export const copyCollectionTracksToFolder = async (
+  params: CopyCollectionTracksParams,
+): Promise<{
   folderPath: string;
   successful: string[];
   failed: Array<{ path: string; error: string }>;

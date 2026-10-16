@@ -37,7 +37,7 @@ export const normalizePartyTrackDisplaySettings = (
     stripLeadingCharsCount: count,
     stripLeadingCharsDelimiter: delimiter,
   };
-}
+};
 
 export const applyPartyTrackDisplayToTrackName = (
   name: string,
@@ -65,7 +65,7 @@ export const applyPartyTrackDisplayToTrackName = (
   const n = Math.min(normalized.stripLeadingCharsCount, chars.length);
   const rest = chars.slice(n).join('');
   return rest.length > 0 ? rest : name;
-}
+};
 
 export const applyPartyTrackDisplayToComponentPlaylist = (
   items: ComponentPlayerItem[],
@@ -84,7 +84,7 @@ export const applyPartyTrackDisplayToComponentPlaylist = (
       name: applyPartyTrackDisplayToTrackName(item.name, settings),
     };
   });
-}
+};
 
 export const convertToComponentPlayerItem = (
   item: ProjectItem,
@@ -112,11 +112,11 @@ export const convertToComponentPlayerItem = (
       level,
     };
   }
-}
+};
 
 export const convertToComponentPlayerItems = (items: ProjectItem[]): ComponentPlayerItem[] => {
   return items.map((item, index) => convertToComponentPlayerItem(item, index, 0));
-}
+};
 
 export const calculateTotalDuration = (items: ProjectItem[]): number => {
   let total = 0;
@@ -128,7 +128,7 @@ export const calculateTotalDuration = (items: ProjectItem[]): number => {
     }
   }
   return total;
-}
+};
 
 export const countTotalTracks = (items: ProjectItem[]): number => {
   let count = 0;
@@ -140,7 +140,7 @@ export const countTotalTracks = (items: ProjectItem[]): number => {
     }
   }
   return count;
-}
+};
 
 export const collectComponentPlaylistTrackIds = (items: ComponentPlayerItem[]): string[] => {
   const ids: string[] = [];
@@ -154,7 +154,7 @@ export const collectComponentPlaylistTrackIds = (items: ComponentPlayerItem[]): 
     }
   }
   return ids;
-}
+};
 
 export const convertToApiPlayerItem = (
   item: ProjectItem,
@@ -188,16 +188,18 @@ export const convertToApiPlayerItem = (
       level,
     };
   }
-}
+};
 
 export const convertToApiPlayerItems = (
   items: ProjectItem[],
   trackDisplay?: PartyTrackDisplaySettings,
 ): PlayerItemForApi[] => {
   return items.map((item, index) => convertToApiPlayerItem(item, index, 0, trackDisplay));
-}
+};
 
-export const calculatePlaylistMetadata = (items: ProjectItem[]): {
+export const calculatePlaylistMetadata = (
+  items: ProjectItem[],
+): {
   totalTracks: number;
   totalDuration: number;
 } => {
@@ -205,7 +207,7 @@ export const calculatePlaylistMetadata = (items: ProjectItem[]): {
     totalTracks: countTotalTracks(items),
     totalDuration: calculateTotalDuration(items),
   };
-}
+};
 
 export const convertPlaylistForApi = (
   items: ProjectItem[],
@@ -223,4 +225,4 @@ export const convertPlaylistForApi = (
     totalTracks: metadata.totalTracks,
     totalDuration: metadata.totalDuration,
   };
-}
+};

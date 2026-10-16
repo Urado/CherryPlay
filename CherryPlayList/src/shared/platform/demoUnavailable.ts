@@ -6,26 +6,26 @@ export const PLATFORM_UNAVAILABLE_MESSAGE = 'Недоступно на этой 
 
 export const getPlatformUnavailableMessage = (): string => {
   return getAppMode() === 'demo' ? DEMO_UNAVAILABLE_MESSAGE : PLATFORM_UNAVAILABLE_MESSAGE;
-}
+};
 
 export const demoUnavailableResponse = <T = void>(): IPCResponse<T> => {
   return {
     success: false,
     error: DEMO_UNAVAILABLE_MESSAGE,
   };
-}
+};
 
 export const platformUnavailableResponse = <T = void>(): IPCResponse<T> => {
   return {
     success: false,
     error: getPlatformUnavailableMessage(),
   };
-}
+};
 
 export const throwDemoUnavailable = (): never => {
   throw new Error(DEMO_UNAVAILABLE_MESSAGE);
-}
+};
 
 export const throwPlatformUnavailable = (): never => {
   throw new Error(getPlatformUnavailableMessage());
-}
+};

@@ -190,9 +190,7 @@ const runAuthCallbackLoop = async (): Promise<void> => {
 
       const errorMessage = result.error?.trim();
       const message =
-        !result.success && errorMessage
-          ? errorMessage
-          : 'Не удалось обработать вход из браузера';
+        !result.success && errorMessage ? errorMessage : 'Не удалось обработать вход из браузера';
       if (failWaitingBrowserLogin(message)) {
         notifyAuthError(message);
       }

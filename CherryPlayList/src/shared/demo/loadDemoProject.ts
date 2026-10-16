@@ -6,7 +6,7 @@ export const DEMO_SAMPLE_PROJECT_URL = '/demo/sample.cherry';
 
 const demoLoadErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
-}
+};
 export const DEMO_SAMPLE_PROJECT_PATH = '/demo/sample.cherry';
 
 export const loadDemoProject = async (): Promise<void> => {
@@ -25,7 +25,7 @@ export const loadDemoProject = async (): Promise<void> => {
   });
 
   useSettingsStore.getState().setLastOpenedPlaylist(DEMO_SAMPLE_PROJECT_PATH);
-}
+};
 
 export const loadDemoProjectSafe = async (): Promise<boolean> => {
   try {
@@ -38,8 +38,8 @@ export const loadDemoProjectSafe = async (): Promise<boolean> => {
     });
     return false;
   }
-}
+};
 
 export const shouldAutoLoadDemoProject = (): boolean => {
   return import.meta.env.VITE_LOAD_DEMO_PROJECT === '1';
-}
+};

@@ -1,4 +1,3 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
 import { Track } from '@core/types/track';
@@ -149,7 +148,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     (state) => state.setFromIdList,
   );
 
-
   const isPreparationMode = mode === 'preparation';
 
   const { showHourDividers, enableStreaming } = useSettingsStore();
@@ -217,12 +215,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         markTrackAsPlayed,
       );
     },
-    [
-      allTracks,
-      isTrackOrGroupDisabled,
-      isTrackPlayed,
-      markTrackAsPlayed,
-    ],
+    [allTracks, isTrackOrGroupDisabled, isTrackPlayed, markTrackAsPlayed],
   );
 
   const { startTrackPlayback, pausePlayback, handleNext, activeTrackId, playerStatus } =

@@ -91,14 +91,14 @@ describe('partyService.transitionPartyLifecycle', () => {
     const [requestUrl, request] = fetchMock.mock.calls[0];
     expect(requestUrl).toBe(`${API_URL}/parties/${PARTY_ID}/lifecycle`);
     expect(request).toMatchObject({
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ partyLifecycleState: 'ready' }),
-        cache: 'no-cache',
-      });
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ partyLifecycleState: 'ready' }),
+      cache: 'no-cache',
+    });
   });
 
   it('parses 409 invalid_lifecycle_transition into InvalidPartyLifecycleTransitionError', async () => {

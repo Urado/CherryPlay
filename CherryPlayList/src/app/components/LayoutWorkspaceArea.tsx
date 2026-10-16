@@ -1,4 +1,3 @@
-
 import { useLayoutStore } from '@shared/stores';
 import { isLayoutEmpty } from '@shared/utils/layoutWorkspaceOperations';
 import React from 'react';

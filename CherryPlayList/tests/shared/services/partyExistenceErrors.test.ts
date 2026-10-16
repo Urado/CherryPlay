@@ -21,9 +21,9 @@ describe('isDefinitivePartyExistenceError', () => {
   });
 
   it('treats invalid party id as definitive', () => {
-    expect(
-      isDefinitivePartyExistenceError(new Error('Некорректный идентификатор вечеринки')),
-    ).toBe(true);
+    expect(isDefinitivePartyExistenceError(new Error('Некорректный идентификатор вечеринки'))).toBe(
+      true,
+    );
   });
 
   it('does not treat network failures as definitive', () => {

@@ -55,9 +55,7 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
   const hasMultipleTracks = flatTracks.length > 1;
   const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1] : null;
   const nextTrack =
-    currentIndex >= 0 && currentIndex < flatTracks.length - 1
-      ? flatTracks[currentIndex + 1]
-      : null;
+    currentIndex >= 0 && currentIndex < flatTracks.length - 1 ? flatTracks[currentIndex + 1] : null;
 
   const currentDisplayName =
     currentTrack && currentTrack.type === 'track' ? stripLastExtension(currentTrack.name) : '';

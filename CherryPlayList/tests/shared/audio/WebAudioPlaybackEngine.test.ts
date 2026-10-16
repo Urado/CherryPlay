@@ -111,16 +111,12 @@ const originalCreateObjectURL: typeof URL.createObjectURL | undefined =
 const originalRevokeObjectURL: typeof URL.revokeObjectURL | undefined =
   typeof URL !== 'undefined' && URL.revokeObjectURL ? URL.revokeObjectURL.bind(URL) : undefined;
 
-const createMockAdapter = (
-  overrides: Partial<PlatformAudioAdapter> = {},
-): PlatformAudioAdapter => {
+const createMockAdapter = (overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter => {
   const revoke = jest.fn();
   return {
     resolveSource: jest.fn((source: PlaybackSource) =>
       Promise.resolve(
-        source.kind === 'url'
-          ? { url: source.url }
-          : { url: 'cherryplay-audio:///mock', revoke },
+        source.kind === 'url' ? { url: source.url } : { url: 'cherryplay-audio:///mock', revoke },
       ),
     ),
     getDuration: jest.fn().mockResolvedValue(240),

@@ -25,7 +25,7 @@ export interface CreateApplyDeviceOptions {
 export const createApplyDevice = ({
   engine,
   onDeviceNotFound,
-}: CreateApplyDeviceOptions): (deviceId: string | null, logContext: string) => Promise<void> => {
+}: CreateApplyDeviceOptions): ((deviceId: string | null, logContext: string) => Promise<void>) => {
   return async (deviceId, logContext) => {
     await applyPlaybackOutputDeviceWithFallback(engine, {
       deviceId,
@@ -33,7 +33,7 @@ export const createApplyDevice = ({
       onDeviceNotFound,
     });
   };
-}
+};
 
 export interface CreateHandleErrorOptions {
   readonly engine: PlaybackEngine;
@@ -45,7 +45,7 @@ export const createHandleError = ({
   engine,
   logLabel,
   setErrorState,
-}: CreateHandleErrorOptions): (message: string, error?: unknown) => void => {
+}: CreateHandleErrorOptions): ((message: string, error?: unknown) => void) => {
   return (message, error) => {
     if (isFileNotFoundError(error)) {
       logger.warn(`${logLabel}: missing file`, error instanceof Error ? error : undefined);
@@ -55,7 +55,7 @@ export const createHandleError = ({
     setErrorState(message);
     engine.stop();
   };
-}
+};
 
 export interface ResolveTrackPrecheckOptions {
   readonly track: Track;
@@ -83,7 +83,7 @@ export const resolveTrackPrecheck = async (
     handleError(message, new Error(message));
     return null;
   }
-}
+};
 
 export interface LoadTrackCoreOptions {
   readonly engine: PlaybackEngine;
@@ -126,7 +126,7 @@ export const loadTrackCore = async (options: LoadTrackCoreOptions): Promise<void
     }
     throw error instanceof Error ? error : new Error('Failed to load audio source');
   }
-}
+};
 
 export interface PlayTrackCoreOptions {
   readonly engine: PlaybackEngine;
@@ -158,7 +158,7 @@ export const playTrackCore = async (options: PlayTrackCoreOptions): Promise<void
   }
 
   await options.engine.play();
-}
+};
 
 export interface WirePlaybackEngineOptions {
   readonly engine: PlaybackEngine;
@@ -220,4 +220,4 @@ export const wirePlaybackEngine = (options: WirePlaybackEngineOptions): void => 
       options.onSettingsDeviceChange(currentDeviceId);
     }
   });
-}
+};

@@ -8,15 +8,15 @@ let cachedApiConfig: {
 
 const normalizeBaseUrl = (url: string): string => {
   return url.replace(/\/+$/, '');
-}
+};
 
 const buildSignalRUrl = (serverUrl: string): string => {
   return `${normalizeBaseUrl(serverUrl)}/partyHub`;
-}
+};
 
 const buildApiUrl = (serverUrl: string): string => {
   return `${normalizeBaseUrl(serverUrl)}/api`;
-}
+};
 
 const getApiConfigAsync = async (): Promise<{
   serverUrl: string;
@@ -30,7 +30,7 @@ const getApiConfigAsync = async (): Promise<{
     signalRUrl: buildSignalRUrl(raw),
     apiUrl: buildApiUrl(raw),
   };
-}
+};
 
 const getApiConfigSync = (): {
   serverUrl: string;
@@ -50,7 +50,7 @@ const getApiConfigSync = (): {
   };
 
   return cachedApiConfig;
-}
+};
 
 export const apiConfig = {
   get serverUrl(): string {
@@ -92,8 +92,8 @@ export const getApiConfig = async (): Promise<{
   const config = await getApiConfigAsync();
   cachedApiConfig = config;
   return config;
-}
+};
 
 export const clearApiConfigCache = (): void => {
   cachedApiConfig = null;
-}
+};

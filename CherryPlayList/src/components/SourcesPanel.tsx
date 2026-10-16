@@ -1,7 +1,6 @@
 import type { WorkspaceId } from '@core/types/workspace';
 import React from 'react';
 
-
 import { FileBrowser } from './FileBrowser';
 
 interface SourcesPanelProps {

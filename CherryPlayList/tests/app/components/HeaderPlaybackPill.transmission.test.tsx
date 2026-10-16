@@ -12,11 +12,16 @@ jest.mock('@app/components/CherryPlayStreamingController', () => ({
   }),
 }));
 jest.mock('@shared/components', () => ({ StreamingConnectionIndicator: () => null }));
-jest.mock('@shared/streaming', () => ({ useOnlineNetworkPolicy: () => ({ networkEnabled: true }) }));
+jest.mock('@shared/streaming', () => ({
+  useOnlineNetworkPolicy: () => ({ networkEnabled: true }),
+}));
 jest.mock('@shared/utils/durationUtils', () => ({ formatPlayerTime: () => '0:00' }));
 jest.mock('@shared/utils/togglePlayPause', () => ({ togglePlayPause: jest.fn() }));
 jest.mock('@shared/stores', () => {
-  const projectState = { meta: { linkedParty: { id: 'party-1' } }, sessionState: { mode: 'session' } };
+  const projectState = {
+    meta: { linkedParty: { id: 'party-1' } },
+    sessionState: { mode: 'session' },
+  };
   const settingsState = { streamingSource: 'cherryPlayPlayer' };
   const playerState = {
     currentTrack: { name: 'Example track', duration: 180 },
@@ -29,8 +34,10 @@ jest.mock('@shared/stores', () => {
   };
   return {
     useProjectStore: (selector: (state: typeof projectState) => unknown) => selector(projectState),
-    useSettingsStore: (selector: (state: typeof settingsState) => unknown) => selector(settingsState),
-    usePlayerAudioStore: (selector: (state: typeof playerState) => unknown) => selector(playerState),
+    useSettingsStore: (selector: (state: typeof settingsState) => unknown) =>
+      selector(settingsState),
+    usePlayerAudioStore: (selector: (state: typeof playerState) => unknown) =>
+      selector(playerState),
   };
 });
 

@@ -16,4 +16,4 @@ export const resolveUnlinkedThemeAccessReconnectAction = (input: {
     return 'clear';
   }
   return 'none';
-}
+};

@@ -1,7 +1,6 @@
 import { getPriorityHourDividerKind } from '@shared/utils';
 import React from 'react';
 
-
 export interface HourDividerAfterTrackRowProps {
   hasPlannedEndDivider: boolean;
   hasQueueEndDivider: boolean;
@@ -55,7 +54,7 @@ export const HourDividerAfterTrackRow = ({
       <span className="playlist-hour-divider-label">{dividerLabel}</span>
     </div>
   );
-}
+};
 
 export interface HourDividerListBottomProps {
   showPlannedEndDividerAtListBottom: boolean;
@@ -97,4 +96,4 @@ export const HourDividerListBottom = ({
       )}
     </>
   );
-}
+};

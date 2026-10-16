@@ -66,7 +66,7 @@ export const matchKeyBinding = (event: KeyboardEvent, binding: KeyBinding): bool
   }
 
   return true;
-}
+};
 
 export const isInputField = (event: KeyboardEvent): boolean => {
   const target = event.target as HTMLElement | null;
@@ -74,7 +74,7 @@ export const isInputField = (event: KeyboardEvent): boolean => {
     return false;
   }
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-}
+};
 
 export const isInteractiveElement = (event: KeyboardEvent): boolean => {
   const target = event.target;
@@ -82,7 +82,7 @@ export const isInteractiveElement = (event: KeyboardEvent): boolean => {
     return false;
   }
   return target.closest(INTERACTIVE_SELECTOR) !== null;
-}
+};
 
 export const shouldBlockPlayerSpaceShortcut = (event: KeyboardEvent): boolean => {
   const target = event.target;
@@ -103,7 +103,7 @@ export const shouldBlockPlayerSpaceShortcut = (event: KeyboardEvent): boolean =>
     return true;
   }
   return false;
-}
+};
 
 export const bindingHasModifier = (binding: KeyBinding): boolean => {
   return (
@@ -112,15 +112,15 @@ export const bindingHasModifier = (binding: KeyBinding): boolean => {
     binding.altKey === true ||
     binding.shiftKey === true
   );
-}
+};
 
 export const isActivationKeyBinding = (binding: KeyBinding): boolean => {
   return (binding.code === 'Space' || binding.code === 'Enter') && !bindingHasModifier(binding);
-}
+};
 
 export const isMac = (): boolean => {
   return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-}
+};
 
 export const formatKeyBinding = (binding: KeyBinding): string => {
   const parts: string[] = [];
@@ -140,7 +140,7 @@ export const formatKeyBinding = (binding: KeyBinding): string => {
   parts.push(codeToKeyName(binding.code));
 
   return parts.join('+');
-}
+};
 
 const codeToKeyName = (code: string): string => {
   if (code.startsWith('Key')) {
@@ -165,7 +165,7 @@ const codeToKeyName = (code: string): string => {
   };
 
   return specialKeys[code] || code;
-}
+};
 
 export const parseShortcutString = (shortcutString: string): KeyBinding | null => {
   const parts = shortcutString.split('+').map((p) => p.trim().toLowerCase());
@@ -206,7 +206,7 @@ export const parseShortcutString = (shortcutString: string): KeyBinding | null =
   }
 
   return binding;
-}
+};
 
 const keyNameToCode = (keyName: string): string => {
   const normalized = keyName.toUpperCase();
@@ -232,4 +232,4 @@ const keyNameToCode = (keyName: string): string => {
   };
 
   return specialCodes[normalized] || normalized;
-}
+};

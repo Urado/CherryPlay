@@ -14,7 +14,6 @@ import {
 } from '@shared/services/partyService';
 import React, { useEffect, useRef, useState } from 'react';
 
-
 import { PartyEditorAccordion } from './PartyEditorAccordion';
 
 import './PartyEditor.css';
@@ -124,8 +123,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               onChange={(e) => setCustomInput(e.target.value.slice(0, maxTagLength))}
               onKeyDown={handleCustomKeyDown}
               onBlur={(e) => {
-                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
-                  return;
+                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget)) return;
                 collapseTimeoutRef.current = setTimeout(() => setShowCustomInput(false), 150);
               }}
               placeholder="Другой танец (Enter или запятая)"

@@ -10,17 +10,17 @@ export const formatDuration = (seconds: number): string => {
   }
 
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
+};
 
 export const formatTrackDuration = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
+};
 
 export const calculateTotalDuration = (tracks: Track[]): number => {
   return tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-}
+};
 
 export const formatPlayerTime = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds <= 0) {
@@ -32,4 +32,4 @@ export const formatPlayerTime = (seconds: number): string => {
   const secs = totalSeconds % 60;
 
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
-}
+};

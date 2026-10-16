@@ -23,4 +23,4 @@ export const partyWorkspaceLinkedPartyCheck = {
 export const clearPartyWorkspaceLinkedPartyCheck = (): void => {
   partyWorkspaceLinkedPartyCheck.seq += 1;
   partyWorkspaceLinkedPartyCheck.inFlight = null;
-}
+};

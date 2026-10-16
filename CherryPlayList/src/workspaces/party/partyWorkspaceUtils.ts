@@ -15,7 +15,9 @@ export { ERROR_PARTY_NOT_FOUND, ERROR_CONNECTION } from './partyWorkspaceConstan
 export const THEME_PICKER_UNAVAILABLE_MESSAGE = 'Выбор недоступен — нет связи с сервером';
 export const THEME_PICKER_ONLINE_OFF_MESSAGE = 'Включите «Онлайн» в настройках';
 
-export const resolveThemeAccessAfterFetchFailure = (previousThemeAccess: ThemeAccessDto | null): {
+export const resolveThemeAccessAfterFetchFailure = (
+  previousThemeAccess: ThemeAccessDto | null,
+): {
   themeAccess: ThemeAccessDto | null;
   themeAccessErrorMessage: string | null;
 } => {

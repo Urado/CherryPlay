@@ -55,7 +55,10 @@ export const resolveDynamicNeed = (loudness: TrackLoudness): number => {
   return 1;
 };
 
-export const resolveAutoCompressionStrength = (track: Track, settings: LoudnessSettings): number => {
+export const resolveAutoCompressionStrength = (
+  track: Track,
+  settings: LoudnessSettings,
+): number => {
   if (!settings.loudnessNormalizationEnabled || !settings.loudnessCompressionEnabled) {
     return 0;
   }
@@ -89,7 +92,10 @@ export const resolveAutoCompressionStrength = (track: Track, settings: LoudnessS
   return strength;
 };
 
-export const getEffectiveCompressionStrength = (track: Track, settings: LoudnessSettings): number => {
+export const getEffectiveCompressionStrength = (
+  track: Track,
+  settings: LoudnessSettings,
+): number => {
   if (!settings.loudnessNormalizationEnabled || !settings.loudnessCompressionEnabled) {
     return 0;
   }

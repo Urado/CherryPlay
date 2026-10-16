@@ -20,7 +20,7 @@ const audioEntry = (fileName: string, parentPath: string): DirectoryItem => {
     isDirectory: false,
     size: file?.size ?? 4_096,
   };
-}
+};
 
 const DIRECTORY_CONTENTS: Record<string, DirectoryItem[]> = {
   [DEMO_MUSIC_ROOT]: [
@@ -44,7 +44,7 @@ const DIRECTORY_CONTENTS: Record<string, DirectoryItem[]> = {
 
 const normalizePath = (path: string): string => {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '') || '/';
-}
+};
 
 export const listDemoDirectory = (path: string): DirectoryItem[] => {
   const key = normalizePath(path);
@@ -58,9 +58,11 @@ export const listDemoDirectory = (path: string): DirectoryItem[] => {
     ];
   }
   return DIRECTORY_CONTENTS[key] ?? [];
-}
+};
 
-export const statDemoPath = (path: string): {
+export const statDemoPath = (
+  path: string,
+): {
   size: number;
   modified: number;
   isDirectory: boolean;
@@ -95,7 +97,7 @@ export const statDemoPath = (path: string): {
   }
 
   return null;
-}
+};
 
 export const findDemoAudioFilesRecursive = (path: string): string[] => {
   const key = normalizePath(path);
@@ -113,6 +115,6 @@ export const findDemoAudioFilesRecursive = (path: string): string[] => {
 
   walk(key === '/' ? DEMO_MUSIC_ROOT : key);
   return results;
-}
+};
 
 export { resolveDemoPathForFile, resolveDemoPathForFileName } from './trackPaths';

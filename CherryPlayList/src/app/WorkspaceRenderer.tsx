@@ -1,4 +1,3 @@
-
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';

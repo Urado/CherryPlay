@@ -1,4 +1,3 @@
-
 import { useWorkspaceActivation } from '@app/hooks/useWorkspaceActivation';
 import {
   requestCreateScratchWorkspace,
@@ -733,7 +732,7 @@ export const WorkspaceMenu: React.FC = () => {
         }
         variant="ghost"
         size="sm"
-       />
+      />
 
       <WorkspaceNameModal
         key={nameModalKey}

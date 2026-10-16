@@ -135,7 +135,7 @@ const FieldInfoIcon = ({ hint, label = 'Справка' }: FieldInfoIconProps) =
       <InfoOutlinedIcon className="track-loudness-popover__info-icon" aria-hidden />
     </button>
   );
-}
+};
 
 type DetailRowProps = {
   label: string;
@@ -155,7 +155,7 @@ const DetailRow = ({ label, value, hint }: DetailRowProps) => {
       </div>
     </div>
   );
-}
+};
 
 interface TrackLoudnessPopoverProps {
   track: Track;

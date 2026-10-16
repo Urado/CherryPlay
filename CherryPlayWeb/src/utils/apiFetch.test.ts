@@ -61,9 +61,7 @@ describe('apiFetch', () => {
 
     const headers = new Headers(
       (
-        vi.mocked(fetch).mock.calls[0] as unknown as
-          | [RequestInfo | URL, RequestInit]
-          | undefined
+        vi.mocked(fetch).mock.calls[0] as unknown as [RequestInfo | URL, RequestInit] | undefined
       )?.[1]?.headers,
     );
     expect(headers.get(CLIENT_VERSION_HEADER)).toBe(CLIENT_VERSION);

@@ -307,7 +307,7 @@ interface AimpEnvelopeMetadata {
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+};
 
 const createProtocolError = (
   code: AimpProtocolErrorCode,
@@ -322,14 +322,14 @@ const createProtocolError = (
       details,
     },
   };
-}
+};
 
 const createSuccess = <T>(value: T): AimpValidationSuccess<T> => {
   return {
     success: true,
     value,
   };
-}
+};
 
 const readString = (
   record: Record<string, unknown>,
@@ -342,7 +342,7 @@ const readString = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readValidatedOptionalString = (
   record: Record<string, unknown>,
@@ -359,7 +359,7 @@ const readValidatedOptionalString = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readValidatedOptionalStringAllowEmpty = (
   record: Record<string, unknown>,
@@ -379,7 +379,7 @@ const readValidatedOptionalStringAllowEmpty = (
   }
   const trimmed = value.trim();
   return createSuccess(trimmed.length > 0 ? trimmed : undefined);
-}
+};
 
 const readValidatedOptionalNullableString = (
   record: Record<string, unknown>,
@@ -400,7 +400,7 @@ const readValidatedOptionalNullableString = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readInteger = (
   record: Record<string, unknown>,
@@ -417,7 +417,7 @@ const readInteger = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readBoolean = (
   record: Record<string, unknown>,
@@ -430,7 +430,7 @@ const readBoolean = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readValidatedOptionalInteger = (
   record: Record<string, unknown>,
@@ -451,7 +451,7 @@ const readValidatedOptionalInteger = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readValidatedOptionalNullableInteger = (
   record: Record<string, unknown>,
@@ -476,7 +476,7 @@ const readValidatedOptionalNullableInteger = (
   }
 
   return createSuccess(value);
-}
+};
 
 const readValidatedOptionalBoolean = (
   record: Record<string, unknown>,
@@ -493,15 +493,15 @@ const readValidatedOptionalBoolean = (
   }
 
   return createSuccess(value);
-}
+};
 
 const isValidIsoTimestamp = (value: string): boolean => {
   return !Number.isNaN(Date.parse(value));
-}
+};
 
 export const isSupportedAimpProtocolVersion = (version: string): boolean => {
   return (AIMP_SUPPORTED_PROTOCOL_VERSIONS as readonly string[]).includes(version);
-}
+};
 
 export const getAimpProtocolVersionError = (actualVersion: string): AimpProtocolError => {
   return {
@@ -509,7 +509,7 @@ export const getAimpProtocolVersionError = (actualVersion: string): AimpProtocol
     message: `Unsupported AIMP protocol version "${actualVersion}"`,
     details: `Supported versions: ${AIMP_SUPPORTED_PROTOCOL_VERSIONS.join(', ')}`,
   };
-}
+};
 
 export const createAimpHelloAckMessage = (options: {
   sequence: number;
@@ -541,7 +541,7 @@ export const createAimpHelloAckMessage = (options: {
     sentAt: options.sentAt,
     payload,
   };
-}
+};
 
 const readIsoTimestamp = (
   record: Record<string, unknown>,
@@ -558,7 +558,7 @@ const readIsoTimestamp = (
   }
 
   return result;
-}
+};
 
 const readOptionalNullableIsoTimestamp = (
   record: Record<string, unknown>,
@@ -579,7 +579,7 @@ const readOptionalNullableIsoTimestamp = (
   }
 
   return createSuccess(result.value);
-}
+};
 
 const validateAimpGatingReason = (
   value: unknown,
@@ -616,7 +616,7 @@ const validateAimpGatingReason = (
     code: code.value as AimpGatingReasonCode,
     message: message.value,
   });
-}
+};
 
 const validateAimpProtocolErrorState = (
   value: unknown,
@@ -668,7 +668,7 @@ const validateAimpProtocolErrorState = (
     message: message.value,
     details: details.value,
   });
-}
+};
 
 const validateAimpDisconnectReasonState = (
   value: unknown,
@@ -738,7 +738,7 @@ const validateAimpDisconnectReasonState = (
     detail: detailValue,
     occurredAt: occurredAt.value,
   });
-}
+};
 
 const validateAimpEnvironmentEligibility = (
   value: unknown,
@@ -802,9 +802,11 @@ const validateAimpEnvironmentEligibility = (
     architecture: architecture.value,
     gatingReasons,
   });
-}
+};
 
-const validateAimpConnectionState = (value: unknown): AimpValidationResult<AimpConnectionStateDto> => {
+const validateAimpConnectionState = (
+  value: unknown,
+): AimpValidationResult<AimpConnectionStateDto> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP bridge state connection must be an object');
   }
@@ -921,7 +923,7 @@ const validateAimpConnectionState = (value: unknown): AimpValidationResult<AimpC
     disconnectReason: disconnectReason.value,
     protocolError: protocolError.value,
   });
-}
+};
 
 const validateAimpPluginMetadataState = (
   value: unknown,
@@ -1052,7 +1054,7 @@ const validateAimpPluginMetadataState = (
     connectedAt: connectedAt.value,
     lastHelloAt: lastHelloAt.value,
   });
-}
+};
 
 const validateAimpPlaylistTrackDtoState = (
   value: unknown,
@@ -1183,7 +1185,7 @@ const validateAimpPlaylistTrackDtoState = (
     order: order.value,
     isActive: isActive.value,
   });
-}
+};
 
 const validateAimpPlaylistSnapshotState = (
   value: unknown,
@@ -1333,7 +1335,7 @@ const validateAimpPlaylistSnapshotState = (
     sentAt: sentAt.value,
     tracks,
   });
-}
+};
 
 const validateAimpPlaybackSnapshotState = (
   value: unknown,
@@ -1458,7 +1460,7 @@ const validateAimpPlaybackSnapshotState = (
     receivedAt: receivedAt.value,
     sentAt: sentAt.value,
   });
-}
+};
 
 const validateAimpCompatibilityCheckpointInputState = (
   value: unknown,
@@ -1682,11 +1684,11 @@ const validateAimpCompatibilityCheckpointInputState = (
     playlist,
     playback,
   });
-}
+};
 
 const areJsonEqual = (left: unknown, right: unknown): boolean => {
   return JSON.stringify(left) === JSON.stringify(right);
-}
+};
 
 const omitUndefinedDeep = <T>(value: T): T => {
   if (Array.isArray(value)) {
@@ -1706,7 +1708,7 @@ const omitUndefinedDeep = <T>(value: T): T => {
   }
 
   return value;
-}
+};
 
 const playlistContainsTrackKey = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
@@ -1719,7 +1721,7 @@ const playlistContainsTrackKey = (
   return playlistSnapshot.tracks.some(
     (track) => normalizeTrackKeyForComparison(track.trackKey) === normalizedKey,
   );
-}
+};
 
 export const getAimpPlaybackPlaylistConsistencyError = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
@@ -1735,7 +1737,7 @@ export const getAimpPlaybackPlaylistConsistencyError = (
   }
 
   return 'AIMP playbackSnapshot.currentTrackKey must exist in the latest accepted playlistSnapshot.tracks';
-}
+};
 
 export const hasUsableAimpLiveStreamSnapshots = (
   playlistSnapshot: AimpPlaylistSnapshotDto | null,
@@ -1746,7 +1748,7 @@ export const hasUsableAimpLiveStreamSnapshots = (
     playbackSnapshot !== null &&
     getAimpPlaybackPlaylistConsistencyError(playlistSnapshot, playbackSnapshot) === null
   );
-}
+};
 
 export const validateAimpPluginManifest = (value: unknown): AimpPluginManifestValidationResult => {
   if (!isPlainObject(value)) {
@@ -1815,7 +1817,7 @@ export const validateAimpPluginManifest = (value: unknown): AimpPluginManifestVa
     supportedArchitectures,
     main: main.value,
   });
-}
+};
 
 const validateTrackReferencePayload = (
   value: unknown,
@@ -1898,7 +1900,7 @@ const validateTrackReferencePayload = (
     title: title.value,
     durationMs: durationMs.value,
   });
-}
+};
 
 export const normalizeTrackKeyForComparison = (key: string): string => {
   const n = (s: string) => s.normalize('NFC').toLowerCase();
@@ -1913,7 +1915,7 @@ export const normalizeTrackKeyForComparison = (key: string): string => {
     return 'title-duration:' + n(key.slice('title-duration:'.length));
   }
   return n(key);
-}
+};
 
 const validateCanonicalTrackKeyEcho = (
   reference: AimpTrackReferencePayload | null | undefined,
@@ -1946,7 +1948,7 @@ const validateCanonicalTrackKeyEcho = (
   }
 
   return createSuccess(null);
-}
+};
 
 const validatePlaylistActiveTrackMembership = (
   tracks: AimpPlaylistTrackPayload[],
@@ -1993,7 +1995,7 @@ const validatePlaylistActiveTrackMembership = (
   }
 
   return createSuccess(null);
-}
+};
 
 export const validateAimpProtocolMessage = (
   value: unknown,
@@ -2075,7 +2077,7 @@ export const validateAimpProtocolMessage = (
         `Unsupported AIMP message type "${typeResult.value}"`,
       );
   }
-}
+};
 
 export const validateAimpServerProtocolMessage = (
   value: unknown,
@@ -2149,7 +2151,7 @@ export const validateAimpServerProtocolMessage = (
         `Unsupported AIMP server message type "${typeResult.value}"`,
       );
   }
-}
+};
 
 const validateHelloMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2221,7 +2223,7 @@ const validateHelloMessage = (
       instanceId: instanceId.value,
     },
   });
-}
+};
 
 const validateHelloAckMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2309,7 +2311,7 @@ const validateHelloAckMessage = (
       detail: detail.value,
     },
   });
-}
+};
 
 const validatePlaylistSnapshotMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2508,7 +2510,7 @@ const validatePlaylistSnapshotMessage = (
       tracks,
     },
   });
-}
+};
 
 const validatePlaybackSnapshotMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2618,7 +2620,7 @@ const validatePlaybackSnapshotMessage = (
       isMuted: isMuted.value,
     },
   });
-}
+};
 
 const validateHeartbeatMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2660,7 +2662,7 @@ const validateHeartbeatMessage = (
       lastPlaybackRevision: lastPlaybackRevision.value,
     },
   });
-}
+};
 
 const validateGoodbyeMessage = (
   envelope: AimpEnvelopeMetadata,
@@ -2705,9 +2707,11 @@ const validateGoodbyeMessage = (
       detail: detail.value,
     },
   });
-}
+};
 
-export const deriveAimpTrackKey = (track: AimpTrackReferencePayload | AimpPlaylistTrackPayload): {
+export const deriveAimpTrackKey = (
+  track: AimpTrackReferencePayload | AimpPlaylistTrackPayload,
+): {
   trackKey: string;
   identityStrategy: AimpTrackIdentityStrategy;
 } => {
@@ -2735,7 +2739,7 @@ export const deriveAimpTrackKey = (track: AimpTrackReferencePayload | AimpPlayli
     trackKey: `title-duration:${track.title.toLowerCase()}::${track.durationMs ?? 0}`,
     identityStrategy: 'titleDuration',
   };
-}
+};
 
 export const resolveAimpTrackKeyReference = (
   reference: AimpTrackReferencePayload | null | undefined,
@@ -2746,7 +2750,7 @@ export const resolveAimpTrackKeyReference = (
   }
 
   return legacyTrackKey ?? null;
-}
+};
 
 export const resolveAimpTrackKeyFromReference = (
   reference: AimpTrackReferencePayload | null | undefined,
@@ -2756,7 +2760,7 @@ export const resolveAimpTrackKeyFromReference = (
   }
 
   return deriveAimpTrackKey(reference).trackKey;
-}
+};
 
 export const normalizeAimpPluginMetadata = (
   message: AimpHelloMessage,
@@ -2773,7 +2777,7 @@ export const normalizeAimpPluginMetadata = (
     connectedAt,
     lastHelloAt: message.sentAt,
   };
-}
+};
 
 export const normalizeAimpPlaylistSnapshot = (
   message: AimpPlaylistSnapshotMessage,
@@ -2833,7 +2837,7 @@ export const normalizeAimpPlaylistSnapshot = (
       return { ...track, isActive };
     }),
   };
-}
+};
 
 export const normalizeAimpPlaybackSnapshot = (
   message: AimpPlaybackSnapshotMessage,
@@ -2850,7 +2854,7 @@ export const normalizeAimpPlaybackSnapshot = (
     receivedAt,
     sentAt: message.sentAt,
   };
-}
+};
 
 export const createAimpCompatibilityCheckpointInput = (
   state: Pick<
@@ -2897,7 +2901,7 @@ export const createAimpCompatibilityCheckpointInput = (
         }
       : null,
   };
-}
+};
 
 export const createInitialAimpBridgeState = (): AimpBridgeState => {
   const environment: AimpEnvironmentEligibility = {
@@ -2945,11 +2949,11 @@ export const createInitialAimpBridgeState = (): AimpBridgeState => {
 
   baseState.compatibilityCheckpointInput = createAimpCompatibilityCheckpointInput(baseState);
   return baseState;
-}
+};
 
 export const isAimpSourceSelection = (value: unknown): value is AimpSourceSelection => {
   return value === 'aimp' || value === 'cherryPlayPlayer';
-}
+};
 
 export const validateAimpSourceSelectionPayload = (
   value: unknown,
@@ -2968,7 +2972,7 @@ export const validateAimpSourceSelectionPayload = (
   return createSuccess({
     sourceSelection: value.sourceSelection,
   });
-}
+};
 
 export const validateAimpLiveStreamPayload = (
   value: unknown,
@@ -2987,7 +2991,7 @@ export const validateAimpLiveStreamPayload = (
   return createSuccess({
     liveStreamStarted: value.liveStreamStarted,
   });
-}
+};
 
 export const validateAimpBridgeState = (value: unknown): AimpValidationResult<AimpBridgeState> => {
   if (!isPlainObject(value)) {
@@ -3180,9 +3184,11 @@ export const validateAimpBridgeState = (value: unknown): AimpValidationResult<Ai
     playbackSnapshot: playbackSnapshot.value,
     compatibilityCheckpointInput: compatibilityCheckpointInput.value,
   });
-}
+};
 
-export const validateAimpBridgeStateResponse = (value: unknown): AimpValidationResult<{
+export const validateAimpBridgeStateResponse = (
+  value: unknown,
+): AimpValidationResult<{
   success: boolean;
   data?: AimpBridgeState;
   error?: string;
@@ -3221,4 +3227,4 @@ export const validateAimpBridgeStateResponse = (value: unknown): AimpValidationR
     success: false,
     error: error.value,
   });
-}
+};

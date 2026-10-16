@@ -8,7 +8,6 @@ import type { DemoPlayerFloatingSize } from '@shared/stores/settingsStore';
 import { useCallback, useState } from 'react';
 import type { PointerEvent } from 'react';
 
-
 interface ResizeState {
   startX: number;
   originWidth: number;

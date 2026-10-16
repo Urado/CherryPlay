@@ -1,7 +1,6 @@
 import { isOverlayKeyboardTarget, shouldIgnoreEnterForPrimary } from '@shared/utils/modalKeyboard';
 import { useCallback, useEffect, useRef } from 'react';
 
-
 export interface UseModalKeyboardOptions {
   enabled: boolean;
   onCancel: () => void;

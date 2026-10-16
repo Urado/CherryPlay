@@ -132,8 +132,7 @@ const renderRoute = (shortCode: string) =>
   );
 
 describe('PartyQrPage', () => {
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   beforeEach(() => {
     mocks.getPublicParty.mockReset();
@@ -156,7 +155,9 @@ describe('PartyQrPage', () => {
 
     expect(qr.getAttribute('data-value')).toBe(`${window.location.origin}/party/night-2026`);
     expect(qr.getAttribute('data-title')).toBe('Theme Party QR');
-    expect(screen.getByRole('link', { name: '← К вечеринке' }).getAttribute('href')).toBe('/party/night-2026');
+    expect(screen.getByRole('link', { name: '← К вечеринке' }).getAttribute('href')).toBe(
+      '/party/night-2026',
+    );
     expect(mocks.resolvePartyQrStyle).toHaveBeenCalledWith('basic', party.customizationSettings);
     expect(ROUTES.PARTY_QR('night-2026')).toBe('/party/night-2026/qr');
   });
@@ -179,6 +180,8 @@ describe('PartyQrPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: 'QR-код' }).getAttribute('href')).toBe('/party/night-2026/qr');
+    expect(screen.getByRole('link', { name: 'QR-код' }).getAttribute('href')).toBe(
+      '/party/night-2026/qr',
+    );
   });
 });
