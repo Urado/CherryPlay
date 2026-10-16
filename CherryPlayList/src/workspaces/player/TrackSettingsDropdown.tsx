@@ -1,6 +1,5 @@
-
 import { ActionAfterTrack } from '@core/types/project';
-import { useProjectStore } from '@shared/stores';
+import { useProjectStore, getItemPathRecursive } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -8,27 +7,60 @@ import { createPortal } from 'react-dom';
 export const TRACK_SETTINGS_DROPDOWN_WIDTH = 280;
 
 interface TrackSettingsDropdownProps {
-  trackId: string;
+  itemId: string;
+  isGroup: boolean;
   anchorRect: DOMRect;
+  getEffectiveTrackSettings: (trackId: string) => {
+    actionAfterTrack: ActionAfterTrack;
+    pauseBetweenTracks: number;
+  };
   onClose: () => void;
 }
 
 export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
-  trackId,
+  itemId,
+  isGroup,
   anchorRect,
+  getEffectiveTrackSettings,
   onClose,
 }) => {
-  const { settings, getTrackSettings, setTrackSettings } = useProjectStore();
+  const {
+    items,
+    settings,
+    getTrackSettings,
+    setTrackSettings,
+    getGroupSettings,
+    setGroupSettings,
+  } = useProjectStore();
 
-  const { defaultPauseBetweenTracks, defaultActionAfterTrack } = settings;
-  const currentSettings = getTrackSettings(trackId);
+  const { defaultPauseBetweenTracks } = settings;
+  const itemSettings = isGroup ? getGroupSettings(itemId) : getTrackSettings(itemId);
+  const itemPath = getItemPathRecursive(items, itemId) ?? [];
+  const ancestorGroupIds = itemPath.slice(0, -1).reverse();
+  let inheritedPauseBetweenTracks = defaultPauseBetweenTracks;
+
+  for (const ancestorGroupId of ancestorGroupIds) {
+    const ancestorSettings = getGroupSettings(ancestorGroupId);
+    if (ancestorSettings.actionAfterTrack !== null && ancestorSettings.actionAfterTrack !== undefined) {
+      inheritedPauseBetweenTracks =
+        ancestorSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks;
+      break;
+    }
+  }
+
+  const hasItemAction =
+    itemSettings.actionAfterTrack !== null && itemSettings.actionAfterTrack !== undefined;
+  const effectiveTrackSettings = isGroup ? null : getEffectiveTrackSettings(itemId);
+  const resolvedPause = hasItemAction
+    ? itemSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks
+    : isGroup
+      ? inheritedPauseBetweenTracks
+      : effectiveTrackSettings?.pauseBetweenTracks ?? itemSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks;
 
   const [localActionAfterTrack, setLocalActionAfterTrack] = useState<ActionAfterTrack | 'default'>(
-    currentSettings.actionAfterTrack || 'default',
+    itemSettings.actionAfterTrack || 'default',
   );
-  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number | ''>(
-    currentSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
-  );
+  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number | ''>(resolvedPause);
 
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -41,13 +73,19 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     (action: ActionAfterTrack | 'default', pauseSec?: number) => {
       const pause =
         action === 'pauseAndNext' ? (pauseSec ?? effectivePause) : defaultPauseBetweenTracks;
-      setTrackSettings(trackId, {
+      const nextSettings = {
         actionAfterTrack: action === 'default' ? null : action,
         pauseBetweenTracks:
           action === 'pauseAndNext' && pause !== defaultPauseBetweenTracks ? pause : null,
-      });
+      };
+
+      if (isGroup) {
+        setGroupSettings(itemId, nextSettings);
+      } else {
+        setTrackSettings(itemId, nextSettings);
+      }
     },
-    [trackId, defaultPauseBetweenTracks, effectivePause, setTrackSettings],
+    [defaultPauseBetweenTracks, effectivePause, isGroup, itemId, setGroupSettings, setTrackSettings],
   );
 
   const handleSelect = useCallback(
@@ -61,6 +99,7 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
 
   const handlePauseSecChange = useCallback(
     (sec: number) => {
+      setLocalActionAfterTrack('pauseAndNext');
       setLocalPauseBetweenTracks(sec);
       applyImmediate('pauseAndNext', sec);
     },
@@ -68,10 +107,13 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
   );
 
   const handlePauseInputFocus = useCallback(() => {
-    if (localPauseBetweenTracks === defaultPauseBetweenTracks) {
+    if (
+      resolvedPause === defaultPauseBetweenTracks &&
+      localPauseBetweenTracks === resolvedPause
+    ) {
       setLocalPauseBetweenTracks('');
     }
-  }, [localPauseBetweenTracks, defaultPauseBetweenTracks]);
+  }, [defaultPauseBetweenTracks, localPauseBetweenTracks, resolvedPause]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -99,7 +141,7 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     {
       value: 'default',
       label: 'По умолчанию',
-      title: `По умолчанию (${defaultActionAfterTrack === 'next' ? 'Без паузы' : defaultActionAfterTrack === 'pauseAndNext' ? 'Интервал' : 'Пауза'})`,
+      title: 'По умолчанию',
     },
     { value: 'pause', label: 'Пауза в конце трека', title: 'Пауза в конце трека' },
     { value: 'next', label: 'Без паузы', title: 'Сразу следующий трек' },
@@ -117,9 +159,22 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
       className="track-settings-dropdown"
       style={style}
       role="dialog"
-      aria-label="Настройки трека"
+      aria-label="Настройки тайминга"
     >
       <div className="track-settings-dropdown__body">
+        {isGroup && (
+          <div
+            className="track-settings-dropdown__description"
+            style={{
+              marginBottom: 8,
+              fontSize: '0.82rem',
+              lineHeight: 1.35,
+              color: 'var(--text-secondary, #9e9e9e)',
+            }}
+          >
+            Действие применяется ко всем трекам группы. Индивидуальные настройки треков имеют приоритет.
+          </div>
+        )}
         <ul className="track-settings-dropdown__list">
           {actions.map(({ value, label, title }) => (
             <li key={value} className="track-settings-dropdown__item">
