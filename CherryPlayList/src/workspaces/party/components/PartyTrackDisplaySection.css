@@ -1,3 +1,11 @@
+.party-track-display-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.25rem 0 0.5rem;
+}
+
 .party-track-display-section__hint {
   margin: 0;
   font-size: 0.8125rem;

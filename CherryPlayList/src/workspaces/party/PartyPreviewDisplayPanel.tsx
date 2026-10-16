@@ -22,7 +22,7 @@ export const PartyPreviewDisplayPanel: React.FC<PartyPreviewDisplayPanelProps> =
   return (
     <aside id="party-preview-display-panel" className="party-preview-design-panel" hidden={hidden}>
       <div className="party-preview-display-panel">
-        <PartyEditorAccordion title="Глубина групп" defaultExpanded={!springTheme}>
+        <PartyEditorAccordion title="Глубина групп" defaultExpanded={true}>
           {springTheme ? (
             <p className="party-preview-display-depth-note">
               Глубина групп не применяется к теме «Весенний кросс-степ».
@@ -48,11 +48,12 @@ export const PartyPreviewDisplayPanel: React.FC<PartyPreviewDisplayPanelProps> =
         </PartyEditorAccordion>
 
         {form.showTrackDisplay ? (
-          <PartyTrackDisplaySection
-            value={form.partyTrackDisplay}
-            onChange={form.setPartyTrackDisplaySettings}
-            defaultExpanded={true}
-          />
+          <PartyEditorAccordion title="Отображение треков" defaultExpanded={true}>
+            <PartyTrackDisplaySection
+              value={form.partyTrackDisplay}
+              onChange={form.setPartyTrackDisplaySettings}
+            />
+          </PartyEditorAccordion>
         ) : null}
       </div>
     </aside>

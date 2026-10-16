@@ -109,7 +109,7 @@ export const usePartySettingsFormState = (
   const phase = phaseResult.phase;
   const isBlocked = phaseResult.isBlocked;
   const editorPhase = phase ?? (isBlocked ? null : 'draft-unlinked');
-  const showTrackDisplay = shouldShowPartyTrackDisplaySection(phase);
+  const showTrackDisplay = shouldShowPartyTrackDisplaySection(editorPhase ?? 'draft-unlinked');
   const showCatalog = editorPhase != null && shouldShowPartyCatalogVisibilityControl(editorPhase);
   const showCopyUrl =
     Boolean(linkedParty?.url) &&
