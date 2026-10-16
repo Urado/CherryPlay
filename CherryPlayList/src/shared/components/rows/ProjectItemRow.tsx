@@ -11,7 +11,9 @@ import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItem
 import { useItemDragOver } from '../ItemList';
 import { ListRowCompound } from '../ListRow';
 
-function pluralize(count: number, one: string, few: string, many: string): string {
+import './ProjectItemRow.css';
+
+const pluralize = (count: number, one: string, few: string, many: string): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
@@ -25,7 +27,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
     return few;
   }
   return many;
-}
+};
 
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 
@@ -188,9 +190,10 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   }, [isEditingName]);
 
   const itemCount = isGroup ? getGroupItemCount(item) : 0;
-  const groupDisplayName = isGroup
-    ? `${item.name} (${itemCount} ${pluralize(itemCount, 'элемент', 'элемента', 'элементов')})`
+  const groupCountLabel = isGroup
+    ? `(${itemCount} ${pluralize(itemCount, 'элемент', 'элемента', 'элементов')})`
     : '';
+  const canRenameGroup = isGroup && !!onRenameGroup && !isLocked;
   const trackDisplayName = track?.name || '';
 
   const displayDuration = isGroup
@@ -251,39 +254,50 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   );
 
   const renderGroupNameContent = () => {
-    if (isEditingName) {
-      return (
-        <>
-          <input
-            ref={inputRef}
-            type="text"
-            value={editingName}
-            onChange={(e) => setEditingName(e.target.value)}
-            onBlur={handleSaveName}
-            onKeyDown={handleNameKeyDown}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            className="playlist-item-group-name-input"
-            style={{
-              background: 'var(--bg-tertiary)',
-              border: '1px solid var(--accent-primary)',
-              borderRadius: '4px',
-              padding: '2px 6px',
-              fontSize: 'var(--font-size-body)',
-              color: 'var(--text-primary)',
-              outline: 'none',
-              flex: 1,
-              minWidth: 0,
+    return (
+      <>
+        <span
+          className={[
+            'playlist-item-group-name-field',
+            isEditingName ? 'playlist-item-group-name-field--editing' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {isEditingName ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editingName}
+              onChange={(e) => setEditingName(e.target.value)}
+              onBlur={handleSaveName}
+              onKeyDown={handleNameKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="playlist-item-group-name-input"
+              aria-label="Название группы"
+            />
+          ) : (
+            <span className="playlist-item-group-name-text">{item.name}</span>
+          )}
+        </span>
+        {canRenameGroup && !isEditingName ? (
+          <button
+            type="button"
+            className="playlist-item-group-rename-btn"
+            aria-label="Переименовать группу"
+            title="Переименовать"
+            onClick={(e) => {
+              e.stopPropagation();
+              beginGroupRename();
             }}
-          />
-          <span style={{ marginLeft: '4px' }}>
-            ({itemCount} {pluralize(itemCount, 'элемент', 'элемента', 'элементов')})
-          </span>
-        </>
-      );
-    }
-
-    return groupDisplayName;
+          >
+            <EditOutlinedIcon className="playlist-item-group-rename-icon" aria-hidden />
+          </button>
+        ) : null}
+        <span className="playlist-item-group-name-count">{groupCountLabel}</span>
+      </>
+    );
   };
 
   return (
@@ -330,12 +344,11 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       )}
 
       <ListRowCompound.Content
-        editable={isGroup && !!onRenameGroup && !isLocked}
+        className={isGroup ? 'playlist-item-name--with-group-field' : undefined}
+        editable={canRenameGroup}
         onDoubleClick={isGroup ? handleStartEdit : undefined}
         title={
-          isGroup && onRenameGroup && !isLocked
-            ? 'Двойной клик или карандаш для переименования'
-            : undefined
+          canRenameGroup ? 'Двойной клик или карандаш для переименования' : undefined
         }
       >
         {isGroup ? renderGroupNameContent() : trackDisplayName}
@@ -375,22 +388,6 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
       )}
 
       <ListRowCompound.Actions>
-        {isGroup && onRenameGroup && !isLocked && !isEditingName ? (
-          <ListRowCompound.ActionButton
-            className="playlist-item-group-rename-btn"
-            allowWhenPlayedLocked
-            aria-label="Переименовать группу"
-            title="Переименовать"
-            onClick={(e) => {
-              e.stopPropagation();
-              beginGroupRename();
-            }}
-            icon={<EditOutlinedIcon style={{ fontSize: '18px' }} />}
-            variant="ghost"
-            size="sm"
-          />
-        ) : null}
-
         {showSettingsButton &&
           (settingsButton ||
             (onOpenSettings && (
