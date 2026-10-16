@@ -8,11 +8,11 @@ const SECTION_HEADING = /^(\d+)(?:\.(\d+))?\.(\s+)(.+)$/;
 const UNORDERED_ITEM = /^[—–\-*]\s+(.+)$/;
 const ORDERED_ITEM = /^\d+[.)]\s+(.+)$/;
 
-function matchNumberedSection(line: string): RegExpMatchArray | null {
+const matchNumberedSection = (line: string): RegExpMatchArray | null => {
   return line.match(SECTION_HEADING);
-}
+};
 
-function isTitleLikeHeading(line: string): { level: 2 | 3; text: string } | null {
+const isTitleLikeHeading = (line: string): { level: 2 | 3; text: string } | null => {
   const atx = line.match(ATX_HEADING);
   if (atx) {
     return { level: atx[1].length === 2 ? 2 : 3, text: atx[2].trim() };
@@ -25,34 +25,27 @@ function isTitleLikeHeading(line: string): { level: 2 | 3; text: string } | null
 
   const hasSubsection = numbered[2] !== undefined;
   const title = numbered[4].trim();
-  // Standalone section titles stay short; long same-line bodies stay paragraphs.
   if (title.length > 90) {
     return null;
   }
 
   return { level: hasSubsection ? 3 : 2, text: `${numbered[1]}${hasSubsection ? `.${numbered[2]}` : ''}. ${title}` };
-}
+};
 
-function isUnorderedItem(line: string): string | null {
+const isUnorderedItem = (line: string): string | null => {
   const match = line.match(UNORDERED_ITEM);
   return match ? match[1].trim() : null;
-}
+};
 
-function isOrderedItem(line: string): string | null {
-  // Avoid treating "1. Title" section headings as ordered list items.
+const isOrderedItem = (line: string): string | null => {
   if (isTitleLikeHeading(line)) {
     return null;
   }
   const match = line.match(ORDERED_ITEM);
   return match ? match[1].trim() : null;
-}
+};
 
-/**
- * Parses plain legal markdown into headings, paragraphs, and lists.
- * Numbered section lines (`1. …`, `8.4. …`) become h2/h3 when title-like;
- * `##` / `###` are supported; `—` / `-` / `*` lines become unordered lists.
- */
-export function parseLegalMarkdown(body: string): LegalBlock[] {
+export const parseLegalMarkdown = (body: string): LegalBlock[] => {
   const lines = body
     .replace(/^\uFEFF/, '')
     .replace(/\r\n/g, '\n')
@@ -126,7 +119,6 @@ export function parseLegalMarkdown(body: string): LegalBlock[] {
       continue;
     }
 
-    // Numbered clause with long same-line body → its own paragraph (do not glue 2.1/2.2).
     if (matchNumberedSection(line)) {
       blocks.push({ type: 'paragraph', text: line });
       i += 1;
@@ -155,11 +147,10 @@ export function parseLegalMarkdown(body: string): LegalBlock[] {
   }
 
   return blocks;
-}
+};
 
-/** Flattens body into blank-line paragraphs (legacy / operator). */
-export function markdownBodyToParagraphs(body: string): string[] {
+export const markdownBodyToParagraphs = (body: string): string[] => {
   return parseLegalMarkdown(body)
     .filter((block): block is Extract<LegalBlock, { type: 'paragraph' }> => block.type === 'paragraph')
     .map((block) => block.text);
-}
+};

@@ -16,7 +16,7 @@ const LAYOUT_PRESET_SIGNATURES: Record<LayoutPreset, string> = {
   party: 'horizontal(workspace:player,workspace:party-preview)',
 };
 
-export function getLayoutPresetFromLayout(layout: Layout): LayoutPreset | null {
+export const getLayoutPresetFromLayout = (layout: Layout): LayoutPreset | null => {
   const signature = getLayoutStructureSignature(layout.rootZone);
 
   for (const [preset, expectedSignature] of Object.entries(LAYOUT_PRESET_SIGNATURES) as Array<
@@ -28,4 +28,4 @@ export function getLayoutPresetFromLayout(layout: Layout): LayoutPreset | null {
   }
 
   return null;
-}
+};

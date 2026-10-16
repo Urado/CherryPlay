@@ -1,3 +1,4 @@
+import { HeaderPlaybackPill } from '@app/components/HeaderPlaybackPill';
 import '@testing-library/jest-dom';
 import { HubConnectionState } from '@microsoft/signalr';
 import { render, screen } from '@testing-library/react';
@@ -32,8 +33,6 @@ jest.mock('@shared/stores', () => {
     usePlayerAudioStore: (selector: (state: typeof playerState) => unknown) => selector(playerState),
   };
 });
-
-import { HeaderPlaybackPill } from '@app/components/HeaderPlaybackPill';
 
 describe('HeaderPlaybackPill transmission status', () => {
   beforeEach(() => {

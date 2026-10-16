@@ -50,7 +50,8 @@ describe('ProjectItemRow group more menu', () => {
     expect(button).toBeEnabled();
     fireEvent.click(button);
     expect(onTrackActions).toHaveBeenCalledTimes(1);
-    expect(onTrackActions.mock.calls[0][0]).toBe('group-1');
+    const firstCall = onTrackActions.mock.calls[0] as [string, ...unknown[]] | undefined;
+    expect(firstCall?.[0]).toBe('group-1');
   });
 
   it('keeps group ⋯ disabled when the row is disabled, matching track parity', () => {

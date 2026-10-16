@@ -10,36 +10,26 @@ import {
   usePartyPreviewScenarioStore,
 } from './partyPreviewScenarioStore';
 
-function getScenarioStore() {
+const getScenarioStore = () => {
   return usePartyPreviewScenarioStore.getState();
-}
+};
 
-function ensurePreviewTrackNumberSelected(): void {
+const ensurePreviewTrackNumberSelected = (): void => {
   const store = getScenarioStore();
   if (store.currentTrackNumber == null || store.currentTrackNumber < 1) {
     usePartyPreviewScenarioStore.setState({ currentTrackNumber: 1 });
   }
-}
+};
 
-/**
- * Re-sync preview with production runtime: sets `isSynchronized: true` and clears all
- * scenario overrides (lifecycle, mock live, track, theme, connection break).
- *
- * Per reset matrix §6, this restores the same store shape as {@link resetPreviewScenario}
- * because {@link initialPartyPreviewScenarioState} is synchronized-by-default with no
- * overrides. Kept as a separate entry point for the toolbar «Синхронизировать с эфиром»
- * affordance vs expanded-panel «Сброс сценария».
- */
-export function syncPreviewWithProduction(): void {
+export const syncPreviewWithProduction = (): void => {
   resetPreviewScenario();
-}
+};
 
-/** Enter detached mode without changing current overrides. */
-export function detachPreview(): void {
+export const detachPreview = (): void => {
   usePartyPreviewScenarioStore.setState({ isSynchronized: false });
-}
+};
 
-export function setPreviewLifecycleOverride(lifecycle: PartyLifecycleState): void {
+export const setPreviewLifecycleOverride = (lifecycle: PartyLifecycleState): void => {
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,
     lifecycleOverride: lifecycle,
@@ -47,9 +37,9 @@ export function setPreviewLifecycleOverride(lifecycle: PartyLifecycleState): voi
     viewerStatusOverride: null,
     currentTrackNumber: null,
   });
-}
+};
 
-export function setPreviewMockLive(): void {
+export const setPreviewMockLive = (): void => {
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,
     lifecycleOverride: 'ready',
@@ -57,9 +47,9 @@ export function setPreviewMockLive(): void {
     viewerStatusOverride: null,
   });
   ensurePreviewTrackNumberSelected();
-}
+};
 
-export function setPreviewTrackNumber(trackNumber: number | null): void {
+export const setPreviewTrackNumber = (trackNumber: number | null): void => {
   const normalized =
     trackNumber == null || Number.isNaN(trackNumber) ? null : Math.max(1, Math.floor(trackNumber));
   usePartyPreviewScenarioStore.setState({
@@ -69,9 +59,9 @@ export function setPreviewTrackNumber(trackNumber: number | null): void {
     mockLiveEnabled: true,
     currentTrackNumber: normalized ?? 1,
   });
-}
+};
 
-export function setPreviewConnectionBreak(scenario: PreviewConnectionScenario): void {
+export const setPreviewConnectionBreak = (scenario: PreviewConnectionScenario): void => {
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,
     lifecycleOverride: 'ready',
@@ -79,9 +69,9 @@ export function setPreviewConnectionBreak(scenario: PreviewConnectionScenario): 
     viewerStatusOverride: PREVIEW_CONNECTION_VIEWER_STATUS[scenario],
   });
   ensurePreviewTrackNumberSelected();
-}
+};
 
-export function setPreviewTheme(themeId: PartyThemeId): void {
+export const setPreviewTheme = (themeId: PartyThemeId): void => {
   const store = getScenarioStore();
   const customizationSettingsOverride =
     store.customizationSettingsOverride ??
@@ -92,24 +82,17 @@ export function setPreviewTheme(themeId: PartyThemeId): void {
     themeOverride: themeId,
     customizationSettingsOverride,
   });
-}
+};
 
-export function setPreviewCustomizationSettings(settings: Record<string, unknown>): void {
+export const setPreviewCustomizationSettings = (settings: Record<string, unknown>): void => {
   usePartyPreviewScenarioStore.setState({
     isSynchronized: false,
     customizationSettingsOverride: settings,
   });
-}
+};
 
-/**
- * Restore full initial scenario state (`isSynchronized: true`, all overrides cleared).
- *
- * Intentionally equivalent to {@link syncPreviewWithProduction} on the scenario store
- * per reset matrix §6; differs only in UI context (explicit reset vs sync toggle).
- * Does not mutate production `partyWorkspaceStore`.
- */
-export function resetPreviewScenario(): void {
+export const resetPreviewScenario = (): void => {
   usePartyPreviewScenarioStore.setState({ ...initialPartyPreviewScenarioState });
-}
+};
 
 export type { PreviewConnectionScenario };

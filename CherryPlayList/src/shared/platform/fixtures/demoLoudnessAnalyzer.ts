@@ -57,27 +57,27 @@ export const DEMO_LOUDNESS_PROFILES: Readonly<Record<string, DemoLoudnessProfile
   },
 };
 
-function normalizePath(path: string): string {
+const normalizePath = (path: string): string => {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }
 
-function findDemoAudioFile(path: string) {
+const findDemoAudioFile = (path: string) => {
   const key = normalizePath(path);
   return DEMO_AUDIO_FILES.find((file) => normalizePath(file.path) === key);
 }
 
-export function hasDemoLoudnessProfile(path: string): boolean {
+export const hasDemoLoudnessProfile = (path: string): boolean => {
   return normalizePath(path) in DEMO_LOUDNESS_PROFILES;
 }
 
-export function getDemoLoudnessProfile(path: string): DemoLoudnessProfile | null {
+export const getDemoLoudnessProfile = (path: string): DemoLoudnessProfile | null => {
   const key = normalizePath(path);
   return DEMO_LOUDNESS_PROFILES[key] ?? null;
 }
 
-export function resolveDemoAnalyzeTargetLufs(
+export const resolveDemoAnalyzeTargetLufs = (
   targetLufs: unknown,
-): { ok: true; targetLufs: number } | { ok: false; error: string } {
+): { ok: true; targetLufs: number } | { ok: false; error: string } => {
   let resolved = DEFAULT_LOUDNESS_TARGET_LUFS;
   if (typeof targetLufs === 'number' && Number.isFinite(targetLufs)) {
     if (targetLufs < MIN_TARGET_LUFS || targetLufs > MAX_TARGET_LUFS) {
@@ -91,10 +91,10 @@ export function resolveDemoAnalyzeTargetLufs(
   return { ok: true, targetLufs: resolved };
 }
 
-export function analyzeDemoLoudness(
+export const analyzeDemoLoudness = (
   path: string,
   targetLufs: number,
-): LoudnessAnalyzeResult | null {
+): LoudnessAnalyzeResult | null => {
   const profile = getDemoLoudnessProfile(path);
   if (!profile) {
     return null;
@@ -114,7 +114,7 @@ export function analyzeDemoLoudness(
   };
 }
 
-export function statDemoAudioFile(path: string): AudioFileStat | null {
+export const statDemoAudioFile = (path: string): AudioFileStat | null => {
   const file = findDemoAudioFile(path);
   if (!file) {
     return null;
@@ -126,7 +126,7 @@ export function statDemoAudioFile(path: string): AudioFileStat | null {
   };
 }
 
-export function handleDemoAnalyzeLoudness(payload: unknown): IPCResponse<LoudnessAnalyzeResult> {
+export const handleDemoAnalyzeLoudness = (payload: unknown): IPCResponse<LoudnessAnalyzeResult> => {
   const path =
     typeof payload === 'object' &&
     payload !== null &&
@@ -182,7 +182,7 @@ export function handleDemoAnalyzeLoudness(payload: unknown): IPCResponse<Loudnes
   };
 }
 
-export function handleDemoStatAudioFile(payload: unknown): IPCResponse<AudioFileStat> {
+export const handleDemoStatAudioFile = (payload: unknown): IPCResponse<AudioFileStat> => {
   const path =
     typeof payload === 'object' &&
     payload !== null &&

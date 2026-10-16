@@ -15,7 +15,7 @@ export interface BaseCurrentTrackDisplayProps {
   themeId?: string;
 }
 
-function getStatusText(status: PlaybackState['status']): string {
+const getStatusText = (status: PlaybackState['status']): string => {
   switch (status) {
     case 'playing':
       return '▶ Воспроизведение';
@@ -26,7 +26,7 @@ function getStatusText(status: PlaybackState['status']): string {
     default:
       return '⏹ Ожидание';
   }
-}
+};
 
 export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
   playbackState,

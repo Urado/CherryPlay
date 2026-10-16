@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,28 +46,45 @@ const samplePlaybackState: PlaybackStateDto = {
 };
 
 describe('useSignalR hub event wiring', () => {
-  const handlers: Record<string, (...args: unknown[]) => void> = {};
+  const handlers: {
+    onSessionStarted?: (partyId: string) => void;
+    onSessionEnded?: (partyId: string) => void;
+    onFullStateUpdated?: (partyId: string, state: PlaybackStateDto) => void;
+    onConnectionStatusChanged?: (partyId: string, isOnline: boolean) => void;
+    onError?: (error: string) => void;
+  } = {};
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsServiceConnected.mockReturnValue(false);
-    for (const key of Object.keys(handlers)) {
+    const handlerKeys = [
+      'onSessionStarted',
+      'onSessionEnded',
+      'onFullStateUpdated',
+      'onConnectionStatusChanged',
+      'onError',
+    ] as const;
+    for (const key of handlerKeys) {
       delete handlers[key];
     }
 
-    mockOnSessionStarted.mockImplementation((handler) => {
+    mockOnSessionStarted.mockImplementation((handler: (partyId: string) => void) => {
       handlers.onSessionStarted = handler;
     });
-    mockOnSessionEnded.mockImplementation((handler) => {
+    mockOnSessionEnded.mockImplementation((handler: (partyId: string) => void) => {
       handlers.onSessionEnded = handler;
     });
-    mockOnFullStateUpdated.mockImplementation((handler) => {
-      handlers.onFullStateUpdated = handler;
-    });
-    mockOnConnectionStatusChanged.mockImplementation((handler) => {
-      handlers.onConnectionStatusChanged = handler;
-    });
-    mockOnError.mockImplementation((handler) => {
+    mockOnFullStateUpdated.mockImplementation(
+      (handler: (partyId: string, state: PlaybackStateDto) => void) => {
+        handlers.onFullStateUpdated = handler;
+      },
+    );
+    mockOnConnectionStatusChanged.mockImplementation(
+      (handler: (partyId: string, online: boolean) => void) => {
+        handlers.onConnectionStatusChanged = handler;
+      },
+    );
+    mockOnError.mockImplementation((handler: (error: string) => void) => {
       handlers.onError = handler;
     });
   });

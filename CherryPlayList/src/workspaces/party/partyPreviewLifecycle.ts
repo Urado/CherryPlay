@@ -1,8 +1,9 @@
 import type { PartyViewerStatusId, PlaybackState } from '@cherryplay/components';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 
-/** True when playback reflects an active live session (not an idle session snapshot). */
-export function isPlaybackLiveActive(playbackState: PlaybackState | null | undefined): boolean {
+export const isPlaybackLiveActive = (
+  playbackState: PlaybackState | null | undefined,
+): boolean => {
   if (playbackState == null) {
     return false;
   }
@@ -10,12 +11,12 @@ export function isPlaybackLiveActive(playbackState: PlaybackState | null | undef
     return true;
   }
   return playbackState.mode === 'session' && playbackState.status === 'paused';
-}
+};
 
-export function resolvePreviewViewerStatusId(
+export const resolvePreviewViewerStatusId = (
   playbackState: PlaybackState | null | undefined,
   previewLifecycleState?: PartyLifecycleState | null,
-): PartyViewerStatusId {
+): PartyViewerStatusId => {
   if (isPlaybackLiveActive(playbackState)) {
     return 'live';
   }
@@ -28,4 +29,4 @@ export function resolvePreviewViewerStatusId(
     return 'starting_soon';
   }
   return 'draft';
-}
+};

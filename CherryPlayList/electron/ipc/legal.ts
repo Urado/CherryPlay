@@ -7,7 +7,7 @@ const DOCUMENT_PATHS = {
   legal: '/legal',
 } as const;
 
-export function registerLegalHandlers(): void {
+export const registerLegalHandlers = (): void => {
   ipcMain.handle('legal:openDocument', async (_event, payload: { document: unknown }) => {
     try {
       if (payload?.document !== 'privacy' && payload?.document !== 'legal') {
@@ -28,4 +28,4 @@ export function registerLegalHandlers(): void {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to open legal page' };
     }
   });
-}
+};

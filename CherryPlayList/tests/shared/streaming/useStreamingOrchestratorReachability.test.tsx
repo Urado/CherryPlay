@@ -3,8 +3,6 @@ import { act, renderHook } from '@testing-library/react';
 
 import { partyService } from '../../../src/shared/services/partyService';
 import { signalRService } from '../../../src/shared/services/signalRService';
-import { useSettingsStore } from '../../../src/shared/stores';
-import { streamingOrchestrator } from '../../../src/shared/streaming/streamingOrchestrator';
 import { useStreamingOrchestrator } from '../../../src/shared/streaming/useStreamingOrchestrator';
 
 jest.mock('../../../src/shared/services/partyService', () => ({
@@ -34,8 +32,8 @@ jest.mock('../../../src/shared/streaming/streamingOrchestrator', () => ({
 describe('useStreamingOrchestrator server reachability polling', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.mocked(partyService.checkServerReachable).mockResolvedValue(true);
-    jest.mocked(signalRService.getConnectionState).mockReturnValue(signalR.HubConnectionState.Connected);
+    jest.spyOn(partyService, 'checkServerReachable').mockResolvedValue(true);
+    jest.spyOn(signalRService, 'getConnectionState').mockReturnValue(signalR.HubConnectionState.Connected);
   });
 
   afterEach(() => {
@@ -45,7 +43,7 @@ describe('useStreamingOrchestrator server reachability polling', () => {
   });
 
   it('changes to disconnected when the server becomes unreachable', async () => {
-    const reachability = jest.mocked(partyService.checkServerReachable);
+    const reachability = jest.spyOn(partyService, 'checkServerReachable');
     const { result } = renderHook(() =>
       useStreamingOrchestrator({ partyId: 'party-1', sessionMode: 'preparation' }),
     );

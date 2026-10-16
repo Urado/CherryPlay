@@ -11,7 +11,7 @@ const ARTIST_B = `${DEMO_MUSIC_ROOT}/Artist B`;
 const CLASSICS = `${DEMO_MUSIC_ROOT}/Classics`;
 const CLASSICS_ROCK = `${CLASSICS}/Rock`;
 
-function audioEntry(fileName: string, parentPath: string): DirectoryItem {
+const audioEntry = (fileName: string, parentPath: string): DirectoryItem => {
   const file = DEMO_AUDIO_FILES.find((f) => f.fileName === fileName);
   const path = file?.path ?? `${parentPath}/${fileName}`;
   return {
@@ -42,11 +42,11 @@ const DIRECTORY_CONTENTS: Record<string, DirectoryItem[]> = {
   [CLASSICS_ROCK]: [audioEntry('track1.mp3', CLASSICS_ROCK)],
 };
 
-function normalizePath(path: string): string {
+const normalizePath = (path: string): string => {
   return path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/\/$/, '') || '/';
 }
 
-export function listDemoDirectory(path: string): DirectoryItem[] {
+export const listDemoDirectory = (path: string): DirectoryItem[] => {
   const key = normalizePath(path);
   if (key === '' || key === '/') {
     return [
@@ -60,11 +60,11 @@ export function listDemoDirectory(path: string): DirectoryItem[] {
   return DIRECTORY_CONTENTS[key] ?? [];
 }
 
-export function statDemoPath(path: string): {
+export const statDemoPath = (path: string): {
   size: number;
   modified: number;
   isDirectory: boolean;
-} | null {
+} | null => {
   const key = normalizePath(path);
   if (key === '' || key === '/') {
     return { size: 0, modified: DEMO_AUDIO_FILE_MTIME_MS, isDirectory: true };
@@ -97,7 +97,7 @@ export function statDemoPath(path: string): {
   return null;
 }
 
-export function findDemoAudioFilesRecursive(path: string): string[] {
+export const findDemoAudioFilesRecursive = (path: string): string[] => {
   const key = normalizePath(path);
   const results: string[] = [];
 

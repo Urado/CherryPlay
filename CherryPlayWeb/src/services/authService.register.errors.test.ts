@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { buildRequiredConsentInputs } from '@cherryplay/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,15 +11,15 @@ vi.mock('../utils/apiFetch', () => ({
   apiFetch: vi.fn(),
 }));
 
-function mockJsonResponse(status: number, body: unknown): Response {
+const mockJsonResponse = (status: number, body: unknown): Response => {
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === 200 || status === 201 ? 'OK' : 'Error',
-    json: async () => body,
-    text: async () => JSON.stringify(body),
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
   } as Response;
-}
+};
 
 describe('authService.register 400 errors', () => {
   beforeEach(() => {
@@ -54,8 +52,8 @@ describe('authService.register 400 errors', () => {
       ok: false,
       status: 400,
       statusText: 'Bad Request',
-      json: async () => ({}),
-      text: async () => '',
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
     } as Response);
 
     await expect(authService.register('a@b.c', 'secret1', 'Name', consents)).rejects.toMatchObject({

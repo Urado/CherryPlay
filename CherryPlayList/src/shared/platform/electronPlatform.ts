@@ -1,11 +1,11 @@
 import type { PlatformAPI } from './types';
 
-function assertWindowApi(): NonNullable<typeof window.api> {
+const assertWindowApi = (): NonNullable<typeof window.api> => {
   if (typeof window === 'undefined' || !window.api) {
     throw new Error('Electron preload API (window.api) is not available');
   }
   return window.api;
-}
+};
 
 export class ElectronPlatform implements PlatformAPI {
   getPathForFile(file: File): string {

@@ -21,12 +21,12 @@ import { validateProjectFile, validateProjectIntegrity } from '@shared/utils/pro
 import { ipcService } from './ipcService';
 import { normalizeLoadedLoudness } from './loudnessService';
 
-function pathDirname(filePath: string): string {
+const pathDirname = (filePath: string): string => {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
 }
 
-function resolveRelativePath(baseDir: string, relativePath: string): string {
+const resolveRelativePath = (baseDir: string, relativePath: string): string => {
   const normalizedBase = baseDir.replace(/\\/g, '/');
   const normalizedRel = relativePath.replace(/\\/g, '/');
 
@@ -58,7 +58,7 @@ function resolveRelativePath(baseDir: string, relativePath: string): string {
   return resolved;
 }
 
-function isRelativePath(filePath: string): boolean {
+const isRelativePath = (filePath: string): boolean => {
   return (
     filePath.startsWith('./') ||
     filePath.startsWith('../') ||
@@ -67,7 +67,7 @@ function isRelativePath(filePath: string): boolean {
   );
 }
 
-async function checkFileExists(filePath: string): Promise<boolean> {
+const checkFileExists = async (filePath: string): Promise<boolean> => {
   try {
     await ipcService.statFile(filePath);
     return true;
@@ -76,7 +76,10 @@ async function checkFileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: string): Promise<void> {
+const resolveAndCheckTracks = async (
+  items: ProjectItem[],
+  cherryFilePath: string,
+): Promise<void> => {
   const baseDir = pathDirname(cherryFilePath);
 
   const processItems = async (projectItems: ProjectItem[]): Promise<void> => {

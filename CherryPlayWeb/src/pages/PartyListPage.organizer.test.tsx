@@ -1,7 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getAllParties = vi.hoisted(() => vi.fn());
 
@@ -55,10 +55,6 @@ const createParty = (organizerName?: string | null) => ({
 });
 
 describe('party list organizer name', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   beforeEach(() => {
     getAllParties.mockReset();
   });

@@ -15,11 +15,14 @@ export interface PartySettingsContentProps {
   onPartyCreated: () => void;
 }
 
-export function notifyParentAfterPartyCreated(created: boolean, onPartyCreated: () => void): void {
+export const notifyParentAfterPartyCreated = (
+  created: boolean,
+  onPartyCreated: () => void,
+): void => {
   if (created) {
     onPartyCreated();
   }
-}
+};
 
 export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   runtime,
@@ -44,7 +47,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       kind="unreachable"
       isReconnecting={runtime.isReconnecting}
       lastManualCheckFailed={runtime.lastManualCheckFailed}
-      onManualReconnect={runtime.handleManualReconnect}
+      onManualReconnect={() => void runtime.handleManualReconnect()}
     />
   ) : null;
 
@@ -88,7 +91,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
         secondaryExtra={archiveZone}
         onCreateParty={handleCreateParty}
         onOpenLinkParty={onOpenLinkParty}
-        onSaveMetadata={form.handleSaveMetadata}
+        onSaveMetadata={() => void form.handleSaveMetadata()}
         onMakeReady={() => void form.handleLifecycleTransition('ready')}
       />
     ) : archiveZone ? (
@@ -138,7 +141,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
                 ? 'Включите «Онлайн» в настройках'
                 : 'Скопировать URL вечеринки'
             }
-            onCopyUrl={form.handleCopyUrl}
+            onCopyUrl={() => void form.handleCopyUrl()}
           />
         ) : null}
       </div>

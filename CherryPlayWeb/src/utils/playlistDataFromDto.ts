@@ -2,7 +2,7 @@ import type { PartyPlaylistData } from '@cherryplay/components';
 
 import type { PartyPlaylistDto, PlayerItemDto } from '../types/api';
 
-function normalizePlaylistItems(items: PlayerItemDto[]): PlayerItemDto[] {
+const normalizePlaylistItems = (items: PlayerItemDto[]): PlayerItemDto[] => {
   const sorted = [...items].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
   return sorted.map((item) => {
@@ -14,12 +14,12 @@ function normalizePlaylistItems(items: PlayerItemDto[]): PlayerItemDto[] {
     }
     return item;
   });
-}
+};
 
-export function playlistDataFromDto(dto: PartyPlaylistDto): PartyPlaylistData {
+export const playlistDataFromDto = (dto: PartyPlaylistDto): PartyPlaylistData => {
   return {
     items: normalizePlaylistItems(dto.items),
     totalDuration: dto.totalDuration,
     totalTracks: dto.totalTracks,
   };
-}
+};

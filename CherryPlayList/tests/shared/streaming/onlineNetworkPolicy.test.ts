@@ -10,20 +10,20 @@ import {
   isStreamingNetworkEnabled,
 } from '../../../src/shared/streaming/onlineNetworkPolicy';
 
-function createStubPlatform(): PlatformAPI {
+const createStubPlatform = (): PlatformAPI => {
   return {
     getPathForFile: () => '',
-    invoke: async () => ({ success: false, error: 'stub' }),
+    invoke: () => Promise.resolve({ success: false, error: 'stub' }),
     on: () => () => undefined,
     aimp: {
-      getState: async () => ({ success: false, error: 'stub' }),
-      setSourceSelection: async () => ({ success: false, error: 'stub' }),
-      setLiveStreamStarted: async () => ({ success: false, error: 'stub' }),
+      getState: () => Promise.resolve({ success: false, error: 'stub' }),
+      setSourceSelection: () => Promise.resolve({ success: false, error: 'stub' }),
+      setLiveStreamStarted: () => Promise.resolve({ success: false, error: 'stub' }),
       onStateChanged: () => () => undefined,
       onLog: () => () => undefined,
     },
   };
-}
+};
 
 describe('onlineNetworkPolicy dual-mode', () => {
   const originalDemoLive = process.env.VITE_DEMO_LIVE;

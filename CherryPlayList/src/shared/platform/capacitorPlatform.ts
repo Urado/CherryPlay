@@ -1,27 +1,23 @@
 import { platformUnavailableResponse, throwPlatformUnavailable } from './demoUnavailable';
 import type { IPCResponse, PlatformAPI } from './types';
 
-function getWindowApi(): NonNullable<typeof window.api> | undefined {
+const getWindowApi = (): NonNullable<typeof window.api> | undefined => {
   if (typeof window !== 'undefined' && window.api) {
     return window.api;
   }
   return undefined;
 }
 
-function createUnavailableAimpApi(): PlatformAPI['aimp'] {
+const createUnavailableAimpApi = (): PlatformAPI['aimp'] => {
   return {
-    getState: async () => platformUnavailableResponse(),
-    setSourceSelection: async () => platformUnavailableResponse(),
-    setLiveStreamStarted: async () => platformUnavailableResponse(),
+    getState: () => Promise.resolve(platformUnavailableResponse()),
+    setSourceSelection: () => Promise.resolve(platformUnavailableResponse()),
+    setLiveStreamStarted: () => Promise.resolve(platformUnavailableResponse()),
     onStateChanged: () => () => undefined,
     onLog: () => () => undefined,
   };
 }
 
-/**
- * Capacitor/Android platform stub. Delegates to `window.api` when the bridge is injected;
- * otherwise returns controlled unavailable responses until native plugins land.
- */
 export class CapacitorPlatform implements PlatformAPI {
   getPathForFile(file: File): string {
     const api = getWindowApi();

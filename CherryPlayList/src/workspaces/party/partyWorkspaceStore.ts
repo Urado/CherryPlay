@@ -237,10 +237,10 @@ export const usePartyWorkspaceStore = createWithEqualityFn<PartyWorkspaceState>(
     }),
 }));
 
-export function resetPartyWorkspaceState(): void {
+export const resetPartyWorkspaceState = (): void => {
   usePartyWorkspaceStore.getState().resetPartyWorkspaceState();
 }
 
-export function resetPartyLinkState(): void {
+export const resetPartyLinkState = (): void => {
   usePartyWorkspaceStore.getState().resetPartyLinkState();
 }

@@ -8,36 +8,25 @@ import {
 } from '../../contracts/loudness';
 import { getEffectiveGainDb } from '../loudnessGain';
 
-/** Fallback quiet-passage offset when only integrated LUFS is available. */
 export const COMPRESSION_INTEGRATED_ONLY_QUIET_OFFSET_LU = 6;
 export { COMPRESSION_QUIET_GAP_RANGE_LU };
-/** Estimate quiet-passage loudness from LRA when {@link TrackLoudness.lraLowLufs} is missing. */
 export const COMPRESSION_LRA_QUIET_ESTIMATE_FACTOR = 0.55;
-/** LRA below this LU is treated as already compressed (dense pop / brickwall). */
 export const COMPRESSION_LRA_MIN_LU = 8;
-/** Full {@link resolveDynamicNeed} when LRA span reaches MIN + this many LU. */
 export const COMPRESSION_LRA_RANGE_LU = 10;
-/** Positive gain above this dB adds extra strength (boost exaggerates internal contrast). */
 export const COMPRESSION_BOOST_GATE_DB = 3;
-/** Full boost multiplier span above {@link COMPRESSION_BOOST_GATE_DB}. */
 export const COMPRESSION_BOOST_RANGE_DB = 12;
 
-function clamp01(value: number): number {
+const clamp01 = (value: number): number => {
   return Math.min(1, Math.max(0, value));
-}
+};
 
-/** Quiet-gap span for full quietNeed from global settings (5…30 LU). */
-export function resolveQuietGapRangeLu(settings: LoudnessSettings): number {
+export const resolveQuietGapRangeLu = (settings: LoudnessSettings): number => {
   return clampLoudnessQuietGapRangeLu(
     settings.loudnessQuietGapRangeLu ?? DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
   );
-}
+};
 
-/**
- * Estimates loudness of quiet passages for compression strength.
- * Prefers ebur128 LRA low (10th percentile); falls back to integrated − 0.55×LRA.
- */
-export function resolveQuietPassageLufs(loudness: TrackLoudness): number | undefined {
+export const resolveQuietPassageLufs = (loudness: TrackLoudness): number | undefined => {
   if (loudness.lraLowLufs !== undefined) {
     return loudness.lraLowLufs;
   }
@@ -51,12 +40,9 @@ export function resolveQuietPassageLufs(loudness: TrackLoudness): number | undef
   }
 
   return undefined;
-}
+};
 
-/**
- * How wide the programme dynamics are (0…1). Uses LRA when available, else integrated − LRA low.
- */
-export function resolveDynamicNeed(loudness: TrackLoudness): number {
+export const resolveDynamicNeed = (loudness: TrackLoudness): number => {
   if (loudness.lraLu !== undefined) {
     return clamp01((loudness.lraLu - COMPRESSION_LRA_MIN_LU) / COMPRESSION_LRA_RANGE_LU);
   }
@@ -67,14 +53,9 @@ export function resolveDynamicNeed(loudness: TrackLoudness): number {
   }
 
   return 1;
-}
+};
 
-/**
- * Auto-calculated compression strength in 0…1 from quiet-passage gap and LRA (EBU LRA block).
- * Compression runs before linear gain in playback; strength does not use |gainDb| as a driver.
- * Ignores {@link TrackLoudness.manualCompressionStrength}.
- */
-export function resolveAutoCompressionStrength(track: Track, settings: LoudnessSettings): number {
+export const resolveAutoCompressionStrength = (track: Track, settings: LoudnessSettings): number => {
   if (!settings.loudnessNormalizationEnabled || !settings.loudnessCompressionEnabled) {
     return 0;
   }
@@ -106,13 +87,9 @@ export function resolveAutoCompressionStrength(track: Track, settings: LoudnessS
   }
 
   return strength;
-}
+};
 
-/**
- * Effective per-track compression strength for playback and UI (0…1).
- * Uses manual override when set; otherwise {@link resolveAutoCompressionStrength}.
- */
-export function getEffectiveCompressionStrength(track: Track, settings: LoudnessSettings): number {
+export const getEffectiveCompressionStrength = (track: Track, settings: LoudnessSettings): number => {
   if (!settings.loudnessNormalizationEnabled || !settings.loudnessCompressionEnabled) {
     return 0;
   }
@@ -127,7 +104,6 @@ export function getEffectiveCompressionStrength(track: Track, settings: Loudness
   }
 
   return resolveAutoCompressionStrength(track, settings);
-}
+};
 
-/** @deprecated Prefer {@link getEffectiveCompressionStrength} — kept for existing imports. */
 export const resolveCompressionStrength = getEffectiveCompressionStrength;

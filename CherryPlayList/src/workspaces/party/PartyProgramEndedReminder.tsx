@@ -7,7 +7,7 @@ import {
 } from './partyProgramEndedStore';
 import { PARTY_ARCHIVE_CONFIRM_MESSAGE } from './resolvePartyArchiveAvailability';
 
-function useReminderClock(isActive: boolean, deadlineMs: number | null): number {
+const useReminderClock = (isActive: boolean, deadlineMs: number | null): number => {
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -25,7 +25,7 @@ function useReminderClock(isActive: boolean, deadlineMs: number | null): number 
   }, [deadlineMs, isActive]);
 
   return nowMs;
-}
+};
 
 export const PartyProgramEndedReminder: React.FC = () => {
   const reminderVisible = usePartyProgramEndedStore((state) => state.reminderVisible);

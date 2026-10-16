@@ -11,7 +11,7 @@ export type DesktopAuthCodeMessage = {
   code: string;
 };
 
-export function isDesktopAuthCodeMessage(data: unknown): data is DesktopAuthCodeMessage {
+export const isDesktopAuthCodeMessage = (data: unknown): data is DesktopAuthCodeMessage => {
   if (!data || typeof data !== 'object') {
     return false;
   }
@@ -23,7 +23,7 @@ export function isDesktopAuthCodeMessage(data: unknown): data is DesktopAuthCode
   );
 }
 
-export function readPendingDesktopAuthCode(): string | null {
+export const readPendingDesktopAuthCode = (): string | null => {
   try {
     const code = localStorage.getItem(DESKTOP_AUTH_PENDING_CODE_KEY);
     return code && code.trim() ? code.trim() : null;
@@ -32,11 +32,11 @@ export function readPendingDesktopAuthCode(): string | null {
   }
 }
 
-export function writePendingDesktopAuthCode(code: string): void {
+export const writePendingDesktopAuthCode = (code: string): void => {
   localStorage.setItem(DESKTOP_AUTH_PENDING_CODE_KEY, code.trim());
 }
 
-export function clearPendingDesktopAuthCode(): void {
+export const clearPendingDesktopAuthCode = (): void => {
   try {
     localStorage.removeItem(DESKTOP_AUTH_PENDING_CODE_KEY);
   } catch {

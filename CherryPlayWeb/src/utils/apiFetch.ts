@@ -20,7 +20,7 @@ interface ConsentRequiredPayload {
   missing?: string[];
 }
 
-function mergeClientVersionHeaders(init?: RequestInit): Headers {
+const mergeClientVersionHeaders = (init?: RequestInit): Headers => {
   const headers = new Headers(init?.headers);
 
   for (const [key, value] of Object.entries(getClientVersionHeaders())) {
@@ -30,9 +30,9 @@ function mergeClientVersionHeaders(init?: RequestInit): Headers {
   }
 
   return headers;
-}
+};
 
-async function handleClientOutdatedResponse(response: Response): Promise<void> {
+const handleClientOutdatedResponse = async (response: Response): Promise<void> => {
   if (response.status !== CLIENT_OUTDATED_STATUS) {
     return;
   }
@@ -41,9 +41,9 @@ async function handleClientOutdatedResponse(response: Response): Promise<void> {
   if (payload?.code === CLIENT_OUTDATED_CODE) {
     notifyClientOutdated();
   }
-}
+};
 
-async function handleConsentRequiredResponse(response: Response): Promise<void> {
+const handleConsentRequiredResponse = async (response: Response): Promise<void> => {
   if (response.status !== CONSENT_REQUIRED_STATUS) {
     return;
   }
@@ -57,13 +57,9 @@ async function handleConsentRequiredResponse(response: Response): Promise<void> 
     ? payload.missing.filter((id): id is string => typeof id === 'string')
     : undefined;
   notifyConsentRequired(missing);
-}
+};
 
-/**
- * Обёртка над fetch: добавляет заголовки версии клиента и обрабатывает
- * 426 client_outdated / 403 consent_required.
- */
-export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const response = await fetch(input, {
     ...init,
     headers: mergeClientVersionHeaders(init),
@@ -73,4 +69,4 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Pr
   await handleConsentRequiredResponse(response);
 
   return response;
-}
+};

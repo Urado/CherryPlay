@@ -8,9 +8,11 @@ import { WebDemoPlatform } from '@shared/platform/webDemoPlatform';
 import { authService, buildDesktopAuthReturnTo } from '@shared/services/authService';
 import { useAuthStore } from '@shared/stores/authStore';
 
-const getWebBaseUrlMock = jest.fn();
-const getServerUrlMock = jest.fn();
-const apiFetchMock = jest.fn();
+const getWebBaseUrlMock = jest.fn<Promise<string>, unknown[]>();
+const getServerUrlMock = jest.fn<Promise<string>, unknown[]>();
+const apiFetchMock = jest.fn<Promise<Response>, [string, RequestInit?]>();
+const mockWindowOpen = jest.fn();
+const invokeMock = jest.fn<Promise<{ success: boolean; error?: string }>, [string, { url: string }] >();
 
 jest.mock('@shared/config/serverConfig', () => {
   const actual = jest.requireActual<typeof import('@shared/config/serverConfig')>(
@@ -24,22 +26,22 @@ jest.mock('@shared/config/serverConfig', () => {
 });
 
 jest.mock('@shared/utils/apiFetch', () => ({
-  apiFetch: (...args: unknown[]) => apiFetchMock(...args),
+  apiFetch: (...args: unknown[]) => apiFetchMock(...(args as [string, RequestInit?])),
 }));
 
-function mockResponse(status: number, body: unknown): Response {
+const mockResponse = (status: number, body: unknown): Response => {
   const text = typeof body === 'string' ? body : JSON.stringify(body);
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status >= 400 ? 'Error' : 'OK',
-    json: async () => body,
-    text: async () => text,
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(text),
   } as Response;
-}
+};
 
 describe('authService browser SSO', () => {
-  const originalOpen = window.open;
+  const originalOpen = window.open.bind(window);
 
   beforeEach(() => {
     clearServerUrlCache();
@@ -49,10 +51,13 @@ describe('authService browser SSO', () => {
     apiFetchMock.mockReset();
     getWebBaseUrlMock.mockResolvedValue('https://web.example.com/');
     getServerUrlMock.mockResolvedValue('https://api.example.com');
-    window.open = jest.fn();
+    mockWindowOpen.mockReset();
+    window.open = mockWindowOpen;
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue({ success: true });
     setPlatform(new ElectronPlatform(), 'electron');
     (window as unknown as { api: { invoke: jest.Mock } }).api = {
-      invoke: jest.fn().mockResolvedValue({ success: true }),
+      invoke: invokeMock,
     };
   });
 
@@ -82,18 +87,17 @@ describe('authService browser SSO', () => {
     it('builds /login?client=desktop&return_to= deep link under test transform', async () => {
       await authService.startBrowserLogin();
 
-      const invoke = (window as unknown as { api: { invoke: jest.Mock } }).api.invoke;
-      expect(invoke).toHaveBeenCalledWith('auth:openExternal', {
-        url: expect.stringMatching(
-          /^https:\/\/web\.example\.com\/login\?client=desktop&return_to=/,
-        ),
-      });
-      const url = invoke.mock.calls[0][1].url as string;
+      const call = invokeMock.mock.calls[0] as [string, { url: string }];
+      expect(call[0]).toBe('auth:openExternal');
+      expect(call[1].url).toMatch(
+        /^https:\/\/web\.example\.com\/login\?client=desktop&return_to=/,
+      );
+      const url = call[1].url;
       expect(url).toContain(`return_to=${encodeURIComponent('cherryplaylist://auth')}`);
     });
 
     it('throws when auth:openExternal fails', async () => {
-      (window as unknown as { api: { invoke: jest.Mock } }).api.invoke.mockResolvedValueOnce({
+      (window as unknown as { api: { invoke: typeof invokeMock } }).api.invoke.mockResolvedValueOnce({
         success: false,
         error: 'blocked by OS',
       });
@@ -107,7 +111,7 @@ describe('authService browser SSO', () => {
 
       await authService.startBrowserLogin();
 
-      expect(window.open).toHaveBeenCalledWith(
+      expect(mockWindowOpen).toHaveBeenCalledWith(
         expect.stringContaining('/login?client=desktop&return_to='),
         '_blank',
       );
@@ -118,7 +122,7 @@ describe('authService browser SSO', () => {
 
       await authService.startBrowserLogin();
 
-      expect(window.open).not.toHaveBeenCalled();
+      expect(mockWindowOpen).not.toHaveBeenCalled();
       expect(useAuthStore.getState().accessToken).toBe(DEMO_ACCESS_TOKEN);
       expect(useAuthStore.getState().organizer?.name).toBe('Demo Organizer');
     });
@@ -145,13 +149,9 @@ describe('authService browser SSO', () => {
     it('throws AuthHttpError on HTTP error', async () => {
       apiFetchMock.mockResolvedValueOnce(mockResponse(400, { message: 'Invalid code' }));
 
-      try {
-        await authService.exchangeDesktopCode('bad');
-        fail('expected AuthHttpError');
-      } catch (error) {
-        expect(error).toBeInstanceOf(AuthHttpError);
-        expect(error).toMatchObject({ status: 400 });
-      }
+      const exchange = authService.exchangeDesktopCode('bad');
+      await expect(exchange).rejects.toBeInstanceOf(AuthHttpError);
+      await expect(exchange).rejects.toMatchObject({ status: 400 });
     });
 
     it('demo exchange returns demo token', async () => {

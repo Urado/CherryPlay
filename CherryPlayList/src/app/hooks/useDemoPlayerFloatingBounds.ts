@@ -30,30 +30,30 @@ export interface DemoPlayerFloatingBoundsApi {
   commitFloatingSize: (size: DemoPlayerFloatingSize) => void;
 }
 
-function positionsEqual(a: DemoPlayerFloatingPosition, b: DemoPlayerFloatingPosition): boolean {
+const positionsEqual = (a: DemoPlayerFloatingPosition, b: DemoPlayerFloatingPosition): boolean => {
   return a.x === b.x && a.y === b.y;
-}
+};
 
-function sizesEqual(a: DemoPlayerFloatingSize, b: DemoPlayerFloatingSize): boolean {
+const sizesEqual = (a: DemoPlayerFloatingSize, b: DemoPlayerFloatingSize): boolean => {
   return a.width === b.width && a.height === b.height;
-}
+};
 
-function getDefaultFloatingPosition(metrics: FloatingMetrics): DemoPlayerFloatingPosition {
+const getDefaultFloatingPosition = (metrics: FloatingMetrics): DemoPlayerFloatingPosition => {
   const x = Math.max(
     PANEL_BOUNDS_PADDING_PX,
     metrics.containerWidth - metrics.panelWidth - DEFAULT_EDGE_OFFSET_PX,
   );
   const y = DEFAULT_EDGE_OFFSET_PX;
   return clampFloatingPosition(x, y, metrics);
-}
+};
 
-export function useDemoPlayerFloatingBounds({
+export const useDemoPlayerFloatingBounds = ({
   contentContainerRef,
   demoPlayerFloatingPosition,
   demoPlayerFloatingSize,
   setDemoPlayerFloatingPosition,
   setDemoPlayerFloatingSize,
-}: UseDemoPlayerFloatingBoundsParams): DemoPlayerFloatingBoundsApi {
+}: UseDemoPlayerFloatingBoundsParams): DemoPlayerFloatingBoundsApi => {
   const panelRef = useRef<HTMLDivElement>(null);
   const pendingFloatingPositionRef = useRef<DemoPlayerFloatingPosition | null>(null);
   const pendingFloatingSizeRef = useRef<DemoPlayerFloatingSize | null>(null);
@@ -251,4 +251,4 @@ export function useDemoPlayerFloatingBounds({
     commitFloatingPosition,
     commitFloatingSize,
   };
-}
+};

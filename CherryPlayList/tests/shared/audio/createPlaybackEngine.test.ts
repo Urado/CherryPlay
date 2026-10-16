@@ -16,12 +16,9 @@ import {
 } from '../../../src/shared/audio/playback/types';
 
 const mockAdapter: PlatformAudioAdapter = {
-  resolveSource: jest.fn(async (source) => {
-    if (source.kind === 'url') {
-      return { url: source.url };
-    }
-    return { url: 'blob:mock' };
-  }),
+  resolveSource: jest.fn((source) =>
+    Promise.resolve(source.kind === 'url' ? { url: source.url } : { url: 'blob:mock' }),
+  ),
   setSinkId: jest.fn().mockResolvedValue(undefined),
 };
 

@@ -16,13 +16,13 @@ import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
 
 import './AdminPages.css';
 
-function getPendingRevocationKey(entitlementId: string): string {
+const getPendingRevocationKey = (entitlementId: string): string => {
   return `admin-entitlement-revocation:${entitlementId}`;
-}
+};
 
-function readPendingRevocation(
+const readPendingRevocation = (
   entitlementId: string,
-): CreateEntitlementRevocationRequest | null {
+): CreateEntitlementRevocationRequest | null => {
   try {
     const serialized = window.sessionStorage.getItem(getPendingRevocationKey(entitlementId));
     if (!serialized) return null;
@@ -49,9 +49,9 @@ function readPendingRevocation(
   } catch {
     return null;
   }
-}
+};
 
-function persistPendingRevocation(request: CreateEntitlementRevocationRequest): boolean {
+const persistPendingRevocation = (request: CreateEntitlementRevocationRequest): boolean => {
   try {
     window.sessionStorage.setItem(
       getPendingRevocationKey(request.entitlementId),
@@ -61,26 +61,26 @@ function persistPendingRevocation(request: CreateEntitlementRevocationRequest): 
   } catch {
     return false;
   }
-}
+};
 
-function clearPendingRevocation(entitlementId: string): void {
+const clearPendingRevocation = (entitlementId: string): void => {
   try {
     window.sessionStorage.removeItem(getPendingRevocationKey(entitlementId));
   } catch {
     return;
   }
-}
+};
 
-function isDefinitiveRevocationRejection(error: unknown): error is { status: number } {
+const isDefinitiveRevocationRejection = (error: unknown): error is { status: number } => {
   if (!error || typeof error !== 'object' || !('status' in error)) return false;
   return typeof error.status === 'number' && [400, 401, 403, 404, 409, 422].includes(error.status);
-}
+};
 
-function isActiveEntitlement(entitlement: EntitlementDto): boolean {
+const isActiveEntitlement = (entitlement: EntitlementDto): boolean => {
   if (entitlement.revokedAt) return false;
   if (!entitlement.expiresAt) return true;
   return new Date(entitlement.expiresAt).getTime() > Date.now();
-}
+};
 
 export const AdminOrganizerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -474,7 +474,8 @@ export const AdminOrganizerDetailPage = () => {
                 size="sm"
                 type="button"
                 disabled={granting || !grantPackageId}
-                onClick={async () => {
+                onClick={() => {
+                  void (async () => {
                   setGranting(true);
                   setGrantError(null);
                   try {
@@ -491,6 +492,7 @@ export const AdminOrganizerDetailPage = () => {
                   } finally {
                     setGranting(false);
                   }
+                  })();
                 }}
               >
                 {granting ? 'Выдача…' : 'Выдать'}
@@ -546,7 +548,8 @@ export const AdminOrganizerDetailPage = () => {
                 size="sm"
                 type="button"
                 disabled={revoking}
-                onClick={async () => {
+                onClick={() => {
+                  void (async () => {
                   setRevoking(true);
                   setRevokeError(null);
                   const savedRequest = readPendingRevocation(revokeEntitlement.id);
@@ -585,6 +588,7 @@ export const AdminOrganizerDetailPage = () => {
                   } finally {
                     setRevoking(false);
                   }
+                  })();
                 }}
               >
                 {revoking ? 'Отзыв…' : revocationPending ? 'Повторить отзыв' : 'Отозвать'}

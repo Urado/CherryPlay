@@ -223,6 +223,6 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   acknowledgeFileBrowserFocus: () => set({ fileBrowserFocusRequest: null }),
 }));
 
-export function openPartySettingsModal(): void {
+export const openPartySettingsModal = (): void => {
   useUIStore.getState().openPartySettingsModal();
-}
+};

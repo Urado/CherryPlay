@@ -9,34 +9,36 @@ let themeAccessLoadGeneration = 0;
 
 export type ThemeAccessLoadResult = 'ok' | 'skipped' | 'failed' | 'unreachable';
 
-function getPartyStore() {
+const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
 }
 
-function isThemeAccessSessionActive(): boolean {
+const isThemeAccessSessionActive = (): boolean => {
   const networkEnabled = getOnlineNetworkPolicy({
     enableStreaming: useSettingsStore.getState().enableStreaming,
   }).networkEnabled;
   return networkEnabled && useAuthStore.getState().isAuthenticated();
 }
 
-function clearThemeAccessState(): void {
+const clearThemeAccessState = (): void => {
   const store = getPartyStore();
   store.setThemeAccess(null);
   store.setThemeAccessErrorMessage(null);
   store.setIsThemeAccessLoading(false);
 }
 
-export function invalidatePartyThemeAccessLoads(): void {
+export const invalidatePartyThemeAccessLoads = (): void => {
   themeAccessLoadGeneration += 1;
   clearThemeAccessState();
 }
 
-export function shouldShowThemeAccessLoading(themeAccess: ThemeAccessDto | null): boolean {
+export const shouldShowThemeAccessLoading = (themeAccess: ThemeAccessDto | null): boolean => {
   return themeAccess === null;
 }
 
-export async function loadPartyThemeAccess(forceRefresh = false): Promise<ThemeAccessLoadResult> {
+export const loadPartyThemeAccess = async (
+  forceRefresh = false,
+): Promise<ThemeAccessLoadResult> => {
   if (!isThemeAccessSessionActive()) {
     invalidatePartyThemeAccessLoads();
     return 'skipped';

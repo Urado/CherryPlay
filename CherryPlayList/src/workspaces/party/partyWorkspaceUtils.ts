@@ -15,10 +15,10 @@ export { ERROR_PARTY_NOT_FOUND, ERROR_CONNECTION } from './partyWorkspaceConstan
 export const THEME_PICKER_UNAVAILABLE_MESSAGE = 'Выбор недоступен — нет связи с сервером';
 export const THEME_PICKER_ONLINE_OFF_MESSAGE = 'Включите «Онлайн» в настройках';
 
-export function resolveThemeAccessAfterFetchFailure(previousThemeAccess: ThemeAccessDto | null): {
+export const resolveThemeAccessAfterFetchFailure = (previousThemeAccess: ThemeAccessDto | null): {
   themeAccess: ThemeAccessDto | null;
   themeAccessErrorMessage: string | null;
-} {
+} => {
   if (previousThemeAccess) {
     return {
       themeAccess: previousThemeAccess,
@@ -29,14 +29,14 @@ export function resolveThemeAccessAfterFetchFailure(previousThemeAccess: ThemeAc
     themeAccess: null,
     themeAccessErrorMessage: THEME_PICKER_UNAVAILABLE_MESSAGE,
   };
-}
+};
 
-export function resolveThemePickerHintMessage(input: {
+export const resolveThemePickerHintMessage = (input: {
   networkEnabled: boolean;
   hasThemeAccess: boolean;
   isThemeAccessLoading: boolean;
   themeAccessErrorMessage: string | null;
-}): string | null {
+}): string | null => {
   const themePickerUnavailable = !input.hasThemeAccess && !input.isThemeAccessLoading;
   if (!input.networkEnabled) {
     return themePickerUnavailable ? THEME_PICKER_ONLINE_OFF_MESSAGE : null;
@@ -45,24 +45,24 @@ export function resolveThemePickerHintMessage(input: {
     input.themeAccessErrorMessage ??
     (themePickerUnavailable ? THEME_PICKER_UNAVAILABLE_MESSAGE : null)
   );
-}
+};
 
-export function resolveCreateBlockedByTheme(input: {
+export const resolveCreateBlockedByTheme = (input: {
   themeAccess: ThemeAccessDto | null;
   isCurrentThemeLocked: boolean;
-}): { blocked: boolean; title: string | undefined } {
+}): { blocked: boolean; title: string | undefined } => {
   const blocked = Boolean(input.themeAccess) && input.isCurrentThemeLocked;
   return {
     blocked,
     title: blocked ? 'Выберите тему, доступную в вашем тарифе' : undefined,
   };
-}
+};
 
-export function resolveDisplayPartyName(
+export const resolveDisplayPartyName = (
   partyName: string | null | undefined,
   projectName: string | null | undefined,
   fallback = 'Вечеринка',
-): string {
+): string => {
   const trimmedParty = partyName?.trim() ?? '';
   if (trimmedParty.length > 0) {
     return trimmedParty;
@@ -72,27 +72,27 @@ export function resolveDisplayPartyName(
     return trimmedProject;
   }
   return fallback;
-}
+};
 
 export const REVOKED_THEME_PACKAGE_CODE = 'revoked-current-theme';
 export const REVOKED_THEME_PACKAGE_NAME = 'Не доступна в пакетах';
 
-export function getGroupDisplayDepth(settings: Record<string, unknown> | undefined): number {
+export const getGroupDisplayDepth = (settings: Record<string, unknown> | undefined): number => {
   const value = settings?.groupDisplayDepth;
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 10
     ? value
     : 3;
-}
+};
 
-export function withGroupDisplayDepth(
+export const withGroupDisplayDepth = (
   settings: Record<string, unknown>,
   groupDisplayDepth: number,
-): Record<string, unknown> {
+): Record<string, unknown> => {
   const depth = Number.isInteger(groupDisplayDepth)
     ? Math.min(10, Math.max(0, groupDisplayDepth))
     : 3;
   return { ...settings, groupDisplayDepth: depth };
-}
+};
 
 const UNAVAILABLE_PACKAGE_LABELS = new Set([
   REVOKED_THEME_PACKAGE_NAME,
@@ -100,53 +100,53 @@ const UNAVAILABLE_PACKAGE_LABELS = new Set([
   'недоступно',
 ]);
 
-export function isUnavailableThemePackageLabel(packageName: string | null | undefined): boolean {
+export const isUnavailableThemePackageLabel = (packageName: string | null | undefined): boolean => {
   if (!packageName) {
     return false;
   }
   const trimmed = packageName.trim();
   return UNAVAILABLE_PACKAGE_LABELS.has(trimmed);
-}
+};
 
-export function buildThemeLockInfoMessage(packageName: string): string {
+export const buildThemeLockInfoMessage = (packageName: string): string => {
   if (isUnavailableThemePackageLabel(packageName)) {
     return 'Тема не доступна в ваших пакетах';
   }
   return `Доступно в пакете ${packageName}`;
-}
+};
 
-export function buildThemeLockAriaLabel(themeName: string, packageName: string): string {
+export const buildThemeLockAriaLabel = (themeName: string, packageName: string): string => {
   if (isUnavailableThemePackageLabel(packageName)) {
     return `${themeName}. Тема не доступна в ваших пакетах.`;
   }
   return `${themeName}. Требуется пакет ${packageName}.`;
-}
+};
 
-export function isThemeGranted(themeId: string, access: ThemeAccessDto | null): boolean {
+export const isThemeGranted = (themeId: string, access: ThemeAccessDto | null): boolean => {
   if (!access) {
     return false;
   }
   return access.grantedThemeIds.some((id) => id === themeId);
-}
+};
 
-export function isThemeNotEntitledError(error: unknown): error is ThemeNotEntitledError {
+export const isThemeNotEntitledError = (error: unknown): error is ThemeNotEntitledError => {
   return error instanceof ThemeNotEntitledError;
-}
+};
 
-export function resolveLockedThemeByPackageCode(
+export const resolveLockedThemeByPackageCode = (
   access: ThemeAccessDto | null,
   packageCode: string,
-): LockedThemeDto | null {
+): LockedThemeDto | null => {
   if (!access) {
     return null;
   }
   return access.visibleLockedThemes.find((item) => item.packageCode === packageCode) ?? null;
-}
+};
 
-export function buildThemeNotEntitledMessage(
+export const buildThemeNotEntitledMessage = (
   error: ThemeNotEntitledError,
   access: ThemeAccessDto | null,
-): string {
+): string => {
   const firstRequiredPackage = error.requiredPackageCodes[0] ?? null;
   const lockedThemeInfo = firstRequiredPackage
     ? resolveLockedThemeByPackageCode(access, firstRequiredPackage)
@@ -165,12 +165,12 @@ export function buildThemeNotEntitledMessage(
   }
 
   return 'Тема не доступна в ваших пакетах';
-}
+};
 
-export function resolveLoadedCustomizationSettings(
+export const resolveLoadedCustomizationSettings = (
   resolvedThemeId: PartyThemeId,
   customizationSettings: Record<string, unknown> | undefined,
-): Record<string, unknown> {
+): Record<string, unknown> => {
   const defaults = getDefaultCustomizationSettings(resolvedThemeId);
   const hasMeaningful =
     customizationSettings &&
@@ -194,11 +194,11 @@ export function resolveLoadedCustomizationSettings(
   }
 
   return withGroupDisplayDepth({ ...defaults, ...raw }, getGroupDisplayDepth(raw));
-}
+};
 
-export function normalizeCustomizationSettings(
+export const normalizeCustomizationSettings = (
   settings: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
+): Record<string, unknown> | undefined => {
   if (!settings) {
     return undefined;
   }
@@ -225,4 +225,4 @@ export function normalizeCustomizationSettings(
   );
 
   return Object.keys(normalized).length > 0 ? normalized : undefined;
-}
+};

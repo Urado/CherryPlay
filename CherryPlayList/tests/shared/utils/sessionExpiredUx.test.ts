@@ -13,7 +13,7 @@ jest.mock('@shared/stores/uiStore', () => ({
 }));
 
 jest.mock('@shared/utils/authSession', () => ({
-  clearAuthSession: (...args: unknown[]) => clearAuthSessionMock(...args),
+  clearAuthSession: (...args: unknown[]) => clearAuthSessionMock(...args) as unknown,
 }));
 
 import { isSessionAuthError } from '@shared/utils/apiErrorHandler';

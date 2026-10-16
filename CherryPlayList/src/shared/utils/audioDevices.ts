@@ -1,6 +1,3 @@
-/**
- * Утилиты для работы с аудиоустройствами через Web Audio API
- */
 
 export interface AudioDevice {
   deviceId: string;
@@ -8,29 +5,20 @@ export interface AudioDevice {
   kind: MediaDeviceKind;
 }
 
-/**
- * Проверяет, поддерживается ли setSinkId в текущем браузере
- */
-export function isSinkIdSupported(): boolean {
+export const isSinkIdSupported = (): boolean => {
   return typeof HTMLAudioElement !== 'undefined' && 'setSinkId' in HTMLAudioElement.prototype;
 }
 
-/**
- * Получает список всех аудиоустройств вывода
- * @returns Promise с массивом устройств
- */
-export async function getAudioOutputDevices(): Promise<AudioDevice[]> {
+export const getAudioOutputDevices = async (): Promise<AudioDevice[]> => {
   if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
     return [];
   }
 
   try {
-    // Для получения полных меток устройств может потребоваться разрешение
-    // Попробуем получить разрешение на доступ к микрофону (это разблокирует метки)
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      // Игнорируем ошибку - метки могут быть недоступны, но устройства все равно можно получить
+      void 0;
     }
 
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -49,18 +37,11 @@ export async function getAudioOutputDevices(): Promise<AudioDevice[]> {
   }
 }
 
-/**
- * Получает ID устройства по умолчанию
- * @returns 'default' - стандартное значение для устройства по умолчанию
- */
-export function getDefaultDeviceId(): string {
+export const getDefaultDeviceId = (): string => {
   return 'default';
 }
 
-/**
- * Проверяет, является ли ошибка ошибкой "устройство не найдено"
- */
-function isDeviceNotFoundError(error: unknown): boolean {
+const isDeviceNotFoundError = (error: unknown): boolean => {
   if (error instanceof DOMException) {
     return error.name === 'NotFoundError' || error.message.includes('not found');
   }
@@ -70,46 +51,33 @@ function isDeviceNotFoundError(error: unknown): boolean {
   return false;
 }
 
-/**
- * Применяет выбранное аудиоустройство к HTMLAudioElement
- * @param audioElement - элемент аудио
- * @param deviceId - ID устройства или 'default' для устройства по умолчанию
- * @returns Promise, который разрешается при успешной установке устройства
- * @throws Ошибку только если не удалось установить даже устройство по умолчанию
- */
-export async function setAudioSinkId(
+export const setAudioSinkId = async (
   audioElement: HTMLAudioElement,
   deviceId: string | null,
-): Promise<void> {
+): Promise<void> => {
   if (!isSinkIdSupported()) {
-    // Если setSinkId не поддерживается, используем устройство по умолчанию
-    // В Electron это должно работать, но на всякий случай проверяем
     return;
   }
 
   const targetDeviceId = deviceId || getDefaultDeviceId();
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (audioElement as any).setSinkId(targetDeviceId);
+    await (audioElement as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> }).setSinkId(
+      targetDeviceId,
+    );
   } catch (error) {
-    // Если это ошибка "устройство не найдено" и мы пытались установить не устройство по умолчанию,
-    // пробуем установить устройство по умолчанию
     if (isDeviceNotFoundError(error) && targetDeviceId !== getDefaultDeviceId()) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (audioElement as any).setSinkId(getDefaultDeviceId());
-        // Успешно переключились на устройство по умолчанию - не пробрасываем ошибку
-        // Вызывающий код должен обновить настройки
+        await (
+          audioElement as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> }
+        ).setSinkId(getDefaultDeviceId());
         return;
       } catch (fallbackError) {
-        // Если даже устройство по умолчанию не удалось установить, логируем и пробрасываем исходную ошибку
         console.error('Failed to set default audio sink ID after device not found', fallbackError);
         throw error;
       }
     }
 
-    // Для других ошибок или если уже пытались установить устройство по умолчанию, логируем и пробрасываем ошибку
     console.error('Failed to set audio sink ID', error);
     throw error;
   }

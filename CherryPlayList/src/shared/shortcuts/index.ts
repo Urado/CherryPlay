@@ -39,13 +39,13 @@ export interface InitializeShortcutsOptions {
   isShortcutsBlocked?: () => boolean;
 }
 
-export function initializeShortcuts(
+export const initializeShortcuts = (
   getCustomBindings: () => CustomKeyBindings,
   options: InitializeShortcutsOptions = {},
-): void {
+): void => {
   shortcutManager.init(getCustomBindings, options.isShortcutsBlocked);
-}
+};
 
-export function destroyShortcuts(): void {
+export const destroyShortcuts = (): void => {
   shortcutManager.destroy();
-}
+};

@@ -11,7 +11,7 @@ import {
 export const DESKTOP_AUTH_CODE_QUERY = 'desktop_auth_code';
 export const DESKTOP_AUTH_ERROR_SESSION_KEY = 'cherryplaylist-desktop-auth-error';
 
-async function waitForAuthStoreHydration(): Promise<void> {
+const waitForAuthStoreHydration = async (): Promise<void> => {
   const persistApi = useAuthStore.persist;
   if (persistApi.hasHydrated()) {
     return;
@@ -24,7 +24,7 @@ async function waitForAuthStoreHydration(): Promise<void> {
   });
 }
 
-function takeDesktopAuthCodeFromUrl(): string | null {
+const takeDesktopAuthCodeFromUrl = (): string | null => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -39,7 +39,7 @@ function takeDesktopAuthCodeFromUrl(): string | null {
   return code.trim();
 }
 
-export function readDesktopAuthBootstrapError(): string | null {
+export const readDesktopAuthBootstrapError = (): string | null => {
   try {
     const message = sessionStorage.getItem(DESKTOP_AUTH_ERROR_SESSION_KEY);
     return message && message.trim() ? message : null;
@@ -48,7 +48,7 @@ export function readDesktopAuthBootstrapError(): string | null {
   }
 }
 
-export function clearDesktopAuthBootstrapError(): void {
+export const clearDesktopAuthBootstrapError = (): void => {
   try {
     sessionStorage.removeItem(DESKTOP_AUTH_ERROR_SESSION_KEY);
   } catch {
@@ -56,7 +56,7 @@ export function clearDesktopAuthBootstrapError(): void {
   }
 }
 
-function writeDesktopAuthBootstrapError(message: string): void {
+const writeDesktopAuthBootstrapError = (message: string): void => {
   try {
     sessionStorage.setItem(DESKTOP_AUTH_ERROR_SESSION_KEY, message);
   } catch {
@@ -64,7 +64,7 @@ function writeDesktopAuthBootstrapError(message: string): void {
   }
 }
 
-export async function consumeWebDesktopAuthCodeAtBootstrap(): Promise<void> {
+export const consumeWebDesktopAuthCodeAtBootstrap = async (): Promise<void> => {
   const code = takeDesktopAuthCodeFromUrl();
   if (!code) {
     return;

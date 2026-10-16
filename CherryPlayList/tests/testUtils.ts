@@ -10,13 +10,13 @@ interface DragEventOptions {
   nativeFiles?: File[];
 }
 
-export function createFileWithPath(name: string, absolutePath: string): File & { path: string } {
+export const createFileWithPath = (name: string, absolutePath: string): File & { path: string } => {
   const f = new File([''], name) as File & { path: string };
   f.path = absolutePath;
   return f;
-}
+};
 
-export function createMockDragEvent(options: DragEventOptions = {}): DragEvent<Element> {
+export const createMockDragEvent = (options: DragEventOptions = {}): DragEvent<Element> => {
   const { types = [], data = {}, rectHeight = 100, clientY = 0, nativeFiles } = options;
   const store = { ...data };
 
@@ -57,9 +57,9 @@ export function createMockDragEvent(options: DragEventOptions = {}): DragEvent<E
   } as unknown as DragEvent<Element>;
 
   return event;
-}
+};
 
-export function createTrack(id: string, path: string): Track {
+export const createTrack = (id: string, path: string): Track => {
   return {
     id,
     type: 'track',
@@ -67,6 +67,6 @@ export function createTrack(id: string, path: string): Track {
     name: path.split('/').pop() ?? path,
     duration: undefined,
   };
-}
+};
 
 export const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));

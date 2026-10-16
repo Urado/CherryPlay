@@ -27,7 +27,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({ showDemoPanel 
       kind="unreachable"
       isReconnecting={isReconnecting}
       lastManualCheckFailed={lastManualCheckFailed}
-      onManualReconnect={handleManualReconnect}
+      onManualReconnect={() => void handleManualReconnect()}
     />
   ) : null;
 

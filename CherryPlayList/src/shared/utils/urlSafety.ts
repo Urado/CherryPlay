@@ -1,6 +1,6 @@
 const SAFE_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tg:']);
 
-export function sanitizeExternalUrl(rawUrl: string | null | undefined): string | null {
+export const sanitizeExternalUrl = (rawUrl: string | null | undefined): string | null => {
   if (typeof rawUrl !== 'string') {
     return null;
   }
@@ -20,4 +20,4 @@ export function sanitizeExternalUrl(rawUrl: string | null | undefined): string |
   } catch {
     return null;
   }
-}
+};

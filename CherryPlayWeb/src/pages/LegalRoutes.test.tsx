@@ -1,16 +1,14 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, render, screen } from '@testing-library/react';
+// @vitest-environment jsdom
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { ROUTES } from '../constants/routes';
 
 import { LegalDocumentPage } from './LegalDocumentPage';
 import { LegalOperatorPage } from './LegalOperatorPage';
 
-function renderPath(path: string) {
+const renderPath = (path: string) => {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
@@ -27,31 +25,27 @@ function renderPath(path: string) {
       </Routes>
     </MemoryRouter>,
   );
-}
+};
 
 describe('legal routes', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders privacy, consent, terms, cookies, legal', () => {
-    renderPath(ROUTES.PRIVACY);
+    let view = renderPath(ROUTES.PRIVACY);
     expect(screen.getByRole('heading', { name: /Политика обработки/i })).toBeTruthy();
-    cleanup();
+    view.unmount();
 
-    renderPath(ROUTES.CONSENT);
+    view = renderPath(ROUTES.CONSENT);
     expect(screen.getByRole('heading', { name: /Согласие на обработку/i })).toBeTruthy();
-    cleanup();
+    view.unmount();
 
-    renderPath(ROUTES.TERMS);
+    view = renderPath(ROUTES.TERMS);
     expect(screen.getByRole('heading', { name: /Пользовательское соглашение/i })).toBeTruthy();
-    cleanup();
+    view.unmount();
 
-    renderPath(ROUTES.COOKIES);
+    view = renderPath(ROUTES.COOKIES);
     expect(
       screen.getByRole('heading', { level: 1, name: 'Политика использования cookie' }),
     ).toBeTruthy();
-    cleanup();
+    view.unmount();
 
     renderPath(ROUTES.LEGAL);
     expect(screen.getByRole('heading', { name: /Реквизиты/i })).toBeTruthy();

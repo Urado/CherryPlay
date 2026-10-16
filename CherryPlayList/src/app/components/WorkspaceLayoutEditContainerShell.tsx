@@ -23,10 +23,10 @@ interface ShellDimensions {
   height: number;
 }
 
-function readShellDimensions(node: HTMLDivElement): ShellDimensions {
+const readShellDimensions = (node: HTMLDivElement): ShellDimensions => {
   const { width, height } = node.getBoundingClientRect();
   return { width, height };
-}
+};
 
 export const WorkspaceLayoutEditContainerShell: React.FC<
   WorkspaceLayoutEditContainerShellProps

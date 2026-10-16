@@ -2,10 +2,10 @@ import type { ThemeAccessLoadResult } from './partyThemeAccessLoad';
 
 export type { ThemeAccessLoadResult };
 
-export function resolveUnlinkedThemeAccessReconnectAction(input: {
+export const resolveUnlinkedThemeAccessReconnectAction = (input: {
   result: ThemeAccessLoadResult;
   hasLinkedParty: boolean;
-}): 'start' | 'clear' | 'none' {
+}): 'start' | 'clear' | 'none' => {
   if (input.hasLinkedParty) {
     return 'none';
   }

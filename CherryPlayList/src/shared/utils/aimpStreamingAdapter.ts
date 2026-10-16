@@ -25,7 +25,7 @@ export interface AimpAvailability {
   gatingReasons: AimpGatingReason[];
 }
 
-function convertDurationMsToSeconds(durationMs?: number): number {
+const convertDurationMsToSeconds = (durationMs?: number): number => {
   if (typeof durationMs !== 'number' || durationMs <= 0) {
     return 0;
   }
@@ -33,7 +33,7 @@ function convertDurationMsToSeconds(durationMs?: number): number {
   return Math.max(0, Math.round(durationMs / 1000));
 }
 
-export function getAimpAvailability(state: Pick<AimpBridgeState, 'environment'>): AimpAvailability {
+export const getAimpAvailability = (state: Pick<AimpBridgeState, 'environment'>): AimpAvailability => {
   const gatingReasons = state.environment.gatingReasons.filter(
     (reason) => reason.code !== 'sourceNotAimp',
   );
@@ -44,7 +44,7 @@ export function getAimpAvailability(state: Pick<AimpBridgeState, 'environment'>)
   };
 }
 
-export function isAimpDegraded(state: Pick<AimpBridgeState, 'connection'>): boolean {
+export const isAimpDegraded = (state: Pick<AimpBridgeState, 'connection'>): boolean => {
   return (
     state.connection.phase === 'stale' ||
     state.connection.protocolError !== null ||
@@ -52,9 +52,9 @@ export function isAimpDegraded(state: Pick<AimpBridgeState, 'connection'>): bool
   );
 }
 
-export function getAimpCurrentTrack(
+export const getAimpCurrentTrack = (
   state: Pick<AimpBridgeState, 'playlistSnapshot' | 'playbackSnapshot'>,
-): AimpPlaylistTrackDto | null {
+): AimpPlaylistTrackDto | null => {
   const trackKey =
     state.playbackSnapshot?.currentTrackKey ?? state.playlistSnapshot?.activeTrackKey ?? null;
 
@@ -70,10 +70,10 @@ export function getAimpCurrentTrack(
   );
 }
 
-export function getAimpEffectiveProgressMs(
+export const getAimpEffectiveProgressMs = (
   state: Pick<AimpBridgeState, 'connection' | 'playbackSnapshot'>,
   nowMs: number = Date.now(),
-): number {
+): number => {
   const playbackSnapshot = state.playbackSnapshot;
   if (playbackSnapshot === null) {
     return 0;
@@ -94,13 +94,13 @@ export function getAimpEffectiveProgressMs(
   return Math.max(0, progressMs);
 }
 
-export function createAimpPlaybackStateDto(
+export const createAimpPlaybackStateDto = (
   state: Pick<
     AimpBridgeState,
     'connection' | 'playlistSnapshot' | 'playbackSnapshot' | 'liveStreamStarted'
   >,
   nowMs: number = Date.now(),
-): PlaybackStateDto {
+): PlaybackStateDto => {
   const currentTrack = getAimpCurrentTrack(state);
   const currentTrackKey =
     state.playbackSnapshot?.currentTrackKey ?? state.playlistSnapshot?.activeTrackKey ?? null;
@@ -130,7 +130,7 @@ export function createAimpPlaybackStateDto(
   };
 }
 
-function getAimpTrackDisplayName(track: AimpPlaylistTrackDto): string {
+const getAimpTrackDisplayName = (track: AimpPlaylistTrackDto): string => {
   if (track.artist && track.artist.trim().length > 0) {
     return `${track.artist} - ${track.title}`;
   }
@@ -138,14 +138,14 @@ function getAimpTrackDisplayName(track: AimpPlaylistTrackDto): string {
   return track.title;
 }
 
-export function convertAimpPlaylistForApi(
+export const convertAimpPlaylistForApi = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
   trackDisplay: PartyTrackDisplaySettings = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
 ): {
   items: PlayerItemForApi[];
   totalTracks: number;
   totalDuration: number;
-} {
+} => {
   const tracks = playlistSnapshot?.tracks ?? [];
 
   return {
@@ -169,13 +169,13 @@ export function convertAimpPlaylistForApi(
   };
 }
 
-export function canUseAimpLiveSnapshots(
+export const canUseAimpLiveSnapshots = (
   state: Pick<AimpBridgeState, 'playlistSnapshot' | 'playbackSnapshot'>,
-): boolean {
+): boolean => {
   return hasUsableAimpLiveStreamSnapshots(state.playlistSnapshot, state.playbackSnapshot);
 }
 
-export function canStartAimpLiveStream(
+export const canStartAimpLiveStream = (
   state: Pick<
     AimpBridgeState,
     | 'sourceSelection'
@@ -185,7 +185,7 @@ export function canStartAimpLiveStream(
     | 'playlistSnapshot'
     | 'playbackSnapshot'
   >,
-): boolean {
+): boolean => {
   return (
     state.sourceSelection === 'aimp' &&
     state.environment.eligible &&
@@ -196,9 +196,9 @@ export function canStartAimpLiveStream(
   );
 }
 
-export function getAimpPlaylistPublishKey(
+export const getAimpPlaylistPublishKey = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'playlistId' | 'revision'> | null,
-): string | null {
+): string | null => {
   if (playlistSnapshot === null) {
     return null;
   }
@@ -206,18 +206,12 @@ export function getAimpPlaylistPublishKey(
   return `${playlistSnapshot.playlistId}:${playlistSnapshot.revision}`;
 }
 
-/**
- * Key for "did we already publish this playback state" — excludes position/revision
- * so we only call UpdateFullState when track/status/playlist changes, not on every
- * position update. Position is sent via UpdatePlaybackPosition every 1s to avoid
- * out-of-order and high-frequency full state updates.
- */
-export function getAimpPlaybackPublishKey(
+export const getAimpPlaybackPublishKey = (
   state: Pick<
     AimpBridgeState,
     'connection' | 'playlistSnapshot' | 'playbackSnapshot' | 'liveStreamStarted'
   >,
-): string {
+): string => {
   return JSON.stringify({
     connectionPhase: state.connection.phase,
     playlistRevision: state.playlistSnapshot?.revision ?? null,
@@ -227,9 +221,9 @@ export function getAimpPlaybackPublishKey(
   });
 }
 
-export function canAdvanceAimpPlayback(
+export const canAdvanceAimpPlayback = (
   connectionPhase: AimpConnectionPhase,
   playbackStatus: AimpPlaybackStatus | null | undefined,
-): boolean {
+): boolean => {
   return connectionPhase === 'connected' && playbackStatus === 'playing';
 }

@@ -17,7 +17,7 @@ export type WorkspacePickerAnchor =
   | { kind: 'below-center' }
   | { kind: 'air-side'; side: LayoutEditAirSide };
 
-function getPickerPosition(anchor: DOMRect, placement: WorkspacePickerAnchor): PickerPosition {
+const getPickerPosition = (anchor: DOMRect, placement: WorkspacePickerAnchor): PickerPosition => {
   const centerX = anchor.left + anchor.width / 2;
   const centerY = anchor.top + anchor.height / 2;
 
@@ -55,7 +55,7 @@ function getPickerPosition(anchor: DOMRect, placement: WorkspacePickerAnchor): P
         transform: 'translate(-100%, -50%)',
       };
   }
-}
+};
 
 interface UseWorkspacePickerMenuOptions {
   anchorRef: React.RefObject<HTMLElement | null>;
@@ -65,13 +65,13 @@ interface UseWorkspacePickerMenuOptions {
   placement: WorkspacePickerAnchor;
 }
 
-export function useWorkspacePickerMenu({
+export const useWorkspacePickerMenu = ({
   anchorRef,
   controlRef,
   isOpen,
   onClose,
   placement,
-}: UseWorkspacePickerMenuOptions) {
+}: UseWorkspacePickerMenuOptions) => {
   const listId = useId();
   const [pickerPosition, setPickerPosition] = useState<PickerPosition | null>(null);
 
@@ -125,7 +125,7 @@ export function useWorkspacePickerMenu({
   }, [isOpen, listId, onClose, controlRef]);
 
   return { listId, pickerPosition: isOpen ? pickerPosition : null, syncPickerPosition };
-}
+};
 
 interface WorkspacePickerMenuProps {
   listId: string;

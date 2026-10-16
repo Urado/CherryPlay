@@ -2,9 +2,9 @@ import type { PartyLifecycleState } from '../types/api';
 
 export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
 
-export function isPartyLifecycleState(value: unknown): value is PartyLifecycleState {
+export const isPartyLifecycleState = (value: unknown): value is PartyLifecycleState => {
   return typeof value === 'string' && (PARTY_LIFECYCLE_STATES as readonly string[]).includes(value);
-}
+};
 
 export const LIFECYCLE_STATUS_LABELS: Record<PartyLifecycleState, string> = {
   draft: 'Черновик',
@@ -12,7 +12,7 @@ export const LIFECYCLE_STATUS_LABELS: Record<PartyLifecycleState, string> = {
   completed: 'В архиве',
 };
 
-export function getAllowedLifecycleTargets(from: PartyLifecycleState): PartyLifecycleState[] {
+export const getAllowedLifecycleTargets = (from: PartyLifecycleState): PartyLifecycleState[] => {
   switch (from) {
     case 'draft':
       return ['ready'];
@@ -21,15 +21,15 @@ export function getAllowedLifecycleTargets(from: PartyLifecycleState): PartyLife
     case 'completed':
       return ['ready'];
   }
-}
+};
 
-export function canTransitionLifecycle(
+export const canTransitionLifecycle = (
   from: PartyLifecycleState,
   to: PartyLifecycleState,
-): boolean {
+): boolean => {
   return from === to || getAllowedLifecycleTargets(from).includes(to);
-}
+};
 
-export function canToggleCatalogVisibility(state: PartyLifecycleState): boolean {
+export const canToggleCatalogVisibility = (state: PartyLifecycleState): boolean => {
   return state === 'ready' || state === 'completed';
-}
+};

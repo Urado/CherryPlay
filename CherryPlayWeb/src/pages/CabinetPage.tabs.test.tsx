@@ -39,15 +39,17 @@ vi.mock('../hooks/useThemeAccess', () => ({
 vi.mock('@cherryplay/components', async (importOriginal) => {
   const React = await import('react');
   const actual = await importOriginal<typeof import('@cherryplay/components')>();
+  const MockButton = React.forwardRef<
+    HTMLButtonElement,
+    { children?: React.ReactNode; onClick?: () => void; className?: string; type?: string }
+  >(({ children, onClick, className, type }, ref) =>
+    React.createElement('button', { onClick, className, type, ref }, children),
+  );
+  MockButton.displayName = 'MockButton';
   return {
     ...actual,
     ChangePasswordForm: () => React.createElement('div'),
-    Button: React.forwardRef<
-      HTMLButtonElement,
-      { children?: React.ReactNode; onClick?: () => void; className?: string; type?: string }
-    >(({ children, onClick, className, type }, ref) =>
-      React.createElement('button', { onClick, className, type, ref }, children),
-    ),
+    Button: MockButton,
   };
 });
 
@@ -96,7 +98,7 @@ describe('CabinetPage section tabs', () => {
     fireEvent.keyDown(partiesTab, { key: 'ArrowRight' });
 
     await waitFor(() => expect(accountTab.getAttribute('aria-selected')).toBe('true'));
-    expect(document.activeElement).toBe(accountTab);
+    expect(accountTab.matches(':focus')).toBe(true);
     expect(partiesPanel?.hasAttribute('hidden')).toBe(true);
     expect(accountPanel?.hasAttribute('hidden')).toBe(false);
   });

@@ -16,11 +16,12 @@ const mockGetApiConfig = getApiConfig as jest.MockedFunction<typeof getApiConfig
 const API_URL = 'http://localhost:5000/api';
 const SHORT_CODE = 'abc123';
 const PARTY_ID = '123e4567-e89b-12d3-a456-426614174000';
+const fetchMock = jest.fn<Promise<Response>, Parameters<typeof fetch>>();
 
-function mockFetchResponse(
+const mockFetchResponse = (
   body: unknown,
   init: { status?: number; ok?: boolean; statusText?: string } = {},
-): Response {
+): Response => {
   const status = init.status ?? 200;
   const ok = init.ok ?? (status >= 200 && status < 300);
   const serialized = typeof body === 'string' ? body : JSON.stringify(body);
@@ -33,12 +34,12 @@ function mockFetchResponse(
     clone() {
       return this;
     },
-    json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
-    text: async () => serialized,
+    json: () => Promise.resolve(typeof body === 'string' ? (JSON.parse(body) as unknown) : body),
+    text: () => Promise.resolve(serialized),
   } as Response;
-}
+};
 
-function mockPublicStateResponse(partyDisplayStatus: string) {
+const mockPublicStateResponse = (partyDisplayStatus: string) => {
   const stateBody = {
     partyId: PARTY_ID,
     isSessionActive: false,
@@ -46,9 +47,9 @@ function mockPublicStateResponse(partyDisplayStatus: string) {
     playlist: { items: [], totalDuration: 0, totalTracks: 0 },
     serverTrackIds: [],
   };
-  (global.fetch as jest.Mock).mockResolvedValue(mockFetchResponse(stateBody));
+  fetchMock.mockResolvedValue(mockFetchResponse(stateBody));
   return stateBody;
-}
+};
 
 describe('partyService.getPartyState — partyDisplayStatus wire values', () => {
   beforeEach(() => {
@@ -60,7 +61,8 @@ describe('partyService.getPartyState — partyDisplayStatus wire values', () => 
       apiUrl: API_URL,
     });
 
-    global.fetch = jest.fn();
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
   });
 
   it("parses partyDisplayStatus 'live' from public state endpoint", async () => {
@@ -70,14 +72,13 @@ describe('partyService.getPartyState — partyDisplayStatus wire values', () => 
 
     expect(result).toEqual(stateBody);
     expect((result as Record<string, unknown>).partyDisplayStatus).toBe('live');
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_URL}/parties/public/${SHORT_CODE}/state`,
-      expect.objectContaining({
+    const [requestUrl, request] = fetchMock.mock.calls[0];
+    expect(requestUrl).toBe(`${API_URL}/parties/public/${SHORT_CODE}/state`);
+    expect(request).toMatchObject({
         method: 'GET',
-        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        headers: { 'Content-Type': 'application/json' },
         cache: 'no-cache',
-      }),
-    );
+      });
   });
 
   it("parses partyDisplayStatus 'scheduled' from public state endpoint", async () => {
@@ -90,7 +91,6 @@ describe('partyService.getPartyState — partyDisplayStatus wire values', () => 
   });
 
   it('passes through unknown partyDisplayStatus without client validation', async () => {
-    // getPartyState returns response.json() as-is; consumers should guard with isPartyDisplayStatusId.
     const stateBody = mockPublicStateResponse('broadcasting');
 
     const result = await partyService.getPartyState(SHORT_CODE);

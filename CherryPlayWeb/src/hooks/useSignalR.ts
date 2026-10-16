@@ -1,7 +1,3 @@
-/**
- * Хук для управления SignalR подключением
- * Инкапсулирует логику подключения/отключения и подписки на события
- */
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 import { signalRService } from '../services/signalRService';
@@ -30,10 +26,7 @@ export interface UseSignalRReturn {
   requestFullState: (shortCode: string) => Promise<PartyStateDto | null>;
 }
 
-/**
- * Хук для работы с SignalR
- */
-export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
+export const useSignalR = (options: UseSignalROptions = {}): UseSignalRReturn => {
   const {
     shortCode,
     onSessionStarted,
@@ -64,7 +57,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onError,
   });
 
-  // Обновляем ref при изменении callbacks
   useEffect(() => {
     callbacksRef.current = {
       onSessionStarted,
@@ -89,7 +81,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onError,
   ]);
 
-  // Единственное место подписки на события SignalR (один обработчик на событие в сервисе)
   useEffect(() => {
     if (onSessionStarted) {
       signalRService.onSessionStarted((partyId) => {
@@ -145,7 +136,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
       });
     }
 
-    // Очистка подписок при размонтировании
     return () => {
       if (onSessionStarted) signalRService.off('OnSessionStarted');
       if (onSessionEnded) signalRService.off('OnSessionEnded');
@@ -169,7 +159,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     onError,
   ]);
 
-  // Проверка статуса подключения
   useEffect(() => {
     const checkConnection = () => {
       const connected = signalRService.isServiceConnected();
@@ -194,7 +183,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
       setConnectionStatus('connecting');
       await signalRService.connect();
 
-      // Небольшая задержка для проверки соединения
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       if (!signalRService.isServiceConnected()) {
@@ -225,7 +213,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     return await signalRService.requestFullState(code);
   }, []);
 
-  // Автоматическое подключение
   const autoConnectingRef = useRef(false);
   useEffect(() => {
     if (
@@ -243,7 +230,6 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
         .catch((err) => {
           console.error('[useSignalR] Auto-connect failed:', err);
           autoConnectingRef.current = false;
-          // НЕ пытаемся подключиться снова автоматически
         });
     }
   }, [autoConnect, shortCode, isConnected, connectionStatus, connect]);
@@ -256,4 +242,4 @@ export function useSignalR(options: UseSignalROptions = {}): UseSignalRReturn {
     joinPartyAsViewer,
     requestFullState,
   };
-}
+};

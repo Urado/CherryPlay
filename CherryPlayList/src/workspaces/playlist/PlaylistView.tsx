@@ -229,8 +229,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     tracks,
     isTrackOrGroupDisabled,
     getEffectiveTrackSettings,
-    sessionState.disabledTrackIds,
-    sessionState.disabledGroupIds,
   ]);
 
   const canCreateGroup = useMemo(() => {

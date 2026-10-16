@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,9 +39,11 @@ describe('useSignalR onPartyDisplayStatusChanged wiring', () => {
     mockOff.mockReset();
     mockIsServiceConnected.mockReset();
     mockIsServiceConnected.mockReturnValue(false);
-    mockOnPartyDisplayStatusChanged.mockImplementation((handler) => {
+    mockOnPartyDisplayStatusChanged.mockImplementation(
+      (handler: (partyId: string, status: PartyDisplayStatusId) => void) => {
       registeredHandler = handler;
-    });
+      },
+    );
   });
 
   afterEach(() => {

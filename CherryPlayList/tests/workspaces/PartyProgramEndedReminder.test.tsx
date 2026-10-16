@@ -5,7 +5,7 @@ import React from 'react';
 const mockArchivePartyFromHeader = jest.fn();
 
 jest.mock('../../src/workspaces/party/partyHeaderCommands', () => ({
-  archivePartyFromHeader: (...args: unknown[]) => mockArchivePartyFromHeader(...args),
+  archivePartyFromHeader: (...args: unknown[]) => mockArchivePartyFromHeader(...args) as unknown,
 }));
 
 import { PartyProgramEndedReminder } from '../../src/workspaces/party/PartyProgramEndedReminder';

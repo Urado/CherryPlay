@@ -12,39 +12,27 @@ interface UsePlayerStateHelpersOptions {
   isTrackActive: (trackId: string) => boolean;
 }
 
-/**
- * Хук для хелперов состояния плеера
- * Объединяет логику: getEffectiveTrackSettings, calculateTrackDurationWithPause, getNextActiveTrack
- */
-export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
+export const usePlayerStateHelpers = (options: UsePlayerStateHelpersOptions) => {
   const { allTracks, activePlayerTrackId, getItemPath, findItemById, isTrackActive } = options;
 
   const { getTrackSettings, getGroupSettings, settings } = useProjectStore();
   const { defaultActionAfterTrack, defaultPauseBetweenTracks } = settings;
 
-  /**
-   * Получает эффективные настройки трека с учетом иерархии
-   * Приоритет: трек > группа > большая группа > глобальные
-   */
   const getEffectiveTrackSettings = useCallback(
     (trackId: string) => {
       const trackSettings = getTrackSettings(trackId);
 
-      // Определяем actionAfterTrack с учетом иерархии
       let effectiveActionAfterTrack: ActionAfterTrack = defaultActionAfterTrack;
       let effectivePauseBetweenTracks: number = defaultPauseBetweenTracks;
 
-      // 1. Проверяем настройки трека
       if (trackSettings.actionAfterTrack !== null && trackSettings.actionAfterTrack !== undefined) {
         effectiveActionAfterTrack = trackSettings.actionAfterTrack;
-        // Если у трека есть actionAfterTrack, используем pauseBetweenTracks из трека или глобальные
         effectivePauseBetweenTracks =
           trackSettings.pauseBetweenTracks !== null &&
           trackSettings.pauseBetweenTracks !== undefined
             ? trackSettings.pauseBetweenTracks
             : defaultPauseBetweenTracks;
       } else {
-        // 2. Ищем настройки в группах (от ближайшей к дальней)
         const path = getItemPath(trackId);
         let foundInGroup = false;
 
@@ -58,7 +46,6 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
               groupSettings.actionAfterTrack !== undefined
             ) {
               effectiveActionAfterTrack = groupSettings.actionAfterTrack;
-              // Используем pauseBetweenTracks из группы или глобальные
               effectivePauseBetweenTracks =
                 groupSettings.pauseBetweenTracks !== null &&
                 groupSettings.pauseBetweenTracks !== undefined
@@ -70,10 +57,8 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
           }
         }
 
-        // 3. Если не нашли в группах, используем глобальные настройки
         if (!foundInGroup) {
           effectiveActionAfterTrack = defaultActionAfterTrack;
-          // Если у трека есть pauseBetweenTracks, используем его, иначе глобальные
           effectivePauseBetweenTracks =
             trackSettings.pauseBetweenTracks !== null &&
             trackSettings.pauseBetweenTracks !== undefined
@@ -97,9 +82,6 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
     ],
   );
 
-  /**
-   * Рассчитывает длительность трека с учетом паузы
-   */
   const calculateTrackDurationWithPause = useCallback(
     (track: Track, includePause: boolean = true): number => {
       let duration = track.duration || 0;
@@ -114,13 +96,9 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
     [getEffectiveTrackSettings],
   );
 
-  /**
-   * Получает следующий активный трек
-   */
   const getNextActiveTrack = useCallback((): Track | null => {
     const currentIndex = allTracks.findIndex((t) => t.id === activePlayerTrackId);
     if (currentIndex === -1) {
-      // Если текущего трека нет, ищем первый активный трек
       for (let i = 0; i < allTracks.length; i++) {
         const track = allTracks[i];
         if (isTrackActive(track.id)) {
@@ -130,7 +108,6 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
       return null;
     }
 
-    // Ищем следующий активный трек (не проигранный, не отключенный)
     for (let i = currentIndex + 1; i < allTracks.length; i++) {
       const track = allTracks[i];
       if (isTrackActive(track.id)) {
@@ -146,4 +123,4 @@ export function usePlayerStateHelpers(options: UsePlayerStateHelpersOptions) {
     calculateTrackDurationWithPause,
     getNextActiveTrack,
   };
-}
+};

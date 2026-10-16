@@ -13,18 +13,13 @@ export interface DirectoryItem {
   size?: number;
 }
 
-/**
- * List directory contents
- */
-async function listDirectory(dirPath: string): Promise<DirectoryItem[]> {
+const listDirectory = async (dirPath: string): Promise<DirectoryItem[]> => {
   try {
-    // Validate path exists and is a directory
     const stats = await fs.stat(dirPath);
     if (!stats.isDirectory()) {
       throw new Error('Path is not a directory');
     }
 
-    // Read directory contents
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
     const items: DirectoryItem[] = [];
@@ -41,12 +36,10 @@ async function listDirectory(dirPath: string): Promise<DirectoryItem[]> {
           size: entryStats.isFile() ? entryStats.size : undefined,
         });
       } catch (error) {
-        // Skip entries that can't be accessed (permissions, etc.)
         logger.warn(`Cannot access ${fullPath}`, error);
       }
     }
 
-    // Sort: directories first, then files, both alphabetically
     items.sort((a, b) => {
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
@@ -57,16 +50,13 @@ async function listDirectory(dirPath: string): Promise<DirectoryItem[]> {
   } catch (error) {
     throw new Error(`Failed to list directory: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Get file/directory stats
- */
-async function statFile(filePath: string): Promise<{
+const statFile = async (filePath: string): Promise<{
   size: number;
   modified: number;
   isDirectory: boolean;
-}> {
+}> => {
   try {
     const stats = await fs.stat(filePath);
     return {
@@ -77,15 +67,12 @@ async function statFile(filePath: string): Promise<{
   } catch (error) {
     throw new Error(`Failed to stat file: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Find all audio files recursively in a directory
- */
-async function findAudioFilesRecursive(dirPath: string): Promise<string[]> {
+const findAudioFilesRecursive = async (dirPath: string): Promise<string[]> => {
   const audioFiles: string[] = [];
 
-  async function traverse(currentPath: string): Promise<void> {
+  const traverse = async (currentPath: string): Promise<void> => {
     try {
       const stats = await fs.stat(currentPath);
 
@@ -100,22 +87,17 @@ async function findAudioFilesRecursive(dirPath: string): Promise<string[]> {
         audioFiles.push(currentPath);
       }
     } catch (error) {
-      // Skip entries that can't be accessed
       logger.warn(`Cannot access ${currentPath}`, error);
     }
-  }
+  };
 
   await traverse(dirPath);
   return audioFiles;
-}
+};
 
-/**
- * Register file browser IPC handlers
- */
-export function registerFileBrowserHandlers(): void {
+export const registerFileBrowserHandlers = (): void => {
   ipcMain.handle('fileBrowser:listDirectory', async (event, payload: { path: string }) => {
     try {
-      // Validate path to prevent path traversal attacks
       if (!validatePath(payload.path)) {
         return {
           success: false,
@@ -138,7 +120,6 @@ export function registerFileBrowserHandlers(): void {
 
   ipcMain.handle('fileBrowser:statFile', async (event, payload: { path: string }) => {
     try {
-      // Validate path to prevent path traversal attacks
       if (!validatePath(payload.path)) {
         return {
           success: false,
@@ -163,7 +144,6 @@ export function registerFileBrowserHandlers(): void {
     'fileBrowser:findAudioFilesRecursive',
     async (event, payload: { path: string }) => {
       try {
-        // Validate path to prevent path traversal attacks
         if (!validatePath(payload.path)) {
           return {
             success: false,
@@ -184,4 +164,4 @@ export function registerFileBrowserHandlers(): void {
       }
     },
   );
-}
+};

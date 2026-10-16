@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { partyService } from '../services/partyService';
 import { signalRService } from '../services/signalRService';
-import { useSettingsStore } from '../stores';
+import { useSettingsStore } from '../stores/settingsStore';
 
 import { CherryPlayPlayerBroadcastSource } from './CherryPlayPlayerBroadcastSource';
 import { isStreamingHubAllowed, isStreamingNetworkEnabled } from './onlineNetworkPolicy';
@@ -26,9 +26,9 @@ export interface UseStreamingOrchestratorResult {
   reconnect: () => void;
 }
 
-export function useStreamingOrchestrator(
+export const useStreamingOrchestrator = (
   options: UseStreamingOrchestratorOptions,
-): UseStreamingOrchestratorResult {
+): UseStreamingOrchestratorResult => {
   const {
     partyId,
     sessionMode,
@@ -157,4 +157,4 @@ export function useStreamingOrchestrator(
   }, []);
 
   return { connectionState, reconnect };
-}
+};

@@ -71,11 +71,11 @@ export type { LayoutPreset } from '@core/types/workspacePreset';
 export const WORKSPACE_PERSIST_KEY = 'cherryplaylist-workspaces';
 export const LEGACY_LAYOUT_PERSIST_KEY = 'cherryplaylist-layout';
 
-function cloneLayout(layout: Layout): Layout {
+const cloneLayout = (layout: Layout): Layout => {
   return JSON.parse(JSON.stringify(layout)) as Layout;
-}
+};
 
-function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): WorkspacePersistSlice {
+const syncActiveUserWorkspaceLayoutInSlice = (slice: WorkspacePersistSlice): WorkspacePersistSlice => {
   if (slice.activeWorkspace.kind !== 'user') {
     return slice;
   }
@@ -89,7 +89,7 @@ function syncActiveUserWorkspaceLayoutInSlice(slice: WorkspacePersistSlice): Wor
       workspace.id === activeId ? { ...workspace, layout: syncedLayout } : workspace,
     ),
   };
-}
+};
 
 const KNOWN_LAYOUT_PRESET_KEYS: readonly LayoutPreset[] = [
   'simple',
@@ -101,11 +101,11 @@ const KNOWN_LAYOUT_PRESET_KEYS: readonly LayoutPreset[] = [
   'aimp-party',
 ];
 
-function isKnownLayoutPresetKey(key: string): key is LayoutPreset {
+const isKnownLayoutPresetKey = (key: string): key is LayoutPreset => {
   return (KNOWN_LAYOUT_PRESET_KEYS as readonly string[]).includes(key);
-}
+};
 
-function migrateBuiltinPresetKey(preset: LayoutPreset): LayoutPreset {
+const migrateBuiltinPresetKey = (preset: LayoutPreset): LayoutPreset => {
   if (preset === 'aimp-party') {
     return 'party';
   }
@@ -113,17 +113,17 @@ function migrateBuiltinPresetKey(preset: LayoutPreset): LayoutPreset {
     return 'collections-vertical';
   }
   return preset;
-}
+};
 
-function migrateLayoutTree(layout: Layout): Layout {
+const migrateLayoutTree = (layout: Layout): Layout => {
   return migrateDuplicateFileBrowserWorkspaceIds(
     migrateAimpZonesToPlayerInLayout(migrateLegacyPartyLayout(layout)),
   );
-}
+};
 
-export function normalizeBuiltinLayoutOverrides(
+export const normalizeBuiltinLayoutOverrides = (
   overrides: BuiltinLayoutOverrides | undefined | null,
-): BuiltinLayoutOverrides {
+): BuiltinLayoutOverrides => {
   if (!overrides || typeof overrides !== 'object') {
     return {};
   }
@@ -155,31 +155,31 @@ export function normalizeBuiltinLayoutOverrides(
     result[entry.target] = entry.layout;
   }
   return result;
-}
+};
 
-export function resolveBuiltinLayout(
+export const resolveBuiltinLayout = (
   preset: LayoutPreset,
   overrides: BuiltinLayoutOverrides,
-): Layout {
+): Layout => {
   const normalizedPreset = migrateBuiltinPresetKey(preset);
   const override = overrides[normalizedPreset];
   if (override) {
     return cloneLayout(override);
   }
   return createLayoutByPreset(normalizedPreset);
-}
+};
 
 const LEGACY_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:player,workspace:party)';
 const LEGACY_AIMP_PARTY_LAYOUT_SIGNATURE = 'horizontal(workspace:aimp,workspace:party)';
 
-function isLegacyPartyZone(zone: Zone): zone is WorkspaceZone {
+const isLegacyPartyZone = (zone: Zone): zone is WorkspaceZone => {
   return (
     zone.type === 'workspace' &&
     (zone.workspaceType === 'party' || zone.workspaceId === 'party-workspace')
   );
-}
+};
 
-function createPartyEditorZone(size: number): WorkspaceZone {
+const createPartyEditorZone = (size: number): WorkspaceZone => {
   return {
     id: uuidv4(),
     type: 'workspace',
@@ -187,9 +187,9 @@ function createPartyEditorZone(size: number): WorkspaceZone {
     workspaceType: 'party-editor',
     size,
   };
-}
+};
 
-function createPartyPreviewZone(size: number): WorkspaceZone {
+const createPartyPreviewZone = (size: number): WorkspaceZone => {
   return {
     id: uuidv4(),
     type: 'workspace',
@@ -197,9 +197,9 @@ function createPartyPreviewZone(size: number): WorkspaceZone {
     workspaceType: 'party-preview',
     size,
   };
-}
+};
 
-function splitLegacyPartyZonesInContainer(container: ContainerZone): ContainerZone {
+const splitLegacyPartyZonesInContainer = (container: ContainerZone): ContainerZone => {
   const newZones: Zone[] = [];
   const newSizes: number[] = [];
 
@@ -224,25 +224,25 @@ function splitLegacyPartyZonesInContainer(container: ContainerZone): ContainerZo
     zones: newZones,
     sizes: newSizes,
   };
-}
+};
 
-function splitLegacyPartyZonesInTree(zone: Zone): Zone {
+const splitLegacyPartyZonesInTree = (zone: Zone): Zone => {
   if (zone.type === 'workspace') {
     return zone;
   }
 
   return splitLegacyPartyZonesInContainer(zone);
-}
+};
 
-function layoutContainsLegacyParty(zone: Zone): boolean {
+const layoutContainsLegacyParty = (zone: Zone): boolean => {
   if (zone.type === 'workspace') {
     return isLegacyPartyZone(zone);
   }
 
   return zone.zones.some(layoutContainsLegacyParty);
-}
+};
 
-export function migrateLegacyPartyLayout(layout: Layout): Layout {
+export const migrateLegacyPartyLayout = (layout: Layout): Layout => {
   const signature = getLayoutStructureSignature(layout.rootZone);
 
   if (signature === LEGACY_PARTY_LAYOUT_SIGNATURE) {
@@ -265,21 +265,21 @@ export function migrateLegacyPartyLayout(layout: Layout): Layout {
   }
 
   return migrateAimpZonesToPlayerInLayout(createPartyLayout());
-}
+};
 
-export function migratePersistedLayoutState(
+export const migratePersistedLayoutState = (
   persistedState: unknown,
   version: number,
-): { layout: Layout } {
+): { layout: Layout } => {
   if (version < 3) {
     const state = persistedState as { layout?: Layout } | undefined;
     const layout = state?.layout ?? createInitialLayout();
     return { layout: migrateLegacyPartyLayout(layout) };
   }
   return persistedState as { layout: Layout };
-}
+};
 
-export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
+export const createDefaultWorkspacePersistSlice = (): WorkspacePersistSlice => {
   const layout = createInitialLayout();
   return {
     activeWorkspace: { kind: 'builtin', preset: DEFAULT_BUILTIN_PRESET },
@@ -287,15 +287,15 @@ export function createDefaultWorkspacePersistSlice(): WorkspacePersistSlice {
     layout,
     builtinLayoutOverrides: {},
   };
-}
+};
 
-export async function removeLegacyLayoutPersistKey(): Promise<void> {
+export const removeLegacyLayoutPersistKey = async (): Promise<void> => {
   await electronStorage.removeItem(LEGACY_LAYOUT_PERSIST_KEY);
-}
+};
 
-export function normalizeWorkspacePersistSlice(
+export const normalizeWorkspacePersistSlice = (
   slice: WorkspacePersistSlice,
-): WorkspacePersistSlice {
+): WorkspacePersistSlice => {
   const builtinLayoutOverrides = normalizeBuiltinLayoutOverrides(slice.builtinLayoutOverrides);
   const userWorkspaces = slice.userWorkspaces.map((workspace) => ({
     ...workspace,
@@ -343,12 +343,12 @@ export function normalizeWorkspacePersistSlice(
     layout: resolveBuiltinLayout(activeWorkspace.preset, builtinLayoutOverrides),
     builtinLayoutOverrides,
   };
-}
+};
 
-export function migratePersistedWorkspaceState(
+export const migratePersistedWorkspaceState = (
   persistedState: unknown,
   version: number,
-): WorkspacePersistSlice {
+): WorkspacePersistSlice => {
   if (!persistedState || version === 0) {
     return createDefaultWorkspacePersistSlice();
   }
@@ -368,13 +368,13 @@ export function migratePersistedWorkspaceState(
     layout,
     builtinLayoutOverrides,
   });
-}
+};
 
-export function computeIsWorkspaceDirty(
+export const computeIsWorkspaceDirty = (
   layout: Layout,
   baselineLayout: Layout | null,
   options?: { structureOnly?: boolean },
-): boolean {
+): boolean => {
   if (!baselineLayout) {
     return false;
   }
@@ -389,32 +389,32 @@ export function computeIsWorkspaceDirty(
   return (
     getLayoutZoneSignature(layout.rootZone) !== getLayoutZoneSignature(baselineLayout.rootZone)
   );
-}
+};
 
-function prepareLayoutWorkspaceInstances(layout: Layout): void {
+const prepareLayoutWorkspaceInstances = (layout: Layout): void => {
   for (const zone of collectWorkspaceZones(layout.rootZone)) {
     prepareWorkspaceInstance(zone);
   }
-}
+};
 
-function cleanupLayoutWorkspaceInstances(layout: Layout): void {
+const cleanupLayoutWorkspaceInstances = (layout: Layout): void => {
   for (const zone of collectWorkspaceZones(layout.rootZone)) {
     cleanupWorkspaceInstance(zone);
   }
-}
+};
 
 export const LAYOUT_EMPTY_PICKER_KEY = 'empty';
 
-export function getLayoutAirPickerKey(zoneId: ZoneId, side: LayoutEditAirSide): string {
+export const getLayoutAirPickerKey = (zoneId: ZoneId, side: LayoutEditAirSide): string => {
   return `${zoneId}:${side}`;
-}
+};
 
-export function getLayoutContainerAirPickerKey(
+export const getLayoutContainerAirPickerKey = (
   containerId: ZoneId,
   side: LayoutEditAirSide,
-): string {
+): string => {
   return `container:${containerId}:${side}`;
-}
+};
 
 interface LayoutState {
   layout: Layout;

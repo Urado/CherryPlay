@@ -3,9 +3,9 @@ import * as path from 'path';
 
 import { app, ipcMain } from 'electron';
 
-function getDevProjectRoot(): string {
+const getDevProjectRoot = (): string => {
   return fs.realpathSync.native(process.cwd());
-}
+};
 
 interface ServerConfig {
   serverUrl: string;
@@ -17,29 +17,29 @@ const DEFAULT_WEB_BASE_URL = {
   production: 'https://cherrypashkaparty.ru',
 } as const;
 
-function resolveWebBaseUrl(config: ServerConfig | null): string {
+const resolveWebBaseUrl = (config: ServerConfig | null): string => {
   if (config?.webBaseUrl && typeof config.webBaseUrl === 'string' && config.webBaseUrl.trim()) {
     return config.webBaseUrl.trim();
   }
   return app.isPackaged ? DEFAULT_WEB_BASE_URL.production : DEFAULT_WEB_BASE_URL.development;
-}
+};
 
-export function getConfiguredWebBaseUrl(): string {
+export const getConfiguredWebBaseUrl = (): string => {
   return resolveWebBaseUrl(readConfig());
-}
+};
 
 const CONFIG_FILE = {
   development: 'serverConfig.development.json',
   production: 'serverConfig.production.json',
 } as const;
 
-function getConfigPath(): string {
+const getConfigPath = (): string => {
   const root = app.isPackaged ? app.getAppPath() : getDevProjectRoot();
   const fileName = app.isPackaged ? CONFIG_FILE.production : CONFIG_FILE.development;
   return path.join(root, fileName);
-}
+};
 
-function readConfig(): ServerConfig | null {
+const readConfig = (): ServerConfig | null => {
   const configPath = getConfigPath();
 
   try {
@@ -59,9 +59,9 @@ function readConfig(): ServerConfig | null {
   }
 
   return null;
-}
+};
 
-function writeConfig(config: ServerConfig): void {
+const writeConfig = (config: ServerConfig): void => {
   const configPath = getConfigPath();
 
   try {
@@ -79,10 +79,10 @@ function writeConfig(config: ServerConfig): void {
     console.error('[Config] Error writing config file:', error);
     throw error;
   }
-}
+};
 
-export function registerConfigHandlers(): void {
-  ipcMain.handle('config:getConfigPath', async () => {
+export const registerConfigHandlers = (): void => {
+  ipcMain.handle('config:getConfigPath', () => {
     try {
       const configPath = getConfigPath();
       return {
@@ -97,7 +97,7 @@ export function registerConfigHandlers(): void {
     }
   });
 
-  ipcMain.handle('config:getServerUrl', async () => {
+  ipcMain.handle('config:getServerUrl', () => {
     try {
       const config = readConfig();
       if (!config) {
@@ -119,7 +119,7 @@ export function registerConfigHandlers(): void {
     }
   });
 
-  ipcMain.handle('config:getWebBaseUrl', async () => {
+  ipcMain.handle('config:getWebBaseUrl', () => {
     try {
       const config = readConfig();
       return {
@@ -134,7 +134,7 @@ export function registerConfigHandlers(): void {
     }
   });
 
-  ipcMain.handle('config:setServerUrl', async (event, payload: { serverUrl: string }) => {
+  ipcMain.handle('config:setServerUrl', (_event, payload: { serverUrl: string }) => {
     try {
       const currentConfig = readConfig();
       const newConfig: ServerConfig = {
@@ -154,7 +154,7 @@ export function registerConfigHandlers(): void {
     }
   });
 
-  ipcMain.handle('config:getConfig', async () => {
+  ipcMain.handle('config:getConfig', () => {
     try {
       const config = readConfig();
       if (!config) {
@@ -175,4 +175,4 @@ export function registerConfigHandlers(): void {
       };
     }
   });
-}
+};

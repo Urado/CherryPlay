@@ -12,9 +12,7 @@ jest.mock('../../../src/shared/utils/audioDevices', () => ({
 import { createDefaultPlatformAudioAdapter } from '../../../src/shared/audio/playback/createDefaultPlatformAudioAdapter';
 import { ipcService } from '../../../src/shared/services/ipcService';
 
-const mockedGetAudioFileUrl = ipcService.getAudioFileUrl as jest.MockedFunction<
-  typeof ipcService.getAudioFileUrl
->;
+const mockedGetAudioFileUrl = jest.spyOn(ipcService, 'getAudioFileUrl');
 
 describe('createDefaultPlatformAudioAdapter', () => {
   const createObjectURL = jest.fn();

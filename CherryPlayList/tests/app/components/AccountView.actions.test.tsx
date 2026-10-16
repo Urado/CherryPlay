@@ -1,12 +1,13 @@
+import { AccountView } from '@app/components/AccountView';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-const mockGetWebBaseUrl = jest.fn();
-const mockInvoke = jest.fn();
+const mockGetWebBaseUrl = jest.fn<Promise<string>, unknown[]>();
+const mockInvoke = jest.fn<Promise<unknown>, unknown[]>();
 const mockAddNotification = jest.fn();
 const mockOnClose = jest.fn();
-const mockLogout = jest.fn();
+const mockLogout = jest.fn<Promise<void>, unknown[]>();
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -69,8 +70,6 @@ jest.mock('@shared/stores/authStore', () => {
 
 jest.mock('@shared/utils/authSession', () => ({ clearAuthSession: jest.fn() }));
 jest.mock('@app/components/BrowserLoginPanel', () => ({ BrowserLoginPanel: () => null }));
-
-import { AccountView } from '@app/components/AccountView';
 
 describe('AccountView actions', () => {
   beforeEach(() => {

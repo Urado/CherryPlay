@@ -26,12 +26,6 @@ export interface WebAudioPlaybackEngineOptions {
   readonly adapter: PlatformAudioAdapter;
 }
 
-/**
- * {@link PlaybackEngine} using Web Audio API (EBU order): MediaElementSource → EQ → compressor →
- * track gain (R128 linear normalize) → master gain → destination.
- *
- * Transport lifecycle (load/play/seek/events) is delegated to {@link MediaElementTransport}.
- */
 export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
   private readonly adapter: PlatformAudioAdapter;
   private readonly transport: MediaElementTransport;
@@ -207,9 +201,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     this.applyEqualizerBands();
     this.applyMasterVolume(this.transport.getSnapshot().volume);
 
-    if ('setSinkId' in context && typeof context.setSinkId === 'function') {
+    const contextWithSinkId = context as AudioContext & {
+      setSinkId?: (sinkId: string) => Promise<void>;
+    };
+    if (typeof contextWithSinkId.setSinkId === 'function') {
       const outputDeviceId = this.transport.getSnapshot().outputDeviceId;
-      void context.setSinkId(outputDeviceId ?? 'default').catch((error: unknown) => {
+      void contextWithSinkId.setSinkId(outputDeviceId ?? 'default').catch((error: unknown) => {
         logger.warn(
           'WebAudioPlaybackEngine: failed to set AudioContext sink on graph init',
           error instanceof Error ? error : undefined,
@@ -218,11 +215,6 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
     }
   }
 
-  /**
-   * Routes output to the selected device. After {@link createMediaElementSource},
-   * Chromium/Electron reject {@link HTMLAudioElement.setSinkId} (AbortError) — use
-   * {@link AudioContext.setSinkId} for the Web Audio graph instead.
-   */
   private async applyOutputDevice(deviceId: string | null): Promise<void> {
     const sinkId = deviceId ?? 'default';
 
@@ -230,10 +222,12 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       this.ensureGraph();
       if (
         this.audioContext &&
-        'setSinkId' in this.audioContext &&
-        typeof this.audioContext.setSinkId === 'function'
+        typeof (this.audioContext as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> }).setSinkId === 'function'
       ) {
-        await this.audioContext.setSinkId(sinkId);
+        const contextWithSinkId = this.audioContext as AudioContext & {
+          setSinkId: (targetSinkId: string) => Promise<void>;
+        };
+        await contextWithSinkId.setSinkId(sinkId);
         return;
       }
     }
@@ -283,7 +277,6 @@ export class WebAudioPlaybackEngine implements PlaybackEngine, PlaybackEffects {
       return;
     }
 
-    // EBU Tech 3343 gentle LRA block: low threshold, moderate ratio, long release.
     this.compressorNode.threshold.value = -45 + strength * 10;
     this.compressorNode.ratio.value = 1.2 + strength * 0.8;
     this.compressorNode.knee.value = 30 - strength * 15;

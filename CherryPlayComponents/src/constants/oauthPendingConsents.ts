@@ -4,11 +4,11 @@ export const OAUTH_PENDING_CONSENTS_STORAGE_KEY = 'cherryplay.oauth.pendingConse
 
 const CONSENT_DECISIONS: readonly ConsentDecision[] = ['grant', 'withdraw', 'deny'];
 
-function isConsentDecision(value: unknown): value is ConsentDecision {
+const isConsentDecision = (value: unknown): value is ConsentDecision => {
   return typeof value === 'string' && (CONSENT_DECISIONS as readonly string[]).includes(value);
-}
+};
 
-function isConsentInput(value: unknown): value is ConsentInput {
+const isConsentInput = (value: unknown): value is ConsentInput => {
   if (value === null || typeof value !== 'object') {
     return false;
   }
@@ -19,16 +19,16 @@ function isConsentInput(value: unknown): value is ConsentInput {
     typeof record.documentHash === 'string' &&
     isConsentDecision(record.decision)
   );
-}
+};
 
-export function stashOAuthPendingConsents(consents: ConsentInput[]): void {
+export const stashOAuthPendingConsents = (consents: ConsentInput[]): void => {
   if (typeof sessionStorage === 'undefined') {
     return;
   }
   sessionStorage.setItem(OAUTH_PENDING_CONSENTS_STORAGE_KEY, JSON.stringify(consents));
-}
+};
 
-export function readOAuthPendingConsents(): ConsentInput[] | null {
+export const readOAuthPendingConsents = (): ConsentInput[] | null => {
   if (typeof sessionStorage === 'undefined') {
     return null;
   }
@@ -45,11 +45,11 @@ export function readOAuthPendingConsents(): ConsentInput[] | null {
   } catch {
     return null;
   }
-}
+};
 
-export function clearOAuthPendingConsents(): void {
+export const clearOAuthPendingConsents = (): void => {
   if (typeof sessionStorage === 'undefined') {
     return;
   }
   sessionStorage.removeItem(OAUTH_PENDING_CONSENTS_STORAGE_KEY);
-}
+};

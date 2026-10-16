@@ -18,7 +18,9 @@ import { getLayoutPresetFromLayout } from '../../src/shared/utils/layoutPreset';
 import { getLayoutZoneSignature } from '../../src/shared/utils/layoutSignature';
 import { collectWorkspaceZones } from '../../src/shared/utils/layoutWorkspaceOperations';
 
-function getCollectionWorkspaceIds(layout: ReturnType<typeof useLayoutStore.getState>['layout']) {
+const getCollectionWorkspaceIds = (
+  layout: ReturnType<typeof useLayoutStore.getState>['layout'],
+) => {
   return collectWorkspaceZones(layout.rootZone)
     .filter((zone) => zone.workspaceType === 'collection')
     .map((zone) => zone.workspaceId);
@@ -279,9 +281,7 @@ describe('workspaceStore', () => {
       expect(state.isWorkspaceDirty()).toBe(false);
       const afterRoot = state.layout.rootZone;
       expect(afterRoot.type).toBe('container');
-      if (afterRoot.type === 'container') {
-        expect(afterRoot.sizes).toEqual(originalSizes);
-      }
+      expect(afterRoot).toMatchObject({ type: 'container', sizes: originalSizes });
     });
 
     it('autoCommitWorkspaceChanges silently saves user workspace', () => {

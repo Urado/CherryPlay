@@ -46,7 +46,7 @@ export const LinkPartyModal: React.FC = () => {
 
   useEffect(() => {
     if (modal === 'linkParty') {
-      loadParties();
+      void loadParties();
     }
   }, [modal, loadParties]);
 
@@ -59,33 +59,36 @@ export const LinkPartyModal: React.FC = () => {
     onCancel: handleCancel,
   });
 
+  const handleLink = useCallback(
+    async (party: PartyDto) => {
+      setLinkingId(party.id);
+      try {
+        const url = await partyService.getPartyUrl(party.shortCode);
+        const partyData = { id: party.id, shortCode: party.shortCode, url };
+        setLinkedParty(partyData);
+        markAsDirty();
+
+        if (uploadPlaylist && items.length > 0) {
+          const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
+          await partyService.updatePartyPlaylist(party.id, playlistForApi);
+          applySyncedPlaylistTrackIds(playlistForApi);
+        }
+        closeModal();
+      } catch (e) {
+        addNotification({
+          type: 'error',
+          message: e instanceof Error ? e.message : 'Ошибка при привязке к вечеринке',
+        });
+      } finally {
+        setLinkingId(null);
+      }
+    },
+    [addNotification, closeModal, items, markAsDirty, partyTrackDisplay, setLinkedParty, uploadPlaylist],
+  );
+
   if (modal !== 'linkParty') {
     return null;
   }
-
-  const handleLink = async (party: PartyDto) => {
-    setLinkingId(party.id);
-    try {
-      const url = await partyService.getPartyUrl(party.shortCode);
-      const partyData = { id: party.id, shortCode: party.shortCode, url };
-      setLinkedParty(partyData);
-      markAsDirty();
-
-      if (uploadPlaylist && items.length > 0) {
-        const playlistForApi = convertPlaylistForApi(items, partyTrackDisplay);
-        await partyService.updatePartyPlaylist(party.id, playlistForApi);
-        applySyncedPlaylistTrackIds(playlistForApi);
-      }
-      closeModal();
-    } catch (e) {
-      addNotification({
-        type: 'error',
-        message: e instanceof Error ? e.message : 'Ошибка при привязке к вечеринке',
-      });
-    } finally {
-      setLinkingId(null);
-    }
-  };
 
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -165,7 +168,7 @@ export const LinkPartyModal: React.FC = () => {
                         <Button
                           type="button"
                           className="modal-button link-party-modal-link-btn"
-                          onClick={() => handleLink(party)}
+          onClick={() => { void handleLink(party); }}
                           disabled={linkingId !== null}
                           loading={linkingId === party.id}
                           loadingLabel="Привязка..."

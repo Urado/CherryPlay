@@ -186,18 +186,18 @@ export const useGlobalHistoryStore = createWithEqualityFn<GlobalHistoryState>((s
   },
 }));
 
-export function createMoveDescription(
+export const createMoveDescription = (
   sourceWorkspaceId: WorkspaceId,
   targetWorkspaceId: WorkspaceId,
   count: number,
-): string {
+): string => {
   return `Move ${count} item(s) from ${sourceWorkspaceId} to ${targetWorkspaceId}`;
-}
+};
 
-export function createCopyDescription(
+export const createCopyDescription = (
   sourceWorkspaceId: WorkspaceId,
   targetWorkspaceId: WorkspaceId,
   count: number,
-): string {
+): string => {
   return `Copy ${count} item(s) from ${sourceWorkspaceId} to ${targetWorkspaceId}`;
-}
+};

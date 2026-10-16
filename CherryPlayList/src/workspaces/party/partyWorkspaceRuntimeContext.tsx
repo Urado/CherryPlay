@@ -17,7 +17,7 @@ const PartyWorkspaceRuntimeContext = createContext<PartyWorkspaceRuntimeValue | 
 const providerRegistry = new Set<symbol>();
 const providerElectionListeners = new Set<() => void>();
 
-function notifyProviderElection() {
+const notifyProviderElection = () => {
   providerElectionListeners.forEach((listener) => listener());
 }
 
@@ -28,16 +28,16 @@ const runtimeStore = {
 
 const runtimeStoreListeners = new Set<() => void>();
 
-function subscribeRuntimeStore(listener: () => void) {
+const subscribeRuntimeStore = (listener: () => void) => {
   runtimeStoreListeners.add(listener);
   return () => runtimeStoreListeners.delete(listener);
 }
 
-function getRuntimeStoreEpoch() {
+const getRuntimeStoreEpoch = () => {
   return runtimeStore.epoch;
 }
 
-function setSharedRuntime(runtime: PartyWorkspaceRuntimeValue | null) {
+const setSharedRuntime = (runtime: PartyWorkspaceRuntimeValue | null) => {
   if (runtimeStore.runtime === runtime) {
     return;
   }
@@ -62,7 +62,7 @@ const PartyWorkspaceRuntimeHost = () => {
   return null;
 }
 
-export function useSharedPartyWorkspaceRuntime(): PartyWorkspaceRuntimeValue | null {
+export const useSharedPartyWorkspaceRuntime = (): PartyWorkspaceRuntimeValue | null => {
   return useSyncExternalStore(
     subscribeRuntimeStore,
     () => runtimeStore.runtime,
@@ -76,7 +76,7 @@ export const PartyWorkspaceRuntimeEphemeralHost = () => {
   return isHost ? <PartyWorkspaceRuntimeHost /> : null;
 }
 
-function useIsElectedHost(): boolean {
+const useIsElectedHost = (): boolean => {
   const providerIdRef = useRef(Symbol('party-workspace-runtime-provider'));
   const [isHost, setIsHost] = useState(false);
 
@@ -120,7 +120,7 @@ export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.Re
   );
 }
 
-export function usePartyWorkspaceRuntimeContext(): PartyWorkspaceRuntimeValue {
+export const usePartyWorkspaceRuntimeContext = (): PartyWorkspaceRuntimeValue => {
   const context = useContext(PartyWorkspaceRuntimeContext);
   if (!context) {
     throw new Error(

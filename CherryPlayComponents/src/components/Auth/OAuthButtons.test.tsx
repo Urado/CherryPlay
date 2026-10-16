@@ -14,21 +14,21 @@ import type { AuthService } from '../../types/auth';
 
 import { OAuthButtons } from './OAuthButtons';
 
-function createAuthService(startOAuthFlow = vi.fn()): AuthService {
+const createAuthService = (startOAuthFlow = vi.fn()): AuthService => {
   return {
     login: vi.fn(),
     register: vi.fn(),
     startOAuthFlow,
   };
-}
+};
 
-function getButtonByName(name: RegExp): HTMLButtonElement {
+const getButtonByName = (name: RegExp): HTMLButtonElement => {
   const button = screen.getByRole('button', { name });
   if (!(button instanceof HTMLButtonElement)) {
     throw new Error('Expected a button element');
   }
   return button;
-}
+};
 
 describe('OAuthButtons consent gate', () => {
   afterEach(() => {

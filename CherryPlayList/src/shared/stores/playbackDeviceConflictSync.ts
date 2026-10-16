@@ -6,23 +6,16 @@ import { useDemoPlayerStore } from './demoPlayerStore';
 import { getProjectStore } from './projectStoreFactory';
 import { useSettingsStore } from './settingsStore';
 
-/**
- * Demo disable policy: block shared output only in **session** mode when both engines
- * target the same device id (including `null` = system default).
- *
- * In **preparation** mode, main and demo may play simultaneously on the same device
- * so DJs can preview while the main player runs.
- */
-export function shouldBlockSharedOutput(
+export const shouldBlockSharedOutput = (
   deviceIdA: string | null,
   deviceIdB: string | null,
   sessionMode: ProjectSessionMode,
-): boolean {
+): boolean => {
   const devicesMatch = deviceIdA === deviceIdB;
   return devicesMatch && sessionMode === 'session';
 }
 
-function getSessionMode(): ProjectSessionMode {
+const getSessionMode = (): ProjectSessionMode => {
   const playerProjectStore = getProjectStore(DEFAULT_PLAYER_WORKSPACE_ID);
   return playerProjectStore?.getState().sessionState?.mode ?? 'preparation';
 }
@@ -35,13 +28,13 @@ interface SyncConflictParams {
   setTargetDisabled: (disabled: boolean) => void;
 }
 
-function syncSharedOutputConflict({
+const syncSharedOutputConflict = ({
   targetDeviceId,
   compareDeviceId,
   targetPlaybackStatus,
   pauseTarget,
   setTargetDisabled,
-}: SyncConflictParams): void {
+}: SyncConflictParams): void => {
   const mode = getSessionMode();
   const shouldBlock = shouldBlockSharedOutput(targetDeviceId, compareDeviceId, mode);
 
@@ -56,8 +49,7 @@ function syncSharedOutputConflict({
   setTargetDisabled(false);
 }
 
-/** Called from demo player when its output device changes or before play. */
-export function syncDemoWithMainPlayer(demoDeviceId: string | null): void {
+export const syncDemoWithMainPlayer = (demoDeviceId: string | null): void => {
   const playerDeviceId = useSettingsStore.getState().playerAudioDeviceId;
   const demoStore = useDemoPlayerStore.getState();
   syncSharedOutputConflict({
@@ -69,8 +61,7 @@ export function syncDemoWithMainPlayer(demoDeviceId: string | null): void {
   });
 }
 
-/** Called from main player when its output device changes or before play. */
-export function syncMainWithDemoPlayer(playerDeviceId: string | null): void {
+export const syncMainWithDemoPlayer = (playerDeviceId: string | null): void => {
   const demoPlayerDeviceId = useSettingsStore.getState().demoPlayerAudioDeviceId;
   const demoPlayerState = useDemoPlayerStore.getState();
   syncSharedOutputConflict({

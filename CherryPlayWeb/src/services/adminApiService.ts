@@ -12,7 +12,7 @@ import type {
 import { createApiError, handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 
-function formatAdminError(payload: ApiErrorPayload | null, fallback: string): string {
+const formatAdminError = (payload: ApiErrorPayload | null, fallback: string): string => {
   if (!payload) return fallback;
   if (payload.code === 'entitlement_already_active') {
     return 'Пакет уже выдан этому организатору и активен.';
@@ -36,21 +36,20 @@ function formatAdminError(payload: ApiErrorPayload | null, fallback: string): st
     return 'Выбранный доступ не найден.';
   }
   return payload.detail || payload.message || payload.error || fallback;
-}
+};
 
-async function createAdminApiError(
+const createAdminApiError = async (
   response: Response,
   payload: ApiErrorPayload | null,
   fallback: string,
-) {
+): Promise<Error & { status: number; statusText: string; code?: string; details?: unknown }> => {
   const error = await createApiError(response, fallback);
-  return {
+  return Object.assign(new Error(formatAdminError(payload, error.message || fallback)), {
     ...error,
-    message: formatAdminError(payload, error.message || fallback),
     code: payload?.code ?? error.code,
     details: payload ?? error.details,
-  };
-}
+  });
+};
 
 class AdminApiService {
   async getOrganizers(params: {

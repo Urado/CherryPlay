@@ -27,12 +27,7 @@ const ALLOWED_LIFECYCLE_TRANSITIONS: Record<PartyLifecycleState, readonly PartyL
   completed: ['ready'],
 };
 
-let demoPartySnapshot: PartyDto = buildDemoParty({
-  name: 'Demo Party',
-  title: 'Веб-демо вечеринка',
-});
-
-function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): PartyDto {
+const buildDemoParty = (overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): PartyDto => {
   return {
     id: DEMO_PARTY_ID,
     name: overrides.name,
@@ -59,11 +54,16 @@ function buildDemoParty(overrides: Partial<PartyDto> & Pick<PartyDto, 'name'>): 
   };
 }
 
-export function getDemoPartySnapshot(): PartyDto {
+let demoPartySnapshot: PartyDto = buildDemoParty({
+  name: 'Demo Party',
+  title: 'Веб-демо вечеринка',
+});
+
+export const getDemoPartySnapshot = (): PartyDto => {
   return { ...demoPartySnapshot };
 }
 
-export function demoCreateParty(data: CreatePartyDto): PartyDto {
+export const demoCreateParty = (data: CreatePartyDto): PartyDto => {
   demoPartySnapshot = buildDemoParty({
     name: data.name,
     title: data.title,
@@ -85,7 +85,7 @@ export function demoCreateParty(data: CreatePartyDto): PartyDto {
   return getDemoPartySnapshot();
 }
 
-export function demoUpdateParty(partyId: string, data: UpdatePartyDto): void {
+export const demoUpdateParty = (partyId: string, data: UpdatePartyDto): void => {
   if (partyId !== DEMO_PARTY_ID) {
     return;
   }
@@ -111,7 +111,7 @@ export function demoUpdateParty(partyId: string, data: UpdatePartyDto): void {
   });
 }
 
-export function demoSetPartyLifecycleState(targetState: PartyLifecycleState): PartyDto {
+export const demoSetPartyLifecycleState = (targetState: PartyLifecycleState): PartyDto => {
   demoPartySnapshot = {
     ...demoPartySnapshot,
     partyLifecycleState: targetState,
@@ -119,7 +119,7 @@ export function demoSetPartyLifecycleState(targetState: PartyLifecycleState): Pa
   return getDemoPartySnapshot();
 }
 
-export function demoTransitionPartyLifecycle(targetState: PartyLifecycleState): PartyDto {
+export const demoTransitionPartyLifecycle = (targetState: PartyLifecycleState): PartyDto => {
   const currentState = demoPartySnapshot.partyLifecycleState;
   if (currentState === targetState) {
     return getDemoPartySnapshot();
@@ -140,7 +140,7 @@ export const DEMO_THEME_ACCESS: ThemeAccessDto = {
   contactUrl: 'https://example.com/demo/themes',
 };
 
-export function getDemoPartyState(): PartyStateDto {
+export const getDemoPartyState = (): PartyStateDto => {
   return {
     partyId: DEMO_PARTY_ID,
     isSessionActive: false,
@@ -149,6 +149,6 @@ export function getDemoPartyState(): PartyStateDto {
   };
 }
 
-export function getDemoPartyPublicUrl(shortCode: string): string {
+export const getDemoPartyPublicUrl = (shortCode: string): string => {
   return `https://demo.cherryplay.local/party/${shortCode}`;
 }

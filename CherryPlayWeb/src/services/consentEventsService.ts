@@ -20,7 +20,7 @@ export interface CreateConsentEventsRequest {
   events: ConsentInput[];
 }
 
-function createConsentId(): string {
+const createConsentId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -29,9 +29,9 @@ function createConsentId(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
+};
 
-export function computeMissingRequiredVersionIds(events: ConsentEventDto[]): string[] {
+export const computeMissingRequiredVersionIds = (events: ConsentEventDto[]): string[] => {
   const missing: string[] = [];
 
   for (const doc of REQUIRED_CONSENT_DOCUMENTS) {
@@ -45,7 +45,7 @@ export function computeMissingRequiredVersionIds(events: ConsentEventDto[]): str
   }
 
   return missing;
-}
+};
 
 export class ConsentDocumentsOutdatedError extends Error {
   constructor(message = 'Версии согласий на сервере не совпадают с клиентом. Обновите страницу.') {
@@ -54,10 +54,10 @@ export class ConsentDocumentsOutdatedError extends Error {
   }
 }
 
-export function buildConsentInputsForMissing(
+export const buildConsentInputsForMissing = (
   missing?: string[],
   createId: () => string = createConsentId,
-): ConsentInput[] {
+): ConsentInput[] => {
   const docs =
     missing === undefined
       ? REQUIRED_CONSENT_DOCUMENTS
@@ -73,9 +73,9 @@ export function buildConsentInputsForMissing(
     documentHash: doc.contentHash,
     decision: 'grant' as const,
   }));
-}
+};
 
-export async function listConsentEvents(): Promise<ConsentEventDto[]> {
+export const listConsentEvents = async (): Promise<ConsentEventDto[]> => {
   const response = await apiFetch(getApiUrl(API_ENDPOINTS.CONSENT_EVENTS), {
     method: 'GET',
     credentials: 'include',
@@ -83,9 +83,11 @@ export async function listConsentEvents(): Promise<ConsentEventDto[]> {
   });
 
   return handleApiResponse<ConsentEventDto[]>(response, 'Не удалось загрузить согласия');
-}
+};
 
-export async function createConsentEvents(consents: ConsentInput[]): Promise<ConsentEventDto[]> {
+export const createConsentEvents = async (
+  consents: ConsentInput[],
+): Promise<ConsentEventDto[]> => {
   const body: CreateConsentEventsRequest = { events: consents };
   const response = await apiFetch(getApiUrl(API_ENDPOINTS.CONSENT_EVENTS), {
     method: 'POST',
@@ -96,4 +98,4 @@ export async function createConsentEvents(consents: ConsentInput[]): Promise<Con
   });
 
   return handleApiResponse<ConsentEventDto[]>(response, 'Не удалось сохранить согласия');
-}
+};

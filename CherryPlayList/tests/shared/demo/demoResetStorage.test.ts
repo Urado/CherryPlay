@@ -1,4 +1,4 @@
-const removeItem = jest.fn(async () => undefined);
+const removeItem = jest.fn(() => Promise.resolve());
 
 jest.mock('../../../src/shared/storage/electronStorage', () => ({
   electronStorage: {

@@ -170,12 +170,6 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
     }
   };
 
-  const handleRowClickWhenDisabled = (e: React.MouseEvent): void => {
-    if (!isDisabled) return;
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   const rootClass = [
     'party-playlist-item',
     item.type === 'group' ? 'party-playlist-item--group' : 'party-playlist-item--track',
@@ -193,7 +187,6 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
       className={rootClass}
       role="listitem"
       aria-describedby={cancelTooltipVisible ? tooltipId : undefined}
-      onClick={handleRowClickWhenDisabled}
     >
       <div className="party-playlist-item-left">
         {isDisabled ? (

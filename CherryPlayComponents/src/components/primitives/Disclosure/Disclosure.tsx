@@ -17,9 +17,9 @@ export interface DisclosureProps {
   onExpandedChange?: (expanded: boolean) => void;
 }
 
-function hasSummary(summary: React.ReactNode): boolean {
+const hasSummary = (summary: React.ReactNode): boolean => {
   return summary != null && summary !== '';
-}
+};
 
 export const Disclosure: React.FC<DisclosureProps> = ({
   title,

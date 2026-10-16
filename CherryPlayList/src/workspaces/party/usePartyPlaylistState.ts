@@ -21,9 +21,9 @@ import { useMemo } from 'react';
 
 import { resolvePlaylistSource } from './partyWorkspacePlaylistSource';
 
-function stripPathsFromComponentItems(
+const stripPathsFromComponentItems = (
   items: ReturnType<typeof convertToComponentPlayerItems>,
-): ReturnType<typeof convertToComponentPlayerItems> {
+): ReturnType<typeof convertToComponentPlayerItems> => {
   return items.map((item) => {
     if (item.type === 'track') {
       const { path: _path, ...trackWithoutPath } = item;
@@ -37,9 +37,9 @@ function stripPathsFromComponentItems(
     }
     return item;
   });
-}
+};
 
-export function usePartyPlaylistState() {
+export const usePartyPlaylistState = () => {
   const items = useProjectStore((state) => state.items);
   const partyTrackDisplay = useProjectStore((state) => state.meta.partyTrackDisplay);
   const sessionState = useProjectStore((state) => state.sessionState);
@@ -159,7 +159,7 @@ export function usePartyPlaylistState() {
     previewPlaylistData,
     playbackState,
   };
-}
+};
 
 export type PartyPlaylistBuildParams = {
   streamingSource: string;

@@ -59,15 +59,15 @@ const CONNECTION_SCENARIOS: { label: string; scenario: PreviewConnectionScenario
   { label: 'Организатор не в сети', scenario: 'organizer_offline' },
 ];
 
-function shouldShowSection(
+const shouldShowSection = (
   section: PartyPreviewScenarioControlsSection,
   target: 'quick' | 'expanded',
-): boolean {
+): boolean => {
   if (section === 'all') {
     return true;
   }
   return section === target;
-}
+};
 
 export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControlsProps> = ({
   variant,

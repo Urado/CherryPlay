@@ -12,7 +12,7 @@ import './AdminPages.css';
 
 const PAGE_SIZE = 20;
 
-function getOrganizerContactLabel(item: AdminOrganizerListItemDto): string {
+const getOrganizerContactLabel = (item: AdminOrganizerListItemDto): string => {
   if (item.email) {
     return item.email;
   }
@@ -34,7 +34,7 @@ function getOrganizerContactLabel(item: AdminOrganizerListItemDto): string {
   }
 
   return 'Нет контакта';
-}
+};
 
 export const AdminOrganizersPage = () => {
   const { checking, isAdmin } = useRequireAdmin();

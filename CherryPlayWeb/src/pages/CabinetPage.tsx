@@ -45,11 +45,11 @@ const emptyForm: CreatePartyDto = {
   danceTags: [],
 };
 
-function mergePartiesWithLocalDrafts(
+const mergePartiesWithLocalDrafts = (
   current: PartyDto[],
   fromServer: PartyDto[],
   excludedPartyIds: string[] = [],
-): PartyDto[] {
+): PartyDto[] => {
   const excludedIds = new Set(excludedPartyIds);
   const availableParties = fromServer.filter((party) => !excludedIds.has(party.id));
   const serverIds = new Set(availableParties.map((party) => party.id));
@@ -60,7 +60,7 @@ function mergePartiesWithLocalDrafts(
       !excludedIds.has(party.id),
   );
   return [...localDrafts, ...sortPartiesByEventDateDesc(availableParties)];
-}
+};
 
 export const CabinetPage = () => {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ export const CabinetPage = () => {
 
   const handleSectionChange = (section: 'parties' | 'account') => {
     setActiveSection(section);
-    navigate(
+    void navigate(
       {
         pathname: location.pathname,
         search: location.search,
@@ -179,7 +179,7 @@ export const CabinetPage = () => {
       try {
         const currentOrganizer = await authService.checkAuth();
         if (!currentOrganizer) {
-          navigate(ROUTES.LOGIN);
+          void navigate(ROUTES.LOGIN);
           return;
         }
         setOrganizer(currentOrganizer);
@@ -189,17 +189,17 @@ export const CabinetPage = () => {
         await loadConsentEvents();
       } catch (err) {
         console.error('[CabinetPage] Error checking auth:', err);
-        navigate(ROUTES.LOGIN);
+        void navigate(ROUTES.LOGIN);
       }
     };
 
-    loadOrganizer();
+    void loadOrganizer();
   }, [navigate, loadParties, ensureConsents, loadConsentEvents]);
 
   const handleLogout = async () => {
     await authService.logout();
     clearThemeAccessCache();
-    navigate(ROUTES.LOGIN);
+    void navigate(ROUTES.LOGIN);
   };
 
   const handleDeleteAccount = async () => {
@@ -209,7 +209,7 @@ export const CabinetPage = () => {
       await deleteOrganizerAccount();
       clearThemeAccessCache();
       await authService.logout();
-      navigate(ROUTES.LOGIN, { replace: true, state: { accountDeleted: true } });
+      void navigate(ROUTES.LOGIN, { replace: true, state: { accountDeleted: true } });
     } catch (e) {
       setPrivacyError(extractApiErrorMessage(e, 'Не удалось удалить аккаунт'));
       setDeletingAccount(false);
@@ -286,7 +286,7 @@ export const CabinetPage = () => {
     void (async () => {
       clearThemeAccessCache();
       await authService.logout();
-      navigate(ROUTES.LOGIN, { replace: true, state: { passwordChanged: true } });
+    void navigate(ROUTES.LOGIN, { replace: true, state: { passwordChanged: true } });
     })();
   };
 
@@ -294,13 +294,13 @@ export const CabinetPage = () => {
     const state = location.state as CabinetLocationState;
     if (state?.deniedToast) {
       setDeniedToastMessage(state.deniedToast);
-      navigate(location.pathname, { replace: true });
+      void navigate(location.pathname, { replace: true });
       return;
     }
 
     if (state?.error) {
       setError(state.error);
-      navigate(location.pathname, { replace: true });
+      void navigate(location.pathname, { replace: true });
     }
   }, [location.pathname, location.state, navigate]);
 
@@ -462,7 +462,9 @@ export const CabinetPage = () => {
               variant="secondary"
               size="sm"
               className="logout-button"
-              onClick={handleLogout}
+              onClick={() => {
+                void handleLogout();
+              }}
             >
               Выйти
             </Button>
@@ -599,7 +601,9 @@ export const CabinetPage = () => {
                     themeAccess={themeAccess}
                     themeAccessError={themeAccessError}
                     onSelectLockedTheme={handleSelectLockedTheme}
-                    onSubmit={handleCreateSubmit}
+                    onSubmit={(event) => {
+                      void handleCreateSubmit(event);
+                    }}
                     onCancel={() => {
                       setShowCreateForm(false);
                       setCreateForm(emptyForm);
@@ -623,13 +627,21 @@ export const CabinetPage = () => {
                     themeAccessError={themeAccessError}
                     onSelectLockedTheme={handleSelectLockedTheme}
                     onEdit={handleEditOpen}
-                    onEditSubmit={handleEditSubmit}
+                    onEditSubmit={(event) => {
+                      void handleEditSubmit(event);
+                    }}
                     onEditCancel={handleEditCancel}
-                    onToggleCatalog={handleToggleCatalog}
-                    onDeleteConfirm={handleDeleteConfirm}
+                    onToggleCatalog={(party) => {
+                      void handleToggleCatalog(party);
+                    }}
+                    onDeleteConfirm={(partyId) => {
+                      void handleDeleteConfirm(partyId);
+                    }}
                     transitioningPartyId={transitioningPartyId}
                     transitioningTargetState={transitioningTargetState}
-                    onLifecycleTransition={handleLifecycleTransition}
+                    onLifecycleTransition={(partyId, targetState) => {
+                      void handleLifecycleTransition(partyId, targetState);
+                    }}
                   />
                 )}
                 {!loadingParties && parties.length === 0 && !showCreateForm && !expandedPartyId && (

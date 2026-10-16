@@ -10,15 +10,15 @@ export interface OnlineNetworkPolicy {
   readonly partyDiscoverabilityEnabled: boolean;
 }
 
-export function isStreamingNetworkEnabled(
+export const isStreamingNetworkEnabled = (
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
-): boolean {
+): boolean => {
   return settings.enableStreaming;
 }
 
-export function isStreamingHubAllowed(
+export const isStreamingHubAllowed = (
   settings: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
-): boolean {
+): boolean => {
   if (!isStreamingNetworkEnabled(settings)) {
     return false;
   }
@@ -28,15 +28,15 @@ export function isStreamingHubAllowed(
   return getPlatformCapabilities().supportsRealAuth;
 }
 
-export function isPartyDiscoverabilityEnabled(
+export const isPartyDiscoverabilityEnabled = (
   _settings?: Pick<StreamingNetworkPolicySettings, 'enableStreaming'>,
-): boolean {
+): boolean => {
   return true;
 }
 
-export function getOnlineNetworkPolicy(
+export const getOnlineNetworkPolicy = (
   settings: StreamingNetworkPolicySettings,
-): OnlineNetworkPolicy {
+): OnlineNetworkPolicy => {
   return {
     networkEnabled: isStreamingNetworkEnabled(settings),
     partyDiscoverabilityEnabled: isPartyDiscoverabilityEnabled(settings),

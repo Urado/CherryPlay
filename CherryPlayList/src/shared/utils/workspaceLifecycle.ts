@@ -8,7 +8,7 @@ import { useUIStore } from '../stores/uiStore';
 const COLLECTION_NAME_PREFIX = 'Подборка ';
 const COLLECTION_NAME_PATTERN = /^(?:Подборка|Коллекция) (\d+)$/;
 
-function getNextCollectionNumber(collectionNames: string[]): number {
+const getNextCollectionNumber = (collectionNames: string[]): number => {
   let maxNumber = 0;
   let parsedAny = false;
 
@@ -27,7 +27,7 @@ function getNextCollectionNumber(collectionNames: string[]): number {
   return collectionNames.length + 1;
 }
 
-export function setupCollectionZoneForPreset(zone: WorkspaceZone, name: string): void {
+export const setupCollectionZoneForPreset = (zone: WorkspaceZone, name: string): void => {
   const { workspaceId, workspaceType, id: zoneId } = zone;
 
   ensureProjectStore({
@@ -44,7 +44,7 @@ export function setupCollectionZoneForPreset(zone: WorkspaceZone, name: string):
   uiStore.setWorkspaceZoneId(workspaceId, zoneId);
 }
 
-export function prepareWorkspaceInstance(zone: WorkspaceZone): void {
+export const prepareWorkspaceInstance = (zone: WorkspaceZone): void => {
   const { workspaceId, workspaceType, id: zoneId } = zone;
 
   if (workspaceType === 'collection') {
@@ -78,7 +78,7 @@ export function prepareWorkspaceInstance(zone: WorkspaceZone): void {
   }
 }
 
-export function cleanupWorkspaceInstance(zone: WorkspaceZone): void {
+export const cleanupWorkspaceInstance = (zone: WorkspaceZone): void => {
   if (zone.workspaceType === 'collection') {
     const uiStore = useUIStore.getState();
     uiStore.removeWorkspace(zone.workspaceId);

@@ -10,7 +10,7 @@ import { applyLoudnessPlaybackEffects } from './applyPlaybackEffects';
 import type { PlaybackEngine } from './PlaybackEngine';
 import { demoPlaybackEngine, mainPlaybackEngine } from './playbackEngines';
 
-function syncPlaybackEngineIfTrackMatches(
+const syncPlaybackEngineIfTrackMatches = (
   trackId: string,
   options: {
     currentTrack: Track | null | undefined;
@@ -18,7 +18,7 @@ function syncPlaybackEngineIfTrackMatches(
     engine: PlaybackEngine;
     onTrackUpdated: (track: Track) => void;
   },
-): void {
+): void => {
   if (options.isPlayerDisabled || !options.currentTrack || options.currentTrack.id !== trackId) {
     return;
   }
@@ -30,18 +30,18 @@ function syncPlaybackEngineIfTrackMatches(
 
   applyLoudnessPlaybackEffects(options.engine, item, useSettingsStore.getState());
   options.onTrackUpdated({ ...item });
-}
+};
 
-function syncMainPlayerIfTrackMatches(trackId: string): void {
+const syncMainPlayerIfTrackMatches = (trackId: string): void => {
   const { currentTrack } = usePlayerAudioStore.getState();
   syncPlaybackEngineIfTrackMatches(trackId, {
     currentTrack,
     engine: mainPlaybackEngine,
     onTrackUpdated: (track) => usePlayerAudioStore.setState({ currentTrack: track }),
   });
-}
+};
 
-function syncDemoPlayerIfTrackMatches(trackId: string): void {
+const syncDemoPlayerIfTrackMatches = (trackId: string): void => {
   const { currentTrack, isDisabled } = useDemoPlayerStore.getState();
   syncPlaybackEngineIfTrackMatches(trackId, {
     currentTrack,
@@ -49,18 +49,17 @@ function syncDemoPlayerIfTrackMatches(trackId: string): void {
     engine: demoPlaybackEngine,
     onTrackUpdated: (track) => useDemoPlayerStore.setState({ currentTrack: track }),
   });
-}
+};
 
-/** Re-apply loudness gain on active engines when a track's loudness metadata changes. */
-export function applyLoudnessChangeToActivePlayback(trackId: string): void {
+export const applyLoudnessChangeToActivePlayback = (trackId: string): void => {
   syncMainPlayerIfTrackMatches(trackId);
   syncDemoPlayerIfTrackMatches(trackId);
-}
+};
 
-function hasLoudnessPlaybackFieldsChanged(
+const hasLoudnessPlaybackFieldsChanged = (
   prev: TrackLoudness | undefined,
   next: TrackLoudness | undefined,
-): boolean {
+): boolean => {
   if (prev === next) {
     return false;
   }
@@ -77,12 +76,12 @@ function hasLoudnessPlaybackFieldsChanged(
     prev.lraLowLufs !== next.lraLowLufs ||
     prev.lraLu !== next.lraLu
   );
-}
+};
 
-function handleProjectLoudnessChange(
+const handleProjectLoudnessChange = (
   state: ReturnType<typeof useProjectStore.getState>,
   prevState: ReturnType<typeof useProjectStore.getState>,
-): void {
+): void => {
   const mainTrackId = usePlayerAudioStore.getState().currentTrack?.id;
   const demoTrackId = useDemoPlayerStore.getState().currentTrack?.id;
   const trackIds = new Set([mainTrackId, demoTrackId].filter(Boolean) as string[]);
@@ -97,10 +96,9 @@ function handleProjectLoudnessChange(
       applyLoudnessChangeToActivePlayback(trackId);
     }
   }
-}
+};
 
-/** Subscribe to project/settings updates so gain changes apply during playback. */
-export function wireLoudnessPlaybackSync(): void {
+export const wireLoudnessPlaybackSync = (): void => {
   useProjectStore.subscribe((state, prevState) => {
     handleProjectLoudnessChange(state, prevState);
   });
@@ -124,4 +122,4 @@ export function wireLoudnessPlaybackSync(): void {
       syncDemoPlayerIfTrackMatches(demoTrackId);
     }
   });
-}
+};

@@ -93,9 +93,15 @@ describe('auth IPC handlers', () => {
     const register = handlers.get('auth:registerCallback');
     const cancel = handlers.get('auth:cancelCallback');
     const pending = register?.({ sender: {} });
+    const pendingRejection = pending?.then(
+      () => {
+        throw new Error('Expected callback cancellation to reject');
+      },
+      (error: unknown) => expect(error).toMatchObject({ message: AUTH_CALLBACK_CANCELLED_MESSAGE }),
+    );
 
-    await expect(cancel?.({})).resolves.toEqual({ success: true });
-    await expect(pending).rejects.toThrow(AUTH_CALLBACK_CANCELLED_MESSAGE);
+    expect(cancel?.({})).toEqual({ success: true });
+    await pendingRejection;
   });
 
   it('invalid URL parse → reject', async () => {
@@ -130,9 +136,15 @@ describe('auth IPC handlers', () => {
   it('re-register cancels previous waiter', async () => {
     const register = handlers.get('auth:registerCallback');
     const first = register?.({ sender: {} });
+    const firstRejection = first?.then(
+      () => {
+        throw new Error('Expected replacement to reject the previous callback');
+      },
+      (error: unknown) => expect(error).toMatchObject({ message: AUTH_CALLBACK_CANCELLED_MESSAGE }),
+    );
     const second = register?.({ sender: {} });
 
-    await expect(first).rejects.toThrow(AUTH_CALLBACK_CANCELLED_MESSAGE);
+    await firstRejection;
 
     handleOAuthCallback('cherryplaylist://auth?code=second', null);
     await expect(second).resolves.toEqual({

@@ -22,10 +22,10 @@ export interface CreateApplyDeviceOptions {
   readonly onDeviceNotFound: () => void;
 }
 
-export function createApplyDevice({
+export const createApplyDevice = ({
   engine,
   onDeviceNotFound,
-}: CreateApplyDeviceOptions): (deviceId: string | null, logContext: string) => Promise<void> {
+}: CreateApplyDeviceOptions): (deviceId: string | null, logContext: string) => Promise<void> => {
   return async (deviceId, logContext) => {
     await applyPlaybackOutputDeviceWithFallback(engine, {
       deviceId,
@@ -41,11 +41,11 @@ export interface CreateHandleErrorOptions {
   readonly setErrorState: (message: string) => void;
 }
 
-export function createHandleError({
+export const createHandleError = ({
   engine,
   logLabel,
   setErrorState,
-}: CreateHandleErrorOptions): (message: string, error?: unknown) => void {
+}: CreateHandleErrorOptions): (message: string, error?: unknown) => void => {
   return (message, error) => {
     if (isFileNotFoundError(error)) {
       logger.warn(`${logLabel}: missing file`, error instanceof Error ? error : undefined);
@@ -64,9 +64,9 @@ export interface ResolveTrackPrecheckOptions {
   readonly handleError: (message: string, error?: unknown) => void;
 }
 
-export async function resolveTrackPrecheck(
+export const resolveTrackPrecheck = async (
   options: ResolveTrackPrecheckOptions,
-): Promise<Track | null> {
+): Promise<Track | null> => {
   const { track, markTrackFound, notifyMissingTrack, handleError } = options;
 
   if (!track.isMissing) {
@@ -97,7 +97,7 @@ export interface LoadTrackCoreOptions {
   readonly onBeforeLoad?: () => void;
 }
 
-export async function loadTrackCore(options: LoadTrackCoreOptions): Promise<void> {
+export const loadTrackCore = async (options: LoadTrackCoreOptions): Promise<void> => {
   if (!guardPlaybackUnavailable()) {
     return;
   }
@@ -138,7 +138,7 @@ export interface PlayTrackCoreOptions {
   readonly canPlay?: () => boolean;
 }
 
-export async function playTrackCore(options: PlayTrackCoreOptions): Promise<void> {
+export const playTrackCore = async (options: PlayTrackCoreOptions): Promise<void> => {
   if (!options.currentTrack || (options.canPlay && !options.canPlay())) {
     return;
   }
@@ -179,7 +179,7 @@ export interface WirePlaybackEngineOptions {
   readonly initErrorLogLabel: string;
 }
 
-export function wirePlaybackEngine(options: WirePlaybackEngineOptions): void {
+export const wirePlaybackEngine = (options: WirePlaybackEngineOptions): void => {
   bindPlaybackEngineToStore(options.engine, {
     onStatusChanged: (status) => {
       if (options.getStatus() === 'error' && status === 'idle') {

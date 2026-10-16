@@ -180,7 +180,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
 
   useEffect(() => {
     if (currentPath) {
-      loadDirectory(currentPath);
+      void loadDirectory(currentPath);
     }
   }, [currentPath]);
 
@@ -343,7 +343,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
 
   const handleDoubleClick = (item: { path: string; isDirectory: boolean }) => {
     if (item.isDirectory) {
-      handleNavigate(item.path);
+      void handleNavigate(item.path);
     }
   };
 
@@ -363,7 +363,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       if (item.isDirectory) {
-        handleNavigate(item.path);
+        void handleNavigate(item.path);
       } else {
         selectSingleItem(item.path);
       }
@@ -387,7 +387,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
   }, [currentPath, goToPath]);
 
   const handleBreadcrumbClick = (path: string) => {
-    handleNavigate(path);
+    void handleNavigate(path);
   };
 
   const handleItemClick = (e: React.MouseEvent, path: string) => {
@@ -649,7 +649,7 @@ export const FileBrowser: React.FC<FileBrowserProps> = ({ workspaceId }) => {
             <Button
               type="button"
               className="file-browser-choose-folder"
-              onClick={handleChooseFolder}
+              onClick={() => void handleChooseFolder()}
               disabled={loading}
               title="Выбрать папку"
               startIcon={<FolderIcon />}

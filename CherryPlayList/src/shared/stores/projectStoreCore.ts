@@ -12,7 +12,7 @@ export interface FlatListItem {
   path: string[];
 }
 
-export function findItemRecursive(items: ProjectItem[], id: string): ProjectItem | null {
+export const findItemRecursive = (items: ProjectItem[], id: string): ProjectItem | null => {
   for (const item of items) {
     if (item.id === id) {
       return item;
@@ -27,11 +27,11 @@ export function findItemRecursive(items: ProjectItem[], id: string): ProjectItem
   return null;
 }
 
-export function getItemPathRecursive(
+export const getItemPathRecursive = (
   items: ProjectItem[],
   itemId: string,
   currentPath: string[] = [],
-): string[] | null {
+): string[] | null => {
   for (const item of items) {
     const newPath = [...currentPath, item.id];
     if (item.id === itemId) {
@@ -47,7 +47,7 @@ export function getItemPathRecursive(
   return null;
 }
 
-export function findItemWithParent(items: ProjectItem[], itemId: string): ItemPositionInfo | null {
+export const findItemWithParent = (items: ProjectItem[], itemId: string): ItemPositionInfo | null => {
   const rootIndex = items.findIndex((item) => item.id === itemId);
   if (rootIndex !== -1) {
     return {
@@ -81,7 +81,7 @@ export function findItemWithParent(items: ProjectItem[], itemId: string): ItemPo
   return null;
 }
 
-export function getAllTracksRecursive(items: ProjectItem[]): Track[] {
+export const getAllTracksRecursive = (items: ProjectItem[]): Track[] => {
   const tracks: Track[] = [];
   for (const item of items) {
     if (isProjectTrack(item)) {
@@ -93,10 +93,10 @@ export function getAllTracksRecursive(items: ProjectItem[]): Track[] {
   return tracks;
 }
 
-export function getFlatItemList(items: ProjectItem[]): FlatListItem[] {
+export const getFlatItemList = (items: ProjectItem[]): FlatListItem[] => {
   const result: FlatListItem[] = [];
 
-  function traverse(itemsToTraverse: ProjectItem[], currentPath: string[]) {
+  const traverse = (itemsToTraverse: ProjectItem[], currentPath: string[]): void => {
     for (const item of itemsToTraverse) {
       const itemPath = [...currentPath, item.id];
       result.push({ item, path: itemPath });
@@ -104,13 +104,13 @@ export function getFlatItemList(items: ProjectItem[]): FlatListItem[] {
         traverse(item.items, itemPath);
       }
     }
-  }
+  };
 
   traverse(items, []);
   return result;
 }
 
-export function collectAllItemIds(item: ProjectItem): string[] {
+export const collectAllItemIds = (item: ProjectItem): string[] => {
   const ids = [item.id];
   if (isProjectGroup(item)) {
     for (const child of item.items) {
@@ -120,7 +120,7 @@ export function collectAllItemIds(item: ProjectItem): string[] {
   return ids;
 }
 
-export function removeItemFromItems(items: ProjectItem[], itemId: string): ProjectItem[] {
+export const removeItemFromItems = (items: ProjectItem[], itemId: string): ProjectItem[] => {
   return items
     .filter((item) => item.id !== itemId)
     .map((item) => {
@@ -134,11 +134,11 @@ export function removeItemFromItems(items: ProjectItem[], itemId: string): Proje
     });
 }
 
-export function updateTrackInItems(
+export const updateTrackInItems = (
   items: ProjectItem[],
   trackId: string,
   duration: number,
-): ProjectItem[] {
+): ProjectItem[] => {
   return items.map((item) => {
     if (isProjectTrack(item) && item.id === trackId) {
       return { ...item, duration };
@@ -150,11 +150,11 @@ export function updateTrackInItems(
   });
 }
 
-export function updateTrackLoudnessInItems(
+export const updateTrackLoudnessInItems = (
   items: ProjectItem[],
   trackId: string,
   loudness: TrackLoudness,
-): ProjectItem[] {
+): ProjectItem[] => {
   return items.map((item) => {
     if (isProjectTrack(item) && item.id === trackId) {
       return { ...item, loudness };
@@ -166,11 +166,11 @@ export function updateTrackLoudnessInItems(
   });
 }
 
-export function markTrackMissingInItems(
+export const markTrackMissingInItems = (
   items: ProjectItem[],
   trackId: string,
   isMissing = true,
-): ProjectItem[] {
+): ProjectItem[] => {
   return items.map((item) => {
     if (isProjectTrack(item) && item.id === trackId) {
       return { ...item, isMissing };
@@ -182,11 +182,11 @@ export function markTrackMissingInItems(
   });
 }
 
-export function updateGroupInItems(
+export const updateGroupInItems = (
   items: ProjectItem[],
   groupId: string,
   updater: (group: ProjectGroup) => ProjectGroup,
-): ProjectItem[] {
+): ProjectItem[] => {
   return items.map((item) => {
     if (isProjectGroup(item) && item.id === groupId) {
       return updater(item);
@@ -201,12 +201,12 @@ export function updateGroupInItems(
   });
 }
 
-export function insertItemAtPath(
+export const insertItemAtPath = (
   items: ProjectItem[],
   item: ProjectItem,
   parentPath: string[],
   index: number,
-): ProjectItem[] {
+): ProjectItem[] => {
   if (parentPath.length === 0) {
     const newItems = [...items];
     newItems.splice(index, 0, item);
@@ -237,11 +237,11 @@ export function insertItemAtPath(
   });
 }
 
-export function removeItemAtPath(
+export const removeItemAtPath = (
   items: ProjectItem[],
   parentPath: string[],
   index: number,
-): ProjectItem[] {
+): ProjectItem[] => {
   if (parentPath.length === 0) {
     const newItems = [...items];
     if (index >= 0 && index < newItems.length) {
@@ -276,13 +276,7 @@ export function removeItemAtPath(
   });
 }
 
-/**
- * Удаляет несколько элементов по их ID из иерархии
- * @param items - Текущая иерархия элементов
- * @param itemIds - Массив ID элементов для удаления
- * @returns Новая иерархия без указанных элементов
- */
-export function removeItemsById(items: ProjectItem[], itemIds: string[]): ProjectItem[] {
+export const removeItemsById = (items: ProjectItem[], itemIds: string[]): ProjectItem[] => {
   const idsSet = new Set(itemIds);
   return items
     .filter((item) => !idsSet.has(item.id))
@@ -297,18 +291,11 @@ export function removeItemsById(items: ProjectItem[], itemIds: string[]): Projec
     });
 }
 
-/**
- * Собирает элементы по их ID из иерархии, сохраняя порядок из flatList
- * @param items - Иерархия элементов
- * @param itemIds - Массив ID элементов для сбора (в нужном порядке)
- * @returns Массив найденных элементов в порядке itemIds
- */
-export function collectItemsById(items: ProjectItem[], itemIds: string[]): ProjectItem[] {
+export const collectItemsById = (items: ProjectItem[], itemIds: string[]): ProjectItem[] => {
   const result: ProjectItem[] = [];
   const foundItems = new Map<string, ProjectItem>();
 
-  // Рекурсивно собираем все элементы в Map
-  function collectRecursive(itemsToCollect: ProjectItem[]) {
+  const collectRecursive = (itemsToCollect: ProjectItem[]): void => {
     for (const item of itemsToCollect) {
       if (itemIds.includes(item.id)) {
         foundItems.set(item.id, item);
@@ -317,11 +304,10 @@ export function collectItemsById(items: ProjectItem[], itemIds: string[]): Proje
         collectRecursive(item.items);
       }
     }
-  }
+  };
 
   collectRecursive(items);
 
-  // Возвращаем элементы в порядке itemIds
   for (const id of itemIds) {
     const item = foundItems.get(id);
     if (item) {
@@ -332,20 +318,12 @@ export function collectItemsById(items: ProjectItem[], itemIds: string[]): Proje
   return result;
 }
 
-/**
- * Вставляет элементы в группу по её ID
- * @param items - Текущая иерархия элементов
- * @param groupId - ID группы для вставки
- * @param index - Индекс вставки внутри группы
- * @param itemsToInsert - Элементы для вставки
- * @returns Новая иерархия с вставленными элементами
- */
-export function insertIntoGroup(
+export const insertIntoGroup = (
   items: ProjectItem[],
   groupId: string,
   index: number,
   itemsToInsert: ProjectItem[],
-): ProjectItem[] {
+): ProjectItem[] => {
   return items.map((item) => {
     if (isProjectGroup(item) && item.id === groupId) {
       const newGroupItems = [...item.items];

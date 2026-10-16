@@ -39,6 +39,6 @@ export const usePartySettingsUiStore = createWithEqualityFn<PartySettingsUiState
   resetPartySettingsUiState: () => set({ ...initialPartySettingsUiState }),
 }));
 
-export function resetPartySettingsUiState(): void {
+export const resetPartySettingsUiState = (): void => {
   usePartySettingsUiStore.getState().resetPartySettingsUiState();
-}
+};

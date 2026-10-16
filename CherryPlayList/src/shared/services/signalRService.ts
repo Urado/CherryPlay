@@ -2,7 +2,7 @@ import * as signalR from '@microsoft/signalr';
 
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
 import { type PlaybackStateDto } from '../contracts/playbackState';
-import { useAuthStore } from '../stores';
+import { useAuthStore } from '../stores/authStore';
 import {
   handleAuthError,
   isAuthError,
@@ -215,7 +215,8 @@ class SignalRService {
       console.log('[SignalR] Reconnecting...', error ? `Error: ${error.message}` : '');
     });
 
-    this.connection.onreconnected(async (connectionId) => {
+    this.connection.onreconnected((connectionId) => {
+      void (async () => {
       console.log('[SignalR] Reconnected with connection ID:', connectionId);
 
       
@@ -258,6 +259,7 @@ class SignalRService {
           console.error('[SignalR] Failed to restore party connection after reconnect:', error);
         }
       }
+      })();
     });
   }
 

@@ -28,9 +28,9 @@ export const SETTINGS_EXPORT_BUNDLE_FILENAME = 'cherryplaylist-settings-bundle.j
 
 const JSON_FILE_FILTERS = [{ name: 'JSON файлы', extensions: ['json'] }];
 
-function cloneLayout(layout: Layout): Layout {
+const cloneLayout = (layout: Layout): Layout => {
   return JSON.parse(JSON.stringify(layout)) as Layout;
-}
+};
 
 const AUTH_FIELD_KEYS = ['accessToken', 'organizer', 'refreshToken'] as const;
 
@@ -72,9 +72,9 @@ export interface SettingsImportResult {
   workspacesUpdated: number;
 }
 
-function coerceFileBrowserPathsByWorkspaceId(
+const coerceFileBrowserPathsByWorkspaceId = (
   value: unknown,
-): Record<WorkspaceId, string> | undefined {
+): Record<WorkspaceId, string> | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined;
   }
@@ -87,11 +87,11 @@ function coerceFileBrowserPathsByWorkspaceId(
   }
 
   return result;
-}
+};
 
-export function pickSettingsExportFields(
+export const pickSettingsExportFields = (
   state: ReturnType<typeof useSettingsStore.getState>,
-): SettingsExportPersistedState {
+): SettingsExportPersistedState => {
   const defaultFileBrowserPath = state.getFileBrowserPathForWorkspace(
     DEFAULT_FILEBROWSER_WORKSPACE_ID,
   );
@@ -115,9 +115,9 @@ export function pickSettingsExportFields(
     loudnessCompressionEnabled: state.loudnessCompressionEnabled,
     loudnessQuietGapRangeLu: state.loudnessQuietGapRangeLu,
   };
-}
+};
 
-export function buildSettingsExportBundle(): SettingsExportBundle {
+export const buildSettingsExportBundle = (): SettingsExportBundle => {
   const settingsState = useSettingsStore.getState();
   const layoutState = useLayoutStore.getState();
 
@@ -138,16 +138,16 @@ export function buildSettingsExportBundle(): SettingsExportBundle {
       ...(activeWorkspace ? { activeWorkspace } : {}),
     },
   };
-}
+};
 
-function hasAuthFields(value: unknown): boolean {
+const hasAuthFields = (value: unknown): boolean => {
   if (!value || typeof value !== 'object') {
     return false;
   }
   return AUTH_FIELD_KEYS.some((key) => key in (value as Record<string, unknown>));
-}
+};
 
-function isUserWorkspace(value: unknown): value is UserWorkspace {
+const isUserWorkspace = (value: unknown): value is UserWorkspace => {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -158,9 +158,9 @@ function isUserWorkspace(value: unknown): value is UserWorkspace {
     workspace.layout !== null &&
     typeof workspace.layout === 'object'
   );
-}
+};
 
-function isActiveWorkspace(value: unknown): value is ActiveWorkspace {
+const isActiveWorkspace = (value: unknown): value is ActiveWorkspace => {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -175,9 +175,9 @@ function isActiveWorkspace(value: unknown): value is ActiveWorkspace {
     return true;
   }
   return false;
-}
+};
 
-function isSettingsExportPersistedState(value: unknown): value is SettingsExportPersistedState {
+const isSettingsExportPersistedState = (value: unknown): value is SettingsExportPersistedState => {
   if (!value || typeof value !== 'object' || hasAuthFields(value)) {
     return false;
   }
@@ -209,9 +209,9 @@ function isSettingsExportPersistedState(value: unknown): value is SettingsExport
     (settings.fileBrowserPathsByWorkspaceId === undefined ||
       coerceFileBrowserPathsByWorkspaceId(settings.fileBrowserPathsByWorkspaceId) !== undefined)
   );
-}
+};
 
-export function validateSettingsExportBundle(data: unknown): data is SettingsExportBundle {
+export const validateSettingsExportBundle = (data: unknown): data is SettingsExportBundle => {
   if (!data || typeof data !== 'object') {
     return false;
   }
@@ -260,12 +260,12 @@ export function validateSettingsExportBundle(data: unknown): data is SettingsExp
   }
 
   return !hasAuthFields(bundle);
-}
+};
 
-export function parseSettingsBundleJson(text: string): SettingsExportBundle {
+export const parseSettingsBundleJson = (text: string): SettingsExportBundle => {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text);
+    parsed = JSON.parse(text) as unknown;
   } catch {
     throw new Error('Некорректный JSON');
   }
@@ -275,9 +275,9 @@ export function parseSettingsBundleJson(text: string): SettingsExportBundle {
   }
 
   return parsed;
-}
+};
 
-function resolveUniqueWorkspaceName(name: string, usedNames: Set<string>): string {
+const resolveUniqueWorkspaceName = (name: string, usedNames: Set<string>): string => {
   if (!usedNames.has(name)) {
     return name;
   }
@@ -287,12 +287,12 @@ function resolveUniqueWorkspaceName(name: string, usedNames: Set<string>): strin
     suffix += 1;
   }
   return `${name} (${suffix})`;
-}
+};
 
-export function mergeUserWorkspacesOnImport(
+export const mergeUserWorkspacesOnImport = (
   existing: UserWorkspace[],
   incoming: UserWorkspace[],
-): { merged: UserWorkspace[]; importedCount: number; updatedCount: number } {
+): { merged: UserWorkspace[]; importedCount: number; updatedCount: number } => {
   const mergedById = new Map(existing.map((workspace) => [workspace.id, workspace]));
   const usedNames = new Set(existing.map((workspace) => workspace.name));
   let importedCount = 0;
@@ -329,12 +329,12 @@ export function mergeUserWorkspacesOnImport(
     importedCount,
     updatedCount,
   };
-}
+};
 
-function isImportableActiveWorkspace(
+const isImportableActiveWorkspace = (
   activeWorkspace: ActiveWorkspace,
   mergedWorkspaces: UserWorkspace[],
-): boolean {
+): boolean => {
   if (activeWorkspace.kind === 'scratch') {
     return false;
   }
@@ -342,19 +342,19 @@ function isImportableActiveWorkspace(
     return mergedWorkspaces.some((workspace) => workspace.id === activeWorkspace.id);
   }
   return true;
-}
+};
 
-function prepareLayoutStateForSettingsImport(): void {
+const prepareLayoutStateForSettingsImport = (): void => {
   const state = useLayoutStore.getState();
   state.autoCommitWorkspaceChanges();
   state.setLayoutEditMode(false);
-}
+};
 
-function normalizeImportedSettings(
+const normalizeImportedSettings = (
   settings: SettingsExportPersistedState,
 ): SettingsExportPersistedState & {
   fileBrowserPathsByWorkspaceId: Record<WorkspaceId, string>;
-} {
+} => {
   const coercedMap = coerceFileBrowserPathsByWorkspaceId(settings.fileBrowserPathsByWorkspaceId);
   const migrated = migrateFileBrowserPathsOnRehydrate({
     fileBrowserPath: settings.fileBrowserPath,
@@ -382,9 +382,9 @@ function normalizeImportedSettings(
         ? clampLoudnessQuietGapRangeLu(settings.loudnessQuietGapRangeLu)
         : DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
   };
-}
+};
 
-export function applySettingsImport(bundle: SettingsExportBundle): SettingsImportResult {
+export const applySettingsImport = (bundle: SettingsExportBundle): SettingsImportResult => {
   const normalizedSettings = normalizeImportedSettings(bundle.settings);
   const settingsFieldCount = Object.keys(normalizedSettings).length;
 
@@ -439,9 +439,9 @@ export function applySettingsImport(bundle: SettingsExportBundle): SettingsImpor
     workspacesImported: importedCount,
     workspacesUpdated: updatedCount,
   };
-}
+};
 
-export function downloadSettingsBundleInBrowser(): void {
+export const downloadSettingsBundleInBrowser = (): void => {
   const bundle = buildSettingsExportBundle();
   const json = JSON.stringify(bundle, null, 2);
   const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
@@ -453,9 +453,9 @@ export function downloadSettingsBundleInBrowser(): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-}
+};
 
-async function exportSettingsBundleViaNativeDialog(): Promise<boolean> {
+const exportSettingsBundleViaNativeDialog = async (): Promise<boolean> => {
   const bundle = buildSettingsExportBundle();
   const path = await ipcService.showSaveDialog({
     title: 'Экспорт настроек',
@@ -469,9 +469,9 @@ async function exportSettingsBundleViaNativeDialog(): Promise<boolean> {
 
   await ipcService.invoke('settings:saveBundle', { path, bundle }, false);
   return true;
-}
+};
 
-export async function loadSettingsBundleViaNativeDialog(): Promise<SettingsExportBundle | null> {
+export const loadSettingsBundleViaNativeDialog = async (): Promise<SettingsExportBundle | null> => {
   const path = await ipcService.showOpenFileDialog({
     title: 'Импорт настроек',
     filters: JSON_FILE_FILTERS,
@@ -487,11 +487,11 @@ export async function loadSettingsBundleViaNativeDialog(): Promise<SettingsExpor
   }
 
   return data;
-}
+};
 
 export type SettingsExportOutcome = 'exported' | 'cancelled';
 
-export async function exportSettingsBundle(): Promise<SettingsExportOutcome> {
+export const exportSettingsBundle = async (): Promise<SettingsExportOutcome> => {
   if (getPlatformCapabilities().supportsNativeFileSystem) {
     const exported = await exportSettingsBundleViaNativeDialog();
     return exported ? 'exported' : 'cancelled';
@@ -499,4 +499,4 @@ export async function exportSettingsBundle(): Promise<SettingsExportOutcome> {
 
   downloadSettingsBundleInBrowser();
   return 'exported';
-}
+};

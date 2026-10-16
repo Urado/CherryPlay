@@ -3,7 +3,9 @@ const mockUpdatePartyPlaylist = jest.fn();
 let projectState: { items: Array<{ id: string }> } = { items: [] };
 
 jest.mock('../../../src/shared/services/partyService', () => ({
-  partyService: { updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) },
+  partyService: {
+    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) as unknown,
+  },
 }));
 
 jest.mock('../../../src/shared/stores/projectStore', () => ({
@@ -60,9 +62,10 @@ describe('subscribePartyPlaylistSync coalescing', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mockUpdatePartyPlaylist).toHaveBeenCalledTimes(2);
-    expect(mockUpdatePartyPlaylist.mock.calls[1][1].items.map((item: { name: string }) => item.name)).toEqual([
-      'Repeat', 'Repeat', 'Repeat',
-    ]);
+    const secondCall = mockUpdatePartyPlaylist.mock.calls[1] as
+      | [string, { items: Array<{ name: string }> }]
+      | undefined;
+    expect(secondCall?.[1].items.map((item) => item.name)).toEqual(['Repeat', 'Repeat', 'Repeat']);
     expect(onAfterSync).toHaveBeenCalledTimes(2);
     expect(onSynced).toHaveBeenCalledTimes(2);
     unsubscribe();

@@ -4,13 +4,7 @@ import { setAudioSinkId } from '../../utils/audioDevices';
 import type { PlatformAudioAdapter, ResolvedPlaybackUrl } from './PlatformAudioAdapter';
 import type { PlaybackSource } from './types';
 
-/**
- * Default Electron/browser {@link PlatformAudioAdapter} delegating to IPC and audio device helpers.
- *
- * Resolves `filePath` via `audio:getFileUrl` → `cherryplay-audio://` streaming protocol URL.
- * Protocol URLs work under the renderer CSP without base64/Blob indirection.
- */
-export function createDefaultPlatformAudioAdapter(): PlatformAudioAdapter {
+export const createDefaultPlatformAudioAdapter = (): PlatformAudioAdapter => {
   return {
     async resolveSource(source: PlaybackSource): Promise<ResolvedPlaybackUrl> {
       switch (source.kind) {
@@ -65,10 +59,11 @@ export function createDefaultPlatformAudioAdapter(): PlatformAudioAdapter {
         return;
       }
 
-      if ('setSinkId' in target && typeof target.setSinkId === 'function') {
+      const targetWithSinkId = target as AudioContext & { setSinkId?: (sinkId: string) => Promise<void> };
+      if (typeof targetWithSinkId.setSinkId === 'function') {
         const sinkId = deviceId ?? 'default';
-        await target.setSinkId(sinkId);
+        await targetWithSinkId.setSinkId(sinkId);
       }
     },
   };
-}
+};

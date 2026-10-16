@@ -50,31 +50,31 @@ const SINGLETON_WORKSPACE_TYPES = new Set([
 
 const PLAYBACK_WORKSPACE_TYPES = new Set(['player', 'aimp']);
 
-function isPlaybackWorkspaceType(workspaceType: string): boolean {
+const isPlaybackWorkspaceType = (workspaceType: string): boolean => {
   return PLAYBACK_WORKSPACE_TYPES.has(workspaceType);
-}
+};
 
-function getSplitDirection(side: LayoutEditAirSide): SplitDirection {
+const getSplitDirection = (side: LayoutEditAirSide): SplitDirection => {
   return side === 'top' || side === 'bottom' ? 'vertical' : 'horizontal';
-}
+};
 
-function isBeforeSide(side: LayoutEditAirSide): boolean {
+const isBeforeSide = (side: LayoutEditAirSide): boolean => {
   return side === 'top' || side === 'left';
-}
+};
 
-export function countWorkspaceLeaves(root: Zone): number {
+export const countWorkspaceLeaves = (root: Zone): number => {
   if (root.type === 'workspace') {
     return 1;
   }
 
   return root.zones.reduce((sum, zone) => sum + countWorkspaceLeaves(zone), 0);
-}
+};
 
-export function isLayoutEmpty(layout: Layout): boolean {
+export const isLayoutEmpty = (layout: Layout): boolean => {
   return countWorkspaceLeaves(layout.rootZone) === 0;
-}
+};
 
-export function createEmptyLayout(): Layout {
+export const createEmptyLayout = (): Layout => {
   const emptyRoot: ContainerZone = {
     id: uuidv4(),
     type: 'container',
@@ -87,7 +87,7 @@ export function createEmptyLayout(): Layout {
     version: 1,
     rootZone: emptyRoot,
   };
-}
+};
 
 export type AddInitialWorkspaceResult =
   | { ok: true; layout: Layout; preparedZone: WorkspaceZone }
@@ -97,10 +97,10 @@ export type AddInitialWorkspaceResult =
       minSizeDiagnostics?: AddAdjacentMinSizeDiagnostics;
     };
 
-export function addInitialWorkspaceToLayout(
+export const addInitialWorkspaceToLayout = (
   workspaceType: string,
   currentLayoutViewport?: LayoutViewportSize | null,
-): AddInitialWorkspaceResult {
+): AddInitialWorkspaceResult => {
   const zone = createWorkspaceZone(workspaceType);
   const result: AddInitialWorkspaceResult = {
     ok: true,
@@ -112,9 +112,9 @@ export function addInitialWorkspaceToLayout(
   };
 
   return enforceMinSizeFeasibility(result, currentLayoutViewport);
-}
+};
 
-export function collectWorkspaceTypes(root: Zone): Set<string> {
+export const collectWorkspaceTypes = (root: Zone): Set<string> => {
   if (root.type === 'workspace') {
     return new Set([root.workspaceType]);
   }
@@ -127,25 +127,25 @@ export function collectWorkspaceTypes(root: Zone): Set<string> {
   }
 
   return types;
-}
+};
 
-export function collectWorkspaceZones(root: Zone): WorkspaceZone[] {
+export const collectWorkspaceZones = (root: Zone): WorkspaceZone[] => {
   if (root.type === 'workspace') {
     return [root];
   }
 
   return root.zones.flatMap(collectWorkspaceZones);
-}
+};
 
-export function isSingletonWorkspaceType(workspaceType: string): boolean {
+export const isSingletonWorkspaceType = (workspaceType: string): boolean => {
   return SINGLETON_WORKSPACE_TYPES.has(workspaceType) || isPlaybackWorkspaceType(workspaceType);
-}
+};
 
-function layoutHasPlaybackWorkspace(types: Set<string>): boolean {
+const layoutHasPlaybackWorkspace = (types: Set<string>): boolean => {
   return types.has('player') || types.has('aimp');
-}
+};
 
-function migrateAimpZoneToPlayer(zone: Zone): Zone {
+const migrateAimpZoneToPlayer = (zone: Zone): Zone => {
   if (zone.type === 'workspace' && zone.workspaceType === 'aimp') {
     return {
       ...zone,
@@ -162,16 +162,16 @@ function migrateAimpZoneToPlayer(zone: Zone): Zone {
   }
 
   return zone;
-}
+};
 
-export function migrateAimpZonesToPlayerInLayout(layout: Layout): Layout {
+export const migrateAimpZonesToPlayerInLayout = (layout: Layout): Layout => {
   return {
     ...layout,
     rootZone: migrateAimpZoneToPlayer(layout.rootZone),
   };
-}
+};
 
-function migrateDuplicateFileBrowserZone(zone: Zone, seenDefaultId: { value: boolean }): Zone {
+const migrateDuplicateFileBrowserZone = (zone: Zone, seenDefaultId: { value: boolean }): Zone => {
   if (zone.type === 'workspace' && zone.workspaceType === 'fileBrowser') {
     if (zone.workspaceId === DEFAULT_FILEBROWSER_WORKSPACE_ID) {
       if (!seenDefaultId.value) {
@@ -196,18 +196,18 @@ function migrateDuplicateFileBrowserZone(zone: Zone, seenDefaultId: { value: boo
   }
 
   return zone;
-}
+};
 
-export function migrateDuplicateFileBrowserWorkspaceIds(layout: Layout): Layout {
+export const migrateDuplicateFileBrowserWorkspaceIds = (layout: Layout): Layout => {
   const seenDefaultId = { value: false };
 
   return {
     ...layout,
     rootZone: migrateDuplicateFileBrowserZone(layout.rootZone, seenDefaultId),
   };
-}
+};
 
-export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
+export const resolveWorkspaceIdForType = (workspaceType: string): WorkspaceId => {
   switch (workspaceType) {
     case 'playlist':
       return DEFAULT_PLAYLIST_WORKSPACE_ID;
@@ -226,9 +226,9 @@ export function resolveWorkspaceIdForType(workspaceType: string): WorkspaceId {
     default:
       return generateWorkspaceId();
   }
-}
+};
 
-export function createWorkspaceZone(workspaceType: string): WorkspaceZone {
+export const createWorkspaceZone = (workspaceType: string): WorkspaceZone => {
   const normalizedType = normalizeWorkspaceType(workspaceType);
 
   return {
@@ -238,13 +238,13 @@ export function createWorkspaceZone(workspaceType: string): WorkspaceZone {
     workspaceType: normalizedType,
     size: 50,
   };
-}
+};
 
-function buildSplitContainer(
+const buildSplitContainer = (
   existingZone: Zone,
   newZone: WorkspaceZone,
   side: LayoutEditAirSide,
-): ContainerZone {
+): ContainerZone => {
   const zones = isBeforeSide(side) ? [newZone, existingZone] : [existingZone, newZone];
 
   return {
@@ -254,7 +254,7 @@ function buildSplitContainer(
     zones,
     sizes: [50, 50],
   };
-}
+};
 
 export interface AddAdjacentMinSizeDiagnostics {
   proposedRoot: Zone | null;
@@ -278,10 +278,10 @@ export type AddAdjacentWorkspaceResult =
 
 type MinSizeFeasibilityResult = AddAdjacentWorkspaceResult | AddInitialWorkspaceResult;
 
-function enforceMinSizeFeasibility<T extends MinSizeFeasibilityResult>(
+const enforceMinSizeFeasibility = <T extends MinSizeFeasibilityResult>(
   result: T,
   currentLayoutViewport?: LayoutViewportSize | null,
-): T {
+): T => {
   if (!result.ok) {
     return result;
   }
@@ -316,40 +316,40 @@ function enforceMinSizeFeasibility<T extends MinSizeFeasibilityResult>(
   }
 
   return result;
-}
+};
 
-export function logAddAdjacentMinSizeViolation(
+export const logAddAdjacentMinSizeViolation = (
   result: AddAdjacentWorkspaceResult | AddInitialWorkspaceResult,
-): void {
+): void => {
   if (result.ok || result.reason !== 'min_size_violation') {
     return;
   }
 
   const diagnostics = result.minSizeDiagnostics ?? { proposedRoot: null, viewport: null };
   logMinSizeViolation(diagnostics.proposedRoot, diagnostics.viewport);
-}
+};
 
-export function canAddAdjacentWorkspace(
+export const canAddAdjacentWorkspace = (
   layout: Layout,
   targetZoneId: ZoneId,
   side: LayoutEditAirSide,
   workspaceTypes: string[],
   currentLayoutViewport?: LayoutViewportSize | null,
-): boolean {
+): boolean => {
   return workspaceTypes.some(
     (workspaceType) =>
       addAdjacentWorkspaceToLayout(layout, targetZoneId, side, workspaceType, currentLayoutViewport)
         .ok,
   );
-}
+};
 
-export function canAddAdjacentWorkspaceToContainer(
+export const canAddAdjacentWorkspaceToContainer = (
   layout: Layout,
   containerId: ZoneId,
   side: LayoutEditAirSide,
   workspaceTypes: string[],
   currentLayoutViewport?: LayoutViewportSize | null,
-): boolean {
+): boolean => {
   return workspaceTypes.some(
     (workspaceType) =>
       addAdjacentWorkspaceToContainerLayout(
@@ -360,16 +360,16 @@ export function canAddAdjacentWorkspaceToContainer(
         currentLayoutViewport,
       ).ok,
   );
-}
+};
 
-export function canAddInitialWorkspace(
+export const canAddInitialWorkspace = (
   workspaceType: string,
   currentLayoutViewport?: LayoutViewportSize | null,
-): boolean {
+): boolean => {
   return addInitialWorkspaceToLayout(workspaceType, currentLayoutViewport).ok;
-}
+};
 
-function logMinSizeViolation(proposedRoot: Zone | null, viewport: LayoutViewportSize | null): void {
+const logMinSizeViolation = (proposedRoot: Zone | null, viewport: LayoutViewportSize | null): void => {
   if (!proposedRoot || !viewport) {
     logger.warn(
       '[layout mins] Нельзя добавить workspace: размер области layout неизвестен (viewport=null), ' +
@@ -397,26 +397,26 @@ function logMinSizeViolation(proposedRoot: Zone | null, viewport: LayoutViewport
   ].join('\n');
 
   logger.warn(report);
-}
+};
 
-export function getContainerSpanSides(direction: SplitDirection): LayoutEditAirSide[] {
+export const getContainerSpanSides = (direction: SplitDirection): LayoutEditAirSide[] => {
   return direction === 'horizontal' ? ['top', 'bottom'] : ['left', 'right'];
-}
+};
 
-export function isSpanSideForContainer(
+export const isSpanSideForContainer = (
   direction: SplitDirection,
   side: LayoutEditAirSide,
-): boolean {
+): boolean => {
   return getContainerSpanSides(direction).includes(side);
-}
+};
 
-function insertAdjacentZoneInLayout(
+const insertAdjacentZoneInLayout = (
   layout: Layout,
   targetZoneId: ZoneId,
   targetZone: Zone,
   newZone: WorkspaceZone,
   side: LayoutEditAirSide,
-): AddAdjacentWorkspaceResult {
+): AddAdjacentWorkspaceResult => {
   const splitDirection = getSplitDirection(side);
   const parent = findParentZone(layout.rootZone, targetZoneId);
 
@@ -483,12 +483,12 @@ function insertAdjacentZoneInLayout(
     },
     preparedZone: newZone,
   };
-}
+};
 
-function validateSingletonWorkspaceType(
+const validateSingletonWorkspaceType = (
   layout: Layout,
   workspaceType: string,
-): AddAdjacentWorkspaceResult | null {
+): AddAdjacentWorkspaceResult | null => {
   if (!isSingletonWorkspaceType(workspaceType)) {
     return null;
   }
@@ -503,15 +503,15 @@ function validateSingletonWorkspaceType(
   }
 
   return null;
-}
+};
 
-export function addAdjacentWorkspaceToLayout(
+export const addAdjacentWorkspaceToLayout = (
   layout: Layout,
   targetZoneId: ZoneId,
   side: LayoutEditAirSide,
   workspaceType: string,
   currentLayoutViewport?: LayoutViewportSize | null,
-): AddAdjacentWorkspaceResult {
+): AddAdjacentWorkspaceResult => {
   const targetZone = findZoneById(layout.rootZone, targetZoneId);
   if (!targetZone || targetZone.type !== 'workspace') {
     return { ok: false, reason: 'not_found' };
@@ -527,15 +527,15 @@ export function addAdjacentWorkspaceToLayout(
 
   const result = insertAdjacentZoneInLayout(layout, targetZoneId, targetZone, newZone, side);
   return enforceMinSizeFeasibility(result, currentLayoutViewport);
-}
+};
 
-export function addAdjacentWorkspaceToContainerLayout(
+export const addAdjacentWorkspaceToContainerLayout = (
   layout: Layout,
   containerId: ZoneId,
   side: LayoutEditAirSide,
   workspaceType: string,
   currentLayoutViewport?: LayoutViewportSize | null,
-): AddAdjacentWorkspaceResult {
+): AddAdjacentWorkspaceResult => {
   const container = findZoneById(layout.rootZone, containerId);
   if (!container || container.type !== 'container') {
     return { ok: false, reason: 'not_found' };
@@ -559,13 +559,13 @@ export function addAdjacentWorkspaceToContainerLayout(
 
   const result = insertAdjacentZoneInLayout(layout, containerId, container, newZone, side);
   return enforceMinSizeFeasibility(result, currentLayoutViewport);
-}
+};
 
 export type RemoveWorkspaceResult =
   | { ok: true; layout: Layout; removedZone: WorkspaceZone }
   | { ok: false; reason: 'not_found' };
 
-export function removeWorkspaceFromLayout(layout: Layout, zoneId: ZoneId): RemoveWorkspaceResult {
+export const removeWorkspaceFromLayout = (layout: Layout, zoneId: ZoneId): RemoveWorkspaceResult => {
   const zone = findZoneById(layout.rootZone, zoneId);
   if (!zone || zone.type !== 'workspace') {
     return { ok: false, reason: 'not_found' };
@@ -612,11 +612,11 @@ export function removeWorkspaceFromLayout(layout: Layout, zoneId: ZoneId): Remov
     },
     removedZone: zone,
   };
-}
+};
 
-export function getAddWorkspaceErrorMessage(
+export const getAddWorkspaceErrorMessage = (
   reason: Extract<AddAdjacentWorkspaceResult, { ok: false }>['reason'],
-): string {
+): string => {
   switch (reason) {
     case 'duplicate_singleton':
       return 'Этот workspace уже есть в layout';
@@ -635,15 +635,15 @@ export function getAddWorkspaceErrorMessage(
     default:
       return 'Не удалось добавить workspace';
   }
-}
+};
 
-export function getRemoveWorkspaceErrorMessage(
+export const getRemoveWorkspaceErrorMessage = (
   reason: Extract<RemoveWorkspaceResult, { ok: false }>['reason'],
-): string {
+): string => {
   switch (reason) {
     case 'not_found':
       return 'Workspace не найден';
     default:
       return 'Не удалось удалить workspace';
   }
-}
+};

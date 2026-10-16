@@ -13,9 +13,9 @@ export interface IconButtonProps extends Omit<
   'aria-label': string;
 }
 
-function mapButtonSizeToIconSize(size: IconButtonProps['size']): IconSize {
+const mapButtonSizeToIconSize = (size: IconButtonProps['size']): IconSize => {
   return size === 'sm' ? 'sm' : 'md';
-}
+};
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ icon, size = 'md', iconSize, ...buttonProps }, ref) => (

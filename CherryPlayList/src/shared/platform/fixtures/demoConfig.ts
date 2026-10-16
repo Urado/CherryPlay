@@ -1,17 +1,16 @@
-/** Пустая строка = same-origin; Vite proxy перенаправляет /api и /partyHub на CherryPlayServer. */
-let demoServerUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '';
+const configuredApiUrl: unknown = import.meta.env?.VITE_API_URL;
+let demoServerUrl = typeof configuredApiUrl === 'string' ? configuredApiUrl : '';
 
-/** Demo defaults applied on bootstrap (see demoReset / bootstrap). */
 export const DEMO_DEFAULT_ENABLE_STREAMING = true;
 
-export function getDemoServerUrl(): string {
+export const getDemoServerUrl = (): string => {
   return demoServerUrl;
 }
 
-export function setDemoServerUrl(url: string): void {
+export const setDemoServerUrl = (url: string): void => {
   demoServerUrl = url;
 }
 
-export function getDemoConfigPath(): string {
+export const getDemoConfigPath = (): string => {
   return '/demo/config/serverConfig.json';
 }

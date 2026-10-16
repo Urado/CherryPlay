@@ -12,13 +12,13 @@ export interface ProjectGroup {
 
 export type ProjectItem = Track | ProjectGroup;
 
-export function isProjectGroup(item: ProjectItem): item is ProjectGroup {
+export const isProjectGroup = (item: ProjectItem): item is ProjectGroup => {
   return 'items' in item;
-}
+};
 
-export function isProjectTrack(item: ProjectItem): item is Track {
+export const isProjectTrack = (item: ProjectItem): item is Track => {
   return !isProjectGroup(item);
-}
+};
 
 export interface ProjectTrackSettings {
   pauseBetweenTracks?: number | null;

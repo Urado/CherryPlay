@@ -28,10 +28,10 @@ import { WorkspaceNameModal } from './WorkspaceNameModal';
 
 const ALL_BUILTIN_PRESETS: LayoutPreset[] = ['simple', 'collections-vertical', 'player', 'party'];
 
-function getActiveWorkspaceLabel(
+const getActiveWorkspaceLabel = (
   activeWorkspace: ActiveWorkspace,
   userWorkspaces: { id: string; name: string }[],
-): string {
+): string => {
   if (activeWorkspace.kind === 'builtin') {
     return LAYOUT_PRESET_DISPLAY_NAMES_RU[activeWorkspace.preset];
   }
@@ -40,15 +40,15 @@ function getActiveWorkspaceLabel(
     return workspace?.name ?? UNNAMED_WORKSPACE_NAME;
   }
   return UNNAMED_WORKSPACE_NAME;
-}
+};
 
-function isBuiltinActive(activeWorkspace: ActiveWorkspace, preset: LayoutPreset): boolean {
+const isBuiltinActive = (activeWorkspace: ActiveWorkspace, preset: LayoutPreset): boolean => {
   return activeWorkspace.kind === 'builtin' && activeWorkspace.preset === preset;
-}
+};
 
-function isUserActive(activeWorkspace: ActiveWorkspace, id: string): boolean {
+const isUserActive = (activeWorkspace: ActiveWorkspace, id: string): boolean => {
   return activeWorkspace.kind === 'user' && activeWorkspace.id === id;
-}
+};
 
 export const WorkspaceMenu: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);

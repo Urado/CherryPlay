@@ -8,7 +8,7 @@ import { usePartyPlaylistState } from './usePartyPlaylistState';
 import { usePartyServerActions, usePartyWorkspaceAuthState } from './usePartyServerActions';
 import { usePartyWorkspaceEffects } from './usePartyWorkspaceEffects';
 
-export function usePartyWorkspaceRuntime() {
+export const usePartyWorkspaceRuntime = () => {
   const { isAuth, isClientOutdated, clientRequiredVersion } = usePartyWorkspaceAuthState();
   const { networkEnabled } = useOnlineNetworkPolicy();
 
@@ -319,4 +319,4 @@ export function usePartyWorkspaceRuntime() {
       playlistState.playbackState,
     ],
   );
-}
+};

@@ -11,12 +11,12 @@ interface ClientOutdatedPayload {
   requiredVersion?: string;
 }
 
-function hasHeaderKey(headers: Record<string, string>, name: string): boolean {
+const hasHeaderKey = (headers: Record<string, string>, name: string): boolean => {
   const lower = name.toLowerCase();
   return Object.keys(headers).some((key) => key.toLowerCase() === lower);
 }
 
-function mergeClientVersionHeaders(init?: RequestInit): Record<string, string> {
+const mergeClientVersionHeaders = (init?: RequestInit): Record<string, string> => {
   const merged: Record<string, string> = {};
 
   const source = init?.headers;
@@ -41,7 +41,7 @@ function mergeClientVersionHeaders(init?: RequestInit): Record<string, string> {
   return merged;
 }
 
-async function handleClientOutdatedResponse(response: Response): Promise<void> {
+const handleClientOutdatedResponse = async (response: Response): Promise<void> => {
   if (response.status !== CLIENT_OUTDATED_STATUS) {
     return;
   }
@@ -52,10 +52,7 @@ async function handleClientOutdatedResponse(response: Response): Promise<void> {
   }
 }
 
-/**
- * Обёртка над fetch: добавляет заголовки версии клиента и обрабатывает 426 client_outdated.
- */
-export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const response = await fetch(input, {
     ...init,
     headers: mergeClientVersionHeaders(init),

@@ -1,7 +1,9 @@
 /// <reference types="jest" />
 
+const mockStatFile = jest.fn<Promise<{ isDirectory: boolean }>, [string]>();
+
 jest.mock('@shared/stores/projectStoreFactory', () => {
-  const { createTrack } = jest.requireActual('../testUtils');
+  const { createTrack } = jest.requireActual<typeof import('../testUtils')>('../testUtils');
   const t1 = createTrack('1', '/track-1.mp3');
   const t2 = createTrack('2', '/track-2.mp3');
   const t3 = createTrack('3', '/track-3.mp3');
@@ -18,14 +20,13 @@ jest.mock('@shared/stores/projectStoreFactory', () => {
 
 jest.mock('@shared/services/ipcService', () => ({
   ipcService: {
-    statFile: jest.fn(),
+    statFile: mockStatFile,
   },
 }));
 
 import { ipcService } from '@shared/services/ipcService';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { DragEvent as ReactDragEvent } from 'react';
-
 
 import { usePlaylistDragAndDrop } from '../../src/shared/hooks/useWorkspaceDragAndDrop';
 import { useDragDropStore } from '../../src/shared/stores/dragDropStore';
@@ -59,7 +60,7 @@ const createDragLeaveEvent = () =>
     clientY: 200,
   }) as ReactDragEvent<Element>;
 
-function createOptions() {
+const createOptions = () => {
   return {
     displayItems: baseDisplayItems,
     items: baseTracks,
@@ -68,14 +69,14 @@ function createOptions() {
     workspaceId: 'test-workspace' as const,
     isValidAudioFile: jest.fn((path: string) => path.endsWith('.mp3')),
     onAddTracks: jest.fn(),
-    onAddTracksAt: jest.fn(),
+    onAddTracksAt: jest.fn<void, [Array<{ path: string; name: string }>, number]>(),
     onTracksAdded: jest.fn(),
     loadFolderTracks: jest.fn().mockResolvedValue(['/folder/nested.mp3']),
     onMove: jest.fn().mockReturnValue(true),
     onCopy: jest.fn().mockReturnValue(true),
     onError: jest.fn(),
   };
-}
+};
 
 const renderUsePlaylistDragAndDrop = (override: Partial<ReturnType<typeof createOptions>> = {}) => {
   const options = { ...createOptions(), ...override };
@@ -86,8 +87,8 @@ const renderUsePlaylistDragAndDrop = (override: Partial<ReturnType<typeof create
 beforeEach(() => {
   jest.clearAllMocks();
   useDragDropStore.getState().clearDragState();
-  (ipcService.statFile as jest.Mock).mockReset();
-  (ipcService.statFile as jest.Mock).mockImplementation(async (path: string) => ({
+  mockStatFile.mockReset();
+  mockStatFile.mockImplementation((path: string) => Promise.resolve({
     isDirectory: /[/\\]dir$/i.test(path) || path.includes('__dir__') || path.endsWith('Folder'),
   }));
 });
@@ -312,7 +313,7 @@ describe('usePlaylistDragAndDrop', () => {
     });
 
     expect(options.onAddTracksAt).toHaveBeenCalledTimes(1);
-    const drafts = options.onAddTracksAt.mock.calls[0][0] as { path: string; name: string }[];
+    const drafts = options.onAddTracksAt.mock.calls[0][0];
     expect(drafts).toHaveLength(1);
     expect(drafts[0]).toEqual(
       expect.objectContaining({
@@ -339,17 +340,17 @@ describe('usePlaylistDragAndDrop', () => {
   });
 
   it('adds external OS files: stats paths, filters audio, supports mixed file + folder', async () => {
-    (ipcService.statFile as jest.Mock).mockImplementation(async (path: string) => {
+    mockStatFile.mockImplementation((path: string) => {
       if (path === 'C:/mix/__dir__') {
-        return { isDirectory: true };
+        return Promise.resolve({ isDirectory: true });
       }
       if (path === 'C:/mix/skip.txt') {
-        return { isDirectory: false };
+        return Promise.resolve({ isDirectory: false });
       }
       if (path === 'C:/mix/ok.mp3') {
-        return { isDirectory: false };
+        return Promise.resolve({ isDirectory: false });
       }
-      return { isDirectory: false };
+      return Promise.resolve({ isDirectory: false });
     });
 
     const loadFolderTracks = jest.fn().mockResolvedValueOnce(['C:/mix/from-folder.mp3']);
@@ -370,11 +371,11 @@ describe('usePlaylistDragAndDrop', () => {
       await flushPromises();
     });
 
-    expect(ipcService.statFile).toHaveBeenCalled();
+    expect(mockStatFile).toHaveBeenCalled();
     expect(loadFolderTracks).toHaveBeenCalledWith('C:/mix/__dir__');
     expect(options.onAddTracksAt).toHaveBeenCalledTimes(2);
     const fromCalls = options.onAddTracksAt.mock.calls.flatMap((call) =>
-      (call[0] as { path: string }[]).map((d) => d.path),
+      call[0].map((draft) => draft.path),
     );
     expect(fromCalls.sort()).toEqual(['C:/mix/from-folder.mp3', 'C:/mix/ok.mp3'].sort());
   });
@@ -442,11 +443,11 @@ describe('usePlaylistDragAndDrop', () => {
   });
 
   it('warns via onError when some native paths fail stat but others are added', async () => {
-    (ipcService.statFile as jest.Mock).mockImplementation(async (path: string) => {
+    mockStatFile.mockImplementation((path: string) => {
       if (path === 'C:/x/bad.mp3') {
-        throw new Error('stat failed');
+        return Promise.reject(new Error('stat failed'));
       }
-      return { isDirectory: false };
+      return Promise.resolve({ isDirectory: false });
     });
 
     const { result, options } = renderUsePlaylistDragAndDrop();
@@ -495,7 +496,7 @@ describe('usePlaylistDragAndDrop', () => {
       await flushPromises();
     });
 
-    expect(ipcService.statFile).not.toHaveBeenCalled();
+    expect(mockStatFile).not.toHaveBeenCalled();
     expect(options.onAddTracksAt).toHaveBeenCalledTimes(1);
     expect(options.onAddTracksAt).toHaveBeenCalledWith(
       [expect.objectContaining({ path: '/from-json/pick-me.mp3' })],

@@ -30,15 +30,15 @@ interface ShellDimensions {
 
 const AIR_SIDES: LayoutEditAirSide[] = ['top', 'right', 'bottom', 'left'];
 
-function readShellDimensions(node: HTMLDivElement): ShellDimensions {
+const readShellDimensions = (node: HTMLDivElement): ShellDimensions => {
   const { width, height } = node.getBoundingClientRect();
   const airSizeRaw = getComputedStyle(node).getPropertyValue('--layout-edit-air-size').trim();
   const airSize = Number.parseFloat(airSizeRaw) || 24;
 
   return { width, height, airSize };
-}
+};
 
-function buildCornerDiagonals({ width, height, airSize }: ShellDimensions) {
+const buildCornerDiagonals = ({ width, height, airSize }: ShellDimensions) => {
   if (width <= 0 || height <= 0 || airSize <= 0) {
     return [];
   }
@@ -49,9 +49,9 @@ function buildCornerDiagonals({ width, height, airSize }: ShellDimensions) {
     { x1: width - airSize, y1: height - airSize, x2: width, y2: height },
     { x1: airSize, y1: height - airSize, x2: 0, y2: height },
   ];
-}
+};
 
-function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): string | null {
+const getRemoveWorkspaceConfirmMessage = (zone: WorkspaceZone, rootZone: Zone): string | null => {
   const displayName = getWorkspaceDisplayNameRu(zone.workspaceType);
   const isLastZone = countWorkspaceLeaves(rootZone) <= 1;
   const isSingleton = isSingletonWorkspaceType(zone.workspaceType);
@@ -65,7 +65,7 @@ function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): 
   }
 
   return null;
-}
+};
 
 export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> = ({ zone }) => {
   const shellRef = useRef<HTMLDivElement>(null);

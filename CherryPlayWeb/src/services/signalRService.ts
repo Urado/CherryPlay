@@ -1,26 +1,20 @@
-/**
- * SignalR сервис для подключения к трансляции состояния вечеринки
- */
 import * as signalR from '@microsoft/signalr';
 
 import { API_ENDPOINTS, getSignalRUrl } from '../config/apiConfig';
 import type { PartyDisplayStatusId, PlaybackStateDto, PartyStateDto } from '../types/api';
 import { devLog } from '../utils/logger';
 
-/** Логировать в консоль полученные сообщения SignalR (только в dev) */
-function logReceived(eventName: string, ...args: unknown[]): void {
+const logReceived = (eventName: string, ...args: unknown[]): void => {
   if (import.meta.env.DEV) {
     console.log(`[SignalR] Received ${eventName}`, ...args);
   }
-}
+};
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private isConnected = false;
   private pendingCallbacks: Array<() => void> = [];
-  // Один обработчик на событие (подписка только из useSignalR)
   private eventHandlers: Map<string, (...args: unknown[]) => void> = new Map();
-  // Храним shortCode для повторного подключения к группе при переподключении
   private currentShortCode: string | null = null;
 
   private registerHandlers(): void {
@@ -31,15 +25,11 @@ class SignalRService {
     });
   }
 
-  /**
-   * Подключается к SignalR Hub
-   */
   async connect(): Promise<void> {
     if (this.connection && this.isConnected) {
       return;
     }
 
-    // Используем прямой URL к серверу (CORS настроен на сервере)
     const url = getSignalRUrl(API_ENDPOINTS.SIGNALR.PARTY_HUB);
 
     this.connection = new signalR.HubConnectionBuilder()
@@ -61,7 +51,6 @@ class SignalRService {
     devLog('[SignalR Web] Restoring event handlers');
     this.registerHandlers();
 
-    // Обработка событий подключения
     this.connection.onclose((error) => {
       this.isConnected = false;
       devLog('[SignalR Web] Connection closed:', error?.message);
@@ -71,20 +60,21 @@ class SignalRService {
       devLog('[SignalR Web] Reconnecting...', error?.message);
     });
 
-    this.connection.onreconnected(async (connectionId) => {
-      this.isConnected = true;
-      devLog('[SignalR Web] Reconnected:', connectionId);
-      this.registerHandlers();
+    this.connection.onreconnected((connectionId) => {
+      void (async () => {
+        this.isConnected = true;
+        devLog('[SignalR Web] Reconnected:', connectionId);
+        this.registerHandlers();
 
-      // Повторно подключаемся к группе вечеринки, если был shortCode
-      if (this.currentShortCode) {
-        try {
-          devLog('[SignalR Web] Re-joining party after reconnect:', this.currentShortCode);
-          await this.joinPartyAsViewer(this.currentShortCode);
-        } catch (err) {
-          console.error('[SignalR Web] Failed to re-join party after reconnect:', err);
+        if (this.currentShortCode) {
+          try {
+            devLog('[SignalR Web] Re-joining party after reconnect:', this.currentShortCode);
+            await this.joinPartyAsViewer(this.currentShortCode);
+          } catch (err) {
+            console.error('[SignalR Web] Failed to re-join party after reconnect:', err);
+          }
         }
-      }
+      })();
     });
 
     try {
@@ -107,9 +97,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Отключается от SignalR Hub
-   */
   async disconnect(): Promise<void> {
     if (this.connection) {
       devLog('[SignalR Web] Disconnecting...');
@@ -119,22 +106,15 @@ class SignalRService {
     }
   }
 
-  /**
-   * Проверяет, подключен ли сервис
-   */
   isServiceConnected(): boolean {
     const state = this.connection?.state;
     const isConnected = state === signalR.HubConnectionState.Connected;
     if (isConnected && !this.isConnected) {
-      // Обновляем флаг если соединение установлено
       this.isConnected = true;
     }
     return isConnected;
   }
 
-  /**
-   * Ждет установления соединения
-   */
   private async waitForConnection(maxWait: number = 5000): Promise<void> {
     const startTime = Date.now();
     while (!this.isServiceConnected() && Date.now() - startTime < maxWait) {
@@ -145,9 +125,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подключается к вечеринке как зритель
-   */
   async joinPartyAsViewer(shortCode: string): Promise<void> {
     if (!this.connection) {
       throw new Error('SignalR connection not initialized');
@@ -159,16 +136,13 @@ class SignalRService {
     devLog('[SignalR Web] Joined party as viewer:', shortCode);
   }
 
-  /**
-   * Запрашивает полное состояние вечеринки
-   */
   async requestFullState(shortCode: string): Promise<PartyStateDto | null> {
     if (!this.connection) {
       throw new Error('SignalR connection not initialized');
     }
 
     await this.waitForConnection();
-    const result = await this.connection.invoke('RequestFullState', shortCode);
+    const result = await this.connection.invoke<PartyStateDto | null>('RequestFullState', shortCode);
     devLog('[SignalR Web] Received full state:', shortCode, !!result?.playbackState);
     if (import.meta.env.DEV && result != null) {
       console.log('[SignalR] RequestFullState result:', {
@@ -182,10 +156,6 @@ class SignalRService {
     return result;
   }
 
-  /**
-   * Подписывается на событие начала сессии
-   * Можно вызывать до подключения - подписка установится когда соединение будет создано
-   */
   onSessionStarted(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionStarted';
     const wrappedCallback = (partyId: string) => {
@@ -201,9 +171,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие завершения сессии
-   */
   onSessionEnded(callback: (partyId: string) => void): void {
     const eventName = 'OnSessionEnded';
     const wrappedCallback = (partyId: string) => {
@@ -219,9 +186,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на обновление позиции воспроизведения
-   */
   onPlaybackPositionUpdated(
     callback: (partyId: string, trackId: string, position: number) => void,
   ): void {
@@ -239,9 +203,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на полное обновление состояния
-   */
   onFullStateUpdated(callback: (partyId: string, state: PlaybackStateDto) => void): void {
     const eventName = 'OnFullStateUpdated';
     const wrappedCallback = (partyId: string, state: PlaybackStateDto) => {
@@ -264,9 +225,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на уведомление об изменении состояния
-   */
   onStateChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnStateChanged';
     const wrappedCallback = (partyId: string) => {
@@ -282,9 +240,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на уведомление об изменении плейлиста
-   */
   onPlaylistChanged(callback: (partyId: string) => void): void {
     const eventName = 'OnPlaylistChanged';
     const wrappedCallback = (partyId: string) => {
@@ -300,9 +255,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на событие сброса состояния воспроизведения (организатор нажал «Сбросить»)
-   */
   onPlaybackStateReset(callback: (partyId: string) => void): void {
     const eventName = 'PlaybackStateReset';
     const wrappedCallback = (partyId: string) => {
@@ -318,9 +270,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на изменение статуса подключения организатора
-   */
   onConnectionStatusChanged(callback: (partyId: string, isOnline: boolean) => void): void {
     const eventName = 'OnConnectionStatusChanged';
     const wrappedCallback = (partyId: string, isOnline: boolean) => {
@@ -336,9 +285,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на изменение статуса отображения вечеринки (сервер).
-   */
   onPartyDisplayStatusChanged(
     callback: (partyId: string, partyDisplayStatus: PartyDisplayStatusId) => void,
   ): void {
@@ -356,9 +302,6 @@ class SignalRService {
     }
   }
 
-  /**
-   * Подписывается на ошибки
-   */
   onError(callback: (error: string) => void): void {
     const eventName = 'Error';
     const wrappedCallback = (error: string) => {
@@ -374,14 +317,10 @@ class SignalRService {
     }
   }
 
-  /**
-   * Отписывается от всех событий
-   */
   off(eventName: string): void {
     if (this.connection) {
       this.connection.off(eventName);
     }
-    // Удаляем обработчики из хранилища
     this.eventHandlers.delete(eventName);
   }
 }

@@ -5,11 +5,11 @@ import { getAimpPlaylistPublishKey } from '../utils/aimpStreamingAdapter';
 
 import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
-export async function syncPartyPlaylist(
+export const syncPartyPlaylist = async (
   partyId: string,
   payload: PlaylistForApiPayload,
   onSynced?: (payload: PlaylistForApiPayload) => void,
-): Promise<void> {
+): Promise<void> => {
   console.log('[PartyPlaylistSync] → Sending PUT request to update playlist:', {
     partyId,
     itemsCount: payload.items.length,
@@ -20,15 +20,15 @@ export async function syncPartyPlaylist(
   onSynced?.(payload);
 
   console.log('[PartyPlaylistSync] ✓ Playlist updated successfully');
-}
+};
 
-export function subscribePartyPlaylistSync(
+export const subscribePartyPlaylistSync = (
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
   onSyncError?: (error: unknown) => void,
   onSynced?: (payload: PlaylistForApiPayload) => void,
-): () => void {
+): (() => void) => {
   let isInitialCall = true;
   let isSyncing = false;
   let latestPayload: PlaylistForApiPayload | null = null;
@@ -81,15 +81,15 @@ export function subscribePartyPlaylistSync(
     latestPayload = getPayload();
     void syncLatestPayload();
   });
-}
+};
 
-export function subscribeAimpPartyPlaylistSync(
+export const subscribeAimpPartyPlaylistSync = (
   partyId: string,
   getPayload: () => PlaylistForApiPayload,
   onAfterSync: () => void,
   onSyncError?: (error: unknown) => void,
   onSynced?: (payload: PlaylistForApiPayload) => void,
-): () => void {
+): (() => void) => {
   let lastPublishedKey: string | null = null;
 
   return useAimpStore.subscribe(() => {
@@ -115,4 +115,4 @@ export function subscribeAimpPartyPlaylistSync(
         onSyncError?.(error);
       });
   });
-}
+};

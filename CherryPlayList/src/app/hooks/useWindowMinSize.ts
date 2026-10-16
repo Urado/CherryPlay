@@ -12,14 +12,6 @@ import {
 import { logger } from '@shared/utils/logger';
 import { useEffect, type RefObject } from 'react';
 
-/**
- * Absolute lower bound for the window minimum, used as `max(appFloor, computed)`
- * so empty/small layouts still keep a usable window size.
- *
- * Sourced from the shared window-min contract (`@shared/contracts/windowMins`),
- * the same module the Electron main-process floor is built from, so the renderer
- * and main can never drift apart.
- */
 const APP_WINDOW_MIN_FLOOR: LayoutViewportSize = {
   width: APP_MIN_WINDOW_WIDTH,
   height: APP_MIN_WINDOW_HEIGHT,
@@ -27,7 +19,7 @@ const APP_WINDOW_MIN_FLOOR: LayoutViewportSize = {
 
 const RESIZE_DEBOUNCE_MS = 120;
 
-function measureLayoutViewport(host: HTMLElement | null): LayoutViewportSize | null {
+const measureLayoutViewport = (host: HTMLElement | null): LayoutViewportSize | null => {
   if (!host) {
     return null;
   }
@@ -38,9 +30,9 @@ function measureLayoutViewport(host: HTMLElement | null): LayoutViewportSize | n
   }
 
   return { width: rect.width, height: rect.height };
-}
+};
 
-function measureChromeInsets(host: HTMLElement | null): WindowChromeInsets {
+const measureChromeInsets = (host: HTMLElement | null): WindowChromeInsets => {
   const viewport = measureLayoutViewport(host);
   if (!viewport) {
     return { top: 0, bottom: 0, left: 0, right: 0 };
@@ -52,18 +44,9 @@ function measureChromeInsets(host: HTMLElement | null): WindowChromeInsets {
     left: Math.max(0, window.innerWidth - viewport.width),
     right: 0,
   };
-}
+};
 
-/**
- * Computes the minimum window client size from the current layout mins plus
- * measured chrome insets and reports it to the Electron shell. Also registers a
- * live layout-viewport getter used by add-adjacent feasibility checks.
- *
- * Recomputes on layout change, layout-edit toggle, window resize, and host
- * resize (which captures chrome-affecting toggles such as the in-app player
- * header or the demo banner). No-op outside Electron.
- */
-export function useWindowMinSize(hostRef: RefObject<HTMLElement | null>): void {
+export const useWindowMinSize = (hostRef: RefObject<HTMLElement | null>): void => {
   const layout = useLayoutStore((state) => state.layout);
   const isLayoutEditMode = useLayoutStore((state) => state.isLayoutEditMode);
 
@@ -116,8 +99,5 @@ export function useWindowMinSize(hostRef: RefObject<HTMLElement | null>): void {
       resizeObserver?.disconnect();
       registerLayoutViewportGetter(() => null);
     };
-    // `isLayoutEditMode` is a dependency because toggling layout-edit mode shows/hides
-    // edit chrome (air bars, controls), which changes measured chrome insets and thus
-    // the reported minimum window size; recompute when it changes.
   }, [hostRef, layout, isLayoutEditMode]);
-}
+};

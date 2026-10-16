@@ -1,12 +1,15 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+// @vitest-environment jsdom
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { adminApiService } from '../../services/adminApiService';
-import type { AdminOrganizerDetailDto, EntitlementDto } from '../../types/api';
+import type {
+  AdminOrganizerDetailDto,
+  CreateEntitlementRevocationRequest,
+  EntitlementDto,
+  GrantEntitlementRequest,
+  ThemePackageListResponse,
+} from '../../types/api';
 
 import { AdminOrganizerDetailPage } from './AdminOrganizerDetailPage';
 
@@ -14,14 +17,16 @@ vi.mock('../../hooks/useRequireAdmin', () => ({
   useRequireAdmin: () => ({ checking: false, isAdmin: true }),
 }));
 
-vi.mock('../../services/adminApiService', () => ({
-  adminApiService: {
-    getOrganizerById: vi.fn(),
-    getThemePackages: vi.fn(),
-    grantEntitlement: vi.fn(),
-    revokeEntitlement: vi.fn(),
-  },
+const apiMocks = vi.hoisted(() => ({
+  getOrganizerById: vi.fn<(organizerId: string) => Promise<AdminOrganizerDetailDto>>(),
+  getThemePackages: vi.fn<() => Promise<ThemePackageListResponse>>(),
+  grantEntitlement: vi.fn<
+    (organizerId: string, request: GrantEntitlementRequest) => Promise<EntitlementDto>
+  >(),
+  revokeEntitlement: vi.fn<(request: CreateEntitlementRevocationRequest) => Promise<void>>(),
 }));
+
+vi.mock('../../services/adminApiService', () => ({ adminApiService: apiMocks }));
 
 const entitlement: EntitlementDto = {
   id: 'entitlement-1',
@@ -42,7 +47,7 @@ const organizer: AdminOrganizerDetailDto = {
   entitlements: [entitlement],
 };
 
-function renderPage() {
+const renderPage = () => {
   return render(
     <MemoryRouter initialEntries={['/admin/organizers/organizer-1']}>
       <Routes>
@@ -50,39 +55,38 @@ function renderPage() {
       </Routes>
     </MemoryRouter>,
   );
-}
+};
 
-async function openRevocationDialog(actionName = 'Отозвать') {
+const openRevocationDialog = async (actionName = 'Отозвать') => {
   await screen.findByRole('heading', { name: 'Карточка организатора' });
   fireEvent.click(screen.getByRole('button', { name: actionName }));
   return screen.findByRole('dialog');
-}
+};
 
-function getConfirmButton(dialog: HTMLElement, name = 'Отозвать') {
+const getConfirmButton = (dialog: HTMLElement, name = 'Отозвать') => {
   return within(dialog).getByRole('button', { name });
-}
+};
 
 describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
-    vi.mocked(adminApiService.getOrganizerById).mockReset().mockResolvedValue(organizer);
-    vi.mocked(adminApiService.getThemePackages).mockReset().mockResolvedValue({ items: [] });
-    vi.mocked(adminApiService.grantEntitlement).mockReset();
-    vi.mocked(adminApiService.revokeEntitlement).mockReset();
+    apiMocks.getOrganizerById.mockReset().mockResolvedValue(organizer);
+    apiMocks.getThemePackages.mockReset().mockResolvedValue({ items: [] });
+    apiMocks.grantEntitlement.mockReset();
+    apiMocks.revokeEntitlement.mockReset();
   });
 
   afterEach(() => {
-    cleanup();
     vi.restoreAllMocks();
     window.sessionStorage.clear();
   });
 
   it('restores and retries the same pending request after an uncertain result and page return', async () => {
-    const revokeEntitlement = vi.mocked(adminApiService.revokeEntitlement);
+    const revokeEntitlement = apiMocks.revokeEntitlement;
     revokeEntitlement.mockRejectedValueOnce(new Error('Соединение прервано'));
     revokeEntitlement.mockResolvedValueOnce(undefined);
 
-    const firstPage = renderPage();
+    const view = renderPage();
     const firstDialog = await openRevocationDialog();
     fireEvent.change(within(firstDialog).getByRole('textbox'), {
       target: { value: 'Проверка отзыва' },
@@ -98,8 +102,8 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
     expect(firstRequest?.id).toMatch(/^[0-9a-f-]{36}$/i);
 
     fireEvent.click(within(firstDialog).getByRole('button', { name: 'Отмена' }));
-    firstPage.unmount();
-    vi.mocked(adminApiService.getOrganizerById).mockResolvedValue({
+    view.unmount();
+    apiMocks.getOrganizerById.mockResolvedValue({
       ...organizer,
       entitlements: [{ ...entitlement, revokedAt: '2026-01-02T00:00:00.000Z' }],
     });
@@ -119,7 +123,7 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
   });
 
   it.each([400, 422])('uses a new UUID after a definitive %s rejection', async (status) => {
-    const revokeEntitlement = vi.mocked(adminApiService.revokeEntitlement);
+    const revokeEntitlement = apiMocks.revokeEntitlement;
     revokeEntitlement.mockRejectedValueOnce(Object.assign(new Error('Проверка запроса не пройдена'), { status }));
     revokeEntitlement.mockResolvedValueOnce(undefined);
 
@@ -148,7 +152,7 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
     ];
     vi.spyOn(globalThis.crypto, 'randomUUID').mockImplementation(() => generatedIds.shift()!);
 
-    const revokeEntitlement = vi.mocked(adminApiService.revokeEntitlement);
+    const revokeEntitlement = apiMocks.revokeEntitlement;
     revokeEntitlement.mockRejectedValueOnce(
       Object.assign(new Error('Проверка запроса не пройдена'), { status: 422 }),
     );

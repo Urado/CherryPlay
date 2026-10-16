@@ -21,30 +21,30 @@ export interface ValidationResult {
   data: ProjectFile | null;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
+const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+};
 
-function isArray(value: unknown): value is unknown[] {
+const isArray = (value: unknown): value is unknown[] => {
   return Array.isArray(value);
-}
+};
 
-function isString(value: unknown): value is string {
+const isString = (value: unknown): value is string => {
   return typeof value === 'string';
-}
+};
 
-function isNumber(value: unknown): value is number {
+const isNumber = (value: unknown): value is number => {
   return typeof value === 'number' && !isNaN(value);
-}
+};
 
-function isBoolean(value: unknown): value is boolean {
+const isBoolean = (value: unknown): value is boolean => {
   return typeof value === 'boolean';
-}
+};
 
-function validatePartyCustomizationSettings(
+const validatePartyCustomizationSettings = (
   raw: unknown,
   warnings: string[],
-): Record<string, unknown> | undefined {
+): Record<string, unknown> | undefined => {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -58,9 +58,9 @@ function validatePartyCustomizationSettings(
     warnings.push('Invalid partyCustomizationSettings, omitting');
     return undefined;
   }
-}
+};
 
-function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrackDisplaySettings {
+const validatePartyTrackDisplay = (raw: unknown, warnings: string[]): PartyTrackDisplaySettings => {
   if (!isObject(raw)) {
     warnings.push('Invalid partyTrackDisplay, using defaults');
     return { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS };
@@ -93,20 +93,20 @@ function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrack
     stripLeadingCharsCount: count,
     stripLeadingCharsDelimiter: delimiter,
   };
-}
+};
 
-function isValidActionAfterTrack(value: unknown): boolean {
+const isValidActionAfterTrack = (value: unknown): boolean => {
   return value === 'next' || value === 'pauseAndNext' || value === 'pause';
-}
+};
 
 const VALID_LOUDNESS_STATUSES: TrackLoudnessStatus[] = ['ok', 'pending', 'error'];
 
-function validateTrackLoudness(
+const validateTrackLoudness = (
   loudness: unknown,
   trackId: string,
   errors: string[],
   warnings: string[],
-): boolean {
+): boolean => {
   if (loudness === undefined) {
     return true;
   }
@@ -156,20 +156,20 @@ function validateTrackLoudness(
   }
 
   return true;
-}
+};
 
-function validateSavedTrack(
+const validateSavedTrack = (
   item: unknown,
   errors: string[],
   warnings: string[],
-): item is SavedProjectTrack {
+): item is SavedProjectTrack => {
   if (!isObject(item)) {
     errors.push('Track item is not an object');
     return false;
   }
 
   if (item.type !== 'track') {
-    errors.push(`Expected track type, got: ${item.type}`);
+    errors.push(`Expected track type, got: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
 
@@ -198,16 +198,16 @@ function validateSavedTrack(
   }
 
   return true;
-}
+};
 
-function validateSavedGroup(item: unknown, errors: string[]): item is SavedProjectGroup {
+const validateSavedGroup = (item: unknown, errors: string[]): item is SavedProjectGroup => {
   if (!isObject(item)) {
     errors.push('Group item is not an object');
     return false;
   }
 
   if (item.type !== 'group') {
-    errors.push(`Expected group type, got: ${item.type}`);
+    errors.push(`Expected group type, got: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
 
@@ -234,13 +234,13 @@ function validateSavedGroup(item: unknown, errors: string[]): item is SavedProje
   }
 
   return true;
-}
+};
 
-function validateSavedItem(
+const validateSavedItem = (
   item: unknown,
   errors: string[],
   warnings: string[],
-): item is SavedProjectItem {
+): item is SavedProjectItem => {
   if (!isObject(item)) {
     errors.push('Item is not an object');
     return false;
@@ -251,12 +251,12 @@ function validateSavedItem(
   } else if (item.type === 'group') {
     return validateSavedGroup(item, errors);
   } else {
-    errors.push(`Unknown item type: ${item.type}`);
+    errors.push(`Unknown item type: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
-}
+};
 
-function validateSettings(settings: unknown, warnings: string[]): ProjectSettings {
+const validateSettings = (settings: unknown, warnings: string[]): ProjectSettings => {
   const result = { ...DEFAULT_PROJECT_SETTINGS };
 
   if (!isObject(settings)) {
@@ -290,9 +290,9 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
   }
 
   return result;
-}
+};
 
-function validateSessionState(sessionState: unknown, warnings: string[]): ProjectSessionState {
+const validateSessionState = (sessionState: unknown, warnings: string[]): ProjectSessionState => {
   const result = { ...DEFAULT_SESSION_STATE };
 
   if (!isObject(sessionState)) {
@@ -326,12 +326,12 @@ function validateSessionState(sessionState: unknown, warnings: string[]): Projec
   }
 
   return result;
-}
+};
 
-function validateTrackSettings(
+const validateTrackSettings = (
   trackSettings: unknown,
   warnings: string[],
-): Record<string, ProjectTrackSettings> {
+): Record<string, ProjectTrackSettings> => {
   const result: Record<string, ProjectTrackSettings> = {};
 
   if (!isObject(trackSettings)) {
@@ -362,12 +362,12 @@ function validateTrackSettings(
   }
 
   return result;
-}
+};
 
-function validateGroupSettings(
+const validateGroupSettings = (
   groupSettings: unknown,
   warnings: string[],
-): Record<string, ProjectGroupSettings> {
+): Record<string, ProjectGroupSettings> => {
   const result: Record<string, ProjectGroupSettings> = {};
 
   if (!isObject(groupSettings)) {
@@ -398,9 +398,9 @@ function validateGroupSettings(
   }
 
   return result;
-}
+};
 
-export function validateProjectFile(data: unknown): ValidationResult {
+export const validateProjectFile = (data: unknown): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -417,7 +417,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
     if (data.version === undefined) {
       errors.push('Missing version field');
     } else {
-      errors.push(`Unsupported version: ${data.version}`);
+      errors.push(`Unsupported version: ${JSON.stringify(data.version) ?? typeof data.version}`);
     }
   }
 
@@ -524,9 +524,9 @@ export function validateProjectFile(data: unknown): ValidationResult {
     warnings,
     data: projectFile,
   };
-}
+};
 
-export function validateProjectIntegrity(projectFile: ProjectFile): string[] {
+export const validateProjectIntegrity = (projectFile: ProjectFile): string[] => {
   const warnings: string[] = [];
   const itemIds = new Set(projectFile.items.map((item) => item.id));
 
@@ -547,4 +547,4 @@ export function validateProjectIntegrity(projectFile: ProjectFile): string[] {
   }
 
   return warnings;
-}
+};

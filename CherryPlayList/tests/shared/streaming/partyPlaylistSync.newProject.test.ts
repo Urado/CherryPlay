@@ -6,7 +6,9 @@ let projectState: {
 } = { items: [], meta: { linkedParty: null } };
 
 jest.mock('../../../src/shared/services/partyService', () => ({
-  partyService: { updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) },
+  partyService: {
+    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) as unknown,
+  },
 }));
 
 jest.mock('../../../src/shared/stores/projectStore', () => ({

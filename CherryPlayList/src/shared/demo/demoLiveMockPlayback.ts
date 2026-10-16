@@ -10,18 +10,18 @@ let tickerId: ReturnType<typeof setInterval> | null = null;
 let tickOriginMs = 0;
 let positionAtTickOrigin = 0;
 
-export function isDemoLiveMockPlaybackEnabled(): boolean {
+export const isDemoLiveMockPlaybackEnabled = (): boolean => {
   return isDemoLiveMode();
 }
 
-function clearTicker(): void {
+const clearTicker = (): void => {
   if (tickerId !== null) {
     clearInterval(tickerId);
     tickerId = null;
   }
 }
 
-function resolveDuration(track: Track): number {
+const resolveDuration = (track: Track): number => {
   const duration = track.duration;
   if (typeof duration === 'number' && Number.isFinite(duration) && duration > 0) {
     return duration;
@@ -29,7 +29,7 @@ function resolveDuration(track: Track): number {
   return FALLBACK_DURATION_SEC;
 }
 
-function startTicker(): void {
+const startTicker = (): void => {
   clearTicker();
   positionAtTickOrigin = usePlayerAudioStore.getState().position;
   tickOriginMs = Date.now();
@@ -54,11 +54,11 @@ function startTicker(): void {
   }, TICK_MS);
 }
 
-export function stopDemoLiveMockPlayback(): void {
+export const stopDemoLiveMockPlayback = (): void => {
   clearTicker();
 }
 
-export function loadDemoLiveMockTrack(track: Track): void {
+export const loadDemoLiveMockTrack = (track: Track): void => {
   clearTicker();
   usePlayerAudioStore.setState({
     currentTrack: { ...track, isMissing: false },
@@ -69,7 +69,7 @@ export function loadDemoLiveMockTrack(track: Track): void {
   });
 }
 
-export function playDemoLiveMockPlayback(): void {
+export const playDemoLiveMockPlayback = (): void => {
   const { currentTrack } = usePlayerAudioStore.getState();
   if (!currentTrack) {
     return;
@@ -79,12 +79,12 @@ export function playDemoLiveMockPlayback(): void {
   startTicker();
 }
 
-export function startDemoLiveMockPlayback(track: Track): void {
+export const startDemoLiveMockPlayback = (track: Track): void => {
   loadDemoLiveMockTrack(track);
   playDemoLiveMockPlayback();
 }
 
-export function pauseDemoLiveMockPlayback(): void {
+export const pauseDemoLiveMockPlayback = (): void => {
   clearTicker();
   const { status } = usePlayerAudioStore.getState();
   if (status === 'playing') {
@@ -92,7 +92,7 @@ export function pauseDemoLiveMockPlayback(): void {
   }
 }
 
-export function seekDemoLiveMockPlayback(positionSeconds: number): void {
+export const seekDemoLiveMockPlayback = (positionSeconds: number): void => {
   const { currentTrack, duration, status } = usePlayerAudioStore.getState();
   if (!currentTrack) {
     return;

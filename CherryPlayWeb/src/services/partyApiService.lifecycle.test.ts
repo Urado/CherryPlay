@@ -4,16 +4,16 @@ import type { PartyDto } from '../types/api';
 
 import { InvalidPartyLifecycleTransitionError, partyApiService } from './partyApiService';
 
-function mockResponse(status: number, body: unknown): Response {
+const mockResponse = (status: number, body: unknown): Response => {
   const text = JSON.stringify(body);
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === 409 ? 'Conflict' : status === 200 ? 'OK' : 'Error',
-    json: async () => body,
-    text: async () => text,
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(text),
   } as Response;
-}
+};
 
 const sampleParty: PartyDto = {
   id: 'party-1',
@@ -63,7 +63,7 @@ describe('partyApiService.transitionPartyLifecycle', () => {
 
     const error = await partyApiService
       .transitionPartyLifecycle('party-1', 'draft')
-      .catch((caught) => caught);
+      .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(InvalidPartyLifecycleTransitionError);
     expect(error).toMatchObject({
@@ -87,9 +87,12 @@ describe('partyApiService.transitionPartyLifecycle', () => {
 
     const error = await partyApiService
       .transitionPartyLifecycle('party-1', 'completed')
-      .catch((caught) => caught);
+      .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(InvalidPartyLifecycleTransitionError);
+    if (!(error instanceof InvalidPartyLifecycleTransitionError)) {
+      throw new Error('Expected a lifecycle transition error');
+    }
     expect(error.message).toBe('Нельзя перевести вечеринку из «Черновик» в «В архиве».');
     expect(error.currentState).toBe('draft');
     expect(error.requestedState).toBe('completed');
@@ -105,9 +108,12 @@ describe('partyApiService.transitionPartyLifecycle', () => {
 
     const error = await partyApiService
       .transitionPartyLifecycle('party-1', 'ready')
-      .catch((caught) => caught);
+      .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(InvalidPartyLifecycleTransitionError);
+    if (!(error instanceof InvalidPartyLifecycleTransitionError)) {
+      throw new Error('Expected a lifecycle transition error');
+    }
     expect(error.currentState).toBe('draft');
     expect(error.requestedState).toBe('draft');
   });

@@ -149,9 +149,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     (state) => state.setFromIdList,
   );
 
-  const disabledTracksKey = sessionState.disabledTrackIds.join(',');
-  const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
-  const playedTracksKey = sessionState.playedTrackIds.join(',');
 
   const isPreparationMode = mode === 'preparation';
 
@@ -225,9 +222,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       isTrackOrGroupDisabled,
       isTrackPlayed,
       markTrackAsPlayed,
-      disabledTracksKey,
-      disabledGroupsKey,
-      playedTracksKey,
     ],
   );
 
@@ -393,7 +387,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     isTrackPlayed,
     activePlayerTrackId,
     getAllTracksInOrder,
-    playedTracksKey,
   ]);
 
   const handleRemoveSelectedItems = useCallback(() => {
@@ -403,7 +396,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     removeSelectedItems();
   }, [canRemoveSelectedItems, removeSelectedItems]);
 
-  const totalDuration = useMemo(() => {
+  const totalDuration = (() => {
     let total = 0;
     for (let i = 0; i < allTracks.length; i++) {
       const track = allTracks[i];
@@ -419,13 +412,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       }
     }
     return total;
-  }, [
-    allTracks,
-    isTrackOrGroupDisabled,
-    getEffectiveTrackSettings,
-    disabledTracksKey,
-    disabledGroupsKey,
-  ]);
+  })();
 
   const areItemsConsecutive = useCallback(
     (itemIds: string[]): boolean => {
@@ -527,8 +514,12 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         onCreateGroup={handleCreateGroup}
         onRemoveSelectedItems={handleRemoveSelectedItems}
         onSelectAll={selectAll}
-        onStartSession={handleStartSession}
-        onResetSession={handleResetSession}
+        onStartSession={() => {
+          void handleStartSession();
+        }}
+        onResetSession={() => {
+          void handleResetSession();
+        }}
         onOpenGlobalSettings={handleOpenGlobalSettings}
         onExportTracksToText={handleExportTracksToText}
         displayItems={displayItems}
@@ -562,7 +553,9 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         handleOpenTrackSettings={handleOpenTrackSettings}
         startTrackPlayback={startTrackPlayback}
         pausePlayback={pausePlayback}
-        onNext={handleNext}
+        onNext={() => {
+          void handleNext();
+        }}
         serverTrackIds={serverTrackIds}
         jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
       />

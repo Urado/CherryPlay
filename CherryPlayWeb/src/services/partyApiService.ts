@@ -1,6 +1,3 @@
-/**
- * Сервис для работы с API вечеринок
- */
 import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import { isPartyLifecycleState, LIFECYCLE_STATUS_LABELS } from '../constants/partyLifecycle';
 import type {
@@ -20,7 +17,7 @@ import { apiFetch } from '../utils/apiFetch';
 
 import { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './partyApiErrors';
 
-function buildThemeEntitlementMessage(payload: ApiErrorPayload): string {
+const buildThemeEntitlementMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'theme_not_entitled') {
     return payload.detail || payload.message || 'Ошибка доступа к теме';
   }
@@ -31,9 +28,9 @@ function buildThemeEntitlementMessage(payload: ApiErrorPayload): string {
   }
 
   return `Тема недоступна без пакета: ${packageCodes.join(', ')}. Обратитесь к администратору.`;
-}
+};
 
-function buildLifecycleTransitionMessage(payload: ApiErrorPayload): string {
+const buildLifecycleTransitionMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'invalid_lifecycle_transition') {
     return payload.detail || payload.message || 'Недопустимый переход состояния вечеринки';
   }
@@ -47,9 +44,9 @@ function buildLifecycleTransitionMessage(payload: ApiErrorPayload): string {
   }
 
   return payload.message || 'Недопустимый переход состояния вечеринки';
-}
+};
 
-async function throwIfThemeNotEntitled(response: Response): Promise<void> {
+const throwIfThemeNotEntitled = async (response: Response): Promise<void> => {
   if (response.status !== 403) {
     return;
   }
@@ -66,9 +63,9 @@ async function throwIfThemeNotEntitled(response: Response): Promise<void> {
     : [];
 
   throw new ThemeNotEntitledError(message, themeId, requiredPackageCodes);
-}
+};
 
-async function throwIfInvalidLifecycleTransition(response: Response): Promise<void> {
+const throwIfInvalidLifecycleTransition = async (response: Response): Promise<void> => {
   if (response.status !== 409) {
     return;
   }
@@ -85,7 +82,7 @@ async function throwIfInvalidLifecycleTransition(response: Response): Promise<vo
     : 'draft';
 
   throw new InvalidPartyLifecycleTransitionError(message, currentState, requestedState);
-}
+};
 
 class PartyApiService {
   /**

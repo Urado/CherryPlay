@@ -432,7 +432,6 @@ export const CabinetPartyForm = ({
                 maxLength={MAX_DANCE_TAG_LENGTH}
                 disabled={danceTags.length >= MAX_DANCE_TAGS}
                 aria-label="Поле для ввода другого танца"
-                autoFocus
               />
               <Button
                 type="button"

@@ -146,7 +146,7 @@ export type ProjectStore = UseBoundStore<StoreApi<ProjectStoreState>>;
 
 const projectStores = new Map<WorkspaceId, ProjectStore>();
 
-function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
+const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
   const {
     workspaceId,
     initialName = 'New Project',
@@ -930,7 +930,7 @@ function createStoreImpl(options: ProjectStoreOptions): ProjectStore {
   return createWithEqualityFn<ProjectStoreState>(storeCreator);
 }
 
-export function ensureProjectStore(options: ProjectStoreOptions): ProjectStore {
+export const ensureProjectStore = (options: ProjectStoreOptions): ProjectStore => {
   const existing = projectStores.get(options.workspaceId);
   if (existing) {
     return existing;
@@ -942,7 +942,7 @@ export function ensureProjectStore(options: ProjectStoreOptions): ProjectStore {
   return store;
 }
 
-function getStoreForWorkspace(workspaceId: WorkspaceId): ProjectStore | undefined {
+const getStoreForWorkspace = (workspaceId: WorkspaceId): ProjectStore | undefined => {
   const store = projectStores.get(workspaceId);
   if (store) return store;
   if (workspaceId === DEFAULT_PLAYER_WORKSPACE_ID) {
@@ -951,27 +951,27 @@ function getStoreForWorkspace(workspaceId: WorkspaceId): ProjectStore | undefine
   return undefined;
 }
 
-export function getProjectStore(workspaceId: WorkspaceId): ProjectStore | undefined {
+export const getProjectStore = (workspaceId: WorkspaceId): ProjectStore | undefined => {
   return getStoreForWorkspace(workspaceId);
 }
 
-export function removeProjectStore(workspaceId: WorkspaceId): void {
+export const removeProjectStore = (workspaceId: WorkspaceId): void => {
   projectStores.delete(workspaceId);
 }
 
-export function getAllProjectStoreIds(): WorkspaceId[] {
+export const getAllProjectStoreIds = (): WorkspaceId[] => {
   return Array.from(projectStores.keys());
 }
 
-export function registerProjectStore(workspaceId: WorkspaceId, store: ProjectStore): void {
+export const registerProjectStore = (workspaceId: WorkspaceId, store: ProjectStore): void => {
   projectStores.set(workspaceId, store);
 }
 
-export function useProjectStoreSelector<T>(
+export const useProjectStoreSelector = <T>(
   workspaceId: WorkspaceId,
   selector: (state: ProjectStoreState) => T,
   equalityFn?: (a: T, b: T) => boolean,
-): T {
+): T => {
   const store = projectStores.get(workspaceId);
   if (!store) {
     throw new Error(`Project store ${workspaceId} is not registered`);
@@ -983,13 +983,13 @@ let externalApplyHandler:
   | ((workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean)
   | null = null;
 
-export function registerExternalApplyHandler(
+export const registerExternalApplyHandler = (
   handler: (workspaceId: WorkspaceId, command: HistoryCommand, mode: 'execute' | 'undo') => boolean,
-): void {
+): void => {
   externalApplyHandler = handler;
 }
 
-export function initializeGlobalHistory(): void {
+export const initializeGlobalHistory = (): void => {
   useGlobalHistoryStore.getState().registerApplyCommand((workspaceId, command, mode) => {
     const store = getStoreForWorkspace(workspaceId);
     if (store) {

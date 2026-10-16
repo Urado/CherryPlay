@@ -15,7 +15,7 @@ export interface SpringCrossStepCurrentTrackDisplayProps {
   themeId?: string;
 }
 
-function getStatusLabel(status: PlaybackState['status']): string {
+const getStatusLabel = (status: PlaybackState['status']): string => {
   switch (status) {
     case 'playing':
       return 'Сейчас играет';
@@ -26,7 +26,7 @@ function getStatusLabel(status: PlaybackState['status']): string {
     default:
       return 'Ожидание трека...';
   }
-}
+};
 
 export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayProps> = ({
   playbackState,

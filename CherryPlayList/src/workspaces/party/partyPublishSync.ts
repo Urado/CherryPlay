@@ -34,7 +34,7 @@ type PartyPublishMetadataSlice = Pick<
   | 'isListedInCatalog'
 >;
 
-export function buildPartyPublishMetadataSignature(store: PartyPublishMetadataSlice): string {
+export const buildPartyPublishMetadataSignature = (store: PartyPublishMetadataSlice): string => {
   return JSON.stringify({
     partyName: store.partyName,
     partyTitle: store.partyTitle,
@@ -56,29 +56,29 @@ export function buildPartyPublishMetadataSignature(store: PartyPublishMetadataSl
   });
 }
 
-export function buildPartyPublishPlaylistSignature(params: {
+export const buildPartyPublishPlaylistSignature = (params: {
   streamingSource: string;
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
-}): string {
+}): string => {
   return JSON.stringify(buildPlaylistForApi(params));
 }
 
-export function buildPartyPublishSyncParts(params: {
+export const buildPartyPublishSyncParts = (params: {
   store: PartyPublishMetadataSlice;
   streamingSource: string;
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
-}): PartyPublishSyncParts {
+}): PartyPublishSyncParts => {
   return {
     playlist: buildPartyPublishPlaylistSignature(params),
     metadata: buildPartyPublishMetadataSignature(params.store),
   };
 }
 
-export function getCurrentPartyPublishSyncParts(): PartyPublishSyncParts {
+export const getCurrentPartyPublishSyncParts = (): PartyPublishSyncParts => {
   const store = usePartyWorkspaceStore.getState();
   const project = useProjectStore.getState();
   return buildPartyPublishSyncParts({
@@ -90,12 +90,12 @@ export function getCurrentPartyPublishSyncParts(): PartyPublishSyncParts {
   });
 }
 
-export function resolveHeaderPartyPublishHighlight(input: {
+export const resolveHeaderPartyPublishHighlight = (input: {
   hasLinkedParty: boolean;
   partyLifecycleState: PartyLifecycleState | null;
   lastSynced: PartyPublishSyncParts | null;
   current: PartyPublishSyncParts;
-}): boolean {
+}): boolean => {
   if (!input.hasLinkedParty) {
     return false;
   }
@@ -111,13 +111,13 @@ export function resolveHeaderPartyPublishHighlight(input: {
   );
 }
 
-export function markPartyPublishFullySynced(parts?: PartyPublishSyncParts): void {
+export const markPartyPublishFullySynced = (parts?: PartyPublishSyncParts): void => {
   usePartyWorkspaceStore
     .getState()
     .setLastSyncedPublishParts(parts ?? getCurrentPartyPublishSyncParts());
 }
 
-export function markPartyPublishMetadataSynced(metadataSignature?: string): void {
+export const markPartyPublishMetadataSynced = (metadataSignature?: string): void => {
   const store = usePartyWorkspaceStore.getState();
   const previous = store.lastSyncedPublishParts;
   if (previous == null) {
@@ -130,7 +130,7 @@ export function markPartyPublishMetadataSynced(metadataSignature?: string): void
   });
 }
 
-export function markPartyPublishCatalogVisibilitySynced(listed: boolean): void {
+export const markPartyPublishCatalogVisibilitySynced = (listed: boolean): void => {
   const store = usePartyWorkspaceStore.getState();
   const previous = store.lastSyncedPublishParts;
   if (previous == null) {
@@ -153,7 +153,7 @@ export function markPartyPublishCatalogVisibilitySynced(listed: boolean): void {
   });
 }
 
-export function markPartyPublishPlaylistSynced(playlistSignature: string): void {
+export const markPartyPublishPlaylistSynced = (playlistSignature: string): void => {
   const store = usePartyWorkspaceStore.getState();
   const previous = store.lastSyncedPublishParts;
   if (previous == null) {
@@ -170,6 +170,6 @@ export function markPartyPublishPlaylistSynced(playlistSignature: string): void 
   });
 }
 
-export function clearPartyPublishSync(): void {
+export const clearPartyPublishSync = (): void => {
   usePartyWorkspaceStore.getState().setLastSyncedPublishParts(null);
 }

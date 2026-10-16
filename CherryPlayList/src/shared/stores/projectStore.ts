@@ -69,7 +69,7 @@ type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
 
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
 
-function enqueueLoudnessScanForTracks(tracks: Track[]): void {
+const enqueueLoudnessScanForTracks = (tracks: Track[]): void => {
   void import('./settingsStore').then(({ useSettingsStore }) => {
     if (!useSettingsStore.getState().loudnessNormalizationEnabled) {
       return;
@@ -78,7 +78,7 @@ function enqueueLoudnessScanForTracks(tracks: Track[]): void {
       void loudnessService.scanTracks(tracks);
     });
   });
-}
+};
 
 interface ProjectState {
   name: string;
@@ -1281,7 +1281,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
   ),
 );
 
-export function initializeProjectStoreHistory(): void {
+export const initializeProjectStoreHistory = (): void => {
   registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as unknown as ProjectStore);
 
   registerExternalApplyHandler((workspaceId, command, mode) => {
@@ -1290,6 +1290,6 @@ export function initializeProjectStoreHistory(): void {
     }
     return false;
   });
-}
+};
 
 export { PROJECT_WORKSPACE_ID };

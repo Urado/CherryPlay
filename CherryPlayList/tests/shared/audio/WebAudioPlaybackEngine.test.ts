@@ -66,8 +66,9 @@ class MockAudio {
 
   private listeners: Record<string, Listener[]> = {};
 
-  public play = jest.fn().mockImplementation(async () => {
+  public play = jest.fn().mockImplementation(() => {
     this.dispatch('play');
+    return Promise.resolve();
   });
 
   public pause = jest.fn().mockImplementation(() => {
@@ -106,24 +107,27 @@ class MockAudio {
 }
 
 const originalCreateObjectURL: typeof URL.createObjectURL | undefined =
-  typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL : undefined;
+  typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL.bind(URL) : undefined;
 const originalRevokeObjectURL: typeof URL.revokeObjectURL | undefined =
-  typeof URL !== 'undefined' && URL.revokeObjectURL ? URL.revokeObjectURL : undefined;
+  typeof URL !== 'undefined' && URL.revokeObjectURL ? URL.revokeObjectURL.bind(URL) : undefined;
 
-function createMockAdapter(overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter {
+const createMockAdapter = (
+  overrides: Partial<PlatformAudioAdapter> = {},
+): PlatformAudioAdapter => {
   const revoke = jest.fn();
   return {
-    resolveSource: jest.fn(async (source: PlaybackSource) => {
-      if (source.kind === 'url') {
-        return { url: source.url };
-      }
-      return { url: 'cherryplay-audio:///mock', revoke };
-    }),
+    resolveSource: jest.fn((source: PlaybackSource) =>
+      Promise.resolve(
+        source.kind === 'url'
+          ? { url: source.url }
+          : { url: 'cherryplay-audio:///mock', revoke },
+      ),
+    ),
     getDuration: jest.fn().mockResolvedValue(240),
     setSinkId: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-}
+};
 
 beforeAll(() => {
   // @ts-expect-error test mock
@@ -156,6 +160,7 @@ afterAll(() => {
 describe('WebAudioPlaybackEngine lifecycle', () => {
   test('load → play → pause → seek → ended → dispose', async () => {
     const adapter = createMockAdapter();
+    const resolveSourceMock = jest.spyOn(adapter, 'resolveSource');
     const engine = new WebAudioPlaybackEngine({ id: 'lifecycle', adapter });
 
     const statusChanges: string[] = [];
@@ -171,19 +176,21 @@ describe('WebAudioPlaybackEngine lifecycle', () => {
     const source: PlaybackSource = { kind: 'url', url: 'https://example.com/track.mp3' };
     await engine.load(source);
 
-    expect(adapter.resolveSource).toHaveBeenCalledWith(source);
+    expect(resolveSourceMock).toHaveBeenCalledWith(source);
     expect(engine.getSnapshot().status).toBe('paused');
 
     const audio = MockAudio.lastInstance();
+    const audioPlayMock = jest.spyOn(audio!, 'play');
+    const audioPauseMock = jest.spyOn(audio!, 'pause');
     expect(audio?.src).toBe('https://example.com/track.mp3');
 
     await engine.play();
     expect(engine.getSnapshot().status).toBe('playing');
-    expect(audio?.play).toHaveBeenCalled();
+    expect(audioPlayMock).toHaveBeenCalled();
 
     engine.pause();
     expect(engine.getSnapshot().status).toBe('paused');
-    expect(audio?.pause).toHaveBeenCalled();
+    expect(audioPauseMock).toHaveBeenCalled();
 
     engine.seek(42);
     expect(engine.getSnapshot().position).toBe(42);
@@ -208,15 +215,16 @@ describe('WebAudioPlaybackEngine lifecycle', () => {
   test('revokes object URL on reload and dispose', async () => {
     const revoke = jest.fn();
     const adapter = createMockAdapter({
-      resolveSource: jest.fn(async () => ({ url: 'blob:first', revoke })),
+      resolveSource: jest.fn(() => Promise.resolve({ url: 'blob:first', revoke })),
     });
+    const resolveSourceMock = jest.spyOn(adapter, 'resolveSource');
     const engine = new WebAudioPlaybackEngine({ id: 'revoke', adapter });
 
     await engine.load({ kind: 'filePath', path: '/music/track.mp3' });
     expect(revoke).not.toHaveBeenCalled();
 
     const secondRevoke = jest.fn();
-    (adapter.resolveSource as jest.Mock).mockResolvedValueOnce({
+    resolveSourceMock.mockResolvedValueOnce({
       url: 'blob:second',
       revoke: secondRevoke,
     });
@@ -231,12 +239,13 @@ describe('WebAudioPlaybackEngine lifecycle', () => {
 
   test('emits duration from loadedmetadata and adapter getDuration', async () => {
     const adapter = createMockAdapter();
+    const getDurationMock = jest.spyOn(adapter, 'getDuration');
     const engine = new WebAudioPlaybackEngine({ id: 'duration', adapter });
     const durations: number[] = [];
     engine.subscribe('durationChanged', (duration) => durations.push(duration));
 
     await engine.load({ kind: 'filePath', path: '/music/track.mp3' });
-    expect(adapter.getDuration).toHaveBeenCalledWith('/music/track.mp3');
+    expect(getDurationMock).toHaveBeenCalledWith('/music/track.mp3');
     expect(durations).toContain(240);
 
     const audio = MockAudio.lastInstance();
@@ -307,14 +316,15 @@ describe('WebAudioPlaybackEngine lifecycle', () => {
 
   test('re-applies output device after load', async () => {
     const adapter = createMockAdapter();
+    const setSinkIdMock = jest.spyOn(adapter, 'setSinkId');
     const engine = new WebAudioPlaybackEngine({ id: 'device-reapply', adapter });
 
     await engine.setOutputDevice('speaker-1');
-    (adapter.setSinkId as jest.Mock).mockClear();
+    setSinkIdMock.mockClear();
 
     await engine.load({ kind: 'url', url: 'https://example.com/track.mp3' });
 
-    expect(adapter.setSinkId).toHaveBeenCalledWith(expect.any(MockAudio), 'speaker-1');
+    expect(setSinkIdMock).toHaveBeenCalledWith(expect.any(MockAudio), 'speaker-1');
   });
 
   test('load aborted by dispose does not emit after disposal', async () => {

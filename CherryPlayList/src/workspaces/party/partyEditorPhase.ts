@@ -57,11 +57,11 @@ export const PARTY_EDITOR_LIFECYCLE_BADGE_LABELS: Record<PartyLifecycleState, st
 
 export { resolvePartyLifecycleServerBadgeLabel };
 
-export function applyDemoBlockedOverride(
+export const applyDemoBlockedOverride = (
   baseResult: PartyEditorPhaseResult,
   input: ResolvePartyEditorPhaseInput,
   demoBlockedOverride: PartyEditorBlockedReason | null,
-): PartyEditorPhaseResult {
+): PartyEditorPhaseResult => {
   if (demoBlockedOverride == null) {
     return baseResult;
   }
@@ -81,15 +81,15 @@ export function applyDemoBlockedOverride(
   };
 }
 
-export function shouldPreserveShellContentWhenBlocked(
+export const shouldPreserveShellContentWhenBlocked = (
   demoBlockedOverride: PartyEditorBlockedReason | null,
-): boolean {
+): boolean => {
   return demoBlockedOverride != null;
 }
 
-export function resolvePartyEditorPhase(
+export const resolvePartyEditorPhase = (
   input: ResolvePartyEditorPhaseInput,
-): PartyEditorPhaseResult {
+): PartyEditorPhaseResult => {
   if (!input.isAuth) {
     return { phase: null, blockedReason: 'auth', isBlocked: true, effectiveLifecycle: null };
   }
@@ -139,10 +139,10 @@ export function resolvePartyEditorPhase(
   return applyPartyNotFoundBlocking(result, input);
 }
 
-function applyPartyNotFoundBlocking(
+const applyPartyNotFoundBlocking = (
   result: PartyEditorPhaseResult,
   input: ResolvePartyEditorPhaseInput,
-): PartyEditorPhaseResult {
+): PartyEditorPhaseResult => {
   if (
     result.isBlocked ||
     input.linkedParty == null ||
@@ -158,6 +158,6 @@ function applyPartyNotFoundBlocking(
   };
 }
 
-export function shouldShowPartyTrackDisplaySection(phase: PartyEditorPhase | null): boolean {
+export const shouldShowPartyTrackDisplaySection = (phase: PartyEditorPhase | null): boolean => {
   return phase != null && phase !== 'completed';
 }

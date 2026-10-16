@@ -1,14 +1,16 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { SettingsModal } from '../../../src/app/components/SettingsModal';
 import { resetPlatformForTests, setPlatform } from '../../../src/shared/platform/platformContext';
 import type { PlatformAPI } from '../../../src/shared/platform/types';
 import { useUIStore } from '../../../src/shared/stores/uiStore';
 
-const invokeMock = jest.fn(async (channel: string) =>
-  channel === 'config:getWebBaseUrl'
-    ? { success: true as const, data: 'https://example.test' }
-    : { success: true as const },
+const invokeMock = jest.fn((channel: string) =>
+  Promise.resolve(
+    channel === 'config:getWebBaseUrl'
+      ? { success: true as const, data: 'https://example.test' }
+      : { success: true as const },
+  ),
 );
 
 const testPlatform = {
@@ -16,9 +18,9 @@ const testPlatform = {
   invoke: invokeMock,
   on: () => () => undefined,
   aimp: {
-    getState: async () => ({ success: true as const }),
-    setSourceSelection: async () => ({ success: true as const }),
-    setLiveStreamStarted: async () => ({ success: true as const }),
+    getState: () => Promise.resolve({ success: true as const }),
+    setSourceSelection: () => Promise.resolve({ success: true as const }),
+    setLiveStreamStarted: () => Promise.resolve({ success: true as const }),
     onStateChanged: () => () => undefined,
     onLog: () => () => undefined,
   },
@@ -32,7 +34,6 @@ describe('SettingsModal legal links', () => {
   });
 
   afterEach(() => {
-    cleanup();
     useUIStore.getState().closeModal();
     resetPlatformForTests();
   });

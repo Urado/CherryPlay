@@ -35,17 +35,17 @@ const INITIAL_SCAN_STATE: LoudnessScanFlowState = {
 const PENDING_POLL_MS = 200;
 const PENDING_POLL_MAX_ATTEMPTS = 300;
 
-function delay(ms: number): Promise<void> {
+const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
-}
+};
 
-async function waitForPendingGateTracks(
+const waitForPendingGateTracks = async (
   gateTracks: Track[],
   resolveFreshTracks: (tracks: Track[]) => Track[],
   cancelToken: LoudnessCancelToken,
-): Promise<void> {
+): Promise<void> => {
   for (let attempt = 0; attempt < PENDING_POLL_MAX_ATTEMPTS; attempt += 1) {
     if (cancelToken.cancelled) {
       return;
@@ -59,18 +59,18 @@ async function waitForPendingGateTracks(
 
     await delay(PENDING_POLL_MS);
   }
-}
+};
 
-function buildGateErrorMessage(tracks: Track[]): string | null {
+const buildGateErrorMessage = (tracks: Track[]): string | null => {
   const failed = tracks.filter((track) => track.loudness?.status === 'error');
   if (failed.length === 0) {
     return null;
   }
   const names = failed.map((track) => track.name).join(', ');
   return `Не удалось проанализировать: ${names}`;
-}
+};
 
-export function useLoudnessScanFlow() {
+export const useLoudnessScanFlow = () => {
   const [scanState, setScanState] = useState<LoudnessScanFlowState>(INITIAL_SCAN_STATE);
   const cancelTokenRef = useRef<LoudnessCancelToken | null>(null);
 
@@ -193,4 +193,4 @@ export function useLoudnessScanFlow() {
     cancelScan,
     ensureSessionGateReady,
   };
-}
+};

@@ -134,7 +134,7 @@ const cloneItemTreeWithNewIds = (
   return duplicate;
 };
 
-export function addPlayedTrackNext(trackId: string, activeTrackId: string | null): boolean {
+export const addPlayedTrackNext = (trackId: string, activeTrackId: string | null): boolean => {
   const store = useProjectStore.getState();
   const projectKey = `${store.name}:${store.meta.filePath ?? ''}:${store.sessionState.sessionStartTime ?? ''}`;
   resetInsertCursorIfProjectChanged(projectKey);
@@ -186,9 +186,9 @@ export function addPlayedTrackNext(trackId: string, activeTrackId: string | null
   lastAnchorKey = slot.anchorKey;
   lastInsertedItemId = duplicate.id;
   return true;
-}
+};
 
-export function addPlayedGroupNext(groupId: string, activeTrackId: string | null): boolean {
+export const addPlayedGroupNext = (groupId: string, activeTrackId: string | null): boolean => {
   const store = useProjectStore.getState();
   const projectKey = `${store.name}:${store.meta.filePath ?? ''}:${store.sessionState.sessionStartTime ?? ''}`;
   resetInsertCursorIfProjectChanged(projectKey);
@@ -247,4 +247,4 @@ export function addPlayedGroupNext(groupId: string, activeTrackId: string | null
   lastAnchorKey = slot.anchorKey;
   lastInsertedItemId = duplicate.id;
   return true;
-}
+};

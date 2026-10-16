@@ -8,7 +8,7 @@ const applyDemoAuthSessionMock = jest.fn();
 const settingsSetState = jest.fn();
 
 jest.mock('../../../src/shared/demo/demoAuthFixture', () => ({
-  applyDemoAuthSession: (...args: unknown[]) => applyDemoAuthSessionMock(...args),
+  applyDemoAuthSession: (...args: unknown[]) => applyDemoAuthSessionMock(...args) as unknown,
 }));
 
 jest.mock('../../../src/shared/stores/projectStore', () => ({
@@ -22,7 +22,7 @@ jest.mock('../../../src/shared/stores/projectStore', () => ({
 
 jest.mock('../../../src/shared/stores/settingsStore', () => ({
   useSettingsStore: {
-    setState: (...args: unknown[]) => settingsSetState(...args),
+    setState: (...args: unknown[]) => settingsSetState(...args) as unknown,
   },
 }));
 

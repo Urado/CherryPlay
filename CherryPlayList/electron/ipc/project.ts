@@ -13,9 +13,6 @@ import {
   validatePath,
 } from '../utils/fsHelpers.js';
 
-/**
- * Формат файла .cherry (версия 2.0)
- */
 export interface ProjectFile {
   version: '2.0';
   name: string;
@@ -59,11 +56,7 @@ export interface ProjectFile {
   linkedParty?: { id: string; shortCode: string; url: string };
 }
 
-/**
- * Build a mapping from track ID to the path of groups (collections) it belongs to.
- * The path contains group names from root to the deepest group that contains the track.
- */
-function buildTrackCollectionFolderMap(projectFile: ProjectFile): Map<string, string | null> {
+const buildTrackCollectionFolderMap = (projectFile: ProjectFile): Map<string, string | null> => {
   const itemsById = new Map<string, ProjectFile['items'][number]>();
 
   for (const item of projectFile.items) {
@@ -79,7 +72,6 @@ function buildTrackCollectionFolderMap(projectFile: ProjectFile): Map<string, st
     }
 
     if (item.type === 'track') {
-      // Only set the group path if we haven't seen this track yet.
       if (!trackToGroupPath.has(item.id)) {
         trackToGroupPath.set(item.id, groupPath);
       }
@@ -116,19 +108,13 @@ function buildTrackCollectionFolderMap(projectFile: ProjectFile): Map<string, st
   }
 
   return result;
-}
+};
 
-/**
- * Resolve a unique destination filename in the tracks folder.
- * If `tracks/filename.ext` already exists and is a different source file,
- * appends `_2`, `_3`, etc. until a free slot is found.
- */
-async function resolveUniqueDestPath(destDir: string, srcPath: string): Promise<string> {
+const resolveUniqueDestPath = async (destDir: string, srcPath: string): Promise<string> => {
   const ext = path.extname(srcPath);
   const baseName = path.basename(srcPath, ext);
   let candidate = path.join(destDir, `${baseName}${ext}`);
 
-  // If the candidate is the same file as the source, no conflict
   if (path.resolve(candidate) === path.resolve(srcPath)) {
     return candidate;
   }
@@ -137,27 +123,20 @@ async function resolveUniqueDestPath(destDir: string, srcPath: string): Promise<
   while (true) {
     try {
       await fs.access(candidate);
-      // Different file occupies this name — try next suffix
       candidate = path.join(destDir, `${baseName}_${suffix}${ext}`);
       suffix++;
     } catch {
-      // fs.access threw → file does not exist → slot is free
       return candidate;
     }
   }
-}
+};
 
-/**
- * Copy all track files into `<projectDir>/tracks/` and rewrite their paths
- * to relative form (`./tracks/filename.ext`) in the projectFile in-place.
- * Emits `project:save-progress` events via `sendProgress`.
- */
-async function copyTracksForPortableMode(
+const copyTracksForPortableMode = async (
   filePath: string,
   projectFile: ProjectFile,
   sendProgress: (current: number, total: number, fileName: string) => void,
   options?: { strictSourceFiles?: boolean },
-): Promise<void> {
+): Promise<void> => {
   const strictSourceFiles = options?.strictSourceFiles === true;
   const projectDir = path.dirname(filePath);
   const tracksDir = path.join(projectDir, 'tracks');
@@ -202,7 +181,6 @@ async function copyTracksForPortableMode(
 
       if (inTracksDir) {
         if (strictSourceFiles) {
-          // Portable strict: do not rewrite ./tracks/... if the file is missing.
           try {
             await fs.access(srcAbsolute);
           } catch {
@@ -212,7 +190,6 @@ async function copyTracksForPortableMode(
             );
           }
         }
-        // Already inside tracks/ (including subfolders) — rewrite path to relative form
         const relativeFromTracks = path.relative(tracksDir, srcAbsolute);
         const normalizedRelative = relativeFromTracks.split(path.sep).join('/');
         item.path = `./tracks/${normalizedRelative}`;
@@ -220,9 +197,6 @@ async function copyTracksForPortableMode(
         continue;
       }
 
-      // Check source accessibility: strict (save-as «переносимый») — abort; legacy — skip.
-      // Relative `..` that resolves outside the project is allowed in strict mode only if the file exists
-      // (enforced by this access; otherwise a dedicated message explains the policy).
       try {
         await fs.access(srcAbsolute);
       } catch {
@@ -246,7 +220,6 @@ async function copyTracksForPortableMode(
 
       await copyFileWithRetry(srcAbsolute, destPath);
 
-      // Use forward slashes for the relative path stored on disk
       const relativeFromTracks = path.relative(tracksDir, destPath);
       const normalizedRelative = relativeFromTracks.split(path.sep).join('/');
       item.path = `./tracks/${normalizedRelative}`;
@@ -300,35 +273,27 @@ async function copyTracksForPortableMode(
       }
     }
   }
-}
+};
 
-/**
- * Save project to .cherry file
- */
-async function saveProject(filePath: string, projectFile: ProjectFile): Promise<void> {
+const saveProject = async (filePath: string, projectFile: ProjectFile): Promise<void> => {
   try {
-    // Ensure directory exists
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
 
-    // Write JSON file
     await fs.writeFile(filePath, JSON.stringify(projectFile, null, 2), 'utf8');
   } catch (error) {
     throw new Error(`Failed to save project: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Load project from .cherry file
- */
-async function loadProject(filePath: string): Promise<ProjectFile> {
+const loadProject = async (filePath: string): Promise<ProjectFile> => {
   try {
     const content = await fs.readFile(filePath, 'utf8');
     const projectFile = JSON.parse(content) as ProjectFile;
 
-    // Validate structure
-    if (projectFile.version !== '2.0') {
-      throw new Error(`Unsupported project version: ${projectFile.version}`);
+    const projectVersion = String(projectFile.version);
+    if (projectVersion !== '2.0') {
+      throw new Error(`Unsupported project version: ${projectVersion}`);
     }
 
     if (
@@ -347,17 +312,13 @@ async function loadProject(filePath: string): Promise<ProjectFile> {
   } catch (error) {
     throw new Error(`Failed to load project: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Переносимый пакет: папка с именем проекта внутри parentPath, .cherry и tracks в staging; затем rename.
- * Любая ошибка — каталог staging удаляется, финальная папка не остаётся.
- */
-async function savePortableProjectAsPackage(
+const savePortableProjectAsPackage = async (
   event: IpcMainInvokeEvent,
   parentPath: string,
   projectFile: ProjectFile,
-): Promise<{ cherryPath: string; folderPath: string }> {
+): Promise<{ cherryPath: string; folderPath: string }> => {
   if (!validatePath(parentPath)) {
     throw new Error('Invalid path: path traversal detected');
   }
@@ -406,7 +367,7 @@ async function savePortableProjectAsPackage(
 
   const cherryFileName = `${rawName}.cherry`;
   const cherryPath = path.join(stagingDir, cherryFileName);
-  const portableFile: ProjectFile = JSON.parse(JSON.stringify(projectFile));
+  const portableFile = JSON.parse(JSON.stringify(projectFile)) as ProjectFile;
 
   try {
     await copyTracksForPortableMode(
@@ -426,7 +387,6 @@ async function savePortableProjectAsPackage(
       if (code === 'EEXIST' || code === 'ENOTEMPTY') {
         throw new Error('Папка с таким именем уже существует');
       }
-      // TOCTOU: destination may have appeared after the initial existence check
       try {
         const st = await fs.stat(finalDir);
         if (st.isDirectory()) {
@@ -439,16 +399,11 @@ async function savePortableProjectAsPackage(
         ) {
           throw statError;
         }
-        // finalDir missing or not the conflict — surface original rename error
       }
       throw renameError;
     }
   } catch (error) {
-    try {
-      await fs.rm(stagingDir, { recursive: true, force: true });
-    } catch {
-      // ignore
-    }
+    await fs.rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
     throw error;
   }
 
@@ -456,12 +411,9 @@ async function savePortableProjectAsPackage(
     folderPath: finalDir,
     cherryPath: path.join(finalDir, cherryFileName),
   };
-}
+};
 
-/**
- * Register project IPC handlers
- */
-export function registerProjectHandlers(): void {
+export const registerProjectHandlers = (): void => {
   ipcMain.handle(
     'project:save',
     async (
@@ -470,12 +422,10 @@ export function registerProjectHandlers(): void {
         path: string;
         projectFile: ProjectFile;
         portableMode?: boolean;
-        /** Ignored when `portableMode` is set — main always uses strict copy-all-or-abort for portable saves. */
         strictSourceFiles?: boolean;
       },
     ) => {
       try {
-        // Validate path to prevent path traversal attacks
         if (!validatePath(payload.path)) {
           return {
             success: false,
@@ -484,8 +434,7 @@ export function registerProjectHandlers(): void {
         }
 
         if (payload.portableMode) {
-          // Deep-clone to avoid mutating the renderer's in-memory state
-          const portableFile: ProjectFile = JSON.parse(JSON.stringify(payload.projectFile));
+          const portableFile = JSON.parse(JSON.stringify(payload.projectFile)) as ProjectFile;
 
           await copyTracksForPortableMode(
             payload.path,
@@ -496,7 +445,6 @@ export function registerProjectHandlers(): void {
             { strictSourceFiles: true },
           );
 
-          // Mark the file as portable so it reloads correctly
           portableFile.settings.portableMode = true;
 
           await saveProject(payload.path, portableFile);
@@ -558,7 +506,6 @@ export function registerProjectHandlers(): void {
 
   ipcMain.handle('project:load', async (event, payload: { path: string }) => {
     try {
-      // Validate path to prevent path traversal attacks
       if (!validatePath(payload.path)) {
         return {
           success: false,
@@ -578,4 +525,4 @@ export function registerProjectHandlers(): void {
       };
     }
   });
-}
+};

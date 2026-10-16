@@ -3,7 +3,7 @@ const listeners: Array<() => void> = [];
 
 jest.mock('../../../src/shared/services/partyService', () => ({
   partyService: {
-    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args),
+    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) as unknown,
   },
 }));
 

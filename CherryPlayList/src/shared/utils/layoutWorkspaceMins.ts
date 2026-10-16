@@ -8,10 +8,6 @@ export interface WorkspaceMinSize {
   minHeight: number;
 }
 
-/**
- * Conservative fallback used when a workspace type is not registered
- * or does not declare explicit mins.
- */
 export const DEFAULT_WORKSPACE_MIN_SIZE: WorkspaceMinSize = {
   minWidth: 200,
   minHeight: 150,
@@ -24,21 +20,11 @@ export interface WindowChromeInsets {
   right: number;
 }
 
-/**
- * Normalizes legacy/alias workspace types before registry lookup or zone
- * creation. `aimp` zones are treated as `player` (spec A7). Single source of
- * truth reused by layout operations so the alias mapping never diverges.
- */
-export function normalizeWorkspaceType(workspaceType: string): string {
+export const normalizeWorkspaceType = (workspaceType: string): string => {
   return workspaceType === 'aimp' ? 'player' : workspaceType;
 }
 
-/**
- * Resolves the minimum content size (in pixels) for a workspace type via the
- * registry. `aimp` normalizes to `player`. Unknown types fall back to a
- * conservative default and emit a dev warning.
- */
-export function getWorkspaceMinSize(workspaceType: string): WorkspaceMinSize {
+export const getWorkspaceMinSize = (workspaceType: string): WorkspaceMinSize => {
   const normalizedType = normalizeWorkspaceType(workspaceType);
   const module = workspaceRegistry.getModuleByType(normalizedType);
 
@@ -57,11 +43,7 @@ export interface WorkspaceTypeWithMins extends WorkspaceMinSize {
   type: string;
 }
 
-/**
- * Returns all registered workspace types with their declared mins.
- * Intended for documentation and tests.
- */
-export function getAllRegisteredWorkspaceTypesWithMins(): WorkspaceTypeWithMins[] {
+export const getAllRegisteredWorkspaceTypesWithMins = (): WorkspaceTypeWithMins[] => {
   return workspaceRegistry.getAllModulesByType().map((module) => ({
     type: module.type,
     minWidth: module.minWidth,
@@ -69,28 +51,20 @@ export function getAllRegisteredWorkspaceTypesWithMins(): WorkspaceTypeWithMins[
   }));
 }
 
-function getMinAlongSplitAxis(size: WorkspaceMinSize, direction: SplitDirection): number {
+const getMinAlongSplitAxis = (size: WorkspaceMinSize, direction: SplitDirection): number => {
   return direction === 'horizontal' ? size.minWidth : size.minHeight;
 }
 
-function getMinAlongCrossAxis(size: WorkspaceMinSize, direction: SplitDirection): number {
+const getMinAlongCrossAxis = (size: WorkspaceMinSize, direction: SplitDirection): number => {
   return direction === 'horizontal' ? size.minHeight : size.minWidth;
 }
 
-function getChildMinPixelsAlongSplitAxis(child: Zone, direction: SplitDirection): number {
+const getChildMinPixelsAlongSplitAxis = (child: Zone, direction: SplitDirection): number => {
   const childSize = computeMinLayoutSize(child);
   return getMinAlongSplitAxis(childSize, direction);
 }
 
-/**
- * Minimum layout viewport size at which the tree can be arranged so every
- * workspace leaf receives at least its declared `minWidth` × `minHeight`.
- *
- * Min-content model (dividers are adjustable): along a container's split axis
- * the minimum is the **sum** of child mins; along the cross axis it is the
- * **max** of child mins. Size fractions do not affect this minimum.
- */
-export function computeMinLayoutSize(rootZone: Zone): WorkspaceMinSize {
+export const computeMinLayoutSize = (rootZone: Zone): WorkspaceMinSize => {
   if (rootZone.type === 'workspace') {
     return getWorkspaceMinSize(rootZone.workspaceType);
   }
@@ -125,15 +99,11 @@ export function computeMinLayoutSize(rootZone: Zone): WorkspaceMinSize {
   };
 }
 
-/**
- * Per-sibling minimum percentages along a container's split axis, parallel to
- * `zones`. Uses current container pixel width/height for percent conversion.
- */
-export function getMinSizePercentsForContainer(
+export const getMinSizePercentsForContainer = (
   containerZone: ContainerZone,
   containerPixelWidth: number,
   containerPixelHeight: number,
-): number[] {
+): number[] => {
   const splitAxisSize =
     containerZone.direction === 'horizontal' ? containerPixelWidth : containerPixelHeight;
 
@@ -147,19 +117,14 @@ export function getMinSizePercentsForContainer(
   });
 }
 
-function roundPx(value: number): number {
+const roundPx = (value: number): number => {
   return Math.round(value * 100) / 100;
 }
 
-/**
- * Human-readable breakdown of `computeMinLayoutSize`, exposing the recursion for
- * both axes (width and height). Returned `lines` are indented per depth so the
- * console output mirrors the layout tree; `size` matches `computeMinLayoutSize`.
- */
-export function explainMinLayoutSize(
+export const explainMinLayoutSize = (
   rootZone: Zone,
   depth = 0,
-): { size: WorkspaceMinSize; lines: string[] } {
+): { size: WorkspaceMinSize; lines: string[] } => {
   const indent = '  '.repeat(depth);
 
   if (rootZone.type === 'workspace') {
@@ -228,10 +193,7 @@ export function explainMinLayoutSize(
   return { size, lines };
 }
 
-/**
- * Minimum browser window size = layout viewport mins plus chrome insets.
- */
-export function computeMinWindowSize(layout: Layout, chrome: WindowChromeInsets): WorkspaceMinSize {
+export const computeMinWindowSize = (layout: Layout, chrome: WindowChromeInsets): WorkspaceMinSize => {
   const layoutMins = computeMinLayoutSize(layout.rootZone);
 
   return {

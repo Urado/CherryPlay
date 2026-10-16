@@ -110,7 +110,8 @@ class FakeServer extends EventEmitter {
   }
 
   listen(pathToListen: net.ListenOptions | string, callback?: () => void): this {
-    this.listenPath = typeof pathToListen === 'string' ? pathToListen : String(pathToListen);
+    this.listenPath =
+      typeof pathToListen === 'string' ? pathToListen : JSON.stringify(pathToListen) ?? '';
     callback?.();
     return this;
   }
@@ -125,13 +126,13 @@ class FakeServer extends EventEmitter {
   }
 }
 
-function loadFixture(name: string): AimpFixture {
+const loadFixture = (name: string): AimpFixture => {
   return JSON.parse(
     originalReadFileSync(path.join(fixturesDirectory, `${name}.json`), 'utf8') as string,
   ) as AimpFixture;
-}
+};
 
-function setProcessRuntime(platform: NodeJS.Platform, arch: string): void {
+const setProcessRuntime = (platform: NodeJS.Platform, arch: string): void => {
   Object.defineProperty(process, 'platform', {
     configurable: true,
     value: platform,
@@ -140,9 +141,9 @@ function setProcessRuntime(platform: NodeJS.Platform, arch: string): void {
     configurable: true,
     value: arch,
   });
-}
+};
 
-function restoreProcessRuntime(): void {
+const restoreProcessRuntime = (): void => {
   if (originalPlatformDescriptor) {
     Object.defineProperty(process, 'platform', originalPlatformDescriptor);
   }
@@ -150,15 +151,15 @@ function restoreProcessRuntime(): void {
   if (originalArchDescriptor) {
     Object.defineProperty(process, 'arch', originalArchDescriptor);
   }
-}
+};
 
-function readServerMessages(socket: FakeSocket): unknown[] {
+const readServerMessages = (socket: FakeSocket): unknown[] => {
   return socket.writtenPayloads
     .flatMap((payload) => payload.split(AIMP_PROTOCOL_MESSAGE_DELIMITER))
     .map((payload) => payload.trim())
     .filter((payload) => payload.length > 0)
     .map((payload) => JSON.parse(payload) as unknown);
-}
+};
 
 describe('AimpIntegrationService lifecycle', () => {
   let service: AimpIntegrationService;
@@ -167,9 +168,9 @@ describe('AimpIntegrationService lifecycle', () => {
   let createServerSpy: jest.SpiedFunction<typeof net.createServer>;
   let createdServers: FakeServer[];
 
-  function configureManifest(
+  const configureManifest = (
     mode: 'valid' | 'missing' | 'invalidJson' | 'invalidContract' = 'valid',
-  ): void {
+  ): void => {
     existsSyncSpy.mockImplementation((targetPath) => {
       return targetPath.toString().endsWith(manifestSuffix) && mode !== 'missing';
     });
@@ -193,25 +194,25 @@ describe('AimpIntegrationService lifecycle', () => {
 
       return JSON.stringify(validManifest);
     }));
-  }
+  };
 
-  function createService(): void {
+  const createService = (): void => {
     service?.dispose();
     service = new AimpIntegrationService();
-  }
+  };
 
-  function connectSocket(): FakeSocket {
+  const connectSocket = (): FakeSocket => {
     const socket = new FakeSocket();
     expect(createdServers).toHaveLength(1);
     createdServers[0].connect(socket);
     return socket;
-  }
+  };
 
-  function emitFixture(socket: FakeSocket, fixture: AimpFixture): void {
+  const emitFixture = (socket: FakeSocket, fixture: AimpFixture): void => {
     fixture.messages.forEach((message) => {
       socket.emitProtocolMessage(message);
     });
-  }
+  };
 
   beforeEach(() => {
     jest.useFakeTimers();

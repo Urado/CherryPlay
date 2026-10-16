@@ -32,16 +32,16 @@ import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
-function resolvePartyNameForServer(
+const resolvePartyNameForServer = (
   store: ReturnType<typeof getPartyStore>,
   projectName: string,
-): string {
+): string => {
   const nameToUse = resolveDisplayPartyName(store.partyName, projectName, 'Вечеринка');
   if (!store.partyName.trim()) {
     store.setPartyName(nameToUse);
   }
   return nameToUse;
-}
+};
 
 type PartyServerEffects = {
   loadThemeAccess: (forceRefresh?: boolean) => Promise<void>;
@@ -50,11 +50,11 @@ type PartyServerEffects = {
   isNetworkEnabled: () => boolean;
 };
 
-export function usePartyServerActions(
+export const usePartyServerActions = (
   isAuth: boolean,
   playlistBuildParams: PartyPlaylistBuildParams,
   effects: PartyServerEffects,
-) {
+) => {
   const meta = useProjectStore((state) => state.meta);
   const projectName = useProjectStore((state) => state.name);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
@@ -333,13 +333,13 @@ export function usePartyServerActions(
     handleCatalogVisibilityChange,
     handleLifecycleTransition,
   };
-}
+};
 
-export function usePartyWorkspaceAuthState() {
+export const usePartyWorkspaceAuthState = () => {
   const authStore = useAuthStore();
   const isAuth = authStore.isAuthenticated();
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
 
   return { isAuth, isClientOutdated, clientRequiredVersion };
-}
+};

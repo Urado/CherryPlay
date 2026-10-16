@@ -1,10 +1,10 @@
 import type { PartyPlaylistData, PlaybackState } from '../../types';
 import { getFlatTracksInDisplayOrder } from '../utils/playlist';
 
-export function isProgramEnded(
+export const isProgramEnded = (
   playlist: PartyPlaylistData,
   playbackState: PlaybackState | null | undefined,
-): boolean {
+): boolean => {
   if (!playbackState || playbackState.mode !== 'session') {
     return false;
   }
@@ -30,4 +30,4 @@ export function isProgramEnded(
   }
 
   return status === 'ended';
-}
+};

@@ -31,7 +31,7 @@ export const BUTTON_CHROME_DEFAULTS: Required<ButtonChromeProps> = {
 
 export type ResolvedButtonChromeProps = Required<ButtonChromeProps>;
 
-export function resolveChromeProps(props: ButtonChromeProps): ResolvedButtonChromeProps {
+export const resolveChromeProps = (props: ButtonChromeProps): ResolvedButtonChromeProps => {
   return {
     variant: props.variant ?? BUTTON_CHROME_DEFAULTS.variant,
     size: props.size ?? BUTTON_CHROME_DEFAULTS.size,
@@ -42,7 +42,7 @@ export function resolveChromeProps(props: ButtonChromeProps): ResolvedButtonChro
     hoverable: props.hoverable ?? BUTTON_CHROME_DEFAULTS.hoverable,
     filled: props.filled ?? BUTTON_CHROME_DEFAULTS.filled,
   };
-}
+};
 
 export interface ButtonClassNameOptions extends ButtonChromeProps {
   loading?: boolean;
@@ -50,7 +50,7 @@ export interface ButtonClassNameOptions extends ButtonChromeProps {
   className?: string;
 }
 
-export function buttonClassNames({
+export const buttonClassNames = ({
   variant = BUTTON_CHROME_DEFAULTS.variant,
   size = BUTTON_CHROME_DEFAULTS.size,
   fullWidth = BUTTON_CHROME_DEFAULTS.fullWidth,
@@ -62,7 +62,7 @@ export function buttonClassNames({
   hoverable = BUTTON_CHROME_DEFAULTS.hoverable,
   filled = BUTTON_CHROME_DEFAULTS.filled,
   className,
-}: ButtonClassNameOptions): string {
+}: ButtonClassNameOptions): string => {
   return cn(
     'cp-button',
     `cp-button--${variant}`,
@@ -78,21 +78,24 @@ export function buttonClassNames({
     filled === 'always' && 'cp-button--fill-always',
     className,
   );
-}
+};
 
 export const ICON_ONLY_ACCESSIBLE_NAME_WARNING =
   'iconOnly button control should have aria-label or aria-labelledby for accessibility.';
 
 export const BUTTON_LOADING_LABEL_DEFAULT = 'Загрузка...';
 
-export function hasIconOnlyAccessibleName(ariaLabel?: string, ariaLabelledBy?: string): boolean {
+export const hasIconOnlyAccessibleName = (
+  ariaLabel?: string,
+  ariaLabelledBy?: string,
+): boolean => {
   return Boolean(ariaLabel || ariaLabelledBy);
-}
+};
 
-export function createDisabledLinkClickHandler(
+export const createDisabledLinkClickHandler = (
   disabled: boolean,
   onClick?: React.MouseEventHandler<HTMLAnchorElement>,
-): React.MouseEventHandler<HTMLAnchorElement> {
+): React.MouseEventHandler<HTMLAnchorElement> => {
   return (event) => {
     if (disabled) {
       event.preventDefault();
@@ -102,9 +105,9 @@ export function createDisabledLinkClickHandler(
 
     onClick?.(event);
   };
-}
+};
 
-export function useIconOnlyA11yWarning(iconOnly: boolean, hasAccessibleName: boolean): void {
+export const useIconOnlyA11yWarning = (iconOnly: boolean, hasAccessibleName: boolean): void => {
   const warnedAboutIconOnlyNameRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -117,7 +120,7 @@ export function useIconOnlyA11yWarning(iconOnly: boolean, hasAccessibleName: boo
       console.warn(ICON_ONLY_ACCESSIBLE_NAME_WARNING);
     }
   }, [hasAccessibleName, iconOnly]);
-}
+};
 
 export interface ButtonInnerContentProps {
   children?: React.ReactNode;

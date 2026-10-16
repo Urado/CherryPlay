@@ -27,13 +27,13 @@ class MockPlaybackEngine implements PlaybackEngine {
     error: null,
   };
 
-  load = jest.fn(async (_source: PlaybackSource) => undefined);
-  play = jest.fn(async () => undefined);
+  load = jest.fn((_source: PlaybackSource) => Promise.resolve());
+  play = jest.fn(() => Promise.resolve());
   pause = jest.fn();
   stop = jest.fn();
   seek = jest.fn();
   setVolume = jest.fn();
-  setOutputDevice = jest.fn(async () => undefined);
+  setOutputDevice = jest.fn(() => Promise.resolve());
   dispose = jest.fn();
 
   getSnapshot(): PlaybackSnapshot {

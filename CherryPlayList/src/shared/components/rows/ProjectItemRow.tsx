@@ -10,7 +10,7 @@ import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItem
 import { useItemDragOver } from '../ItemList';
 import { ListRowCompound } from '../ListRow';
 
-function pluralize(count: number, one: string, few: string, many: string): string {
+const pluralize = (count: number, one: string, few: string, many: string): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
@@ -24,7 +24,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
     return few;
   }
   return many;
-}
+};
 
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 

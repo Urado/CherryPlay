@@ -113,7 +113,7 @@ export const PartyPreviewView: React.FC<PartyPreviewViewProps> = ({
           kind="unreachable"
           isReconnecting={isReconnecting}
           lastManualCheckFailed={lastManualCheckFailed}
-          onManualReconnect={handleManualReconnect}
+          onManualReconnect={() => void handleManualReconnect()}
         />
       )}
       <div className="party-preview-view-header">

@@ -14,7 +14,7 @@ const NON_SESSION_FORBIDDEN_CODES = new Set([
   'admin_only',
 ]);
 
-export async function handleApiResponse<T>(response: Response, defaultMessage: string): Promise<T> {
+export const handleApiResponse = async <T>(response: Response, defaultMessage: string): Promise<T> => {
   if (!response.ok) {
     const error = await createApiError(response, defaultMessage);
 
@@ -50,10 +50,10 @@ export async function handleApiResponse<T>(response: Response, defaultMessage: s
   }
 }
 
-export async function createApiError(
+export const createApiError = async (
   response: Response,
   defaultMessage: string,
-): Promise<ApiError> {
+): Promise<ApiError> => {
   let errorMessage = defaultMessage;
   let code: string | undefined;
 
@@ -93,7 +93,7 @@ export async function createApiError(
   };
 }
 
-export async function parseApiErrorPayload<T>(response: Response): Promise<T | null> {
+export const parseApiErrorPayload = async <T>(response: Response): Promise<T | null> => {
   try {
     const text = await response.text();
     if (!text) return null;
@@ -103,7 +103,7 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
   }
 }
 
-export function isSessionAuthError(status: number, code?: string): boolean {
+export const isSessionAuthError = (status: number, code?: string): boolean => {
   if (status === 401) {
     return true;
   }
@@ -116,6 +116,6 @@ export function isSessionAuthError(status: number, code?: string): boolean {
   return true;
 }
 
-export function isAuthError(status: number, code?: string): boolean {
+export const isAuthError = (status: number, code?: string): boolean => {
   return isSessionAuthError(status, code);
 }

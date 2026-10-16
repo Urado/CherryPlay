@@ -6,7 +6,7 @@ interface ProjectNameInputProps {
   title: string;
 }
 
-export const ProjectNameInput = memo<ProjectNameInputProps>(({ disabled, title }) => {
+const ProjectNameInputComponent = ({ disabled, title }: ProjectNameInputProps) => {
   const name = useProjectStore((state) => state.name);
   const setName = useProjectStore((state) => state.setName);
   const [isHydrated, setIsHydrated] = useState(() => useProjectStore.persist.hasHydrated());
@@ -36,4 +36,8 @@ export const ProjectNameInput = memo<ProjectNameInputProps>(({ disabled, title }
       }
     />
   );
-});
+};
+
+ProjectNameInputComponent.displayName = 'ProjectNameInputComponent';
+
+export const ProjectNameInput = memo(ProjectNameInputComponent);
