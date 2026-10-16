@@ -1,7 +1,4 @@
-import {
-  getHourDividerKindsAfterTrackRow,
-  type HourDividerKind,
-} from '@shared/utils';
+import { getHourDividerKindsAfterTrackRow, type HourDividerKind } from '@shared/utils';
 import React from 'react';
 
 export interface HourDividerAfterTrackRowProps {
@@ -14,13 +11,13 @@ export interface HourDividerAfterTrackRowProps {
   formatDividerLabel: (trackId: string) => string;
 }
 
-function labelForHourDividerKind(
+const labelForHourDividerKind = (
   kind: HourDividerKind,
   intervalTrackId: string | undefined,
   formatPlannedEndTimelineLabel: () => string,
   formatQueueEndTimelineLabel: () => string,
   formatDividerLabel: (trackId: string) => string,
-): string {
+): string => {
   if (kind === 'planned-end') {
     return formatPlannedEndTimelineLabel();
   }
@@ -31,7 +28,7 @@ function labelForHourDividerKind(
     return '';
   }
   return formatDividerLabel(intervalTrackId);
-}
+};
 
 const HourDividerRow = ({
   kind,
@@ -41,11 +38,56 @@ const HourDividerRow = ({
   label: string;
 }): React.ReactElement => {
   return (
-    <div className={`playlist-hour-divider playlist-hour-divider--${kind}`}>
+    <div
+      className={`playlist-hour-divider playlist-hour-divider--${kind}`}
+      role="separator"
+      aria-label={label}
+    >
       <span className="playlist-hour-divider-label">{label}</span>
     </div>
   );
-}
+};
+
+const CombinedPlanAndQueueHourDivider = ({
+  plannedLabel,
+  queueLabel,
+}: {
+  plannedLabel: string;
+  queueLabel: string;
+}): React.ReactElement => {
+  return (
+    <div
+      className="playlist-hour-divider playlist-hour-divider--planned-and-queue-end"
+      role="separator"
+      aria-label={`${plannedLabel}, ${queueLabel}`}
+    >
+      <span className="playlist-hour-divider-captions">
+        <span className="playlist-hour-divider-label playlist-hour-divider-label--planned-end">
+          {plannedLabel}
+        </span>
+        <span className="playlist-hour-divider-label playlist-hour-divider-label--queue-end">
+          {queueLabel}
+        </span>
+      </span>
+    </div>
+  );
+};
+
+const renderPlanAndQueueCoincidence = (
+  plannedLabel: string,
+  queueLabel: string,
+): React.ReactElement | null => {
+  if (plannedLabel.length === 0 && queueLabel.length === 0) {
+    return null;
+  }
+  if (plannedLabel.length === 0) {
+    return <HourDividerRow kind="queue-end" label={queueLabel} />;
+  }
+  if (queueLabel.length === 0) {
+    return <HourDividerRow kind="planned-end" label={plannedLabel} />;
+  }
+  return <CombinedPlanAndQueueHourDivider plannedLabel={plannedLabel} queueLabel={queueLabel} />;
+};
 
 export const HourDividerAfterTrackRow = ({
   hasPlannedEndDivider,
@@ -63,6 +105,13 @@ export const HourDividerAfterTrackRow = ({
   );
   if (kinds.length === 0) {
     return null;
+  }
+
+  if (kinds.includes('planned-end') && kinds.includes('queue-end')) {
+    return renderPlanAndQueueCoincidence(
+      formatPlannedEndTimelineLabel(),
+      formatQueueEndTimelineLabel(),
+    );
   }
 
   const rows = kinds
@@ -113,18 +162,16 @@ export const HourDividerListBottom = ({
     return null;
   }
 
-  return (
-    <>
-      {showPlanned && (
-        <div className="playlist-hour-divider playlist-hour-divider--planned-end">
-          <span className="playlist-hour-divider-label">{formatPlannedEndTimelineLabel()}</span>
-        </div>
-      )}
-      {showQueue && (
-        <div className="playlist-hour-divider playlist-hour-divider--queue-end">
-          <span className="playlist-hour-divider-label">{formatQueueEndTimelineLabel()}</span>
-        </div>
-      )}
-    </>
-  );
+  if (showPlanned && showQueue) {
+    return renderPlanAndQueueCoincidence(
+      formatPlannedEndTimelineLabel(),
+      formatQueueEndTimelineLabel(),
+    );
+  }
+
+  if (showPlanned) {
+    return <HourDividerRow kind="planned-end" label={formatPlannedEndTimelineLabel()} />;
+  }
+
+  return <HourDividerRow kind="queue-end" label={formatQueueEndTimelineLabel()} />;
 };

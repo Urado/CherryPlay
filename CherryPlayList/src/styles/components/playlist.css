@@ -557,13 +557,12 @@
 
 .playlist-hour-divider {
   --playlist-hour-divider-height: max(1px, calc(var(--track-item-padding, 8px) * 0.375));
-  --playlist-hour-divider-margin-y: max(2px, var(--track-item-padding, 8px));
-  --playlist-hour-divider-gap: max(8px, calc(var(--track-item-padding, 8px) * 3));
-  --playlist-hour-divider-label-pad-y: max(1px, calc(var(--track-item-padding, 8px) * 0.25));
-  --playlist-hour-divider-label-pad-x: max(4px, calc(var(--track-item-padding, 8px) * 1.25));
-  --playlist-hour-divider-label-font: max(
-    9px,
-    calc(var(--font-size-secondary, 12px) * (0.75 + var(--track-item-padding, 8px) / 32))
+  --playlist-hour-divider-margin-y: var(--track-item-padding, 8px);
+  --playlist-hour-divider-gap: max(4px, calc(var(--track-item-padding, 8px) * 3));
+  --playlist-hour-divider-label-pad-y: calc(var(--track-item-padding, 8px) * 0.25);
+  --playlist-hour-divider-label-pad-x: max(2px, calc(var(--track-item-padding, 8px) * 1.25));
+  --playlist-hour-divider-label-font: calc(
+    var(--font-size-secondary, 12px) * (0.75 + var(--track-item-padding, 8px) / 32px)
   );
 
   height: var(--playlist-hour-divider-height);
@@ -577,11 +576,6 @@
 
 .playlist-hour-divider + .playlist-hour-divider {
   margin-top: var(--playlist-hour-divider-gap);
-}
-
-.playlist-hour-divider--planned-end + .playlist-hour-divider--queue-end,
-.playlist-hour-divider--queue-end + .playlist-hour-divider--planned-end {
-  margin-top: max(4px, calc(var(--playlist-hour-divider-gap) * 0.65));
 }
 
 .playlist-hour-divider--interval {
@@ -606,6 +600,42 @@
   border-color: #f44336;
 }
 
+.playlist-hour-divider--planned-and-queue-end {
+  background-color: transparent;
+  background-image: linear-gradient(to right, #f44336 0 50%, #00897b 50% 100%);
+  opacity: 1;
+}
+
+.playlist-hour-divider-captions {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: max(2px, calc(var(--track-item-padding, 8px) * 0.5));
+  max-width: calc(100% - 2 * var(--playlist-hour-divider-label-pad-x, 10px));
+  min-width: 0;
+}
+
+.playlist-hour-divider--planned-and-queue-end .playlist-hour-divider-label {
+  position: static;
+  left: auto;
+  transform: none;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.playlist-hour-divider-label--planned-end {
+  border-color: #f44336;
+}
+
+.playlist-hour-divider-label--queue-end {
+  border-color: #00897b;
+}
+
 .playlist-hour-divider-label {
   position: absolute;
   left: 50%;
@@ -617,11 +647,11 @@
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
-  max-width: min(340px, calc(100% - 12px));
+  max-width: min(340px, calc(100% - 2 * var(--playlist-hour-divider-label-pad-x, 10px)));
   overflow: hidden;
   text-overflow: ellipsis;
   border: 1px solid var(--accent-primary);
-  border-radius: 4px;
+  border-radius: max(2px, calc(var(--track-item-padding, 8px) * 0.5));
 }
 
 .item-list {
