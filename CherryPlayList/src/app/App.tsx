@@ -1,4 +1,3 @@
-
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
@@ -15,10 +14,7 @@ import {
   initializeProjectStoreHistory,
 } from '@shared/stores';
 import { clearExpiredAuthSession } from '@shared/utils/authSession';
-import {
-  isTokenExpiringSoon,
-  getDaysUntilExpiration,
-} from '@shared/utils/tokenUtils';
+import { isTokenExpiringSoon, getDaysUntilExpiration } from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
 import React, { useEffect, useRef } from 'react';
 

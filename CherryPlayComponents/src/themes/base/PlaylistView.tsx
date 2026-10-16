@@ -25,7 +25,7 @@ const PlaylistIcon = (): React.ReactElement => {
       <circle cx="18" cy="16" r="3" />
     </svg>
   );
-}
+};
 
 export interface BasePlaylistViewProps {
   playlist: PartyPlaylistData;
@@ -54,7 +54,8 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
     const tracks: PlayerItem[] = [];
     const collectTracks = (items: PlayerItem[], parentDisabled = false) => {
       for (const item of sortItemsByDisplayOrder(items)) {
-        const isDisabled = parentDisabled || (item.type === 'group' && disabledGroupIds.includes(item.id));
+        const isDisabled =
+          parentDisabled || (item.type === 'group' && disabledGroupIds.includes(item.id));
         if (item.type === 'track') {
           if (!isDisabled) tracks.push(item);
         } else if (item.items) {
@@ -138,10 +139,7 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
       if (item.type === 'track') return 0;
       const depth =
         1 +
-        (item.items ?? []).reduce(
-          (maximum, child) => Math.max(maximum, measureDepth(child)),
-          0,
-        );
+        (item.items ?? []).reduce((maximum, child) => Math.max(maximum, measureDepth(child)), 0);
       depths.set(item.id, depth);
       return depth;
     };
@@ -166,7 +164,10 @@ export const PlaylistView: React.FC<BasePlaylistViewProps> = ({
     const sortedItems =
       item.type === 'group' && item.items ? sortItemsByDisplayOrder(item.items) : null;
 
-    if (item.type === 'group' && (groupDisplayDepth === 0 || (maxGroupDepthById.get(item.id) ?? 1) > groupDisplayDepth)) {
+    if (
+      item.type === 'group' &&
+      (groupDisplayDepth === 0 || (maxGroupDepthById.get(item.id) ?? 1) > groupDisplayDepth)
+    ) {
       return (
         <React.Fragment key={`${item.id}-${level}-${index}`}>
           {sortedItems?.map((childItem, childIndex) =>

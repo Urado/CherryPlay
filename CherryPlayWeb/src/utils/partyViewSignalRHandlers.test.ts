@@ -2,17 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { PartyDisplayStatusId, PlaybackStateDto } from '../types/api';
 
-/**
- * Mirrors PartyView.onSessionEnded handler (~171–180): grace timer then clears playback.
- */
-function applySessionEnded(params: {
+const applySessionEnded = (params: {
   clearSessionTimers: () => void;
   setIsDisconnectFreezeActive: (v: boolean) => void;
   setPartyDisplayStatus: (s: PartyDisplayStatusId) => void;
   scheduleGrace: (fn: () => void, ms: number) => void;
   setPlaybackState: (s: null) => void;
   setIsSessionActive: (v: boolean) => void;
-}): void {
+}): void => {
   params.clearSessionTimers();
   params.setIsDisconnectFreezeActive(false);
   params.setPartyDisplayStatus('starting_soon');
@@ -20,38 +17,32 @@ function applySessionEnded(params: {
     params.setPlaybackState(null);
     params.setIsSessionActive(false);
   }, 5000);
-}
+};
 
-/**
- * Mirrors PartyView handlePlaybackStateReset (~316–321).
- */
-function applyPlaybackStateReset(params: {
+const applyPlaybackStateReset = (params: {
   clearSessionTimers: () => void;
   setIsDisconnectFreezeActive: (v: boolean) => void;
   setPlaybackState: (s: null) => void;
   setIsSessionActive: (v: boolean) => void;
   setPartyDisplayStatus: (s: PartyDisplayStatusId) => void;
-}): void {
+}): void => {
   params.clearSessionTimers();
   params.setIsDisconnectFreezeActive(false);
   params.setPlaybackState(null);
   params.setIsSessionActive(false);
   params.setPartyDisplayStatus('starting_soon');
-}
+};
 
-/**
- * Mirrors PartyView.onFullStateUpdated non-session branch (~224–227).
- */
-function applyFullStateUpdated(
+const applyFullStateUpdated = (
   state: PlaybackStateDto,
   setIsSessionActive: (v: boolean) => void,
   setPlaybackState: (s: null) => void,
-): void {
+): void => {
   if (state.mode !== 'session') {
     setIsSessionActive(false);
     setPlaybackState(null);
   }
-}
+};
 
 describe('PartyView SignalR handler contracts', () => {
   it('onSessionEnded sets starting_soon and schedules playback clear', () => {

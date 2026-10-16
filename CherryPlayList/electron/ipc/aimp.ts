@@ -14,23 +14,23 @@ let hasRegisteredAimpHandlers = false;
 let unsubscribeAimpBroadcast: (() => void) | null = null;
 let unsubscribeAimpLog: (() => void) | null = null;
 
-function broadcastAimpState(state: AimpBridgeState): void {
+const broadcastAimpState = (state: AimpBridgeState): void => {
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed()) {
       window.webContents.send(AIMP_STATE_CHANGED_CHANNEL, state);
     }
   }
-}
+};
 
-function broadcastAimpLog(entry: AimpLogEntry): void {
+const broadcastAimpLog = (entry: AimpLogEntry): void => {
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed()) {
       window.webContents.send(AIMP_LOG_CHANNEL, entry);
     }
   }
-}
+};
 
-export function registerAimpHandlers(): void {
+export const registerAimpHandlers = (): void => {
   if (hasRegisteredAimpHandlers) {
     return;
   }
@@ -43,14 +43,14 @@ export function registerAimpHandlers(): void {
     broadcastAimpLog(entry);
   });
 
-  ipcMain.handle('aimp:getState', async () => {
+  ipcMain.handle('aimp:getState', () => {
     return {
       success: true,
       data: aimpIntegrationService.getState(),
     };
   });
 
-  ipcMain.handle('aimp:setSourceSelection', async (_event, payload: unknown) => {
+  ipcMain.handle('aimp:setSourceSelection', (_event, payload: unknown) => {
     const validationResult = validateAimpSourceSelectionPayload(payload);
     if (!validationResult.success) {
       return {
@@ -65,7 +65,7 @@ export function registerAimpHandlers(): void {
     };
   });
 
-  ipcMain.handle('aimp:setLiveStreamStarted', async (_event, payload: unknown) => {
+  ipcMain.handle('aimp:setLiveStreamStarted', (_event, payload: unknown) => {
     const validationResult = validateAimpLiveStreamPayload(payload);
     if (!validationResult.success) {
       return {
@@ -86,12 +86,12 @@ export function registerAimpHandlers(): void {
       };
     }
   });
-}
+};
 
-export function unregisterAimpHandlers(): void {
+export const unregisterAimpHandlers = (): void => {
   unsubscribeAimpLog?.();
   unsubscribeAimpLog = null;
   unsubscribeAimpBroadcast?.();
   unsubscribeAimpBroadcast = null;
   hasRegisteredAimpHandlers = false;
-}
+};

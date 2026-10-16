@@ -15,19 +15,19 @@ export const AIR_DISABLED_HINT = 'Недостаточно места — уве
 
 export const LAYOUT_EDIT_DISABLED_TITLE = 'Недоступно в режиме редактирования окон';
 
-function isWorkspaceTypeUsedInLayout(type: string, usedTypes: Set<string>): boolean {
+const isWorkspaceTypeUsedInLayout = (type: string, usedTypes: Set<string>): boolean => {
   if (type === 'player' || type === 'aimp') {
     return usedTypes.has('player') || usedTypes.has('aimp');
   }
 
   return usedTypes.has(type);
-}
+};
 
-function isTestWorkspaceType(type: string): boolean {
+const isTestWorkspaceType = (type: string): boolean => {
   return /^test\d$/.test(type);
-}
+};
 
-export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOption[] {
+export const getWorkspacePickerOptions = (layout?: Layout): WorkspacePickerOption[] => {
   const usedTypes = layout ? collectWorkspaceTypes(layout.rootZone) : new Set<string>();
 
   const options = workspaceRegistry
@@ -45,4 +45,4 @@ export function getWorkspacePickerOptions(layout?: Layout): WorkspacePickerOptio
         !isWorkspaceTypeUsedInLayout(option.type, usedTypes),
     )
     .sort((left, right) => left.name.localeCompare(right.name, 'ru'));
-}
+};

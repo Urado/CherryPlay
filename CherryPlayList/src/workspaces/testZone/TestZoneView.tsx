@@ -1,7 +1,6 @@
 import { WorkspaceId } from '@core/types/workspace';
 import React from 'react';
 
-
 interface TestZoneViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;

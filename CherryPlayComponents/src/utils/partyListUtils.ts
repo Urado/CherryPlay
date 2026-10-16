@@ -2,11 +2,10 @@ export interface PartyWithEventDate {
   eventDateTime?: string | null;
 }
 
-/** Сравнение по дате события: сначала ближайшие/недавние, в конце — без даты и старые. */
-export function comparePartiesByEventDateDesc(
+export const comparePartiesByEventDateDesc = (
   a: PartyWithEventDate,
   b: PartyWithEventDate,
-): number {
+): number => {
   const aTime = a.eventDateTime ? new Date(a.eventDateTime).getTime() : null;
   const bTime = b.eventDateTime ? new Date(b.eventDateTime).getTime() : null;
 
@@ -21,8 +20,8 @@ export function comparePartiesByEventDateDesc(
   }
 
   return bTime - aTime;
-}
+};
 
-export function sortPartiesByEventDateDesc<T extends PartyWithEventDate>(parties: T[]): T[] {
+export const sortPartiesByEventDateDesc = <T extends PartyWithEventDate>(parties: T[]): T[] => {
   return [...parties].sort(comparePartiesByEventDateDesc);
-}
+};

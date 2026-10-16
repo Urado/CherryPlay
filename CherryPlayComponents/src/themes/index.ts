@@ -10,10 +10,7 @@ import {
   PartyInfoDisplay as BasePartyInfoDisplay,
 } from './base';
 import { BasicThemeCustomizationEditor } from './basic';
-import {
-  BASIC_THEME_CUSTOMIZATION_OPTION_KEYS,
-  resolveBasicThemePalette,
-} from './basic/palette';
+import { BASIC_THEME_CUSTOMIZATION_OPTION_KEYS, resolveBasicThemePalette } from './basic/palette';
 import { CyberpunkThemeCustomizationEditor } from './cyberpunk/CustomizationEditor';
 import {
   DEFAULT_PARTY_THEME_ID,
@@ -104,7 +101,7 @@ export interface CreatePartyThemeConfig {
   overrides?: Partial<PartyThemeComponents>;
 }
 
-export function createPartyTheme(config: CreatePartyThemeConfig): PartyTheme {
+export const createPartyTheme = (config: CreatePartyThemeConfig): PartyTheme => {
   return {
     id: config.id,
     name: config.name,
@@ -119,7 +116,7 @@ export function createPartyTheme(config: CreatePartyThemeConfig): PartyTheme {
       ...config.overrides,
     },
   };
-}
+};
 
 export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   cyberpunk: createPartyTheme({
@@ -195,32 +192,32 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
 
 export const partyThemes: PartyTheme[] = Object.values(PARTY_THEME_REGISTRY);
 
-export function getPartyTheme(partyThemeId: PartyThemeId): PartyTheme | undefined {
+export const getPartyTheme = (partyThemeId: PartyThemeId): PartyTheme | undefined => {
   return PARTY_THEME_REGISTRY[partyThemeId];
-}
+};
 
-export function applyPartyTheme(partyThemeId: PartyThemeId, element: HTMLElement): void {
+export const applyPartyTheme = (partyThemeId: PartyThemeId, element: HTMLElement): void => {
   element.setAttribute('data-theme', partyThemeId);
-}
+};
 
-export function isValidPartyTheme(partyThemeId: string): partyThemeId is PartyThemeId {
+export const isValidPartyTheme = (partyThemeId: string): partyThemeId is PartyThemeId => {
   return partyThemeId in PARTY_THEME_REGISTRY;
-}
+};
 
-export function getPartyThemeOrDefault(partyThemeId: string | undefined | null): PartyTheme {
+export const getPartyThemeOrDefault = (partyThemeId: string | undefined | null): PartyTheme => {
   if (partyThemeId && isValidPartyTheme(partyThemeId)) {
     return PARTY_THEME_REGISTRY[partyThemeId];
   }
   return PARTY_THEME_REGISTRY[DEFAULT_PARTY_THEME_ID];
-}
+};
 
-export function resolvePartyQrStyle(
+export const resolvePartyQrStyle = (
   partyThemeId: string | undefined | null,
   settings?: Partial<Record<string, unknown>>,
-): PartyQrStyle {
+): PartyQrStyle => {
   const theme = getPartyThemeOrDefault(partyThemeId);
   return theme.resolveQrStyle?.(settings) ?? theme.qrStyle;
-}
+};
 
 export const resolvePartyQrImage = (
   partyThemeId: string,

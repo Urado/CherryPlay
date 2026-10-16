@@ -1,10 +1,10 @@
-import { ContainerZone, WorkspaceZone } from '../../src/types/layout';
 import {
   cleanupContainers,
   findParentZone,
   findZoneById,
   validateLayout,
-} from '../../src/utils/layoutUtils';
+} from '../../src/shared/utils/layoutUtils';
+import { ContainerZone, WorkspaceZone } from '../../src/types/layout';
 
 const createWorkspace = (id: string, size = 50): WorkspaceZone => ({
   id: `${id}-zone`,

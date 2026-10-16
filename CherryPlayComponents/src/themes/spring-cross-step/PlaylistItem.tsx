@@ -36,7 +36,7 @@ const MusicIcon = (): React.ReactElement => {
       <circle cx="18" cy="16" r="3" />
     </svg>
   );
-}
+};
 
 const CheckIcon = (): React.ReactElement => {
   return (
@@ -54,21 +54,15 @@ const CheckIcon = (): React.ReactElement => {
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
-}
+};
 
 const StopIcon = (): React.ReactElement => {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <rect x="6" y="6" width="12" height="12" rx="1" />
     </svg>
   );
-}
+};
 
 export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
   item,
@@ -170,12 +164,6 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
     }
   };
 
-  const handleRowClickWhenDisabled = (e: React.MouseEvent): void => {
-    if (!isDisabled) return;
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   const rootClass = [
     'party-playlist-item',
     item.type === 'group' ? 'party-playlist-item--group' : 'party-playlist-item--track',
@@ -193,7 +181,6 @@ export const PlaylistItem: React.FC<SpringCrossStepPlaylistItemProps> = ({
       className={rootClass}
       role="listitem"
       aria-describedby={cancelTooltipVisible ? tooltipId : undefined}
-      onClick={handleRowClickWhenDisabled}
     >
       <div className="party-playlist-item-left">
         {isDisabled ? (

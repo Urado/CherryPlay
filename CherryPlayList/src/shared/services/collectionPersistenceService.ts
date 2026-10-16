@@ -16,11 +16,9 @@ export interface CopyCollectionTracksParams {
   folderName: string;
 }
 
-/**
- * Saves collection as JSON via native save dialog + IPC.
- * In web demo: shows «Не доступно в демо» and returns false.
- */
-export async function exportCollectionAsJson(params: ExportCollectionJsonParams): Promise<boolean> {
+export const exportCollectionAsJson = async (
+  params: ExportCollectionJsonParams,
+): Promise<boolean> => {
   if (!guardNativeFileOperation()) {
     return false;
   }
@@ -47,17 +45,15 @@ export async function exportCollectionAsJson(params: ExportCollectionJsonParams)
 
   await playlistService.savePlaylist(path, playlistData);
   return true;
-}
+};
 
-/**
- * Copies collection tracks into a user-selected folder.
- * In web demo: shows «Не доступно в демо» and returns null.
- */
-export async function copyCollectionTracksToFolder(params: CopyCollectionTracksParams): Promise<{
+export const copyCollectionTracksToFolder = async (
+  params: CopyCollectionTracksParams,
+): Promise<{
   folderPath: string;
   successful: string[];
   failed: Array<{ path: string; error: string }>;
-} | null> {
+} | null> => {
   if (!guardNativeFileOperation()) {
     return null;
   }
@@ -71,13 +67,9 @@ export async function copyCollectionTracksToFolder(params: CopyCollectionTracksP
   }
 
   return exportService.copyTracksToFolder(params.tracks, targetPath, params.folderName);
-}
+};
 
-/**
- * Loads collection JSON from disk via open dialog + IPC.
- * In web demo: shows «Не доступно в демо» and returns null.
- */
-export async function importCollectionFromJson(): Promise<PlaylistData | null> {
+export const importCollectionFromJson = async (): Promise<PlaylistData | null> => {
   if (!guardNativeFileOperation()) {
     return null;
   }
@@ -92,4 +84,4 @@ export async function importCollectionFromJson(): Promise<PlaylistData | null> {
   }
 
   return playlistService.loadPlaylist(path);
-}
+};

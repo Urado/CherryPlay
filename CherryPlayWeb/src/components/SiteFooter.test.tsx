@@ -1,17 +1,11 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, render, screen } from '@testing-library/react';
+// @vitest-environment jsdom
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { SiteFooter } from './SiteFooter';
 
 describe('SiteFooter', () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   it('renders legal nav with full document link labels', () => {
     render(
       <MemoryRouter>

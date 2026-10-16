@@ -17,19 +17,19 @@ export const AUTH_RATE_LIMITED = 'Слишком много запросов. П
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function validateEmail(email: string): boolean {
+export const validateEmail = (email: string): boolean => {
   return EMAIL_REGEX.test(email);
-}
+};
 
-export function validateOrganizerName(name: string): boolean {
+export const validateOrganizerName = (name: string): boolean => {
   const trimmed = name.trim();
   return trimmed.length > 0 && trimmed.length <= MAX_ORGANIZER_NAME_LENGTH;
-}
+};
 
-export function validatePassword(password: string): boolean {
+export const validatePassword = (password: string): boolean => {
   return password.length >= MIN_PASSWORD_LENGTH;
-}
+};
 
-export function validatePasswordMatch(password: string, confirmPassword: string): boolean {
+export const validatePasswordMatch = (password: string, confirmPassword: string): boolean => {
   return password === confirmPassword;
-}
+};

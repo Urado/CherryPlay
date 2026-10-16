@@ -1,7 +1,6 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+// @vitest-environment jsdom
+import * as testingLibrary from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement, useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,9 +10,9 @@ import { resetConsentGateNotifier } from '../utils/consentGateNotifier';
 
 import { ConsentGateProvider, useConsentGate, useConsentGateOpen } from './ConsentGateContext';
 
-const createConsentEventsMock = vi.fn();
-const listConsentEventsMock = vi.fn();
-const logoutMock = vi.fn();
+const createConsentEventsMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const listConsentEventsMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const logoutMock = vi.fn<(...args: unknown[]) => Promise<void>>();
 
 vi.mock('../services/consentEventsService', async () => {
   const actual = await vi.importActual<typeof import('../services/consentEventsService')>(
@@ -94,7 +93,7 @@ const CookieWithGateFlag = () => {
   return open ? null : <CookieNotice />;
 };
 
-function renderGateApp() {
+const renderGateApp = () => {
   return render(
     <MemoryRouter>
       <ConsentGateProvider>
@@ -103,7 +102,7 @@ function renderGateApp() {
       </ConsentGateProvider>
     </MemoryRouter>,
   );
-}
+};
 
 const EnsureConsentsButton = () => {
   const { ensureConsents } = useConsentGate();
@@ -122,6 +121,8 @@ const EnsureConsentsButton = () => {
 };
 
 describe('ConsentGateProvider', () => {
+  afterEach(testingLibrary['cleanup']);
+
   beforeEach(() => {
     resetConsentGateNotifier();
     createConsentEventsMock.mockReset();
@@ -132,7 +133,6 @@ describe('ConsentGateProvider', () => {
   });
 
   afterEach(() => {
-    cleanup();
     resetConsentGateNotifier();
     localStorage.clear();
     document.body.className = '';
@@ -187,8 +187,8 @@ describe('ConsentGateProvider', () => {
     const firstCheckbox = screen.getByRole('checkbox', {
       name: /Пользовательского соглашения/i,
     });
-    expect(document.activeElement).toBe(firstCheckbox);
-    expect(screen.getByRole('button', { name: 'Продолжить' })).not.toBe(document.activeElement);
+    expect(firstCheckbox.matches(':focus')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Продолжить' }).matches(':focus')).toBe(false);
   });
 
   it('shows refresh CTA when missing versions are unknown to client', async () => {

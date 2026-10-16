@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlaybackStateDto } from '../types/api';
 
-const mockOn = vi.fn();
+const mockOn = vi.fn<(eventName: string, handler: (...args: unknown[]) => void) => void>();
 const mockOff = vi.fn();
 const mockStart = vi.fn().mockResolvedValue(undefined);
 const mockInvoke = vi.fn().mockResolvedValue(null);
@@ -53,9 +53,9 @@ const samplePlaybackState: PlaybackStateDto = {
   lastUpdatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-function getHandler(eventName: string): ((...args: unknown[]) => void) | undefined {
+const getHandler = (eventName: string): ((...args: unknown[]) => void) | undefined => {
   return mockOn.mock.calls.find(([name]) => name === eventName)?.[1];
-}
+};
 
 describe('signalRService hub event handlers', () => {
   beforeEach(() => {

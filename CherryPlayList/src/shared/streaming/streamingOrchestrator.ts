@@ -3,7 +3,7 @@ import * as signalR from '@microsoft/signalr';
 import { isDefinitivePartyExistenceError } from '../services/partyExistenceErrors';
 import { partyService } from '../services/partyService';
 import { signalRService } from '../services/signalRService';
-import { logger } from '../utils';
+import { logger } from '../utils/logger';
 
 import { AimpBroadcastSource } from './AimpBroadcastSource';
 import { isStreamingHubAllowed } from './onlineNetworkPolicy';
@@ -48,8 +48,9 @@ export class StreamingOrchestrator {
   }
 
   stop(): void {
-    void this.enqueueLifecycle(async () => {
+    void this.enqueueLifecycle(() => {
       this.stopInternal(true);
+      return Promise.resolve();
     });
   }
 
@@ -394,20 +395,17 @@ export class StreamingOrchestrator {
     }
   }
 
-  private async restoreAfterReconnect(partyId: string): Promise<void> {
+  private restoreAfterReconnect(partyId: string): Promise<void> {
     if (!this.running || this.config?.partyId !== partyId) {
-      return;
+      return Promise.resolve();
     }
 
-    try {
-      logger.info('[StreamingOrchestrator] Restoring party connection after reconnect:', partyId);
-      this.startSourceSubscriptions(partyId);
-      this.syncLiveSession(this.config.broadcastSource.isLiveSessionActive());
-      this.publishFullStateNow(partyId);
-      this.config.onConnectionStateChange?.(signalR.HubConnectionState.Connected);
-    } catch (error) {
-      logger.error('[StreamingOrchestrator] Failed to restore after reconnect:', error);
-    }
+    logger.info('[StreamingOrchestrator] Restoring party connection after reconnect:', partyId);
+    this.startSourceSubscriptions(partyId);
+    this.syncLiveSession(this.config.broadcastSource.isLiveSessionActive());
+    this.publishFullStateNow(partyId);
+    this.config.onConnectionStateChange?.(signalR.HubConnectionState.Connected);
+    return Promise.resolve();
   }
 
   private startSourceSubscriptions(partyId: string): void {
@@ -523,7 +521,7 @@ export class StreamingOrchestrator {
       }
 
       const position = source.getPosition();
-      signalRService.updatePlaybackPosition(partyId, trackId, position);
+      void signalRService.updatePlaybackPosition(partyId, trackId, position);
     }, POSITION_TICK_MS);
   }
 

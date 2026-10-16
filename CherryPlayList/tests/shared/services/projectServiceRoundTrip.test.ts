@@ -1,6 +1,9 @@
 import type { ProjectItem } from '../../../src/core/types/project';
 import { projectService } from '../../../src/shared/services/projectService';
-import { ensureProjectStore, removeProjectStore } from '../../../src/shared/stores/projectStoreFactory';
+import {
+  ensureProjectStore,
+  removeProjectStore,
+} from '../../../src/shared/stores/projectStoreFactory';
 
 const mockInvoke = jest.fn();
 const mockStatFile = jest.fn();
@@ -31,9 +34,7 @@ describe('project service serialization', () => {
         {
           id: 'group-nested',
           name: 'Indie',
-          items: [
-            { id: 'track-1', path: 'D:/music/song.mp3', name: 'Song', duration: 185 },
-          ],
+          items: [{ id: 'track-1', path: 'D:/music/song.mp3', name: 'Song', duration: 185 }],
         },
       ],
     },
@@ -100,14 +101,31 @@ describe('project service serialization', () => {
     const loaded = await projectService.loadProjectFromData(file, 'D:\\parties\\set.cherry');
 
     expect(loaded.items).toEqual([
-      { id: 'track-present', path: 'D:\\parties\\tracks\\present.mp3', name: 'Present', duration: 30, isMissing: false },
-      { id: 'track-missing', path: 'D:\\parties\\tracks\\missing.mp3', name: 'Missing', duration: 20, isMissing: true },
+      {
+        id: 'track-present',
+        path: 'D:\\parties\\tracks\\present.mp3',
+        name: 'Present',
+        duration: 30,
+        isMissing: false,
+      },
+      {
+        id: 'track-missing',
+        path: 'D:\\parties\\tracks\\missing.mp3',
+        name: 'Missing',
+        duration: 20,
+        isMissing: true,
+      },
     ]);
   });
 
   it('rejects corrupt project data before it can be applied to the open project', async () => {
     const store = ensureProjectStore({ workspaceId, initialName: 'Playlist' });
-    const currentTrack = { id: 'current-track', path: 'D:/music/current.mp3', name: 'Current', duration: 50 };
+    const currentTrack = {
+      id: 'current-track',
+      path: 'D:/music/current.mp3',
+      name: 'Current',
+      duration: 50,
+    };
     store.getState().loadData({
       name: 'Current project',
       items: [currentTrack],
@@ -115,9 +133,9 @@ describe('project service serialization', () => {
     });
     store.getState().markAsDirty();
 
-    await expect(projectService.loadProjectFromData({ version: 'unsupported' }, '')).rejects.toThrow(
-      'Invalid project file',
-    );
+    await expect(
+      projectService.loadProjectFromData({ version: 'unsupported' }, ''),
+    ).rejects.toThrow('Invalid project file');
 
     expect(store.getState().name).toBe('Current project');
     expect(store.getState().items).toEqual([currentTrack]);

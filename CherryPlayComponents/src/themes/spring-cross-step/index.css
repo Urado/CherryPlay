@@ -1,8 +1,8 @@
-@import './layout.css';
-@import './playlist.css';
-@import './playlist-item.css';
-@import './player.css';
-@import './party-info.css';
+@import url('./layout.css');
+@import url('./playlist.css');
+@import url('./playlist-item.css');
+@import url('./player.css');
+@import url('./party-info.css');
 
 [data-theme='spring-cross-step'] {
   --bg-primary: #f9fcf7;
@@ -22,6 +22,7 @@
   --canceled-track: color-mix(in srgb, var(--text-primary) 52%, var(--flower-white) 48%);
   --canceled-track-text: color-mix(in srgb, var(--text-primary) 40%, transparent);
   --canceled-track-icon: var(--flower-white);
+
   background: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -58,6 +59,7 @@
     opacity: 0.6;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.2);
@@ -68,12 +70,15 @@
   0% {
     transform: translateY(0) rotate(0deg);
   }
+
   25% {
     transform: translateY(-8px) rotate(5deg);
   }
+
   75% {
     transform: translateY(4px) rotate(-3deg);
   }
+
   100% {
     transform: translateY(0) rotate(0deg);
   }
@@ -84,9 +89,11 @@
     transform: translate3d(0, -20px, 0) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 0.4;
   }
+
   12.5% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.6),
@@ -95,6 +102,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.125turn));
   }
+
   18% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.8),
@@ -103,6 +111,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.18turn));
   }
+
   21% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.9),
@@ -111,6 +120,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.21turn));
   }
+
   25% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px)),
@@ -120,6 +130,7 @@
       rotate(calc(var(--petal-rotation-turns, 2) * 0.25turn));
     opacity: 0.7;
   }
+
   29% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.96),
@@ -128,6 +139,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.29turn));
   }
+
   32% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.85),
@@ -136,6 +148,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.32turn));
   }
+
   37.5% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * 0.65),
@@ -144,10 +157,12 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.375turn));
   }
+
   50% {
     transform: translate3d(0, 50vh, 0) rotate(calc(var(--petal-rotation-turns, 2) * 0.5turn));
     opacity: 0.5;
   }
+
   62.5% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
@@ -156,6 +171,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.625turn));
   }
+
   68% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
@@ -164,6 +180,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.68turn));
   }
+
   72% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
@@ -172,6 +189,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.72turn));
   }
+
   75% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -1),
@@ -181,6 +199,7 @@
       rotate(calc(var(--petal-rotation-turns, 2) * 0.75turn));
     opacity: 0.6;
   }
+
   78% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.96),
@@ -189,6 +208,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.78turn));
   }
+
   82% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.85),
@@ -197,6 +217,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.82turn));
   }
+
   87.5% {
     transform: translate3d(
         calc(var(--petal-sway-direction, 1) * var(--petal-sway-amplitude, 96px) * -0.65),
@@ -205,6 +226,7 @@
       )
       rotate(calc(var(--petal-rotation-turns, 2) * 0.875turn));
   }
+
   100% {
     transform: translate3d(0, 110vh, 0) rotate(calc(var(--petal-rotation-turns, 2) * 1turn));
     opacity: 0;

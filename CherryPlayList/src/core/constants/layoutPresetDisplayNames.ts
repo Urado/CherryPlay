@@ -17,6 +17,6 @@ export const LAYOUT_PRESET_DESCRIPTIONS_RU: Partial<Record<LayoutPreset, string>
   party: 'Вечеринка для гостей: настройка и превью страницы',
 };
 
-export function getLayoutPresetDescriptionRu(preset: LayoutPreset): string | undefined {
+export const getLayoutPresetDescriptionRu = (preset: LayoutPreset): string | undefined => {
   return LAYOUT_PRESET_DESCRIPTIONS_RU[preset];
-}
+};

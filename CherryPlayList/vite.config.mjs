@@ -8,7 +8,7 @@ import eslint from 'vite-plugin-eslint';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = realpathSync.native(__dirname);
-const pkg = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf-8'));
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 const isDev = process.env.NODE_ENV === 'development';
 const shouldLint = process.env.SKIP_LINT !== 'true' && !isDev;
 
@@ -23,8 +23,11 @@ const eslintPlugin = eslint({
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, projectRoot, 'VITE_');
-  const serverConfigFile = mode === 'production' ? 'serverConfig.production.json' : 'serverConfig.development.json';
-  const serverConfig = JSON.parse(readFileSync(path.join(projectRoot, serverConfigFile), 'utf-8'));
+  const serverConfigText =
+    mode === 'production'
+      ? readFileSync('./serverConfig.production.json', 'utf-8')
+      : readFileSync('./serverConfig.development.json', 'utf-8');
+  const serverConfig = JSON.parse(serverConfigText);
   const webBaseUrl = env.VITE_WEB_BASE_URL?.trim() || serverConfig.webBaseUrl;
 
   return {

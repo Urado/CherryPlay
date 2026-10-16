@@ -1,4 +1,4 @@
-import { useLayoutStore } from '../../src/state/layoutStore';
+import { useLayoutStore } from '../../src/shared/stores/layoutStore';
 import { ContainerZone, Layout, WorkspaceZone } from '../../src/types/layout';
 
 describe('layoutStore basic behaviors', () => {

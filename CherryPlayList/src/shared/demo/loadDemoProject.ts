@@ -4,12 +4,12 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useUIStore } from '../stores/uiStore';
 export const DEMO_SAMPLE_PROJECT_URL = '/demo/sample.cherry';
 
-function demoLoadErrorMessage(error: unknown): string {
+const demoLoadErrorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
-}
+};
 export const DEMO_SAMPLE_PROJECT_PATH = '/demo/sample.cherry';
 
-export async function loadDemoProject(): Promise<void> {
+export const loadDemoProject = async (): Promise<void> => {
   const response = await fetch(DEMO_SAMPLE_PROJECT_URL);
   if (!response.ok) {
     throw new Error(`Failed to fetch demo project (${response.status})`);
@@ -25,9 +25,9 @@ export async function loadDemoProject(): Promise<void> {
   });
 
   useSettingsStore.getState().setLastOpenedPlaylist(DEMO_SAMPLE_PROJECT_PATH);
-}
+};
 
-export async function loadDemoProjectSafe(): Promise<boolean> {
+export const loadDemoProjectSafe = async (): Promise<boolean> => {
   try {
     await loadDemoProject();
     return true;
@@ -38,8 +38,8 @@ export async function loadDemoProjectSafe(): Promise<boolean> {
     });
     return false;
   }
-}
+};
 
-export function shouldAutoLoadDemoProject(): boolean {
+export const shouldAutoLoadDemoProject = (): boolean => {
   return import.meta.env.VITE_LOAD_DEMO_PROJECT === '1';
-}
+};

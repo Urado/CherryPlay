@@ -21,7 +21,7 @@ const ClientOutdatedOverlay = () => {
     refreshButtonRef.current?.focus();
   }, []);
 
-  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+  const trapFocus = (event: KeyboardEvent<HTMLDialogElement>) => {
     if (event.key !== 'Tab') {
       return;
     }
@@ -31,13 +31,12 @@ const ClientOutdatedOverlay = () => {
   };
 
   return (
-    <div
+    <dialog
+      open
       className="client-outdated-backdrop"
-      role="dialog"
       aria-modal="true"
       aria-labelledby="client-outdated-title"
       aria-describedby="client-outdated-description"
-      tabIndex={-1}
       onKeyDown={trapFocus}
     >
       <div className="client-outdated-modal">
@@ -47,7 +46,7 @@ const ClientOutdatedOverlay = () => {
           Обновить страницу
         </button>
       </div>
-    </div>
+    </dialog>
   );
 };
 
@@ -81,6 +80,6 @@ export const ClientOutdatedProvider = ({ children }: { children: ReactNode }) =>
   );
 };
 
-export function useClientOutdated(): boolean {
+export const useClientOutdated = (): boolean => {
   return useContext(ClientOutdatedContext);
-}
+};

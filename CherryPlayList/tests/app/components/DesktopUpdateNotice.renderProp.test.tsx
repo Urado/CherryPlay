@@ -57,9 +57,7 @@ describe('DesktopUpdateNotice render prop and download errors', () => {
     );
 
     expect(await screen.findByText('Обновление 0.8.0')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Скачать обновление 0.8.0' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Скачать обновление 0.8.0' })).toBeInTheDocument();
     expect(screen.getByTestId('header-slot')).toContainElement(
       screen.getByText('Обновление 0.8.0'),
     );

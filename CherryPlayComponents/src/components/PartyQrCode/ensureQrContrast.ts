@@ -1,8 +1,18 @@
 const parseHex = (value: string): [number, number, number] | null => {
   const normalized = value.trim().replace(/^#/, '');
   if (!/^(?:[\da-f]{3}|[\da-f]{6})$/i.test(normalized)) return null;
-  const expanded = normalized.length === 3 ? normalized.split('').map((char) => char + char).join('') : normalized;
-  return [0, 2, 4].map((offset) => Number.parseInt(expanded.slice(offset, offset + 2), 16)) as [number, number, number];
+  const expanded =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : normalized;
+  return [0, 2, 4].map((offset) => Number.parseInt(expanded.slice(offset, offset + 2), 16)) as [
+    number,
+    number,
+    number,
+  ];
 };
 
 const channelLuminance = (channel: number) => {
@@ -11,12 +21,15 @@ const channelLuminance = (channel: number) => {
 };
 
 const luminance = ([red, green, blue]: [number, number, number]) =>
-  0.2126 * channelLuminance(red) + 0.7152 * channelLuminance(green) + 0.0722 * channelLuminance(blue);
+  0.2126 * channelLuminance(red) +
+  0.7152 * channelLuminance(green) +
+  0.0722 * channelLuminance(blue);
 
 const toHex = ([red, green, blue]: [number, number, number]) =>
   `#${[red, green, blue].map((channel) => Math.round(channel).toString(16).padStart(2, '0')).join('')}`;
 
-const ratio = (first: number, second: number) => (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+const ratio = (first: number, second: number) =>
+  (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 
 export const ensureQrContrast = (foreground: string, background: string) => {
   const parsedBackground = parseHex(background) ?? [255, 255, 255];
@@ -34,7 +47,9 @@ export const ensureQrContrast = (foreground: string, background: string) => {
 
   for (let step = 1; step <= 100; step += 1) {
     const amount = step / 100;
-    const adjusted = parsedForeground.map((channel) => channel + (targetLuminance * 255 - channel) * amount) as [number, number, number];
+    const adjusted = parsedForeground.map(
+      (channel) => channel + (targetLuminance * 255 - channel) * amount,
+    ) as [number, number, number];
     if (ratio(backgroundLuminance, luminance(adjusted)) >= 7) {
       return { foreground: toHex(adjusted), background: toHex(parsedBackground) };
     }

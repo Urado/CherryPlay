@@ -1,14 +1,14 @@
 import * as signalR from '@microsoft/signalr';
 
-const mockCheckPartyExists = jest.fn();
-const mockSetPartyReconnectHandler = jest.fn();
-const mockOnReconnectionFailed = jest.fn();
-const mockIsServiceConnected = jest.fn();
-const mockConnect = jest.fn();
-const mockJoinPartyAsOrganizer = jest.fn();
-const mockDisconnect = jest.fn();
-const mockEndSession = jest.fn();
-const mockResetPlaybackState = jest.fn();
+const mockCheckPartyExists = jest.fn<Promise<boolean>, unknown[]>();
+const mockSetPartyReconnectHandler = jest.fn<void, unknown[]>();
+const mockOnReconnectionFailed = jest.fn<void, unknown[]>();
+const mockIsServiceConnected = jest.fn<boolean, unknown[]>();
+const mockConnect = jest.fn<Promise<void>, unknown[]>();
+const mockJoinPartyAsOrganizer = jest.fn<Promise<void>, unknown[]>();
+const mockDisconnect = jest.fn<Promise<void>, unknown[]>();
+const mockEndSession = jest.fn<Promise<void>, unknown[]>();
+const mockResetPlaybackState = jest.fn<Promise<void>, unknown[]>();
 
 jest.mock('../../../src/shared/services/partyService', () => ({
   partyService: {
@@ -68,7 +68,7 @@ import { StreamingOrchestrator } from '../../../src/shared/streaming/streamingOr
 const PARTY_ID = '123e4567-e89b-12d3-a456-426614174000';
 const RECONNECT_DELAY_MS = 10_000;
 
-function createBroadcastSource(): PlaybackBroadcastSource {
+const createBroadcastSource = (): PlaybackBroadcastSource => {
   return {
     sourceId: 'cherryPlayPlayer',
     subscribe: jest.fn(() => () => {}),
@@ -84,13 +84,13 @@ function createBroadcastSource(): PlaybackBroadcastSource {
     getCurrentTrackId: () => null,
     getPosition: () => 0,
   };
-}
+};
 
-async function flushAsyncWork(): Promise<void> {
+const flushAsyncWork = async (): Promise<void> => {
   for (let i = 0; i < 20; i++) {
     await Promise.resolve();
   }
-}
+};
 
 describe('StreamingOrchestrator existence check and durable reconnect', () => {
   let exhaustionHandler: (() => void) | undefined;
@@ -112,7 +112,7 @@ describe('StreamingOrchestrator existence check and durable reconnect', () => {
     mockResetPlaybackState.mockResolvedValue(undefined);
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     jest.useRealTimers();
   });
 

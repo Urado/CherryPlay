@@ -66,16 +66,16 @@ const disabledSettings: LoudnessSettings = {
   loudnessNormalizationEnabled: false,
 };
 
-function createTrack(overrides: Partial<Track> = {}): Track {
+const createTrack = (overrides: Partial<Track> = {}): Track => {
   return {
     id: 'track-1',
     path: 'D:/Music/track.flac',
     name: 'Track',
     ...overrides,
   };
-}
+};
 
-function createOkLoudness(overrides: Partial<TrackLoudness> = {}): TrackLoudness {
+const createOkLoudness = (overrides: Partial<TrackLoudness> = {}): TrackLoudness => {
   return {
     status: 'ok',
     integratedLufs: -20,
@@ -85,7 +85,7 @@ function createOkLoudness(overrides: Partial<TrackLoudness> = {}): TrackLoudness
     algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
     ...overrides,
   };
-}
+};
 
 describe('normalizeLoadedLoudness', () => {
   it('drops persisted pending so tracks are rescanned', () => {
@@ -252,7 +252,7 @@ describe('createLoudnessService', () => {
     fileMtime: 2000,
   };
 
-  function createService(overrides: Partial<Parameters<typeof createLoudnessService>[0]> = {}) {
+  const createService = (overrides: Partial<Parameters<typeof createLoudnessService>[0]> = {}) => {
     const loudnessByTrackId = new Map<string, TrackLoudness>();
     const updateTrackLoudness = jest.fn((trackId: string, loudness: TrackLoudness) => {
       loudnessByTrackId.set(trackId, loudness);
@@ -271,7 +271,7 @@ describe('createLoudnessService', () => {
     });
 
     return { service, updateTrackLoudness, analyzeLoudness, statAudioFile, loudnessByTrackId };
-  }
+  };
 
   it('scanTrack is a no-op when normalization is disabled', async () => {
     const track = createTrack({ loudness: createOkLoudness() });
@@ -314,9 +314,9 @@ describe('createLoudnessService', () => {
     const cancelToken = { cancelled: false };
     const { service, updateTrackLoudness, analyzeLoudness } = createService();
 
-    analyzeLoudness.mockImplementation(async () => {
+    analyzeLoudness.mockImplementation(() => {
       cancelToken.cancelled = true;
-      return okResult;
+      return Promise.resolve(okResult);
     });
 
     await service.scanTracks([track], undefined, cancelToken);

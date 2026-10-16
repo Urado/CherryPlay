@@ -13,7 +13,9 @@ export const ForgotPasswordPage = () => {
       <div className="login-page-form">
         <ForgotPasswordForm
           authService={authService}
-          onBackToLogin={() => navigate(ROUTES.LOGIN)}
+          onBackToLogin={() => {
+            void navigate(ROUTES.LOGIN);
+          }}
         />
       </div>
     </div>

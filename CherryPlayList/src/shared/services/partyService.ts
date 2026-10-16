@@ -39,9 +39,9 @@ export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
 
 export type PartyLifecycleState = (typeof PARTY_LIFECYCLE_STATES)[number];
 
-export function isPartyLifecycleState(value: unknown): value is PartyLifecycleState {
+export const isPartyLifecycleState = (value: unknown): value is PartyLifecycleState => {
   return typeof value === 'string' && (PARTY_LIFECYCLE_STATES as readonly string[]).includes(value);
-}
+};
 
 export interface TransitionPartyLifecycleDto {
   partyLifecycleState: PartyLifecycleState;

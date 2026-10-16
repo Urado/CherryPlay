@@ -1,4 +1,4 @@
-export function formatConsentDecisionLabel(decision: string | undefined | null): string {
+export const formatConsentDecisionLabel = (decision: string | undefined | null): string => {
   if (decision === 'grant') {
     return 'принято';
   }
@@ -6,4 +6,4 @@ export function formatConsentDecisionLabel(decision: string | undefined | null):
     return 'отозвано';
   }
   return 'нет записи';
-}
+};

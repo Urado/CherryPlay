@@ -34,10 +34,10 @@ const API_URL = 'http://localhost:5000/api';
 const PARTY_ID = '123e4567-e89b-12d3-a456-426614174000';
 const ACCESS_TOKEN = 'test-access-token';
 
-function mockFetchResponse(
+const mockFetchResponse = (
   body: unknown,
   init: { status?: number; ok?: boolean; statusText?: string } = {},
-): Response {
+): Response => {
   const status = init.status ?? 200;
   const ok = init.ok ?? (status >= 200 && status < 300);
   const serialized = typeof body === 'string' ? body : JSON.stringify(body);
@@ -50,10 +50,10 @@ function mockFetchResponse(
     clone() {
       return this;
     },
-    json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
-    text: async () => serialized,
+    json: () => Promise.resolve(typeof body === 'string' ? (JSON.parse(body) as unknown) : body),
+    text: () => Promise.resolve(serialized),
   } as Response;
-}
+};
 
 describe('partyService.checkPartyExists', () => {
   beforeEach(() => {

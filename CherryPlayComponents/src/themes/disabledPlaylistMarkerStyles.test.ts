@@ -29,10 +29,7 @@ describe('disabled playlist marker theme styles', () => {
   it.each(Object.entries(stylesByTheme))(
     '%s styles disabled tracks for the theme',
     (theme, styles) => {
-      const parentRule = getRule(
-        styles,
-        `[data-theme='${theme}'] .party-playlist-item--disabled`,
-      );
+      const parentRule = getRule(styles, `[data-theme='${theme}'] .party-playlist-item--disabled`);
 
       expect(parentRule).toBeDefined();
 

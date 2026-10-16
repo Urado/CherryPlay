@@ -15,7 +15,7 @@ export interface UseAudioPathDurationsOptions {
   batchSize?: number;
 }
 
-export function useAudioPathDurations({
+export const useAudioPathDurations = ({
   paths,
   requestDuration,
   onResolved,
@@ -23,7 +23,7 @@ export function useAudioPathDurations({
   enabled = true,
   shouldApply,
   batchSize = DEFAULT_BATCH_SIZE,
-}: UseAudioPathDurationsOptions) {
+}: UseAudioPathDurationsOptions) => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const pathsSnapshotRef = useRef(paths);
 
@@ -86,7 +86,7 @@ export function useAudioPathDurations({
   }, []);
 
   return { loadPaths };
-}
+};
 
 interface UseTrackDurationOptions {
   tracks: Track[];
@@ -96,11 +96,10 @@ interface UseTrackDurationOptions {
   onDurationResolved: (trackId: string, duration: number) => void;
   onError?: (path: string, error: Error) => void;
   batchSize?: number;
-  /** When false, skips IPC duration requests (e.g. web demo). */
   enabled?: boolean;
 }
 
-export function useTrackDuration({
+export const useTrackDuration = ({
   tracks,
   isAudioFile,
   requestDuration,
@@ -109,7 +108,7 @@ export function useTrackDuration({
   onError,
   batchSize = DEFAULT_BATCH_SIZE,
   enabled = true,
-}: UseTrackDurationOptions) {
+}: UseTrackDurationOptions) => {
   const tracksRef = useRef(tracks);
   const resolveRef = useRef(resolveTrackById);
 
@@ -176,4 +175,4 @@ export function useTrackDuration({
   return {
     loadDurationsForTracks,
   };
-}
+};

@@ -28,6 +28,8 @@ import {
 } from '../../src/shared/stores/layoutStore';
 import { useSettingsStore } from '../../src/shared/stores/settingsStore';
 
+const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
 const resetStores = () => {
   useSettingsStore.setState({
     exportPath: '',
@@ -47,14 +49,14 @@ const resetStores = () => {
   const defaults = createDefaultWorkspacePersistSlice();
   useLayoutStore.setState({
     ...defaults,
-    baselineLayout: JSON.parse(JSON.stringify(defaults.layout)),
+    baselineLayout: clone(defaults.layout),
     isLayoutEditMode: false,
     openLayoutEditPickerKey: null,
   });
 };
 
-function createUserWorkspace(id: string, name: string): UserWorkspace {
-  const layout = JSON.parse(JSON.stringify(useLayoutStore.getState().layout));
+const createUserWorkspace = (id: string, name: string): UserWorkspace => {
+  const layout = clone(useLayoutStore.getState().layout);
   return {
     id,
     name,
@@ -62,7 +64,7 @@ function createUserWorkspace(id: string, name: string): UserWorkspace {
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   };
-}
+};
 
 beforeEach(() => {
   resetStores();

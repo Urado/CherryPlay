@@ -98,9 +98,7 @@ jest.mock('../../src/shared/services/ipcService', () => ({
   },
 }));
 
-const mockedGetAudioFileUrl = ipcService.getAudioFileUrl as jest.MockedFunction<
-  typeof ipcService.getAudioFileUrl
->;
+const mockedGetAudioFileUrl = jest.spyOn(ipcService, 'getAudioFileUrl');
 
 let usePlayerAudioStore: typeof import('../../src/shared/stores/playerAudioStore').usePlayerAudioStore;
 

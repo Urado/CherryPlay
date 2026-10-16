@@ -1,6 +1,6 @@
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 
-export function sanitizeExternalUrl(value: string | null | undefined): string | null {
+export const sanitizeExternalUrl = (value: string | null | undefined): string | null => {
   if (!value) return null;
 
   const trimmed = value.trim();
@@ -15,4 +15,4 @@ export function sanitizeExternalUrl(value: string | null | undefined): string | 
   } catch {
     return null;
   }
-}
+};

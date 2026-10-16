@@ -80,7 +80,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       {displayError && !successMessage && <ErrorMessage message={displayError} />}
 
       {!successMessage && (
-        <form onSubmit={handleSubmit} className="password-auth-form-content">
+        <form onSubmit={(event) => void handleSubmit(event)} className="password-auth-form-content">
           <FormInput
             label="Email"
             type="email"

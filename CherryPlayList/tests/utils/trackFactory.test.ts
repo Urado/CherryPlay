@@ -1,4 +1,4 @@
-import { createTrackDraft, createTrackDrafts } from '../../src/utils/trackFactory';
+import { createTrackDraft, createTrackDrafts } from '../../src/shared/utils/trackFactory';
 
 describe('trackFactory', () => {
   it('creates draft with filename extracted from path', () => {

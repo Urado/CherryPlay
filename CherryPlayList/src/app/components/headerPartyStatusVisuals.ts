@@ -27,7 +27,7 @@ const EXTRA_PRIMARY_TITLES: Record<string, string> = {
 
 const UNREACHABLE_TITLE = 'Нет связи с сервером';
 
-export function resolveHeaderPartyStatusTooltip(label: string): string | null {
+export const resolveHeaderPartyStatusTooltip = (label: string): string | null => {
   if (label === HEADER_PARTY_STATUS_UNREACHABLE_LABEL) {
     return UNREACHABLE_TITLE;
   }
@@ -38,9 +38,9 @@ export function resolveHeaderPartyStatusTooltip(label: string): string | null {
     return EXTRA_PRIMARY_TITLES[label];
   }
   return null;
-}
+};
 
-export function resolveHeaderPartyControlActiveStageIndex(primaryLabel: string): number {
+export const resolveHeaderPartyControlActiveStageIndex = (primaryLabel: string): number => {
   switch (primaryLabel) {
     case 'Не создана':
       return 0;
@@ -56,9 +56,9 @@ export function resolveHeaderPartyControlActiveStageIndex(primaryLabel: string):
     default:
       return 0;
   }
-}
+};
 
-export function resolveHeaderPartyControlCtaLabel(primaryLabel: string): string {
+export const resolveHeaderPartyControlCtaLabel = (primaryLabel: string): string => {
   switch (primaryLabel) {
     case 'Не создана':
       return 'Создать';
@@ -76,4 +76,4 @@ export function resolveHeaderPartyControlCtaLabel(primaryLabel: string): string 
     default:
       return 'Создать';
   }
-}
+};

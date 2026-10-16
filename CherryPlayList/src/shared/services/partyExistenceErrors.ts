@@ -1,7 +1,6 @@
 import { isAuthError } from '../utils/authErrorHandler';
 
-/** Auth / invalid-id failures that must not trigger party reconnect loops. */
-export function isDefinitivePartyExistenceError(error: unknown): boolean {
+export const isDefinitivePartyExistenceError = (error: unknown): boolean => {
   if (isAuthError(error)) {
     return true;
   }
@@ -10,7 +9,6 @@ export function isDefinitivePartyExistenceError(error: unknown): boolean {
   }
   const message = error.message;
   return (
-    message.includes('необходимо войти') ||
-    message.includes('Некорректный идентификатор вечеринки')
+    message.includes('необходимо войти') || message.includes('Некорректный идентификатор вечеринки')
   );
-}
+};

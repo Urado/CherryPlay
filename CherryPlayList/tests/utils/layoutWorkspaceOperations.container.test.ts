@@ -8,7 +8,7 @@ import {
   collectWorkspaceZones,
 } from '../../src/shared/utils/layoutWorkspaceOperations';
 
-function createHorizontalTwoZoneLayout(): { layout: Layout; containerId: string } {
+const createHorizontalTwoZoneLayout = (): { layout: Layout; containerId: string } => {
   const containerId = 'root-horizontal';
   return {
     containerId,
@@ -38,7 +38,7 @@ function createHorizontalTwoZoneLayout(): { layout: Layout; containerId: string 
       },
     },
   };
-}
+};
 
 describe('addAdjacentWorkspaceToContainerLayout', () => {
   it('wraps a horizontal row with a new zone above', () => {

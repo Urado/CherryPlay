@@ -51,7 +51,12 @@ const resolveInsertSlot = (
   items: ProjectItem[],
   getItemPath: (id: string) => string[],
   activeTrackId: string | null,
-): { parentId: string | null; parentPath: string[]; insertIndex: number; anchorKey: string } | null => {
+): {
+  parentId: string | null;
+  parentPath: string[];
+  insertIndex: number;
+  anchorKey: string;
+} | null => {
   const activePath = activeTrackId ? getItemPath(activeTrackId) : [];
   const activePathExists = Boolean(activeTrackId && activePath.length > 0);
   const anchorKey = activePath[activePath.length - 1] ?? 'queue-start';
@@ -134,7 +139,7 @@ const cloneItemTreeWithNewIds = (
   return duplicate;
 };
 
-export function addPlayedTrackNext(trackId: string, activeTrackId: string | null): boolean {
+export const addPlayedTrackNext = (trackId: string, activeTrackId: string | null): boolean => {
   const store = useProjectStore.getState();
   const projectKey = `${store.name}:${store.meta.filePath ?? ''}:${store.sessionState.sessionStartTime ?? ''}`;
   resetInsertCursorIfProjectChanged(projectKey);
@@ -186,9 +191,9 @@ export function addPlayedTrackNext(trackId: string, activeTrackId: string | null
   lastAnchorKey = slot.anchorKey;
   lastInsertedItemId = duplicate.id;
   return true;
-}
+};
 
-export function addPlayedGroupNext(groupId: string, activeTrackId: string | null): boolean {
+export const addPlayedGroupNext = (groupId: string, activeTrackId: string | null): boolean => {
   const store = useProjectStore.getState();
   const projectKey = `${store.name}:${store.meta.filePath ?? ''}:${store.sessionState.sessionStartTime ?? ''}`;
   resetInsertCursorIfProjectChanged(projectKey);
@@ -247,4 +252,4 @@ export function addPlayedGroupNext(groupId: string, activeTrackId: string | null
   lastAnchorKey = slot.anchorKey;
   lastInsertedItemId = duplicate.id;
   return true;
-}
+};

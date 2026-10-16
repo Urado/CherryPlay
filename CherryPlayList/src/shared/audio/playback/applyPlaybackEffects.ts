@@ -11,12 +11,11 @@ import { getEffectiveCompressionStrength } from './compressionStrength';
 import { DEFAULT_EQUALIZER_BANDS, DEFAULT_TRACK_GAIN, isPlaybackEffects } from './effects';
 import type { PlaybackEngine } from './PlaybackEngine';
 
-/** Applies per-track loudness gain and compression; does not reset EQ bands. */
-export function applyLoudnessPlaybackEffects(
+export const applyLoudnessPlaybackEffects = (
   engine: PlaybackEngine,
   track: Track,
   settings: LoudnessSettings,
-): void {
+): void => {
   if (!isPlaybackEffects(engine)) {
     return;
   }
@@ -30,23 +29,21 @@ export function applyLoudnessPlaybackEffects(
     engine.setAutoGainEnabled(false);
     engine.setCompressionStrength(0);
   }
-}
+};
 
-/** Track-load preset: loudness effects plus default EQ bands and disabled autogain. */
-export function applyPlaybackEffects(
+export const applyPlaybackEffects = (
   engine: PlaybackEngine,
   track: Track,
   settings: LoudnessSettings,
-): void {
+): void => {
   applyLoudnessPlaybackEffects(engine, track, settings);
 
   if (isPlaybackEffects(engine)) {
     engine.setEqualizerBands(DEFAULT_EQUALIZER_BANDS);
   }
-}
+};
 
-/** Legacy helper — applies unity gain with loudness normalization disabled. */
-export function applyDefaultPlaybackEffects(engine: PlaybackEngine): void {
+export const applyDefaultPlaybackEffects = (engine: PlaybackEngine): void => {
   applyPlaybackEffects(
     engine,
     { id: '', path: '', name: '' },
@@ -57,4 +54,4 @@ export function applyDefaultPlaybackEffects(engine: PlaybackEngine): void {
       loudnessQuietGapRangeLu: DEFAULT_LOUDNESS_QUIET_GAP_RANGE_LU,
     },
   );
-}
+};

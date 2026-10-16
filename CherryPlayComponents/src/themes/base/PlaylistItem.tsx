@@ -13,7 +13,7 @@ const PlayIcon = (): React.ReactElement => {
       <path d="M8 5v14l11-7z" />
     </svg>
   );
-}
+};
 
 const CheckIcon = (): React.ReactElement => {
   return (
@@ -31,7 +31,7 @@ const CheckIcon = (): React.ReactElement => {
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
-}
+};
 
 const StopIcon = (): React.ReactElement => {
   return (
@@ -121,7 +121,10 @@ export const PlaylistItem: React.FC<BasePlaylistItemProps> = ({
             </div>
           </div>
         ) : (
-          <div className="party-playlist-item-state party-playlist-item-state--placeholder" aria-hidden />
+          <div
+            className="party-playlist-item-state party-playlist-item-state--placeholder"
+            aria-hidden
+          />
         )}
         <div className="party-playlist-item-info">
           <div

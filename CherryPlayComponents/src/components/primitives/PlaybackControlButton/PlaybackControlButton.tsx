@@ -18,16 +18,16 @@ const DEFAULT_ARIA_LABELS: Record<PlaybackControl, string> = {
   error: 'Playback error',
 };
 
-function isEmphasisControl(control: PlaybackControl): boolean {
+const isEmphasisControl = (control: PlaybackControl): boolean => {
   return control === 'play' || control === 'pause' || control === 'error';
-}
+};
 
-function mapIconSize(size: PlaybackControlSize, emphasis: boolean): IconSize {
+const mapIconSize = (size: PlaybackControlSize, emphasis: boolean): IconSize => {
   if (size === 'sm') {
     return 'sm';
   }
   return emphasis ? 'lg' : 'md';
-}
+};
 
 export interface PlaybackControlButtonProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,

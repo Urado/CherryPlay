@@ -1,4 +1,3 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';

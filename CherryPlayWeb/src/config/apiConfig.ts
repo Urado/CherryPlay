@@ -69,7 +69,7 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-export function getApiUrl(endpoint: string): string {
+export const getApiUrl = (endpoint: string): string => {
   if (!API_BASE_URL || API_BASE_URL.trim() === '') {
     return endpoint;
   }
@@ -78,11 +78,11 @@ export function getApiUrl(endpoint: string): string {
     console.log('[apiConfig] getApiUrl:', { endpoint, API_BASE_URL, fullUrl });
   }
   return fullUrl;
-}
+};
 
-export function getSignalRUrl(hubPath: string): string {
+export const getSignalRUrl = (hubPath: string): string => {
   if (!SIGNALR_BASE_URL) {
     return hubPath;
   }
   return `${SIGNALR_BASE_URL}${hubPath}`;
-}
+};

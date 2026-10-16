@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 
-import { useSettingsStore } from '../../src/state/settingsStore';
+import { useSettingsStore } from '../../src/shared/stores/settingsStore';
 
 const resetStore = () => {
   useSettingsStore.setState({

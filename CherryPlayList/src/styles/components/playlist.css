@@ -291,8 +291,6 @@
 .playlist-tracks {
   flex: 1;
   overflow: auto;
-  overflow-x: auto;
-  overflow-y: auto;
   padding: var(--spacing-sm);
   min-width: 0;
 }
@@ -510,10 +508,14 @@
     color 0.2s;
 }
 
-.playlist-item-action:not(.cp-button--borderless):not(.cp-button--no-hover):not(
+.playlist-item-action:not(
+    .cp-button--borderless,
+    .cp-button--no-hover,
     .cp-button--tone-danger
   ):hover,
-.cp-button.playlist-item-action:not(.cp-button--borderless):not(.cp-button--no-hover):not(
+.cp-button.playlist-item-action:not(
+    .cp-button--borderless,
+    .cp-button--no-hover,
     .cp-button--tone-danger
   ):hover:not(:disabled) {
   background-color: var(--bg-hover);
@@ -641,7 +643,8 @@
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--bg-secondary);
-  padding: var(--playlist-hour-divider-label-pad-y, 2px) var(--playlist-hour-divider-label-pad-x, 10px);
+  padding: var(--playlist-hour-divider-label-pad-y, 2px)
+    var(--playlist-hour-divider-label-pad-x, 10px);
   color: var(--text-primary);
   font-size: var(--playlist-hour-divider-label-font, var(--font-size-secondary));
   font-weight: 500;

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -132,9 +132,7 @@ const renderRoute = (shortCode: string) =>
   );
 
 describe('PartyQrPage', () => {
-  afterEach(() => {
-    cleanup();
-  });
+  afterEach(() => {});
 
   beforeEach(() => {
     mocks.getPublicParty.mockReset();
@@ -157,7 +155,9 @@ describe('PartyQrPage', () => {
 
     expect(qr.getAttribute('data-value')).toBe(`${window.location.origin}/party/night-2026`);
     expect(qr.getAttribute('data-title')).toBe('Theme Party QR');
-    expect(screen.getByRole('link', { name: '← К вечеринке' }).getAttribute('href')).toBe('/party/night-2026');
+    expect(screen.getByRole('link', { name: '← К вечеринке' }).getAttribute('href')).toBe(
+      '/party/night-2026',
+    );
     expect(mocks.resolvePartyQrStyle).toHaveBeenCalledWith('basic', party.customizationSettings);
     expect(ROUTES.PARTY_QR('night-2026')).toBe('/party/night-2026/qr');
   });
@@ -180,6 +180,8 @@ describe('PartyQrPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: 'QR-код' }).getAttribute('href')).toBe('/party/night-2026/qr');
+    expect(screen.getByRole('link', { name: 'QR-код' }).getAttribute('href')).toBe(
+      '/party/night-2026/qr',
+    );
   });
 });

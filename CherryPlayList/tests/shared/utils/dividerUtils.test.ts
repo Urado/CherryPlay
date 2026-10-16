@@ -12,18 +12,18 @@ import {
   type DividerCalculationContext,
 } from '../../../src/shared/utils/dividerUtils';
 
-function makeTrack(id: string, duration: number): Track {
+const makeTrack = (id: string, duration: number): Track => {
   return {
     id,
     name: id,
     path: `/t/${id}.mp3`,
     duration,
   };
-}
+};
 
-function baseContext(
+const baseContext = (
   overrides: Partial<DividerCalculationContext> = {},
-): DividerCalculationContext {
+): DividerCalculationContext => {
   return {
     tracks: [],
     activeTrackId: null,
@@ -35,7 +35,7 @@ function baseContext(
     calculateTrackDurationWithPause: (t) => t.duration ?? 0,
     ...overrides,
   };
-}
+};
 
 describe('dividerUtils timeline formatting', () => {
   it('formatTimeFromTimestamp uses hh:mm:ss segments', () => {

@@ -20,7 +20,6 @@ const BASE_THEME_NEUTRAL_TRACK_SURFACE: Pick<
   trackBackground: '#333333',
 };
 
-/** Светлые поверхности списка/трека для семейства «Светлый акцент» (фиксированные нейтральные тона). */
 const LIGHT_ACCENT_TRACK_SURFACE: Pick<
   BaseThemeColorPalette,
   'trackAreaBackground' | 'trackBackground'
@@ -48,7 +47,7 @@ const DARK_NEON_MIX = {
   bgTowardBlack: 96.25,
 } as const;
 
-export function deriveDarkGradientFromAccent(accentInput: string): BaseThemeColorPalette {
+export const deriveDarkGradientFromAccent = (accentInput: string): BaseThemeColorPalette => {
   const accent = normalizeHexColor(accentInput) ?? BASIC_THEME_FAMILY_DEFAULT_ACCENTS.darkGradient;
   return {
     nameRu: 'Тёмный градиент',
@@ -58,9 +57,9 @@ export function deriveDarkGradientFromAccent(accentInput: string): BaseThemeColo
     trackAreaBackground: mixTowardBlack(accent, DARK_GRADIENT_MIX.areaTowardBlack),
     trackBackground: mixTowardBlack(accent, DARK_GRADIENT_MIX.trackTowardBlack),
   };
-}
+};
 
-export function deriveLightGradientFromAccent(accentInput: string): BaseThemeColorPalette {
+export const deriveLightGradientFromAccent = (accentInput: string): BaseThemeColorPalette => {
   const accent = normalizeHexColor(accentInput) ?? BASIC_THEME_FAMILY_DEFAULT_ACCENTS.lightGradient;
   return {
     nameRu: 'Светлый градиент',
@@ -70,9 +69,9 @@ export function deriveLightGradientFromAccent(accentInput: string): BaseThemeCol
     trackAreaBackground: mixTowardWhite(accent, LIGHT_GRADIENT_MIX.areaTowardWhite),
     trackBackground: mixTowardWhite(accent, LIGHT_GRADIENT_MIX.trackTowardWhite),
   };
-}
+};
 
-export function deriveDarkNeonFromAccent(accentInput: string): BaseThemeColorPalette {
+export const deriveDarkNeonFromAccent = (accentInput: string): BaseThemeColorPalette => {
   const accent = normalizeHexColor(accentInput) ?? BASIC_THEME_FAMILY_DEFAULT_ACCENTS.darkNeon;
   return {
     nameRu: 'Тёмный неон',
@@ -82,9 +81,9 @@ export function deriveDarkNeonFromAccent(accentInput: string): BaseThemeColorPal
     trackAreaBackground: BASE_THEME_NEUTRAL_TRACK_SURFACE.trackAreaBackground,
     trackBackground: BASE_THEME_NEUTRAL_TRACK_SURFACE.trackBackground,
   };
-}
+};
 
-export function deriveLightAccentFromAccent(accentInput: string): BaseThemeColorPalette {
+export const deriveLightAccentFromAccent = (accentInput: string): BaseThemeColorPalette => {
   const base = deriveLightGradientFromAccent(accentInput);
   return {
     ...base,
@@ -92,12 +91,12 @@ export function deriveLightAccentFromAccent(accentInput: string): BaseThemeColor
     trackAreaBackground: LIGHT_ACCENT_TRACK_SURFACE.trackAreaBackground,
     trackBackground: LIGHT_ACCENT_TRACK_SURFACE.trackBackground,
   };
-}
+};
 
-export function resolveFamilyPalette(
+export const resolveFamilyPalette = (
   id: BaseThemeFamilyPaletteId,
   accentInput: string,
-): BaseThemeColorPalette {
+): BaseThemeColorPalette => {
   switch (id) {
     case 'darkGradient':
       return deriveDarkGradientFromAccent(accentInput);
@@ -108,19 +107,19 @@ export function resolveFamilyPalette(
     case 'lightAccent':
       return deriveLightAccentFromAccent(accentInput);
   }
-}
+};
 
-export function buildBasicFamilyCustomPalette(
+export const buildBasicFamilyCustomPalette = (
   familyId: BaseThemeFamilyPaletteId,
   accentInput: string,
-): BaseThemeCustomColorPalette {
+): BaseThemeCustomColorPalette => {
   return paletteToCustom(resolveFamilyPalette(familyId, accentInput));
-}
+};
 
-export function isBasicThemeFamilyPaletteId(value: string): value is BaseThemeFamilyPaletteId {
+export const isBasicThemeFamilyPaletteId = (value: string): value is BaseThemeFamilyPaletteId => {
   return (BASIC_THEME_FAMILY_IDS as readonly string[]).includes(value);
-}
+};
 
-export function buildSecondaryAccent(accentPrimary: string): string {
+export const buildSecondaryAccent = (accentPrimary: string): string => {
   return mixHexColors(accentPrimary, '#ffffff', 25);
-}
+};

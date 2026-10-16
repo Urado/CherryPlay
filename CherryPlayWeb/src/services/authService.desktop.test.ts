@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { AuthHttpError, LEGAL_PD_CONSENT, LEGAL_TERMS } from '@cherryplay/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,15 +15,15 @@ vi.mock('../utils/apiFetch', () => ({
   apiFetch: vi.fn(),
 }));
 
-function mockJsonResponse(status: number, body: unknown): Response {
+const mockJsonResponse = (status: number, body: unknown): Response => {
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === 200 ? 'OK' : 'Error',
-    json: async () => body,
-    text: async () => JSON.stringify(body),
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
   } as Response;
-}
+};
 
 describe('authService desktop', () => {
   beforeEach(() => {
@@ -74,7 +72,7 @@ describe('authService desktop', () => {
       ]);
 
       expect(code).toBe('desk-reg');
-      expect(String(vi.mocked(apiFetch).mock.calls[0]?.[0])).toContain('/api/organizers');
+      expect(vi.mocked(apiFetch).mock.calls[0]?.[0]).toMatch(/\/api\/organizers$/);
       const loginHeaders = vi.mocked(apiFetch).mock.calls[1]?.[1]?.headers as Record<
         string,
         string
@@ -129,7 +127,7 @@ describe('authService desktop', () => {
       await expect(authService.issueDesktopAuthCode()).resolves.toBe('issued');
 
       const [url, init] = vi.mocked(apiFetch).mock.calls[0] ?? [];
-      expect(String(url)).toContain('/auth/desktop/code');
+      expect(url).toMatch(/\/auth\/desktop\/code$/);
       expect(init?.method).toBe('POST');
     });
 

@@ -199,7 +199,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
       {displayError && <ErrorMessage message={displayError} />}
 
       {emailMode === 'login' ? (
-        <form onSubmit={handleLogin} className="email-auth-form-content">
+        <form onSubmit={(event) => void handleLogin(event)} className="email-auth-form-content">
           <FormInput
             label="Email"
             type="email"
@@ -247,7 +247,7 @@ export const EmailAuthForm: React.FC<EmailAuthFormProps> = ({
           </FormButton>
         </form>
       ) : (
-        <form onSubmit={handleRegister} className="email-auth-form-content">
+        <form onSubmit={(event) => void handleRegister(event)} className="email-auth-form-content">
           <FormInput
             label="Название организации"
             type="text"

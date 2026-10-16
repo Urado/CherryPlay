@@ -10,7 +10,6 @@ import TimerIcon from '@mui/icons-material/Timer';
 import { formatTimeFromDuration } from '@shared/utils';
 import React from 'react';
 
-
 interface PlayerHeaderProps {
   allTracksCount: number;
   totalDuration: number;
@@ -114,7 +113,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   icon={<ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                   variant="ghost"
                   size="sm"
-                 />
+                />
                 {canCreateGroup && (
                   <IconButton
                     onClick={onCreateGroup}
@@ -124,7 +123,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                     icon={<GroupAddIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                     variant="ghost"
                     size="sm"
-                   />
+                  />
                 )}
                 <IconButton
                   onClick={onRemoveSelectedItems}
@@ -139,7 +138,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                   icon={<DeleteSweepIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                   variant="ghost"
                   size="sm"
-                 />
+                />
               </>
             ) : (
               <IconButton
@@ -150,7 +149,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 icon={<SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
                 variant="ghost"
                 size="sm"
-               />
+              />
             )
           ) : null}
 
@@ -162,7 +161,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             icon={<SettingsIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
             variant="ghost"
             size="sm"
-           />
+          />
 
           <IconButton
             onClick={onExportTracksToText}
@@ -173,7 +172,7 @@ export const PlayerHeader: React.FC<PlayerHeaderProps> = ({
             icon={<TextSnippetIcon style={{ fontSize: HEADER_ICON_SIZE }} />}
             variant="ghost"
             size="sm"
-           />
+          />
         </div>
       </div>
     </div>

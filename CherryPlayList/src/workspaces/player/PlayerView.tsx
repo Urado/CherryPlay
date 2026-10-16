@@ -1,4 +1,3 @@
-
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';

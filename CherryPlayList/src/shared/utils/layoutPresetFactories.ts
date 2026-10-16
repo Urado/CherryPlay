@@ -12,7 +12,7 @@ import type { ContainerZone, Layout, WorkspaceZone } from '../../core/types/layo
 
 import { setupCollectionZoneForPreset } from './workspaceLifecycle';
 
-export function createSimpleLayout(): Layout {
+export const createSimpleLayout = (): Layout => {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
   const rootContainerId = uuidv4();
@@ -42,9 +42,9 @@ export function createSimpleLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-function createCollectionsVerticalLayout(): Layout {
+const createCollectionsVerticalLayout = (): Layout => {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
   const collection1ZoneId = uuidv4();
@@ -108,9 +108,9 @@ function createCollectionsVerticalLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-export function createCollectionsLayout(): Layout {
+export const createCollectionsLayout = (): Layout => {
   const playlistZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
   const collection1ZoneId = uuidv4();
@@ -185,9 +185,9 @@ export function createCollectionsLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-export function createComplexLayout(): Layout {
+export const createComplexLayout = (): Layout => {
   const playlistZoneId = uuidv4();
   const rootContainerId = uuidv4();
 
@@ -315,9 +315,9 @@ export function createComplexLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-export function createPlayerLayout(): Layout {
+export const createPlayerLayout = (): Layout => {
   const playerZoneId = uuidv4();
   const fileBrowserZoneId = uuidv4();
   const rootContainerId = uuidv4();
@@ -347,9 +347,9 @@ export function createPlayerLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-export function createPartyLayout(): Layout {
+export const createPartyLayout = (): Layout => {
   const playerZoneId = uuidv4();
   const partyPreviewZoneId = uuidv4();
   const rootContainerId = uuidv4();
@@ -379,13 +379,13 @@ export function createPartyLayout(): Layout {
     },
     version: 1,
   };
-}
+};
 
-function createAimpPartyLayout(): Layout {
+const createAimpPartyLayout = (): Layout => {
   return createPartyLayout();
-}
+};
 
-export function createLayoutByPreset(preset: LayoutPreset): Layout {
+export const createLayoutByPreset = (preset: LayoutPreset): Layout => {
   switch (preset) {
     case 'simple':
       return createSimpleLayout();
@@ -404,8 +404,8 @@ export function createLayoutByPreset(preset: LayoutPreset): Layout {
     default:
       return createSimpleLayout();
   }
-}
+};
 
-export function createInitialLayout(): Layout {
+export const createInitialLayout = (): Layout => {
   return createCollectionsVerticalLayout();
-}
+};

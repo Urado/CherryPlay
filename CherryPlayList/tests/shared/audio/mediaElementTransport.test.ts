@@ -21,9 +21,10 @@ class MockAudio {
 
   private listeners: Record<string, Listener[]> = {};
 
-  public play = jest.fn().mockImplementation(async () => {
+  public play = jest.fn().mockImplementation(() => {
     this.paused = false;
     this.dispatch('play');
+    return Promise.resolve();
   });
 
   public pause = jest.fn().mockImplementation(() => {
@@ -62,23 +63,22 @@ class MockAudio {
   }
 }
 
-function createMockAdapter(overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter {
+const createMockAdapter = (overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter => {
   return {
-    resolveSource: jest.fn(async (source: PlaybackSource) => {
-      if (source.kind === 'url') {
-        return { url: source.url };
-      }
-      return { url: 'cherryplay-audio:///mock' };
-    }),
+    resolveSource: jest.fn((source: PlaybackSource) =>
+      Promise.resolve(
+        source.kind === 'url' ? { url: source.url } : { url: 'cherryplay-audio:///mock' },
+      ),
+    ),
     getDuration: jest.fn().mockResolvedValue(240),
     setSinkId: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-}
+};
 
-function createTransport(adapter = createMockAdapter()): MediaElementTransport {
+const createTransport = (adapter = createMockAdapter()): MediaElementTransport => {
   return new MediaElementTransport({ id: 'transport-test', adapter });
-}
+};
 
 beforeAll(() => {
   // @ts-expect-error test mock

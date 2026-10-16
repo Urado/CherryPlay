@@ -2,8 +2,6 @@ jest.mock('../../src/workspaces/party/usePartyWorkspace', () => ({
   usePartyWorkspaceRuntime: jest.fn(),
 }));
 
-import type { PlaybackState } from '@cherryplay/components';
-
 import {
   resolvePartyPreviewEffectiveState,
   type PartyPreviewProductionSnapshot,

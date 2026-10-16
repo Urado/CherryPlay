@@ -3,7 +3,7 @@ import { logger } from '../../utils/logger';
 
 import type { PlaybackEngine } from './PlaybackEngine';
 
-function isDeviceNotFoundError(error: unknown): boolean {
+const isDeviceNotFoundError = (error: unknown): boolean => {
   if (error instanceof DOMException) {
     return error.name === 'NotFoundError' || error.message.includes('not found');
   }
@@ -11,7 +11,7 @@ function isDeviceNotFoundError(error: unknown): boolean {
     return error.message.includes('not found') || error.message.includes('NotFoundError');
   }
   return false;
-}
+};
 
 export interface OutputDeviceFallbackOptions {
   readonly deviceId: string | null;
@@ -19,14 +19,10 @@ export interface OutputDeviceFallbackOptions {
   readonly logContext: string;
 }
 
-/**
- * Applies output device to a {@link PlaybackEngine} with fallback to system default
- * when the selected device is unavailable (mirrors store behavior pre-migration).
- */
-export async function applyPlaybackOutputDeviceWithFallback(
+export const applyPlaybackOutputDeviceWithFallback = async (
   engine: PlaybackEngine,
   options: OutputDeviceFallbackOptions,
-): Promise<void> {
+): Promise<void> => {
   const { deviceId, onDeviceNotFound, logContext } = options;
 
   try {
@@ -47,4 +43,4 @@ export async function applyPlaybackOutputDeviceWithFallback(
 
     throw error;
   }
-}
+};

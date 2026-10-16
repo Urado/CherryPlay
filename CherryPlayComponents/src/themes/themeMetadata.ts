@@ -39,10 +39,8 @@ export type SakuraCustomizationSettings = Record<string, never>;
 
 export type ArtDecoCustomizationSettings = Record<string, never>;
 
-// Canonical storage contract for basic theme settings.
 export type BasicCustomizationSettings = BaseThemeColorCustomizationSettings;
 
-// Option metadata uses the same canonical settings contract.
 export type BasicCustomizationOptionSettings = BaseThemeColorCustomizationSettings;
 
 export type SpringCrossStepCustomizationSettings = Record<string, never>;
@@ -58,16 +56,15 @@ export type ThemeCustomizationSettingsMap = {
 export type CustomizationSettings<T extends PartyThemeId = PartyThemeId> =
   ThemeCustomizationSettingsMap[T];
 
-function createBasicThemeCustomizationOptions(
+const createBasicThemeCustomizationOptions = (
   settings?: Partial<Record<string, unknown>>,
-): ThemeCustomizationOption[] {
+): ThemeCustomizationOption[] => {
   const normalized = normalizeBasicThemePaletteSettings(settings);
 
   const catalogSelectOptions = getBasicThemePaletteCatalog(settings).map((palette) => ({
     value: palette.id,
     label: palette.label,
   }));
-  /** `base` не входит в визуальный каталог плиток, но остаётся валидным `paletteId` и дефолтом при fallback. */
   const paletteIdOptions = catalogSelectOptions.some((o) => o.value === 'base')
     ? catalogSelectOptions
     : [{ value: 'base', label: BASE_THEME_COLOR_PALETTES.base.nameRu }, ...catalogSelectOptions];
@@ -111,9 +108,8 @@ function createBasicThemeCustomizationOptions(
       label: 'Кастом: фон трека',
     },
   ];
-}
+};
 
-/** Снимок метаданных при загрузке модуля. Для `basic` актуальные опции/defaultValue — через `getThemeMetadata('basic', settings)`. */
 export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   cyberpunk: {
     id: 'cyberpunk',
@@ -142,13 +138,10 @@ export const THEME_METADATA: Record<PartyThemeId, ThemeMetadata> = {
   },
 };
 
-// Dynamic form usage: pass current `customizationSettings` to get live default values
-// for basic custom colors and custom-palette preview option.
-// Static usage (docs, schema listing): call without runtime settings.
-export function getThemeMetadata(
+export const getThemeMetadata = (
   partyThemeId: PartyThemeId,
   customizationSettings?: Partial<Record<string, unknown>>,
-): ThemeMetadata {
+): ThemeMetadata => {
   const metadata = THEME_METADATA[partyThemeId];
 
   if (partyThemeId !== 'basic') {
@@ -159,20 +152,20 @@ export function getThemeMetadata(
     ...metadata,
     customizationOptions: createBasicThemeCustomizationOptions(customizationSettings),
   };
-}
+};
 
-export function getDefaultCustomizationSettings<T extends PartyThemeId>(
+export const getDefaultCustomizationSettings = <T extends PartyThemeId>(
   partyThemeId: T,
-): ThemeCustomizationSettingsMap[T] {
+): ThemeCustomizationSettingsMap[T] => {
   const metadata = THEME_METADATA[partyThemeId];
   return metadata.defaultCustomizationSettings as ThemeCustomizationSettingsMap[T];
-}
+};
 
-export function getCustomizationOption(
+export const getCustomizationOption = (
   partyThemeId: PartyThemeId,
   optionKey: string,
   customizationSettings?: Partial<Record<string, unknown>>,
-): ThemeCustomizationOption | undefined {
+): ThemeCustomizationOption | undefined => {
   const metadata = getThemeMetadata(partyThemeId, customizationSettings);
   return metadata.customizationOptions.find((opt) => opt.key === optionKey);
-}
+};

@@ -3,7 +3,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useModalKeyboard } from '@shared/hooks';
 import React, { useId } from 'react';
 
-
 export interface SettingsImportConfirmDialogProps {
   open: boolean;
   onClose: () => void;

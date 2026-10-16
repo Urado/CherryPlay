@@ -94,4 +94,4 @@ const ConsentItem = ({
       </div>
     </div>
   );
-}
+};

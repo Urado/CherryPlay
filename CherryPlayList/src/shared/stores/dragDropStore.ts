@@ -1,4 +1,3 @@
-
 import { ProjectItem } from '@core/types/project';
 import { WorkspaceId } from '@core/types/workspace';
 import { createWithEqualityFn } from 'zustand/traditional';
@@ -36,10 +35,10 @@ interface DragDropState {
   ) => DragDropResult;
 }
 
-function canAddItems(
+const canAddItems = (
   targetState: ProjectStoreState | { maxItems?: number | null; items: ProjectItem[] },
   count: number,
-): { canAdd: boolean; availableSlots: number } {
+): { canAdd: boolean; availableSlots: number } => {
   const maxItems = targetState.maxItems;
   if (maxItems === null || maxItems === undefined) {
     return { canAdd: true, availableSlots: count };
@@ -53,7 +52,7 @@ function canAddItems(
   const itemsLength = targetState.items?.length ?? 0;
   const availableSlots = maxItems - itemsLength;
   return { canAdd: availableSlots >= count, availableSlots: Math.max(0, availableSlots) };
-}
+};
 
 export const useDragDropStore = createWithEqualityFn<DragDropState>((set) => ({
   dragging: false,
@@ -88,7 +87,6 @@ export const useDragDropStore = createWithEqualityFn<DragDropState>((set) => ({
       return { success: false, error: 'No items selected for move' };
     }
 
-    // Same-workspace moves are now allowed - unified with cross-workspace
     const sourceStore = getProjectStore(sourceWorkspaceId);
     const targetStore = getProjectStore(targetWorkspaceId);
 
@@ -211,6 +209,6 @@ export const useDragDropStore = createWithEqualityFn<DragDropState>((set) => ({
   },
 }));
 
-export function isItemDragState(draggedItems: DraggedItems): draggedItems is ItemDragState {
+export const isItemDragState = (draggedItems: DraggedItems): draggedItems is ItemDragState => {
   return draggedItems !== null && draggedItems.type === 'items';
-}
+};

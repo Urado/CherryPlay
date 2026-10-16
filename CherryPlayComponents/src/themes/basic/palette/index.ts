@@ -91,19 +91,19 @@ export {
   sanitizeBasicUserSavedPalettes,
 };
 
-export function getBasicThemePaletteCatalog(
+export const getBasicThemePaletteCatalog = (
   settings?: Partial<Record<string, unknown>>,
-): BaseThemeColorPaletteCatalogItem[] {
+): BaseThemeColorPaletteCatalogItem[] => {
   return buildBasicThemePaletteCatalog(normalizeBasicThemePaletteSettings(settings));
-}
+};
 
 type BasicThemeResolvedPalette = BaseThemeColorPaletteSettings & {
   palette: BaseThemeColorPalette;
 };
 
-export function resolveBasicThemePalette(
+export const resolveBasicThemePalette = (
   settings?: Partial<Record<string, unknown>>,
-): BasicThemeResolvedPalette {
+): BasicThemeResolvedPalette => {
   const normalized = normalizeBasicThemePaletteSettings(settings);
   const palette =
     normalized.paletteId === 'custom'
@@ -112,11 +112,11 @@ export function resolveBasicThemePalette(
         ? resolveFamilyPalette(normalized.paletteId, normalized.customPalette.accentPrimary)
         : BASE_THEME_COLOR_PALETTES[normalized.paletteId];
   return { ...normalized, palette };
-}
+};
 
-export function resolveBasicThemeCssSettings(
+export const resolveBasicThemeCssSettings = (
   settings?: Partial<Record<string, unknown>>,
-): BaseThemeResolvedCssVars {
+): BaseThemeResolvedCssVars => {
   const selectedPalette = resolveBasicThemePalette(settings).palette;
   const textPrimary = selectedPalette.textPrimary;
   const textSecondary = withAlpha(textPrimary, 0.72);
@@ -147,7 +147,7 @@ export function resolveBasicThemeCssSettings(
     'shadow-black-30': 'rgba(0, 0, 0, 0.3)',
     'shadow-white-05': 'rgba(255, 255, 255, 0.05)',
   };
-}
+};
 
 const DEFAULT_CSS_SETTINGS = resolveBasicThemeCssSettings();
 

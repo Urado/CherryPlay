@@ -1,10 +1,6 @@
 import type { AimpPlaybackStatus } from './aimp';
 import type { StorePlaybackStatus } from './storePlaybackStatus';
 
-/**
- * Playback status on the wire (REST / SignalR).
- * Matches CONTRACTS.md §6.3 and server `PlaybackStatus` enum.
- */
 export type PlaybackWireStatus = 'idle' | 'playing' | 'paused' | 'ended';
 
 export interface PlaybackStateDto {
@@ -20,11 +16,7 @@ export interface PlaybackStateDto {
   lastUpdatedAt: string;
 }
 
-/**
- * Maps local player store statuses to the wire contract.
- * Transitional statuses (`loading`, `buffering`) are published as `playing`.
- */
-export function mapStoreStatusToWireStatus(status: StorePlaybackStatus): PlaybackWireStatus {
+export const mapStoreStatusToWireStatus = (status: StorePlaybackStatus): PlaybackWireStatus => {
   switch (status) {
     case 'playing':
     case 'loading':
@@ -39,12 +31,11 @@ export function mapStoreStatusToWireStatus(status: StorePlaybackStatus): Playbac
     default:
       return 'idle';
   }
-}
+};
 
-/** Maps AIMP playback snapshot status to the wire contract. */
-export function mapAimpPlaybackStatusToWireStatus(
+export const mapAimpPlaybackStatusToWireStatus = (
   status: AimpPlaybackStatus | null | undefined,
-): PlaybackWireStatus {
+): PlaybackWireStatus => {
   switch (status) {
     case 'playing':
       return 'playing';
@@ -54,4 +45,4 @@ export function mapAimpPlaybackStatusToWireStatus(
     default:
       return 'idle';
   }
-}
+};

@@ -8,7 +8,7 @@ import {
   tryParseInternalFileBrowserPayload,
 } from '../../src/shared/utils/nativeDataTransferPaths';
 
-function makeDataTransferWithFiles(files: File[], types: string[] = ['Files']): DataTransfer {
+const makeDataTransferWithFiles = (files: File[], types: string[] = ['Files']): DataTransfer => {
   const list: FileList = {
     ...files,
     length: files.length,
@@ -19,7 +19,7 @@ function makeDataTransferWithFiles(files: File[], types: string[] = ['Files']): 
     types,
     getData: () => '',
   } as unknown as DataTransfer;
-}
+};
 
 describe('nativeDataTransferPaths', () => {
   beforeEach(() => {
@@ -67,9 +67,9 @@ describe('nativeDataTransferPaths', () => {
   });
 
   it('classifyNativePathsWithStat splits files and directories', async () => {
-    const stat = jest.fn().mockImplementation(async (p: string) => ({
-      isDirectory: p === 'C:/Folder',
-    }));
+    const stat = jest
+      .fn()
+      .mockImplementation((p: string) => Promise.resolve({ isDirectory: p === 'C:/Folder' }));
     const r = await classifyNativePathsWithStat(['C:/a.mp3', 'C:/Folder'], stat);
     expect(r.files).toEqual(['C:/a.mp3']);
     expect(r.directories).toEqual(['C:/Folder']);
@@ -87,11 +87,11 @@ describe('nativeDataTransferPaths', () => {
   });
 
   it('classifyNativePathsWithStat counts partial stat failures and keeps successful paths', async () => {
-    const stat = jest.fn().mockImplementation(async (p: string) => {
+    const stat = jest.fn().mockImplementation((p: string) => {
       if (p === '/bad') {
-        throw new Error('eacces');
+        return Promise.reject(new Error('eacces'));
       }
-      return { isDirectory: p === '/okdir' };
+      return Promise.resolve({ isDirectory: p === '/okdir' });
     });
     const r = await classifyNativePathsWithStat(['/bad', '/ok.mp3', '/okdir'], stat);
     expect(r.files).toEqual(['/ok.mp3']);

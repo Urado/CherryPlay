@@ -1,12 +1,13 @@
+import { AccountView } from '@app/components/AccountView';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-const mockGetWebBaseUrl = jest.fn();
-const mockInvoke = jest.fn();
+const mockGetWebBaseUrl = jest.fn<Promise<string>, unknown[]>();
+const mockInvoke = jest.fn<Promise<unknown>, unknown[]>();
 const mockAddNotification = jest.fn();
 const mockOnClose = jest.fn();
-const mockLogout = jest.fn();
+const mockLogout = jest.fn<Promise<void>, unknown[]>();
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -27,7 +28,9 @@ jest.mock('@cherryplay/components', () => {
 });
 
 jest.mock('@shared/components', () => ({ OnlineUnavailablePanel: () => null }));
-jest.mock('@shared/demo/demoAuthFixture', () => ({ DEMO_ORGANIZER_DTO: { id: 'demo', name: 'Demo' } }));
+jest.mock('@shared/demo/demoAuthFixture', () => ({
+  DEMO_ORGANIZER_DTO: { id: 'demo', name: 'Demo' },
+}));
 jest.mock('@shared/platform', () => ({
   getAppMode: () => 'production',
   getPlatform: () => ({ invoke: (...args: unknown[]) => mockInvoke(...args) }),
@@ -70,8 +73,6 @@ jest.mock('@shared/stores/authStore', () => {
 jest.mock('@shared/utils/authSession', () => ({ clearAuthSession: jest.fn() }));
 jest.mock('@app/components/BrowserLoginPanel', () => ({ BrowserLoginPanel: () => null }));
 
-import { AccountView } from '@app/components/AccountView';
-
 describe('AccountView actions', () => {
   beforeEach(() => {
     mockGetWebBaseUrl.mockReset().mockResolvedValue('https://cherryplay.example/');
@@ -85,7 +86,9 @@ describe('AccountView actions', () => {
     render(<AccountView />);
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Привязать существующую вечеринку' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Привязать существующую вечеринку' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть кабинет на сайте' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeVisible();
   });

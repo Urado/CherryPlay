@@ -2,7 +2,7 @@ import * as signalR from '@microsoft/signalr';
 
 import { clearApiConfigCache, getApiConfig } from '../config/apiConfig';
 import { type PlaybackStateDto } from '../contracts/playbackState';
-import { useAuthStore } from '../stores';
+import { useAuthStore } from '../stores/authStore';
 import {
   handleAuthError,
   isAuthError,
@@ -47,7 +47,6 @@ class SignalRService {
     delayMs: 3000,
   };
 
-  
   private eventHandlers: {
     onSessionStarted?: SessionStartedHandler;
     onSessionEnded?: SessionEndedHandler;
@@ -59,29 +58,24 @@ class SignalRService {
     onReconnectionFailed?: () => void;
   } = {};
 
-  
   private currentPartyId: string | null = null;
   private currentToken: string | undefined = undefined;
   private partyReconnectHandler: ((partyId: string) => Promise<void>) | null = null;
 
-  
   setPartyReconnectHandler(handler: ((partyId: string) => Promise<void>) | null): void {
     this.partyReconnectHandler = handler;
   }
 
-  
   isServiceConnected(): boolean {
     return (
       this.connection !== null && this.connection.state === signalR.HubConnectionState.Connected
     );
   }
 
-  
   getConnectionState(): signalR.HubConnectionState | null {
     return this.connection?.state ?? null;
   }
 
-  
   getConnectionErrorReason(): string | null {
     if (!this.currentPartyId) {
       return 'Нет вечеринки';
@@ -103,28 +97,23 @@ class SignalRService {
       return 'Ошибка соединения';
     }
 
-    return null; 
+    return null;
   }
 
-  
   async connect(token?: string): Promise<void> {
-    
     const authToken = token || useAuthStore.getState().accessToken;
 
-    
     if (authToken && isTokenExpired(authToken)) {
       console.warn('[SignalR] Token expired, clearing auth');
       handleAuthError('Authentication token has expired');
       throw new Error(SESSION_EXPIRED_USER_MESSAGE);
     }
 
-    
     if (authToken) {
       this.currentToken = authToken;
     }
-    
+
     if (this.isConnecting) {
-      
       while (this.isConnecting) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
@@ -140,24 +129,17 @@ class SignalRService {
     this.isConnecting = true;
 
     try {
-      
       if (this.connection) {
         await this.cleanupConnection();
       }
 
-      
       clearApiConfigCache();
       const config = await getApiConfig();
 
       console.log('[SignalR] Starting connection to:', config.signalRUrl);
 
-      
-      
-      
       const connectionOptions: signalR.IHttpConnectionOptions = {};
       if (authToken) {
-        
-        
         connectionOptions.accessTokenFactory = () => {
           const currentToken = useAuthStore.getState().accessToken || authToken;
           return Promise.resolve(currentToken || '');
@@ -178,15 +160,13 @@ class SignalRService {
             if (this.eventHandlers.onReconnectionFailed) {
               this.eventHandlers.onReconnectionFailed();
             }
-            return null; 
+            return null;
           },
         })
         .build();
 
-      
       this.setupConnectionHandlers();
 
-      
       this.setupHubEventHandlers();
 
       await this.connection.start();
@@ -200,7 +180,6 @@ class SignalRService {
     }
   }
 
-  
   private setupConnectionHandlers(): void {
     if (!this.connection) return;
 
@@ -215,57 +194,55 @@ class SignalRService {
       console.log('[SignalR] Reconnecting...', error ? `Error: ${error.message}` : '');
     });
 
-    this.connection.onreconnected(async (connectionId) => {
-      console.log('[SignalR] Reconnected with connection ID:', connectionId);
+    this.connection.onreconnected((connectionId) => {
+      void (async () => {
+        console.log('[SignalR] Reconnected with connection ID:', connectionId);
 
-      
-      const currentToken = useAuthStore.getState().accessToken || this.currentToken;
-      if (currentToken && isTokenExpired(currentToken)) {
-        console.warn('[SignalR] Token expired during reconnect, clearing auth');
-        handleAuthError('Authentication token has expired');
-        await this.disconnect();
-        return;
-      }
-
-      
-      if (currentToken) {
-        this.currentToken = currentToken;
-      }
-
-      
-      this.setupHubEventHandlers();
-
-      
-      if (this.currentPartyId) {
-        try {
-          console.log('[SignalR] Restoring party connection after reconnect:', this.currentPartyId);
-
-          
-          if (this.connection && this.isServiceConnected() && this.currentToken) {
-            await this.invokeWithLogging(
-              'JoinPartyAsOrganizer',
-              this.currentPartyId,
-              this.currentToken,
-            );
-          }
-
-          if (this.partyReconnectHandler) {
-            await this.partyReconnectHandler(this.currentPartyId);
-          }
-
-          console.log('[SignalR] Party connection restored after reconnect');
-        } catch (error) {
-          console.error('[SignalR] Failed to restore party connection after reconnect:', error);
+        const currentToken = useAuthStore.getState().accessToken || this.currentToken;
+        if (currentToken && isTokenExpired(currentToken)) {
+          console.warn('[SignalR] Token expired during reconnect, clearing auth');
+          handleAuthError('Authentication token has expired');
+          await this.disconnect();
+          return;
         }
-      }
+
+        if (currentToken) {
+          this.currentToken = currentToken;
+        }
+
+        this.setupHubEventHandlers();
+
+        if (this.currentPartyId) {
+          try {
+            console.log(
+              '[SignalR] Restoring party connection after reconnect:',
+              this.currentPartyId,
+            );
+
+            if (this.connection && this.isServiceConnected() && this.currentToken) {
+              await this.invokeWithLogging(
+                'JoinPartyAsOrganizer',
+                this.currentPartyId,
+                this.currentToken,
+              );
+            }
+
+            if (this.partyReconnectHandler) {
+              await this.partyReconnectHandler(this.currentPartyId);
+            }
+
+            console.log('[SignalR] Party connection restored after reconnect');
+          } catch (error) {
+            console.error('[SignalR] Failed to restore party connection after reconnect:', error);
+          }
+        }
+      })();
     });
   }
 
-  
   private setupHubEventHandlers(): void {
     if (!this.connection) return;
 
-    
     Object.values(SignalREvents).forEach((eventName) => {
       this.connection!.off(eventName);
     });
@@ -361,10 +338,8 @@ class SignalRService {
     }
   }
 
-  
   private async cleanupConnection(): Promise<void> {
     if (this.connection) {
-      
       this.removeAllEventHandlers();
 
       try {
@@ -377,7 +352,6 @@ class SignalRService {
     }
   }
 
-  
   private removeAllEventHandlers(): void {
     if (!this.connection) return;
 
@@ -386,7 +360,6 @@ class SignalRService {
     });
   }
 
-  
   async disconnect(): Promise<void> {
     await this.cleanupConnection();
     this.currentPartyId = null;
@@ -395,7 +368,6 @@ class SignalRService {
     console.log('[SignalR] Disconnected');
   }
 
-  
   private async invokeWithLogging<T>(methodName: string, ...args: unknown[]): Promise<T> {
     if (!this.connection) {
       throw new Error('SignalR connection is null');
@@ -426,9 +398,7 @@ class SignalRService {
     }
   }
 
-  
   async joinPartyAsOrganizer(partyId: string, token?: string): Promise<void> {
-    
     const authToken = token || useAuthStore.getState().accessToken;
 
     if (!authToken) {
@@ -455,7 +425,7 @@ class SignalRService {
       console.log('[SignalR] Successfully joined party as organizer');
     } catch (error) {
       console.error('[SignalR] Failed to join party as organizer:', error);
-      
+
       if (isAuthError(error)) {
         handleAuthError(error instanceof Error ? error : String(error));
       }
@@ -463,7 +433,6 @@ class SignalRService {
     }
   }
 
-  
   async startSession(partyId: string): Promise<void> {
     if (!this.isServiceConnected()) {
       throw new Error('SignalR connection not established');
@@ -473,7 +442,6 @@ class SignalRService {
       throw new Error('SignalR connection is null');
     }
 
-    
     const token = useAuthStore.getState().accessToken || this.currentToken;
     if (!token) {
       const error = new Error('Authentication token is required to start session');
@@ -500,7 +468,6 @@ class SignalRService {
     }
   }
 
-  
   async endSession(partyId: string): Promise<void> {
     try {
       await this.endSessionOrThrow(partyId);
@@ -518,7 +485,6 @@ class SignalRService {
     console.log('[SignalR] Session ended');
   }
 
-  
   async resetPlaybackState(partyId: string): Promise<void> {
     if (!this.isServiceConnected() || !this.connection) {
       throw new Error('Нет подключения к серверу');
@@ -528,10 +494,9 @@ class SignalRService {
     console.log('[SignalR] Playback state reset');
   }
 
-  
   async updatePlaybackPosition(partyId: string, trackId: string, position: number): Promise<void> {
     if (!this.isServiceConnected() || !this.connection) {
-      return; 
+      return;
     }
 
     try {
@@ -541,7 +506,6 @@ class SignalRService {
     }
   }
 
-  
   async notifyStateChanged(partyId: string): Promise<void> {
     try {
       await this.notifyStateChangedOrThrow(partyId);
@@ -558,7 +522,6 @@ class SignalRService {
     await this.invokeWithLogging('NotifyStateChanged', partyId);
   }
 
-  
   async updateFullState(partyId: string, state: PlaybackStateDto): Promise<void> {
     try {
       await this.updateFullStateOrThrow(partyId, state);
@@ -575,7 +538,6 @@ class SignalRService {
     await this.invokeWithLogging('UpdateFullState', partyId, state);
   }
 
-  
   onSessionStarted(handler: SessionStartedHandler): void {
     this.eventHandlers.onSessionStarted = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -583,7 +545,6 @@ class SignalRService {
     }
   }
 
-  
   onSessionEnded(handler: SessionEndedHandler): void {
     this.eventHandlers.onSessionEnded = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -591,7 +552,6 @@ class SignalRService {
     }
   }
 
-  
   onFullStateUpdated(handler: FullStateUpdatedHandler): void {
     this.eventHandlers.onFullStateUpdated = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -599,7 +559,6 @@ class SignalRService {
     }
   }
 
-  
   onPlaybackPositionUpdated(handler: PlaybackPositionUpdatedHandler): void {
     this.eventHandlers.onPlaybackPositionUpdated = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -607,7 +566,6 @@ class SignalRService {
     }
   }
 
-  
   onStateChanged(handler: StateChangedHandler): void {
     this.eventHandlers.onStateChanged = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -615,7 +573,6 @@ class SignalRService {
     }
   }
 
-  
   onPlaylistChanged(handler: PlaylistChangedHandler): void {
     this.eventHandlers.onPlaylistChanged = handler;
     if (this.connection && this.isServiceConnected()) {
@@ -623,17 +580,14 @@ class SignalRService {
     }
   }
 
-  
   onError(handler: ErrorHandler): void {
     this.eventHandlers.onError = handler;
   }
 
-  
   onReconnectionFailed(handler: (() => void) | null | undefined): void {
     this.eventHandlers.onReconnectionFailed = handler ?? undefined;
   }
 
-  
   removeAllHandlers(): void {
     this.removeAllEventHandlers();
     this.eventHandlers = {};

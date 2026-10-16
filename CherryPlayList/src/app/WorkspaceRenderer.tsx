@@ -1,4 +1,3 @@
-
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
@@ -10,7 +9,7 @@ interface WorkspaceRendererProps {
   zone: WorkspaceZone;
 }
 
-function renderWorkspaceBody(zone: WorkspaceZone): React.ReactNode {
+const renderWorkspaceBody = (zone: WorkspaceZone): React.ReactNode => {
   const { supportsAimpWorkspace, mode } = getPlatformCapabilities();
 
   if (zone.workspaceType === 'aimp') {
@@ -47,7 +46,7 @@ function renderWorkspaceBody(zone: WorkspaceZone): React.ReactNode {
     workspaceId: zone.workspaceId,
     zoneId: zone.id,
   });
-}
+};
 
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
   const zoneTitle = getWorkspaceDisplayNameRu(zone.workspaceType);

@@ -24,11 +24,11 @@ export type HandlePartyCreationFailureDeps = {
   startReconnectTimer: (linkedParty: { id: string; shortCode: string } | null) => void;
 };
 
-export async function finalizePartyCreation(
+export const finalizePartyCreation = async (
   store: PartyStore,
   createData: CreatePartyDto,
   deps: FinalizePartyCreationDeps,
-): Promise<boolean> {
+): Promise<boolean> => {
   const party = await partyService.createParty(createData);
 
   try {
@@ -73,13 +73,13 @@ export async function finalizePartyCreation(
   deps.markAsDirty();
   markPartyPublishFullySynced();
   return true;
-}
+};
 
-export async function handlePartyCreationFailure(
+export const handlePartyCreationFailure = async (
   store: PartyStore,
   deps: HandlePartyCreationFailureDeps,
   errorMessage: string,
-): Promise<void> {
+): Promise<void> => {
   const reachable = await partyService.checkServerReachable();
   if (!reachable) {
     store.setServerUnreachable(true);
@@ -89,4 +89,4 @@ export async function handlePartyCreationFailure(
   }
   store.setPartyVerified(false);
   deps.addNotification({ type: 'error', message: errorMessage });
-}
+};

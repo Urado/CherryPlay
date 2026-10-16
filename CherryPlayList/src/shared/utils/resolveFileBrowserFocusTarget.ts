@@ -9,14 +9,10 @@ export interface FileBrowserFocusRequestInput {
   targetWorkspaceId?: WorkspaceId;
 }
 
-/**
- * Resolves which fileBrowser panel should handle a focus request.
- * Order: explicit target (if zone exists) → default workspace id → first fileBrowser zone.
- */
-export function resolveFileBrowserFocusTarget(
+export const resolveFileBrowserFocusTarget = (
   layout: Layout,
   request: FileBrowserFocusRequestInput,
-): WorkspaceId | null {
+): WorkspaceId | null => {
   const fileBrowserZones = collectWorkspaceZones(layout.rootZone).filter(
     (zone) => zone.workspaceType === 'fileBrowser',
   );
@@ -42,4 +38,4 @@ export function resolveFileBrowserFocusTarget(
   }
 
   return fileBrowserZones[0].workspaceId;
-}
+};

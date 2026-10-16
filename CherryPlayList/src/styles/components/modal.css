@@ -140,12 +140,12 @@
 }
 
 .settings-input--no-spinner {
-  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .settings-input--no-spinner::-webkit-outer-spin-button,
 .settings-input--no-spinner::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -341,7 +341,7 @@
   width: 2px;
   height: 10px;
   border-radius: 999px;
-  background: currentColor;
+  background: currentcolor;
 }
 
 .settings-quiet-gap__preset-label {
@@ -888,7 +888,7 @@
   color: var(--text-primary);
   font-size: var(--font-size-body);
   line-height: var(--line-height-body);
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .account-view-field-value--mono {

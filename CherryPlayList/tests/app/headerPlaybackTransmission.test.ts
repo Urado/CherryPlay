@@ -32,6 +32,8 @@ describe('header playback transmission', () => {
   it('shows the connection and inactive-session labels truthfully', () => {
     expect(resolveHeaderPlaybackTransmissionLabel('connecting', true)).toBe('Подключение');
     expect(resolveHeaderPlaybackTransmissionLabel('inactive', true)).toBe('Нет связи');
-    expect(resolveHeaderPlaybackTransmissionLabel('inactive', false)).toBe('Трансляция не запущена');
+    expect(resolveHeaderPlaybackTransmissionLabel('inactive', false)).toBe(
+      'Трансляция не запущена',
+    );
   });
 });

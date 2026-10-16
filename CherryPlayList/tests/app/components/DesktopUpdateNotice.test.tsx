@@ -6,28 +6,36 @@ import type { PlatformAPI } from '../../../src/shared/platform/types';
 import { checkLatestDesktopUpdate } from '../../../src/shared/services/desktopUpdateService';
 import { useClientOutdatedStore } from '../../../src/shared/stores/clientOutdatedStore';
 import { useProjectStore } from '../../../src/shared/stores/projectStore';
-import { apiFetch, CLIENT_OUTDATED_CODE, CLIENT_OUTDATED_STATUS } from '../../../src/shared/utils/apiFetch';
+import {
+  apiFetch,
+  CLIENT_OUTDATED_CODE,
+  CLIENT_OUTDATED_STATUS,
+} from '../../../src/shared/utils/apiFetch';
 
 jest.mock('@shared/config', () => ({ APP_VERSION: '0.7.0' }));
 jest.mock('@shared/services/desktopUpdateService', () => {
-  const actual = jest.requireActual('@shared/services/desktopUpdateService');
+  const actual = jest.requireActual<typeof import('@shared/services/desktopUpdateService')>(
+    '@shared/services/desktopUpdateService',
+  );
   return { ...actual, checkLatestDesktopUpdate: jest.fn() };
 });
 
 const checkUpdateMock = jest.mocked(checkLatestDesktopUpdate);
 const originalFetch = global.fetch;
-const invokeMock = jest.fn(async (channel: string) => ({
-  success: true as const,
-  data: channel === 'config:getWebBaseUrl' ? 'https://example.test' : undefined,
-}));
+const invokeMock = jest.fn((channel: string) =>
+  Promise.resolve({
+    success: true as const,
+    data: channel === 'config:getWebBaseUrl' ? 'https://example.test' : undefined,
+  }),
+);
 const testPlatform = {
   getPathForFile: () => '',
   invoke: invokeMock,
   on: () => () => undefined,
   aimp: {
-    getState: async () => ({ success: true as const }),
-    setSourceSelection: async () => ({ success: true as const }),
-    setLiveStreamStarted: async () => ({ success: true as const }),
+    getState: () => Promise.resolve({ success: true as const }),
+    setSourceSelection: () => Promise.resolve({ success: true as const }),
+    setLiveStreamStarted: () => Promise.resolve({ success: true as const }),
     onStateChanged: () => () => undefined,
     onLog: () => () => undefined,
   },
@@ -51,13 +59,15 @@ const flushPromises = async () => {
   });
 };
 
-const outdatedResponse = (): Response => ({
-  ok: false,
-  status: CLIENT_OUTDATED_STATUS,
-  statusText: 'Upgrade Required',
-  clone: () => outdatedResponse(),
-  text: async () => JSON.stringify({ code: CLIENT_OUTDATED_CODE, requiredVersion: '0.8.0' }),
-} as Response);
+const outdatedResponse = (): Response =>
+  ({
+    ok: false,
+    status: CLIENT_OUTDATED_STATUS,
+    statusText: 'Upgrade Required',
+    clone: () => outdatedResponse(),
+    text: () =>
+      Promise.resolve(JSON.stringify({ code: CLIENT_OUTDATED_CODE, requiredVersion: '0.8.0' })),
+  }) as Response;
 
 describe('DesktopUpdateNotice', () => {
   beforeEach(() => {
@@ -167,7 +177,9 @@ describe('DesktopUpdateNotice', () => {
     useClientOutdatedStore.getState().markOutdated('0.8.0');
     render(<DesktopUpdateNotice />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Требуется обновление приложения до 0.8.0.');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Требуется обновление приложения до 0.8.0.',
+    );
     expect(screen.getByRole('button', { name: 'Скачать обновление' })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Скрыть уведомление об обновлении' }),
@@ -189,6 +201,8 @@ describe('DesktopUpdateNotice', () => {
       await apiFetch('/api/parties');
     });
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Требуется обновление приложения до 0.8.0.');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Требуется обновление приложения до 0.8.0.',
+    );
   });
 });

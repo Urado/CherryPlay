@@ -8,19 +8,17 @@ import { isAudioFile, validatePath } from '../utils/fsHelpers.js';
 
 export const CHERRYPLAY_AUDIO_SCHEME = 'cherryplay-audio';
 
-/** Fixed authority host so the base64 payload stays in pathname (case-sensitive). */
 export const CHERRYPLAY_AUDIO_HOST = 'local';
 
-/** Stat-only guard for absurdly large files; streaming itself is not memory-bound. */
 export const MAX_AUDIO_FILE_BYTES = 2 * 1024 * 1024 * 1024;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
 } as const;
 
-function withCorsHeaders(headers: Record<string, string> = {}): Record<string, string> {
+const withCorsHeaders = (headers: Record<string, string> = {}): Record<string, string> => {
   return { ...CORS_HEADERS, ...headers };
-}
+};
 
 const AUDIO_MIME_TYPES: Record<string, string> = {
   '.mp3': 'audio/mpeg',
@@ -30,34 +28,34 @@ const AUDIO_MIME_TYPES: Record<string, string> = {
   '.ogg': 'audio/ogg',
 };
 
-function base64urlEncodeUtf8(text: string): string {
+const base64urlEncodeUtf8 = (text: string): string => {
   return Buffer.from(text, 'utf8')
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
-}
+};
 
-function base64urlDecodeUtf8(encoded: string): string {
+const base64urlDecodeUtf8 = (encoded: string): string => {
   const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   return Buffer.from(base64 + padding, 'base64').toString('utf8');
-}
+};
 
-export function getAudioMimeType(filePath: string): string {
+export const getAudioMimeType = (filePath: string): string => {
   const ext = path.extname(filePath).toLowerCase();
   return AUDIO_MIME_TYPES[ext] ?? 'application/octet-stream';
-}
+};
 
 export interface ParsedByteRange {
   readonly start: number;
   readonly end: number;
 }
 
-export function parseByteRange(
+export const parseByteRange = (
   rangeHeader: string | null,
   fileSize: number,
-): ParsedByteRange | null | 'unsatisfiable' {
+): ParsedByteRange | null | 'unsatisfiable' => {
   if (!rangeHeader) {
     return null;
   }
@@ -101,27 +99,13 @@ export function parseByteRange(
   }
 
   return { start, end };
-}
+};
 
-/**
- * Build a streaming playback URL for a local file path.
- * Format: `cherryplay-audio://local/<base64url(utf8-absolute-path)>`
- *
- * Do not use `cherryplay-audio:///<payload>` — Chromium moves the payload into
- * hostname and lowercases it, corrupting case-sensitive base64url.
- */
-export function encodePathToCherryplayAudioUrl(filePath: string): string {
+export const encodePathToCherryplayAudioUrl = (filePath: string): string => {
   return `${CHERRYPLAY_AUDIO_SCHEME}://${CHERRYPLAY_AUDIO_HOST}/${base64urlEncodeUtf8(filePath)}`;
-}
+};
 
-/**
- * Extract base64url payload from a cherryplay-audio request URL.
- *
- * Canonical form: `cherryplay-audio://local/<payload>` (payload in pathname).
- * Legacy `cherryplay-audio:///<payload>` may appear as `cherryplay-audio://<payload>/`
- * with lowercased hostname — decoding often fails; kept only as best-effort fallback.
- */
-export function extractEncodedPathFromCherryplayAudioUrl(requestUrl: string): string | null {
+export const extractEncodedPathFromCherryplayAudioUrl = (requestUrl: string): string | null => {
   try {
     const url = new URL(requestUrl);
     if (url.protocol !== `${CHERRYPLAY_AUDIO_SCHEME}:`) {
@@ -133,7 +117,6 @@ export function extractEncodedPathFromCherryplayAudioUrl(requestUrl: string): st
       return pathnamePayload;
     }
 
-    // Legacy browser-normalized triple-slash form (hostname is lowercased — often corrupt).
     if (url.hostname && url.hostname !== CHERRYPLAY_AUDIO_HOST) {
       return url.hostname;
     }
@@ -142,9 +125,9 @@ export function extractEncodedPathFromCherryplayAudioUrl(requestUrl: string): st
   } catch {
     return null;
   }
-}
+};
 
-export function decodePathFromCherryplayAudioUrl(requestUrl: string): string | null {
+export const decodePathFromCherryplayAudioUrl = (requestUrl: string): string | null => {
   const encodedPath = extractEncodedPathFromCherryplayAudioUrl(requestUrl);
   if (!encodedPath) {
     return null;
@@ -155,9 +138,9 @@ export function decodePathFromCherryplayAudioUrl(requestUrl: string): string | n
   } catch {
     return null;
   }
-}
+};
 
-export async function handleCherryplayAudioRequest(request: Request): Promise<Response> {
+export const handleCherryplayAudioRequest = async (request: Request): Promise<Response> => {
   const filePath = decodePathFromCherryplayAudioUrl(request.url);
   if (!filePath || !validatePath(filePath)) {
     return new Response('Forbidden', { status: 403, headers: withCorsHeaders() });
@@ -222,12 +205,9 @@ export async function handleCherryplayAudioRequest(request: Request): Promise<Re
       'Content-Type': mimeType,
     }),
   });
-}
+};
 
-/**
- * Must be called before `app.whenReady()`.
- */
-export function registerCherryplayAudioScheme(): void {
+export const registerCherryplayAudioScheme = (): void => {
   protocol.registerSchemesAsPrivileged([
     {
       scheme: CHERRYPLAY_AUDIO_SCHEME,
@@ -239,11 +219,8 @@ export function registerCherryplayAudioScheme(): void {
       },
     },
   ]);
-}
+};
 
-/**
- * Must be called inside `app.whenReady()`.
- */
-export function registerCherryplayAudioProtocolHandler(): void {
+export const registerCherryplayAudioProtocolHandler = (): void => {
   protocol.handle(CHERRYPLAY_AUDIO_SCHEME, handleCherryplayAudioRequest);
-}
+};

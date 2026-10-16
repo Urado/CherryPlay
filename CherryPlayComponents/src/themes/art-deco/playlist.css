@@ -2,6 +2,7 @@
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   color: #d4af37;
   font-family: 'Playfair Display', 'Georgia', serif;
+
   --party-playlist-row-inline-start: 16px;
 }
 

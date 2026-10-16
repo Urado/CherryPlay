@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -120,7 +120,6 @@ describe('CabinetPage parties', () => {
   });
 
   afterEach(() => {
-    cleanup();
     vi.clearAllMocks();
   });
 
@@ -189,9 +188,9 @@ describe('CabinetPage parties', () => {
 
   it('refreshes catalog visibility after a successful toggle', async () => {
     const existingParty = party();
-    mocks.getMyParties.mockResolvedValueOnce([existingParty]).mockResolvedValueOnce([
-      { ...existingParty, isListedInCatalog: true },
-    ]);
+    mocks.getMyParties
+      .mockResolvedValueOnce([existingParty])
+      .mockResolvedValueOnce([{ ...existingParty, isListedInCatalog: true }]);
 
     renderCabinet();
 
@@ -203,8 +202,8 @@ describe('CabinetPage parties', () => {
       }),
     );
     await waitFor(() => expect(mocks.getMyParties).toHaveBeenCalledTimes(2));
-    expect(
-      screen.getByRole<HTMLInputElement>('checkbox', { name: 'В каталоге' }).checked,
-    ).toBe(true);
+    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: 'В каталоге' }).checked).toBe(
+      true,
+    );
   });
 });

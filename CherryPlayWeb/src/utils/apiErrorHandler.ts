@@ -6,7 +6,7 @@ export interface ApiError {
   details?: unknown;
 }
 
-function isApiError(error: unknown): error is ApiError {
+const isApiError = (error: unknown): error is ApiError => {
   if (!error || typeof error !== 'object') {
     return false;
   }
@@ -17,25 +17,29 @@ function isApiError(error: unknown): error is ApiError {
     typeof candidate.status === 'number' &&
     typeof candidate.statusText === 'string'
   );
-}
+};
 
-export async function handleApiResponse<T>(response: Response, defaultMessage: string): Promise<T> {
+export const handleApiResponse = async <T>(
+  response: Response,
+  defaultMessage: string,
+): Promise<T> => {
   if (!response.ok) {
     const error = await createApiError(response, defaultMessage);
-    throw error;
+    throw Object.assign(new Error(error.message), error);
   }
 
   if (response.status === 204 || response.status === 205) {
     return undefined as T;
   }
 
-  return response.json();
-}
+  const payload: unknown = await response.json();
+  return payload as T;
+};
 
-export async function createApiError(
+export const createApiError = async (
   response: Response,
   defaultMessage: string,
-): Promise<ApiError> {
+): Promise<ApiError> => {
   let errorMessage = defaultMessage;
   let code: string | undefined;
   let details: unknown;
@@ -44,10 +48,16 @@ export async function createApiError(
     const text = await response.text();
     if (text) {
       try {
-        const json = JSON.parse(text);
-        code = typeof json.code === 'string' ? json.code : undefined;
+        const parsed: unknown = JSON.parse(text);
+        const json =
+          parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : undefined;
+        code = typeof json?.code === 'string' ? json.code : undefined;
         details = json;
-        errorMessage = json.detail || json.message || json.error || text;
+        errorMessage =
+          (typeof json?.detail === 'string' && json.detail) ||
+          (typeof json?.message === 'string' && json.message) ||
+          (typeof json?.error === 'string' && json.error) ||
+          text;
       } catch {
         errorMessage = text;
       }
@@ -65,9 +75,9 @@ export async function createApiError(
     code,
     details,
   };
-}
+};
 
-export async function parseApiErrorPayload<T>(response: Response): Promise<T | null> {
+export const parseApiErrorPayload = async <T>(response: Response): Promise<T | null> => {
   try {
     const text = await response.text();
     if (!text) return null;
@@ -75,9 +85,9 @@ export async function parseApiErrorPayload<T>(response: Response): Promise<T | n
   } catch {
     return null;
   }
-}
+};
 
-export function isAuthError(status: number, code?: string): boolean {
+export const isAuthError = (status: number, code?: string): boolean => {
   if (status === 401) {
     return true;
   }
@@ -93,9 +103,9 @@ export function isAuthError(status: number, code?: string): boolean {
     return false;
   }
   return true;
-}
+};
 
-export function extractApiErrorMessage(error: unknown, fallbackMessage: string): string {
+export const extractApiErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (isApiError(error)) {
     return error.message || fallbackMessage;
   }
@@ -109,4 +119,4 @@ export function extractApiErrorMessage(error: unknown, fallbackMessage: string):
   }
 
   return fallbackMessage;
-}
+};

@@ -8,7 +8,9 @@ interface PartyPreviewDesignPanelProps {
   hidden?: boolean;
 }
 
-export const PartyPreviewDesignPanel: React.FC<PartyPreviewDesignPanelProps> = ({ hidden = false }) => {
+export const PartyPreviewDesignPanel: React.FC<PartyPreviewDesignPanelProps> = ({
+  hidden = false,
+}) => {
   const runtime = usePartyWorkspaceRuntimeContext();
   const form = usePartySettingsFormState(runtime);
   const designPhase = form.editorPhase ?? 'draft-unlinked';

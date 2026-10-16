@@ -89,8 +89,7 @@
 
 .party-settings-content__body .party-editor-actions {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   justify-content: flex-start;
   gap: var(--spacing-sm, 8px);
@@ -155,7 +154,7 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .modal-content.party-settings-modal-content {
     width: calc(100vw - 16px);
     max-width: calc(100vw - 16px);
@@ -164,7 +163,7 @@
   }
 }
 
-@media (max-height: 700px) {
+@media (height <= 700px) {
   .modal-content.party-settings-modal-content {
     max-height: calc(100vh - 16px);
   }

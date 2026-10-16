@@ -1,7 +1,3 @@
-/**
- * Synthetic audio paths for web demo (no binaries on disk).
- * Single source of truth for DnD path resolution and sample.cherry tracks.
- */
 export interface DemoAudioFile {
   readonly fileName: string;
   readonly path: string;
@@ -52,27 +48,24 @@ const pathByBaseName = new Map<string, string>(
   }),
 );
 
-function normalizeLookupKey(fileName: string): string {
+const normalizeLookupKey = (fileName: string): string => {
   return fileName.trim().toLowerCase();
-}
+};
 
-export function getDemoTrackPathByFileName(fileName: string): string | undefined {
+export const getDemoTrackPathByFileName = (fileName: string): string | undefined => {
   const key = normalizeLookupKey(fileName);
   return pathByFileName.get(key) ?? pathByBaseName.get(key);
-}
+};
 
-export function resolveDemoPathForFileName(fileName: string): string {
+export const resolveDemoPathForFileName = (fileName: string): string => {
   const known = getDemoTrackPathByFileName(fileName);
   if (known) {
     return known;
   }
   return `/demo/music/${fileName}`;
-}
+};
 
-/**
- * Maps a browser File from fixture drag-and-drop to a stable synthetic path.
- */
-export function resolveDemoPathForFile(file: File): string {
+export const resolveDemoPathForFile = (file: File): string => {
   const fromName = getDemoTrackPathByFileName(file.name);
   if (fromName) {
     return fromName;
@@ -96,8 +89,8 @@ export function resolveDemoPathForFile(file: File): string {
   }
 
   return resolveDemoPathForFileName(file.name);
-}
+};
 
-export function listDemoAudioFilePaths(): string[] {
+export const listDemoAudioFilePaths = (): string[] => {
   return DEMO_AUDIO_FILES.map((file) => file.path);
-}
+};

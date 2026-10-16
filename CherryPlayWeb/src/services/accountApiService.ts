@@ -2,7 +2,7 @@ import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import { createApiError } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 
-export async function deleteOrganizerAccount(): Promise<void> {
+export const deleteOrganizerAccount = async (): Promise<void> => {
   const response = await apiFetch(getApiUrl(API_ENDPOINTS.ORGANIZER.ACCOUNT), {
     method: 'DELETE',
     credentials: 'include',
@@ -10,6 +10,7 @@ export async function deleteOrganizerAccount(): Promise<void> {
   });
 
   if (!response.ok) {
-    throw await createApiError(response, 'Не удалось удалить аккаунт');
+    const error = await createApiError(response, 'Не удалось удалить аккаунт');
+    throw Object.assign(new Error(error.message), error);
   }
-}
+};

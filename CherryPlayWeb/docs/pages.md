@@ -8,36 +8,37 @@
 
 Маршрутизация выполняется через **React Router** с path-based маршрутами. Константы путей — в `src/constants/routes.ts`.
 
-| Путь | Страница | Компонент |
-|------|---------|-----------|
-| `/` | Каталог вечеринок (или редирект с `?party=...`) | `PartyListPage` / `CatalogOrRedirect` |
-| `/download` | Загрузка CherryPashkaParty для Windows | `DownloadPage` |
-| `/guide/first-run` | Первый запуск CherryPashkaParty | `FirstRunGuidePage` |
-| `/first-run-guide.html` | Совместимый адрес инструкции | Перенаправление на `/guide/first-run`; при открытии локального HTML-файла сохраняется офлайн-страница |
-| `/feedback` | Обратная связь, email поддержки и прямая ссылка на сообщения ВКонтакте | `FeedbackPage` |
-| `/party/:shortCode` | Просмотр вечеринки (плейлист + состояние) | `PartyView` |
-| `/party/:shortCode/info` | Информация о вечеринке | `PartyInfoPage` |
-| `/party/:shortCode/qr` | QR-код для открытия вечеринки и скачивания PNG | `PartyQrPage` |
-| `/login` | Вход | `LoginPage` |
-| `/register` | Регистрация организатора (email + consents) | `RegisterPage` |
-| `/oauth/complete` | Завершение входа через OAuth или desktop callback | `OAuthCompletePage` |
-| `/forgot-password` | Запрос сброса пароля (письмо) | `ForgotPasswordPage` |
-| `/reset-password` | Новый пароль по `?token=` из письма | `ResetPasswordPage` |
-| `/cabinet` | Кабинет организатора (в т.ч. смена пароля) | `CabinetPage` |
-| `/admin` | Корневой админ-маршрут (redirect) | `Navigate -> /admin/organizers` |
-| `/admin/organizers` | Список организаторов (admin only) | `AdminOrganizersPage` |
-| `/admin/organizers/:id` | Детальная карточка организатора (admin only) | `AdminOrganizerDetailPage` |
-| `/privacy` | Политика ПДн | `LegalDocumentPage` (`privacy`) |
-| `/privacy/v/:version` | Архив версии политики | `LegalDocumentPage` |
-| `/consent` | Согласие на обработку ПДн | `LegalDocumentPage` (`consent`) |
-| `/consent/v/:version` | Архив версии согласия | `LegalDocumentPage` |
-| `/terms` | Пользовательское соглашение | `LegalDocumentPage` (`terms`) |
-| `/terms/v/:version` | Архив версии terms | `LegalDocumentPage` |
-| `/cookies` | Политика cookie | `LegalDocumentPage` (`cookies`) |
-| `/cookies/v/:version` | Архив версии cookies | `LegalDocumentPage` |
-| `/legal` | Реквизиты / оператор | `LegalOperatorPage` |
+| Путь                     | Страница                                                               | Компонент                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `/`                      | Каталог вечеринок (или редирект с `?party=...`)                        | `PartyListPage` / `CatalogOrRedirect`                                                                 |
+| `/download`              | Загрузка CherryPashkaParty для Windows                                 | `DownloadPage`                                                                                        |
+| `/guide/first-run`       | Первый запуск CherryPashkaParty                                        | `FirstRunGuidePage`                                                                                   |
+| `/first-run-guide.html`  | Совместимый адрес инструкции                                           | Перенаправление на `/guide/first-run`; при открытии локального HTML-файла сохраняется офлайн-страница |
+| `/feedback`              | Обратная связь, email поддержки и прямая ссылка на сообщения ВКонтакте | `FeedbackPage`                                                                                        |
+| `/party/:shortCode`      | Просмотр вечеринки (плейлист + состояние)                              | `PartyView`                                                                                           |
+| `/party/:shortCode/info` | Информация о вечеринке                                                 | `PartyInfoPage`                                                                                       |
+| `/party/:shortCode/qr`   | QR-код для открытия вечеринки и скачивания PNG                         | `PartyQrPage`                                                                                         |
+| `/login`                 | Вход                                                                   | `LoginPage`                                                                                           |
+| `/register`              | Регистрация организатора (email + consents)                            | `RegisterPage`                                                                                        |
+| `/oauth/complete`        | Завершение входа через OAuth или desktop callback                      | `OAuthCompletePage`                                                                                   |
+| `/forgot-password`       | Запрос сброса пароля (письмо)                                          | `ForgotPasswordPage`                                                                                  |
+| `/reset-password`        | Новый пароль по `?token=` из письма                                    | `ResetPasswordPage`                                                                                   |
+| `/cabinet`               | Кабинет организатора (в т.ч. смена пароля)                             | `CabinetPage`                                                                                         |
+| `/admin`                 | Корневой админ-маршрут (redirect)                                      | `Navigate -> /admin/organizers`                                                                       |
+| `/admin/organizers`      | Список организаторов (admin only)                                      | `AdminOrganizersPage`                                                                                 |
+| `/admin/organizers/:id`  | Детальная карточка организатора (admin only)                           | `AdminOrganizerDetailPage`                                                                            |
+| `/privacy`               | Политика ПДн                                                           | `LegalDocumentPage` (`privacy`)                                                                       |
+| `/privacy/v/:version`    | Архив версии политики                                                  | `LegalDocumentPage`                                                                                   |
+| `/consent`               | Согласие на обработку ПДн                                              | `LegalDocumentPage` (`consent`)                                                                       |
+| `/consent/v/:version`    | Архив версии согласия                                                  | `LegalDocumentPage`                                                                                   |
+| `/terms`                 | Пользовательское соглашение                                            | `LegalDocumentPage` (`terms`)                                                                         |
+| `/terms/v/:version`      | Архив версии terms                                                     | `LegalDocumentPage`                                                                                   |
+| `/cookies`               | Политика cookie                                                        | `LegalDocumentPage` (`cookies`)                                                                       |
+| `/cookies/v/:version`    | Архив версии cookies                                                   | `LegalDocumentPage`                                                                                   |
+| `/legal`                 | Реквизиты / оператор                                                   | `LegalOperatorPage`                                                                                   |
 
 - **PartyListPage**: список вечеринок; при выборе вечеринки переход по `ROUTES.PARTY_VIEW(shortCode)`.
+
 ## Страница загрузки приложения
 
 **DownloadPage**: ссылка «Скачать приложение» в каталоге открывает эту страницу. Она запрашивает публичный GitHub Releases API для `Urado/CherryPlay`, отбирает опубликованные prerelease с тегом строго в формате `player-vX.Y.Z` (три числовых компонента без prerelease-суффикса) и ZIP с точно совпадающим именем `CherryPashkaParty-X.Y.Z-x64.zip`. Среди подходящих релизов выбирается наибольшая SemVer-версия. Страница показывает версию тега и ведёт непосредственно на ZIP приложения CherryPashkaParty. Desktop использует те же правила отбора и сравнения для мягкого уведомления. Поведение описано в [DEPLOYMENT.md](../../.github/DEPLOYMENT.md).

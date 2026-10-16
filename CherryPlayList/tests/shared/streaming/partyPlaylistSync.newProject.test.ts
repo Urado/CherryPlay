@@ -6,7 +6,9 @@ let projectState: {
 } = { items: [], meta: { linkedParty: null } };
 
 jest.mock('../../../src/shared/services/partyService', () => ({
-  partyService: { updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) },
+  partyService: {
+    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) as unknown,
+  },
 }));
 
 jest.mock('../../../src/shared/stores/projectStore', () => ({
@@ -24,7 +26,10 @@ jest.mock('../../../src/shared/stores/projectStore', () => ({
 }));
 
 jest.mock('../../../src/shared/stores/aimpStore', () => ({
-  useAimpStore: { getState: () => ({ bridgeState: { liveStreamStarted: false } }), subscribe: () => () => undefined },
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+    subscribe: () => () => undefined,
+  },
 }));
 
 import { subscribePartyPlaylistSync } from '../../../src/shared/streaming/partyPlaylistSync';

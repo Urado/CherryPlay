@@ -1,17 +1,20 @@
+import { useBrowserLogin } from '@shared/hooks/useBrowserLogin';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-const startBrowserLoginMock = jest.fn();
-const invokeMock = jest.fn();
-const isPlatformInitializedMock = jest.fn(() => true);
-const getAppModeMock = jest.fn(() => 'electron');
+const startBrowserLoginMock = jest.fn<Promise<void>, unknown[]>();
+const invokeMock = jest.fn<Promise<{ success: boolean }>, unknown[]>();
+const isPlatformInitializedMock = jest.fn<boolean, []>(() => true);
+const getAppModeMock = jest.fn<'electron' | 'demo', []>(() => 'electron');
 const getPlatformMock = jest.fn(() => ({ invoke: invokeMock }));
 
-const beginBrowserLoginFlow = jest.fn();
-const completeBrowserLoginFlow = jest.fn();
-const failBrowserLoginFlow = jest.fn();
-const resetBrowserLoginFlow = jest.fn();
-const getBrowserLoginFlowState = jest.fn(() => ({ status: 'idle', error: null }));
-const subscribeBrowserLoginFlow = jest.fn((listener: () => void) => {
+const beginBrowserLoginFlow = jest.fn<void, unknown[]>();
+const completeBrowserLoginFlow = jest.fn<void, unknown[]>();
+const failBrowserLoginFlow = jest.fn<void, unknown[]>();
+const resetBrowserLoginFlow = jest.fn<void, unknown[]>();
+const getBrowserLoginFlowState = jest.fn<{ status: 'idle' | 'waiting'; error: string | null }, []>(
+  () => ({ status: 'idle', error: null }),
+);
+const subscribeBrowserLoginFlow = jest.fn((_listener: () => void) => {
   return () => undefined;
 });
 
@@ -36,14 +39,12 @@ jest.mock('@shared/auth/browserLoginFlow', () => ({
   subscribeBrowserLoginFlow: (listener: () => void) => subscribeBrowserLoginFlow(listener),
 }));
 
-const isAuthenticatedMock = jest.fn(() => false);
+const isAuthenticatedMock = jest.fn<boolean, []>(() => false);
 
 jest.mock('@shared/stores/authStore', () => ({
   useAuthStore: (selector: (state: { isAuthenticated: () => boolean }) => unknown) =>
     selector({ isAuthenticated: () => isAuthenticatedMock() }),
 }));
-
-import { useBrowserLogin } from '@shared/hooks/useBrowserLogin';
 
 describe('useBrowserLogin', () => {
   beforeEach(() => {
@@ -100,7 +101,7 @@ describe('useBrowserLogin', () => {
   it('retryLogin resets and starts again', async () => {
     const { result } = renderHook(() => useBrowserLogin());
 
-    await act(async () => {
+    act(() => {
       result.current.retryLogin();
     });
 

@@ -1,4 +1,3 @@
-
 import { ProjectItem } from '@core/types/project';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -38,9 +37,7 @@ export interface WorkspaceDragDropOptions {
   onAddTracksAt: (tracks: Omit<Track, 'id'>[], index: number) => void;
   onTracksAdded?: (targets: Array<{ id: string; path: string }>) => void;
   loadFolderTracks?: (folderPath: string) => Promise<string[]>;
-  /** Unified move executor - handles both same-workspace and cross-workspace moves */
   onMove?: (command: DragDropCommand) => boolean;
-  /** Unified copy executor - handles both same-workspace and cross-workspace copies */
   onCopy?: (command: DragDropCommand) => boolean;
   onError?: (message: string) => void;
 }
@@ -48,7 +45,7 @@ export interface WorkspaceDragDropOptions {
 export type TrackWorkspaceDragOptions = WorkspaceDragDropOptions;
 export type PlaylistDragOptions = WorkspaceDragDropOptions;
 
-export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
+export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
   const {
     displayItems,
     items: _items,
@@ -250,7 +247,6 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       } else {
         onAddTracks(drafts);
       }
-      // Duration loading is done in the parent's onAddTracks/onAddTracksAt (with track ids)
     },
     [isValidAudioFile, onAddTracks, onAddTracksAt],
   );
@@ -359,7 +355,6 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         targetDisplayItems,
       );
 
-      // Unified execution path: always use prepareMoveCommand/prepareCopyCommand + executor
       const isCopyOperation = draggedItems.isCopyMode ?? false;
       const prepareCommand = isCopyOperation ? prepareCopyCommand : prepareMoveCommand;
       const executeCallback = isCopyOperation ? onCopy : onMove;
@@ -568,7 +563,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
     handleDragEnd,
     handleDragLeave,
   };
-}
+};
 
 export const useTrackWorkspaceDragAndDrop = useWorkspaceDragAndDrop;
 export const usePlaylistDragAndDrop = useWorkspaceDragAndDrop;

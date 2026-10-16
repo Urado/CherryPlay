@@ -1,13 +1,9 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useDemoPlayerStore, usePlayerAudioStore, useProjectStore } from '@shared/stores';
 import { useMemo } from 'react';
 
-/**
- * Интерфейс для работы с плеером независимо от режима
- */
 export interface PlayerModeInterface {
   currentTrack: Track | null;
   status: string;
@@ -16,15 +12,10 @@ export interface PlayerModeInterface {
   pause: () => void;
 }
 
-/**
- * Хук для абстракции режимов preparation/session
- * Возвращает единый интерфейс для работы с плеером в зависимости от текущего режима
- */
-export function usePlayerMode(): PlayerModeInterface {
+export const usePlayerMode = (): PlayerModeInterface => {
   const mode = useProjectStore((state) => state.sessionState.mode);
   const isPreparationMode = mode === 'preparation';
 
-  // Демо-плеер для режима подготовки
   const {
     currentTrack: demoCurrentTrack,
     status: demoStatus,
@@ -33,7 +24,6 @@ export function usePlayerMode(): PlayerModeInterface {
     pause: pauseDemo,
   } = useDemoPlayerStore();
 
-  // Плеер для режима сессии
   const {
     currentTrack: playerCurrentTrack,
     status: playerStatus,
@@ -77,4 +67,4 @@ export function usePlayerMode(): PlayerModeInterface {
     playPlayer,
     pausePlayer,
   ]);
-}
+};

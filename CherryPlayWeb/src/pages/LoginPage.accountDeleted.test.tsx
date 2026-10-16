@@ -1,7 +1,5 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+// @vitest-environment jsdom
+import { render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,7 +49,7 @@ const LocationStateProbe = () => {
   });
 };
 
-function renderLoginWithState(state: { accountDeleted?: boolean; passwordChanged?: boolean }) {
+const renderLoginWithState = (state: { accountDeleted?: boolean; passwordChanged?: boolean }) => {
   return render(
     createElement(
       MemoryRouter,
@@ -71,7 +69,7 @@ function renderLoginWithState(state: { accountDeleted?: boolean; passwordChanged
       ),
     ),
   );
-}
+};
 
 describe('LoginPage accountDeleted notice', () => {
   beforeEach(() => {
@@ -79,7 +77,6 @@ describe('LoginPage accountDeleted notice', () => {
   });
 
   afterEach(() => {
-    cleanup();
     sessionStorage.clear();
   });
 
