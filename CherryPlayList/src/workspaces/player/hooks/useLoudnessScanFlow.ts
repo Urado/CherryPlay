@@ -6,11 +6,7 @@ import {
   type LoudnessScanProgress,
 } from '@shared/services';
 import { useSettingsStore } from '@shared/stores';
-import {
-  areGateTracksReady,
-  getGateTracksNotReady,
-  getSessionGateTracks,
-} from '@shared/utils/loudnessSessionGate';
+import { getSessionGateTracks } from '@shared/utils/loudnessSessionGate';
 import { useCallback, useRef, useState } from 'react';
 
 export type LoudnessScanFlowState = {
@@ -34,6 +30,12 @@ const INITIAL_SCAN_STATE: LoudnessScanFlowState = {
 const PENDING_POLL_MS = 200;
 const PENDING_POLL_MAX_ATTEMPTS = 300;
 
+const areGateTracksResolved = (tracks: Track[]): boolean => {
+  return tracks.every(
+    (track) => track.loudness?.status === 'ok' || track.loudness?.status === 'error',
+  );
+};
+
 const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
@@ -52,21 +54,12 @@ const waitForPendingGateTracks = async (
 
     const freshTracks = resolveFreshTracks(gateTracks);
     const hasPending = freshTracks.some((track) => track.loudness?.status === 'pending');
-    if (!hasPending || areGateTracksReady(freshTracks)) {
+    if (!hasPending || areGateTracksResolved(freshTracks)) {
       return;
     }
 
     await delay(PENDING_POLL_MS);
   }
-};
-
-const buildGateErrorMessage = (tracks: Track[]): string | null => {
-  const failed = tracks.filter((track) => track.loudness?.status === 'error');
-  if (failed.length === 0) {
-    return null;
-  }
-  const names = failed.map((track) => track.name).join(', ');
-  return `Не удалось проанализировать: ${names}`;
 };
 
 export const useLoudnessScanFlow = () => {
@@ -155,7 +148,7 @@ export const useLoudnessScanFlow = () => {
       }
 
       const freshBeforeScan = resolveFreshTracks(gateTracks);
-      if (areGateTracksReady(freshBeforeScan)) {
+      if (areGateTracksResolved(freshBeforeScan)) {
         cancelTokenRef.current = null;
         return true;
       }
@@ -168,21 +161,7 @@ export const useLoudnessScanFlow = () => {
         return false;
       }
 
-      const freshGateTracks = resolveFreshTracks(gateTracks);
-      if (areGateTracksReady(freshGateTracks)) {
-        return true;
-      }
-
-      const notReady = getGateTracksNotReady(freshGateTracks);
-      setScanState({
-        open: true,
-        title: 'Не удалось подготовить громкость',
-        completed: freshGateTracks.length - notReady.length,
-        total: freshGateTracks.length,
-        currentTrackName: notReady[0]?.name ?? null,
-        errorMessage: buildGateErrorMessage(freshGateTracks),
-      });
-      return false;
+      return true;
     },
     [runScan],
   );

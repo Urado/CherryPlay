@@ -270,7 +270,7 @@ export const analyzeLoudness = async (
   return enqueueScan(async () => {
     const ffmpegPath = resolveFfmpegPath();
     if (!ffmpegPath) {
-      return scanError('FFmpeg binary not found. Ensure ffmpeg-static is installed and bundled.');
+      return scanError('Не удалось проанализировать громкость этого трека.');
     }
 
     let fileMtime: number;
