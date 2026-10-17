@@ -151,9 +151,12 @@ describe('CabinetPage future party limit', () => {
     renderCabinet();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Редактировать' }));
-    fireEvent.change(screen.getByLabelText('Дата мероприятия (по местному времени выбранной таймзоны)'), {
-      target: { value: '2026-12-01T18:00' },
-    });
+    fireEvent.change(
+      screen.getByLabelText('Дата мероприятия (по местному времени выбранной таймзоны)'),
+      {
+        target: { value: '2026-12-01T18:00' },
+      },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
 
     expect((await screen.findByRole('alert')).textContent).toBe(FUTURE_PARTY_LIMIT_MESSAGE);

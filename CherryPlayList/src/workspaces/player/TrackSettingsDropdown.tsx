@@ -41,7 +41,10 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
 
   for (const ancestorGroupId of ancestorGroupIds) {
     const ancestorSettings = getGroupSettings(ancestorGroupId);
-    if (ancestorSettings.actionAfterTrack !== null && ancestorSettings.actionAfterTrack !== undefined) {
+    if (
+      ancestorSettings.actionAfterTrack !== null &&
+      ancestorSettings.actionAfterTrack !== undefined
+    ) {
       inheritedPauseBetweenTracks =
         ancestorSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks;
       break;
@@ -52,15 +55,19 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
     itemSettings.actionAfterTrack !== null && itemSettings.actionAfterTrack !== undefined;
   const effectiveTrackSettings = isGroup ? null : getEffectiveTrackSettings(itemId);
   const resolvedPause = hasItemAction
-    ? itemSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks
+    ? (itemSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks)
     : isGroup
       ? inheritedPauseBetweenTracks
-      : effectiveTrackSettings?.pauseBetweenTracks ?? itemSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks;
+      : (effectiveTrackSettings?.pauseBetweenTracks ??
+        itemSettings.pauseBetweenTracks ??
+        defaultPauseBetweenTracks);
 
   const [localActionAfterTrack, setLocalActionAfterTrack] = useState<ActionAfterTrack | 'default'>(
     itemSettings.actionAfterTrack || 'default',
   );
-  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number | ''>(resolvedPause);
+  const [localPauseBetweenTracks, setLocalPauseBetweenTracks] = useState<number | ''>(
+    resolvedPause,
+  );
 
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +92,14 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
         setTrackSettings(itemId, nextSettings);
       }
     },
-    [defaultPauseBetweenTracks, effectivePause, isGroup, itemId, setGroupSettings, setTrackSettings],
+    [
+      defaultPauseBetweenTracks,
+      effectivePause,
+      isGroup,
+      itemId,
+      setGroupSettings,
+      setTrackSettings,
+    ],
   );
 
   const handleSelect = useCallback(
@@ -107,10 +121,7 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
   );
 
   const handlePauseInputFocus = useCallback(() => {
-    if (
-      resolvedPause === defaultPauseBetweenTracks &&
-      localPauseBetweenTracks === resolvedPause
-    ) {
+    if (resolvedPause === defaultPauseBetweenTracks && localPauseBetweenTracks === resolvedPause) {
       setLocalPauseBetweenTracks('');
     }
   }, [defaultPauseBetweenTracks, localPauseBetweenTracks, resolvedPause]);
@@ -172,7 +183,8 @@ export const TrackSettingsDropdown: React.FC<TrackSettingsDropdownProps> = ({
               color: 'var(--text-secondary, #9e9e9e)',
             }}
           >
-            Действие применяется ко всем трекам группы. Индивидуальные настройки треков имеют приоритет.
+            Действие применяется ко всем трекам группы. Индивидуальные настройки треков имеют
+            приоритет.
           </div>
         )}
         <ul className="track-settings-dropdown__list">

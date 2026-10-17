@@ -3,7 +3,6 @@ import type { Track } from '@core/types/track';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
@@ -62,13 +61,22 @@ import {
   DEMO_SHARED_OUTPUT_CONFLICT_MESSAGE,
 } from '../../src/shared/demo/demoSharedOutputConflict';
 
-const mockOpenDemoAudioDeviceSettings = jest.fn();
+type OpenDemoAudioDeviceSettings =
+  (typeof import('../../src/shared/demo/demoSharedOutputConflict'))['openDemoAudioDeviceSettings'];
+
+const mockOpenDemoAudioDeviceSettings = jest.fn<
+  ReturnType<OpenDemoAudioDeviceSettings>,
+  Parameters<OpenDemoAudioDeviceSettings>
+>();
 
 jest.mock('../../src/shared/demo/demoSharedOutputConflict', () => {
-  const actual = jest.requireActual('../../src/shared/demo/demoSharedOutputConflict');
+  const actual = jest.requireActual<
+    typeof import('../../src/shared/demo/demoSharedOutputConflict')
+  >('../../src/shared/demo/demoSharedOutputConflict');
   return {
     ...actual,
-    openDemoAudioDeviceSettings: (...args: unknown[]) => mockOpenDemoAudioDeviceSettings(...args),
+    openDemoAudioDeviceSettings: (...args: Parameters<OpenDemoAudioDeviceSettings>) =>
+      mockOpenDemoAudioDeviceSettings(...args),
   };
 });
 
@@ -111,16 +119,21 @@ jest.mock('../../src/shared/audio/playback', () => {
 });
 
 jest.mock('../../src/shared/stores/demoPlayerStore', () => {
-  const actual = jest.requireActual('../../src/shared/stores/demoPlayerStore');
+  const actual = jest.requireActual<typeof import('../../src/shared/stores/demoPlayerStore')>(
+    '../../src/shared/stores/demoPlayerStore',
+  );
   return {
     ...actual,
     useDemoPlayerStore: jest.fn(),
   };
 });
 
-const { useDemoPlayerStore: mockUseDemoPlayerStore } = jest.requireMock(
-  '../../src/shared/stores/demoPlayerStore',
-);
+type UseDemoPlayerStore =
+  (typeof import('../../src/shared/stores/demoPlayerStore'))['useDemoPlayerStore'];
+
+const mockUseDemoPlayerStore = jest.requireMock<{
+  useDemoPlayerStore: jest.MockedFunction<UseDemoPlayerStore>;
+}>('../../src/shared/stores/demoPlayerStore').useDemoPlayerStore;
 
 jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: (selector: (state: { addNotification: typeof mockAddNotification }) => unknown) =>
@@ -272,9 +285,7 @@ describe('DemoPlayer component', () => {
     });
 
     render(<DemoPlayer controller={controller} notify={jest.fn()} />);
-    fireEvent.click(
-      screen.getByRole('button', { name: DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: DEMO_SHARED_OUTPUT_CONFLICT_ACTION_LABEL }));
 
     expect(mockOpenDemoAudioDeviceSettings).toHaveBeenCalledTimes(1);
   });

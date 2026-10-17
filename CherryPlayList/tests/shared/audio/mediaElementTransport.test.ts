@@ -81,7 +81,6 @@ const createTransport = (adapter = createMockAdapter()): MediaElementTransport =
 };
 
 beforeAll(() => {
-  // @ts-expect-error test mock
   global.Audio = MockAudio as unknown as typeof Audio;
 });
 
@@ -144,6 +143,31 @@ describe('MediaElementTransport', () => {
     audio.paused = false;
     audio.dispatch('canplay');
     expect(transport.getSnapshot().status).toBe('playing');
+  });
+
+  test('ignores play interruption when paused before playback starts', async () => {
+    const transport = createTransport();
+    await transport.load({ kind: 'url', url: 'https://example.com/track.mp3' });
+
+    const audio = MockAudio.lastInstance()!;
+    let rejectPlay: (error: Error) => void = () => undefined;
+    audio.play.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectPlay = reject;
+        }),
+    );
+
+    const playPromise = transport.play();
+    await Promise.resolve();
+    transport.pause();
+    const interruption = new Error('The play() request was interrupted by a call to pause().');
+    interruption.name = 'AbortError';
+    rejectPlay(interruption);
+
+    await expect(playPromise).resolves.toBeUndefined();
+    expect(transport.getSnapshot().status).toBe('paused');
+    expect(transport.getSnapshot().error).toBeNull();
   });
 
   test('seek clamps to duration and updates position', async () => {

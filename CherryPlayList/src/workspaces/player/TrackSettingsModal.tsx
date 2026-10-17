@@ -13,7 +13,12 @@ import {
 } from '@shared/contracts/loudness';
 import { useModalKeyboard } from '@shared/hooks';
 import { usePlatformCapabilities } from '@shared/platform';
-import { getItemPathRecursive, useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
+import {
+  getItemPathRecursive,
+  useProjectStore,
+  useSettingsStore,
+  useUIStore,
+} from '@shared/stores';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 export const TrackSettingsModal: React.FC = () => {
@@ -49,7 +54,11 @@ export const TrackSettingsModal: React.FC = () => {
   const isGlobal = trackSettingsContext.isGlobal;
   const itemPath = useMemo(
     () =>
-      (groupId ? getItemPathRecursive(items, groupId) : trackId ? getItemPathRecursive(items, trackId) : null) ?? [],
+      (groupId
+        ? getItemPathRecursive(items, groupId)
+        : trackId
+          ? getItemPathRecursive(items, trackId)
+          : null) ?? [],
     [groupId, items, trackId],
   );
   const ancestorGroupIds = useMemo(
@@ -67,11 +76,13 @@ export const TrackSettingsModal: React.FC = () => {
   const getInheritedGroupSettings = useCallback(() => {
     for (const ancestorId of ancestorGroupIds) {
       const ancestorSettings = getGroupSettings(ancestorId);
-      if (ancestorSettings.actionAfterTrack !== null && ancestorSettings.actionAfterTrack !== undefined) {
+      if (
+        ancestorSettings.actionAfterTrack !== null &&
+        ancestorSettings.actionAfterTrack !== undefined
+      ) {
         return {
           actionAfterTrack: ancestorSettings.actionAfterTrack,
-          pauseBetweenTracks:
-            ancestorSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
+          pauseBetweenTracks: ancestorSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
           hasInheritedGroupAction: true,
         };
       }
@@ -83,52 +94,49 @@ export const TrackSettingsModal: React.FC = () => {
     };
   }, [ancestorGroupIds, defaultActionAfterTrack, defaultPauseBetweenTracks, getGroupSettings]);
 
-  const getResolvedSettings = useCallback(
-    () => {
-      if (isGlobal) {
-        return {
-          pauseBetweenTracks: defaultPauseBetweenTracks,
-          actionAfterTrack: defaultActionAfterTrack,
-        };
-      }
-      if (groupId) {
-        const groupSettings = getGroupSettings(groupId);
-        const inherited = getInheritedGroupSettings();
-        return {
-          actionAfterTrack: groupSettings.actionAfterTrack,
-          pauseBetweenTracks:
-            groupSettings.actionAfterTrack !== null && groupSettings.actionAfterTrack !== undefined
-              ? groupSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks
-              : inherited.pauseBetweenTracks,
-        };
-      }
-      if (trackId) {
-        const trackSettings = getTrackSettings(trackId);
-        const hasTrackAction =
-          trackSettings.actionAfterTrack !== null && trackSettings.actionAfterTrack !== undefined;
-        const inherited = getInheritedGroupSettings();
-        return {
-          actionAfterTrack: trackSettings.actionAfterTrack,
-          pauseBetweenTracks: hasTrackAction
-            ? trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks
-            : inherited.hasInheritedGroupAction
-              ? inherited.pauseBetweenTracks
-              : trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
-        };
-      }
-      return {};
-    },
-    [
-      isGlobal,
-      groupId,
-      trackId,
-      defaultPauseBetweenTracks,
-      defaultActionAfterTrack,
-      getInheritedGroupSettings,
-      getGroupSettings,
-      getTrackSettings,
-    ],
-  );
+  const getResolvedSettings = useCallback(() => {
+    if (isGlobal) {
+      return {
+        pauseBetweenTracks: defaultPauseBetweenTracks,
+        actionAfterTrack: defaultActionAfterTrack,
+      };
+    }
+    if (groupId) {
+      const groupSettings = getGroupSettings(groupId);
+      const inherited = getInheritedGroupSettings();
+      return {
+        actionAfterTrack: groupSettings.actionAfterTrack,
+        pauseBetweenTracks:
+          groupSettings.actionAfterTrack !== null && groupSettings.actionAfterTrack !== undefined
+            ? (groupSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks)
+            : inherited.pauseBetweenTracks,
+      };
+    }
+    if (trackId) {
+      const trackSettings = getTrackSettings(trackId);
+      const hasTrackAction =
+        trackSettings.actionAfterTrack !== null && trackSettings.actionAfterTrack !== undefined;
+      const inherited = getInheritedGroupSettings();
+      return {
+        actionAfterTrack: trackSettings.actionAfterTrack,
+        pauseBetweenTracks: hasTrackAction
+          ? (trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks)
+          : inherited.hasInheritedGroupAction
+            ? inherited.pauseBetweenTracks
+            : (trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks),
+      };
+    }
+    return {};
+  }, [
+    isGlobal,
+    groupId,
+    trackId,
+    defaultPauseBetweenTracks,
+    defaultActionAfterTrack,
+    getInheritedGroupSettings,
+    getGroupSettings,
+    getTrackSettings,
+  ]);
 
   const [localActionAfterTrack, setLocalActionAfterTrack] = useState<ActionAfterTrack | 'default'>(
     () => getResolvedSettings().actionAfterTrack || 'default',

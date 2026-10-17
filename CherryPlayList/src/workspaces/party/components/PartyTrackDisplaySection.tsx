@@ -68,9 +68,7 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
           <input
             type="checkbox"
             checked={display.stripLeadingCharsEnabled}
-            onChange={(e) =>
-              onChange({ ...display, stripLeadingCharsEnabled: e.target.checked })
-            }
+            onChange={(e) => onChange({ ...display, stripLeadingCharsEnabled: e.target.checked })}
           />
           <span>Скрыть символы с начала имени трека</span>
         </label>

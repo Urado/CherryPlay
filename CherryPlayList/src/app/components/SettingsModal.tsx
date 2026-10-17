@@ -32,8 +32,13 @@ const DIVIDER_INTERVALS = [
 ];
 
 export const SettingsModal: React.FC = () => {
-  const { modal, closeModal, addNotification, settingsFocusElementId, clearSettingsFocusElementId } =
-    useUIStore();
+  const {
+    modal,
+    closeModal,
+    addNotification,
+    settingsFocusElementId,
+    clearSettingsFocusElementId,
+  } = useUIStore();
   const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
@@ -604,13 +609,11 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             <p className="settings-description settings-backup-description">
-              Сохраняет настройки приложения (аудио, интерфейс, онлайн) в JSON. Файл проекта (.cherry)
-              сохраняется отдельно через меню проекта.
+              Сохраняет настройки приложения (аудио, интерфейс, онлайн) в JSON. Файл проекта
+              (.cherry) сохраняется отдельно через меню проекта.
             </p>
 
-            <div
-              className="settings-group settings-backup-actions"
-            >
+            <div className="settings-group settings-backup-actions">
               <Button
                 type="button"
                 className="modal-button"

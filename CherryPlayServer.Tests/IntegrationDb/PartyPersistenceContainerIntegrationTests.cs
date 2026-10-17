@@ -5,9 +5,11 @@ using CherryPlayServer.Infrastructure.Persistence.Entities;
 using CherryPlayServer.Infrastructure.Persistence.Repositories;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Exceptions;
+using CherryPlayServer.Core.Options;
 using CherryPlayServer.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
 using Npgsql;
 
@@ -341,7 +343,8 @@ public sealed class PartyPersistenceContainerIntegrationTests
                 new RegressionPlaylistNotifier(),
                 new PartyAccessService(repo, NullLogger<PartyAccessService>.Instance),
                 new RegressionThemeAccessService(),
-                NullLogger<PartyService>.Instance);
+                NullLogger<PartyService>.Instance,
+                Options.Create(new PartyLimitOptions { EnforceFuturePartyLimit = true }));
             try
             {
                 await service.CreatePartyAsync(new CherryPlayServer.Models.CreatePartyDto

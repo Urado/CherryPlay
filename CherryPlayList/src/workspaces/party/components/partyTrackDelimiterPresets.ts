@@ -19,18 +19,18 @@ export const PARTY_TRACK_DELIMITER_PRESETS: ReadonlyArray<{
   { id: PARTY_TRACK_DELIMITER_PRESET_UNDERSCORE, label: 'Подчёркивание', char: '_' },
 ];
 
-export function resolvePartyTrackDelimiterPresetId(
+export const resolvePartyTrackDelimiterPresetId = (
   delimiter: string,
-): PartyTrackDelimiterPresetId {
+): PartyTrackDelimiterPresetId => {
   const match = PARTY_TRACK_DELIMITER_PRESETS.find((preset) => preset.char === delimiter);
   return match?.id ?? PARTY_TRACK_DELIMITER_PRESET_CUSTOM;
-}
+};
 
-export function partyTrackDelimiterCharFromPreset(
+export const partyTrackDelimiterCharFromPreset = (
   presetId: PartyTrackDelimiterPresetId,
-): string | null {
+): string | null => {
   if (presetId === PARTY_TRACK_DELIMITER_PRESET_CUSTOM) {
     return null;
   }
   return PARTY_TRACK_DELIMITER_PRESETS.find((preset) => preset.id === presetId)?.char ?? null;
-}
+};

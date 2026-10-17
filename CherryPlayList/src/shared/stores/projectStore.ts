@@ -1132,7 +1132,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         if (trackIds.length === 0) return;
         set((state) => {
           const toRemove = new Set(trackIds);
-          const playedTrackIds = state.sessionState.playedTrackIds.filter((id) => !toRemove.has(id));
+          const playedTrackIds = state.sessionState.playedTrackIds.filter(
+            (id) => !toRemove.has(id),
+          );
           if (playedTrackIds.length === state.sessionState.playedTrackIds.length) return state;
           return {
             sessionState: {

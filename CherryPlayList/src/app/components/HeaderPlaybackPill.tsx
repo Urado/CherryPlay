@@ -1,4 +1,3 @@
-
 import { useCherryPlayStreamingConnection } from '@app/components/CherryPlayStreamingController';
 import * as signalR from '@microsoft/signalr';
 import PauseIcon from '@mui/icons-material/Pause';

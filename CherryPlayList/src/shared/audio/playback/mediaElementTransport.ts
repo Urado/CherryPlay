@@ -157,6 +157,9 @@ export class MediaElementTransport {
       if (this.disposed) {
         return;
       }
+      if (error instanceof Error && error.name === 'AbortError' && this.audioElement?.paused) {
+        return;
+      }
       const message = error instanceof Error ? error.message : 'Не удалось воспроизвести трек';
       this.handlePlaybackError(message);
       throw error instanceof Error ? error : new Error(message);

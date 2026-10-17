@@ -25,13 +25,13 @@ const FUTURE_PARTY_LIMIT_FALLBACK = 2;
 
 const buildFuturePartyLimitMessage = (limit: number): string => {
   return `Достигнут лимит: не больше ${limit} будущих вечеринок. Новую будущую вечеринку создать нельзя, и прошедшую нельзя перенести в будущее.`;
-}
+};
 
 const resolveFuturePartyLimit = (limit: unknown): number => {
   return typeof limit === 'number' && Number.isInteger(limit) && limit > 0
     ? limit
     : FUTURE_PARTY_LIMIT_FALLBACK;
-}
+};
 
 const buildThemeEntitlementMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'theme_not_entitled') {
@@ -44,7 +44,7 @@ const buildThemeEntitlementMessage = (payload: ApiErrorPayload): string => {
   }
 
   return `Тема недоступна без пакета: ${packageCodes.join(', ')}. Обратитесь к администратору.`;
-}
+};
 
 const buildLifecycleTransitionMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'invalid_lifecycle_transition') {
@@ -60,7 +60,7 @@ const buildLifecycleTransitionMessage = (payload: ApiErrorPayload): string => {
   }
 
   return payload.message || 'Недопустимый переход состояния вечеринки';
-}
+};
 
 const throwIfFuturePartyLimitReached = async (response: Response): Promise<void> => {
   if (response.status !== 403) {
@@ -74,7 +74,7 @@ const throwIfFuturePartyLimitReached = async (response: Response): Promise<void>
 
   const limit = resolveFuturePartyLimit(payload.limit);
   throw new FuturePartyLimitReachedError(buildFuturePartyLimitMessage(limit), limit);
-}
+};
 
 const throwIfThemeNotEntitled = async (response: Response): Promise<void> => {
   if (response.status !== 403) {
@@ -93,7 +93,7 @@ const throwIfThemeNotEntitled = async (response: Response): Promise<void> => {
     : [];
 
   throw new ThemeNotEntitledError(message, themeId, requiredPackageCodes);
-}
+};
 
 const throwIfInvalidLifecycleTransition = async (response: Response): Promise<void> => {
   if (response.status !== 409) {
@@ -112,7 +112,7 @@ const throwIfInvalidLifecycleTransition = async (response: Response): Promise<vo
     : 'draft';
 
   throw new InvalidPartyLifecycleTransitionError(message, currentState, requestedState);
-}
+};
 
 class PartyApiService {
   async getMyParties(): Promise<PartyDto[]> {

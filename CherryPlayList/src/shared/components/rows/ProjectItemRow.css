@@ -26,7 +26,6 @@
 .playlist-item-group-name-field--editing {
   flex: 1 1 auto;
   border-color: var(--accent-primary, #4a9eff);
-  border-bottom-color: var(--accent-primary, #4a9eff);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary, #4a9eff) 35%, transparent);
 }
 

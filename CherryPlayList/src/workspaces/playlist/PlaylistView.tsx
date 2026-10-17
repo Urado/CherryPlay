@@ -1,4 +1,3 @@
-
 import { IconButton } from '@cherryplay/components';
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';

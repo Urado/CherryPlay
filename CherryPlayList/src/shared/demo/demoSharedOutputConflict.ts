@@ -18,7 +18,5 @@ export const isDemoSharedOutputConflictError = (error: string | null | undefined
 };
 
 export const openDemoAudioDeviceSettings = (): void => {
-  useUIStore
-    .getState()
-    .openSettingsModal(DEMO_PLAYER_AUDIO_DEVICE_SETTINGS_ELEMENT_ID);
+  useUIStore.getState().openSettingsModal(DEMO_PLAYER_AUDIO_DEVICE_SETTINGS_ELEMENT_ID);
 };

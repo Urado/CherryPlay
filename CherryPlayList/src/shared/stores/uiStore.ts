@@ -105,8 +105,7 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   setActiveSource: (source) => set({ activeSource: source }),
 
-  openModal: (type) =>
-    set({ modal: type, modalReturnTo: null, settingsFocusElementId: null }),
+  openModal: (type) => set({ modal: type, modalReturnTo: null, settingsFocusElementId: null }),
 
   openSettingsModal: (focusElementId) =>
     set({
