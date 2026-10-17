@@ -26,6 +26,7 @@ import { AppHeader } from './components/AppHeader';
 import { CherryPlayStreamingController } from './components/CherryPlayStreamingController';
 import { DemoModeBanner } from './components/DemoModeBanner';
 import { DemoPlayerShell } from './components/DemoPlayerShell';
+import { DialogHost } from './components/DialogHost';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
@@ -158,6 +159,7 @@ const App: React.FC = () => {
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />
+        <DialogHost />
         <AppFooter />
       </div>
     </CherryPlayStreamingController>

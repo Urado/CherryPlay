@@ -1,6 +1,7 @@
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { WorkspaceZone, Zone } from '@core/types/layout';
 import CloseIcon from '@mui/icons-material/Close';
+import { dialogService } from '@shared/services/dialogService';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutAirPickerKey } from '@shared/stores/layoutStore';
 import { getCurrentLayoutViewport } from '@shared/utils/layoutViewportBridge';
@@ -107,10 +108,23 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
     [addAdjacentWorkspace, zone.id],
   );
 
-  const handleRemoveWorkspace = useCallback(() => {
+  const removeRequestRef = useRef(false);
+  const handleRemoveWorkspace = useCallback(async () => {
+    if (removeRequestRef.current) return;
     const confirmMessage = getRemoveWorkspaceConfirmMessage(zone, layout.rootZone);
-    if (confirmMessage && !window.confirm(confirmMessage)) {
-      return;
+    if (confirmMessage) {
+      removeRequestRef.current = true;
+      try {
+        const accepted = await dialogService.confirm({
+          title: 'Удалить рабочее окно?',
+          message: confirmMessage,
+          confirmLabel: 'Удалить',
+          destructive: true,
+        });
+        if (!accepted) return;
+      } finally {
+        removeRequestRef.current = false;
+      }
     }
 
     removeWorkspaceZone(zone.id);
@@ -205,7 +219,7 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
         className="workspace-layout-edit-close"
         title={`Удалить «${workspaceLabel}»`}
         aria-label={`Удалить «${workspaceLabel}»`}
-        onClick={handleRemoveWorkspace}
+        onClick={() => void handleRemoveWorkspace()}
       >
         <CloseIcon fontSize="small" aria-hidden />
       </button>

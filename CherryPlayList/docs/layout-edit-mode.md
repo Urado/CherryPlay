@@ -276,7 +276,7 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 
 ### Удаление зоны
 
-1. Кнопка **×** в `WorkspaceLayoutEditShell` вызывает `handleRemoveWorkspace`. Перед удалением может показаться нативный **`window.confirm`** (`getRemoveWorkspaceConfirmMessage`):
+1. Кнопка **×** в `WorkspaceLayoutEditShell` вызывает `handleRemoveWorkspace`. Перед удалением может показаться стилизованный диалог приложения (`getRemoveWorkspaceConfirmMessage`):
    - **последняя** workspace-зона в layout: «Удалить последний workspace «…»? Layout станет пустым.»
    - **единственный** workspace singleton-типа в layout: «Удалить единственный workspace «…» этого типа?»
      В остальных случаях подтверждения нет.

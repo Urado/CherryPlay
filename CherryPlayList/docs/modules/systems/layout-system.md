@@ -233,7 +233,7 @@ isLayoutEmpty(layout)?
 - **WorkspaceLayoutEditShell** — оболочка одной workspace-зоны (air-регионы, content-frame, diagonals, удаление)
 - **WorkspaceLayoutEditContainerShell** — span-полосы контейнера (flex-полосы **24px**; вся полоса кликабельна для добавления над/под или слева/справа от всего ряда)
 - **WorkspaceLayoutEditAirControl** — кнопка air-зоны workspace (вся сторона кликабельна) или span-полоса контейнера (`iconPlacement="band-center"`); picker
-- **Удаление зоны (×):** при удалении последней workspace-зоны или единственного singleton-типа — `window.confirm` с текстом из `getRemoveWorkspaceConfirmMessage` (`WorkspaceLayoutEditShell.tsx`)
+- **Удаление зоны (×):** при удалении последней workspace-зоны или единственного singleton-типа — стилизованный диалог приложения с текстом из `getRemoveWorkspaceConfirmMessage` (`WorkspaceLayoutEditShell.tsx`)
 - **LayoutEmptyWorkspaceState** — пустой layout, первая зона через picker
 
 ## См. также
