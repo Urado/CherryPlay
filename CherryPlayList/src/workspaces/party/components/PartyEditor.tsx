@@ -1,10 +1,11 @@
+import type { PartyTrackDisplaySettings } from '@core/types/project';
 import { useProjectStore } from '@shared/stores/projectStore';
 import React from 'react';
 
 import type { PartyEditorPhase } from '../partyEditorPhase';
 import type { PartySettingsSection } from '../partySettingsUiStore';
 
-import { PartyCardFieldsSection } from './PartyCardFieldsSection';
+import { PartyCatalogSection } from './PartyCatalogSection';
 import { PartyDesignSection } from './PartyDesignSection';
 import type {
   PartyEditorConnectionState,
@@ -12,7 +13,8 @@ import type {
   PartyEditorFieldHandlers,
   PartyEditorFieldValues,
 } from './partyEditorRuntimeTypes';
-import { PartyInfoSection } from './PartyInfoSection';
+import { PartyGeneralSection } from './PartyGeneralSection';
+import { PartyGuestPageSection } from './PartyGuestPageSection';
 
 import './PartyEditor.css';
 
@@ -33,6 +35,16 @@ interface PartyEditorProps {
   copyUrlDisabled?: boolean;
   copyUrlTitle?: string;
   onCopyUrl?: () => void;
+  showTrackDisplay?: boolean;
+  partyTrackDisplay?: PartyTrackDisplaySettings | Partial<PartyTrackDisplaySettings>;
+  onPartyTrackDisplayChange?: (value: PartyTrackDisplaySettings) => void;
+  catalogVisibilityControl?: React.ReactNode;
+  catalogDefaultExpanded?: boolean;
+  catalogExpanded?: boolean;
+  onCatalogExpandedChange?: (expanded: boolean) => void;
+  catalogSectionRef?: React.Ref<HTMLElement>;
+  isListedInCatalog?: boolean;
+  showDraftCatalogHint?: boolean;
 }
 
 export const PartyEditor: React.FC<PartyEditorProps> = ({
@@ -50,6 +62,16 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   copyUrlDisabled = false,
   copyUrlTitle,
   onCopyUrl,
+  showTrackDisplay = false,
+  partyTrackDisplay,
+  onPartyTrackDisplayChange,
+  catalogVisibilityControl,
+  catalogDefaultExpanded = false,
+  catalogExpanded,
+  onCatalogExpandedChange,
+  catalogSectionRef,
+  isListedInCatalog = false,
+  showDraftCatalogHint = false,
 }) => {
   const projectName = useProjectStore((state) => state.name);
   const {
@@ -99,6 +121,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   const showAllSections = section === 'all';
   const showAbout = section === 'about' || showAllSections;
   const showDesign = section === 'design' || showAllSections;
+  const showGuestPage = showAllSections;
   const accessibleStyleIds = new Set(
     (visibleThemeIds ?? [])
       .filter((id) => !lockedThemes.some((locked) => locked.themeId === id))
@@ -106,15 +129,30 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   );
   const selectedLockedTheme = lockedThemes.find((item) => item.themeId === themeId) ?? null;
 
+  const designSectionProps = {
+    themeId,
+    customizationSettings,
+    onThemeIdChange,
+    onCustomizationSettingsChange,
+    readOnly: isReadOnly,
+    lockedThemes,
+    visibleThemeIds,
+    hasThemeAccess,
+    networkEnabled: designNetworkEnabled,
+    isThemeAccessLoading,
+    themeAccessErrorMessage,
+    showNoAccessibleThemesHint:
+      !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0,
+    selectedLockedTheme,
+    designPreviewHint,
+    defaultExpanded,
+  };
+
   return (
     <div className={`party-editor${isReadOnly ? ' party-editor--read-only' : ''}`}>
       {showAbout ? (
         <>
-          <PartyInfoSection
-            partyName={partyName}
-            partyTitle={partyTitle}
-            partySubtitle={partySubtitle}
-            projectName={projectName}
+          <PartyGeneralSection
             readOnly={isReadOnly}
             defaultExpanded={defaultExpanded}
             partyUrl={linkedParty?.url}
@@ -122,12 +160,12 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             copyUrlDisabled={copyUrlDisabled}
             copyUrlTitle={copyUrlTitle}
             onCopyUrl={onCopyUrl}
-            onPartyNameChange={onPartyNameChange}
-            onPartyTitleChange={onPartyTitleChange}
-            onPartySubtitleChange={onPartySubtitleChange}
           />
 
-          <PartyCardFieldsSection
+          <PartyCatalogSection
+            partyName={partyName}
+            onPartyNameChange={onPartyNameChange}
+            projectName={projectName}
             eventDateTime={eventDateTime}
             eventEndDateTime={eventEndDateTime}
             city={city}
@@ -137,7 +175,14 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             externalLinkText={externalLinkText}
             danceTags={danceTags}
             readOnly={isReadOnly}
-            defaultExpanded={defaultExpanded}
+            defaultExpanded={catalogDefaultExpanded || defaultExpanded}
+            expanded={catalogExpanded}
+            onExpandedChange={onCatalogExpandedChange}
+            sectionRef={catalogSectionRef}
+            headerTrailing={catalogVisibilityControl}
+            isListedInCatalog={isListedInCatalog}
+            editorPhase={phase}
+            showDraftCatalogHint={showDraftCatalogHint}
             onEventDateTimeChange={onEventDateTimeChange}
             onEventEndDateTimeChange={onEventEndDateTimeChange}
             onCityChange={onCityChange}
@@ -150,26 +195,25 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </>
       ) : null}
 
-      {showDesign ? (
-        <PartyDesignSection
-          themeId={themeId}
-          customizationSettings={customizationSettings}
-          onThemeIdChange={onThemeIdChange}
-          onCustomizationSettingsChange={onCustomizationSettingsChange}
+      {showGuestPage ? (
+        <PartyGuestPageSection
+          partyTitle={partyTitle}
+          partySubtitle={partySubtitle}
+          projectName={projectName}
           readOnly={isReadOnly}
-          lockedThemes={lockedThemes}
-          visibleThemeIds={visibleThemeIds}
-          hasThemeAccess={hasThemeAccess}
-          networkEnabled={designNetworkEnabled}
-          isThemeAccessLoading={isThemeAccessLoading}
-          themeAccessErrorMessage={themeAccessErrorMessage}
           defaultExpanded={defaultExpanded}
-          showNoAccessibleThemesHint={
-            !isThemeAccessLoading && visibleThemeIds != null && accessibleStyleIds.size === 0
-          }
-          selectedLockedTheme={selectedLockedTheme}
           designPreviewHint={designPreviewHint}
+          showTrackDisplay={showTrackDisplay}
+          partyTrackDisplay={partyTrackDisplay}
+          onPartyTrackDisplayChange={onPartyTrackDisplayChange}
+          onPartyTitleChange={onPartyTitleChange}
+          onPartySubtitleChange={onPartySubtitleChange}
+          {...designSectionProps}
         />
+      ) : null}
+
+      {showDesign && !showGuestPage ? (
+        <PartyDesignSection {...designSectionProps} />
       ) : null}
 
       {showAbout ? (

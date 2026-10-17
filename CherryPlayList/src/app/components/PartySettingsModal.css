@@ -29,6 +29,16 @@
   width: 100%;
 }
 
+.party-settings-content__status-row {
+  flex-shrink: 0;
+  padding: 0 24px 8px;
+}
+
+.party-settings-content__status-row:empty {
+  display: none;
+  padding: 0;
+}
+
 .party-settings-content__body {
   flex: 1 1 auto;
   min-width: 0;
@@ -48,8 +58,12 @@
 
 .party-settings-content__body .party-catalog-visibility {
   margin: 0;
-  width: 100%;
+  width: auto;
   box-sizing: border-box;
+}
+
+.party-settings-content__body .party-catalog-visibility--header {
+  margin: 0;
 }
 
 .party-settings-content__body .party-catalog-visibility-options {

@@ -16,6 +16,7 @@ export interface PartyDesignSectionProps {
   onCustomizationSettingsChange: (settings: Record<string, unknown>) => void;
   readOnly?: boolean;
   defaultExpanded?: boolean;
+  layout?: 'accordion' | 'embedded';
   lockedThemes?: PartyDesignLockedThemeInfo[];
   visibleThemeIds?: PartyThemeId[] | null;
   hasThemeAccess?: boolean;
@@ -34,6 +35,7 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
   onCustomizationSettingsChange,
   readOnly = false,
   defaultExpanded = false,
+  layout = 'accordion',
   lockedThemes = [],
   visibleThemeIds = null,
   hasThemeAccess = true,
@@ -44,9 +46,9 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
   selectedLockedTheme = null,
   designPreviewHint = null,
 }) => {
-  return (
-    <PartyEditorAccordion title="Стиль оформления" defaultExpanded={defaultExpanded}>
-      {designPreviewHint}
+  const block = (
+    <>
+      {layout === 'accordion' ? designPreviewHint : null}
       <PartyDesignSettingsBlock
         themeId={themeId}
         customizationSettings={customizationSettings}
@@ -61,15 +63,25 @@ export const PartyDesignSection: React.FC<PartyDesignSectionProps> = ({
         themeAccessErrorMessage={themeAccessErrorMessage}
         hideSectionLabel
       />
-      {showNoAccessibleThemesHint && (
+      {showNoAccessibleThemesHint ? (
         <div className="party-editor-theme-access-hint">Нет доступных тем в вашем тарифе.</div>
-      )}
-      {selectedLockedTheme && (
+      ) : null}
+      {selectedLockedTheme ? (
         <div className="party-editor-theme-restricted-note">
           Текущая тема больше не входит в ваш доступ. Выберите доступную тему, чтобы создать
           вечеринку, или переключитесь на доступную тему перед сохранением.
         </div>
-      )}
+      ) : null}
+    </>
+  );
+
+  if (layout === 'embedded') {
+    return block;
+  }
+
+  return (
+    <PartyEditorAccordion title="Стиль оформления" defaultExpanded={defaultExpanded}>
+      {block}
     </PartyEditorAccordion>
   );
 };

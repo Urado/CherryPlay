@@ -11,6 +11,7 @@ export interface DisclosureProps {
   variant?: DisclosureVariant;
   defaultExpanded?: boolean;
   summary?: React.ReactNode;
+  headerTrailing?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
   expanded?: boolean;
@@ -26,6 +27,7 @@ export const Disclosure: React.FC<DisclosureProps> = ({
   variant = 'flat',
   defaultExpanded = false,
   summary,
+  headerTrailing,
   className = '',
   children,
   expanded: expandedProp,
@@ -73,6 +75,9 @@ export const Disclosure: React.FC<DisclosureProps> = ({
         {!isExpanded && hasSummary(summary) && (
           <span className="cp-disclosure__summary">{summary}</span>
         )}
+        {headerTrailing != null && headerTrailing !== '' ? (
+          <div className="cp-disclosure__header-trailing">{headerTrailing}</div>
+        ) : null}
       </div>
 
       <div

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 
 import type { PartyWorkspaceRuntimeValue } from '../partyWorkspaceRuntimeContext';
 import { usePartySettingsFormState } from '../usePartySettingsFormState';
@@ -8,6 +8,7 @@ import { PartyConnectivityBanner } from './PartyConnectivityBanner';
 import { PartyEditor } from './PartyEditor';
 import { PartyEditorActions } from './PartyEditorActions';
 import { PartyEditorDangerZone } from './PartyEditorDangerZone';
+import { PartySettingsCatalogStatusChip } from './PartySettingsCatalogStatusChip';
 
 export interface PartySettingsContentProps {
   runtime: PartyWorkspaceRuntimeValue;
@@ -30,12 +31,21 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   onPartyCreated,
 }) => {
   const form = usePartySettingsFormState(runtime);
+  const catalogSectionRef = useRef<HTMLElement>(null);
+  const [catalogExpanded, setCatalogExpanded] = useState<boolean | undefined>(undefined);
 
   const handleCreateParty = () => {
     void form.handleCreateParty().then((created) => {
       notifyParentAfterPartyCreated(created, onPartyCreated);
     });
   };
+
+  const focusCatalogSection = useCallback(() => {
+    setCatalogExpanded(true);
+    requestAnimationFrame(() => {
+      catalogSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }, []);
 
   const connectivityBanner = !form.isNetworkEnabledForEditor ? (
     <PartyConnectivityBanner
@@ -62,9 +72,10 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
     />
   ) : null;
 
-  const catalogBlock =
-    form.editorPhase && form.actionVisibility && form.showCatalog ? (
+  const catalogVisibilityControl =
+    form.editorPhase && form.showCatalog ? (
       <PartyCatalogVisibilityControl
+        layout="header"
         isListedInCatalog={form.isListedInCatalog}
         disabled={form.networkActionsDisabled || form.editorPhase === 'completed'}
         isUpdating={form.isTogglingCatalogVisibility}
@@ -100,15 +111,9 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       </div>
     ) : null;
 
-  const footerActions =
-    catalogBlock || primaryActions ? (
-      <div className="party-editor-about-actions">
-        {catalogBlock}
-        {primaryActions}
-      </div>
-    ) : null;
-
-  const aboutActions = footerActions;
+  const footerActions = primaryActions ? (
+    <div className="party-editor-about-actions">{primaryActions}</div>
+  ) : null;
 
   const designPreviewHint = form.editorPhase ? (
     <p className="party-settings-design-hint">
@@ -116,9 +121,18 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
     </p>
   ) : null;
 
+  const catalogDefaultExpanded = form.editorPhase === 'draft-unlinked';
+
   return (
     <div className="party-settings-content">
       {connectivityBanner}
+      <div className="party-settings-content__status-row">
+        <PartySettingsCatalogStatusChip
+          isListedInCatalog={form.isListedInCatalog}
+          visible={Boolean(form.showCatalog)}
+          onFocusCatalog={focusCatalogSection}
+        />
+      </div>
       <div className="party-settings-content__body">
         {form.editorPhase ? (
           <PartyEditor
@@ -129,9 +143,19 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
             design={form.editorDesign}
             connection={form.editorConnection}
             isBlocked={form.isBlocked}
-            aboutActions={aboutActions}
+            aboutActions={footerActions}
             defaultExpanded={true}
+            catalogDefaultExpanded={catalogDefaultExpanded}
+            catalogExpanded={catalogExpanded}
+            onCatalogExpandedChange={setCatalogExpanded}
+            catalogSectionRef={catalogSectionRef}
+            catalogVisibilityControl={catalogVisibilityControl}
+            isListedInCatalog={form.isListedInCatalog}
+            showDraftCatalogHint={form.editorPhase === 'draft-unlinked'}
             designPreviewHint={designPreviewHint}
+            showTrackDisplay={form.showTrackDisplay}
+            partyTrackDisplay={form.partyTrackDisplay}
+            onPartyTrackDisplayChange={form.setPartyTrackDisplaySettings}
             showCopyUrl={form.showCopyUrl}
             copyUrlDisabled={
               form.networkActionsDisabled || form.isCreating || form.isSavingMetadata

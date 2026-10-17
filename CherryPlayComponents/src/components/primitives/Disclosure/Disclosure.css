@@ -84,6 +84,12 @@
   text-overflow: ellipsis;
 }
 
+.cp-disclosure__header-trailing {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 .cp-disclosure__panel {
   margin-top: 0.75rem;
   display: flex;

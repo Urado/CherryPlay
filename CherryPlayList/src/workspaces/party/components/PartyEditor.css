@@ -1023,6 +1023,34 @@
   min-width: 150px;
 }
 
+.party-editor .project-name-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 4px;
+  font-size: 14px;
+  background: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #000000);
+}
+
+.party-editor-catalog-draft-hint,
+.party-editor-catalog-link-only-hint {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: var(--font-size-secondary, 12px);
+  line-height: 1.4;
+  color: var(--text-secondary, #666666);
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.04));
+}
+
+.party-editor-catalog-fields--link-only .party-editor-input:not(:focus),
+.party-editor-catalog-fields--link-only .party-editor-input:not(:focus-visible),
+.party-editor-catalog-fields--link-only textarea.party-editor-input:not(:focus) {
+  opacity: 0.72;
+}
+
 .party-editor .party-editor-input:focus-visible,
 .party-editor .party-editor-dropdown-button:focus-visible,
 .party-editor .party-editor-dropdown-item:focus-visible,

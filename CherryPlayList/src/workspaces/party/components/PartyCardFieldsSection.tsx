@@ -197,7 +197,7 @@ export interface PartyCardFieldsSectionProps {
   onTimeZoneChange?: (timeZone: string) => void;
 }
 
-export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
+export const PartyCatalogCardFields: React.FC<PartyCardFieldsSectionProps> = ({
   eventDateTime,
   eventEndDateTime,
   city,
@@ -207,7 +207,6 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
   externalLinkText,
   danceTags,
   readOnly = false,
-  defaultExpanded = false,
   onEventDateTimeChange,
   onEventEndDateTimeChange,
   onCityChange,
@@ -218,7 +217,7 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
   onTimeZoneChange,
 }) => {
   return (
-    <PartyEditorAccordion title="Карточка в каталоге" defaultExpanded={defaultExpanded}>
+    <>
       <div className="party-editor-fields-group">
         <h4 className="party-editor-fields-group__title">Дата и время</h4>
         <div className="party-editor-fields-group__fields">
@@ -375,6 +374,15 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
           </div>
         </div>
       ) : null}
+    </>
+  );
+};
+
+export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = (props) => {
+  const { defaultExpanded = false, ...fieldsProps } = props;
+  return (
+    <PartyEditorAccordion title="Карточка в каталоге" defaultExpanded={defaultExpanded}>
+      <PartyCatalogCardFields {...fieldsProps} />
     </PartyEditorAccordion>
   );
 };
