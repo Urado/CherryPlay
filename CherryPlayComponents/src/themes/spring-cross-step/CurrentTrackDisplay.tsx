@@ -84,6 +84,7 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
 
   const progress =
     playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
+  const duration = playbackState.duration > 0 ? playbackState.duration : currentTrack.duration;
   const isPlaying = playbackState.status === 'playing';
 
   return (
@@ -170,7 +171,11 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
         {currentTrack.path && <div className="party-current-track-meta">{currentTrack.path}</div>}
         <div className="party-current-track-time">
           <span>{formatTime(playbackState.position)}</span>
-          <span>{formatTime(playbackState.duration)}</span>
+          {duration != null && duration > 0 ? (
+            <span>{formatTime(duration)}</span>
+          ) : (
+            <span className="party-current-track-time-loader" role="status" aria-label="Загрузка длительности" />
+          )}
         </div>
         <div className="party-current-track-progress">
           <div className="party-current-track-progress-bar" style={{ width: `${progress}%` }} />

@@ -32,6 +32,7 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
 
   const progress =
     playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
+  const duration = playbackState.duration > 0 ? playbackState.duration : currentTrack.duration;
 
   return (
     <div className={`party-current-track-display ${className}`} data-theme={themeId}>
@@ -40,7 +41,12 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
         <div className="party-current-track-meta">
           <span className="party-current-track-status">{getStatusText(playbackState.status)}</span>
           <span className="party-current-track-time">
-            {formatTime(playbackState.position)} / {formatTime(playbackState.duration)}
+            {formatTime(playbackState.position)} /{' '}
+            {duration != null && duration > 0 ? (
+              formatTime(duration)
+            ) : (
+              <span className="party-current-track-time-loader" role="status" aria-label="Загрузка длительности" />
+            )}
           </span>
         </div>
       </div>
