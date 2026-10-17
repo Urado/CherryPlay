@@ -43,7 +43,7 @@ party/
 ├── usePartySettingsFormState.ts   # shared form state for modal + preview design
 ├── PartyEditorView.tsx / PartyPreviewView.tsx
 ├── PartyPreviewDesignPanel.tsx
-├── PartyPreviewDisplayPanel.tsx     # display settings: group depth + track-name prefix trimming
+├── PartyPreviewDisplayPanel.tsx     # preview display panel: group depth only (track names in settings modal)
 ├── PartyWorkspaceDemoPanel.tsx    # thin UI consumer scenario actions (preview mode)
 ```
 

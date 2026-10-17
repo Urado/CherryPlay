@@ -2,7 +2,6 @@ import type { PartyThemeId } from '@cherryplay/components';
 import React from 'react';
 
 import { PartyEditorAccordion } from './components/PartyEditorAccordion';
-import { PartyTrackDisplaySection } from './components/PartyTrackDisplaySection';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
 import { usePartySettingsFormState } from './usePartySettingsFormState';
 
@@ -46,15 +45,6 @@ export const PartyPreviewDisplayPanel: React.FC<PartyPreviewDisplayPanelProps> =
             </div>
           )}
         </PartyEditorAccordion>
-
-        {form.showTrackDisplay ? (
-          <PartyEditorAccordion title="Отображение треков" defaultExpanded={true}>
-            <PartyTrackDisplaySection
-              value={form.partyTrackDisplay}
-              onChange={form.setPartyTrackDisplaySettings}
-            />
-          </PartyEditorAccordion>
-        ) : null}
       </div>
     </aside>
   );

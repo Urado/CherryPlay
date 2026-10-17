@@ -23,6 +23,7 @@
 
 .cp-disclosure__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -110,5 +111,23 @@
 @media (min-width: 900px) {
   .cp-disclosure__summary {
     max-width: min(85%, 28rem);
+  }
+}
+
+@media (max-width: 720px) {
+  .cp-disclosure__header {
+    align-items: flex-start;
+    row-gap: 0.625rem;
+  }
+
+  .cp-disclosure__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .cp-disclosure__header-trailing {
+    flex: 1 1 100%;
+    max-width: 100%;
+    justify-content: flex-start;
   }
 }
