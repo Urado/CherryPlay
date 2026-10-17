@@ -6,11 +6,11 @@ import type { ThemeAccessDto } from '../types/api';
 const ANONYMOUS_SCOPE = '__anonymous__';
 const themeAccessCache = new Map<string, ThemeAccessDto>();
 
-export function clearThemeAccessCache(): void {
+export const clearThemeAccessCache = (): void => {
   themeAccessCache.clear();
-}
+};
 
-export function useThemeAccess(enabled = true, cacheScope?: string | null) {
+export const useThemeAccess = (enabled = true, cacheScope?: string | null) => {
   const scope = cacheScope ?? ANONYMOUS_SCOPE;
   const cachedData = themeAccessCache.get(scope) ?? null;
   const [data, setData] = useState<ThemeAccessDto | null>(cachedData);
@@ -44,4 +44,4 @@ export function useThemeAccess(enabled = true, cacheScope?: string | null) {
   }, [enabled, refresh, scope]);
 
   return { data, loading, error, refresh };
-}
+};

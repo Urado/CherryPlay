@@ -3,7 +3,6 @@ import type { Track } from '@core/types/track';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
@@ -52,6 +51,7 @@ jest.mock('../../src/shared/utils/togglePlayPause', () => ({
 }));
 
 import { DemoPlayer, DemoPlayerController } from '../../src/shared/components/DemoPlayer';
+import { useDemoPlayerStore } from '../../src/shared/stores/demoPlayerStore';
 
 const mockAddNotification = jest.fn();
 
@@ -92,16 +92,16 @@ jest.mock('../../src/shared/audio/playback', () => {
 });
 
 jest.mock('../../src/shared/stores/demoPlayerStore', () => {
-  const actual = jest.requireActual('../../src/shared/stores/demoPlayerStore');
+  const actual = jest.requireActual<typeof import('../../src/shared/stores/demoPlayerStore')>(
+    '../../src/shared/stores/demoPlayerStore',
+  );
   return {
     ...actual,
     useDemoPlayerStore: jest.fn(),
   };
 });
 
-const { useDemoPlayerStore: mockUseDemoPlayerStore } = jest.requireMock(
-  '../../src/shared/stores/demoPlayerStore',
-);
+const mockUseDemoPlayerStore = jest.mocked(useDemoPlayerStore);
 
 jest.mock('../../src/shared/stores/uiStore', () => ({
   useUIStore: (selector: (state: { addNotification: typeof mockAddNotification }) => unknown) =>

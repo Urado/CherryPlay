@@ -4,7 +4,7 @@ import { clearAuthSession } from './authSession';
 
 export const SESSION_EXPIRED_USER_MESSAGE = 'Сессия устарела. Войдите ещё раз.';
 
-export function handleAuthError(error?: Error | string): void {
+export const handleAuthError = (error?: Error | string): void => {
   const technicalMessage =
     typeof error === 'string'
       ? error
@@ -24,9 +24,9 @@ export function handleAuthError(error?: Error | string): void {
   });
 
   console.warn('[AuthErrorHandler] Authentication error:', technicalMessage);
-}
+};
 
-export function isSessionExpiredError(error: unknown): boolean {
+export const isSessionExpiredError = (error: unknown): boolean => {
   if (typeof error === 'string') {
     return error.includes(SESSION_EXPIRED_USER_MESSAGE);
   }
@@ -34,9 +34,9 @@ export function isSessionExpiredError(error: unknown): boolean {
     return error.message.includes(SESSION_EXPIRED_USER_MESSAGE);
   }
   return false;
-}
+};
 
-export function isAuthErrorMessage(error: unknown): boolean {
+export const isAuthErrorMessage = (error: unknown): boolean => {
   if (isSessionExpiredError(error)) {
     return true;
   }
@@ -52,6 +52,6 @@ export function isAuthErrorMessage(error: unknown): boolean {
     );
   }
   return false;
-}
+};
 
 export { isAuthErrorMessage as isAuthError };

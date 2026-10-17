@@ -6,7 +6,6 @@ import type {
 export const PANEL_BOUNDS_PADDING_PX = 8;
 export const DEFAULT_EDGE_OFFSET_PX = 16;
 export const FALLBACK_PANEL_WIDTH_PX = 420;
-/** Fixed floating panel height: header + track title row + single controls row. */
 export const FLOATING_PANEL_FIXED_HEIGHT_PX = 120;
 export const FALLBACK_PANEL_HEIGHT_PX = FLOATING_PANEL_FIXED_HEIGHT_PX;
 export const FLOATING_PANEL_MIN_WIDTH_PX = 400;
@@ -22,12 +21,12 @@ export interface FloatingMetrics {
   containerHeight: number;
 }
 
-export function clampFloatingSize(
+export const clampFloatingSize = (
   width: number,
   _height: number,
   containerWidth: number,
   _containerHeight: number,
-): DemoPlayerFloatingSize {
+): DemoPlayerFloatingSize => {
   const minWidth = FLOATING_PANEL_MIN_WIDTH_PX;
   const maxWidth = Math.max(minWidth, containerWidth - PANEL_BOUNDS_PADDING_PX * 2);
 
@@ -35,14 +34,14 @@ export function clampFloatingSize(
     width: Math.max(minWidth, Math.min(maxWidth, width)),
     height: FLOATING_PANEL_FIXED_HEIGHT_PX,
   };
-}
+};
 
-export function clampFloatingPosition(
+export const clampFloatingPosition = (
   x: number,
   y: number,
   metrics: FloatingMetrics,
   panelSize?: DemoPlayerFloatingSize,
-): DemoPlayerFloatingPosition {
+): DemoPlayerFloatingPosition => {
   const effectivePanelWidth = panelSize?.width ?? metrics.panelWidth;
   const effectivePanelHeight = FLOATING_PANEL_FIXED_HEIGHT_PX;
   const minX = PANEL_BOUNDS_PADDING_PX;
@@ -60,4 +59,4 @@ export function clampFloatingPosition(
     x: Math.max(minX, Math.min(maxX, x)),
     y: Math.max(minY, Math.min(maxY, y)),
   };
-}
+};

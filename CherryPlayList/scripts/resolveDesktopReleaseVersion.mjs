@@ -20,7 +20,13 @@ const compareVersions = (left, right) => {
   return 0;
 };
 
-export const resolveDesktopReleaseVersion = ({ eventName, tagName, isPrerelease, isDraft, packageVersion }) => {
+export const resolveDesktopReleaseVersion = ({
+  eventName,
+  tagName,
+  isPrerelease,
+  isDraft,
+  packageVersion,
+}) => {
   if (!tagName.startsWith('player-')) return packageVersion;
 
   const match = playerTagPattern.exec(tagName);
@@ -40,7 +46,8 @@ export const getLatestDesktopReleaseVersion = async ({
   fetchImpl = fetch,
   timeoutMs = 30_000,
 }) => {
-  if (!/^[^/]+\/[^/]+$/.test(repository ?? '')) throw new Error('GITHUB_REPOSITORY must use owner/repository format');
+  if (!/^[^/]+\/[^/]+$/.test(repository ?? ''))
+    throw new Error('GITHUB_REPOSITORY must use owner/repository format');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const releases = [];
@@ -58,10 +65,12 @@ export const getLatestDesktopReleaseVersion = async ({
       );
       if (!response.ok) throw new Error(`GitHub Releases API returned ${response.status}`);
       const pageReleases = await response.json();
-      if (!Array.isArray(pageReleases)) throw new Error('GitHub Releases API returned an invalid response');
+      if (!Array.isArray(pageReleases))
+        throw new Error('GitHub Releases API returned an invalid response');
       releases.push(...pageReleases);
       if (pageReleases.length < releasePageSize) break;
-      if (page === maximumReleasePages) throw new Error('GitHub Releases API pagination limit was exceeded');
+      if (page === maximumReleasePages)
+        throw new Error('GitHub Releases API pagination limit was exceeded');
     }
   } finally {
     clearTimeout(timeout);
@@ -69,11 +78,16 @@ export const getLatestDesktopReleaseVersion = async ({
 
   const candidates = releases.flatMap((release) => {
     if (!release || release.draft === true || release.prerelease !== true) return [];
-    const match = typeof release.tag_name === 'string' ? playerTagPattern.exec(release.tag_name) : null;
+    const match =
+      typeof release.tag_name === 'string' ? playerTagPattern.exec(release.tag_name) : null;
     if (!match) return [];
     const version = `${match[1]}.${match[2]}.${match[3]}`;
     const expectedZips = [`CherryPashkaParty-${version}-x64.zip`];
-    if (!Array.isArray(release.assets) || !release.assets.some((asset) => expectedZips.includes(asset?.name))) return [];
+    if (
+      !Array.isArray(release.assets) ||
+      !release.assets.some((asset) => expectedZips.includes(asset?.name))
+    )
+      return [];
     return [version];
   });
 
@@ -118,7 +132,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     }
     const updatedPackage = JSON.parse(await readFile('package.json', 'utf8'));
     if (updatedPackage.version !== version) {
-      throw new Error(`Desktop package version '${updatedPackage.version}' does not match release version '${version}'`);
+      throw new Error(
+        `Desktop package version '${updatedPackage.version}' does not match release version '${version}'`,
+      );
     }
     process.stdout.write(`${version}\n`);
   }

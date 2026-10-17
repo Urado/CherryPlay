@@ -106,15 +106,16 @@ describe('ButtonLink', () => {
 
   it('createDisabledLinkClickHandler forwards click when enabled', () => {
     const onClick = vi.fn();
+    const preventDefault = vi.fn();
     const handler = createDisabledLinkClickHandler(false, onClick);
     const event = {
-      preventDefault: vi.fn(),
+      preventDefault,
       stopPropagation: vi.fn(),
     } as unknown as MouseEvent<HTMLAnchorElement>;
 
     handler(event);
 
-    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
     expect(onClick).toHaveBeenCalledWith(event);
   });
 });

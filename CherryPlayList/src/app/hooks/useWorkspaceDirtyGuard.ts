@@ -5,20 +5,20 @@ export interface RequestActivateWorkspaceOptions {
   bypassDirtyGuard?: boolean;
 }
 
-function isSameWorkspace(
+const isSameWorkspace = (
   active: ReturnType<typeof useLayoutStore.getState>['activeWorkspace'],
   ref: WorkspaceRef,
-): boolean {
+): boolean => {
   if (ref.kind === 'builtin') {
     return active.kind === 'builtin' && active.preset === ref.preset;
   }
   return active.kind === 'user' && active.id === ref.id;
-}
+};
 
-export function requestActivateWorkspace(
+export const requestActivateWorkspace = (
   ref: WorkspaceRef,
   options?: RequestActivateWorkspaceOptions,
-): boolean {
+): boolean => {
   const state = useLayoutStore.getState();
   if (state.isLayoutEditMode) {
     return false;
@@ -33,9 +33,9 @@ export function requestActivateWorkspace(
   }
 
   return useLayoutStore.getState().activateWorkspace(ref);
-}
+};
 
-export function requestCreateScratchWorkspace(): boolean {
+export const requestCreateScratchWorkspace = (): boolean => {
   const state = useLayoutStore.getState();
   if (state.isLayoutEditMode) {
     return false;
@@ -50,9 +50,9 @@ export function requestCreateScratchWorkspace(): boolean {
   }
 
   return useLayoutStore.getState().createScratchWorkspace();
-}
+};
 
-export function requestExitEditMode(): void {
+export const requestExitEditMode = (): void => {
   const state = useLayoutStore.getState();
   if (!state.isLayoutEditMode) {
     return;
@@ -60,13 +60,13 @@ export function requestExitEditMode(): void {
 
   state.autoCommitWorkspaceChanges();
   state.setLayoutEditMode(false);
-}
+};
 
-export function requestToggleLayoutEditMode(): void {
+export const requestToggleLayoutEditMode = (): void => {
   const state = useLayoutStore.getState();
   if (!state.isLayoutEditMode) {
     state.setLayoutEditMode(true);
     return;
   }
   requestExitEditMode();
-}
+};

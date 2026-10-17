@@ -5,7 +5,7 @@ import type { PlaybackEngineStatus } from './types';
 
 export type { StorePlaybackStatus };
 
-export function mapEngineStatusToStoreStatus(status: PlaybackEngineStatus): StorePlaybackStatus {
+export const mapEngineStatusToStoreStatus = (status: PlaybackEngineStatus): StorePlaybackStatus => {
   switch (status) {
     case 'playing':
       return 'playing';
@@ -23,7 +23,7 @@ export function mapEngineStatusToStoreStatus(status: PlaybackEngineStatus): Stor
     default:
       return 'idle';
   }
-}
+};
 
 export interface PlaybackEngineStoreBindings {
   readonly onStatusChanged: (status: StorePlaybackStatus) => void;
@@ -33,14 +33,10 @@ export interface PlaybackEngineStoreBindings {
   readonly onError: (message: string) => void;
 }
 
-/**
- * Subscribes store callbacks to engine events (hybrid state model).
- * @returns Disposer — call on store teardown.
- */
-export function bindPlaybackEngineToStore(
+export const bindPlaybackEngineToStore = (
   engine: PlaybackEngine,
   bindings: PlaybackEngineStoreBindings,
-): () => void {
+): (() => void) => {
   const subscriptions = [
     engine.subscribe('statusChanged', (status) => {
       bindings.onStatusChanged(mapEngineStatusToStoreStatus(status));
@@ -64,4 +60,4 @@ export function bindPlaybackEngineToStore(
       unsubscribe();
     }
   };
-}
+};

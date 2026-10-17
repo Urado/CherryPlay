@@ -1,4 +1,3 @@
-
 import type { Track } from '@core/types/track';
 import type { PlayerStatus } from '@shared/stores/demoPlayerStore';
 import { useEffect, useMemo, useRef } from 'react';
@@ -16,13 +15,13 @@ export interface DemoPlayerFloatingVisibilityState {
   isFloatingVisible: boolean;
 }
 
-export function useDemoPlayerFloatingVisibility({
+export const useDemoPlayerFloatingVisibility = ({
   hasDemoPlayerWorkspace,
   demoPlayerFloatingOpen,
   currentTrack,
   demoPlayerStatus,
   setDemoPlayerFloatingOpen,
-}: UseDemoPlayerFloatingVisibilityParams): DemoPlayerFloatingVisibilityState {
+}: UseDemoPlayerFloatingVisibilityParams): DemoPlayerFloatingVisibilityState => {
   const previousActiveRef = useRef(false);
   const previousOpenRef = useRef(demoPlayerFloatingOpen);
   const sessionEpochRef = useRef(0);
@@ -88,4 +87,4 @@ export function useDemoPlayerFloatingVisibility({
     hasActiveDemoSession,
     isFloatingVisible: !hasDemoPlayerWorkspace && demoPlayerFloatingOpen,
   };
-}
+};

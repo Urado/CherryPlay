@@ -37,11 +37,11 @@
 
 ### Именование пользовательских workspace (auto-save scratch)
 
-| Шаг                                      | Имя в **Мои**      |
-| ---------------------------------------- | ------------------ |
-| 1-й auto-save scratch (нет «Без имени»)  | **Без имени**      |
-| 2-й при занятом «Без имени»              | **Без имени 2**    |
-| далее                                    | **Без имени 3**, … |
+| Шаг                                     | Имя в **Мои**      |
+| --------------------------------------- | ------------------ |
+| 1-й auto-save scratch (нет «Без имени») | **Без имени**      |
+| 2-й при занятом «Без имени»             | **Без имени 2**    |
+| далее                                   | **Без имени 3**, … |
 
 Реализация: `allocateUnnamedWorkspaceName()` в `workspacePreset.ts`, вызов из `saveCurrentWorkspaceAsUnnamed()` в `layoutStore` (только **scratch**, не builtin). После переименования единственного «Без имени» слот снова доступен.
 
@@ -55,15 +55,15 @@
 
 Список пунктов меню встроенных (`ALL_BUILTIN_PRESETS`): `simple`, `collections-vertical`, `player`, `party`. Id `complex` / `collections` / `aimp-party` в меню **не** перечисляются.
 
-| `LayoutPreset`         | Отображаемое имя (RU) | Описание (`LAYOUT_PRESET_DESCRIPTIONS_RU`) / доступность |
-| ---------------------- | --------------------- | -------------------------------------------------------- |
-| `simple`               | **Простая сборка**    | «Плейлист и панель файлов — минимум панелей»; в меню |
+| `LayoutPreset`         | Отображаемое имя (RU) | Описание (`LAYOUT_PRESET_DESCRIPTIONS_RU`) / доступность                                                                       |
+| ---------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `simple`               | **Простая сборка**    | «Плейлист и панель файлов — минимум панелей»; в меню                                                                           |
 | `collections`          | **Сборка плейлиста**  | без one-liner в map; legacy id — при rehydrate мигрирует на `collections-vertical`; в меню встроенных **не** отдельным пунктом |
-| `collections-vertical` | **Сборка плейлиста**  | secondary — «Вертикальная раскладка: подборки (буфер) и файлы»; в меню; **`DEFAULT_BUILTIN_PRESET`** (first-run / fallback) |
-| `player`               | **Играть и править**  | «Играть локально и править список / файлы в одной раскладке»; в меню |
-| `party`                | **Играть для гостей** | «Вечеринка для гостей: настройка и превью страницы»; в меню (`partyDiscoverabilityEnabled`; офлайн — in-zone stub) |
-| `complex`              | Сложный (display map) | без one-liner; **скрыт** всегда (ни prod, ни DEV); factory/id/render сохранены |
-| `aimp-party`           | AIMP + Party          | без one-liner; **legacy:** не в меню; persist мигрирует на `party`; copy clarity **отложено** |
+| `collections-vertical` | **Сборка плейлиста**  | secondary — «Вертикальная раскладка: подборки (буфер) и файлы»; в меню; **`DEFAULT_BUILTIN_PRESET`** (first-run / fallback)    |
+| `player`               | **Играть и править**  | «Играть локально и править список / файлы в одной раскладке»; в меню                                                           |
+| `party`                | **Играть для гостей** | «Вечеринка для гостей: настройка и превью страницы»; в меню (`partyDiscoverabilityEnabled`; офлайн — in-zone stub)             |
+| `complex`              | Сложный (display map) | без one-liner; **скрыт** всегда (ни prod, ни DEV); factory/id/render сохранены                                                 |
+| `aimp-party`           | AIMP + Party          | без one-liner; **legacy:** не в меню; persist мигрирует на `party`; copy clarity **отложено**                                  |
 
 Structural-правки встроенного пресета **не** создают запись в **Мои**: upsert в `builtinLayoutOverrides[preset]`, активный workspace остаётся `{ kind: 'builtin', preset }`. Политика dirty — **Variant A** (только структура; sizes alone → discard к baseline). Сброс: **«Сбросить к исходному»** → `clearBuiltinOverride`. Подробности — [layout-edit-mode.md](../../layout-edit-mode.md#builtin-variant-a-structure-only).
 
@@ -80,13 +80,13 @@ Structural-правки встроенного пресета **не** созд�
 
 ### Переключение и автосохранение
 
-| API                            | Поведение                                                                                                                                 |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `activateWorkspace(ref)`       | Builtin: `resolveBuiltinLayout` (override → clone целиком, иначе фабрика); user/scratch — снимок / пустое дерево; cleanup/prepare lifecycle |
+| API                            | Поведение                                                                                                                                                                    |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activateWorkspace(ref)`       | Builtin: `resolveBuiltinLayout` (override → clone целиком, иначе фабрика); user/scratch — снимок / пустое дерево; cleanup/prepare lifecycle                                  |
 | `autoCommitWorkspaceChanges()` | **user** dirty → `saveCurrentWorkspace`; **builtin** structure dirty → upsert override (иначе discard sizes к baseline); **scratch** dirty → `saveCurrentWorkspaceAsUnnamed` |
-| `clearBuiltinOverride(preset)` | Всегда удаляет override из map; live layout / baseline пересобираются фабрикой **только** если этот builtin сейчас активен; для неактивного preset — только map |
-| `requestActivateWorkspace`     | Auto-commit, затем switch (`useWorkspaceDirtyGuard`)                                                                                      |
-| `isWorkspaceDirty()`           | Builtin: `structureOnly` (`getLayoutStructureDirtySignature`); user/scratch: полная `getLayoutZoneSignature` vs baseline                  |
+| `clearBuiltinOverride(preset)` | Всегда удаляет override из map; live layout / baseline пересобираются фабрикой **только** если этот builtin сейчас активен; для неактивного preset — только map              |
+| `requestActivateWorkspace`     | Auto-commit, затем switch (`useWorkspaceDirtyGuard`)                                                                                                                         |
+| `isWorkspaceDirty()`           | Builtin: `structureOnly` (`getLayoutStructureDirtySignature`); user/scratch: полная `getLayoutZoneSignature` vs baseline                                                     |
 
 Переключение через **▾** **заблокировано** в `isLayoutEditMode`. Вне edit mode при dirty — **тихий** auto-commit перед switch (без диалогов).
 
@@ -111,15 +111,15 @@ Structural-правки встроенного пресета **не** созд�
 
 ### Placeholder-значения (могут уточняться продуктом)
 
-| `workspaceType` | `minWidth` | `minHeight` | Примечание                  |
-| --------------- | ---------- | ----------- | --------------------------- |
-| `playlist`      | 280        | 200         | Список треков               |
-| `fileBrowser`   | 240        | 200         | UI **«Файлы»** (id `fileBrowser`) |
-| `collection`    | 200        | 150         | UI **«Подборка»**           |
-| `player`        | 360        | 120         | UI **«Проигрывание»**       |
-| `demo-player`   | 280        | 100         | UI **«Предпросмотр (только у вас)»** |
-| `party-editor`  | 400        | 300         | Редактор вечеринки          |
-| `party-preview` | 320        | 240         | Превью                      |
+| `workspaceType` | `minWidth` | `minHeight` | Примечание                                                                                                      |
+| --------------- | ---------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| `playlist`      | 280        | 200         | Список треков                                                                                                   |
+| `fileBrowser`   | 240        | 200         | UI **«Файлы»** (id `fileBrowser`)                                                                               |
+| `collection`    | 200        | 150         | UI **«Подборка»**                                                                                               |
+| `player`        | 360        | 120         | UI **«Проигрывание»**                                                                                           |
+| `demo-player`   | 280        | 100         | UI **«Предпросмотр (только у вас)»**                                                                            |
+| `party-editor`  | 400        | 300         | Редактор вечеринки                                                                                              |
+| `party-preview` | 320        | 240         | Превью                                                                                                          |
 | `test1`…`test8` | 150        | 100         | Зарегистрированы всегда (`entry.tsx`); **не** в picker «добавить зону» (даже DEV); уже открытые зоны рендерятся |
 
 Неизвестный тип → консервативный fallback **200×150** (`DEFAULT_WORKSPACE_MIN_SIZE`) + предупреждение в dev.
@@ -196,11 +196,11 @@ Chrome шапки учитывает pill **Рабочие окна**, **HeaderP
 [ Имя (210px)  ▾ ]  [ ✎ ]
 ```
 
-| Элемент | Назначение                                                                                                                |
-| ------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Элемент | Назначение                                                                                                                                                                              |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Имя** | Активный workspace; клик → inline rename (user/scratch, в т.ч. в edit mode); серия «Без имени» / «Без имени N» — курсивом; при builtin override — eyebrow **«Рабочие окна · изменено»** |
-| **▾**   | Меню: **Рабочие окна** (built-in; метка **«изменено»** + ⋯ → **«Сбросить к исходному»**) / **Мои** / **Создать с нуля…** (disabled в edit mode) |
-| **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                    |
+| **▾**   | Меню: **Рабочие окна** (built-in; метка **«изменено»** + ⋯ → **«Сбросить к исходному»**) / **Мои** / **Создать с нуля…** (disabled в edit mode)                                         |
+| **✎**   | Вход/выход из edit mode; выход с auto-commit при dirty                                                                                                                                  |
 
 Отдельного пункта **Сохранить** нет. Для изменённых builtin — **«Сбросить к исходному»**. При переключении workspace и auto-commit блокирующих диалогов нет.
 

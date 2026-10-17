@@ -9,11 +9,11 @@ import './LegalPage.css';
 
 const VALID_KEYS: LegalDocKey[] = ['privacy', 'consent', 'terms', 'cookies'];
 
-function isLegalDocKey(value: string | undefined): value is LegalDocKey {
+const isLegalDocKey = (value: string | undefined): value is LegalDocKey => {
   return !!value && (VALID_KEYS as string[]).includes(value);
-}
+};
 
-function renderBlock(block: LegalBlock, index: number) {
+const renderBlock = (block: LegalBlock, index: number) => {
   switch (block.type) {
     case 'heading': {
       const Tag = block.level === 2 ? 'h2' : 'h3';
@@ -33,7 +33,7 @@ function renderBlock(block: LegalBlock, index: number) {
     default:
       return <p key={index}>{linkifyLegalText(block.text)}</p>;
   }
-}
+};
 
 export const LegalDocumentPage = ({ docKey }: { docKey?: LegalDocKey }) => {
   const params = useParams<{ docKey?: string; version?: string }>();

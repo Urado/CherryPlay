@@ -63,8 +63,7 @@
 
 .party-lifecycle-actions--header {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-flow: row wrap;
   align-items: center;
   gap: 8px;
 }

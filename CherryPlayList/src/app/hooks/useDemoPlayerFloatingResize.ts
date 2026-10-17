@@ -8,7 +8,6 @@ import type { DemoPlayerFloatingSize } from '@shared/stores/settingsStore';
 import { useCallback, useState } from 'react';
 import type { PointerEvent } from 'react';
 
-
 interface ResizeState {
   startX: number;
   originWidth: number;
@@ -28,12 +27,12 @@ export interface DemoPlayerFloatingResizeApi {
   finishResizePointer: (event: PointerEvent<HTMLDivElement>) => void;
 }
 
-export function useDemoPlayerFloatingResize({
+export const useDemoPlayerFloatingResize = ({
   isLayoutBlocked,
   floatingSize,
   measurePanelAndContainer,
   commitFloatingSize,
-}: UseDemoPlayerFloatingResizeParams): DemoPlayerFloatingResizeApi {
+}: UseDemoPlayerFloatingResizeParams): DemoPlayerFloatingResizeApi => {
   const [resizeState, setResizeState] = useState<ResizeState | null>(null);
   const [resizeSize, setResizeSize] = useState<DemoPlayerFloatingSize | null>(null);
 
@@ -126,4 +125,4 @@ export function useDemoPlayerFloatingResize({
     handleResizePointerMove,
     finishResizePointer,
   };
-}
+};

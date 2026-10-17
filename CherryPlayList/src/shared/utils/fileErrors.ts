@@ -5,8 +5,7 @@ const FILE_NOT_FOUND_MESSAGE_PATTERNS = [
   'файл не найден',
 ] as const;
 
-/** True when Node/Electron IPC or adapter reports a missing file. */
-export function isFileNotFoundError(error: unknown): boolean {
+export const isFileNotFoundError = (error: unknown): boolean => {
   if (!error) {
     return false;
   }
@@ -22,11 +21,11 @@ export function isFileNotFoundError(error: unknown): boolean {
 
   const message = error.message.toLowerCase();
   return FILE_NOT_FOUND_MESSAGE_PATTERNS.some((pattern) => message.includes(pattern));
-}
+};
 
-export function formatMissingTrackMessage(trackName: string, trackPath?: string): string {
+export const formatMissingTrackMessage = (trackName: string, trackPath?: string): string => {
   if (trackPath) {
     return `Файл не найден: ${trackPath}`;
   }
   return `Файл не найден: ${trackName}`;
-}
+};

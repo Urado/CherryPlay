@@ -47,7 +47,7 @@ export interface UsePartyStateReturn {
   setPartyName: (name: string | null) => void;
 }
 
-export function usePartyState(options: UsePartyStateOptions = {}): UsePartyStateReturn {
+export const usePartyState = (options: UsePartyStateOptions = {}): UsePartyStateReturn => {
   const { shortCode, isDemo = false } = options;
 
   const [playlist, setPlaylistState] = useState<PartyPlaylistData | null>(null);
@@ -164,7 +164,7 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
   );
 
   useEffect(() => {
-    loadPlaylist();
+    void loadPlaylist();
   }, [loadPlaylist]);
 
   const groupDisplayDepth = (() => {
@@ -200,4 +200,4 @@ export function usePartyState(options: UsePartyStateOptions = {}): UsePartyState
     setCustomizationSettings,
     setPartyName,
   };
-}
+};

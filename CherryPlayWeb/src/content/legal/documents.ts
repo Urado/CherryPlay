@@ -1,4 +1,8 @@
-import { markdownBodyToParagraphs, parseLegalMarkdown, type LegalBlock } from './parseLegalMarkdown';
+import {
+  markdownBodyToParagraphs,
+  parseLegalMarkdown,
+  type LegalBlock,
+} from './parseLegalMarkdown';
 import consentMd from './v1.0/consent.md?raw';
 import cookiesMd from './v1.0/cookies.md?raw';
 import packManifest from './v1.0/manifest.json';
@@ -32,7 +36,7 @@ const KEY_BY_TYPE: Record<string, LegalDocKey> = {
   cookie_policy: 'cookies',
 };
 
-function loadDocuments(): Record<LegalDocKey, LegalDocumentContent> {
+const loadDocuments = (): Record<LegalDocKey, LegalDocumentContent> => {
   const result = {} as Record<LegalDocKey, LegalDocumentContent>;
   for (const entry of packManifest.documents) {
     const key = KEY_BY_TYPE[entry.type];
@@ -55,7 +59,7 @@ function loadDocuments(): Record<LegalDocKey, LegalDocumentContent> {
     };
   }
   return result;
-}
+};
 
 export const LEGAL_DOCUMENTS_CONTENT: Record<LegalDocKey, LegalDocumentContent> = loadDocuments();
 
@@ -68,7 +72,7 @@ export interface LegalOperatorContent {
   paragraphs: string[];
 }
 
-function loadOperator(): LegalOperatorContent {
+const loadOperator = (): LegalOperatorContent => {
   const { operator } = packManifest;
   if (operatorMd.trimStart().startsWith('---')) {
     throw new Error('operator.md: legal markdown must not contain YAML frontmatter');
@@ -81,14 +85,14 @@ function loadOperator(): LegalOperatorContent {
     subjectRequestChannel: operator.subjectRequestChannel,
     paragraphs: markdownBodyToParagraphs(operatorMd),
   };
-}
+};
 
 export const LEGAL_OPERATOR_CONTENT: LegalOperatorContent = loadOperator();
 
-export function resolveLegalDocument(
+export const resolveLegalDocument = (
   key: LegalDocKey,
   version?: string,
-): LegalDocumentContent | null {
+): LegalDocumentContent | null => {
   const doc = LEGAL_DOCUMENTS_CONTENT[key];
   if (!doc) {
     return null;
@@ -97,4 +101,4 @@ export function resolveLegalDocument(
     return null;
   }
   return doc;
-}
+};

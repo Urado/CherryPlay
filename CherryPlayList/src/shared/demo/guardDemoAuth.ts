@@ -1,5 +1,5 @@
 import { getPlatformCapabilities } from '../platform/platformCapabilities';
 
-export function isDemoAuthMode(): boolean {
+export const isDemoAuthMode = (): boolean => {
   return !getPlatformCapabilities().supportsRealAuth;
-}
+};

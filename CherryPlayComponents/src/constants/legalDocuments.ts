@@ -71,11 +71,11 @@ const UI_FIELDS_BY_TYPE: Record<LegalDocumentType, LegalRegistryUiFields> = {
   },
 };
 
-function isLegalDocumentType(type: string): type is LegalDocumentType {
+const isLegalDocumentType = (type: string): type is LegalDocumentType => {
   return (REQUIRED_REGISTRY_TYPES as readonly string[]).includes(type);
-}
+};
 
-function buildDeployConfigFromRegistry(type: LegalDocumentType): LegalDocumentDeployConfig {
+const buildDeployConfigFromRegistry = (type: LegalDocumentType): LegalDocumentDeployConfig => {
   const documents = legalRegistry.documents as LegalRegistryDocument[];
   const entry = documents.find((doc) => doc.type === type);
   if (!entry) {
@@ -100,7 +100,7 @@ function buildDeployConfigFromRegistry(type: LegalDocumentType): LegalDocumentDe
     summary: ui.summary,
     effectiveFrom: entry.effectiveFrom,
   };
-}
+};
 
 for (const type of REQUIRED_REGISTRY_TYPES) {
   const documents = legalRegistry.documents as LegalRegistryDocument[];
@@ -127,11 +127,11 @@ export const REQUIRED_CONSENT_DOCUMENTS: readonly LegalDocumentDeployConfig[] = 
   LEGAL_TERMS,
 ];
 
-export function areRequiredConsentsAccepted(pdConsent: boolean, terms: boolean): boolean {
+export const areRequiredConsentsAccepted = (pdConsent: boolean, terms: boolean): boolean => {
   return pdConsent && terms;
-}
+};
 
-function createConsentId(): string {
+const createConsentId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -140,15 +140,15 @@ function createConsentId(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
+};
 
-export function buildRequiredConsentInputs(
+export const buildRequiredConsentInputs = (
   createId: () => string = createConsentId,
-): ConsentInput[] {
+): ConsentInput[] => {
   return REQUIRED_CONSENT_DOCUMENTS.map((doc) => ({
     id: createId(),
     legalDocumentVersionId: doc.versionId,
     documentHash: doc.contentHash,
     decision: 'grant' as const,
   }));
-}
+};

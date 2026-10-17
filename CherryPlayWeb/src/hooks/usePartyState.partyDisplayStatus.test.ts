@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,7 +21,7 @@ const emptyPlaylist: PartyPlaylistDto = {
   totalTracks: 0,
 };
 
-function buildPublicParty(partyDisplayStatus: string): PublicPartyDto {
+const buildPublicParty = (partyDisplayStatus: string): PublicPartyDto => {
   return {
     id: 'party-1',
     name: 'Test Party',
@@ -33,7 +31,7 @@ function buildPublicParty(partyDisplayStatus: string): PublicPartyDto {
     partyLifecycleState: 'ready',
     partyDisplayStatus: partyDisplayStatus as PublicPartyDto['partyDisplayStatus'],
   };
-}
+};
 
 describe('usePartyState partyDisplayStatus from public party API', () => {
   beforeEach(() => {

@@ -22,13 +22,12 @@ import {
   getPlatformCapabilities,
   isPlatformInitialized,
 } from '@shared/platform';
+import type { IPCResponse } from '@shared/platform/types';
 import { authService } from '@shared/services/authService';
 import { useAuthStore, useUIStore } from '@shared/stores';
 import { setAuthSessionToken } from '@shared/utils/authSession';
 
-type AuthCallbackResult =
-  | { success: true; data: { code: string; provider?: string } }
-  | { success: false; error: string };
+type AuthCallbackPayload = { code: string; provider?: string };
 
 const AUTH_CALLBACK_EXPIRED_MESSAGE =
   'Время ожидания истекло. Код входа действителен около 3 минут — попробуйте снова.';
@@ -39,7 +38,7 @@ let webDemoStorageListener: ((event: StorageEvent) => void) | null = null;
 let webDemoMessageListener: ((event: MessageEvent) => void) | null = null;
 const handledDesktopAuthCodes = new Set<string>();
 
-export function resetAuthCallbackBootstrapForTests(): void {
+export const resetAuthCallbackBootstrapForTests = (): void => {
   bootstrapStarted = false;
   handledDesktopAuthCodes.clear();
   if (webDemoAuthChannel) {
@@ -56,9 +55,9 @@ export function resetAuthCallbackBootstrapForTests(): void {
       webDemoMessageListener = null;
     }
   }
-}
+};
 
-export function initializeAuthCallbackBootstrap(): void {
+export const initializeAuthCallbackBootstrap = (): void => {
   if (bootstrapStarted) {
     return;
   }
@@ -81,9 +80,9 @@ export function initializeAuthCallbackBootstrap(): void {
     startWebDemoAuthCallbackListener();
     notifyDesktopAuthBootstrapError();
   }
-}
+};
 
-function notifyDesktopAuthBootstrapError(): void {
+const notifyDesktopAuthBootstrapError = (): void => {
   const message = readDesktopAuthBootstrapError();
   if (!message) {
     return;
@@ -91,9 +90,9 @@ function notifyDesktopAuthBootstrapError(): void {
   clearDesktopAuthBootstrapError();
   failBrowserLoginFlow(message);
   notifyAuthError(message, 8000);
-}
+};
 
-function startWebDemoAuthCallbackListener(): void {
+const startWebDemoAuthCallbackListener = (): void => {
   consumePendingDesktopAuthCode();
 
   if (typeof window !== 'undefined') {
@@ -123,14 +122,15 @@ function startWebDemoAuthCallbackListener(): void {
   }
 
   webDemoAuthChannel = new BroadcastChannel(DESKTOP_AUTH_BROADCAST_CHANNEL);
-  webDemoAuthChannel.onmessage = (event: MessageEvent) => {
+  webDemoAuthChannel.onmessage = (event: MessageEvent<unknown>) => {
     const data = event.data;
     if (
       data &&
       typeof data === 'object' &&
       (data as { type?: unknown }).type === DESKTOP_AUTH_SESSION_READY_TYPE
     ) {
-      void useAuthStore.persist.rehydrate().then(() => {
+      const rehydrateAuthStore = useAuthStore.persist.rehydrate as () => Promise<void>;
+      void rehydrateAuthStore().then(() => {
         if (useAuthStore.getState().isAuthenticated()) {
           completeBrowserLoginFlow();
           useUIStore.getState().addNotification({
@@ -150,46 +150,47 @@ function startWebDemoAuthCallbackListener(): void {
     clearPendingDesktopAuthCode();
     void completeDesktopAuth(data.code.trim());
   };
-}
+};
 
-function consumePendingDesktopAuthCode(): void {
+const consumePendingDesktopAuthCode = (): void => {
   const code = readPendingDesktopAuthCode();
   if (!code) {
     return;
   }
   clearPendingDesktopAuthCode();
   void completeDesktopAuth(code);
-}
+};
 
-function notifyAuthError(message: string, duration = 5000): void {
+const notifyAuthError = (message: string, duration = 5000): void => {
   useUIStore.getState().addNotification({
     type: 'error',
     message,
     duration,
   });
-}
+};
 
-function failWaitingBrowserLogin(message: string): boolean {
+const failWaitingBrowserLogin = (message: string): boolean => {
   if (getBrowserLoginFlowState().status !== 'waiting') {
     return false;
   }
   failBrowserLoginFlow(message);
   return true;
-}
+};
 
-async function runAuthCallbackLoop(): Promise<void> {
+const runAuthCallbackLoop = async (): Promise<void> => {
   while (bootstrapStarted) {
     try {
-      const result = (await getPlatform().invoke('auth:registerCallback')) as AuthCallbackResult;
+      const result = (await getPlatform().invoke(
+        'auth:registerCallback',
+      )) as IPCResponse<AuthCallbackPayload>;
       if (result.success && result.data?.code) {
         await completeDesktopAuth(result.data.code);
         continue;
       }
 
+      const errorMessage = result.error?.trim();
       const message =
-        !result.success && result.error.trim()
-          ? result.error
-          : 'Не удалось обработать вход из браузера';
+        !result.success && errorMessage ? errorMessage : 'Не удалось обработать вход из браузера';
       if (failWaitingBrowserLogin(message)) {
         notifyAuthError(message);
       }
@@ -214,9 +215,9 @@ async function runAuthCallbackLoop(): Promise<void> {
       }
     }
   }
-}
+};
 
-async function completeDesktopAuth(code: string): Promise<void> {
+const completeDesktopAuth = async (code: string): Promise<void> => {
   if (handledDesktopAuthCodes.has(code)) {
     return;
   }
@@ -243,4 +244,4 @@ async function completeDesktopAuth(code: string): Promise<void> {
     failBrowserLoginFlow(message);
     notifyAuthError(message, 8000);
   }
-}
+};

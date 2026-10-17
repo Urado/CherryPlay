@@ -6,7 +6,9 @@ jest.mock('@cherryplay/components', () => ({
 }));
 
 jest.mock('../../src/workspaces/party/partyWorkspaceUtils', () => ({
-  ...jest.requireActual('../../src/workspaces/party/partyWorkspaceUtils'),
+  ...jest.requireActual<typeof import('../../src/workspaces/party/partyWorkspaceUtils')>(
+    '../../src/workspaces/party/partyWorkspaceUtils',
+  ),
   normalizeCustomizationSettings: (settings: Record<string, unknown> | undefined) => settings,
 }));
 
@@ -17,7 +19,7 @@ import {
 
 const emptyPlaylist = { items: [], totalDuration: 0, totalTracks: 0 };
 
-function buildStoreSlice(overrides: Record<string, unknown> = {}) {
+const buildStoreSlice = (overrides: Record<string, unknown> = {}) => {
   return {
     partyName: 'Test Party',
     partyTitle: 'Title',
@@ -40,7 +42,7 @@ function buildStoreSlice(overrides: Record<string, unknown> = {}) {
     isListedInCatalog: true,
     ...overrides,
   };
-}
+};
 
 describe('buildUpdatePartyDto', () => {
   it('omits eventEndDateTime when end date was not touched', () => {

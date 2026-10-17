@@ -29,7 +29,7 @@ export const OAuthButtons: React.FC<OAuthButtonsProps> = ({
   onError,
   providers = ['telegram', 'vk', 'mailru'],
 }) => {
-  const startOAuthFlow = authService.startOAuthFlow;
+  const startOAuthFlow = authService.startOAuthFlow?.bind(authService);
   const [pdConsentAccepted, setPdConsentAccepted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const consentHintId = useId();

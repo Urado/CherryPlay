@@ -146,16 +146,16 @@ flowchart TB
 
 ## Связанные файлы
 
-| Путь                                          | Роль                                      |
-| --------------------------------------------- | ----------------------------------------- |
-| `src/bootstrap.ts`                            | Выбор платформы                           |
-| `src/shared/platform/platformCapabilities.ts` | Матрица capabilities                      |
-| `src/shared/platform/demoLiveMode.ts`         | `isDemoLiveMode` / `isDemoFixturesMode`   |
+| Путь                                                   | Роль                                                           |
+| ------------------------------------------------------ | -------------------------------------------------------------- |
+| `src/bootstrap.ts`                                     | Выбор платформы                                                |
+| `src/shared/platform/platformCapabilities.ts`          | Матрица capabilities                                           |
+| `src/shared/platform/demoLiveMode.ts`                  | `isDemoLiveMode` / `isDemoFixturesMode`                        |
 | `src/shared/platform/fixtures/demoLoudnessAnalyzer.ts` | Demo simulated `audio:analyzeLoudness` / `audio:statAudioFile` |
-| `src/shared/platform/platformContext.ts`      | Singleton platform + refresh capabilities |
-| `src/shared/platform/capacitorPlatform.ts`    | Stub для Etap 0+                          |
-| `src/shared/hooks/usePlatformCapabilities.ts` | React hook                                |
-| `electron/preload.ts`                         | Канонический IPC-контракт (`window.api`)  |
+| `src/shared/platform/platformContext.ts`               | Singleton platform + refresh capabilities                      |
+| `src/shared/platform/capacitorPlatform.ts`             | Stub для Etap 0+                                               |
+| `src/shared/hooks/usePlatformCapabilities.ts`          | React hook                                                     |
+| `electron/preload.ts`                                  | Канонический IPC-контракт (`window.api`)                       |
 
 ---
 

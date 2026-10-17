@@ -24,8 +24,7 @@ const publicParty = (groupDisplayDepth?: number): PublicPartyDto => ({
   id: 'party-1',
   name: 'Test Party',
   partyThemeId: 'basic',
-  customizationSettings:
-    groupDisplayDepth === undefined ? undefined : { groupDisplayDepth },
+  customizationSettings: groupDisplayDepth === undefined ? undefined : { groupDisplayDepth },
   hasActiveSession: false,
   isListedInCatalog: true,
   partyLifecycleState: 'ready',

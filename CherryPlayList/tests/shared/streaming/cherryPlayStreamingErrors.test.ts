@@ -2,6 +2,7 @@ import {
   CHERRYPLAY_RECONNECT_ACTION_LABEL,
   CHERRYPLAY_RECONNECTION_FAILED_MESSAGE,
   createCherryPlayStreamingErrorHandlers,
+  type CherryPlayStreamingNotify,
   formatCherryPlayConnectError,
   formatCherryPlayPublishError,
   mapCherryPlayStreamingErrorPhrase,
@@ -30,7 +31,10 @@ describe('cherryPlayStreamingErrors', () => {
   });
 
   it('notifies UI for connect, publish, and reconnection failed with reconnect action', () => {
-    const notify = jest.fn();
+    const notifications: Parameters<CherryPlayStreamingNotify>[0][] = [];
+    const notify = jest.fn((notification: Parameters<CherryPlayStreamingNotify>[0]) => {
+      notifications.push(notification);
+    });
     const onReconnect = jest.fn();
     const handlers = createCherryPlayStreamingErrorHandlers(notify, { onReconnect });
 
@@ -39,14 +43,10 @@ describe('cherryPlayStreamingErrors', () => {
     handlers.onReconnectionFailed();
 
     expect(notify).toHaveBeenCalledTimes(3);
-    expect(notify).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ type: 'error', message: expect.stringContaining('нет сети') }),
-    );
-    expect(notify).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({ type: 'error', message: expect.stringContaining('плейлист') }),
-    );
+    expect(notifications[0]?.type).toBe('error');
+    expect(notifications[0]?.message).toContain('нет сети');
+    expect(notifications[1]?.type).toBe('error');
+    expect(notifications[1]?.message).toContain('плейлист');
     expect(notify).toHaveBeenNthCalledWith(
       3,
       expect.objectContaining({

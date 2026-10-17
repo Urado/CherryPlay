@@ -6,7 +6,7 @@ interface ProjectNameInputProps {
   title: string;
 }
 
-export const ProjectNameInput = memo<ProjectNameInputProps>(({ disabled, title }) => {
+const ProjectNameInputComponent = ({ disabled, title }: ProjectNameInputProps) => {
   const name = useProjectStore((state) => state.name);
   const setName = useProjectStore((state) => state.setName);
   const [isHydrated, setIsHydrated] = useState(() => useProjectStore.persist.hasHydrated());
@@ -29,11 +29,11 @@ export const ProjectNameInput = memo<ProjectNameInputProps>(({ disabled, title }
       disabled={disabled || projectStoreLoading}
       aria-label="Название проекта"
       aria-busy={projectStoreLoading}
-      title={
-        projectStoreLoading
-          ? 'Загрузка проекта…'
-          : title
-      }
+      title={projectStoreLoading ? 'Загрузка проекта…' : title}
     />
   );
-});
+};
+
+ProjectNameInputComponent.displayName = 'ProjectNameInputComponent';
+
+export const ProjectNameInput = memo(ProjectNameInputComponent);

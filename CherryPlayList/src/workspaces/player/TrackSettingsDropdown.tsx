@@ -1,4 +1,3 @@
-
 import { ActionAfterTrack } from '@core/types/project';
 import { useProjectStore } from '@shared/stores';
 import { buildAnchorPanelStyle } from '@shared/utils/anchorPanelLayout';

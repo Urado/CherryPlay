@@ -30,7 +30,7 @@ import './PartyView.css';
 
 const SESSION_END_GRACE_MS = 1500;
 
-function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
+const findTrackDuration = (items: PlayerItemDto[], id: string): number | null => {
   for (const item of items) {
     if (item.id === id && item.type === 'track') {
       return item.duration || null;
@@ -41,17 +41,14 @@ function findTrackDuration(items: PlayerItemDto[], id: string): number | null {
     }
   }
   return null;
-}
+};
 
 interface PartyViewProps {
   shortCode?: string;
   isDemo?: boolean;
 }
 
-export const PartyView: React.FC<PartyViewProps> = ({
-  shortCode,
-  isDemo = false,
-}) => {
+export const PartyView: React.FC<PartyViewProps> = ({ shortCode, isDemo = false }) => {
   const { partyInfoPageEnabled } = useAppConfig();
   const partyState = usePartyState({ shortCode, isDemo });
   const {
@@ -179,7 +176,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       (_partyId: string) => {
         clearSessionTimers();
         setIsSessionActive(true);
-        requestFullState();
+        void requestFullState();
       },
       [clearSessionTimers, setIsSessionActive, requestFullState],
     ),
@@ -270,7 +267,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     ),
     onStateChanged: useCallback(
       (_partyId: string) => {
-        requestFullState();
+        void requestFullState();
       },
       [requestFullState],
     ),
@@ -371,7 +368,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       signalR.connectionStatus === 'connected' &&
       (prev === 'connecting' || prev === 'disconnected');
     if (becameConnected) {
-      requestFullState();
+      void requestFullState();
     }
   }, [signalR.connectionStatus, shortCode, isDemo, requestFullState]);
 
@@ -400,7 +397,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
     if (signalR.isConnected) {
       if (!hasConnectedRef.current) {
         hasConnectedRef.current = true;
-        requestFullState();
+        void requestFullState();
       }
       return;
     }
@@ -420,7 +417,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       .connect()
       .then(() => {
         hasConnectedRef.current = true;
-        requestFullState();
+        void requestFullState();
         connectingRef.current = false;
       })
       .catch((err) => {
@@ -495,7 +492,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
   const themeVars = usePartyThemeVars(themeId, customizationSettings);
 
   const handleRetry = () => {
-    loadPlaylist();
+    void loadPlaylist();
   };
 
   if (loading) {
@@ -527,9 +524,7 @@ export const PartyView: React.FC<PartyViewProps> = ({
       <div className="party-view-container">
         <div className="party-view-header">
           <div className="party-view-header-controls">
-            {!isDemo && (
-              <PartyViewBackLink to={ROUTES.HOME} />
-            )}
+            {!isDemo && <PartyViewBackLink to={ROUTES.HOME} />}
             {!isDemo && shortCode && (
               <a
                 href={ROUTES.PARTY_QR(shortCode)}

@@ -37,7 +37,7 @@
 | ID              | Комбинация   | Описание         |
 | --------------- | ------------ | ---------------- |
 | `global.save`   | Ctrl+S       | Сохранить проект |
-| `global.saveAs` | Ctrl+Shift+S | Сохранить как… |
+| `global.saveAs` | Ctrl+Shift+S | Сохранить как…   |
 | `global.open`   | Ctrl+O       | Открыть проект   |
 | `global.new`    | Ctrl+N       | Новый проект     |
 
@@ -53,9 +53,9 @@
 
 ### Плеер (player)
 
-| ID                   | Комбинация | Описание               |
-| -------------------- | ---------- | ---------------------- |
-| `player.togglePlay`  | Space      | Пауза / воспроизведение (сессия) |
+| ID                  | Комбинация | Описание                         |
+| ------------------- | ---------- | -------------------------------- |
+| `player.togglePlay` | Space      | Пауза / воспроизведение (сессия) |
 
 Обработчик — `toggleSessionPlayPause` (`src/shared/utils/togglePlayPause.ts`):
 
@@ -114,12 +114,12 @@ initializeShortcuts(() => useSettingsStore.getState().keyBindings, {
 
 Единый контракт клавиатуры для модалок — хук **`useModalKeyboard`** (`src/shared/hooks/useModalKeyboard.ts`) и утилиты **`modalKeyboard.ts`**:
 
-| Клавиша | Поведение |
-| ------- | --------- |
-| **Enter** | Primary action (`onPrimary`), если передан и не disabled |
-| **Escape** | Cancel / close (`onCancel`) |
-| **Enter** в `textarea` / `contenteditable` | Новая строка, **не** submit |
-| **Enter** на overlay (`.modal-overlay`) | **Ничего** — модалка не закрывается |
+| Клавиша                                    | Поведение                                                |
+| ------------------------------------------ | -------------------------------------------------------- |
+| **Enter**                                  | Primary action (`onPrimary`), если передан и не disabled |
+| **Escape**                                 | Cancel / close (`onCancel`)                              |
+| **Enter** в `textarea` / `contenteditable` | Новая строка, **не** submit                              |
+| **Enter** на overlay (`.modal-overlay`)    | **Ничего** — модалка не закрывается                      |
 
 Стек вложенных модалок: только верхняя обрабатывает Enter/Escape. Подключено в Settings, Account (включая confirm удаления в **«Мои вечеринки»**), Link Party, Save/Export, Workspace dialogs и др.
 

@@ -32,11 +32,11 @@ interface TeardownAimpOrganizerSessionOptions {
   shouldDisconnect: boolean;
 }
 
-export async function startAimpOrganizerSession({
+export const startAimpOrganizerSession = async ({
   bridgeState,
   publishingBridgeReady,
   actions,
-}: StartAimpOrganizerSessionOptions): Promise<void> {
+}: StartAimpOrganizerSessionOptions): Promise<void> => {
   if (!publishingBridgeReady) {
     throw new Error('AIMP publishing path is not ready yet.');
   }
@@ -58,14 +58,14 @@ export async function startAimpOrganizerSession({
     });
     throw error;
   }
-}
+};
 
-export async function teardownAimpOrganizerSession({
+export const teardownAimpOrganizerSession = async ({
   actions,
   shouldEndSession,
   shouldResetPlaybackState,
   shouldDisconnect,
-}: TeardownAimpOrganizerSessionOptions): Promise<void> {
+}: TeardownAimpOrganizerSessionOptions): Promise<void> => {
   if (shouldEndSession) {
     try {
       await actions.endSession();
@@ -89,4 +89,4 @@ export async function teardownAimpOrganizerSession({
       logger.error('[AIMP] Failed to disconnect SignalR during teardown', error);
     }
   }
-}
+};

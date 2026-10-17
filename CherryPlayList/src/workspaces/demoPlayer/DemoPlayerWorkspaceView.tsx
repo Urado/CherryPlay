@@ -1,4 +1,3 @@
-
 import { DemoPlayer } from '@shared/components';
 import { useUIStore } from '@shared/stores';
 import React from 'react';

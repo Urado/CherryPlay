@@ -2,7 +2,7 @@ import { getPlatformCapabilities } from './platformCapabilities';
 import { getPlatformAppMode, isPlatformInitialized } from './platformContext';
 import type { AppMode } from './types';
 
-export function getAppMode(): AppMode {
+export const getAppMode = (): AppMode => {
   const fromPlatform = getPlatformAppMode();
   if (fromPlatform) {
     return fromPlatform;
@@ -21,13 +21,9 @@ export function getAppMode(): AppMode {
   }
 
   return 'electron';
-}
+};
 
-/**
- * @deprecated Prefer {@link getPlatformCapabilities}.supportsAimpWorkspace for feature gating.
- * True when the AIMP desktop workspace bridge is available (Electron only).
- */
-export function isNativePlatformAvailable(): boolean {
+export const isNativePlatformAvailable = (): boolean => {
   if (isPlatformInitialized()) {
     return getPlatformCapabilities().supportsAimpWorkspace;
   }
@@ -38,4 +34,4 @@ export function isNativePlatformAvailable(): boolean {
     typeof window !== 'undefined' &&
     typeof window.api !== 'undefined'
   );
-}
+};

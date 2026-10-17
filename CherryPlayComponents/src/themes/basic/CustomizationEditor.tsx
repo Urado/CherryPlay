@@ -25,15 +25,15 @@ import {
 type HexDraftState = Record<string, string>;
 let basicUserPaletteIdCounter = 0;
 
-function createBasicUserPaletteId(): string {
+const createBasicUserPaletteId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   basicUserPaletteIdCounter += 1;
   return `up-${basicUserPaletteIdCounter}`;
-}
+};
 
-function isDefaultBasicThemeSelection(settings: Record<string, unknown>): boolean {
+const isDefaultBasicThemeSelection = (settings: Record<string, unknown>): boolean => {
   const current = normalizeBasicThemePaletteSettings(settings);
   const baseline = normalizeBasicThemePaletteSettings(DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS);
   if (current.paletteId !== baseline.paletteId) {
@@ -48,12 +48,12 @@ function isDefaultBasicThemeSelection(settings: Record<string, unknown>): boolea
     a.trackAreaBackground === b.trackAreaBackground &&
     a.trackBackground === b.trackBackground
   );
-}
+};
 
-function isCatalogItemSelected(
+const isCatalogItemSelected = (
   item: BaseThemeColorPaletteCatalogItem,
   normalized: ReturnType<typeof normalizeBasicThemePaletteSettings>,
-): boolean {
+): boolean => {
   if (item.id === 'custom' && item.isCustom && !item.userSavedId) {
     return normalized.paletteId === 'custom' && !normalized.basicActiveUserPaletteId;
   }
@@ -63,7 +63,7 @@ function isCatalogItemSelected(
     );
   }
   return normalized.paletteId === item.id;
-}
+};
 
 const BASIC_CUSTOM_COLOR_FIELDS = [
   { key: 'accentPrimary', paletteKey: 'accentPrimary', label: 'Акцент' },
@@ -85,9 +85,9 @@ const FAMILY_ACCENT_PRESETS: Record<
   lightAccent: BASIC_THEME_LIGHT_ACCENT_PRESETS,
 };
 
-function getBasicPalettePreviewStyle(
+const getBasicPalettePreviewStyle = (
   paletteItem: BaseThemeColorPaletteCatalogItem,
-): React.CSSProperties {
+): React.CSSProperties => {
   return {
     ['--palette-preview-accent' as string]: paletteItem.palette.accentPrimary,
     ['--palette-preview-text' as string]: paletteItem.palette.textPrimary,
@@ -95,7 +95,7 @@ function getBasicPalettePreviewStyle(
     ['--palette-preview-bg-secondary' as string]: paletteItem.palette.trackAreaBackground,
     ['--palette-preview-bg-tertiary' as string]: paletteItem.palette.trackBackground,
   };
-}
+};
 
 export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorProps> = ({
   customizationSettings,
@@ -381,7 +381,11 @@ export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorPro
       {familyIdForAccent && (
         <div className="party-editor-family-accent">
           <div className="party-editor-family-accent-label">Акцент</div>
-          <div className="party-editor-accent-preset-row" role="list">
+          <div
+            className="party-editor-accent-preset-row"
+            role="group"
+            aria-label="Акцентные пресеты"
+          >
             {FAMILY_ACCENT_PRESETS[familyIdForAccent].map((preset) => {
               const isSelectedPreset =
                 preset.accent.toLowerCase() === familyAccentResolved.toLowerCase();
@@ -389,7 +393,6 @@ export const BasicThemeCustomizationEditor: React.FC<ThemeCustomizationEditorPro
                 <button
                   key={preset.id}
                   type="button"
-                  role="listitem"
                   className={`party-editor-accent-preset-chip ${isSelectedPreset ? 'party-editor-accent-preset-chip--selected' : ''}`}
                   title={preset.label}
                   aria-label={preset.label}

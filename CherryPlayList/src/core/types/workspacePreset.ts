@@ -41,7 +41,7 @@ export const UNNAMED_WORKSPACE_NAME = 'Без имени';
 
 const UNNAMED_WORKSPACE_NAME_PREFIX = `${UNNAMED_WORKSPACE_NAME} `;
 
-export function isUnnamedWorkspaceName(name: string): boolean {
+export const isUnnamedWorkspaceName = (name: string): boolean => {
   const trimmed = name.trim();
   if (trimmed === UNNAMED_WORKSPACE_NAME) {
     return true;
@@ -55,9 +55,9 @@ export function isUnnamedWorkspaceName(name: string): boolean {
   }
   const index = Number(suffix);
   return Number.isInteger(index) && index >= 2;
-}
+};
 
-export function allocateUnnamedWorkspaceName(existingNames: readonly string[]): string {
+export const allocateUnnamedWorkspaceName = (existingNames: readonly string[]): string => {
   const trimmedNames = existingNames.map((name) => name.trim());
   if (!trimmedNames.includes(UNNAMED_WORKSPACE_NAME)) {
     return UNNAMED_WORKSPACE_NAME;
@@ -68,12 +68,12 @@ export function allocateUnnamedWorkspaceName(existingNames: readonly string[]): 
     suffix += 1;
   }
   return `${UNNAMED_WORKSPACE_NAME} ${suffix}`;
-}
+};
 
-export function toBuiltinWorkspaceId(preset: LayoutPreset): BuiltinWorkspaceId {
+export const toBuiltinWorkspaceId = (preset: LayoutPreset): BuiltinWorkspaceId => {
   return `builtin:${preset}`;
-}
+};
 
-export function isBuiltinWorkspaceId(id: string): id is BuiltinWorkspaceId {
+export const isBuiltinWorkspaceId = (id: string): id is BuiltinWorkspaceId => {
   return id.startsWith('builtin:');
-}
+};

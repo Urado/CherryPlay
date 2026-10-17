@@ -7,9 +7,6 @@ import {
   isProjectTrack,
 } from '@core/types/project';
 
-/**
- * Интерфейс для PlayerItem без path (для API)
- */
 export interface PlayerItemForApi {
   id: string;
   type: 'track' | 'group';
@@ -20,12 +17,9 @@ export interface PlayerItemForApi {
   level: number;
 }
 
-/**
- * Имя трека для API/превью вечеринки с учётом настроек отображения (графемы Unicode).
- */
-export function normalizePartyTrackDisplaySettings(
+export const normalizePartyTrackDisplaySettings = (
   settings: PartyTrackDisplaySettings,
-): PartyTrackDisplaySettings {
+): PartyTrackDisplaySettings => {
   const mode = settings.stripLeadingCharsMode === 'untilDelimiter' ? 'untilDelimiter' : 'count';
   const delimiterRaw = settings.stripLeadingCharsDelimiter;
   const delimiter =
@@ -43,12 +37,12 @@ export function normalizePartyTrackDisplaySettings(
     stripLeadingCharsCount: count,
     stripLeadingCharsDelimiter: delimiter,
   };
-}
+};
 
-export function applyPartyTrackDisplayToTrackName(
+export const applyPartyTrackDisplayToTrackName = (
   name: string,
   settings: PartyTrackDisplaySettings = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
-): string {
+): string => {
   const normalized = normalizePartyTrackDisplaySettings(settings);
   if (!normalized.stripLeadingCharsEnabled) {
     return name;
@@ -71,12 +65,12 @@ export function applyPartyTrackDisplayToTrackName(
   const n = Math.min(normalized.stripLeadingCharsCount, chars.length);
   const rest = chars.slice(n).join('');
   return rest.length > 0 ? rest : name;
-}
+};
 
-export function applyPartyTrackDisplayToComponentPlaylist(
+export const applyPartyTrackDisplayToComponentPlaylist = (
   items: ComponentPlayerItem[],
   settings: PartyTrackDisplaySettings = DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
-): ComponentPlayerItem[] {
+): ComponentPlayerItem[] => {
   return items.map((item) => {
     if (item.type === 'group') {
       const nested = item.items ?? [];
@@ -90,16 +84,13 @@ export function applyPartyTrackDisplayToComponentPlaylist(
       name: applyPartyTrackDisplayToTrackName(item.name, settings),
     };
   });
-}
+};
 
-/**
- * Преобразует ProjectItem из приложения в формат для библиотеки компонентов
- */
-export function convertToComponentPlayerItem(
+export const convertToComponentPlayerItem = (
   item: ProjectItem,
   displayOrder: number = 0,
   level: number = 0,
-): ComponentPlayerItem {
+): ComponentPlayerItem => {
   if (isProjectGroup(item)) {
     return {
       id: item.id,
@@ -121,19 +112,13 @@ export function convertToComponentPlayerItem(
       level,
     };
   }
-}
+};
 
-/**
- * Преобразует массив ProjectItem в формат для библиотеки компонентов
- */
-export function convertToComponentPlayerItems(items: ProjectItem[]): ComponentPlayerItem[] {
+export const convertToComponentPlayerItems = (items: ProjectItem[]): ComponentPlayerItem[] => {
   return items.map((item, index) => convertToComponentPlayerItem(item, index, 0));
-}
+};
 
-/**
- * Вычисляет общую длительность плейлиста
- */
-export function calculateTotalDuration(items: ProjectItem[]): number {
+export const calculateTotalDuration = (items: ProjectItem[]): number => {
   let total = 0;
   for (const item of items) {
     if (isProjectTrack(item)) {
@@ -143,12 +128,9 @@ export function calculateTotalDuration(items: ProjectItem[]): number {
     }
   }
   return total;
-}
+};
 
-/**
- * Подсчитывает общее количество треков
- */
-export function countTotalTracks(items: ProjectItem[]): number {
+export const countTotalTracks = (items: ProjectItem[]): number => {
   let count = 0;
   for (const item of items) {
     if (isProjectTrack(item)) {
@@ -158,10 +140,9 @@ export function countTotalTracks(items: ProjectItem[]): number {
     }
   }
   return count;
-}
+};
 
-/** Collects track ids from a component playlist tree (preview / playback helpers). */
-export function collectComponentPlaylistTrackIds(items: ComponentPlayerItem[]): string[] {
+export const collectComponentPlaylistTrackIds = (items: ComponentPlayerItem[]): string[] => {
   const ids: string[] = [];
   for (const item of items) {
     if (item.type === 'track') {
@@ -173,17 +154,14 @@ export function collectComponentPlaylistTrackIds(items: ComponentPlayerItem[]): 
     }
   }
   return ids;
-}
+};
 
-/**
- * Преобразует ProjectItem из приложения в формат для API (без path)
- */
-export function convertToApiPlayerItem(
+export const convertToApiPlayerItem = (
   item: ProjectItem,
   displayOrder: number = 0,
   level: number = 0,
   trackDisplay?: PartyTrackDisplaySettings,
-): PlayerItemForApi {
+): PlayerItemForApi => {
   if (isProjectGroup(item)) {
     return {
       id: item.id,
@@ -208,45 +186,37 @@ export function convertToApiPlayerItem(
       duration: item.duration,
       displayOrder,
       level,
-      // path намеренно не включается
     };
   }
-}
+};
 
-/**
- * Преобразует массив ProjectItem в формат для API (без path)
- */
-export function convertToApiPlayerItems(
+export const convertToApiPlayerItems = (
   items: ProjectItem[],
   trackDisplay?: PartyTrackDisplaySettings,
-): PlayerItemForApi[] {
+): PlayerItemForApi[] => {
   return items.map((item, index) => convertToApiPlayerItem(item, index, 0, trackDisplay));
-}
+};
 
-/**
- * Вычисляет метаданные плейлиста для API
- */
-export function calculatePlaylistMetadata(items: ProjectItem[]): {
+export const calculatePlaylistMetadata = (
+  items: ProjectItem[],
+): {
   totalTracks: number;
   totalDuration: number;
-} {
+} => {
   return {
     totalTracks: countTotalTracks(items),
     totalDuration: calculateTotalDuration(items),
   };
-}
+};
 
-/**
- * Преобразует плейлист в формат для API с вычислением метаданных
- */
-export function convertPlaylistForApi(
+export const convertPlaylistForApi = (
   items: ProjectItem[],
   trackDisplay?: PartyTrackDisplaySettings,
 ): {
   items: PlayerItemForApi[];
   totalTracks: number;
   totalDuration: number;
-} {
+} => {
   const apiItems = convertToApiPlayerItems(items, trackDisplay);
   const metadata = calculatePlaylistMetadata(items);
 
@@ -255,4 +225,4 @@ export function convertPlaylistForApi(
     totalTracks: metadata.totalTracks,
     totalDuration: metadata.totalDuration,
   };
-}
+};

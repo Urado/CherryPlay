@@ -1,4 +1,3 @@
-
 import type { Track } from '@core/types/track';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';

@@ -28,14 +28,15 @@ jest.mock('electron', () => ({
 
 import '../../electron/preload';
 
-function emitChannel(channel: string, payload: unknown): void {
+const emitChannel = (channel: string, payload: unknown): void => {
   for (const listener of channelListeners.get(channel) ?? []) {
     listener({}, payload);
   }
-}
+};
 
 describe('AIMP preload bridge', () => {
-  const exposedApi = exposeInMainWorldMock.mock.calls[0][1] as Window['api'];
+  const exposedCall = exposeInMainWorldMock.mock.calls[0] as [string, unknown] | undefined;
+  const exposedApi = exposedCall?.[1] as Window['api'];
 
   beforeEach(() => {
     invokeMock.mockReset();

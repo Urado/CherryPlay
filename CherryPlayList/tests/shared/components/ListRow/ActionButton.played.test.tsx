@@ -29,11 +29,7 @@ describe('ActionButton for played tracks', () => {
   it('keeps an opted-in action locked for the current row', () => {
     render(
       <ListRow id="track-1" isPlayed isCurrent isLocked baseClassName="playlist-item">
-        <ActionButton
-          aria-label="Действия с треком"
-          allowWhenPlayedLocked
-          icon={<span>⋮</span>}
-        />
+        <ActionButton aria-label="Действия с треком" allowWhenPlayedLocked icon={<span>⋮</span>} />
       </ListRow>,
     );
 

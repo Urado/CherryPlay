@@ -118,8 +118,10 @@ const colorLuminance = (hex: string) => {
 const contrastRatio = (first: string, second: string) => {
   const firstLuminance = colorLuminance(first);
   const secondLuminance = colorLuminance(second);
-  return (Math.max(firstLuminance, secondLuminance) + 0.05) /
-    (Math.min(firstLuminance, secondLuminance) + 0.05);
+  return (
+    (Math.max(firstLuminance, secondLuminance) + 0.05) /
+    (Math.min(firstLuminance, secondLuminance) + 0.05)
+  );
 };
 
 describe('PartyQrCode', () => {
@@ -160,7 +162,13 @@ describe('PartyQrCode', () => {
       }),
     );
 
-    render(<PartyQrCode value="https://example.test/party/night" title="Spring Night" style={baseStyle} />);
+    render(
+      <PartyQrCode
+        value="https://example.test/party/night"
+        title="Spring Night"
+        style={baseStyle}
+      />,
+    );
     const qr = screen.getByRole('img', { name: 'QR-код: Spring Night' });
     const button = screen.getByRole('button', { name: 'Скачать PNG' });
 
@@ -182,10 +190,12 @@ describe('PartyQrCode', () => {
     await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
     expect(qr.getAttribute('aria-busy')).toBe('false');
     fireEvent.click(button);
-    await waitFor(() => expect(qrMocks.download).toHaveBeenCalledWith({
-      name: 'party-qr-Spring-Night',
-      extension: 'png',
-    }));
+    await waitFor(() =>
+      expect(qrMocks.download).toHaveBeenCalledWith({
+        name: 'party-qr-Spring-Night',
+        extension: 'png',
+      }),
+    );
   });
 
   it('uses rounded Spring dots and the library image mask for the Spring icon', async () => {
@@ -286,7 +296,9 @@ describe('PartyQrCode', () => {
         resolveRawData = resolve;
       }),
     );
-    const view = render(<PartyQrCode value="https://example.test/party/night" title="Night" style={baseStyle} />);
+    const view = render(
+      <PartyQrCode value="https://example.test/party/night" title="Night" style={baseStyle} />,
+    );
 
     await waitFor(() => expect(qrMocks.instances).toHaveLength(1));
     const qrContainer = qrMocks.containers[0];

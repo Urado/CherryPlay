@@ -49,9 +49,8 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
     }
   }, [party]);
 
-  const themeId = party && isValidPartyTheme(party.partyThemeId)
-    ? party.partyThemeId
-    : DEFAULT_PARTY_THEME_ID;
+  const themeId =
+    party && isValidPartyTheme(party.partyThemeId) ? party.partyThemeId : DEFAULT_PARTY_THEME_ID;
   const themeVars = usePartyThemeVars(themeId, party?.customizationSettings);
 
   if (loading) {
@@ -64,7 +63,9 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
               variant="secondary"
               size="sm"
               className="party-info-page-nav-btn"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                void navigate(-1);
+              }}
               title="Список вечеринок"
             >
               ← Список вечеринок
@@ -86,7 +87,9 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
               variant="secondary"
               size="sm"
               className="party-info-page-nav-btn"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                void navigate(-1);
+              }}
               title="Список вечеринок"
             >
               ← Список вечеринок
@@ -98,7 +101,9 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
           type="button"
           variant="secondary"
           className="party-info-page-nav-btn"
-          onClick={() => navigate(ROUTES.HOME)}
+          onClick={() => {
+            void navigate(ROUTES.HOME);
+          }}
         >
           На главную
         </Button>
@@ -115,7 +120,9 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
             variant="secondary"
             size="sm"
             className="party-info-page-nav-btn"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              void navigate(-1);
+            }}
             title="Список вечеринок"
           >
             ← Список вечеринок
@@ -131,7 +138,7 @@ const PartyInfoContent = ({ shortCode }: { shortCode: string }) => {
               if (target && target.toLowerCase() !== '_self') return;
 
               event.preventDefault();
-              navigate(ROUTES.PARTY_VIEW(shortCode));
+              void navigate(ROUTES.PARTY_VIEW(shortCode));
             }}
             className="party-info-page-nav-btn party-info-page-playlist-btn"
             title="Плейлист"

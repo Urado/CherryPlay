@@ -3,8 +3,8 @@ const mockGetPartyUrl = jest.fn();
 
 jest.mock('../../src/shared/services/partyService', () => ({
   partyService: {
-    createParty: (...args: unknown[]) => mockCreateParty(...args),
-    getPartyUrl: (...args: unknown[]) => mockGetPartyUrl(...args),
+    createParty: (...args: unknown[]) => mockCreateParty(...args) as unknown,
+    getPartyUrl: (...args: unknown[]) => mockGetPartyUrl(...args) as unknown,
   },
 }));
 
@@ -16,7 +16,7 @@ import type { CreatePartyDto, PartyLifecycleState } from '../../src/shared/servi
 import { resolvePartyEditorPhase } from '../../src/workspaces/party/partyEditorPhase';
 import { finalizePartyCreation } from '../../src/workspaces/party/partyWorkspaceCreateFlow';
 
-function createStore() {
+const createStore = () => {
   let lifecycleState: PartyLifecycleState | null = null;
   const setPartyLifecycleState = jest.fn((value: PartyLifecycleState) => {
     lifecycleState = value;
@@ -28,9 +28,9 @@ function createStore() {
     setIsListedInCatalog: jest.fn(),
     getLifecycleState: () => lifecycleState,
   };
-}
+};
 
-function createDeps() {
+const createDeps = () => {
   return {
     loadThemeAccess: jest.fn().mockResolvedValue(undefined),
     checkPartyExists: jest.fn().mockResolvedValue(true),
@@ -38,7 +38,7 @@ function createDeps() {
     markAsDirty: jest.fn(),
     addNotification: jest.fn(),
   };
-}
+};
 
 const createData = {
   name: 'Party',

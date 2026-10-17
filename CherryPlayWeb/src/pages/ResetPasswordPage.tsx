@@ -27,7 +27,7 @@ export const ResetPasswordPage = () => {
       window.clearTimeout(redirectTimeoutRef.current);
     }
     redirectTimeoutRef.current = window.setTimeout(() => {
-      navigate(ROUTES.LOGIN, { replace: true });
+      void navigate(ROUTES.LOGIN, { replace: true });
     }, REDIRECT_TO_LOGIN_MS);
   };
 
@@ -38,7 +38,9 @@ export const ResetPasswordPage = () => {
           token={token}
           authService={authService}
           onSuccess={handleSuccess}
-          onBackToLogin={() => navigate(ROUTES.LOGIN)}
+          onBackToLogin={() => {
+            void navigate(ROUTES.LOGIN);
+          }}
         />
       </div>
     </div>

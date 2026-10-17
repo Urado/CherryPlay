@@ -7,7 +7,7 @@ export const CHERRYPLAY_RECONNECT_ACTION_LABEL = 'Переподключить';
 
 const TOAST_COALESCE_MS = 8_000;
 
-function errorDetail(error: unknown): string {
+const errorDetail = (error: unknown): string => {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
@@ -15,9 +15,9 @@ function errorDetail(error: unknown): string {
     return error;
   }
   return '';
-}
+};
 
-export function mapCherryPlayStreamingErrorPhrase(error: unknown): string {
+export const mapCherryPlayStreamingErrorPhrase = (error: unknown): string => {
   const detail = errorDetail(error).toLowerCase();
   if (!detail) {
     return 'неизвестная ошибка';
@@ -55,22 +55,22 @@ export function mapCherryPlayStreamingErrorPhrase(error: unknown): string {
     return 'нет соединения';
   }
   return 'неизвестная ошибка';
-}
+};
 
-export function formatCherryPlayConnectError(error: unknown): string {
+export const formatCherryPlayConnectError = (error: unknown): string => {
   return `Не удалось подключиться к трансляции: ${mapCherryPlayStreamingErrorPhrase(error)}`;
-}
+};
 
-export function formatCherryPlayPublishError(
+export const formatCherryPlayPublishError = (
   operation: CherryPlayPublishOperation,
   error: unknown,
-): string {
+): string => {
   const phrase = mapCherryPlayStreamingErrorPhrase(error);
   if (operation === 'playlistPublish') {
     return `Не удалось синхронизировать плейлист на сервер: ${phrase}`;
   }
   return `Не удалось опубликовать состояние трансляции: ${phrase}`;
-}
+};
 
 export type CherryPlayStreamingNotify = (notification: {
   type: 'error' | 'warning';
@@ -83,10 +83,10 @@ export interface CherryPlayStreamingErrorHandlerOptions {
   onReconnect?: () => void;
 }
 
-export function createCherryPlayStreamingErrorHandlers(
+export const createCherryPlayStreamingErrorHandlers = (
   notify: CherryPlayStreamingNotify,
   options?: CherryPlayStreamingErrorHandlerOptions,
-) {
+) => {
   const lastNotifiedAt = new Map<string, number>();
 
   const shouldNotify = (key: string): boolean => {
@@ -134,4 +134,4 @@ export function createCherryPlayStreamingErrorHandlers(
       });
     },
   };
-}
+};

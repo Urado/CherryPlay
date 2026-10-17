@@ -1,4 +1,3 @@
-
 import { isProjectTrack } from '@core/types/project';
 import type { Track } from '@core/types/track';
 import { applyLoudnessChangeToActivePlayback } from '@shared/audio/playback/loudnessPlaybackSync';

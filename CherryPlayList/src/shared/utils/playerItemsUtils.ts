@@ -9,13 +9,13 @@ export interface DisplayItem {
   parentGroupId: string | null;
 }
 
-function flattenItemsRecursive(
+const flattenItemsRecursive = (
   items: ProjectItem[],
   level: number,
   trackIndex: number,
   flatIndex: number,
   parentGroupId: string | null,
-): { result: DisplayItem[]; nextTrackIndex: number; nextFlatIndex: number } {
+): { result: DisplayItem[]; nextTrackIndex: number; nextFlatIndex: number } => {
   const result: DisplayItem[] = [];
   let currentTrackIndex = trackIndex;
   let currentFlatIndex = flatIndex;
@@ -47,14 +47,14 @@ function flattenItemsRecursive(
   }
 
   return { result, nextTrackIndex: currentTrackIndex, nextFlatIndex: currentFlatIndex };
-}
+};
 
-export function flattenItemsForDisplay(items: ProjectItem[]): DisplayItem[] {
+export const flattenItemsForDisplay = (items: ProjectItem[]): DisplayItem[] => {
   const { result } = flattenItemsRecursive(items, 0, 0, 0, null);
   return result;
-}
+};
 
-function getAllTracksFromGroup(group: ProjectGroup): Track[] {
+const getAllTracksFromGroup = (group: ProjectGroup): Track[] => {
   const tracks: Track[] = [];
   for (const item of group.items) {
     if (isProjectTrack(item)) {
@@ -64,9 +64,9 @@ function getAllTracksFromGroup(group: ProjectGroup): Track[] {
     }
   }
   return tracks;
-}
+};
 
-export function getGroupItemCount(group: ProjectGroup): number {
+export const getGroupItemCount = (group: ProjectGroup): number => {
   let count = 0;
   for (const item of group.items) {
     count++;
@@ -75,14 +75,14 @@ export function getGroupItemCount(group: ProjectGroup): number {
     }
   }
   return count;
-}
+};
 
-export function getGroupTotalDuration(group: ProjectGroup): number {
+export const getGroupTotalDuration = (group: ProjectGroup): number => {
   const tracks = getAllTracksFromGroup(group);
   return tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-}
+};
 
-export function getTracksFromDisplayItems(displayItems: DisplayItem[]): Track[] {
+export const getTracksFromDisplayItems = (displayItems: DisplayItem[]): Track[] => {
   const tracks: Track[] = [];
   for (const displayItem of displayItems) {
     if (isProjectTrack(displayItem.item)) {
@@ -90,9 +90,9 @@ export function getTracksFromDisplayItems(displayItems: DisplayItem[]): Track[] 
     }
   }
   return tracks;
-}
+};
 
-export function getGroupWithNestedIds(groupId: string, displayItems: DisplayItem[]): string[] {
+export const getGroupWithNestedIds = (groupId: string, displayItems: DisplayItem[]): string[] => {
   const ids: string[] = [];
 
   const groupIndex = displayItems.findIndex((di) => di.item.id === groupId);
@@ -117,12 +117,12 @@ export function getGroupWithNestedIds(groupId: string, displayItems: DisplayItem
   }
 
   return ids;
-}
+};
 
-export function expandSelectionWithGroupContents(
+export const expandSelectionWithGroupContents = (
   selectedIds: Set<string>,
   displayItems: DisplayItem[],
-): Set<string> {
+): Set<string> => {
   const expandedIds = new Set<string>();
 
   for (const di of displayItems) {
@@ -149,4 +149,4 @@ export function expandSelectionWithGroupContents(
   }
 
   return expandedIds;
-}
+};

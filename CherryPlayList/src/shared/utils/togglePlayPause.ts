@@ -12,7 +12,7 @@ export interface TogglePlayPauseParams {
   onPlayFailure?: () => void;
 }
 
-export async function togglePlayPause(params: TogglePlayPauseParams): Promise<void> {
+export const togglePlayPause = async (params: TogglePlayPauseParams): Promise<void> => {
   if (params.blocked || !params.hasTrack) {
     return;
   }
@@ -27,9 +27,9 @@ export async function togglePlayPause(params: TogglePlayPauseParams): Promise<vo
   } catch {
     params.onPlayFailure?.();
   }
-}
+};
 
-export function notifyDemoPlayFailureIfNeeded(existingError: string | null | undefined): void {
+export const notifyDemoPlayFailureIfNeeded = (existingError: string | null | undefined): void => {
   if (existingError) {
     return;
   }
@@ -37,9 +37,9 @@ export function notifyDemoPlayFailureIfNeeded(existingError: string | null | und
     type: 'error',
     message: DEMO_PLAY_FAILURE_MESSAGE,
   });
-}
+};
 
-export function toggleSessionPlayPause(): void {
+export const toggleSessionPlayPause = (): void => {
   const mode = useProjectStore.getState().sessionState.mode;
   if (mode !== 'session') {
     return;
@@ -52,4 +52,4 @@ export function toggleSessionPlayPause(): void {
     play,
     pause,
   });
-}
+};

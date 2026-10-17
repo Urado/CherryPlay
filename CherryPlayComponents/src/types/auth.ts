@@ -51,17 +51,17 @@ export interface DesktopAuthExchangeRequest {
 
 export const DESKTOP_AUTH_DEEP_LINK_BASE = 'cherryplaylist://auth';
 
-export function buildAuthReturnUrl(returnTo: string, code: string): string {
+export const buildAuthReturnUrl = (returnTo: string, code: string): string => {
   const base = returnTo.trim();
   const joiner = base.includes('?') ? '&' : '?';
   return `${base}${joiner}code=${encodeURIComponent(code)}`;
-}
+};
 
-export function buildDesktopAuthDeepLink(code: string): string {
+export const buildDesktopAuthDeepLink = (code: string): string => {
   return buildAuthReturnUrl(DESKTOP_AUTH_DEEP_LINK_BASE, code);
-}
+};
 
-export function isAllowedAuthReturnTo(value: string | null | undefined): boolean {
+export const isAllowedAuthReturnTo = (value: string | null | undefined): boolean => {
   if (!value?.trim()) {
     return false;
   }
@@ -81,14 +81,14 @@ export function isAllowedAuthReturnTo(value: string | null | undefined): boolean
   } catch {
     return false;
   }
-}
+};
 
-export function resolveDesktopAuthReturnTo(value: string | null | undefined): string {
+export const resolveDesktopAuthReturnTo = (value: string | null | undefined): string => {
   if (isAllowedAuthReturnTo(value)) {
     return value!.trim();
   }
   return DESKTOP_AUTH_DEEP_LINK_BASE;
-}
+};
 
 export interface LoginRequest {
   email: string;
@@ -131,35 +131,35 @@ export class AuthHttpError extends Error {
   }
 }
 
-export function isAuthHttpError(error: unknown): error is AuthHttpError {
+export const isAuthHttpError = (error: unknown): error is AuthHttpError => {
   return error instanceof AuthHttpError;
-}
+};
 
-export function getAuthHttpStatus(error: unknown): number | undefined {
+export const getAuthHttpStatus = (error: unknown): number | undefined => {
   if (isAuthHttpError(error)) {
     return error.status;
   }
   if (error !== null && typeof error === 'object' && 'status' in error) {
-    const status = (error).status;
+    const status = error.status;
     if (typeof status === 'number' && Number.isFinite(status)) {
       return status;
     }
   }
   return undefined;
-}
+};
 
-export function getAuthErrorMessage(error: unknown): string {
+export const getAuthErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message;
   }
   if (error !== null && typeof error === 'object' && 'message' in error) {
-    const message = (error).message;
+    const message = error.message;
     if (typeof message === 'string') {
       return message;
     }
   }
   return '';
-}
+};
 
 export interface AuthService {
   login(email: string, password: string): Promise<string | void>;

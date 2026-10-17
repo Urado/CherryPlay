@@ -1,6 +1,6 @@
-const mockPlay = jest.fn(async () => undefined);
+const mockPlay = jest.fn(() => Promise.resolve());
 const mockPause = jest.fn();
-const mockDemoPlay = jest.fn(async () => undefined);
+const mockDemoPlay = jest.fn(() => Promise.resolve());
 const mockDemoPause = jest.fn();
 
 let sessionMode: 'preparation' | 'session' = 'preparation';

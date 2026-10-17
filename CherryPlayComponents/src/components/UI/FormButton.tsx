@@ -14,12 +14,12 @@ export interface FormButtonProps extends Omit<
   children?: React.ReactNode;
 }
 
-function mapVariant(variant: FormButtonProps['variant']): ButtonVariant {
+const mapVariant = (variant: FormButtonProps['variant']): ButtonVariant => {
   if (variant === 'outline') {
     return 'ghost';
   }
   return variant ?? 'primary';
-}
+};
 
 export const FormButton: React.FC<FormButtonProps> = ({
   variant = 'primary',

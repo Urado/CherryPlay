@@ -22,10 +22,10 @@ export interface CreateApplyDeviceOptions {
   readonly onDeviceNotFound: () => void;
 }
 
-export function createApplyDevice({
+export const createApplyDevice = ({
   engine,
   onDeviceNotFound,
-}: CreateApplyDeviceOptions): (deviceId: string | null, logContext: string) => Promise<void> {
+}: CreateApplyDeviceOptions): ((deviceId: string | null, logContext: string) => Promise<void>) => {
   return async (deviceId, logContext) => {
     await applyPlaybackOutputDeviceWithFallback(engine, {
       deviceId,
@@ -33,7 +33,7 @@ export function createApplyDevice({
       onDeviceNotFound,
     });
   };
-}
+};
 
 export interface CreateHandleErrorOptions {
   readonly engine: PlaybackEngine;
@@ -41,11 +41,11 @@ export interface CreateHandleErrorOptions {
   readonly setErrorState: (message: string) => void;
 }
 
-export function createHandleError({
+export const createHandleError = ({
   engine,
   logLabel,
   setErrorState,
-}: CreateHandleErrorOptions): (message: string, error?: unknown) => void {
+}: CreateHandleErrorOptions): ((message: string, error?: unknown) => void) => {
   return (message, error) => {
     if (isFileNotFoundError(error)) {
       logger.warn(`${logLabel}: missing file`, error instanceof Error ? error : undefined);
@@ -55,7 +55,7 @@ export function createHandleError({
     setErrorState(message);
     engine.stop();
   };
-}
+};
 
 export interface ResolveTrackPrecheckOptions {
   readonly track: Track;
@@ -64,9 +64,9 @@ export interface ResolveTrackPrecheckOptions {
   readonly handleError: (message: string, error?: unknown) => void;
 }
 
-export async function resolveTrackPrecheck(
+export const resolveTrackPrecheck = async (
   options: ResolveTrackPrecheckOptions,
-): Promise<Track | null> {
+): Promise<Track | null> => {
   const { track, markTrackFound, notifyMissingTrack, handleError } = options;
 
   if (!track.isMissing) {
@@ -83,7 +83,7 @@ export async function resolveTrackPrecheck(
     handleError(message, new Error(message));
     return null;
   }
-}
+};
 
 export interface LoadTrackCoreOptions {
   readonly engine: PlaybackEngine;
@@ -97,7 +97,7 @@ export interface LoadTrackCoreOptions {
   readonly onBeforeLoad?: () => void;
 }
 
-export async function loadTrackCore(options: LoadTrackCoreOptions): Promise<void> {
+export const loadTrackCore = async (options: LoadTrackCoreOptions): Promise<void> => {
   if (!guardPlaybackUnavailable()) {
     return;
   }
@@ -126,7 +126,7 @@ export async function loadTrackCore(options: LoadTrackCoreOptions): Promise<void
     }
     throw error instanceof Error ? error : new Error('Failed to load audio source');
   }
-}
+};
 
 export interface PlayTrackCoreOptions {
   readonly engine: PlaybackEngine;
@@ -138,7 +138,7 @@ export interface PlayTrackCoreOptions {
   readonly canPlay?: () => boolean;
 }
 
-export async function playTrackCore(options: PlayTrackCoreOptions): Promise<void> {
+export const playTrackCore = async (options: PlayTrackCoreOptions): Promise<void> => {
   if (!options.currentTrack || (options.canPlay && !options.canPlay())) {
     return;
   }
@@ -158,7 +158,7 @@ export async function playTrackCore(options: PlayTrackCoreOptions): Promise<void
   }
 
   await options.engine.play();
-}
+};
 
 export interface WirePlaybackEngineOptions {
   readonly engine: PlaybackEngine;
@@ -179,7 +179,7 @@ export interface WirePlaybackEngineOptions {
   readonly initErrorLogLabel: string;
 }
 
-export function wirePlaybackEngine(options: WirePlaybackEngineOptions): void {
+export const wirePlaybackEngine = (options: WirePlaybackEngineOptions): void => {
   bindPlaybackEngineToStore(options.engine, {
     onStatusChanged: (status) => {
       if (options.getStatus() === 'error' && status === 'idle') {
@@ -220,4 +220,4 @@ export function wirePlaybackEngine(options: WirePlaybackEngineOptions): void {
       options.onSettingsDeviceChange(currentDeviceId);
     }
   });
-}
+};

@@ -10,7 +10,9 @@ export const SiteLayout = () => (
   <SiteAuthProvider>
     <div className="site-layout" data-shell-theme="dark">
       <SiteHeader />
-      <div className="site-layout-content"><Outlet /></div>
+      <div className="site-layout-content">
+        <Outlet />
+      </div>
       <SiteFooter />
     </div>
   </SiteAuthProvider>

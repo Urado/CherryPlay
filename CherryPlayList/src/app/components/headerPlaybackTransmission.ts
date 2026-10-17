@@ -7,9 +7,9 @@ export interface HeaderPlaybackTransmissionInput {
   connecting: boolean;
 }
 
-export function resolveHeaderPlaybackTransmissionState(
+export const resolveHeaderPlaybackTransmissionState = (
   input: HeaderPlaybackTransmissionInput,
-): HeaderPlaybackTransmissionState {
+): HeaderPlaybackTransmissionState => {
   if (!input.hasLinkedParty) {
     return 'unlinked';
   }
@@ -20,12 +20,12 @@ export function resolveHeaderPlaybackTransmissionState(
     return 'connected';
   }
   return input.connecting ? 'connecting' : 'inactive';
-}
+};
 
-export function resolveHeaderPlaybackTransmissionLabel(
+export const resolveHeaderPlaybackTransmissionLabel = (
   state: HeaderPlaybackTransmissionState,
   sessionActive: boolean,
-): string {
+): string => {
   switch (state) {
     case 'unlinked':
       return 'Вечеринка не привязана';
@@ -36,4 +36,4 @@ export function resolveHeaderPlaybackTransmissionLabel(
     case 'inactive':
       return sessionActive ? 'Нет связи' : 'Трансляция не запущена';
   }
-}
+};

@@ -1,7 +1,6 @@
 import { useOnlineNetworkPolicy } from '@shared/streaming';
 import React from 'react';
 
-
 import { PartyConnectivityBanner } from './components/PartyConnectivityBanner';
 import { usePartyWorkspaceRuntimeContext } from './partyWorkspaceRuntimeContext';
 
@@ -27,7 +26,7 @@ export const PartyEditorView: React.FC<PartyEditorViewProps> = ({ showDemoPanel 
       kind="unreachable"
       isReconnecting={isReconnecting}
       lastManualCheckFailed={lastManualCheckFailed}
-      onManualReconnect={handleManualReconnect}
+      onManualReconnect={() => void handleManualReconnect()}
     />
   ) : null;
 

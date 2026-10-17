@@ -11,18 +11,16 @@ export interface AimpPartyPresetState {
   blockingReasons: AimpGatingReason[];
 }
 
-/** Single enforce point for built-in `party` layout preset discoverability. */
-export function isPartyLayoutPresetDiscoverable(partyDiscoverabilityEnabled: boolean): boolean {
+export const isPartyLayoutPresetDiscoverable = (partyDiscoverabilityEnabled: boolean): boolean => {
   return partyDiscoverabilityEnabled;
-}
+};
 
-export function getAimpPartyPresetState(options: {
+export const getAimpPartyPresetState = (options: {
   sourceSelection: AimpSourceSelection;
   environment: AimpEnvironmentEligibility;
   partyDiscoverabilityEnabled?: boolean;
-  /** @deprecated Use `partyDiscoverabilityEnabled` from `useOnlineNetworkPolicy`. */
   enableStreaming?: boolean;
-}): AimpPartyPresetState {
+}): AimpPartyPresetState => {
   const fallbackPreset: AimpPartyPresetState['fallbackPreset'] = 'party';
   const partyDiscoverabilityEnabled = options.partyDiscoverabilityEnabled ?? true;
 
@@ -60,4 +58,4 @@ export function getAimpPartyPresetState(options: {
     fallbackPreset,
     blockingReasons: [],
   };
-}
+};

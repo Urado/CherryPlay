@@ -26,7 +26,7 @@ describe('portable project Save As IPC', () => {
     handleMock.mockClear();
     await fs.rm(testRoot, { recursive: true, force: true });
     parentPath = path.join(testRoot, 'packages');
-    await fs.mkdir(parentPath, { recursive: true });
+    await fs.mkdir('./.tmp-project-ipc-tests/packages', { recursive: true });
     registerProjectHandlers();
   });
 
@@ -65,13 +65,12 @@ describe('portable project Save As IPC', () => {
 
     expect(response.success).toBe(false);
     expect(response.error).toContain('файл на диске не найден');
-    expect(await fs.readdir(parentPath)).toEqual([]);
+    expect(await fs.readdir('./.tmp-project-ipc-tests/packages')).toEqual([]);
   });
 
   it('keeps an existing destination package unchanged when its name conflicts', async () => {
-    const finalPath = path.join(parentPath, 'Portable project');
-    await fs.mkdir(finalPath);
-    await fs.writeFile(path.join(finalPath, 'keep.txt'), 'keep');
+    await fs.mkdir('./.tmp-project-ipc-tests/packages/Portable project');
+    await fs.writeFile('./.tmp-project-ipc-tests/packages/Portable project/keep.txt', 'keep');
     const savePortableAs = handlers.get('project:savePortableAs');
     const response = (await savePortableAs?.(
       { sender: { send: jest.fn() } },
@@ -82,7 +81,9 @@ describe('portable project Save As IPC', () => {
       success: false,
       error: 'Папка с таким именем уже существует',
     });
-    expect(await fs.readdir(parentPath)).toEqual(['Portable project']);
-    expect(await fs.readFile(path.join(finalPath, 'keep.txt'), 'utf8')).toBe('keep');
+    expect(await fs.readdir('./.tmp-project-ipc-tests/packages')).toEqual(['Portable project']);
+    expect(
+      await fs.readFile('./.tmp-project-ipc-tests/packages/Portable project/keep.txt', 'utf8'),
+    ).toBe('keep');
   });
 });

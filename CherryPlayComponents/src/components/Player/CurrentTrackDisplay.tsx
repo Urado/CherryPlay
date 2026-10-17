@@ -1,8 +1,3 @@
-/**
- * @deprecated Для фронта рекомендуется использовать единый компонент PartyDisplay.
- * Этот компонент оставлен для обратной совместимости и кастомных композиций.
- * Для темизации используйте компоненты из themes/<themeId>/CurrentTrackDisplay.
- */
 import React from 'react';
 
 import { findTrack } from '../../core/utils/playlist';
@@ -56,7 +51,7 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
   );
 };
 
-function getStatusText(status: PlaybackState['status']): string {
+const getStatusText = (status: PlaybackState['status']): string => {
   switch (status) {
     case 'playing':
       return '▶ Воспроизведение';
@@ -67,4 +62,4 @@ function getStatusText(status: PlaybackState['status']): string {
     default:
       return '⏹ Ожидание';
   }
-}
+};

@@ -3,7 +3,6 @@ import type { WorkspaceId } from '@core/types/workspace';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import type { AimpSourceSelection } from '../contracts/aimp';
 import {
   clampLoudnessQuietGapRangeLu,
@@ -62,10 +61,6 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
-  /**
-   * @deprecated Use {@link setFileBrowserPathForWorkspace} with
-   * `DEFAULT_FILEBROWSER_WORKSPACE_ID`. Remove after subtask 04 when no callers remain.
-   */
   setFileBrowserPath: (path: string) => void;
   setTrackItemSizePreset: (preset: TrackItemSizePreset) => void;
   setHourDividerInterval: (interval: number) => void;
@@ -85,9 +80,9 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setLoudnessQuietGapRangeLu: (quietGapRangeLu: number) => void;
 }
 
-export function migrateFileBrowserPathsOnRehydrate(
+export const migrateFileBrowserPathsOnRehydrate = (
   state: Partial<FileBrowserPathPersistSlice>,
-): FileBrowserPathPersistSlice {
+): FileBrowserPathPersistSlice => {
   const legacyPath = state.fileBrowserPath ?? '';
   const map = { ...(state.fileBrowserPathsByWorkspaceId ?? {}) };
   const defaultId = DEFAULT_FILEBROWSER_WORKSPACE_ID;
@@ -104,7 +99,7 @@ export function migrateFileBrowserPathsOnRehydrate(
     fileBrowserPathsByWorkspaceId: map,
     fileBrowserPath: defaultPath ?? '',
   };
-}
+};
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
   persist(
@@ -182,7 +177,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
       setLastOpenedPlaylist: (path) => set({ lastOpenedPlaylist: path }),
 
-      /** @deprecated Use setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path). */
       setFileBrowserPath: (path) => {
         get().setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path);
       },

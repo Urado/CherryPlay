@@ -5,16 +5,10 @@ export interface UsePlaybackTimelineOptions {
   readonly duration: number;
   readonly disabled: boolean;
   readonly seek: (positionSeconds: number) => void;
-  /** Called after the user commits a seek (e.g. resume when ended). */
   readonly onSeekCommitted?: (positionSeconds: number) => void;
 }
 
-/**
- * Controlled range input for playback timelines.
- * Keeps a local scrub value while dragging/clicking so frequent engine
- * position updates do not reset the thumb before seek commits.
- */
-export function usePlaybackTimeline(options: UsePlaybackTimelineOptions) {
+export const usePlaybackTimeline = (options: UsePlaybackTimelineOptions) => {
   const { position, duration, disabled, seek, onSeekCommitted } = options;
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubValue, setScrubValue] = useState(0);
@@ -69,4 +63,4 @@ export function usePlaybackTimeline(options: UsePlaybackTimelineOptions) {
     handleInput,
     handleChange,
   };
-}
+};

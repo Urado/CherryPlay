@@ -1,4 +1,3 @@
-
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
@@ -6,7 +5,11 @@ import { APP_VERSION } from '@shared/config';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
 import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
-import { getPlatform, getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
+import {
+  getPlatform,
+  getPlatformUnavailableMessage,
+  usePlatformCapabilities,
+} from '@shared/platform';
 import {
   applySettingsImport,
   exportSettingsBundle,
@@ -635,7 +638,10 @@ export const SettingsModal: React.FC = () => {
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
 
-            <div className="settings-section-title" style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}>
+            <div
+              className="settings-section-title"
+              style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+            >
               Правовая информация
             </div>
 
@@ -646,7 +652,9 @@ export const SettingsModal: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 disabled={!legalLinks}
-                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'privacy' })}
+                onClick={() =>
+                  void getPlatform().invoke('legal:openDocument', { document: 'privacy' })
+                }
               >
                 Политика персональных данных
               </Button>
@@ -656,7 +664,9 @@ export const SettingsModal: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 disabled={!legalLinks}
-                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'legal' })}
+                onClick={() =>
+                  void getPlatform().invoke('legal:openDocument', { document: 'legal' })
+                }
               >
                 Реквизиты и контакты
               </Button>

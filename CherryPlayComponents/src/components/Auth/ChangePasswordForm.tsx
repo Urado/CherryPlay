@@ -121,7 +121,7 @@ export const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({
       {displayError && !succeeded && <ErrorMessage message={displayError} />}
 
       {!succeeded && (
-        <form onSubmit={handleSubmit} className="password-auth-form-content">
+        <form onSubmit={(event) => void handleSubmit(event)} className="password-auth-form-content">
           <FormInput
             label="Текущий пароль"
             type="password"

@@ -344,12 +344,12 @@
   border-radius: 4px;
   color: var(--text-primary);
   text-align: center;
-  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .track-settings-dropdown__row .track-settings-dropdown__input::-webkit-outer-spin-button,
 .track-settings-dropdown__row .track-settings-dropdown__input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -686,6 +686,7 @@
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.2);
@@ -725,6 +726,7 @@
 }
 
 /* Extra stripe for deeper nesting */
+
 /* Use rgba on border color to avoid changing full item opacity */
 .playlist-item--level-2 {
   border-left-color: rgba(74, 158, 255, 0.6); /* --accent-primary with opacity 0.6 */

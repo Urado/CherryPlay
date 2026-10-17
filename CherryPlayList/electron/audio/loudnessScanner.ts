@@ -51,24 +51,24 @@ export type Ebur128ParseResult = {
 
 let scanQueue: Promise<unknown> = Promise.resolve();
 
-function isFiniteInRange(value: number, min: number, max: number): boolean {
+const isFiniteInRange = (value: number, min: number, max: number): boolean => {
   return Number.isFinite(value) && value >= min && value <= max;
-}
+};
 
-function isInsideAsarArchive(filePath: string): boolean {
+const isInsideAsarArchive = (filePath: string): boolean => {
   return /(?:^|[/\\])app\.asar[/\\]/.test(filePath);
-}
+};
 
-function parseTpkPeakValues(tpkValues: string): number | null {
+const parseTpkPeakValues = (tpkValues: string): number | null => {
   const peaks = tpkValues
     .trim()
     .split(/\s+/)
     .map((value) => Number.parseFloat(value))
     .filter((value) => Number.isFinite(value));
   return peaks.length > 0 ? Math.max(...peaks) : null;
-}
+};
 
-function parseTruePeakDb(searchText: string): number | null {
+const parseTruePeakDb = (searchText: string): number | null => {
   const peakDbtpMatch = searchText.match(/Peak:\s*([-\d.]+)\s+dBTP/i);
   if (peakDbtpMatch) {
     return Number.parseFloat(peakDbtpMatch[1]);
@@ -90,9 +90,9 @@ function parseTruePeakDb(searchText: string): number | null {
   }
 
   return null;
-}
+};
 
-function computeFfmpegTimeoutMs(fileSizeBytes?: number): number {
+const computeFfmpegTimeoutMs = (fileSizeBytes?: number): number => {
   if (!fileSizeBytes || fileSizeBytes <= 0) {
     return FFMPEG_MAX_TIMEOUT_MS;
   }
@@ -103,9 +103,9 @@ function computeFfmpegTimeoutMs(fileSizeBytes?: number): number {
     FFMPEG_MAX_TIMEOUT_MS,
     Math.max(FFMPEG_MIN_TIMEOUT_MS, Math.round(scaledTimeout)),
   );
-}
+};
 
-export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
+export const parseEbur128Summary = (stderr: string): Ebur128ParseResult | null => {
   const summaryIndex = stderr.lastIndexOf('Summary:');
   const searchText = summaryIndex >= 0 ? stderr.slice(summaryIndex) : stderr;
 
@@ -155,18 +155,18 @@ export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
   }
 
   return { integratedLufs, lraLowLufs, lraLu, truePeakDb };
-}
+};
 
-export function computeTrackGainDb(
+export const computeTrackGainDb = (
   integratedLufs: number,
   truePeakDb: number,
   targetLufs: number,
   headroomDbTp: number = HEADROOM_DB_TP,
-): number {
+): number => {
   return computeAutoGainDb(integratedLufs, truePeakDb, targetLufs, headroomDbTp);
-}
+};
 
-function getFfmpegCandidatePaths(): string[] {
+const getFfmpegCandidatePaths = (): string[] => {
   const candidates: string[] = [];
   const staticPath =
     typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0 ? ffmpegStaticPath : null;
@@ -187,17 +187,17 @@ function getFfmpegCandidatePaths(): string[] {
   }
 
   return [...new Set(candidates)].filter((candidatePath) => !isInsideAsarArchive(candidatePath));
-}
+};
 
-export function resolveFfmpegPath(): string | null {
+export const resolveFfmpegPath = (): string | null => {
   return getFfmpegCandidatePaths().find((candidatePath) => fs.existsSync(candidatePath)) ?? null;
-}
+};
 
-function runFfmpegEbur128(
+const runFfmpegEbur128 = (
   ffmpegPath: string,
   filePath: string,
   fileSizeBytes?: number,
-): Promise<{ stderr: string; exitCode: number | null }> {
+): Promise<{ stderr: string; exitCode: number | null }> => {
   return new Promise((resolve, reject) => {
     const args = [
       '-hide_banner',
@@ -250,23 +250,23 @@ function runFfmpegEbur128(
       resolve({ stderr, exitCode });
     });
   });
-}
+};
 
-function enqueueScan<T>(task: () => Promise<T>): Promise<T> {
+const enqueueScan = <T>(task: () => Promise<T>): Promise<T> => {
   const run = scanQueue.then(() => task());
   scanQueue = run.catch(() => undefined);
   return run;
-}
+};
 
-function scanError(message: string): LoudnessScanError {
+const scanError = (message: string): LoudnessScanError => {
   return { status: 'error', errorMessage: message };
-}
+};
 
-export async function analyzeLoudness(
+export const analyzeLoudness = async (
   filePath: string,
   targetLufs: number = DEFAULT_TARGET_LUFS,
   options?: AnalyzeLoudnessOptions,
-): Promise<LoudnessScanResult> {
+): Promise<LoudnessScanResult> => {
   return enqueueScan(async () => {
     const ffmpegPath = resolveFfmpegPath();
     if (!ffmpegPath) {
@@ -323,4 +323,4 @@ export async function analyzeLoudness(
       return scanError(`Loudness scan failed: ${(error as Error).message}`);
     }
   });
-}
+};

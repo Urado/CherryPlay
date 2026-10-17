@@ -12,11 +12,7 @@ export const PartyListCardLink: React.FC<PartyListCardLinkProps> = ({
   partyName,
   children,
 }) => (
-  <Link
-    to={to}
-    className="party-list-card-open"
-    aria-label={`Открыть вечеринку: ${partyName}`}
-  >
+  <Link to={to} className="party-list-card-open" aria-label={`Открыть вечеринку: ${partyName}`}>
     {children}
   </Link>
 );

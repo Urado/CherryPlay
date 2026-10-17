@@ -9,7 +9,6 @@ import type { DemoPlayerFloatingPosition } from '@shared/stores/settingsStore';
 import { useCallback, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 
-
 interface UseDemoPlayerFloatingDragParams {
   isLayoutBlocked: boolean;
   resolvedFloatingPosition: DemoPlayerFloatingPosition | null;
@@ -32,7 +31,7 @@ export interface DemoPlayerFloatingDragApi {
   handleGripKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
-function shouldIgnoreDragStart(target: EventTarget | null): boolean {
+const shouldIgnoreDragStart = (target: EventTarget | null): boolean => {
   if (!(target instanceof Element)) {
     return false;
   }
@@ -44,9 +43,9 @@ function shouldIgnoreDragStart(target: EventTarget | null): boolean {
   return Boolean(
     target.closest('button, input, select, textarea, [role="button"], [data-no-drag="true"]'),
   );
-}
+};
 
-function getKeyboardDelta(key: string, step: number): DemoPlayerFloatingPosition | null {
+const getKeyboardDelta = (key: string, step: number): DemoPlayerFloatingPosition | null => {
   switch (key) {
     case 'ArrowLeft':
       return { x: -step, y: 0 };
@@ -59,14 +58,14 @@ function getKeyboardDelta(key: string, step: number): DemoPlayerFloatingPosition
     default:
       return null;
   }
-}
+};
 
-export function useDemoPlayerFloatingDrag({
+export const useDemoPlayerFloatingDrag = ({
   isLayoutBlocked,
   resolvedFloatingPosition,
   measurePanelAndContainer,
   commitFloatingPosition,
-}: UseDemoPlayerFloatingDragParams): DemoPlayerFloatingDragApi {
+}: UseDemoPlayerFloatingDragParams): DemoPlayerFloatingDragApi => {
   const [dragPosition, setDragPosition] = useState<DemoPlayerFloatingPosition | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
 
@@ -201,4 +200,4 @@ export function useDemoPlayerFloatingDrag({
     finishGripPointer,
     handleGripKeyDown,
   };
-}
+};

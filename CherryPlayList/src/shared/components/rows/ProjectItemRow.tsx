@@ -4,13 +4,12 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-
 import { formatTrackDuration } from '../../utils/durationUtils';
 import { getGroupItemCount, getGroupTotalDuration } from '../../utils/playerItemsUtils';
 import { useItemDragOver } from '../ItemList';
 import { ListRowCompound } from '../ListRow';
 
-function pluralize(count: number, one: string, few: string, many: string): string {
+const pluralize = (count: number, one: string, few: string, many: string): string => {
   const mod10 = count % 10;
   const mod100 = count % 100;
 
@@ -24,7 +23,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
     return few;
   }
   return many;
-}
+};
 
 export type ProjectItemRowMode = 'playlist' | 'player-preparation' | 'player-session';
 
@@ -121,8 +120,8 @@ export const ProjectItemRow: React.FC<ProjectItemRowProps> = ({
   const handlePlay = () => {
     if (!track || !onPlay) return;
     const maybePromise = onPlay(track);
-    if (maybePromise && typeof (maybePromise).catch === 'function') {
-      (maybePromise).catch(() => undefined);
+    if (maybePromise && typeof maybePromise.catch === 'function') {
+      maybePromise.catch(() => undefined);
     }
   };
 

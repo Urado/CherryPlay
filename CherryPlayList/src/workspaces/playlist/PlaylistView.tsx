@@ -1,4 +1,3 @@
-
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
@@ -27,7 +26,10 @@ import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
-import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
+import {
+  runNewProjectWithSessionGuard,
+  stopLocalPlayerSession,
+} from '@shared/utils/newProjectSessionGuard';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import React, { useCallback, useMemo } from 'react';
 
@@ -225,13 +227,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       }
     }
     return total;
-  }, [
-    tracks,
-    isTrackOrGroupDisabled,
-    getEffectiveTrackSettings,
-    sessionState.disabledTrackIds,
-    sessionState.disabledGroupIds,
-  ]);
+  }, [tracks, isTrackOrGroupDisabled, getEffectiveTrackSettings]);
 
   const canCreateGroup = useMemo(() => {
     if (selectedItemIds.size < 2) return false;

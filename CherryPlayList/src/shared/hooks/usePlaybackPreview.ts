@@ -1,12 +1,12 @@
-
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useMemo } from 'react';
 
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
-import { useLayoutStore, useSettingsStore } from '../stores';
 import { useDemoPlayerStore, PlayerStatus } from '../stores/demoPlayerStore';
+import { useLayoutStore } from '../stores/layoutStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { collectWorkspaceTypes } from '../utils/layoutWorkspaceOperations';
 import { logger } from '../utils/logger';
 
@@ -23,9 +23,9 @@ export interface UsePlaybackPreviewReturn {
   isPlaying: (trackId: string) => boolean;
 }
 
-export function usePlaybackPreview({
+export const usePlaybackPreview = ({
   workspaceId,
-}: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn {
+}: UsePlaybackPreviewOptions): UsePlaybackPreviewReturn => {
   const {
     currentTrack,
     status: playerStatus,
@@ -78,9 +78,7 @@ export function usePlaybackPreview({
 
         if (
           loadGeneration !== undefined &&
-          !useDemoPlayerStore
-            .getState()
-            .shouldAutoPlayTrack(track.id, workspaceId, loadGeneration)
+          !useDemoPlayerStore.getState().shouldAutoPlayTrack(track.id, workspaceId, loadGeneration)
         ) {
           return;
         }
@@ -138,4 +136,4 @@ export function usePlaybackPreview({
     isActive,
     isPlaying,
   };
-}
+};

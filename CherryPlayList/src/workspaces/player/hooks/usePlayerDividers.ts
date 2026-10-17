@@ -1,4 +1,3 @@
-
 import { isProjectTrack, type ProjectItem, type ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { useProjectStore, useSettingsStore } from '@shared/stores';
@@ -34,10 +33,7 @@ interface UsePlayerDividersOptions {
   displayItems: Array<{ item: ProjectItem }>;
 }
 
-/**
- * Хук для управления логикой отсечек
- */
-export function usePlayerDividers(options: UsePlayerDividersOptions) {
+export const usePlayerDividers = (options: UsePlayerDividersOptions) => {
   const {
     allTracks,
     activePlayerTrackId,
@@ -52,13 +48,19 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
   const plannedEndTime = useProjectStore((state) => state.settings.plannedEndTime);
   const disabledTrackIds = useProjectStore((state) => state.sessionState.disabledTrackIds);
   const disabledGroupIds = useProjectStore((state) => state.sessionState.disabledGroupIds);
-  const disabledTrackIdsKey = disabledTrackIds.join(',');
-  const disabledGroupIdsKey = disabledGroupIds.join(',');
   const isPreparationMode = mode === 'preparation';
   const { hourDividerInterval, showHourDividers } = useSettingsStore();
 
-  // Вычисление позиций отсечек (возвращает Map: trackId -> время отсечки в формате timestamp)
-  // В режиме сессии: старт отсчета - текущий трек и текущее время, проигранные и отключенные треки игнорируются
+  const isDividerTrackDisabled = useCallback(
+    (trackId: string) => {
+      if (disabledTrackIds.includes(trackId)) {
+        return true;
+      }
+      return disabledGroupIds.length > 0 && isTrackOrGroupDisabled(trackId);
+    },
+    [disabledTrackIds, disabledGroupIds, isTrackOrGroupDisabled],
+  );
+
   const dividerCalculationContext: DividerCalculationContext = useMemo(
     () => ({
       tracks: allTracks,
@@ -66,7 +68,7 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
       currentTrackPosition,
       mode,
       hourDividerInterval,
-      isTrackDisabled: isTrackOrGroupDisabled,
+      isTrackDisabled: isDividerTrackDisabled,
       isTrackPlayed,
       calculateTrackDurationWithPause: (track: Track) => {
         const settings = getEffectiveTrackSettings(track.id);
@@ -77,19 +79,15 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
         return duration;
       },
     }),
-    // isTrackOrGroupDisabled is listed for hook correctness; disabled* keys still needed because zustand action refs stay stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keys invalidate when disabled sets change
     [
       allTracks,
       activePlayerTrackId,
       currentTrackPosition,
       mode,
       hourDividerInterval,
-      isTrackOrGroupDisabled,
+      isDividerTrackDisabled,
       isTrackPlayed,
       getEffectiveTrackSettings,
-      disabledTrackIdsKey,
-      disabledGroupIdsKey,
     ],
   );
 
@@ -122,8 +120,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
 
   const calculateDividerMarkers = dividerMarkersResult.markers;
 
-  // Форматирование метки отсечки
-  // Использует данные из calculateDividerMarkers, чтобы избежать несоответствий
   const formatDividerLabel = useCallback(
     (trackId: string): string => {
       return formatDividerLabelUtil(trackId, dividerCalculationContext, dividerMarkersResult);
@@ -131,8 +127,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     [dividerCalculationContext, dividerMarkersResult],
   );
 
-  // Вычисление plannedEndMarker независимо от showHourDividers
-  // Красная отсечка должна показываться всегда при наличии plannedEndTime
   const plannedEndMarker = useMemo(() => {
     if (!isPreparationMode && allTracks.length > 0 && plannedEndTime !== null) {
       return calculatePlannedEndMarker(dividerCalculationContext, plannedEndTime);
@@ -140,7 +134,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     return null;
   }, [isPreparationMode, allTracks.length, plannedEndTime, dividerCalculationContext]);
 
-  // Время в подписи: из маркера (граница сегмента при плане внутри трека), иначе настройка
   const formatPlannedEndTimeLabel = useCallback((): string => {
     if (plannedEndTime === null) {
       return '';
@@ -152,11 +145,8 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     return formatTimeFromTimestamp(ts);
   }, [plannedEndTime, plannedEndMarker]);
 
-  // Вычисление позиции красной отсечки о конце
-  // Использует plannedEndMarker, вычисленный независимо от showHourDividers
   const plannedEndDividerPosition = useMemo(() => {
     if (!isPreparationMode && allTracks.length > 0 && plannedEndMarker !== null) {
-      // Создаём временный объект DividerMarkers для использования существующей функции
       const tempMarkers: DividerMarkers = {
         markers: new Map<string, number | null>(),
         startPosition: dividerMarkersResult.startPosition,
@@ -165,7 +155,6 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
       };
       return calculatePlannedEndDividerPosition(tempMarkers, displayItems, isProjectTrack);
     }
-    // Если не нашли позицию или в режиме подготовки, возвращаем null (отсечка в конце)
     return null;
   }, [
     isPreparationMode,
@@ -231,4 +220,4 @@ export function usePlayerDividers(options: UsePlayerDividersOptions) {
     formatQueueEndTimelineLabel,
     showQueueEndDividerAtListBottom,
   };
-}
+};

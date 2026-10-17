@@ -10,47 +10,47 @@ import { resetPreviewScenario } from './partyPreviewScenarioActions';
 import { ERROR_PARTY_NOT_FOUND } from './partyWorkspaceConstants';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 
-function getPartyStore() {
+const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
-}
+};
 
-function getProjectStore() {
+const getProjectStore = () => {
   return useProjectStore.getState();
-}
+};
 
-function guardDemoMode(): boolean {
+const guardDemoMode = (): boolean => {
   return isDemoFixturesMode(getAppMode());
-}
+};
 
-function clearEditorDemoOverrides(): void {
+const clearEditorDemoOverrides = (): void => {
   resetEditorDemoState();
-}
+};
 
-function clearPartyNotFoundProductionFlags(partyExistsOnServer: boolean): void {
+const clearPartyNotFoundProductionFlags = (partyExistsOnServer: boolean): void => {
   const store = getPartyStore();
   store.setServerError(null);
   store.setPartyVerified(partyExistsOnServer);
-}
+};
 
-export function demoSetUnlinkedDraft(): void {
+export const demoSetUnlinkedDraft = (): void => {
   if (!guardDemoMode()) return;
   clearEditorDemoOverrides();
   clearPartyNotFoundProductionFlags(false);
   getProjectStore().setLinkedParty(null);
   demoSetPartyLifecycleState('draft');
   getPartyStore().setPartyLifecycleState(null);
-}
+};
 
-export function demoSetLinkedLifecycle(lifecycle: PartyLifecycleState): void {
+export const demoSetLinkedLifecycle = (lifecycle: PartyLifecycleState): void => {
   if (!guardDemoMode()) return;
   clearEditorDemoOverrides();
   clearPartyNotFoundProductionFlags(true);
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
   demoSetPartyLifecycleState(lifecycle);
   getPartyStore().setPartyLifecycleState(lifecycle);
-}
+};
 
-export function demoSetBlockedOverride(reason: PartyEditorBlockedReason): void {
+export const demoSetBlockedOverride = (reason: PartyEditorBlockedReason): void => {
   if (!guardDemoMode()) return;
   const store = getPartyStore();
   if (reason === 'party-not-found') {
@@ -59,18 +59,18 @@ export function demoSetBlockedOverride(reason: PartyEditorBlockedReason): void {
   }
   store.setServerError(null);
   usePartyEditorDemoStore.getState().setBlockedOverride(reason);
-}
+};
 
-export function demoSetPartyNotFound(): void {
+export const demoSetPartyNotFound = (): void => {
   if (!guardDemoMode()) return;
   const store = getPartyStore();
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
   store.setServerError(ERROR_PARTY_NOT_FOUND);
   store.setPartyVerified(false);
   usePartyEditorDemoStore.getState().setBlockedOverride('party-not-found');
-}
+};
 
-export function demoResetToDefault(): void {
+export const demoResetToDefault = (): void => {
   if (!guardDemoMode()) return;
   clearEditorDemoOverrides();
   resetPreviewScenario();
@@ -78,4 +78,4 @@ export function demoResetToDefault(): void {
   getProjectStore().setLinkedParty(DEMO_LINKED_PARTY);
   demoSetPartyLifecycleState('ready');
   getPartyStore().setPartyLifecycleState('ready');
-}
+};

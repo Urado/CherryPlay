@@ -40,13 +40,13 @@ export const PARTY_VIEWER_STATUS_LABELS: Record<
   server_unreachable: { label: 'Нет связи с сервером', ariaLabel: 'Нет связи с сервером' },
 };
 
-export function isPartyDisplayStatusId(value: unknown): value is PartyDisplayStatusId {
+export const isPartyDisplayStatusId = (value: unknown): value is PartyDisplayStatusId => {
   return (
     typeof value === 'string' && (PARTY_DISPLAY_STATUS_IDS as readonly string[]).includes(value)
   );
-}
+};
 
-export function partyViewerStatusFromId(id: PartyViewerStatusId): PartyViewerStatus {
+export const partyViewerStatusFromId = (id: PartyViewerStatusId): PartyViewerStatus => {
   const copy = PARTY_VIEWER_STATUS_LABELS[id];
   return { id, label: copy.label, ariaLabel: copy.ariaLabel };
-}
+};

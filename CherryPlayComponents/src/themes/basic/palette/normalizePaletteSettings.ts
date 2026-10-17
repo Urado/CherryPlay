@@ -25,7 +25,7 @@ export const DEFAULT_BASIC_THEME_CUSTOMIZATION_SETTINGS: BaseThemeColorCustomiza
   basicActiveUserPaletteId: null,
 };
 
-export function sanitizeBasicUserSavedPalettes(raw: unknown): BaseThemeUserSavedPalette[] {
+export const sanitizeBasicUserSavedPalettes = (raw: unknown): BaseThemeUserSavedPalette[] => {
   if (!Array.isArray(raw)) {
     return [];
   }
@@ -54,23 +54,23 @@ export function sanitizeBasicUserSavedPalettes(raw: unknown): BaseThemeUserSaved
     out.push({ id, name, palette, originalPalette });
   }
   return out;
-}
+};
 
-function applyFamilyDerivationIfNeeded(
+const applyFamilyDerivationIfNeeded = (
   paletteId: BaseThemeColorPaletteSelectionId,
   customPalette: BaseThemeCustomColorPalette,
-): BaseThemeCustomColorPalette {
+): BaseThemeCustomColorPalette => {
   if (paletteId === 'custom' || !isBasicThemeFamilyPaletteId(paletteId)) {
     return customPalette;
   }
   const accent =
     normalizeHexColor(customPalette.accentPrimary) ?? BASIC_THEME_FAMILY_DEFAULT_ACCENTS[paletteId];
   return buildBasicFamilyCustomPalette(paletteId, accent);
-}
+};
 
-export function normalizeBasicThemePaletteSettings(
+export const normalizeBasicThemePaletteSettings = (
   settings?: Partial<Record<string, unknown>>,
-): BaseThemeColorPaletteSettings {
+): BaseThemeColorPaletteSettings => {
   const hasValidShape = settings && typeof settings === 'object' && !Array.isArray(settings);
   if (!hasValidShape) {
     return {
@@ -126,4 +126,4 @@ export function normalizeBasicThemePaletteSettings(
     basicUserSavedPalettes,
     basicActiveUserPaletteId,
   };
-}
+};

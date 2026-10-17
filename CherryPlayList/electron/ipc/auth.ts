@@ -16,31 +16,31 @@ let authCallbackPromise: {
 let authCallbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let pendingCallbackUrl: string | null = null;
 
-function clearAuthCallbackTimeout(): void {
+const clearAuthCallbackTimeout = (): void => {
   if (authCallbackTimeoutId !== null) {
     clearTimeout(authCallbackTimeoutId);
     authCallbackTimeoutId = null;
   }
-}
+};
 
-function rejectAuthCallback(error: Error): void {
+const rejectAuthCallback = (error: Error): void => {
   clearAuthCallbackTimeout();
   if (!authCallbackPromise) {
     return;
   }
   authCallbackPromise.reject(error);
   authCallbackPromise = null;
-}
+};
 
-function cancelAuthCallbackWait(): boolean {
+const cancelAuthCallbackWait = (): boolean => {
   if (!authCallbackPromise) {
     return false;
   }
   rejectAuthCallback(new Error(AUTH_CALLBACK_CANCELLED_MESSAGE));
   return true;
-}
+};
 
-function parseAuthCallbackData(url: string): AuthCallbackData {
+const parseAuthCallbackData = (url: string): AuthCallbackData => {
   const urlObj = new URL(url);
   const code = urlObj.searchParams.get('code');
   const state = urlObj.searchParams.get('state');
@@ -57,9 +57,9 @@ function parseAuthCallbackData(url: string): AuthCallbackData {
     data.provider = provider;
   }
   return data;
-}
+};
 
-function resolveAuthCallback(data: AuthCallbackData, mainWindow: BrowserWindow | null): boolean {
+const resolveAuthCallback = (data: AuthCallbackData, mainWindow: BrowserWindow | null): boolean => {
   if (!authCallbackPromise) {
     return false;
   }
@@ -72,9 +72,9 @@ function resolveAuthCallback(data: AuthCallbackData, mainWindow: BrowserWindow |
   authCallbackPromise = null;
   focusMainWindow(mainWindow);
   return true;
-}
+};
 
-export function registerAuthHandlers(_mainWindow: BrowserWindow | null): void {
+export const registerAuthHandlers = (_mainWindow: BrowserWindow | null): void => {
   ipcMain.handle('auth:openExternal', async (_event, { url }: { url: string }) => {
     try {
       await shell.openExternal(url);
@@ -115,12 +115,12 @@ export function registerAuthHandlers(_mainWindow: BrowserWindow | null): void {
     });
   });
 
-  ipcMain.handle('auth:cancelCallback', async () => {
+  ipcMain.handle('auth:cancelCallback', () => {
     cancelAuthCallbackWait();
     return { success: true };
   });
 
-  ipcMain.handle('auth:deliverCallbackUrl', async (_event, { url }: { url: string }) => {
+  ipcMain.handle('auth:deliverCallbackUrl', (_event, { url }: { url: string }) => {
     try {
       handleOAuthCallback(url, null);
       return { success: true };
@@ -131,9 +131,9 @@ export function registerAuthHandlers(_mainWindow: BrowserWindow | null): void {
       };
     }
   });
-}
+};
 
-function focusMainWindow(mainWindow: BrowserWindow | null): void {
+const focusMainWindow = (mainWindow: BrowserWindow | null): void => {
   if (!mainWindow) {
     return;
   }
@@ -141,9 +141,9 @@ function focusMainWindow(mainWindow: BrowserWindow | null): void {
     mainWindow.restore();
   }
   mainWindow.focus();
-}
+};
 
-export function handleOAuthCallback(url: string, mainWindow: BrowserWindow | null): void {
+export const handleOAuthCallback = (url: string, mainWindow: BrowserWindow | null): void => {
   try {
     const data = parseAuthCallbackData(url);
     if (!resolveAuthCallback(data, mainWindow)) {
@@ -155,10 +155,10 @@ export function handleOAuthCallback(url: string, mainWindow: BrowserWindow | nul
       error instanceof Error ? error : new Error('Failed to parse OAuth callback'),
     );
   }
-}
+};
 
-export function resetAuthIpcStateForTests(): void {
+export const resetAuthIpcStateForTests = (): void => {
   clearAuthCallbackTimeout();
   authCallbackPromise = null;
   pendingCallbackUrl = null;
-}
+};

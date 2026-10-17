@@ -6,24 +6,23 @@ let cachedApiConfig: {
   apiUrl: string;
 } | null = null;
 
-/** Убирает завершающий слэш у base URL, чтобы не получать двойной слэш в путях */
-function normalizeBaseUrl(url: string): string {
+const normalizeBaseUrl = (url: string): string => {
   return url.replace(/\/+$/, '');
-}
+};
 
-function buildSignalRUrl(serverUrl: string): string {
+const buildSignalRUrl = (serverUrl: string): string => {
   return `${normalizeBaseUrl(serverUrl)}/partyHub`;
-}
+};
 
-function buildApiUrl(serverUrl: string): string {
+const buildApiUrl = (serverUrl: string): string => {
   return `${normalizeBaseUrl(serverUrl)}/api`;
-}
+};
 
-async function getApiConfigAsync(): Promise<{
+const getApiConfigAsync = async (): Promise<{
   serverUrl: string;
   signalRUrl: string;
   apiUrl: string;
-}> {
+}> => {
   const raw = await getServerUrl();
   const serverUrl = normalizeBaseUrl(raw);
   return {
@@ -31,13 +30,13 @@ async function getApiConfigAsync(): Promise<{
     signalRUrl: buildSignalRUrl(raw),
     apiUrl: buildApiUrl(raw),
   };
-}
+};
 
-function getApiConfigSync(): {
+const getApiConfigSync = (): {
   serverUrl: string;
   signalRUrl: string;
   apiUrl: string;
-} {
+} => {
   if (cachedApiConfig) {
     return cachedApiConfig;
   }
@@ -51,7 +50,7 @@ function getApiConfigSync(): {
   };
 
   return cachedApiConfig;
-}
+};
 
 export const apiConfig = {
   get serverUrl(): string {
@@ -85,16 +84,16 @@ export const apiConfig = {
   },
 };
 
-export async function getApiConfig(): Promise<{
+export const getApiConfig = async (): Promise<{
   serverUrl: string;
   signalRUrl: string;
   apiUrl: string;
-}> {
+}> => {
   const config = await getApiConfigAsync();
   cachedApiConfig = config;
   return config;
-}
+};
 
-export function clearApiConfigCache(): void {
+export const clearApiConfigCache = (): void => {
   cachedApiConfig = null;
-}
+};

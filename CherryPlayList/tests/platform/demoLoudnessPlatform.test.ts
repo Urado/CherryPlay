@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import * as path from 'node:path';
 
 import {
   DEFAULT_LOUDNESS_TARGET_LUFS,
@@ -37,10 +38,10 @@ type SampleCherryProject = {
   items: SampleCherryTrack[];
 };
 
-function loadSampleCherry(): SampleCherryProject {
-  const raw = readFileSync('public/demo/sample.cherry', 'utf8');
+const loadSampleCherry = (): SampleCherryProject => {
+  const raw = readFileSync(path.resolve(__dirname, '../../public/demo/sample.cherry'), 'utf8');
   return JSON.parse(raw) as SampleCherryProject;
-}
+};
 
 describe('demo loudness platform support', () => {
   test('enables supportsLoudnessAnalysis for demo and electron, not capacitor', () => {
@@ -79,20 +80,24 @@ describe('demo loudness platform support', () => {
 
     for (const track of tracks) {
       const analyzed = analyzeDemoLoudness(track.path, DEFAULT_LOUDNESS_TARGET_LUFS);
-      expect(analyzed).not.toBeNull();
-      expect(analyzed!.status).toBe('ok');
-      expect(track.loudness).toEqual(
+      if (!analyzed || analyzed.status !== 'ok' || !track.loudness) {
+        throw new Error('Expected a loudness result for the sample track');
+      }
+
+      const trackLoudness = track.loudness;
+      expect(analyzed.status).toBe('ok');
+      expect(trackLoudness).toEqual(
         expect.objectContaining({
           status: 'ok',
-          integratedLufs: analyzed!.integratedLufs,
-          truePeakDb: analyzed!.truePeakDb,
-          lraLu: analyzed!.lraLu,
-          lraLowLufs: analyzed!.lraLowLufs,
-          fileMtime: analyzed!.fileMtime,
-          algorithmVersion: analyzed!.algorithmVersion,
+          integratedLufs: analyzed.integratedLufs,
+          truePeakDb: analyzed.truePeakDb,
+          lraLu: analyzed.lraLu,
+          lraLowLufs: analyzed.lraLowLufs,
+          fileMtime: analyzed.fileMtime,
+          algorithmVersion: analyzed.algorithmVersion,
         }),
       );
-      expect(track.loudness!.trackGainDb).toBeCloseTo(analyzed!.trackGainDb, 5);
+      expect(trackLoudness.trackGainDb).toBeCloseTo(analyzed.trackGainDb, 5);
     }
   });
 

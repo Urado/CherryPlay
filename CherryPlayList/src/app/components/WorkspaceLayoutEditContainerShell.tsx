@@ -1,4 +1,3 @@
-
 import { ContainerZone } from '@core/types/layout';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutContainerAirPickerKey } from '@shared/stores/layoutStore';
@@ -23,10 +22,10 @@ interface ShellDimensions {
   height: number;
 }
 
-function readShellDimensions(node: HTMLDivElement): ShellDimensions {
+const readShellDimensions = (node: HTMLDivElement): ShellDimensions => {
   const { width, height } = node.getBoundingClientRect();
   return { width, height };
-}
+};
 
 export const WorkspaceLayoutEditContainerShell: React.FC<
   WorkspaceLayoutEditContainerShellProps

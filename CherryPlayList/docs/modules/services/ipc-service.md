@@ -43,11 +43,11 @@ CSP в `electron/main.ts` разрешает `cherryplay-audio:` в `default-src
 
 Один IPC-контракт на всех платформах с `supportsLoudnessAnalysis`. Исходные аудиофайлы **не изменяются**.
 
-| Runtime | Реализация |
-| ------- | ---------- |
-| **Electron** | FFmpeg `ebur128=peak=true` в main (`electron/audio/loudnessScanner.ts`) |
-| **Web demo** | Детерминированные фикстуры (`demoLoudnessAnalyzer.ts` via `WebDemoPlatform`) — без FFmpeg |
-| **Capacitor stub** | Capability `false`; канал не используется UI |
+| Runtime            | Реализация                                                                                |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| **Electron**       | FFmpeg `ebur128=peak=true` в main (`electron/audio/loudnessScanner.ts`)                   |
+| **Web demo**       | Детерминированные фикстуры (`demoLoudnessAnalyzer.ts` via `WebDemoPlatform`) — без FFmpeg |
+| **Capacitor stub** | Capability `false`; канал не используется UI                                              |
 
 **Запрос** (`ipcService.analyzeLoudness(path, targetLufs)`):
 

@@ -11,7 +11,8 @@ import {
 } from './buttonShared';
 
 export interface ButtonLinkProps
-  extends ButtonChromeProps, Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'type'> {
+  extends ButtonChromeProps, Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'type' | 'href'> {
+  href: string;
   disabled?: boolean;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
@@ -36,6 +37,7 @@ export const ButtonLink = React.forwardRef<HTMLAnchorElement, ButtonLinkProps>(
       onClick,
       tabIndex,
       title,
+      href,
       ...rest
     },
     ref,
@@ -62,6 +64,7 @@ export const ButtonLink = React.forwardRef<HTMLAnchorElement, ButtonLinkProps>(
     return (
       <a
         ref={ref}
+        href={href}
         className={buttonClassNames({
           ...chrome,
           disabled,

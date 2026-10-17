@@ -1,4 +1,4 @@
-@import './FormField.css';
+@import url('./FormField.css');
 
 .form-input {
   padding: 12px 16px;

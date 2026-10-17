@@ -12,16 +12,16 @@ import {
   createAimpPublishingPathState,
   type AimpPublishingPathState,
   type AimpPublishingPathStatus,
-} from '../utils';
+} from '../utils/aimpPublishingPath';
 import { logger } from '../utils/logger';
 
 let unsubscribeAimpBridge: (() => void) | null = null;
 let unsubscribeAimpLog: (() => void) | null = null;
 let initializePromise: Promise<void> | null = null;
 
-function canUseRendererAimpBridge(): boolean {
+const canUseRendererAimpBridge = (): boolean => {
   return isPlatformInitialized() && getPlatformCapabilities().supportsAimpWorkspace;
-}
+};
 
 interface AimpStoreState {
   bridgeState: AimpBridgeState;

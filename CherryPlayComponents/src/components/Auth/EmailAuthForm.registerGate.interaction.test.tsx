@@ -9,20 +9,20 @@ import type { AuthService } from '../../types/auth';
 
 import { EmailAuthForm } from './EmailAuthForm';
 
-function createAuthService(register = vi.fn()): AuthService {
+const createAuthService = (register = vi.fn()): AuthService => {
   return {
     login: vi.fn(),
     register,
   };
-}
+};
 
-function getButtonByName(name: string): HTMLButtonElement {
+const getButtonByName = (name: string): HTMLButtonElement => {
   const button = screen.getByRole('button', { name });
   if (!(button instanceof HTMLButtonElement)) {
     throw new Error('Expected a button element');
   }
   return button;
-}
+};
 
 describe('EmailAuthForm register consent gate (interaction)', () => {
   afterEach(() => {

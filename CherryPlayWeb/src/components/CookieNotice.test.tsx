@@ -1,7 +1,5 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+// @vitest-environment jsdom
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -16,7 +14,6 @@ describe('CookieNotice', () => {
   });
 
   afterEach(() => {
-    cleanup();
     localStorage.clear();
     document.body.className = '';
   });
@@ -41,12 +38,12 @@ describe('CookieNotice', () => {
   it('stays hidden when already dismissed', () => {
     localStorage.setItem(STORAGE_KEY, '1');
 
-    const { container } = render(
+    render(
       <MemoryRouter>
         <CookieNotice />
       </MemoryRouter>,
     );
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Уведомление о cookie' })).toBeNull();
   });
 });

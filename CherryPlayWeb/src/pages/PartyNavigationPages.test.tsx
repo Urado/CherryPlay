@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,9 +13,10 @@ vi.mock('@cherryplay/components', () => ({
   Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
     <button {...props}>{children}</button>
   ),
-  IconButton: ({ 'aria-label': ariaLabel, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button aria-label={ariaLabel} {...props} />
-  ),
+  IconButton: ({
+    'aria-label': ariaLabel,
+    ...props
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button aria-label={ariaLabel} {...props} />,
   PartyDisplay: () => <div>Party display</div>,
   formatDateInTimeZone: () => '2026-10-06',
   getDefaultTimeZone: () => 'UTC',
@@ -115,14 +116,14 @@ describe('party navigation pages', () => {
     ]);
     mocks.checkAuth.mockResolvedValue(null);
 
-    const view = render(
+    render(
       <MemoryRouter>
         <PartyListPage />
       </MemoryRouter>,
     );
 
-    const card = await view.findByRole('link', { name: 'Открыть вечеринку: Spring Party' });
-    const externalLink = view.getByRole('link', { name: 'Event details' });
+    const card = await screen.findByRole('link', { name: 'Открыть вечеринку: Spring Party' });
+    const externalLink = screen.getByRole('link', { name: 'Event details' });
 
     expect(card.getAttribute('href')).toBe('/party/spring-26');
     expect(card.hasAttribute('target')).toBe(false);
@@ -132,7 +133,7 @@ describe('party navigation pages', () => {
   });
 
   it('shows the back link on a loaded non-demo party route', async () => {
-    const view = render(
+    render(
       <MemoryRouter initialEntries={['/party/spring-26']}>
         <Routes>
           <Route path="/party/:shortCode" element={<PartyView shortCode="spring-26" />} />
@@ -141,7 +142,7 @@ describe('party navigation pages', () => {
     );
 
     await waitFor(() => {
-      expect(view.getByRole('link', { name: /Список вечеринок/ }).getAttribute('href')).toBe('/');
+      expect(screen.getByRole('link', { name: /Список вечеринок/ }).getAttribute('href')).toBe('/');
     });
   });
 });

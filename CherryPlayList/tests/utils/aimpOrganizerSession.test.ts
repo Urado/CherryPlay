@@ -5,9 +5,9 @@ import {
   type AimpOrganizerSessionActions,
 } from '../../src/shared/utils/aimpOrganizerSession';
 
-function createActions(
+const createActions = (
   overrides: Partial<AimpOrganizerSessionActions> = {},
-): jest.Mocked<AimpOrganizerSessionActions> {
+): jest.Mocked<AimpOrganizerSessionActions> => {
   return {
     startSession: jest.fn().mockResolvedValue(undefined),
     setLiveStreamStarted: jest.fn().mockResolvedValue(undefined),
@@ -16,9 +16,9 @@ function createActions(
     disconnect: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-}
+};
 
-function createReadyBridgeState() {
+const createReadyBridgeState = () => {
   const state = createInitialAimpBridgeState();
   state.sourceSelection = 'aimp';
   state.environment.eligible = true;
@@ -69,7 +69,7 @@ function createReadyBridgeState() {
     sentAt: '2026-03-13T10:00:01.000Z',
   };
   return state;
-}
+};
 
 describe('aimpOrganizerSession', () => {
   test('blocks organizer startup until the publish path is ready', async () => {
@@ -123,7 +123,21 @@ describe('aimpOrganizerSession', () => {
   });
 
   test('tears down the organizer session before disconnecting SignalR', async () => {
-    const actions = createActions();
+    const actionOrder: string[] = [];
+    const actions = createActions({
+      endSession: jest.fn(() => {
+        actionOrder.push('endSession');
+        return Promise.resolve();
+      }),
+      resetPlaybackState: jest.fn(() => {
+        actionOrder.push('resetPlaybackState');
+        return Promise.resolve();
+      }),
+      disconnect: jest.fn(() => {
+        actionOrder.push('disconnect');
+        return Promise.resolve();
+      }),
+    });
 
     await teardownAimpOrganizerSession({
       actions,
@@ -132,11 +146,6 @@ describe('aimpOrganizerSession', () => {
       shouldDisconnect: true,
     });
 
-    expect(actions.endSession.mock.invocationCallOrder[0]).toBeLessThan(
-      actions.resetPlaybackState.mock.invocationCallOrder[0],
-    );
-    expect(actions.resetPlaybackState.mock.invocationCallOrder[0]).toBeLessThan(
-      actions.disconnect!.mock.invocationCallOrder[0],
-    );
+    expect(actionOrder).toEqual(['endSession', 'resetPlaybackState', 'disconnect']);
   });
 });

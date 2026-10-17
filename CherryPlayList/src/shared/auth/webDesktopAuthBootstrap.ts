@@ -11,7 +11,7 @@ import {
 export const DESKTOP_AUTH_CODE_QUERY = 'desktop_auth_code';
 export const DESKTOP_AUTH_ERROR_SESSION_KEY = 'cherryplaylist-desktop-auth-error';
 
-async function waitForAuthStoreHydration(): Promise<void> {
+const waitForAuthStoreHydration = async (): Promise<void> => {
   const persistApi = useAuthStore.persist;
   if (persistApi.hasHydrated()) {
     return;
@@ -22,9 +22,9 @@ async function waitForAuthStoreHydration(): Promise<void> {
       resolve();
     });
   });
-}
+};
 
-function takeDesktopAuthCodeFromUrl(): string | null {
+const takeDesktopAuthCodeFromUrl = (): string | null => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -37,34 +37,34 @@ function takeDesktopAuthCodeFromUrl(): string | null {
   window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   clearPendingDesktopAuthCode();
   return code.trim();
-}
+};
 
-export function readDesktopAuthBootstrapError(): string | null {
+export const readDesktopAuthBootstrapError = (): string | null => {
   try {
     const message = sessionStorage.getItem(DESKTOP_AUTH_ERROR_SESSION_KEY);
     return message && message.trim() ? message : null;
   } catch {
     return null;
   }
-}
+};
 
-export function clearDesktopAuthBootstrapError(): void {
+export const clearDesktopAuthBootstrapError = (): void => {
   try {
     sessionStorage.removeItem(DESKTOP_AUTH_ERROR_SESSION_KEY);
   } catch {
     return;
   }
-}
+};
 
-function writeDesktopAuthBootstrapError(message: string): void {
+const writeDesktopAuthBootstrapError = (message: string): void => {
   try {
     sessionStorage.setItem(DESKTOP_AUTH_ERROR_SESSION_KEY, message);
   } catch {
     return;
   }
-}
+};
 
-export async function consumeWebDesktopAuthCodeAtBootstrap(): Promise<void> {
+export const consumeWebDesktopAuthCodeAtBootstrap = async (): Promise<void> => {
   const code = takeDesktopAuthCodeFromUrl();
   if (!code) {
     return;
@@ -93,4 +93,4 @@ export async function consumeWebDesktopAuthCodeAtBootstrap(): Promise<void> {
         : 'Не удалось войти. Код мог истечь или уже был использован.';
     writeDesktopAuthBootstrapError(message);
   }
-}
+};

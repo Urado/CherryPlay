@@ -1,4 +1,3 @@
-
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { createWithEqualityFn } from 'zustand/traditional';
@@ -36,11 +35,7 @@ interface DemoPlayerState {
   error: string | null;
   isDisabled: boolean;
 
-  loadTrack: (
-    track: Track,
-    sourceWorkspaceId: WorkspaceId,
-    autoPlay?: boolean,
-  ) => Promise<number>;
+  loadTrack: (track: Track, sourceWorkspaceId: WorkspaceId, autoPlay?: boolean) => Promise<number>;
   shouldAutoPlayTrack: (
     trackId: string,
     sourceWorkspaceId: WorkspaceId,
