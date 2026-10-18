@@ -5,6 +5,7 @@ import './PartyEditorFieldsGroup.css';
 
 export interface PartyEditorAccordionProps {
   title: string;
+  variant?: 'flat' | 'card';
   defaultExpanded?: boolean;
   summary?: React.ReactNode;
   headerTrailing?: React.ReactNode;
@@ -17,6 +18,7 @@ export interface PartyEditorAccordionProps {
 
 export const PartyEditorAccordion: React.FC<PartyEditorAccordionProps> = ({
   title,
+  variant = 'flat',
   defaultExpanded = false,
   summary,
   headerTrailing,
@@ -29,7 +31,7 @@ export const PartyEditorAccordion: React.FC<PartyEditorAccordionProps> = ({
   return (
     <Disclosure
       title={title}
-      variant="flat"
+      variant={variant}
       defaultExpanded={defaultExpanded}
       summary={summary}
       headerTrailing={headerTrailing}
@@ -37,7 +39,9 @@ export const PartyEditorAccordion: React.FC<PartyEditorAccordionProps> = ({
       expanded={expanded}
       onExpandedChange={onExpandedChange}
     >
-      <div ref={sectionRef as React.Ref<HTMLDivElement>}>{children}</div>
+      <div className="party-editor-accordion-content" ref={sectionRef as React.Ref<HTMLDivElement>}>
+        {children}
+      </div>
     </Disclosure>
   );
 };

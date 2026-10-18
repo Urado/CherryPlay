@@ -2,14 +2,13 @@ import { Button } from '@cherryplay/components';
 import React from 'react';
 
 import { ProjectNameInput } from '../../../app/components/ProjectNameInput';
-
-import { PartyEditorAccordion } from './PartyEditorAccordion';
+import { HelpHint } from '../../../shared/components/HelpHint';
 
 import './PartyEditor.css';
 
 export interface PartyGeneralSectionProps {
   readOnly?: boolean;
-  defaultExpanded?: boolean;
+  catalogVisibilityControl?: React.ReactNode;
   partyUrl?: string | null;
   showCopyUrl?: boolean;
   copyUrlDisabled?: boolean;
@@ -19,7 +18,7 @@ export interface PartyGeneralSectionProps {
 
 export const PartyGeneralSection: React.FC<PartyGeneralSectionProps> = ({
   readOnly = false,
-  defaultExpanded = false,
+  catalogVisibilityControl,
   partyUrl = null,
   showCopyUrl = false,
   copyUrlDisabled = false,
@@ -29,11 +28,18 @@ export const PartyGeneralSection: React.FC<PartyGeneralSectionProps> = ({
   const showUrlCopy = showCopyUrl && Boolean(partyUrl) && Boolean(onCopyUrl);
 
   return (
-    <PartyEditorAccordion title="Общие настройки вечеринки" defaultExpanded={defaultExpanded}>
-      <div className="party-editor-fields-group__fields">
+    <section className="party-general-section" aria-label="Настройки проекта">
+      <div className="party-editor-fields-group__fields party-editor-fields-group__fields--single">
         <div className="party-editor-section">
-          <span className="party-editor-label">Название проекта</span>
+          <div className="party-editor-heading-row">
+            <span className="party-editor-label">Название проекта</span>
+            <HelpHint label="Справка: название проекта">
+              Если не задать отдельные названия для каталога и страницы гостей, используется
+              название проекта.
+            </HelpHint>
+          </div>
           <ProjectNameInput
+            className="party-editor-input"
             disabled={readOnly}
             title={readOnly ? 'Редактирование недоступно' : 'Название проекта в CherryPlay'}
           />
@@ -42,7 +48,7 @@ export const PartyGeneralSection: React.FC<PartyGeneralSectionProps> = ({
         {showUrlCopy ? (
           <div className="party-editor-section party-editor-url-section">
             <label className="party-editor-label" htmlFor="party-editor-public-url">
-              URL вечеринки
+              Ссылка для гостей
             </label>
             <div className="party-editor-url-group">
               <input
@@ -68,6 +74,18 @@ export const PartyGeneralSection: React.FC<PartyGeneralSectionProps> = ({
           </div>
         ) : null}
       </div>
-    </PartyEditorAccordion>
+      {catalogVisibilityControl ? (
+        <div className="party-general-section__visibility">
+          <div className="party-editor-heading-row">
+            <span className="party-editor-label">Видимость вечеринки</span>
+            <HelpHint label="Справка: видимость вечеринки">
+              «По ссылке» — вечеринку увидят только те, у кого есть ссылка. «В каталоге» — гости
+              смогут найти её в общем каталоге.
+            </HelpHint>
+          </div>
+          {catalogVisibilityControl}
+        </div>
+      ) : null}
+    </section>
   );
 };

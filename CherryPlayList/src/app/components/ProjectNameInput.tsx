@@ -4,9 +4,14 @@ import { memo, useEffect, useState } from 'react';
 interface ProjectNameInputProps {
   disabled: boolean;
   title: string;
+  className?: string;
 }
 
-const ProjectNameInputComponent = ({ disabled, title }: ProjectNameInputProps) => {
+const ProjectNameInputComponent = ({
+  disabled,
+  title,
+  className = 'project-name-input',
+}: ProjectNameInputProps) => {
   const name = useProjectStore((state) => state.name);
   const setName = useProjectStore((state) => state.setName);
   const [isHydrated, setIsHydrated] = useState(() => useProjectStore.persist.hasHydrated());
@@ -24,7 +29,7 @@ const ProjectNameInputComponent = ({ disabled, title }: ProjectNameInputProps) =
       type="text"
       value={name}
       onChange={(event) => setName(event.target.value)}
-      className="project-name-input"
+      className={className}
       placeholder="Название проекта"
       disabled={disabled || projectStoreLoading}
       aria-label="Название проекта"

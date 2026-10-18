@@ -121,12 +121,12 @@
   }
 
   .cp-disclosure__heading {
-    flex: 1 1 auto;
+    flex: 1 1 12rem;
     min-width: 0;
   }
 
   .cp-disclosure__header-trailing {
-    flex: 1 1 100%;
+    flex: 0 1 auto;
     max-width: 100%;
     justify-content: flex-start;
   }

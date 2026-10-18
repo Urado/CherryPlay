@@ -1,4 +1,3 @@
-import type { PartyTrackDisplaySettings } from '@core/types/project';
 import { useProjectStore } from '@shared/stores/projectStore';
 import React from 'react';
 
@@ -35,9 +34,6 @@ interface PartyEditorProps {
   copyUrlDisabled?: boolean;
   copyUrlTitle?: string;
   onCopyUrl?: () => void;
-  showTrackDisplay?: boolean;
-  partyTrackDisplay?: PartyTrackDisplaySettings | Partial<PartyTrackDisplaySettings>;
-  onPartyTrackDisplayChange?: (value: PartyTrackDisplaySettings) => void;
   catalogVisibilityControl?: React.ReactNode;
   catalogDefaultExpanded?: boolean;
   catalogExpanded?: boolean;
@@ -62,9 +58,6 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   copyUrlDisabled = false,
   copyUrlTitle,
   onCopyUrl,
-  showTrackDisplay = false,
-  partyTrackDisplay,
-  onPartyTrackDisplayChange,
   catalogVisibilityControl,
   catalogDefaultExpanded = false,
   catalogExpanded,
@@ -154,13 +147,27 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         <>
           <PartyGeneralSection
             readOnly={isReadOnly}
-            defaultExpanded={defaultExpanded}
+            catalogVisibilityControl={catalogVisibilityControl}
             partyUrl={linkedParty?.url}
             showCopyUrl={showCopyUrl}
             copyUrlDisabled={copyUrlDisabled}
             copyUrlTitle={copyUrlTitle}
             onCopyUrl={onCopyUrl}
           />
+
+          {showGuestPage ? (
+            <PartyGuestPageSection
+              partyTitle={partyTitle}
+              partySubtitle={partySubtitle}
+              projectName={projectName}
+              readOnly={isReadOnly}
+              defaultExpanded={defaultExpanded}
+              designPreviewHint={designPreviewHint}
+              onPartyTitleChange={onPartyTitleChange}
+              onPartySubtitleChange={onPartySubtitleChange}
+              {...designSectionProps}
+            />
+          ) : null}
 
           <PartyCatalogSection
             partyName={partyName}
@@ -179,7 +186,6 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
             expanded={catalogExpanded}
             onExpandedChange={onCatalogExpandedChange}
             sectionRef={catalogSectionRef}
-            headerTrailing={catalogVisibilityControl}
             isListedInCatalog={isListedInCatalog}
             editorPhase={phase}
             showDraftCatalogHint={showDraftCatalogHint}
@@ -195,26 +201,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
         </>
       ) : null}
 
-      {showGuestPage ? (
-        <PartyGuestPageSection
-          partyTitle={partyTitle}
-          partySubtitle={partySubtitle}
-          projectName={projectName}
-          readOnly={isReadOnly}
-          defaultExpanded={defaultExpanded}
-          designPreviewHint={designPreviewHint}
-          showTrackDisplay={showTrackDisplay}
-          partyTrackDisplay={partyTrackDisplay}
-          onPartyTrackDisplayChange={onPartyTrackDisplayChange}
-          onPartyTitleChange={onPartyTitleChange}
-          onPartySubtitleChange={onPartySubtitleChange}
-          {...designSectionProps}
-        />
-      ) : null}
-
-      {showDesign && !showGuestPage ? (
-        <PartyDesignSection {...designSectionProps} />
-      ) : null}
+      {showDesign && !showGuestPage ? <PartyDesignSection {...designSectionProps} /> : null}
 
       {showAbout ? (
         <>

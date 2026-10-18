@@ -59,10 +59,6 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
 
   return (
     <section className="party-track-display-section">
-      <p className="party-track-display-section__hint">
-        Учитывается в превью и в именах треков при публикации плейлиста на сервер. Файлы и проект не
-        переименовываются.
-      </p>
       <div className="party-track-display-section__controls">
         <label className="party-track-display-section__row">
           <input

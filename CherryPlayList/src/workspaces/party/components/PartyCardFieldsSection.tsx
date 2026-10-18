@@ -81,6 +81,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
             variant="ghost"
             size="sm"
             className={`party-editor-tag-button ${tags.includes(option) ? 'party-editor-tag-button--selected' : ''}`}
+            aria-pressed={tags.includes(option)}
             onClick={() => {
               if (tags.includes(option)) {
                 removeTag(tags.indexOf(option));
@@ -221,10 +222,38 @@ export const PartyCatalogCardFields: React.FC<PartyCardFieldsSectionProps> = ({
       <div className="party-editor-fields-group">
         <h4 className="party-editor-fields-group__title">Дата и время</h4>
         <div className="party-editor-fields-group__fields">
-          {onTimeZoneChange && (
+          <div className="party-editor-section">
+            <label className="party-editor-label">
+              Начало
+              <input
+                type="datetime-local"
+                className="party-editor-input"
+                value={eventDateTime}
+                onChange={(e) => onEventDateTimeChange(e.target.value)}
+                readOnly={readOnly}
+                disabled={readOnly}
+              />
+            </label>
+          </div>
+          {onEventEndDateTimeChange && (
             <div className="party-editor-section">
               <label className="party-editor-label">
-                Таймзона
+                Окончание
+                <input
+                  type="datetime-local"
+                  className="party-editor-input"
+                  value={eventEndDateTime}
+                  onChange={(e) => onEventEndDateTimeChange(e.target.value)}
+                  readOnly={readOnly}
+                  disabled={readOnly}
+                />
+              </label>
+            </div>
+          )}
+          {onTimeZoneChange && (
+            <div className="party-editor-section party-editor-section--full">
+              <label className="party-editor-label">
+                Часовой пояс мероприятия
                 <select
                   className="party-editor-input"
                   value={timeZone || getDefaultTimeZone()}
@@ -240,41 +269,13 @@ export const PartyCatalogCardFields: React.FC<PartyCardFieldsSectionProps> = ({
               </label>
             </div>
           )}
-          <div className="party-editor-section">
-            <label className="party-editor-label">
-              Дата и время мероприятия
-              <input
-                type="datetime-local"
-                className="party-editor-input"
-                value={eventDateTime}
-                onChange={(e) => onEventDateTimeChange(e.target.value)}
-                readOnly={readOnly}
-                disabled={readOnly}
-              />
-            </label>
-          </div>
-          {onEventEndDateTimeChange && (
-            <div className="party-editor-section">
-              <label className="party-editor-label">
-                Время окончания
-                <input
-                  type="datetime-local"
-                  className="party-editor-input"
-                  value={eventEndDateTime}
-                  onChange={(e) => onEventEndDateTimeChange(e.target.value)}
-                  readOnly={readOnly}
-                  disabled={readOnly}
-                />
-              </label>
-            </div>
-          )}
         </div>
       </div>
 
       {onCityChange && (
         <div className="party-editor-fields-group">
           <h4 className="party-editor-fields-group__title">Место</h4>
-          <div className="party-editor-fields-group__fields">
+          <div className="party-editor-fields-group__fields party-editor-fields-group__fields--single">
             <div className="party-editor-section">
               <label className="party-editor-label">
                 Город
@@ -326,7 +327,7 @@ export const PartyCatalogCardFields: React.FC<PartyCardFieldsSectionProps> = ({
           <h4 className="party-editor-fields-group__title">Ссылки и теги</h4>
           <div className="party-editor-fields-group__fields">
             {onExternalLinkUrlChange && onExternalLinkTextChange && (
-              <div className="party-editor-section">
+              <div className="party-editor-section party-editor-section--full party-editor-links-row">
                 <label className="party-editor-label">
                   Внешняя ссылка (URL)
                   <input

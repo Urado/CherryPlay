@@ -17,7 +17,7 @@ import type {
   PartyEditorFieldHandlers,
   PartyEditorFieldValues,
 } from './components/partyEditorRuntimeTypes';
-import { resolvePartyEditorPhase, shouldShowPartyTrackDisplaySection } from './partyEditorPhase';
+import { resolvePartyEditorPhase } from './partyEditorPhase';
 import { resolvePartyPlaybackSourceState } from './partyPlaybackSource';
 import type { PartyWorkspaceRuntimeValue } from './partyWorkspaceRuntimeContext';
 import { resolveCreateBlockedByTheme } from './partyWorkspaceUtils';
@@ -35,8 +35,6 @@ export const usePartySettingsFormState = (
     isClientOutdated,
     isCheckingParty,
     meta,
-    partyTrackDisplay,
-    setPartyTrackDisplaySettings,
     groupDisplayDepth,
     setGroupDisplayDepth,
     partyName,
@@ -106,11 +104,19 @@ export const usePartySettingsFormState = (
     partyLifecycleState,
     serverError,
   });
-  const phase = phaseResult.phase;
   const isBlocked = phaseResult.isBlocked;
-  const editorPhase = phase ?? (isBlocked ? null : 'draft-unlinked');
-  const showTrackDisplay = shouldShowPartyTrackDisplaySection(editorPhase ?? 'draft-unlinked');
-  const showCatalog = editorPhase != null && shouldShowPartyCatalogVisibilityControl(editorPhase);
+  const editorPhase = resolvePartyEditorPhase({
+    isAuth: true,
+    isClientOutdated: false,
+    isCheckingParty: false,
+    linkedParty,
+    partyLifecycleState,
+    serverError,
+  }).phase;
+  const showCatalog =
+    editorPhase != null &&
+    shouldShowPartyCatalogVisibilityControl(editorPhase) &&
+    (!linkedParty || !isBlocked);
   const showCopyUrl =
     Boolean(linkedParty?.url) &&
     (editorPhase === 'draft-linked' || editorPhase === 'ready' || editorPhase === 'completed');
@@ -125,7 +131,7 @@ export const usePartySettingsFormState = (
   const createBlockedByThemeTitle = createBlockedByThemeResult.title;
 
   const archiveAvailability = resolvePartyArchiveAvailability({
-    partyLifecycleState,
+    partyLifecycleState: isBlocked ? null : partyLifecycleState,
     playbackSourceState: resolvePartyPlaybackSourceState(streamingSource, {
       sessionMode,
       playerPlaybackStatus: playbackStatus,
@@ -240,17 +246,19 @@ export const usePartySettingsFormState = (
     [linkedParty, serverError, isCheckingParty, handleRetry],
   );
 
-  const actionVisibility = editorPhase
-    ? getPartyEditorActionVisibility(editorPhase, {
-        isAuthenticated: isAuth,
-        hasOnOpenLinkParty: true,
-      })
-    : null;
+  const showActions =
+    !isBlocked || (!linkedParty && !isAuth && !isCheckingParty && !isClientOutdated);
+  const actionVisibility =
+    editorPhase && showActions
+      ? getPartyEditorActionVisibility(editorPhase, {
+          isAuthenticated: isAuth,
+          hasOnOpenLinkParty: true,
+        })
+      : null;
 
   return {
     editorPhase,
     isBlocked,
-    showTrackDisplay,
     showCatalog,
     showCopyUrl,
     networkActionsDisabled,
@@ -263,8 +271,6 @@ export const usePartySettingsFormState = (
     editorDesign,
     editorConnection,
     actionVisibility,
-    partyTrackDisplay,
-    setPartyTrackDisplaySettings,
     groupDisplayDepth,
     setGroupDisplayDepth,
     isListedInCatalog,

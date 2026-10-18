@@ -1,11 +1,14 @@
 .modal-content.party-settings-modal-content {
   display: flex;
   flex-direction: column;
-  width: min(750px, calc(100vw - 32px));
-  max-width: min(750px, calc(100vw - 32px));
-  max-height: min(92vh, 960px);
-  container-type: inline-size;
-  container-name: party-settings-modal;
+  width: min(820px, calc(100vw - 32px));
+  max-width: min(820px, calc(100vw - 32px));
+  max-height: min(92dvh, 960px);
+  overflow: hidden;
+}
+
+.party-settings-modal-header {
+  flex-shrink: 0;
 }
 
 .party-settings-modal-body {
@@ -18,7 +21,7 @@
 
 .party-settings-modal-loading {
   padding: 24px;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
 }
 
 .party-settings-content {
@@ -29,156 +32,57 @@
   width: 100%;
 }
 
-.party-settings-content__status-row {
-  flex-shrink: 0;
-  padding: 0 24px 8px;
-}
-
-.party-settings-content__status-row:empty {
-  display: none;
-  padding: 0;
-}
-
 .party-settings-content__body {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   overflow: auto;
-  padding: 16px 24px 24px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 20px;
 }
 
-.party-settings-content__body .party-editor-about-actions {
-  display: flex;
-  flex-direction: column;
+.party-settings-content__footer {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  flex-shrink: 0;
+  align-items: center;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color, #e0e0e0);
+  padding: 16px 24px;
+  border-top: 1px solid var(--ui-border);
+  background: var(--bg-secondary);
 }
 
-.party-settings-content__body .party-catalog-visibility {
-  margin: 0;
-  width: auto;
-  box-sizing: border-box;
-}
-
-.party-settings-content__body .party-catalog-visibility--header {
-  margin: 0;
-}
-
-.party-settings-content__body .party-catalog-visibility-options {
-  border-color: var(--ui-border, rgba(255, 255, 255, 0.12));
-  background: var(--bg-tertiary, rgba(255, 255, 255, 0.04));
-}
-
-.party-settings-content__body .party-catalog-visibility-option {
-  border-right-color: var(--ui-border, rgba(255, 255, 255, 0.12));
-  color: var(--text-secondary, #9a9a9a);
-}
-
-.party-settings-content__body .party-catalog-visibility-option:hover:not(:disabled) {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
-  color: var(--text-primary, #f5f5f5);
-}
-
-.party-settings-content__body
-  .party-catalog-visibility-option--selected:not(.party-catalog-visibility-option--listed) {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary, #f5f5f5);
-}
-
-.party-settings-content__body
-  .party-catalog-visibility-option--listed.party-catalog-visibility-option--selected {
-  background: color-mix(in srgb, var(--accent-primary, #4a9eff) 18%, transparent);
-  color: var(--accent-primary, #4a9eff);
-}
-
-.party-settings-content__body
-  .party-catalog-visibility-option--listed.party-catalog-visibility-option--selected:hover:not(
-    :disabled
-  ) {
-  background: color-mix(in srgb, var(--accent-primary, #4a9eff) 24%, transparent);
-  color: var(--accent-primary, #4a9eff);
-}
-
-.party-settings-content__body .party-editor-actions {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--spacing-sm, 8px);
-  width: 100%;
-}
-
-.party-settings-content__body .party-editor-actions__action,
-.party-settings-content__body .party-editor-actions > .cp-button.party-editor-actions__action {
-  flex: 0 0 auto;
-  width: auto;
+.party-settings-content__actions {
+  grid-column: 2;
+  justify-self: end;
   min-width: 0;
-  white-space: nowrap;
-}
-
-.party-settings-content__body .party-editor-actions__trailing {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--spacing-sm, 8px);
-  margin-left: auto;
-}
-
-.party-settings-design-hint {
-  margin: 0 0 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--bg-tertiary, rgba(255, 255, 255, 0.04));
-  color: var(--text-secondary, #9a9a9a);
-  font-size: var(--font-size-secondary, 12px);
-  line-height: 1.4;
-}
-
-@container party-settings-modal (min-width: 640px) {
-  .party-settings-content__body .party-editor-fields-group__fields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 20px;
-    align-items: start;
-  }
-
-  .party-settings-content__body
-    .party-editor-fields-group__fields
-    .party-editor-section:has(textarea),
-  .party-settings-content__body
-    .party-editor-fields-group__fields
-    .party-editor-section:has(.party-editor-tags-predefined),
-  .party-settings-content__body
-    .party-editor-fields-group__fields
-    .party-editor-section:has(.party-editor-tags-list) {
-    grid-column: 1 / -1;
-  }
-}
-
-@container party-settings-modal (max-width: 720px) {
-  .party-settings-content__body {
-    padding: 12px 14px 16px;
-  }
-
-  .party-settings-content__body .party-editor-actions {
-    gap: 6px;
-  }
 }
 
 @media (width <= 640px) {
   .modal-content.party-settings-modal-content {
     width: calc(100vw - 16px);
     max-width: calc(100vw - 16px);
-    max-height: calc(100vh - 16px);
-    border-radius: 6px;
+    max-height: calc(100dvh - 16px);
+  }
+
+  .party-settings-content__body {
+    padding: 12px;
+  }
+
+  .party-settings-content__footer {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 16px;
+  }
+
+  .party-settings-content__actions {
+    grid-column: 1;
+    justify-self: stretch;
   }
 }
 
 @media (height <= 700px) {
   .modal-content.party-settings-modal-content {
-    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
   }
 }

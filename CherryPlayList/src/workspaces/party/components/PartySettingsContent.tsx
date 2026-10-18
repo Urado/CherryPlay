@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 import type { PartyWorkspaceRuntimeValue } from '../partyWorkspaceRuntimeContext';
 import { usePartySettingsFormState } from '../usePartySettingsFormState';
@@ -31,8 +31,7 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
   onPartyCreated,
 }) => {
   const form = usePartySettingsFormState(runtime);
-  const catalogSectionRef = useRef<HTMLElement>(null);
-  const [catalogExpanded, setCatalogExpanded] = useState<boolean | undefined>(undefined);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const handleCreateParty = () => {
     void form.handleCreateParty().then((created) => {
@@ -40,11 +39,8 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
     });
   };
 
-  const focusCatalogSection = useCallback(() => {
-    setCatalogExpanded(true);
-    requestAnimationFrame(() => {
-      catalogSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
+  const focusVisibilitySettings = useCallback(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const connectivityBanner = !form.isNetworkEnabledForEditor ? (
@@ -111,29 +107,16 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
       </div>
     ) : null;
 
-  const footerActions = primaryActions ? (
-    <div className="party-editor-about-actions">{primaryActions}</div>
-  ) : null;
-
-  const designPreviewHint = form.editorPhase ? (
-    <p className="party-settings-design-hint">
-      Оформление удобнее править в превью гостей — кнопка «Дизайн» слева от превью.
-    </p>
-  ) : null;
+  const designPreviewHint = form.editorPhase
+    ? 'Оформление также можно менять в превью гостей — кнопка «Дизайн» слева от превью.'
+    : null;
 
   const catalogDefaultExpanded = form.editorPhase === 'draft-unlinked';
 
   return (
     <div className="party-settings-content">
       {connectivityBanner}
-      <div className="party-settings-content__status-row">
-        <PartySettingsCatalogStatusChip
-          isListedInCatalog={form.isListedInCatalog}
-          visible={Boolean(form.showCatalog)}
-          onFocusCatalog={focusCatalogSection}
-        />
-      </div>
-      <div className="party-settings-content__body">
+      <div className="party-settings-content__body" ref={bodyRef}>
         {form.editorPhase ? (
           <PartyEditor
             phase={form.editorPhase}
@@ -143,19 +126,12 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
             design={form.editorDesign}
             connection={form.editorConnection}
             isBlocked={form.isBlocked}
-            aboutActions={footerActions}
             defaultExpanded={true}
             catalogDefaultExpanded={catalogDefaultExpanded}
-            catalogExpanded={catalogExpanded}
-            onCatalogExpandedChange={setCatalogExpanded}
-            catalogSectionRef={catalogSectionRef}
             catalogVisibilityControl={catalogVisibilityControl}
             isListedInCatalog={form.isListedInCatalog}
-            showDraftCatalogHint={form.editorPhase === 'draft-unlinked'}
+            showDraftCatalogHint={false}
             designPreviewHint={designPreviewHint}
-            showTrackDisplay={form.showTrackDisplay}
-            partyTrackDisplay={form.partyTrackDisplay}
-            onPartyTrackDisplayChange={form.setPartyTrackDisplaySettings}
             showCopyUrl={form.showCopyUrl}
             copyUrlDisabled={
               form.networkActionsDisabled || form.isCreating || form.isSavingMetadata
@@ -169,6 +145,18 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
           />
         ) : null}
       </div>
+      {primaryActions || form.showCatalog ? (
+        <footer className="party-settings-content__footer" aria-label="Действия вечеринки">
+          <PartySettingsCatalogStatusChip
+            isListedInCatalog={form.isListedInCatalog}
+            visible={Boolean(form.showCatalog)}
+            onFocusVisibility={focusVisibilitySettings}
+          />
+          {primaryActions ? (
+            <div className="party-settings-content__actions">{primaryActions}</div>
+          ) : null}
+        </footer>
+      ) : null}
     </div>
   );
 };

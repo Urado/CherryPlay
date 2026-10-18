@@ -7,13 +7,13 @@ import './PartySettingsCatalogStatusChip.css';
 export interface PartySettingsCatalogStatusChipProps {
   isListedInCatalog: boolean;
   visible: boolean;
-  onFocusCatalog?: () => void;
+  onFocusVisibility?: () => void;
 }
 
 export const PartySettingsCatalogStatusChip: React.FC<PartySettingsCatalogStatusChipProps> = ({
   isListedInCatalog,
   visible,
-  onFocusCatalog,
+  onFocusVisibility,
 }) => {
   if (!visible) {
     return null;
@@ -21,15 +21,15 @@ export const PartySettingsCatalogStatusChip: React.FC<PartySettingsCatalogStatus
 
   const label = resolvePartyCatalogLabel(isListedInCatalog);
   const listed = isListedInCatalog;
-  const ariaLabel = `${label}. Перейти к настройкам каталога`;
+  const ariaLabel = `${label}. Перейти к настройкам видимости`;
 
   return (
     <button
       type="button"
       className={`party-settings-catalog-status-chip${listed ? ' party-settings-catalog-status-chip--listed' : ''}`}
-      onClick={onFocusCatalog}
+      onClick={onFocusVisibility}
       aria-label={ariaLabel}
-      title="Перейти к настройкам каталога"
+      title="Перейти к настройкам видимости"
     >
       {label}
     </button>

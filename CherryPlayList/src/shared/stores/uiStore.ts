@@ -6,10 +6,14 @@ import {
   registerWorkspaceType,
   unregisterWorkspaceType,
 } from '../../core/constants/workspace';
+import { dialogService } from '../services/dialogService';
 import { getActiveLayoutSnapshotForFocus } from '../utils/layoutFocusBridge';
 import { resolveFileBrowserFocusTarget } from '../utils/resolveFileBrowserFocusTarget';
 
+import { useAuthStore } from './authStore';
+
 const notificationTimers = new Map<string, NodeJS.Timeout>();
+let partySettingsAuthPromptPending = false;
 
 export type ModalType =
   | 'settings'
@@ -105,7 +109,13 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   setActiveSource: (source) => set({ activeSource: source }),
 
-  openModal: (type) => set({ modal: type, modalReturnTo: null, settingsFocusElementId: null }),
+  openModal: (type) => {
+    if (type === 'partySettings') {
+      get().openPartySettingsModal();
+      return;
+    }
+    set({ modal: type, modalReturnTo: null, settingsFocusElementId: null });
+  },
 
   openSettingsModal: (focusElementId) =>
     set({
@@ -119,8 +129,31 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   openLinkPartyModal: (returnTo) =>
     set({ modal: 'linkParty', modalReturnTo: returnTo ?? null, settingsFocusElementId: null }),
 
-  openPartySettingsModal: () =>
-    set({ modal: 'partySettings', modalReturnTo: null, settingsFocusElementId: null }),
+  openPartySettingsModal: () => {
+    if (useAuthStore.getState().isAuthenticated()) {
+      set({ modal: 'partySettings', modalReturnTo: null, settingsFocusElementId: null });
+      return;
+    }
+    if (partySettingsAuthPromptPending) {
+      return;
+    }
+    partySettingsAuthPromptPending = true;
+    void dialogService
+      .confirm({
+        title: 'Войдите в аккаунт',
+        message: 'Настройки вечеринки доступны после входа в аккаунт.',
+        confirmLabel: 'Войти',
+        cancelLabel: 'Отмена',
+      })
+      .then((confirmed) => {
+        if (confirmed) {
+          get().openModal('account');
+        }
+      })
+      .finally(() => {
+        partySettingsAuthPromptPending = false;
+      });
+  },
 
   closeModal: () =>
     set((state) => ({
