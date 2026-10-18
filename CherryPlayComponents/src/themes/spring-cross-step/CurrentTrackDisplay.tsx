@@ -174,7 +174,11 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
           {duration != null && duration > 0 ? (
             <span>{formatTime(duration)}</span>
           ) : (
-            <span className="party-current-track-time-loader" role="status" aria-label="Загрузка длительности" />
+            <span
+              className="party-current-track-time-loader"
+              role="status"
+              aria-label="Загрузка длительности"
+            />
           )}
         </div>
         <div className="party-current-track-progress">

@@ -165,7 +165,11 @@ export const CurrentTrackDisplay: React.FC<BaseCurrentTrackDisplayProps> = ({
               {duration != null && duration > 0 ? (
                 formatTime(duration)
               ) : (
-                <span className="party-current-track-time-loader" role="status" aria-label="Загрузка длительности" />
+                <span
+                  className="party-current-track-time-loader"
+                  role="status"
+                  aria-label="Загрузка длительности"
+                />
               )}
             </span>
           </div>

@@ -163,7 +163,7 @@
   cursor: progress;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
   .party-catalog-visibility--header {
     width: 100%;
     max-width: 100%;

@@ -147,7 +147,7 @@
   display: inline-block;
   width: 0.85em;
   height: 0.85em;
-  border: 2px solid currentColor;
+  border: 2px solid currentcolor;
   border-right-color: transparent;
   border-radius: 50%;
   vertical-align: -0.12em;

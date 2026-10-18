@@ -175,7 +175,8 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   'spring-cross-step': createPartyTheme({
     id: 'spring-cross-step',
     name: 'Весенний кросс-степ',
-    description: 'Специальная тема фестиваля «Весенний кросс-степ»: светлое оформление с весенними зелёными акцентами.',
+    description:
+      'Специальная тема фестиваля «Весенний кросс-степ»: светлое оформление с весенними зелёными акцентами.',
     cssPath: './spring-cross-step/index.css',
     qrStyle: { foreground: '#173b2b', background: '#f5fff6', accent: '#4a9a63', frame: 'spring' },
     qrImage: '/images/spring-cross-step-poster.jpg',

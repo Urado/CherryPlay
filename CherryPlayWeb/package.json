@@ -14,6 +14,7 @@
     "stylelint:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check": "npm run lint && npm run stylelint && npm run format:check",
     "prepare": "node scripts/prepare-husky.mjs"
   },
   "lint-staged": {
