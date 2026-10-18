@@ -118,7 +118,7 @@ export const usePartySettingsFormState = (
     shouldShowPartyCatalogVisibilityControl(editorPhase) &&
     (!linkedParty || !isBlocked);
   const showCopyUrl =
-    Boolean(linkedParty?.url) &&
+    Boolean(linkedParty?.shortCode) &&
     (editorPhase === 'draft-linked' || editorPhase === 'ready' || editorPhase === 'completed');
   const networkActionsDisabled = !isNetworkEnabledForEditor;
 

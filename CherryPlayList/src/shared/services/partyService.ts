@@ -1,4 +1,5 @@
 import { getApiConfig } from '../config/apiConfig';
+import { getServerUrlSync } from '../config/serverConfig';
 import {
   DEMO_PARTY_ID,
   DEMO_THEME_ACCESS,
@@ -406,7 +407,17 @@ class PartyService {
       return getDemoPartyPublicUrl(shortCode);
     }
     const config = await getApiConfig();
-    const serverUrl = config.serverUrl;
+    return this.buildPartyUrl(config.serverUrl, shortCode);
+  }
+
+  getPartyUrlSync(shortCode: string): string {
+    if (isDemoAuthMode()) {
+      return getDemoPartyPublicUrl(shortCode);
+    }
+    return this.buildPartyUrl(getServerUrlSync(), shortCode);
+  }
+
+  private buildPartyUrl(serverUrl: string, shortCode: string): string {
     if (!serverUrl.trim()) {
       return `http://localhost:3000/party/${shortCode}`;
     }

@@ -301,19 +301,20 @@ export const usePartyServerActions = (
   }, [isAuth, meta.linkedParty, addNotification, openModal, effects, handleThemeNotEntitled]);
 
   const handleCopyUrl = useCallback(async () => {
-    const url = meta.linkedParty?.url;
-    if (!url) {
+    const linkedParty = meta.linkedParty;
+    if (!linkedParty?.shortCode) {
       addNotification({
         type: 'error',
-        message: 'URL вечеринки ещё не загружен',
+        message: 'Сначала привяжите вечеринку.',
       });
       return;
     }
     try {
+      const url = await partyService.getPartyUrl(linkedParty.shortCode);
       await copyTextToClipboard(url);
       addNotification({
         type: 'success',
-        message: 'URL скопирован',
+        message: 'Ссылка для гостей скопирована',
       });
     } catch (error) {
       console.error('Failed to copy URL:', error);
@@ -322,7 +323,7 @@ export const usePartyServerActions = (
         message: 'Не удалось скопировать URL. Скопируйте ссылку вручную.',
       });
     }
-  }, [meta.linkedParty?.url, addNotification]);
+  }, [meta.linkedParty, addNotification]);
 
   return {
     handleCreateParty,

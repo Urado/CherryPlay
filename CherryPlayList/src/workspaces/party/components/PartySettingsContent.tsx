@@ -134,13 +134,9 @@ export const PartySettingsContent: React.FC<PartySettingsContentProps> = ({
             designPreviewHint={designPreviewHint}
             showCopyUrl={form.showCopyUrl}
             copyUrlDisabled={
-              form.networkActionsDisabled || form.isCreating || form.isSavingMetadata
+              form.isCreating || form.isSavingMetadata
             }
-            copyUrlTitle={
-              form.networkActionsDisabled
-                ? 'Включите «Онлайн» в настройках'
-                : 'Скопировать URL вечеринки'
-            }
+            copyUrlTitle="Скопировать ссылку для гостей"
             onCopyUrl={() => void form.handleCopyUrl()}
           />
         ) : null}

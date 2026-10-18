@@ -1,3 +1,4 @@
+import { usePartyPublicUrl } from '@shared/hooks/usePartyPublicUrl';
 import { useProjectStore } from '@shared/stores/projectStore';
 import React from 'react';
 
@@ -109,6 +110,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
   } = design;
 
   const { linkedParty, serverError, isCheckingParty, onRetry } = connection;
+  const partyUrl = usePartyPublicUrl(linkedParty?.shortCode, linkedParty?.url);
 
   const isReadOnly = phase === 'completed';
   const showAllSections = section === 'all';
@@ -148,7 +150,7 @@ export const PartyEditor: React.FC<PartyEditorProps> = ({
           <PartyGeneralSection
             readOnly={isReadOnly}
             catalogVisibilityControl={catalogVisibilityControl}
-            partyUrl={linkedParty?.url}
+            partyUrl={partyUrl}
             showCopyUrl={showCopyUrl}
             copyUrlDisabled={copyUrlDisabled}
             copyUrlTitle={copyUrlTitle}
