@@ -122,7 +122,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   cyberpunk: createPartyTheme({
     id: 'cyberpunk',
     name: 'Cyberpunk',
-    description: 'Неоновая тема в стиле киберпанк',
+    description: 'Футуристический стиль с неоновыми зелёными акцентами и свечением.',
     cssPath: './cyberpunk/index.css',
     qrStyle: { foreground: '#00ff00', background: '#0a0a0a', accent: '#00ff88', frame: 'neon' },
     customizationOptions: [],
@@ -133,7 +133,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   sakura: createPartyTheme({
     id: 'sakura',
     name: 'Sakura',
-    description: 'Нежная пастельная тема',
+    description: 'Пастельный стиль с мягкими розовыми оттенками.',
     cssPath: './sakura/index.css',
     qrStyle: { foreground: '#51213c', background: '#fff8fb', accent: '#df7fa5', frame: 'petal' },
     customizationOptions: [],
@@ -144,7 +144,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   'art-deco': createPartyTheme({
     id: 'art-deco',
     name: 'Art Deco',
-    description: 'Элегантная тема в стиле ар-деко',
+    description: 'Геометрический стиль ар-деко с золотистыми акцентами.',
     cssPath: './art-deco/index.css',
     qrStyle: { foreground: '#292015', background: '#fffaf0', accent: '#b58a3a', frame: 'deco' },
     customizationOptions: [],
@@ -155,7 +155,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   basic: createPartyTheme({
     id: 'basic',
     name: 'Базовый',
-    description: 'Простой и чистый стиль в духе приложения',
+    description: 'Лаконичный стиль с настраиваемой цветовой палитрой.',
     cssPath: './basic/index.css',
     qrStyle: { foreground: '#263143', background: '#f8fbff', accent: '#6179c8', frame: 'simple' },
     resolveQrStyle: (settings) => {
@@ -175,7 +175,7 @@ export const PARTY_THEME_REGISTRY: PartyThemeRegistry = {
   'spring-cross-step': createPartyTheme({
     id: 'spring-cross-step',
     name: 'Весенний кросс-степ',
-    description: 'Светлая весенняя тема с зелёными акцентами и мягкими тонами',
+    description: 'Специальная тема фестиваля «Весенний кросс-степ»: светлое оформление с весенними зелёными акцентами.',
     cssPath: './spring-cross-step/index.css',
     qrStyle: { foreground: '#173b2b', background: '#f5fff6', accent: '#4a9a63', frame: 'spring' },
     qrImage: '/images/spring-cross-step-poster.jpg',
