@@ -1,4 +1,4 @@
-import { Button, ErrorMessage, FormSelect, FormTextarea } from '@cherryplay/components';
+import { Button, Disclosure, ErrorMessage, FormSelect, FormTextarea } from '@cherryplay/components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -13,6 +13,8 @@ import type {
   ThemePackageDto,
 } from '../../types/api';
 import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
+
+import { AdminPartiesList } from './AdminPartiesList';
 
 import './AdminPages.css';
 
@@ -112,6 +114,7 @@ export const AdminOrganizerDetailPage = () => {
   const [revoking, setRevoking] = useState(false);
   const [revocationRequestId, setRevocationRequestId] = useState<string | null>(null);
   const [revocationPending, setRevocationPending] = useState(false);
+  const [partyListExpanded, setPartyListExpanded] = useState(false);
   const grantOpenButtonRef = useRef<HTMLButtonElement | null>(null);
   const revokeOpenButtonRef = useRef<HTMLButtonElement | null>(null);
   const grantModalTitleId = 'admin-grant-modal-title';
@@ -287,7 +290,7 @@ export const AdminOrganizerDetailPage = () => {
   }
 
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-page--wide">
       <div className="admin-page__header">
         <Link to={ROUTES.ADMIN_ORGANIZERS} className="admin-link">
           ← К списку организаторов
@@ -322,6 +325,18 @@ export const AdminOrganizerDetailPage = () => {
             <p>Роль: {organizer.role}</p>
             <p>Дата регистрации: {new Date(organizer.createdAt).toLocaleString('ru-RU')}</p>
           </section>
+
+          <Disclosure
+            title="Вечеринки"
+            variant="card"
+            className="admin-card admin-organizer-parties-disclosure"
+            expanded={partyListExpanded}
+            onExpandedChange={setPartyListExpanded}
+          >
+            {partyListExpanded && (
+              <AdminPartiesList fixedOrganizerId={organizer.id} showFilters={false} />
+            )}
+          </Disclosure>
 
           <section className="admin-card">
             <div className="admin-card__header">
@@ -363,8 +378,7 @@ export const AdminOrganizerDetailPage = () => {
             )}
           </section>
 
-          <details className="admin-card">
-            <summary>История доступов</summary>
+          <Disclosure title="История доступов" variant="card" className="admin-card">
             {historyEntitlements.length ? (
               <ul className="admin-entitlement-list">
                 {historyEntitlements.map((entitlement) => (
@@ -421,7 +435,7 @@ export const AdminOrganizerDetailPage = () => {
             ) : (
               <p>История пуста.</p>
             )}
-          </details>
+          </Disclosure>
         </>
       )}
 

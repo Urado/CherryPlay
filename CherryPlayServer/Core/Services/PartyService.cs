@@ -290,7 +290,7 @@ public class PartyService : IPartyService
             party.CustomizationSettings = CustomizationSettingsValidator.NormalizeCustomizationSettings(dto.CustomizationSettings);
         }
         if (dto.IsListedInCatalog.HasValue)
-            party.IsListedInCatalog = dto.IsListedInCatalog.Value;
+            party.SetCatalogVisibility(dto.IsListedInCatalog.Value);
         if (dto.Description != null)
             party.Description = dto.Description;
         if (dto.Place != null)
@@ -323,10 +323,21 @@ public class PartyService : IPartyService
             {
                 ThrowFuturePartyLimitReached();
             }
+            else if (dto.IsListedInCatalog.HasValue && _partyRepository is IPartyMetadataRepository metadataRepository)
+            {
+                await metadataRepository.UpdateMetadataAsync(party, dto.IsListedInCatalog);
+            }
         }
         else
         {
-            await _partyRepository.UpdateAsync(party);
+            if (_partyRepository is IPartyMetadataRepository metadataRepository)
+            {
+                await metadataRepository.UpdateMetadataAsync(party, dto.IsListedInCatalog);
+            }
+            else
+            {
+                await _partyRepository.UpdateAsync(party);
+            }
         }
         _logger.LogInformation(
             "Party metadata updated: organizerId={OrganizerId}, partyId={PartyId}",
@@ -418,15 +429,18 @@ public class PartyService : IPartyService
         }
 
         var currentState = party.PartyLifecycleState;
+        party.TransitionLifecycleForOrganizer(targetState);
         if (currentState != targetState)
         {
-            if (!IsAllowedPartyLifecycleTransition(currentState, targetState))
+            if (_partyRepository is IPartyLifecycleRepository lifecycleRepository)
             {
-                throw new InvalidPartyLifecycleTransitionException(partyId, currentState, targetState);
+                await lifecycleRepository.UpdateLifecycleStateAsync(partyId, targetState);
+            }
+            else
+            {
+                await _partyRepository.UpdateAsync(party);
             }
 
-            party.PartyLifecycleState = targetState;
-            await _partyRepository.UpdateAsync(party);
             _logger.LogInformation(
                 "Party lifecycle transitioned: organizerId={OrganizerId}, partyId={PartyId}",
                 organizerId,
@@ -436,17 +450,6 @@ public class PartyService : IPartyService
         var sessionState = await _streamingRepository.GetSessionStateAsync(partyId);
         return party.ToDto(sessionState != null);
     }
-
-    private static bool IsAllowedPartyLifecycleTransition(
-        PartyLifecycleState current,
-        PartyLifecycleState target) =>
-        (current, target) switch
-        {
-            (PartyLifecycleState.Draft, PartyLifecycleState.Ready) => true,
-            (PartyLifecycleState.Ready, PartyLifecycleState.Completed) => true,
-            (PartyLifecycleState.Completed, PartyLifecycleState.Ready) => true,
-            _ => false,
-        };
 
     private bool EnforceFuturePartyLimit =>
         _partyLimitOptions?.Value is { EnforceFuturePartyLimit: true };

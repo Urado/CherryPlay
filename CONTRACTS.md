@@ -12,7 +12,7 @@
 | ------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **viewer**    | Зритель в CherryPlayWeb                        | Read-only: публичные API по `shortCode`, подключение к SignalR по `shortCode`, получение обновлений состояния. Не может отправлять write-события. |
 | **organizer** | Организатор (CherryPlayList или кабинет в Web) | Write: создание/редактирование/удаление вечеринок, публикация плейлиста, управление сессией и состоянием воспроизведения. Только к своим данным.  |
-| **admin**     | Организатор с ролью admin                      | Всё из `organizer` + доступ к `/api/admin/*` (управление выдачами пакетов тем).                                                                   |
+| **admin**     | Организатор с ролью admin                      | Всё из `organizer` + доступ к `/api/admin/*` (управление выдачами пакетов тем, организаторами и вечеринками).                                    |
 
 В v1 авторизация write-операций: **JWT** для REST и SignalR; в Web сессия через **httpOnly cookie**. Зрители — анонимные, без логина.
 
@@ -30,9 +30,11 @@
 | **404 organizer_not_found**          | Организатор не найден                 | `GET /api/admin/organizers/{id}`, `GET /api/admin/organizers/{id}/entitlements` или `POST /api/admin/organizers/{id}/entitlements` для отсутствующего организатора. |
 | **404 entitlement_not_found**        | Выдача не найдена                     | `GET /api/admin/entitlements/{entitlementId}`, `GET /api/admin/entitlement-revocations?entitlementId={id}`, либо legacy `DELETE`/новый `POST` для отсутствующей или чужой выдачи. |
 | **404 revocation_not_found**         | Событие отзыва не найдено             | `GET /api/admin/entitlement-revocations/{revocationId}` для отсутствующего события.                                               |
+| **404 party_not_found**              | Вечеринка не найдена или недоступна для изменения | Административная карточка/операция для неизвестной вечеринки; soft-deleted вечеринки остаются доступны только для чтения. |
 | **409 entitlement_already_active**   | Выдача уже активна                    | Повторный grant активного пакета одному организатору.                                                                            |
 | **409 entitlement_already_revoked**  | Выдача уже отозвана                   | Повторный revoke уже отозванной выдачи.                                                                                          |
-| **409 invalid_lifecycle_transition** | Недопустимый переход жизненного цикла | Запрос смены `partyLifecycleState` вне разрешённых переходов (например `ready` → `draft`, `draft` → `completed`, `completed` → `draft`). Состояние `completed` **не** терминальное: `completed` → `ready` разрешён. |
+| **409 invalid_lifecycle_transition** | Недопустимый пользовательский переход жизненного цикла | Запрос организатора на смену `partyLifecycleState` вне правил §3.4 (например `ready` → `draft`). Административные переходы описаны в §3.7. |
+| **409 active_connected_session**     | Эфир активен, desktop подключён       | Административная смена lifecycle или сброс сессии заблокированы, пока одновременно активна сессия и подключён desktop организатора. |
 | **400 package_is_auto_granted**      | Автовыдаваемый пакет                  | Попытка вручную выдать пакет с `isAutoGranted=true` (например `free`).                                                           |
 
 Эндпоинты организатора при отсутствии/невалидности токена возвращают **401** (в т.ч. при срабатывании `[AuthorizeOrganizer]` до входа в действие); при валидном токене, но отсутствии прав на ресурс — **403**.
@@ -416,11 +418,18 @@ DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Все эндпоинты ниже защищены `AuthorizeAdmin`, требуют админскую роль и используют rate limit `admin-strict`.
 
+Текущая серверная сессия должна существовать и принадлежать организатору, а роль `admin` проверяется по актуальной записи организатора в хранилище. Для cookie-аутентифицированных запросов, меняющих данные, сервер проверяет `Origin`; если его нет — использует `Referer`. Источник должен совпадать с origin самого API, `Cors:AllowedOrigins` или origin из `PUBLIC_WEB_BASE_URL`. Если оба заголовка отсутствуют или источник недоверенный, запрос отклоняется.
+
 | Метод  | Путь                                                      | Описание                                                 | Ответ                      |
 | ------ | --------------------------------------------------------- | -------------------------------------------------------- | -------------------------- |
 | GET    | `/api/admin/theme-packages`                               | Список пакетов тем (с `themeIds`)                        | `AdminThemePackageListDto` |
 | GET    | `/api/admin/organizers`                                   | Поиск/список организаторов (`query`, `page`, `pageSize`) | `AdminOrganizerListDto`    |
 | GET    | `/api/admin/organizers/{id}`                              | Карточка организатора и история выдач                    | `AdminOrganizerDetailDto`  |
+| GET    | `/api/admin/parties`                                      | Общий фильтруемый список вечеринок, включая скрытые и soft-deleted записи (`organizerId`, `query`, `city`, `partyLifecycleState`, `isListedInCatalog`, `isDeleted`, `page`, `pageSize`) | `AdminPartyListDto` |
+| GET    | `/api/admin/parties/{id}`                                 | Карточка вечеринки, организатор, плейлист и состояние сессии; soft-deleted записи доступны для чтения | `AdminPartyDetailDto` |
+| PATCH  | `/api/admin/parties/{id}/lifecycle`                       | Установить `draft`, `ready` или `completed`               | `AdminPartyMutationDto` или 404/409 |
+| PATCH  | `/api/admin/parties/{id}/catalog-visibility`              | Установить `isListedInCatalog`                            | `AdminPartyMutationDto` или 404 |
+| POST   | `/api/admin/parties/{id}/session-resets`                  | Завершить устаревшую сессию и сбросить playback state     | `AdminPartySessionResetDto` или 404/409 |
 | GET    | `/api/admin/organizers/{id}/entitlements?status=active`    | Выдачи организатора; `status` принимает `active` или `all`, по умолчанию `all` | `EntitlementDto[]`       |
 | POST   | `/api/admin/organizers/{id}/entitlements`                 | Выдать пакет организатору                                | `EntitlementDto` (201)     |
 | GET    | `/api/admin/entitlements/{entitlementId}`                 | Получить выдачу                                          | `EntitlementDto`           |
@@ -431,6 +440,13 @@ DTO — §6.9. Обзор dual storage / UoW: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 Правила:
 
+- `GET /api/admin/parties` без фильтров возвращает все вечеринки, включая записи удалённых организаторов и soft-deleted вечеринки. Поиск `query` — по названию вечеринки, `city` — по городу; текстовые фильтры нечувствительны к регистру. Все фильтры применяются до подсчёта `total` и пагинации. `page` начинается с 1; `pageSize` по умолчанию 20 и принимает значения от 1 до 100. Сортировка стабильна по `CreatedAt`, затем по `Id`.
+- `GET /api/admin/parties/{id}` возвращает подробные поля вечеринки, вложенный плейлист, lifecycle, видимость каталога, признаки удаления организатора/вечеринки и состояние сессии/playback.
+- Для lifecycle администратор может установить любое из трёх состояний независимо от текущего; повтор текущего значения — no-op. Это не меняет пользовательские правила §3.4. Смена запрещена только при сочетании активной сессии и подключённого desktop. Отказ — `409 active_connected_session`.
+- Soft-deleted вечеринки отображаются в списке и карточке, но операции lifecycle, видимости и сброса для них отклоняются как `404 party_not_found`.
+- Изменение видимости каталога доступно при любом lifecycle и во время активного эфира. Оно влияет только на попадание в публичный каталог: чтение по прямой ссылке остаётся доступным.
+- `POST /api/admin/parties/{id}/session-resets` очищает сохранённую сессию и playback markers, сохраняя lifecycle, видимость каталога, метаданные и плейлист. Повтор сброса отсутствующего или уже чистого состояния — успешный no-op. Активная сессия с подключённым desktop возвращает `409 active_connected_session`.
+- Смена lifecycle отправляет `OnStateChanged` после успешного сохранения. Сброс сессии отправляет событие сброса подключённым клиентам после записи.
 - `POST grant` возвращает `404 package_not_found`, если пакет отсутствует или неактивен.
 - `POST grant` возвращает `400 package_is_auto_granted` для пакетов `isAutoGranted=true`.
 - `POST grant` возвращает `409 entitlement_already_active` и `existingEntitlementId`, если активная выдача уже есть.
@@ -707,7 +723,7 @@ _Примечание:_ в текущей реализации веб может
 ### 6.7 Перечисляемые типы
 
 **PartyThemeId:** `"cyberpunk"` \| `"sakura"` \| `"art-deco"` \| `"basic"` \| `"spring-cross-step"` (PartyTheme идентификатор)  
-**PartyLifecycleState:** `"draft"` \| `"ready"` \| `"completed"` — жизненный цикл вечеринки (JSON snake_case). Новая вечеринка создаётся в `ready` (`POST /api/parties`; breaking change относительно прежнего create → `draft`). Значение `draft` остаётся для legacy-вечеринок; перевод в `ready` — через UI **Сделать доступной** / `POST .../lifecycle` (снова доступен из списка организатора). Список организатора `GET /api/parties` **включает** `draft`. Публичный каталог `GET /api/parties/public/list` **не включает** `draft` (нужны `isListedInCatalog=true` и не `draft`; `completed` с флагом каталога **может** попадать в каталог). Переходы — только через `POST /api/parties/{partyId}/lifecycle` (см. §3.4); `completed` **не** терминальное (`completed` → `ready` разрешён).  
+**PartyLifecycleState:** `"draft"` \| `"ready"` \| `"completed"` — жизненный цикл вечеринки (JSON snake_case). Новая вечеринка создаётся в `ready` (`POST /api/parties`; breaking change относительно прежнего create → `draft`). Значение `draft` остаётся для legacy-вечеринок; перевод в `ready` — через UI **Сделать доступной** / `POST .../lifecycle` (снова доступен из списка организатора). Список организатора `GET /api/parties` **включает** `draft`. Публичный каталог `GET /api/parties/public/list` **не включает** `draft` (нужны `isListedInCatalog=true` и не `draft`; `completed` с флагом каталога **может** попадать в каталог). Переходы организатора описаны в §3.4; администратор может установить любое состояние через §3.7. Состояние `completed` **не** терминальное (`completed` → `ready` разрешён).
 **PlaybackStatus:** `"idle"` \| `"playing"` \| `"paused"` \| `"ended"`  
 **PlaybackMode:** `"preparation"` \| `"session"`  
 **PartyDisplayStatus:** `"draft"` \| `"scheduled"` \| `"starting_soon"` \| `"live"` \| `"organizer_offline"` \| `"party_ended"` — вычисляется на сервере для зрителя. Клиент дополнительно может показывать `connecting`, `server_unreachable` и `program_ended` («Конец программы» — последний трек программы доигран, по snapshot `playbackState` + плейлист; не приходит с API). Приоритет на сервере: `party_ended` (только lifecycle `completed`) → `draft` → `organizer_offline` (сессия активна, организатор отключён ≥ grace) → `live` → `starting_soon` (организатор в Hub, сессия не активна, в т.ч. после `EndSession`) → `scheduled` (сессии нет, организатор не в Hub). При отключении организатора от Hub сессия **не** завершается автоматически (grace ~60 с, см. [docs/integration/streaming.md](docs/integration/streaming.md)).
@@ -729,6 +745,13 @@ _Примечание:_ в текущей реализации веб может
 | `RevokeEntitlementRequest`  | `note?` (`maxLength: 2000`)                                                                                                                                                                     |
 | `CreateEntitlementRevocationRequest` | `id`, `entitlementId` (обязательные UUID), `note?` (`maxLength: 2000`)                                                                                                            |
 | `EntitlementRevocationDto` | `id`, `entitlementId?`, `adminId`, `note`, `createdAt`; `entitlementId` может быть `null` после hard-delete выдачи                                                                                |
+| `AdminPartyListDto` | `items: AdminPartyListItemDto[]`, `total`, `page`, `pageSize` |
+| `AdminPartyListItemDto` | `id`, `organizerId`, `organizerName`, `isOrganizerDeleted`, `name`, `title`, `shortCode`, `city`, `eventDateTime`, `partyLifecycleState`, `isListedInCatalog`, `isDeleted`, `hasActiveSession`, `isOrganizerConnected` |
+| `AdminPartyDetailDto` | Поля списка, `subtitle`, `createdAt`, `eventEndDateTime`, `partyThemeId`, `customizationSettings`, описание/место/расписание/часовой пояс, краткое описание, внешняя ссылка, `danceTags`, `playlist`, `playbackState` |
+| `AdminPartyMutationDto` | `id`, `partyLifecycleState`, `isListedInCatalog` |
+| `AdminPartySessionResetDto` | `id`, `wasReset`, `hasActiveSession`, `isOrganizerConnected`, `playbackState` |
+| `AdminPartyLifecycleRequest` | `partyLifecycleState: PartyLifecycleState` |
+| `AdminPartyCatalogVisibilityRequest` | `isListedInCatalog: boolean` |
 
 Дополнительно по `EntitlementDto`:
 

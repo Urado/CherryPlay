@@ -13,6 +13,8 @@ export const ROUTES = {
   RESET_PASSWORD: '/reset-password',
   CABINET: '/cabinet',
   ADMIN_ROOT: '/admin',
+  ADMIN_PARTIES: '/admin/parties',
+  ADMIN_PARTY_DETAIL: (partyId: string) => `/admin/parties/${partyId}`,
   ADMIN_ORGANIZERS: '/admin/organizers',
   ADMIN_ORGANIZER_DETAIL: (organizerId: string) => `/admin/organizers/${organizerId}`,
   PRIVACY: '/privacy',

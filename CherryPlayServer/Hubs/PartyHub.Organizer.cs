@@ -227,8 +227,11 @@ public partial class PartyHub
         try
         {
             var groupName = partyGuid.ToString();
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            _organizerConnectionTracker.RegisterOrganizer(Context.ConnectionId, partyGuid);
+            await _partyActivityCoordinator.ExecuteAsync(partyGuid, async () =>
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                _organizerConnectionTracker.RegisterOrganizer(Context.ConnectionId, partyGuid);
+            });
             await Clients.Group(groupName).SendAsync("OnConnectionStatusChanged", partyId, true);
             await NotifyPartyDisplayStatusChangedAsync(partyGuid);
             _logger.LogInformation(

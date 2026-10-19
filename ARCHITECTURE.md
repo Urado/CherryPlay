@@ -35,6 +35,7 @@ AIMP path (optional): plugin → named pipe → CherryPlayList → same API/Sign
 |---------|--------|----------------|
 | **Accounts & Auth** | Server + Web/List clients | Organizer JWT (email/password, OAuth); anonymous viewers. [docs/integration/accounts-and-auth.md](docs/integration/accounts-and-auth.md) |
 | **Party Management** | Server + organizer clients | Parties, playlist publish, catalog/unlisted, themes/entitlements. [docs/integration/party-management.md](docs/integration/party-management.md) |
+| **Party Administration** | Server + CherryPlayWeb admin | Administrative search and review of all parties, lifecycle/catalog commands, and session reset. HTTP contracts: [CONTRACTS.md](CONTRACTS.md) §3.7. |
 | **Streaming** | Server Hub + List + Web | Live session/playback state over SignalR. [docs/integration/streaming.md](docs/integration/streaming.md) |
 | **Branding / themes** | Components + Server catalog | PartyTheme UI; package entitlements on server. [ADDING_THEME.md](ADDING_THEME.md), [GLOSSARY.md](GLOSSARY.md) |
 | **Ops** | Server + deploy | Health, rate limits, backups, Docker/CI. [CherryPlayServer/OPS.md](CherryPlayServer/OPS.md), [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md) |
@@ -55,6 +56,8 @@ This is an **intentional** dual path — not a half-migration. Prod always uses 
 **Legal consent (CP-066):** mutations go through `ILegalConsentUnitOfWork` — `InMemoryLegalConsentUnitOfWork` when `UseInMemoryStorage=true`, else `EfLegalConsentUnitOfWork` (Postgres tables `legal_document_versions`, `consent_events`). No public `GET` legal-documents catalog. `ConsentGateMiddleware` is always on for mutating organizer HTTP. OAuth one-shot: callback → SPA → `POST /api/oauth/accounts`. Contracts: [CONTRACTS.md](CONTRACTS.md) §3.2.3; schema: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
 
 **App unit of work / account delete (CP-040):** organizer account deletion runs in `IAppUnitOfWork` (`EfAppUnitOfWork` / `InMemoryAppUnitOfWork`): soft-delete organizer (`IsDeleted`) + profile scrub, hard-delete email/OAuth identities and sessions; parties remain. Consent withdraw is best-effort **outside** that UoW. Contract: [CONTRACTS.md](CONTRACTS.md) §3.3; schema notes: [CherryPlayServer/DATABASE.md](CherryPlayServer/DATABASE.md).
+
+**Party administration:** `AdminPartiesController` delegates read and command scenarios to `AdminPartyQueryService` and `AdminPartyCommandService`; these services do not call organizer-facing `PartyService`. Both paths depend on repository and technical interfaces, while `Party` owns separate administrator and organizer lifecycle operations. EF and InMemory admin repositories use the same storage backing as user party operations. A per-party activity coordinator serializes admin commands with session/playback operations inside one server process; it is an interface boundary for a future distributed coordinator, and does not coordinate separate server instances. Session reset changes only persisted session/playback state and its SignalR notifications; it preserves party lifecycle, catalog visibility, metadata, and playlist. No database migration is required.
 
 ## Key entry points
 

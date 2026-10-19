@@ -43,6 +43,12 @@ export const API_ENDPOINTS = {
   CONSENT_EVENTS: '/api/consent-events',
 
   ADMIN: {
+    PARTIES: '/api/admin/parties',
+    PARTY_BY_ID: (partyId: string) => `/api/admin/parties/${partyId}`,
+    PARTY_LIFECYCLE: (partyId: string) => `/api/admin/parties/${partyId}/lifecycle`,
+    PARTY_CATALOG_VISIBILITY: (partyId: string) =>
+      `/api/admin/parties/${partyId}/catalog-visibility`,
+    PARTY_SESSION_RESET: (partyId: string) => `/api/admin/parties/${partyId}/session-resets`,
     ORGANIZERS: '/api/admin/organizers',
     ORGANIZER_BY_ID: (organizerId: string) => `/api/admin/organizers/${organizerId}`,
     ORGANIZER_ENTITLEMENTS: (organizerId: string) =>

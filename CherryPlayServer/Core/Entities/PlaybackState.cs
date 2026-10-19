@@ -35,4 +35,30 @@ public class PlaybackState
             IsActive = IsActive
         };
     }
+
+    public bool ResetForAdministration(DateTime utcNow)
+    {
+        var changed = IsActive
+            || SessionStartedAt.HasValue
+            || CurrentTrackId is not null
+            || Status != PlaybackStatus.Idle
+            || Position != 0
+            || Duration != 0
+            || Mode != PlaybackMode.Preparation
+            || PlayedTrackIds.Count != 0
+            || DisabledTrackIds.Count != 0
+            || DisabledGroupIds.Count != 0;
+        IsActive = false;
+        SessionStartedAt = null;
+        CurrentTrackId = null;
+        Status = PlaybackStatus.Idle;
+        Position = 0;
+        Duration = 0;
+        Mode = PlaybackMode.Preparation;
+        PlayedTrackIds = [];
+        DisabledTrackIds = [];
+        DisabledGroupIds = [];
+        LastUpdatedAt = utcNow;
+        return changed;
+    }
 }
