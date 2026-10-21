@@ -15,6 +15,11 @@ jest.mock('../../src/workspaces/party/partyWorkspaceRuntimeContext', () => ({
 
 jest.mock('../../src/workspaces/party/usePartySettingsFormState', () => ({
   usePartySettingsFormState: () => ({
+    editorFields: { partyTitle: '', partySubtitle: '' },
+    editorHandlers: {
+      onPartyTitleChange: jest.fn(),
+      onPartySubtitleChange: jest.fn(),
+    },
     groupDisplayDepth: 3,
     setGroupDisplayDepth: jest.fn(),
   }),

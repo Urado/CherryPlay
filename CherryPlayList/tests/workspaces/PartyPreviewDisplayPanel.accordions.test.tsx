@@ -4,7 +4,12 @@ import React from 'react';
 
 import { PartyPreviewDisplayPanel } from '../../src/workspaces/party/PartyPreviewDisplayPanel';
 
-const formState = {
+const mockFormState = {
+  editorFields: { partyTitle: '', partySubtitle: '' },
+  editorHandlers: {
+    onPartyTitleChange: jest.fn(),
+    onPartySubtitleChange: jest.fn(),
+  },
   groupDisplayDepth: 3,
   setGroupDisplayDepth: jest.fn(),
 };
@@ -14,26 +19,24 @@ jest.mock('../../src/workspaces/party/partyWorkspaceRuntimeContext', () => ({
 }));
 
 jest.mock('../../src/workspaces/party/usePartySettingsFormState', () => ({
-  usePartySettingsFormState: () => formState,
+  usePartySettingsFormState: () => mockFormState,
 }));
 
 describe('PartyPreviewDisplayPanel accordions', () => {
-  it('renders one expanded accordion for group depth', () => {
+  it('renders the group settings accordion expanded by default', () => {
     render(<PartyPreviewDisplayPanel themeId="basic" />);
 
-    const depthToggle = screen.getByRole('button', { name: 'Глубина групп' });
+    const groupToggle = screen.getByRole('button', { name: 'Группы' });
 
-    expect(depthToggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.queryByRole('button', { name: 'Отображение треков' })).not.toBeInTheDocument();
-
+    expect(groupToggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByLabelText('Уровень вложенности')).toBeVisible();
-    expect(screen.queryByText('Скрыть символы с начала имени трека')).not.toBeInTheDocument();
+    expect(screen.getByText('Скрыть символы с начала имени трека')).not.toBeVisible();
   });
 
   it('keeps group depth accordion expanded for spring theme while hiding depth controls', () => {
     render(<PartyPreviewDisplayPanel themeId="spring-cross-step" />);
 
-    expect(screen.getByRole('button', { name: 'Глубина групп' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Группы' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
