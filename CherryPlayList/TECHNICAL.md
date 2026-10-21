@@ -232,8 +232,9 @@ CherryPlayList/
 - **`authStore`** — токен и организатор
 - **`settingsStore`** — настройки приложения (экспорт, пути, аудиоустройства, горячие клавиши, стриминг и т.д.)
 - **`layoutStore`** — рабочие пространства и дерево зон (persist `cherryplaylist-workspaces`: `activeWorkspace`, `userWorkspaces`, `layout`; `isLayoutEditMode` не персистится — см. [layout-edit-mode.md](./docs/layout-edit-mode.md))
-- **`projectStore`** — основной плейлист-проект (треки, группы, сессия, мета, привязка к party в урезанном виде)
-- **`ensureProjectStore`** с `persist: true` — отдельные персистентные проекты по **`workspaceId`** (например коллекции), ключ `cherryplaylist-<workspaceId>`
+- **`projectStore`** — данные проекта, основной плейлист, подборки (`id`, имя и элементы), привязки окон, сессия и метаданные; подборки сохраняются в общем `cherryplaylist-project` persist
+- **`projectStoreFactory`** — временный workspace-store адаптер для существующих команд списков; collection adapter не имеет отдельного persist и направляет изменения в сущность проекта
+- Старые подборки могли храниться по ключам `cherryplaylist-<workspaceId>`; локальная миграция переносит найденные записи, не удаляя исходные ключи. Подробности: [Collections](./docs/modules/workspaces/collections.md) и [Persisted Client State](./docs/modules/systems/persisted-client-state.md)
 
 Подробно: **[Storage](./docs/modules/systems/storage.md)** (обзор), **[архитектура клиентского хранения](./docs/modules/systems/storage-architecture.md)**, **[что именно хранится в persist](./docs/modules/systems/persisted-client-state.md)**.
 

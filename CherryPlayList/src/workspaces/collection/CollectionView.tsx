@@ -1,7 +1,6 @@
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
   ItemList,
   DropIndicator,
@@ -18,38 +17,69 @@ import {
 } from '@shared/hooks';
 import { getPlatformCapabilities } from '@shared/platform';
 import {
-  copyCollectionTracksToFolder,
-  exportCollectionAsJson,
   fileService,
   ipcService,
 } from '@shared/services';
+import { dialogService } from '@shared/services/dialogService';
 import { useListShortcuts } from '@shared/shortcuts';
 import {
-  ensureProjectStore,
+  ensureCollectionWorkspaceStore,
+  getProjectStore,
   useUIStore,
+  useProjectStore,
   useGlobalHistoryStore,
   ProjectStoreState,
+  type ProjectStore,
 } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
 import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
+import { deleteCollectionAndReinitialize } from '@shared/utils/workspaceLifecycle';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { CollectionPicker } from './CollectionPicker';
 
 interface CollectionViewProps {
   workspaceId: WorkspaceId;
   zoneId: string;
 }
 
-export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zoneId: _zoneId }) => {
-  const collectionStore = ensureProjectStore({
-    workspaceId,
-    initialName: 'New Collection',
-    persist: true,
-    supportsGroups: true,
-    maxItems: null,
-  });
+export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zoneId }) => {
+  const bindingState = useProjectStore((state) => ({
+    collectionId: state.collectionBindings[workspaceId],
+    collections: state.collections,
+  }));
+  const existingStore = getProjectStore(workspaceId);
+
+  if (!bindingState.collectionId || !existingStore) {
+    return <div className="collection-picker-loading">Подготовка подборки…</div>;
+  }
+
+  return (
+    <CollectionWorkspaceView
+      key={bindingState.collectionId}
+      workspaceId={workspaceId}
+      zoneId={zoneId}
+      collectionId={bindingState.collectionId}
+      collectionStore={existingStore}
+    />
+  );
+};
+
+interface CollectionWorkspaceViewProps extends CollectionViewProps {
+  collectionId: string;
+  collectionStore: ProjectStore;
+}
+
+const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
+  workspaceId,
+  collectionId,
+  collectionStore,
+}) => {
   const collectionStoreRef = useRef(collectionStore);
-  const exportMenuRef = useRef<HTMLDivElement | null>(null);
+  const collections = useProjectStore((state) =>
+    state.collections.map(({ id, name }) => ({ id, name })),
+  );
 
   useEffect(() => {
     collectionStoreRef.current = collectionStore;
@@ -57,29 +87,52 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
 
   const name = collectionStore((s: ProjectStoreState) => s.name);
   const items = collectionStore((s: ProjectStoreState) => s.items);
-  const selectedItemIds = collectionStore((s: ProjectStoreState) => s.selectedItemIds);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(() => new Set());
 
   const setName = collectionStore((s: ProjectStoreState) => s.setName);
   const removeItem = collectionStore((s: ProjectStoreState) => s.removeItem);
   const addItems = collectionStore((s: ProjectStoreState) => s.addItems);
-  const toggleItemSelection = collectionStore((s: ProjectStoreState) => s.toggleItemSelection);
-  const selectAll = collectionStore((s: ProjectStoreState) => s.selectAll);
-  const deselectAll = collectionStore((s: ProjectStoreState) => s.deselectAll);
-  const removeSelectedItems = collectionStore((s: ProjectStoreState) => s.removeSelectedItems);
-  const selectRange = collectionStore((s: ProjectStoreState) => s.selectRange);
   const updateTrackDuration = collectionStore((s: ProjectStoreState) => s.updateTrackDuration);
   const createGroup = collectionStore((s: ProjectStoreState) => s.createGroup);
   const ungroupGroup = collectionStore((s: ProjectStoreState) => s.ungroupGroup);
   const setGroupName = collectionStore((s: ProjectStoreState) => s.setGroupName);
   const getAllTracksInOrder = collectionStore((s: ProjectStoreState) => s.getAllTracksInOrder);
-  const clear = collectionStore((s: ProjectStoreState) => s.clear);
+  const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
+  const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
+
+  const toggleItemSelection = useCallback((id: string) => {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedItemIds(new Set(displayItems.map(({ item }) => item.id)));
+  }, [displayItems]);
+
+  const deselectAll = useCallback(() => setSelectedItemIds(new Set()), []);
+
+  const selectRange = useCallback((fromId: string, toId: string) => {
+    const ids = displayItems.map(({ item }) => item.id);
+    const fromIndex = ids.indexOf(fromId);
+    const toIndex = ids.indexOf(toId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const start = Math.min(fromIndex, toIndex);
+    const end = Math.max(fromIndex, toIndex);
+    setSelectedItemIds(new Set(ids.slice(start, end + 1)));
+  }, [displayItems]);
+
+  const removeSelectedItems = useCallback(() => {
+    const selected = Array.from(selectedItemIds);
+    setSelectedItemIds(new Set());
+    collectionStore.getState().removeItemsWithHistory(selected);
+  }, [collectionStore, selectedItemIds]);
 
   const undo = useGlobalHistoryStore((s) => s.undo);
   const redo = useGlobalHistoryStore((s) => s.redo);
-
-  const displayItems = useMemo(() => flattenItemsForDisplay(items), [items]);
-
-  const tracks = useMemo(() => getAllTracksInOrder(items), [getAllTracksInOrder, items]);
 
   const duplicateTrackIds = useMemo(() => getDuplicateTrackIdsByPathAndFilename(tracks), [tracks]);
 
@@ -107,15 +160,32 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   });
 
   const { addNotification } = useUIStore();
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
-
-  const getSafeFolderName = useCallback(() => {
-    const fallback = 'Collection';
-    const currentName = name;
-    const trimmed = (currentName || fallback).trim();
-    const sanitized = trimmed.replace(/[<>:"/\\|?*]+/g, '_');
-    return sanitized.length === 0 ? fallback : sanitized;
-  }, [name]);
+  const handleSelectCollection = useCallback((nextCollectionId: string) => {
+    ensureCollectionWorkspaceStore(workspaceId, nextCollectionId);
+    useProjectStore.getState().bindCollectionToWorkspace(workspaceId, nextCollectionId);
+    setSelectedItemIds(new Set());
+  }, [workspaceId]);
+  const handleCreateCollection = useCallback(() => {
+    const nextCollectionId = useProjectStore.getState().createCollection();
+    ensureCollectionWorkspaceStore(workspaceId, nextCollectionId);
+    useProjectStore.getState().bindCollectionToWorkspace(workspaceId, nextCollectionId);
+    setSelectedItemIds(new Set());
+  }, [workspaceId]);
+  const handleDeleteCollection = useCallback(async (targetCollectionId: string) => {
+    const targetCollection = useProjectStore.getState().collections.find(
+      (collection) => collection.id === targetCollectionId,
+    );
+    if (!targetCollection) return;
+    const accepted = await dialogService.confirm({
+      title: 'Удалить подборку?',
+      message: targetCollection.items.length > 0
+        ? `Подборка «${targetCollection.name}» и все её треки будут удалены. Это действие нельзя отменить.`
+        : `Подборка «${targetCollection.name}» будет удалена. Это действие нельзя отменить.`,
+      confirmLabel: 'Удалить',
+      destructive: true,
+    });
+    if (accepted) deleteCollectionAndReinitialize(targetCollectionId);
+  }, []);
 
   const addTracksWrapper = useCallback(
     (newTracks: Omit<Track, 'id'>[]) => addItems(newTracks),
@@ -195,89 +265,31 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
   const handleClearAll = useCallback(() => {
-    if (tracks.length === 0) return;
-    clear();
-  }, [tracks.length, clear]);
-
-  useEffect(() => {
-    if (!exportMenuOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setExportMenuOpen(false);
-      }
-    };
-
-    window.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      window.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [exportMenuOpen]);
-
-  const handleExportAsJSON = useCallback(async () => {
-    setExportMenuOpen(false);
-    await exportCollectionAsJson({ name, tracks });
-  }, [name, tracks]);
-
-  const handleCopyTracks = useCallback(async () => {
-    setExportMenuOpen(false);
-    const result = await copyCollectionTracksToFolder({
-      tracks,
-      folderName: getSafeFolderName(),
-    });
-    if (!result) {
-      return;
-    }
-    if (result.failed.length > 0) {
-      addNotification({
-        type: 'warning',
-        message: `Скопировано: ${result.successful.length}. Ошибок: ${result.failed.length}`,
-      });
-    }
-  }, [addNotification, getSafeFolderName, tracks]);
-
-  const toggleExportMenu = useCallback(() => {
-    const tracksLength = tracks.length;
-    if (tracksLength === 0) {
-      addNotification({ type: 'warning', message: 'Подборка пуста' });
-      return;
-    }
-    setExportMenuOpen((prev) => !prev);
-  }, [addNotification, tracks]);
-
-  const exportButton = (
-    <div className="collection-export-wrapper" ref={exportMenuRef}>
-      <button
-        type="button"
-        onClick={toggleExportMenu}
-        className="playlist-header-action-icon"
-        title="Экспортировать подборку"
-        aria-label="Экспортировать подборку"
-        aria-haspopup="menu"
-        aria-expanded={exportMenuOpen}
-      >
-        <FileDownloadIcon style={{ fontSize: '20px' }} />
-      </button>
-      {exportMenuOpen && (
-        <div className="collection-export-menu" role="menu" aria-label="Экспорт подборки">
-          <button type="button" role="menuitem" onClick={() => void handleExportAsJSON()}>
-            Экспорт в JSON
-          </button>
-          <button type="button" role="menuitem" onClick={() => void handleCopyTracks()}>
-            Скопировать в папку
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    if (items.length === 0) return;
+    collectionStore.getState().removeItemsWithHistory(items.map((item) => item.id));
+    setSelectedItemIds(new Set());
+  }, [collectionStore, items]);
 
   return (
     <div className="playlist-view">
       <WorkspaceHeader
         name={name}
         onNameChange={setName}
+        className="collection-header"
+        compactStats
+        titleControl={(
+          <CollectionPicker
+            collectionId={collectionId}
+            name={name}
+            collections={collections}
+            onSelect={handleSelectCollection}
+            onCreate={handleCreateCollection}
+            onRename={setName}
+            onDelete={(targetCollectionId) => {
+              void handleDeleteCollection(targetCollectionId);
+            }}
+          />
+        )}
         itemCount={tracks.length}
         totalDuration={totalDuration}
         placeholder="Название подборки"
@@ -289,7 +301,6 @@ export const CollectionView: React.FC<CollectionViewProps> = ({ workspaceId, zon
         canCreateGroup={canCreateGroup}
         onCreateGroup={handleCreateGroup}
         onClearAll={handleClearAll}
-        extraActions={tracks.length > 0 ? exportButton : undefined}
       />
 
       <ItemList

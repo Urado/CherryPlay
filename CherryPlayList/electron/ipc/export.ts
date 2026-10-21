@@ -138,11 +138,25 @@ const copyTracksToFolder = async (
 
     for (const track of tracks) {
       const fileName = path.basename(track.path);
-      const destPath = path.join(destinationFolder, fileName);
+      const extension = path.extname(fileName);
+      const baseName = path.basename(fileName, extension);
+      let destPath = path.join(destinationFolder, fileName);
 
       try {
         await fs.access(track.path);
-        await copyFileWithRetry(track.path, destPath);
+        if (path.resolve(track.path) !== path.resolve(destPath)) {
+          let suffix = 2;
+          while (true) {
+            try {
+              await fs.access(destPath);
+              destPath = path.join(destinationFolder, `${baseName}_${suffix}${extension}`);
+              suffix++;
+            } catch {
+              break;
+            }
+          }
+          await copyFileWithRetry(track.path, destPath);
+        }
         result.successful.push(track.path);
       } catch (error) {
         result.failed.push({

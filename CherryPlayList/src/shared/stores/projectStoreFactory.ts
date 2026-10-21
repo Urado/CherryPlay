@@ -30,6 +30,7 @@ import {
   RemoveItemsCommand,
   MoveItemCommand,
   MoveItemsCommand,
+  RemoveItemsAtPositionsCommand,
   CreateGroupCommand,
   UngroupCommand,
   RenameGroupCommand,
@@ -39,6 +40,7 @@ import { electronStorage } from '../storage/electronStorage';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
+import { useProjectStore } from './projectStore';
 import {
   findItemRecursive,
   getAllTracksRecursive,
@@ -51,6 +53,7 @@ import {
   removeItemsById,
   collectItemsById,
   collectAllItemIds,
+  findItemWithParent,
   insertIntoGroup,
 } from './projectStoreCore';
 
@@ -98,6 +101,7 @@ export interface ProjectStoreState {
   addItems: (items: Omit<Track, 'id'>[], index?: number) => void;
   addItemsWithHistory: (items: ProjectItem[], index?: number) => void;
   removeItem: (id: string) => void;
+  removeItemsWithHistory: (ids: string[]) => void;
   moveItem: (fromIndex: number, toIndex: number) => void;
   findItemById: (id: string) => ProjectItem | null;
   findItemIndex: (id: string) => number;
@@ -144,6 +148,36 @@ export interface ProjectStoreState {
 export type ProjectStore = UseBoundStore<StoreApi<ProjectStoreState>>;
 
 const projectStores = new Map<WorkspaceId, ProjectStore>();
+const collectionStores = new Map<string, ProjectStore>();
+const collectionAliases = new Map<WorkspaceId, string>();
+let collectionStoreGeneration = 0;
+
+const createCollectionAdapter = (collectionId: string): ProjectStore => {
+  const generation = collectionStoreGeneration;
+  const store = createStoreImpl({
+    workspaceId: collectionId,
+    initialName: 'Подборка',
+    persist: false,
+    supportsGroups: true,
+    maxItems: null,
+  });
+  const collection = useProjectStore.getState().collections.find((entry) => entry.id === collectionId);
+  if (collection) {
+    store.setState({ name: collection.name, items: collection.items, selectedItemIds: new Set() });
+  }
+  store.subscribe((state, previousState) => {
+    if (
+      generation === collectionStoreGeneration &&
+      (state.name !== previousState.name || state.items !== previousState.items)
+    ) {
+      useProjectStore.getState().updateCollection(collectionId, {
+        name: state.name,
+        items: state.items,
+      });
+    }
+  });
+  return store;
+};
 
 const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
   const {
@@ -371,6 +405,46 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
           );
       }
 
+      get().markAsDirty();
+    },
+
+    removeItemsWithHistory: (ids) => {
+      const state = get();
+      const selectedIds = new Set(ids);
+      const positions = ids
+        .map((id) => {
+          const position = findItemWithParent(state.items, id);
+          return position ? { ...position, selectedId: id } : null;
+        })
+        .filter((position): position is NonNullable<typeof position> => position !== null)
+        .filter((position) => !position.parentPath.some((parentId) => selectedIds.has(parentId)))
+        .map(({ item, parentPath, indexInParent }) => ({
+          item,
+          parentPath,
+          index: indexInParent,
+        }));
+      if (positions.length === 0) return;
+
+      const removedIds = positions.map(({ item }) => item.id);
+      const newItems = removedIds.reduce(
+        (currentItems, id) => removeItemFromItems(currentItems, id),
+        state.items,
+      );
+      set({ items: newItems });
+
+      if (!state._skipHistory) {
+        useGlobalHistoryStore.getState().pushCommand(
+          workspaceId,
+          new RemoveItemsAtPositionsCommand(
+            positions.map(({ item, parentPath, index }) => ({
+              item: cloneItem(item),
+              parentPath,
+              index,
+            })),
+          ),
+          `Remove ${positions.length} items`,
+        );
+      }
       get().markAsDirty();
     },
 
@@ -941,6 +1015,59 @@ export const ensureProjectStore = (options: ProjectStoreOptions): ProjectStore =
   return store;
 };
 
+export const ensureCollectionWorkspaceStore = (
+  workspaceId: WorkspaceId,
+  collectionId: string,
+): ProjectStore => {
+  let store = collectionStores.get(collectionId);
+  if (!store) {
+    store = createCollectionAdapter(collectionId);
+    collectionStores.set(collectionId, store);
+    projectStores.set(collectionId, store);
+  }
+  projectStores.set(workspaceId, store);
+  collectionAliases.set(workspaceId, collectionId);
+  return store;
+};
+
+export const removeCollectionWorkspaceStore = (collectionId: string): void => {
+  collectionStores.delete(collectionId);
+  projectStores.delete(collectionId);
+  for (const [workspaceId, boundCollectionId] of collectionAliases) {
+    if (boundCollectionId !== collectionId) continue;
+    projectStores.delete(workspaceId);
+    collectionAliases.delete(workspaceId);
+  }
+};
+
+export const resetCollectionWorkspaceStores = (
+  collections: Array<{ id: string; name: string; items: ProjectItem[] }>,
+  bindings: Record<string, string>,
+): void => {
+  collectionStoreGeneration += 1;
+  for (const collectionId of collectionStores.keys()) {
+    projectStores.delete(collectionId);
+  }
+  for (const workspaceId of collectionAliases.keys()) {
+    projectStores.delete(workspaceId);
+  }
+  collectionStores.clear();
+  collectionAliases.clear();
+  for (const collection of collections) {
+    const store = createCollectionAdapter(collection.id);
+    store.setState({ name: collection.name, items: collection.items, selectedItemIds: new Set() });
+    collectionStores.set(collection.id, store);
+    projectStores.set(collection.id, store);
+  }
+  for (const [workspaceId, collectionId] of Object.entries(bindings)) {
+    const store = collectionStores.get(collectionId);
+    if (store) {
+      projectStores.set(workspaceId, store);
+      collectionAliases.set(workspaceId, collectionId);
+    }
+  }
+};
+
 const getStoreForWorkspace = (workspaceId: WorkspaceId): ProjectStore | undefined => {
   const store = projectStores.get(workspaceId);
   if (store) return store;
@@ -954,8 +1081,13 @@ export const getProjectStore = (workspaceId: WorkspaceId): ProjectStore | undefi
   return getStoreForWorkspace(workspaceId);
 };
 
+export const getStableWorkspaceId = (workspaceId: WorkspaceId): WorkspaceId => {
+  return (collectionAliases.get(workspaceId) ?? workspaceId);
+};
+
 export const removeProjectStore = (workspaceId: WorkspaceId): void => {
   projectStores.delete(workspaceId);
+  collectionAliases.delete(workspaceId);
 };
 
 export const getAllProjectStoreIds = (): WorkspaceId[] => {

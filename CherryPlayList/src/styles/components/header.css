@@ -530,6 +530,32 @@
   gap: 0;
 }
 
+.collection-picker__select {
+  flex: 1;
+  min-width: 0;
+}
+
+.collection-picker__select .workspace-menu__item-label-text {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.workspace-menu__item.collection-picker__delete {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  color: var(--text-tertiary);
+}
+
+.workspace-menu__item.collection-picker__delete svg {
+  width: 18px;
+  height: 18px;
+}
+
+.workspace-menu__item.collection-picker__delete:hover:not(:disabled) {
+  color: var(--status-error, #e5484d);
+}
+
 .workspace-menu__item {
   display: flex;
   align-items: center;
@@ -545,6 +571,12 @@
   text-align: left;
   cursor: pointer;
   transition: background-color 0.15s ease;
+}
+
+.collection-picker__panel {
+  width: 100%;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
 }
 
 .workspace-menu__item--with-description {

@@ -289,7 +289,7 @@ The store uses `electronStorage` (localforage/IndexedDB) for persistence. Histor
 
 ## 6.1.1 playlistStore (Deprecated)
 
-> **Note**: `playlistStore` has been replaced by `projectStore`. Collections still use `trackWorkspaceStoreFactory` for their separate stores.
+`playlistStore` has been replaced by `projectStore`. Collection entities are also part of `projectStore`; `projectStoreFactory` currently provides a non-persistent workspace adapter to reuse list commands while routing changes to the selected project collection. This adapter is temporary.
 
 ---
 
@@ -525,8 +525,8 @@ All stores with `persist` middleware use `electronStorage` (authoritative list i
 - **authStore** — access token and organizer profile
 - **settingsStore** — application settings (export, paths, audio devices, shortcuts, streaming flags, etc.)
 - **layoutStore** — workspace zone tree and split layout
-- **projectStore** — main playlist project (items, groups, session state, reduced meta including party id/shortCode where applicable)
-- **ensureProjectStore** with `persist: true` — per-`workspaceId` projects (e.g. collections); persist key `cherryplaylist-<workspaceId>`
+- **projectStore** — main project (items, groups, session state, collections and workspace bindings, reduced meta including party id/shortCode where applicable); temporary collection adapters have no independent persist
+- **legacy dynamic project stores** — any remaining persisted workspace store uses its own `cherryplaylist-<workspaceId>` key; old collection keys are read by the one-time migration and retained
 
 ### Configuration
 
@@ -772,29 +772,32 @@ The component uses the `usePlaylistStore` hook to get playlist state and methods
 
 **Location**: `src/workspaces/collection/CollectionView.tsx`
 
-React component for rendering a collection workspace. Collections are lightweight versions of playlists designed for temporary storage of tracks. They reuse the same UI and logic as playlists but are stored separately.
+React component for rendering a collection workspace. Collections are lightweight playlists for temporary storage of tracks. Their ID, name and items belong to the project; each workspace zone binds to a collection and displays its shared contents.
 
 **Key Features:**
 
 - **Unlimited Tracks**: Collections have no track limit (`maxTracks: null`)
-- **Independent Store**: Each collection has its own Zustand store created via `trackWorkspaceStoreFactory`
+- **Project storage**: All collection data is persisted with the main project; workspace adapters reuse existing list commands without separate collection persistence
+- **Header picker**: Select any project collection or create a new collection. Rename is available through the separate pencil button; the menu rename action is removed. Multiple windows may show the same collection.
+- **Automatic assignment**: A new collection zone receives the first collection not bound to another zone in the current layout, or creates one if all are occupied.
+- **Close behavior**: Closing a zone removes its binding while retaining the collection in the project.
+- **Delete behavior**: The picker’s **×** opens a destructive confirmation. Confirming deletes the collection, its tracks, and every workspace binding to its ID. Active collection zones bound to it are reinitialized through the standard assignment flow: take a free collection in the active layout or create one if none is available. Deleting a collection with no active bindings does not reassign unrelated zones.
 - **Full Functionality**: Supports all playlist features:
   - Track selection (single, multiple, range)
   - Drag-and-drop reordering
   - Undo/redo history (50 actions)
   - Track duration loading
   - Statistics display (track count, total duration)
-  - Renameable name
 - **Cross-Workspace Drag-and-Drop**: Supports moving/copying tracks to/from playlists and other collections
 - **Same UI**: Reuses `PlaylistItem` component and styling from `PlaylistView`
 
 **Props:**
 
-The component accepts `workspaceId` (unique collection identifier) and optional `zoneId` (layout zone ID).
+The component accepts `workspaceId` (zone instance identifier), the bound `collectionId`, and optional `zoneId` (layout zone ID).
 
 **Store Creation:**
 
-Collections use `ensureTrackWorkspaceStore()` to create or retrieve a store with options: workspaceId, initialName, maxTracks (null for unlimited), historyDepth.
+The compatibility adapter in `projectStoreFactory` is created or retrieved for the bound collection ID and aliased for the workspace. It has no independent persist layer; edits update the project collection and its shared command history.
 
 **Drag-and-Drop:**
 
@@ -1075,7 +1078,7 @@ The `.cherry` format is the primary project file format, supporting tracks, grou
 
 ```typescript
 interface ProjectFile {
-  version: '2.0'; // Format version
+  version: '2.0' | '2.1'; // Current saves write 2.1; 2.0 remains readable
   name: string; // Project name
   items: SavedProjectItem[]; // All items (flat list with references)
   rootItems: string[]; // IDs of root-level items (order matters)
@@ -1083,6 +1086,15 @@ interface ProjectFile {
   trackSettings: Record<string, ProjectTrackSettings>; // Per-track settings
   groupSettings: Record<string, ProjectGroupSettings>; // Per-group settings
   sessionState?: ProjectSessionState; // Optional session state
+  collections?: ProjectCollection[]; // Project-owned collections; absent in 2.0
+  collectionViewState?: { bindings: Record<string, string> }; // Optional workspace-to-collection bindings
+}
+
+interface ProjectCollection {
+  id: string;
+  name: string;
+  items: SavedProjectItem[];
+  rootItems: string[];
 }
 ```
 
@@ -1139,7 +1151,7 @@ interface ProjectSessionState {
 
 ```json
 {
-  "version": "2.0",
+  "version": "2.1",
   "name": "My Party Playlist",
   "items": [
     {
@@ -1165,9 +1177,15 @@ interface ProjectSessionState {
     "plannedEndTime": null
   },
   "trackSettings": {},
-  "groupSettings": {}
+  "groupSettings": {},
+  "collections": [
+    { "id": "collection-id", "name": "Подборка 1", "items": [], "rootItems": [] }
+  ],
+  "collectionViewState": { "bindings": { "workspace-id": "collection-id" } }
 }
 ```
+
+Version `2.0` files remain readable and load with no project collections. Portable projects store the main playlist under `tracks/` and each collection under `collections/<safe-name>--<collectionId>/`; filename collisions receive numeric suffixes. See [Save / Load](docs/modules/systems/save-load.md).
 
 ### Validation
 
@@ -1186,7 +1204,7 @@ The `meta.isDirty` flag tracks unsaved changes. UI shows `*` indicator in projec
 
 ## 7.4 Playlist File (JSON) - Legacy Format
 
-> **Note**: The JSON format is still supported for Collections via `trackWorkspaceStoreFactory`. For main project data, use `.cherry` format.
+> **Note**: Individual collection JSON export and copy-to-folder are not available. Project persistence and portability use `.cherry` format.
 
 ## 7.5 AIMP Playlist Format (M3U8)
 

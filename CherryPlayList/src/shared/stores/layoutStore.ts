@@ -313,8 +313,9 @@ export const normalizeWorkspacePersistSlice = (
   }
 
   if (slice.activeWorkspace.kind === 'user') {
+    const activeWorkspace = slice.activeWorkspace;
     const userWorkspace = userWorkspaces.find(
-      (workspace) => workspace.id === slice.activeWorkspace.id,
+      (workspace) => workspace.id === activeWorkspace.id,
     );
     if (!userWorkspace) {
       return {
@@ -393,10 +394,22 @@ export const computeIsWorkspaceDirty = (
 };
 
 const prepareLayoutWorkspaceInstances = (layout: Layout): void => {
+  const collectionWorkspaceIds = new Set(
+    collectWorkspaceZones(layout.rootZone)
+      .filter((zone) => zone.workspaceType === 'collection')
+      .map((zone) => zone.workspaceId),
+  );
   for (const zone of collectWorkspaceZones(layout.rootZone)) {
-    prepareWorkspaceInstance(zone);
+    prepareWorkspaceInstance(zone, collectionWorkspaceIds);
   }
 };
+
+const getCollectionWorkspaceIds = (layout: Layout): Set<string> =>
+  new Set(
+    collectWorkspaceZones(layout.rootZone)
+      .filter((zone) => zone.workspaceType === 'collection')
+      .map((zone) => zone.workspaceId),
+  );
 
 const cleanupLayoutWorkspaceInstances = (layout: Layout): void => {
   for (const zone of collectWorkspaceZones(layout.rootZone)) {
@@ -619,7 +632,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         const updatedLayout = { ...state.layout };
         updatedLayout.rootZone = updateZoneInTree(updatedLayout.rootZone, parentId, updatedParent);
 
-        prepareWorkspaceInstance(newZone);
+        prepareWorkspaceInstance(newZone, getCollectionWorkspaceIds(updatedLayout));
         set({ layout: updatedLayout });
         get().cleanupEmptyContainers();
       },
@@ -683,9 +696,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         cleanupLayoutWorkspaceInstances(state.layout);
 
-        if (ref.kind === 'user') {
-          prepareLayoutWorkspaceInstances(newLayout);
-        }
+        prepareLayoutWorkspaceInstances(newLayout);
 
         set({
           layout: newLayout,
@@ -830,18 +841,17 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
         }
 
         let newLayout: Layout;
-        let isUserWorkspace = false;
+        const activeWorkspace = state.activeWorkspace;
 
-        switch (state.activeWorkspace.kind) {
+        switch (activeWorkspace.kind) {
           case 'user': {
             const userWorkspace = state.userWorkspaces.find(
-              (workspace) => workspace.id === state.activeWorkspace.id,
+              (workspace) => workspace.id === activeWorkspace.id,
             );
             if (!userWorkspace) {
               return false;
             }
             newLayout = cloneLayout(userWorkspace.layout);
-            isUserWorkspace = true;
             break;
           }
           case 'scratch':
@@ -853,9 +863,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         cleanupLayoutWorkspaceInstances(state.layout);
 
-        if (isUserWorkspace) {
-          prepareLayoutWorkspaceInstances(newLayout);
-        }
+        prepareLayoutWorkspaceInstances(newLayout);
 
         set({
           layout: newLayout,
@@ -877,6 +885,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
 
         if (isActiveBuiltin) {
           cleanupLayoutWorkspaceInstances(state.layout);
+          prepareLayoutWorkspaceInstances(newLayout);
           set({
             builtinLayoutOverrides: nextOverrides,
             layout: newLayout,
@@ -1005,7 +1014,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        prepareWorkspaceInstance(result.preparedZone);
+        prepareWorkspaceInstance(result.preparedZone, getCollectionWorkspaceIds(result.layout));
         set({ layout: result.layout, openLayoutEditPickerKey: null });
       },
 
@@ -1028,7 +1037,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        prepareWorkspaceInstance(result.preparedZone);
+        prepareWorkspaceInstance(result.preparedZone, getCollectionWorkspaceIds(result.layout));
         set({ layout: result.layout, openLayoutEditPickerKey: null });
       },
 
@@ -1049,7 +1058,7 @@ export const useLayoutStore = createWithEqualityFn<LayoutState>()(
           return;
         }
 
-        prepareWorkspaceInstance(result.preparedZone);
+        prepareWorkspaceInstance(result.preparedZone, getCollectionWorkspaceIds(result.layout));
         set({ layout: result.layout });
       },
 

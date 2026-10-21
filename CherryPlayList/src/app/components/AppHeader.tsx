@@ -5,6 +5,7 @@ import {
   type ProjectSettings,
   type ProjectGroupSettings,
   type ProjectTrackSettings,
+  type ProjectCollection,
 } from '@core/types/project';
 import ContactSupportOutlinedIcon from '@mui/icons-material/ContactSupportOutlined';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
@@ -82,8 +83,20 @@ const projectStateDataForSave = (params: {
     ProjectMeta,
     'linkedParty' | 'partyTrackDisplay' | 'partyThemeId' | 'partyCustomizationSettings'
   >;
+  collections: ProjectCollection[];
+  collectionBindings: Record<string, string>;
 }): ProjectStateData => {
-  const { name, items, settings, trackSettings, groupSettings, sessionState, meta } = params;
+  const {
+    name,
+    items,
+    settings,
+    trackSettings,
+    groupSettings,
+    sessionState,
+    meta,
+    collections,
+    collectionBindings,
+  } = params;
   const linkedParty = meta.linkedParty
     ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
     : undefined;
@@ -98,6 +111,8 @@ const projectStateDataForSave = (params: {
     partyTrackDisplay: meta.partyTrackDisplay,
     partyThemeId: meta.partyThemeId,
     partyCustomizationSettings: meta.partyCustomizationSettings,
+    collections,
+    collectionViewState: { bindings: collectionBindings },
   };
 };
 
@@ -119,6 +134,8 @@ export const AppHeader: React.FC = () => {
 
   const {
     items,
+    collections,
+    collectionBindings,
     settings,
     trackSettings,
     groupSettings,
@@ -363,6 +380,8 @@ export const AppHeader: React.FC = () => {
         groupSettings,
         sessionState,
         meta,
+        collections,
+        collectionBindings,
       });
       const projectFile = projectService.serializeProject(stateData);
 
@@ -405,6 +424,8 @@ export const AppHeader: React.FC = () => {
     },
     [
       items,
+      collections,
+      collectionBindings,
       settings,
       trackSettings,
       groupSettings,
@@ -457,6 +478,8 @@ export const AppHeader: React.FC = () => {
             groupSettings,
             sessionState,
             meta,
+            collections,
+            collectionBindings,
           }),
         );
         await projectService.saveProject(quickSavePath, projectFile, {
@@ -474,6 +497,8 @@ export const AppHeader: React.FC = () => {
     runWithSavingIndicator,
     meta,
     items,
+    collections,
+    collectionBindings,
     settings,
     trackSettings,
     groupSettings,

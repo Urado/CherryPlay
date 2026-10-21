@@ -10,7 +10,6 @@ import {
 } from '../../core/constants/workspace';
 import type { ContainerZone, Layout, WorkspaceZone } from '../../core/types/layout';
 
-import { setupCollectionZoneForPreset } from './workspaceLifecycle';
 
 export const createSimpleLayout = (): Layout => {
   const playlistZoneId = uuidv4();
@@ -71,8 +70,6 @@ const createCollectionsVerticalLayout = (): Layout => {
     size: 50,
   };
 
-  setupCollectionZoneForPreset(collection1Zone, 'Подборка 1');
-  setupCollectionZoneForPreset(collection2Zone, 'Подборка 2');
 
   const verticalContainer: ContainerZone = {
     id: verticalContainerId,
@@ -138,8 +135,6 @@ export const createCollectionsLayout = (): Layout => {
     size: 50,
   };
 
-  setupCollectionZoneForPreset(collection1Zone, 'Подборка 1');
-  setupCollectionZoneForPreset(collection2Zone, 'Подборка 2');
 
   const horizontalContainer: ContainerZone = {
     id: horizontalContainerId,

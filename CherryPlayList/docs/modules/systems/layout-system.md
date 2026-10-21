@@ -92,7 +92,7 @@ Structural-правки встроенного пресета **не** созд�
 
 ### Коллекции и `workspaceId`
 
-Данные коллекций (`cherryplaylist-<workspaceId>`) привязаны к **`workspaceId` в дереве**, не к имени workspace. См. [persisted-client-state.md](./persisted-client-state.md).
+Данные подборки принадлежат проекту и адресуются стабильным `collectionId`; workspace-зоны хранят привязки `workspaceId → collectionId`. При появлении новой зоны назначается первая свободная подборка среди зон текущего layout, а если свободной нет — создаётся новая. Ручной переключатель позволяет нескольким зонам показывать одну подборку. Закрытие зоны снимает только её привязку. См. [Collections](../workspaces/collections.md) и [persisted-client-state.md](./persisted-client-state.md).
 
 ## Функциональность
 

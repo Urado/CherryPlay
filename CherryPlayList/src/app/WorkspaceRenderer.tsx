@@ -2,8 +2,10 @@ import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames
 import { workspaceRegistry } from '@core/registry';
 import { WorkspaceZone } from '@core/types/layout';
 import { DEMO_UNAVAILABLE_MESSAGE, getPlatformCapabilities } from '@shared/platform';
+import { useProjectStore } from '@shared/stores';
+import { prepareWorkspaceInstance } from '@shared/utils/workspaceLifecycle';
 import { LegacyAimpWorkspaceAdapter } from '@workspaces/player/components/LegacyAimpWorkspaceAdapter';
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 
 interface WorkspaceRendererProps {
   zone: WorkspaceZone;
@@ -50,6 +52,19 @@ const renderWorkspaceBody = (zone: WorkspaceZone): React.ReactNode => {
 
 const WorkspaceRendererComponent: React.FC<WorkspaceRendererProps> = ({ zone }) => {
   const zoneTitle = getWorkspaceDisplayNameRu(zone.workspaceType);
+  const collectionBinding = useProjectStore((state) =>
+    zone.workspaceType === 'collection' ? state.collectionBindings[zone.workspaceId] : undefined,
+  );
+
+  useEffect(() => {
+    if (zone.workspaceType !== 'collection') return;
+    const prepare = () => prepareWorkspaceInstance(zone);
+    if (useProjectStore.persist.hasHydrated()) {
+      prepare();
+      return;
+    }
+    return useProjectStore.persist.onFinishHydration(prepare);
+  }, [collectionBinding, zone]);
 
   return (
     <div className="workspace-zone">

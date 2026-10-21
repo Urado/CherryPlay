@@ -19,7 +19,7 @@ import {
   removeItemsById,
   insertIntoGroup,
 } from '../stores/projectStoreCore';
-import { getProjectStore } from '../stores/projectStoreFactory';
+import { getProjectStore, getStableWorkspaceId } from '../stores/projectStoreFactory';
 import { cloneItems } from '../utils/historyCore';
 import { logger } from '../utils/logger';
 
@@ -60,10 +60,9 @@ export const useDragDropExecutor = () => {
     try {
       const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } =
         command;
-      const isSameWorkspace = sourceWorkspaceId === targetWorkspaceId;
-
       const sourceStore = getProjectStore(sourceWorkspaceId);
       const targetStore = getProjectStore(targetWorkspaceId);
+      const isSameWorkspace = sourceStore === targetStore;
 
       if (!sourceStore || !targetStore) {
         logger.error('executeMove: stores not found', {
@@ -139,7 +138,7 @@ export const useDragDropExecutor = () => {
         useGlobalHistoryStore.getState().pushCompositeCommand(
           [
             {
-              workspaceId: sourceWorkspaceId,
+              workspaceId: getStableWorkspaceId(sourceWorkspaceId),
               command: new RemoveItemsAtPositionsCommand(
                 sourcePositions.map((p) => ({
                   item: cloneItems([p.item])[0],
@@ -149,7 +148,7 @@ export const useDragDropExecutor = () => {
               ),
             },
             {
-              workspaceId: targetWorkspaceId,
+              workspaceId: getStableWorkspaceId(targetWorkspaceId),
               command: new AddItemsAtPositionsCommand(
                 targetPositions.map((p) => ({
                   item: cloneItems([p.item])[0],
@@ -244,7 +243,7 @@ export const useDragDropExecutor = () => {
       }));
 
       useGlobalHistoryStore.getState().pushCommand(
-        targetWorkspaceId,
+        getStableWorkspaceId(targetWorkspaceId),
         new AddItemsAtPositionsCommand(
           targetPositions.map((p) => ({
             item: cloneItems([p.item])[0],

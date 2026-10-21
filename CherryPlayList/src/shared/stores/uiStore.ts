@@ -211,7 +211,18 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   addWorkspace: (workspace) => {
     const state = get();
-    if (state.workspaces.some((w) => w.id === workspace.id)) {
+    const existing = state.workspaces.find((entry) => entry.id === workspace.id);
+    if (existing) {
+      if (
+        existing.type === workspace.type
+        && existing.name === workspace.name
+        && existing.zoneId === workspace.zoneId
+      ) return;
+      set({
+        workspaces: state.workspaces.map((entry) =>
+          entry.id === workspace.id ? { ...entry, ...workspace } : entry,
+        ),
+      });
       return;
     }
     registerWorkspaceType(workspace.id, workspace.type);
