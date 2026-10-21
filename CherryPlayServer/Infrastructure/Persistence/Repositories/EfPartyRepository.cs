@@ -2,13 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CherryPlayServer.Core;
 using CherryPlayServer.Core.Entities;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-public class EfPartyRepository : IPartyRepository
+public class EfPartyRepository : IPartyRepository, IPartyLifecycleRepository, IPartyMetadataRepository
 {
     private readonly AppDbContext _context;
     private readonly ILogger<EfPartyRepository> _logger;
@@ -192,6 +193,40 @@ public class EfPartyRepository : IPartyRepository
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateMetadataAsync(Party party, bool? isListedInCatalog, CancellationToken cancellationToken = default)
+    {
+        var ef = await _context.Parties.FirstOrDefaultAsync(item => item.Id == party.Id && !item.IsDeleted, cancellationToken);
+        if (ef is null)
+        {
+            throw new InvalidOperationException($"Party {party.Id} not found.");
+        }
+
+        party.ApplyTo(ef);
+        if (isListedInCatalog.HasValue)
+        {
+            ef.IsListedInCatalog = isListedInCatalog.Value;
+        }
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> UpdateLifecycleStateAsync(
+        Guid partyId,
+        PartyLifecycleState state,
+        CancellationToken cancellationToken = default)
+    {
+        var party = await _context.Parties
+            .FirstOrDefaultAsync(item => item.Id == partyId && !item.IsDeleted, cancellationToken);
+        if (party is null)
+        {
+            return false;
+        }
+
+        party.PartyLifecycleState = state;
+        party.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     private Task<int> CountFuturePartiesAsync(Guid organizerId, DateTime nowUtc, Guid? excludePartyId)

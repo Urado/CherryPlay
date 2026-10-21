@@ -2,6 +2,11 @@ import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import type {
   AdminOrganizerDetailDto,
   AdminOrganizerListResponse,
+  AdminPartyDetailDto,
+  AdminPartyListQuery,
+  AdminPartyListResponse,
+  AdminPartyMutationDto,
+  AdminPartySessionResetDto,
   ApiErrorPayload,
   CreateEntitlementRevocationRequest,
   EntitlementDto,
@@ -52,6 +57,99 @@ const createAdminApiError = async (
 };
 
 class AdminApiService {
+  async getParties(params: AdminPartyListQuery): Promise<AdminPartyListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params.organizerId) searchParams.set('organizerId', params.organizerId);
+    if (params.query) searchParams.set('query', params.query);
+    if (params.city) searchParams.set('city', params.city);
+    if (params.partyLifecycleState) {
+      searchParams.set('partyLifecycleState', params.partyLifecycleState);
+    }
+    if (params.isListedInCatalog !== undefined) {
+      searchParams.set('isListedInCatalog', String(params.isListedInCatalog));
+    }
+    if (params.isDeleted !== undefined) searchParams.set('isDeleted', String(params.isDeleted));
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
+
+    const queryString = searchParams.toString();
+    const endpoint = queryString
+      ? `${API_ENDPOINTS.ADMIN.PARTIES}?${queryString}`
+      : API_ENDPOINTS.ADMIN.PARTIES;
+    const response = await apiFetch(getApiUrl(endpoint), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-cache',
+    });
+
+    return handleApiResponse<AdminPartyListResponse>(response, 'Ошибка загрузки вечеринок');
+  }
+
+  async getPartyById(partyId: string): Promise<AdminPartyDetailDto> {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.PARTY_BY_ID(partyId)), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-cache',
+    });
+
+    return handleApiResponse<AdminPartyDetailDto>(response, 'Ошибка загрузки вечеринки');
+  }
+
+  async resetPartySession(partyId: string): Promise<AdminPartySessionResetDto> {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.PARTY_SESSION_RESET(partyId)), {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+      throw await createAdminApiError(response, payload, 'Ошибка сброса сессии вечеринки');
+    }
+
+    return response.json() as Promise<AdminPartySessionResetDto>;
+  }
+
+  async setPartyLifecycle(
+    partyId: string,
+    partyLifecycleState: 'draft' | 'ready' | 'completed',
+  ): Promise<AdminPartyMutationDto> {
+    const response = await apiFetch(getApiUrl(API_ENDPOINTS.ADMIN.PARTY_LIFECYCLE(partyId)), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ partyLifecycleState }),
+    });
+
+    if (!response.ok) {
+      const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+      throw await createAdminApiError(response, payload, 'Ошибка изменения состояния вечеринки');
+    }
+
+    return response.json() as Promise<AdminPartyMutationDto>;
+  }
+
+  async setPartyCatalogVisibility(
+    partyId: string,
+    isListedInCatalog: boolean,
+  ): Promise<AdminPartyMutationDto> {
+    const response = await apiFetch(
+      getApiUrl(API_ENDPOINTS.ADMIN.PARTY_CATALOG_VISIBILITY(partyId)),
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isListedInCatalog }),
+      },
+    );
+
+    if (!response.ok) {
+      const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+      throw await createAdminApiError(response, payload, 'Ошибка изменения видимости вечеринки');
+    }
+
+    return response.json() as Promise<AdminPartyMutationDto>;
+  }
+
   async getOrganizers(params: {
     query?: string;
     page?: number;

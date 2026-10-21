@@ -76,9 +76,11 @@ var useInMemoryStorage = builder.Configuration.GetValue<bool>("UseInMemoryStorag
 if (useInMemoryStorage)
 {
     builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("CherryPlayAdmin"));
-    builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
-    builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
-    builder.Services.AddSingleton<IPartyRepository, InMemoryPartyRepository>();
+    builder.Services.AddSingleton<IAdminEntitlementRepository, InMemoryAdminEntitlementRepository>();
+    builder.Services.AddScoped<IAdminQueryRepository, InMemoryAdminQueryRepository>();
+    builder.Services.AddSingleton<InMemoryPartyRepository>();
+    builder.Services.AddSingleton<IPartyRepository>(sp => sp.GetRequiredService<InMemoryPartyRepository>());
+    builder.Services.AddSingleton<IAdminPartyRepository, InMemoryAdminPartyRepository>();
     builder.Services.AddSingleton<IStreamingRepository, InMemoryStreamingRepository>();
     builder.Services.AddSingleton<IOrganizerRepository, InMemoryOrganizerRepository>();
     builder.Services.AddSingleton<IOrganizerSessionRepository, InMemoryOrganizerSessionRepository>();
@@ -117,6 +119,7 @@ else
     builder.Services.AddScoped<IOrganizerEntitlementRepository, EfOrganizerEntitlementRepository>();
     builder.Services.AddScoped<IAdminEntitlementRepository, EfAdminEntitlementRepository>();
     builder.Services.AddScoped<IAdminQueryRepository, EfAdminQueryRepository>();
+    builder.Services.AddScoped<IAdminPartyRepository, EfAdminPartyRepository>();
     builder.Services.AddScoped<IAdminAuditLogRepository, EfAdminAuditLogRepository>();
     builder.Services.AddScoped<ILegalDocumentVersionRepository, EfLegalDocumentVersionRepository>();
     builder.Services.AddScoped<IConsentEventRepository, EfConsentEventRepository>();
@@ -158,6 +161,8 @@ builder.Services.AddScoped<IStreamingService, StreamingService>();
 builder.Services.AddScoped<IOrganizerService, OrganizerService>();
 builder.Services.AddScoped<IAdminEntitlementService, AdminEntitlementService>();
 builder.Services.AddScoped<IAdminQueryService, AdminQueryService>();
+builder.Services.AddScoped<IAdminPartyQueryService, AdminPartyQueryService>();
+builder.Services.AddScoped<IAdminPartyCommandService, AdminPartyCommandService>();
 if (useInMemoryStorage)
 {
     builder.Services.AddSingleton<IAppUnitOfWork, InMemoryAppUnitOfWork>();
@@ -166,10 +171,14 @@ else
 {
     builder.Services.AddScoped<IAppUnitOfWork, EfAppUnitOfWork>();
 }
-builder.Services.AddScoped<IPartyPlaylistNotifier, PartyHubPlaylistNotifier>();
+builder.Services.AddScoped<PartyHubPlaylistNotifier>();
+builder.Services.AddScoped<IPartyPlaylistNotifier>(sp => sp.GetRequiredService<PartyHubPlaylistNotifier>());
+builder.Services.AddScoped<IPartyStateNotifier>(sp => sp.GetRequiredService<PartyHubPlaylistNotifier>());
+builder.Services.AddScoped<IPartySessionResetNotifier, AdminPartySessionResetNotifier>();
 builder.Services.AddScoped<IPartyAccessService, PartyAccessService>();
 builder.Services.AddScoped<IThemeAccessService, ThemeAccessService>();
 builder.Services.AddSingleton<IOrganizerConnectionTracker, OrganizerConnectionTracker>();
+builder.Services.AddSingleton<IPartyActivityCoordinator, PartyActivityCoordinator>();
 builder.Services.AddSingleton<SignalRConnectionMetrics>();
 builder.Services.Configure<CherryPlayServer.Core.Options.PartyDisplayStatusOptions>(
     builder.Configuration.GetSection(CherryPlayServer.Core.Options.PartyDisplayStatusOptions.SectionName));

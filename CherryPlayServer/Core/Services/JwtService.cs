@@ -64,7 +64,7 @@ public class JwtService : IJwtService
     {
         try
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler { MapInboundClaims = false };
             var key = Encoding.UTF8.GetBytes(_secretKey);
 
             var validationParameters = new TokenValidationParameters
@@ -80,6 +80,19 @@ public class JwtService : IJwtService
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
+            if (validatedToken is not JwtSecurityToken jwtToken
+                || !string.Equals(jwtToken.Header.Alg, SecurityAlgorithms.HmacSha256, StringComparison.Ordinal))
+            {
+                return Task.FromResult(new JwtTokenValidationResult(
+                    IsValid: false,
+                    OrganizerId: null,
+                    SessionId: null,
+                    Name: null,
+                    Role: null,
+                    ErrorMessage: "Unsupported token signing algorithm"
+                ));
+            }
+
             var organizerIdClaim = principal.FindFirst("organizerId")?.Value;
             var nameClaim = principal.FindFirst("name")?.Value;
             var sessionIdClaim = principal.FindFirst("sessionId")?.Value ?? principal.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;

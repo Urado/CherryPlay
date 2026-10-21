@@ -48,7 +48,7 @@ public class EfAdminQueryRepository(AppDbContext db) : IAdminQueryRepository
         }
 
         var total = await organizers.CountAsync();
-        var pageRows = await organizers.OrderBy(x => x.CreatedAt)
+        var pageRows = await organizers.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(x => new { x.Id, x.Name, x.Role, x.CreatedAt })
             .ToListAsync();

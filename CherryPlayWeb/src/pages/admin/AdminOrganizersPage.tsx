@@ -1,12 +1,15 @@
-import { Button, ErrorMessage, FormInput } from '@cherryplay/components';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { AdaptiveSearchInput, ErrorMessage } from '@cherryplay/components';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { ROUTES } from '../../constants/routes';
 import { useRequireAdmin } from '../../hooks/useRequireAdmin';
 import { adminApiService } from '../../services/adminApiService';
 import type { AdminOrganizerListItemDto } from '../../types/api';
 import { extractApiErrorMessage } from '../../utils/apiErrorHandler';
+
+import { AdminPagination } from './AdminPagination';
+import { AdminSectionNav } from './AdminSectionNav';
 
 import './AdminPages.css';
 
@@ -38,59 +41,84 @@ const getOrganizerContactLabel = (item: AdminOrganizerListItemDto): string => {
 
 export const AdminOrganizersPage = () => {
   const { checking, isAdmin } = useRequireAdmin();
-  const [queryInput, setQueryInput] = useState('');
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('query') ?? '';
+  const pageValue = Number(searchParams.get('page'));
+  const page = Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<AdminOrganizerListItemDto[]>([]);
   const [total, setTotal] = useState(0);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      setPage(1);
-      setQuery(queryInput.trim());
-    }, 300);
-    return () => window.clearTimeout(id);
-  }, [queryInput]);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!isAdmin) return;
+    const requestId = ++requestIdRef.current;
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
         const result = await adminApiService.getOrganizers({ query, page, pageSize: PAGE_SIZE });
+        if (requestId !== requestIdRef.current) return;
+        const lastPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+        if (page > lastPage) {
+          setSearchParams(
+            (current) => {
+              const next = new URLSearchParams(current);
+              if (lastPage > 1) next.set('page', String(lastPage));
+              else next.delete('page');
+              return next;
+            },
+            { replace: true },
+          );
+          return;
+        }
         setItems(result.items);
         setTotal(result.total);
       } catch (err) {
-        setError(extractApiErrorMessage(err, 'Не удалось загрузить список организаторов'));
+        if (requestId === requestIdRef.current) {
+          setError(extractApiErrorMessage(err, 'Не удалось загрузить список организаторов'));
+        }
       } finally {
-        setLoading(false);
+        if (requestId === requestIdRef.current) setLoading(false);
       }
     };
     void load();
-  }, [isAdmin, page, query]);
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [isAdmin, page, query, setSearchParams]);
 
   if (checking || !isAdmin) {
     return <div className="admin-page admin-page--loading">Проверка доступа…</div>;
   }
 
   return (
-    <div className="admin-page">
+    <div className="admin-page admin-page--wide">
       <div className="admin-page__header">
         <h1>Админка: организаторы</h1>
       </div>
 
+      <AdminSectionNav />
+
       <div className="admin-toolbar">
-        <FormInput
+        <AdaptiveSearchInput
           label="Поиск организаторов"
           id="admin-organizer-search"
           type="search"
-          value={queryInput}
-          onChange={(e) => setQueryInput(e.target.value)}
+          value={query}
+          onValueChange={(value) => {
+            setSearchParams(
+              (current) => {
+                const next = new URLSearchParams(current);
+                if (value) next.set('query', value);
+                else next.delete('query');
+                next.delete('page');
+                return next;
+              },
+              { replace: true },
+            );
+          }}
           placeholder="Поиск по имени или email"
         />
       </div>
@@ -139,31 +167,18 @@ export const AdminOrganizersPage = () => {
         </div>
       )}
 
-      <div className="admin-pagination">
-        <Button
-          variant="secondary"
-          size="sm"
-          type="button"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page <= 1 || loading}
-          aria-label="Предыдущая страница"
-        >
-          ←
-        </Button>
-        <span>
-          Страница {page} из {totalPages}
-        </span>
-        <Button
-          variant="secondary"
-          size="sm"
-          type="button"
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          disabled={page >= totalPages || loading}
-          aria-label="Следующая страница"
-        >
-          →
-        </Button>
-      </div>
+      <AdminPagination
+        page={page}
+        total={total}
+        pageSize={PAGE_SIZE}
+        disabled={loading}
+        onPageChange={(nextPage) => {
+          const next = new URLSearchParams(searchParams);
+          if (nextPage > 1) next.set('page', String(nextPage));
+          else next.delete('page');
+          setSearchParams(next, { replace: true });
+        }}
+      />
     </div>
   );
 };

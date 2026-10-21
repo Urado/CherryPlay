@@ -76,13 +76,11 @@ public static class DomainToEfMappers
         ef.TimeZone = domain.TimeZone;
         ef.PartyThemeId = domain.PartyThemeId.ToStringValue();
         ef.CustomizationSettingsJson = SerializeDictObject(domain.CustomizationSettings);
-        ef.IsListedInCatalog = domain.IsListedInCatalog;
         ef.UpdatedAt = EnsureUtc(DateTime.UtcNow);
         ef.ShortDescription = domain.ShortDescription;
         ef.ExternalLinkUrl = domain.ExternalLinkUrl;
         ef.ExternalLinkText = domain.ExternalLinkText;
         ef.DanceTagsJson = SerializeStringList(domain.DanceTags);
-        ef.PartyLifecycleState = domain.PartyLifecycleState;
     }
 
     public static PartyEf ToEf(this Party domain)

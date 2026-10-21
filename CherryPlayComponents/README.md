@@ -95,6 +95,22 @@ const data: PartyDisplayData = {
 | `InfoIcon`              | Компактный help-маркер «i» с круглой обводкой (`Icon` + `shape="circle"`)                                                                    |
 | `IconButton`            | Кнопка только с иконкой (`aria-label` обязателен)                                                                                            |
 | `PlaybackControlButton` | Круглая transport-кнопка play/pause/stop/next/error для плееров                                                                              |
+| `AdaptiveSearchInput`  | Поиск с задержкой 350 мс для 3+ символов и 1500 мс для 1–2 символов; очистка применяется сразу |
+
+`AdaptiveSearchInput` обновляет введённый текст сразу, а `onValueChange` вызывает после адаптивной задержки. При очистке значение передаётся немедленно. Изменение внешнего `value` синхронизирует поле без повторного вызова поиска; незавершённый ввод отменяется при размонтировании и во время IME-композиции. Порог и задержки доступны как `SEARCH_DEBOUNCE_THRESHOLD`, `SEARCH_DEBOUNCE_LONG_MS` и `SEARCH_DEBOUNCE_SHORT_MS`.
+
+Используйте `AdaptiveSearchInput` как общий компонент для поисковых полей по приложению, чтобы одинаково применять debounce и немедленную очистку. Сейчас задержка составляет 1500 мс для 1–2 символов и 350 мс для 3 и более символов; при пустом значении поиск вызывается сразу.
+
+```tsx
+import { AdaptiveSearchInput } from '@cherryplay/components';
+
+<AdaptiveSearchInput
+  label="Поиск вечеринок"
+  value={query}
+  onValueChange={setQuery}
+  placeholder="Введите название"
+/>
+```
 
 ### Legacy wrappers (обратная совместимость)
 

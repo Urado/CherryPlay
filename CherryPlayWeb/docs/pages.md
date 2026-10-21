@@ -27,6 +27,8 @@
 | `/admin`                 | Корневой админ-маршрут (redirect)                                      | `Navigate -> /admin/organizers`                                                                       |
 | `/admin/organizers`      | Список организаторов (admin only)                                      | `AdminOrganizersPage`                                                                                 |
 | `/admin/organizers/:id`  | Детальная карточка организатора (admin only)                           | `AdminOrganizerDetailPage`                                                                            |
+| `/admin/parties`         | Общий список вечеринок (admin only)                                    | `AdminPartiesPage` / `AdminPartiesList`                                                               |
+| `/admin/parties/:id`     | Детальная карточка вечеринки (admin only)                              | `AdminPartyDetailPage`                                                                                |
 | `/privacy`               | Политика ПДн                                                           | `LegalDocumentPage` (`privacy`)                                                                       |
 | `/privacy/v/:version`    | Архив версии политики                                                  | `LegalDocumentPage`                                                                                   |
 | `/consent`               | Согласие на обработку ПДн                                              | `LegalDocumentPage` (`consent`)                                                                       |
@@ -52,7 +54,7 @@
 - **PartyView**: отображение плейлиста и состояния воспроизведения; «Назад» ведёт на `ROUTES.HOME` обычной ссылкой. Кнопка «QR-код» рядом с «Назад» открывает `/party/:shortCode/qr`.
 - **PartyQrPage**: загружает публичные данные вечеринки, применяет её PartyTheme и показывает QR-код, ведущий на страницу этой вечеринки. Рендер и скачивание PNG выполняет `qr-code-styling`; quiet margin задан как 64 пикселя изображения, уровень коррекции ошибок — H. В центре QR-кода темы «Весенний кросс-степ» используется её постер; у остальных тем центр заполнен цветом фона QR. Во время генерации индикатор загрузки накладывается поверх квадратной области предпросмотра; область сразу занимает размеры готового предпросмотра и не схлопывается при ожидании QR-кода. Библиотека скрывает точки QR-кода под центральным изображением.
 - **PartyInfoPage**: описание, место, дата; ссылки на плейлист и каталог через `ROUTES`. Отображение страницы и ссылок на неё можно отключить конфигом сервера: `Features:PartyInfoPageEnabled` (значение в ответе `GET /api/config` — поле `partyInfoPageEnabled`); при `false` страница и пункты «Информация»/«Подробнее» скрыты, переход по `/party/:shortCode/info` редиректит на просмотр вечеринки. Подробнее: [CONTRACTS.md](../../CONTRACTS.md) §2.2, [CherryPlayServer/OPS.md](../../CherryPlayServer/OPS.md).
-- **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа.
+- **Admin страницы**: используют `useRequireAdmin()`; неавторизованный пользователь редиректится на `/login`, не-admin — на `/cabinet` с сообщением об ошибке доступа. Сервер повторно проверяет сессию и актуальную роль в хранилище; для cookie-запросов, меняющих данные, проверяется доверенный `Origin` или, если его нет, `Referer` (см. [CONTRACTS.md](../../CONTRACTS.md) §3.7).
 - **RegisterPage:** `EmailAuthForm` mode `register` + legal checkboxes; API — `POST /api/organizers` (+ consents) → `POST /auth/login` ([accounts-and-auth.md](../../docs/integration/accounts-and-auth.md), [CONTRACTS.md](../../CONTRACTS.md) §3.2.3). При `?client=desktop` — **replace-redirect** на `/login?client=desktop` (сохраняет `return_to` / `next`); отдельной desktop-регистрации на `/register` нет.
 - **LoginPage / ConsentGate:** после auth (и до desktop deep-link) — `ensureConsents()`; при missing grants — глобальная модалка `ConsentGateProvider` (`LegalConsentBlock` → `POST /api/consent-events`). Session-continue (`client=desktop`) остаётся вариантом LoginPage; общий header/footer предоставляет `SiteLayout`. Cookie-notice скрыт, пока gate open. Контракт: [CONTRACTS.md](../../CONTRACTS.md) §3.2.3.
 - **LegalDocumentPage / LegalOperatorPage:** тексты из `src/content/legal/` (folder `v1.0`, label `documentVersion` `1.0`); архивы `/…/v/:version`. Ссылки из footer / consent UI. Deploy-time id+hash для API — в Components; серверный seed — см. GLOSSARY / CONTRACTS §3.2.3.
@@ -105,7 +107,8 @@
 ### AdminOrganizersPage
 
 - **GET** `/api/admin/organizers?query=&page=&pageSize=` — список организаторов, поиск, пагинация.
-- Переход на `/admin/organizers/:id` выполняется по ссылке в имени организатора (не по клику по всей строке).
+- Номера страниц, стрелки, первая/последняя страница и многоточия доступны в общей числовой пагинации. Состояние поиска и страницы хранится в URL.
+- Навигация между разделами админки доступна в общем меню «Организаторы» / «Вечеринки».
 
 ### AdminOrganizerDetailPage
 
@@ -114,6 +117,18 @@
 - **POST** `/api/admin/organizers/{id}/entitlements` — выдача пакета.
 - **DELETE** `/api/admin/organizers/{id}/entitlements/{entitlementId}` — отзыв выдачи.
 - Ошибки grant/revoke обрабатываются как структурированные API-ошибки (`{ code, message/detail/error }`) с маппингом кодов (`entitlement_already_active`, `entitlement_already_revoked`, `package_is_auto_granted`, `organizer_not_found`, `package_not_found`, `entitlement_not_found`) в пользовательские сообщения без падения UI.
+- Блок «Вечеринки» свернут по умолчанию и загружает список только при раскрытии; используется общая таблица с фиксированным `organizerId`.
+
+### AdminPartiesPage / AdminPartyDetailPage
+
+- **GET** `/api/admin/parties` — общий список с фильтрами `organizerId`, `query`, `city`, `partyLifecycleState`, `isListedInCatalog`, `isDeleted`, `page`, `pageSize`. По умолчанию включены все записи; размер страницы — 20. Поиск организатора предлагает совпадения по имени/контакту, а фильтр применяется после выбора организатора и отправляет его ID.
+- Поиск по названию и городу использует общий `AdaptiveSearchInput`; параметры фильтров и страница отражены в URL, смена фильтра возвращает на первую страницу. Устаревший ответ запроса не заменяет актуальную выдачу.
+- Строка показывает название, shortCode, организатора, город, дату, lifecycle, видимость каталога и признаки удалённой вечеринки/активности сессии и desktop. Ссылка вечеринки занимает строку целиком; ссылки на организатора остаются отдельными действиями.
+- **GET** `/api/admin/parties/{id}` — карточка с метаданными, плейлистом и состоянием воспроизведения. Soft-deleted вечеринки и вечеринки удалённых организаторов доступны для просмотра; действия для soft-deleted вечеринки отключены.
+- **PATCH** `/api/admin/parties/{id}/lifecycle` с `{ partyLifecycleState }` — установить любое из `draft`, `ready`, `completed`. Кнопки состояния отключены только если сессия активна и desktop подключён; серверная ошибка `409 active_connected_session` также отображается в UI.
+- **PATCH** `/api/admin/parties/{id}/catalog-visibility` с `{ isListedInCatalog }` — скрыть из каталога или вернуть. Действие доступно во время эфира и не закрывает прямую ссылку.
+- **POST** `/api/admin/parties/{id}/session-resets` — подтверждаемое действие для очистки сессии и состояния воспроизведения. Оно сохраняет lifecycle, видимость, метаданные и плейлист; заблокировано при активной сессии и подключённом desktop.
+- Контракт фильтров, DTO и ошибок описан в [CONTRACTS.md](../../CONTRACTS.md) §3.7 и §6.
 
 ---
 
@@ -129,7 +144,7 @@
 - `src/pages/CabinetPage.tsx`, `CabinetPartyForm.tsx`, `CabinetPartyList.tsx` — кабинет организатора с переключаемыми разделами «Вечеринки» / «Аккаунт»; смена пароля, privacy/withdraw и удаление аккаунта находятся в `#account`.
 - `src/services/accountApiService.ts` — `deleteOrganizerAccount` (`DELETE /api/organizer/account`).
 - `src/constants/legalContacts.ts` — `PRIVACY_CONTACT_EMAIL` / `SUPPORT_CONTACT_EMAIL` (`VITE_PRIVACY_CONTACT`, `VITE_SUPPORT_CONTACT`).
-- `src/pages/admin/AdminOrganizersPage.tsx`, `src/pages/admin/AdminOrganizerDetailPage.tsx` — админ-раздел.
+- `src/pages/admin/AdminOrganizersPage.tsx`, `AdminOrganizerDetailPage.tsx`, `AdminPartiesPage.tsx`, `AdminPartyDetailPage.tsx`, `AdminPartiesList.tsx`, `AdminPagination.tsx` — админ-раздел и общая пагинация.
 - `src/services/partyApiService.ts` — вызовы REST API.
 - `src/services/adminApiService.ts`, `src/services/themeAccessService.ts` — admin и theme-access API.
 - `src/hooks/useRequireAdmin.ts`, `src/hooks/useThemeAccess.ts` — role guard и загрузка theme-access.

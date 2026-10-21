@@ -14,4 +14,15 @@ public class OrganizerEntitlement
     public int? UsesRemaining { get; set; }
     public DateTime? RevokedAt { get; set; }
     public string? Note { get; set; }
+
+    public static OrganizerEntitlement CreateAdminGrant(Guid entitlementId, Guid organizerId, Guid packageId, DateTime grantedAt, string? note) => new()
+    {
+        Id = entitlementId,
+        OrganizerId = organizerId,
+        PackageId = packageId,
+        Kind = EntitlementKind.Lifetime,
+        Source = EntitlementSource.AdminGrant,
+        GrantedAt = grantedAt,
+        Note = note
+    };
 }
