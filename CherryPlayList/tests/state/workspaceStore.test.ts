@@ -13,10 +13,12 @@ import {
   useLayoutStore,
   WORKSPACE_PERSIST_KEY,
 } from '../../src/shared/stores/layoutStore';
+import { useProjectStore } from '../../src/shared/stores/projectStore';
 import { useUIStore } from '../../src/shared/stores/uiStore';
 import { getLayoutPresetFromLayout } from '../../src/shared/utils/layoutPreset';
 import { getLayoutZoneSignature } from '../../src/shared/utils/layoutSignature';
 import { collectWorkspaceZones } from '../../src/shared/utils/layoutWorkspaceOperations';
+import { prepareWorkspaceInstance } from '../../src/shared/utils/workspaceLifecycle';
 
 const getCollectionWorkspaceIds = (
   layout: ReturnType<typeof useLayoutStore.getState>['layout'],
@@ -478,10 +480,20 @@ describe('workspaceStore', () => {
       }
     });
 
-    it('failed activateWorkspace does not teardown current layout instances', () => {
+    it('failed activateWorkspace does not teardown current layout instances', async () => {
+      await useProjectStore.persist.rehydrate();
+      useProjectStore.getState().newProject();
+      useProjectStore.getState().markLegacyCollectionsMigrationComplete();
+      useUIStore.setState({ workspaces: [] });
       act(() => {
         useLayoutStore.getState().saveCurrentWorkspaceAs('Saved');
       });
+
+      const currentLayout = useLayoutStore.getState().layout;
+      const collectionWorkspaceIds = new Set(getCollectionWorkspaceIds(currentLayout));
+      for (const zone of collectWorkspaceZones(currentLayout.rootZone)) {
+        prepareWorkspaceInstance(zone, collectionWorkspaceIds);
+      }
 
       const layoutSignatureBefore = getLayoutZoneSignature(
         useLayoutStore.getState().layout.rootZone,

@@ -7,6 +7,7 @@ import type {
   AdminOrganizerDetailDto,
   CreateEntitlementRevocationRequest,
   EntitlementDto,
+  EntitlementRevocationDto,
   GrantEntitlementRequest,
   ThemePackageListResponse,
 } from '../../types/api';
@@ -20,6 +21,8 @@ vi.mock('../../hooks/useRequireAdmin', () => ({
 const apiMocks = vi.hoisted(() => ({
   getOrganizerById: vi.fn<(organizerId: string) => Promise<AdminOrganizerDetailDto>>(),
   getThemePackages: vi.fn<() => Promise<ThemePackageListResponse>>(),
+  getEntitlementRevocations:
+    vi.fn<(entitlementId: string) => Promise<EntitlementRevocationDto[]>>(),
   grantEntitlement:
     vi.fn<(organizerId: string, request: GrantEntitlementRequest) => Promise<EntitlementDto>>(),
   revokeEntitlement: vi.fn<(request: CreateEntitlementRevocationRequest) => Promise<void>>(),
@@ -71,6 +74,7 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
     window.sessionStorage.clear();
     apiMocks.getOrganizerById.mockReset().mockResolvedValue(organizer);
     apiMocks.getThemePackages.mockReset().mockResolvedValue({ items: [] });
+    apiMocks.getEntitlementRevocations.mockReset().mockResolvedValue([]);
     apiMocks.grantEntitlement.mockReset();
     apiMocks.revokeEntitlement.mockReset();
   });
@@ -108,6 +112,7 @@ describe('AdminOrganizerDetailPage revocation request lifecycle', () => {
     });
 
     renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'История доступов' }));
     const returnedDialog = await openRevocationDialog('Повторить отзыв');
     const noteField = within(returnedDialog).getByRole('textbox');
     expect((noteField as HTMLTextAreaElement).value).toBe('Проверка отзыва');

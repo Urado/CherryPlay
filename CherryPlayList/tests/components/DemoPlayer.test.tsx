@@ -5,7 +5,11 @@ import React from 'react';
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const componentsActual = jest.requireActual<typeof import('@cherryplay/components')>(
+    '@cherryplay/components',
+  );
   return {
+    ...componentsActual,
     Button: ({
       children,
       ...props

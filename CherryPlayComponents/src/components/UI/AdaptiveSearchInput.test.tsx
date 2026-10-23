@@ -87,7 +87,7 @@ describe('AdaptiveSearchInput', () => {
     );
     view.rerender(<AdaptiveSearchInput label="Поиск" value="restored" onValueChange={onValueChange} />);
 
-    expect((screen.getByRole('textbox', { name: 'Поиск' })).value).toBe(
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Поиск' }).value).toBe(
       'restored',
     );
     void act(() => { vi.runOnlyPendingTimers(); });
