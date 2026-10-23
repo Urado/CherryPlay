@@ -1,4 +1,4 @@
-@import '../../components/PartyInfoDisplay/PartyInfoDisplay.css';
+@import url('../../components/PartyInfoDisplay/PartyInfoDisplay.css');
 
 [data-theme='art-deco'] .party-info-display {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);

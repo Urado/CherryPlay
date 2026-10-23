@@ -5,7 +5,7 @@ import {
 } from '../../src/shared/stores/layoutStore';
 import { getLayoutPresetFromLayout } from '../../src/shared/utils/layoutPreset';
 
-function createLegacyPartyLayout(): Layout {
+const createLegacyPartyLayout = (): Layout => {
   return {
     version: 1,
     rootZone: {
@@ -31,9 +31,9 @@ function createLegacyPartyLayout(): Layout {
       ],
     },
   };
-}
+};
 
-function createLegacyAimpPartyLayout(): Layout {
+const createLegacyAimpPartyLayout = (): Layout => {
   return {
     version: 1,
     rootZone: {
@@ -59,13 +59,13 @@ function createLegacyAimpPartyLayout(): Layout {
       ],
     },
   };
-}
+};
 
-function getWorkspaceTypes(root: ContainerZone): string[] {
+const getWorkspaceTypes = (root: ContainerZone): string[] => {
   return root.zones
     .filter((zone): zone is WorkspaceZone => zone.type === 'workspace')
     .map((zone) => zone.workspaceType);
-}
+};
 
 describe('layout persist migration v3', () => {
   test('migrates legacy party preset to player + preview workspaces', () => {

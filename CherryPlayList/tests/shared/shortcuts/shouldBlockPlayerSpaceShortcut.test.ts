@@ -1,8 +1,8 @@
 import { shouldBlockPlayerSpaceShortcut } from '../../../src/shared/shortcuts/shortcutUtils';
 
-function makeEvent(target: Element): KeyboardEvent {
+const makeEvent = (target: Element): KeyboardEvent => {
   return { target } as unknown as KeyboardEvent;
-}
+};
 
 describe('shouldBlockPlayerSpaceShortcut', () => {
   it('allows Space on a ListRow (role=button + data-list-row)', () => {

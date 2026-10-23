@@ -1,6 +1,7 @@
 import { Button } from '@cherryplay/components';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
-import React from 'react';
+import { dialogService } from '@shared/services/dialogService';
+import React, { useRef } from 'react';
 
 import type { PartyArchiveAvailability } from '../resolvePartyArchiveAvailability';
 import { PARTY_ARCHIVE_CONFIRM_MESSAGE } from '../resolvePartyArchiveAvailability';
@@ -20,22 +21,49 @@ export const PartyEditorDangerZone: React.FC<PartyEditorDangerZoneProps> = ({
   isTransitioning = false,
   onArchive,
 }) => {
+  const confirmingRef = useRef(false);
+  const requestStateRef = useRef({ availability, disabled, isTransitioning, onArchive });
+  requestStateRef.current = { availability, disabled, isTransitioning, onArchive };
+
   if (!availability.showDangerSection) {
     return null;
   }
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    if (confirmingRef.current) return;
     if (availability.isBlockedByLive) {
-      window.alert(availability.blockedExplanation ?? 'Сейчас нельзя отправить в архив');
+      confirmingRef.current = true;
+      await dialogService.alert({
+        title: 'Нельзя отправить вечеринку в архив',
+        message: availability.blockedExplanation ?? 'Сейчас нельзя отправить в архив',
+      });
+      confirmingRef.current = false;
       return;
     }
     if (!availability.canArchive || disabled || isTransitioning) {
       return;
     }
-    if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
-      return;
+    confirmingRef.current = true;
+    try {
+      const accepted = await dialogService.confirm({
+        title: 'Отправить вечеринку в архив?',
+        message: PARTY_ARCHIVE_CONFIRM_MESSAGE,
+        confirmLabel: 'В архив',
+        destructive: true,
+      });
+      const currentState = requestStateRef.current;
+      if (
+        accepted &&
+        currentState.availability.canArchive &&
+        !currentState.availability.isBlockedByLive &&
+        !currentState.disabled &&
+        !currentState.isTransitioning
+      ) {
+        currentState.onArchive();
+      }
+    } finally {
+      confirmingRef.current = false;
     }
-    onArchive();
   };
 
   const title = availability.isBlockedByLive
@@ -66,7 +94,7 @@ export const PartyEditorDangerZone: React.FC<PartyEditorDangerZoneProps> = ({
         aria-disabled={availability.isBlockedByLive || controlDisabled}
         loading={isTransitioning}
         title={title}
-        onClick={handleClick}
+        onClick={() => void handleClick()}
       >
         {availability.isBlockedByLive ? (
           <WarningAmberOutlinedIcon

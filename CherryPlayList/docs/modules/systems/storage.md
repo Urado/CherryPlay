@@ -30,6 +30,8 @@
 
 Все сторы, подключённые к `persist` с `storage: electronStorage`, проходят через один instance localforage с базой **`CherryPlayList`** и хранилищем **`app-storage`**.
 
+Подборки хранятся в основном project persist (`cherryplaylist-project`) вместе с проектом. Старые ключи `cherryplaylist-<workspaceId>` читаются миграцией для доступных workspace и сохраняются для восстановления данных; детали — в [persisted client state](./persisted-client-state.md#5-старые-коллекции-по-workspace-cherryplaylist-workspaceid).
+
 ---
 
 ## См. также

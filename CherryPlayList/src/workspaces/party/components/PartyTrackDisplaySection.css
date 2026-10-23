@@ -1,8 +1,9 @@
-.party-track-display-section__hint {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  color: var(--text-secondary, #999);
+.party-track-display-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.25rem 0 0.5rem;
 }
 
 .party-track-display-section__controls {
@@ -31,13 +32,30 @@
   font-size: 0.875rem;
 }
 
-.party-track-display-section__input {
+.party-track-display-section__input,
+.party-track-display-section__select {
+  font-family: inherit;
   width: 5rem;
   padding: 0.35rem 0.5rem;
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-sm, 4px);
   background: var(--bg-tertiary);
   color: var(--text-primary);
+}
+
+.party-track-display-section input[type='checkbox'],
+.party-track-display-section input[type='radio'] {
+  accent-color: var(--accent-primary);
+}
+
+.party-track-display-section :is(input, select):focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+}
+
+.party-track-display-section__select {
+  width: min(100%, 12rem);
+  min-height: 2rem;
 }
 
 .party-track-display-section__input--delimiter {
@@ -93,6 +111,12 @@
 
 .party-track-display-section__preview-arrow {
   color: var(--text-tertiary);
+}
+
+.party-track-display-section__preview-note {
+  flex-basis: 100%;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .party-track-display-section__input:disabled {

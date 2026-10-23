@@ -8,7 +8,7 @@ import {
 } from './partyWorkspaceReconnectRefs';
 import { resetPartyWorkspaceState } from './partyWorkspaceStore';
 
-export function resetPartyWorkspaceForFreshProject(): void {
+export const resetPartyWorkspaceForFreshProject = (): void => {
   resetPartyWorkspaceState();
   resetPartySettingsUiState();
   clearPartyProgramEnded();
@@ -21,4 +21,4 @@ export function resetPartyWorkspaceForFreshProject(): void {
     clearInterval(partyWorkspaceReconnectRefs.intervalId);
     partyWorkspaceReconnectRefs.intervalId = null;
   }
-}
+};

@@ -1,7 +1,6 @@
 import { isDemoLiveMode } from '@shared/platform';
 import React from 'react';
 
-
 export const DemoModeBanner: React.FC = () => {
   const live = isDemoLiveMode();
   return (

@@ -3,47 +3,45 @@ import { getPlatform, isPlatformInitialized } from '../platform/platformContext'
 import { normalizeFileBrowserPath } from './fileBrowserNavigationHistory';
 import { logger } from './logger';
 
-/** File with optional absolute path (Chromium / Electron). */
 export type FileWithNativePath = File & { path?: string };
 
-/**
- * Returns true when the drag carries OS file entries (e.g. Explorer on Windows).
- * Internal FileBrowser drags only set `application/json` and typically have an empty `files` list.
- */
-export function isOsNativeFileDataTransfer(dataTransfer: DataTransfer | null | undefined): boolean {
+const getLegacyFilePath = (file: File): string | undefined => {
+  const path = (file as FileWithNativePath).path;
+  return typeof path === 'string' && path.length > 0 ? path : undefined;
+};
+
+export const isOsNativeFileDataTransfer = (
+  dataTransfer: DataTransfer | null | undefined,
+): boolean => {
   if (!dataTransfer?.files) {
     return false;
   }
   return dataTransfer.files.length > 0;
-}
+};
 
-function getPathForFileSafe(
+const getPathForFileSafe = (
   file: File,
   getPathForFile: (f: File) => string | undefined,
-): string | undefined {
+): string | undefined => {
   try {
     const p = getPathForFile(file);
     if (typeof p === 'string' && p.length > 0) {
       return normalizeFileBrowserPath(p);
     }
   } catch {
-    // webUtils.getPathForFile throws for non-path-backed files (e.g. blob:)
+    return normalizeFileBrowserPath(getLegacyFilePath(file) ?? '') || undefined;
   }
-  const legacy = (file as FileWithNativePath).path;
-  if (typeof legacy === 'string' && legacy.length > 0) {
+  const legacy = getLegacyFilePath(file);
+  if (legacy !== undefined) {
     return normalizeFileBrowserPath(legacy);
   }
   return undefined;
-}
+};
 
-/**
- * Collects absolute paths from `DataTransfer.files` (Explorer / OS drops).
- * Prefer `getPlatform().getPathForFile` (Electron `webUtils.getPathForFile` via preload).
- */
-export function collectNativePathsFromDataTransfer(
+export const collectNativePathsFromDataTransfer = (
   dataTransfer: DataTransfer,
   getPathForFile: (f: File) => string | undefined,
-): string[] {
+): string[] => {
   if (!dataTransfer.files?.length) {
     return [];
   }
@@ -60,9 +58,9 @@ export function collectNativePathsFromDataTransfer(
     }
   }
   return dedupePathOrder(out);
-}
+};
 
-function dedupePathOrder(paths: string[]): string[] {
+const dedupePathOrder = (paths: string[]): string[] => {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const p of paths) {
@@ -73,11 +71,10 @@ function dedupePathOrder(paths: string[]): string[] {
     result.push(p);
   }
   return result;
-}
+};
 
 export type PathStat = { isDirectory: boolean };
 
-/** Result of classifying native paths; includes counts for observability and error surfacing. */
 export type ClassifyNativePathsResult = {
   files: string[];
   directories: string[];
@@ -85,14 +82,10 @@ export type ClassifyNativePathsResult = {
   statFailureCount: number;
 };
 
-/**
- * Splits raw paths into files vs directories using an async stat (e.g. `fileBrowser:statFile` IPC).
- * Failed stats are counted, logged in development (`logger.info`), and returned in `statFailureCount`.
- */
-export async function classifyNativePathsWithStat(
+export const classifyNativePathsWithStat = async (
   absolutePaths: string[],
   statPath: (path: string) => Promise<PathStat>,
-): Promise<ClassifyNativePathsResult> {
+): Promise<ClassifyNativePathsResult> => {
   const files: string[] = [];
   const directories: string[] = [];
   let statFailureCount = 0;
@@ -125,16 +118,14 @@ export async function classifyNativePathsWithStat(
     inputCount: absolutePaths.length,
     statFailureCount,
   };
-}
+};
 
-/**
- * When `application/json` carries FileBrowser drag data (`fileBrowser` or legacy `files`),
- * that payload is authoritative for drop handling vs OS `DataTransfer.files` (Explorer).
- * Returns `null` if there is no JSON, parse error, or unrecognized `type`.
- */
-export function tryParseInternalFileBrowserPayload(
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+
+export const tryParseInternalFileBrowserPayload = (
   dataTransfer: DataTransfer,
-): { files: string[]; directories: string[] } | null {
+): { files: string[]; directories: string[] } | null => {
   const types = dataTransfer.types ? Array.from(dataTransfer.types) : [];
   if (!types.includes('application/json')) {
     return null;
@@ -148,40 +139,37 @@ export function tryParseInternalFileBrowserPayload(
     if (!parsed || typeof parsed !== 'object' || !('type' in parsed)) {
       return null;
     }
-    const t = (parsed).type;
+    const t = parsed.type;
     if (t === 'fileBrowser') {
       const o = parsed as { paths?: unknown; directories?: unknown };
       return {
-        files: Array.isArray(o.paths) ? o.paths : [],
-        directories: Array.isArray(o.directories) ? o.directories : [],
+        files: toStringArray(o.paths),
+        directories: toStringArray(o.directories),
       };
     }
     if (t === 'files') {
       const o = parsed as { paths?: unknown };
       if (Array.isArray(o.paths)) {
-        return { files: o.paths, directories: [] };
+        return { files: toStringArray(o.paths), directories: [] };
       }
     }
   } catch {
     return null;
   }
   return null;
-}
+};
 
-/**
- * Resolves a native path for a dropped `File` in the renderer (Electron preload or legacy `.path`).
- */
-export function getPathForFileInRenderer(file: File): string | undefined {
+export const getPathForFileInRenderer = (file: File): string | undefined => {
   if (isPlatformInitialized()) {
     try {
       return getPlatform().getPathForFile(file);
     } catch {
-      // fall through to legacy .path
+      return getLegacyFilePath(file);
     }
   }
-  const legacy = (file as FileWithNativePath).path;
-  if (typeof legacy === 'string' && legacy.length > 0) {
+  const legacy = getLegacyFilePath(file);
+  if (legacy !== undefined) {
     return legacy;
   }
   return undefined;
-}
+};

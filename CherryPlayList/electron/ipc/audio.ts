@@ -20,7 +20,7 @@ type AudioPathValidationResult =
   | { ok: true; resolvedPath: string; stats: Awaited<ReturnType<typeof fs.stat>> }
   | { ok: false; error: string };
 
-async function validateAudioFilePath(userPath: string): Promise<AudioPathValidationResult> {
+const validateAudioFilePath = async (userPath: string): Promise<AudioPathValidationResult> => {
   if (!validatePath(userPath)) {
     return { ok: false, error: 'Invalid path: path traversal detected' };
   }
@@ -45,17 +45,12 @@ async function validateAudioFilePath(userPath: string): Promise<AudioPathValidat
   } catch (error) {
     return { ok: false, error: (error as Error).message };
   }
-}
+};
 
-/**
- * Get audio file duration in seconds
- */
-async function getAudioDuration(filePath: string): Promise<number> {
+const getAudioDuration = async (filePath: string): Promise<number> => {
   try {
-    // Read file metadata
     const metadata = await mm.parseFile(filePath);
 
-    // Get duration in seconds
     if (metadata.format.duration) {
       return Math.floor(metadata.format.duration);
     }
@@ -64,12 +59,9 @@ async function getAudioDuration(filePath: string): Promise<number> {
   } catch (error) {
     throw new Error(`Failed to get audio duration: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Register audio IPC handlers
- */
-export function registerAudioHandlers(): void {
+export const registerAudioHandlers = (): void => {
   ipcMain.handle('audio:getDuration', async (event, payload: { path: string }) => {
     try {
       const validation = await validateAudioFilePath(payload.path);
@@ -121,13 +113,6 @@ export function registerAudioHandlers(): void {
     }
   });
 
-  /**
-   * IPC envelope for loudness analysis (subtask 03 relies on this contract):
-   * - Path / payload validation failures → `{ success: false, error: string }`
-   * - Scan completed (including FFmpeg/parse failures) → `{ success: true, data: LoudnessScanResult }`
-   *   where scan failures use `data.status === 'error'` rather than `success: false`.
-   * - Unexpected handler exceptions → `{ success: false, error: string }`
-   */
   ipcMain.handle(
     'audio:analyzeLoudness',
     async (
@@ -198,4 +183,4 @@ export function registerAudioHandlers(): void {
       };
     }
   });
-}
+};

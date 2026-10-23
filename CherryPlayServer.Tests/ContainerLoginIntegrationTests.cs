@@ -329,6 +329,7 @@ public sealed class ContainerLoginIntegrationTests
     {
         var request = new HttpRequestMessage(method, path);
         request.Headers.Add("Cookie", cookie);
+        request.Headers.TryAddWithoutValidation("Origin", "https://localhost");
         return request;
     }
 

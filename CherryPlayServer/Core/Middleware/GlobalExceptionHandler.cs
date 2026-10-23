@@ -63,7 +63,30 @@ public class GlobalExceptionHandler : IExceptionHandler
             statusCode = HttpStatusCode.Unauthorized;
             title = "Unauthorized";
         }
-        else if (exception is ForbiddenException || exception is PartyLimitReachedException)
+        else if (exception is PartyLimitReachedException partyLimit)
+        {
+            _logger.LogWarning(
+                "Unhandled exception occurred: {FailureType}, failureLocation={FailureLocation}",
+                exception.GetType().Name,
+                CherryPlayServer.Core.Diagnostics.ExceptionDiagnostics.GetFailureLocation(exception));
+
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            httpContext.Response.ContentType = "application/json";
+            var limitJson = JsonSerializer.Serialize(
+                new
+                {
+                    code = PartyLimitReachedException.ErrorCode,
+                    message = partyLimit.Message,
+                    limit = partyLimit.Limit,
+                },
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+            await httpContext.Response.WriteAsync(limitJson, cancellationToken);
+            return true;
+        }
+        else if (exception is ForbiddenException)
         {
             statusCode = HttpStatusCode.Forbidden;
             title = "Forbidden";

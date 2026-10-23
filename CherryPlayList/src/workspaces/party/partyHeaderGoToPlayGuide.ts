@@ -11,10 +11,10 @@ export type PartyHeaderGuideTargetKind =
   | typeof PARTY_HEADER_GUIDE_TARGET_RESUME
   | typeof PARTY_HEADER_GUIDE_TARGET_STOP;
 
-export function resolvePartyHeaderGuideTargetKind(input: {
+export const resolvePartyHeaderGuideTargetKind = (input: {
   primaryStatus: string;
   streamingSource: string;
-}): PartyHeaderGuideTargetKind {
+}): PartyHeaderGuideTargetKind => {
   if (input.primaryStatus === 'Идёт') {
     return PARTY_HEADER_GUIDE_TARGET_STOP;
   }
@@ -25,24 +25,26 @@ export function resolvePartyHeaderGuideTargetKind(input: {
     return PARTY_HEADER_GUIDE_TARGET_RESUME;
   }
   return PARTY_HEADER_GUIDE_TARGET_START;
-}
+};
 
-export function resolvePartyHeaderGuideStartLabel(streamingSource: string): string {
+export const resolvePartyHeaderGuideStartLabel = (streamingSource: string): string => {
   return streamingSource === 'aimp' ? 'Включить онлайн' : 'Начать проигрывание';
-}
+};
 
-export function resolvePartyHeaderGuideStopLabel(streamingSource: string): string {
+export const resolvePartyHeaderGuideStopLabel = (streamingSource: string): string => {
   return streamingSource === 'aimp' ? 'Выключить онлайн' : 'Остановить проигрывание';
-}
+};
 
-export function findPartyHeaderGuideTarget(kind: PartyHeaderGuideTargetKind): HTMLElement | null {
+export const findPartyHeaderGuideTarget = (
+  kind: PartyHeaderGuideTargetKind,
+): HTMLElement | null => {
   return document.querySelector<HTMLElement>(`[${PARTY_HEADER_GUIDE_TARGET_ATTR}="${kind}"]`);
-}
+};
 
 let highlightTimeoutId: number | null = null;
 let highlightedElement: HTMLElement | null = null;
 
-export function clearPartyHeaderGuideHighlight(): void {
+export const clearPartyHeaderGuideHighlight = (): void => {
   if (highlightTimeoutId != null) {
     window.clearTimeout(highlightTimeoutId);
     highlightTimeoutId = null;
@@ -51,9 +53,9 @@ export function clearPartyHeaderGuideHighlight(): void {
     highlightedElement.classList.remove(PARTY_HEADER_GUIDE_HIGHLIGHT_CLASS);
     highlightedElement = null;
   }
-}
+};
 
-export function runPartyHeaderGuideHighlight(target: HTMLElement): void {
+export const runPartyHeaderGuideHighlight = (target: HTMLElement): void => {
   clearPartyHeaderGuideHighlight();
   target.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   highlightedElement = target;
@@ -61,12 +63,12 @@ export function runPartyHeaderGuideHighlight(target: HTMLElement): void {
   highlightTimeoutId = window.setTimeout(() => {
     clearPartyHeaderGuideHighlight();
   }, PARTY_HEADER_GUIDE_HIGHLIGHT_MS);
-}
+};
 
-export function waitForPartyHeaderGuideTarget(
+export const waitForPartyHeaderGuideTarget = (
   kind: PartyHeaderGuideTargetKind,
   options?: { attempts?: number; intervalMs?: number; signal?: AbortSignal },
-): Promise<HTMLElement | null> {
+): Promise<HTMLElement | null> => {
   const attempts = options?.attempts ?? 20;
   const intervalMs = options?.intervalMs ?? 50;
   const signal = options?.signal;
@@ -115,4 +117,4 @@ export function waitForPartyHeaderGuideTarget(
 
     tryFind();
   });
-}
+};

@@ -60,11 +60,7 @@ export const DownloadPage = () => {
           {!loading && release && (
             <div className="download-release">
               <p className="download-version">Версия {release.version}</p>
-              <ButtonLink
-                className="download-button"
-                href={release.downloadUrl}
-                variant="primary"
-              >
+              <ButtonLink className="download-button" href={release.downloadUrl} variant="primary">
                 Скачать для Windows
               </ButtonLink>
               <p className="download-file-details">ZIP-архив · Windows x64</p>

@@ -1,6 +1,6 @@
 import { ProjectItem } from '@core/types/project';
 
-export function cloneItem(item: ProjectItem): ProjectItem {
+export const cloneItem = (item: ProjectItem): ProjectItem => {
   if ('items' in item) {
     return {
       id: item.id,
@@ -9,14 +9,12 @@ export function cloneItem(item: ProjectItem): ProjectItem {
     };
   }
   return { ...item };
-}
+};
 
-export function cloneItems(items: ProjectItem[]): ProjectItem[] {
+export const cloneItems = (items: ProjectItem[]): ProjectItem[] => {
   return items.map(cloneItem);
-}
+};
 
-/** @deprecated Use cloneItem instead */
 export const cloneProjectItem = cloneItem;
 
-/** @deprecated Use cloneItems instead */
 export const cloneProjectItems = cloneItems;

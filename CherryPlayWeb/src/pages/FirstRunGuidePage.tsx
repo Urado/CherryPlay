@@ -40,8 +40,8 @@ export const FirstRunGuidePage = () => (
       <section className="first-run-guide-section">
         <h2>2. Выберите проигрыватель</h2>
         <p>
-          Для эфира можно использовать встроенный проигрыватель CherryPashkaParty или подключить AIMP.
-          Инструкция по подключению AIMP приведена ниже.
+          Для эфира можно использовать встроенный проигрыватель CherryPashkaParty или подключить
+          AIMP. Инструкция по подключению AIMP приведена ниже.
         </p>
       </section>
 
@@ -159,16 +159,16 @@ export const FirstRunGuidePage = () => (
             отображается в её настройках.
           </li>
           <li>
-            <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPashkaParty для
-            Windows x64. Проверьте, что в папке приложения есть{' '}
+            <strong>AIMP недоступен в списке:</strong> функция доступна только в CherryPashkaParty
+            для Windows x64. Проверьте, что в папке приложения есть{' '}
             <strong>CherryPlayAimpBridge</strong> с файлом <strong>manifest.json</strong>, затем
             перезапустите CherryPashkaParty.
           </li>
           <li>
             <strong>Плагин не подключается:</strong> убедитесь, что запущен AIMP x64, а{' '}
             <strong>CherryPlayAimpBridge.dll</strong> находится в папке Plugins этой установки. В
-            CherryPashkaParty выберите AIMP в настройке «Источник проигрывания» и дождитесь состояния
-            «Подключено». Если состояние не меняется, полностью перезапустите AIMP.
+            CherryPashkaParty выберите AIMP в настройке «Источник проигрывания» и дождитесь
+            состояния «Подключено». Если состояние не меняется, полностью перезапустите AIMP.
           </li>
           <li>
             <strong>Подключение устарело:</strong> перезапустите AIMP. Если это не помогло,
@@ -180,8 +180,8 @@ export const FirstRunGuidePage = () => (
           </li>
           <li>
             <strong>«Включить онлайн» недоступно:</strong> сначала создайте или привяжите вечеринку,
-            включите «Онлайн» в настройках CherryPashkaParty и дождитесь подключения плагина и списка
-            треков.
+            включите «Онлайн» в настройках CherryPashkaParty и дождитесь подключения плагина и
+            списка треков.
           </li>
         </ul>
       </section>

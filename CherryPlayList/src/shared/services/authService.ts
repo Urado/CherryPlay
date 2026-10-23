@@ -26,7 +26,7 @@ import { isTokenExpired } from '../utils/tokenUtils';
 
 export type { OrganizerDto, AuthExchangeRequest, AuthExchangeResponse };
 
-async function readResponseErrorMessage(response: Response): Promise<string> {
+const readResponseErrorMessage = async (response: Response): Promise<string> => {
   try {
     const text = await response.text();
     if (!text) {
@@ -54,24 +54,24 @@ async function readResponseErrorMessage(response: Response): Promise<string> {
   } catch {
     return '';
   }
-}
+};
 
-async function throwAuthHttpError(response: Response): Promise<never> {
+const throwAuthHttpError = async (response: Response): Promise<never> => {
   const message = await readResponseErrorMessage(response);
   throw new AuthHttpError(response.status, message);
-}
+};
 
-export function buildDesktopAuthReturnTo(
+export const buildDesktopAuthReturnTo = (
   isDev: boolean,
   origin: string | undefined,
   options?: { webDelivery?: boolean },
-): string {
+): string => {
   if (isDev && origin) {
     const base = `${origin}/auth/callback`;
     return options?.webDelivery ? `${base}?delivery=web` : base;
   }
   return 'cherryplaylist://auth';
-}
+};
 
 class AuthService implements IAuthService {
   private async getBaseUrl(): Promise<string> {
@@ -271,7 +271,7 @@ class AuthService implements IAuthService {
       throw new Error(`Failed to get organizer: ${errorText}`);
     }
 
-    return response.json();
+    return (await response.json()) as OrganizerDto;
   }
 
   async login(email: string, password: string): Promise<string> {

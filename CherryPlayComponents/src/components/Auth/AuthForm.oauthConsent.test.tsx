@@ -5,13 +5,13 @@ import type { AuthService } from '../../types/auth';
 
 import { AuthForm } from './AuthForm';
 
-function createAuthService(): AuthService {
+const createAuthService = (): AuthService => {
   return {
     login: vi.fn(),
     register: vi.fn(),
     startOAuthFlow: vi.fn(),
   };
-}
+};
 
 describe('AuthForm OAuth consent gate', () => {
   it('renders LegalConsentBlock on oauth tab with disabled providers', () => {

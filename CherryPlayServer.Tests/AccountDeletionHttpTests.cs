@@ -93,7 +93,6 @@ public class AccountDeletionHttpTests
         var deleteBody = await deleteResponse.Content.ReadAsStringAsync();
         Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent), deleteBody);
 
-        // Sessions are revoked on delete — stale bearer must not reach profile.
         using var meResponse = await _client.GetAsync("/api/organizer/me");
         Assert.That(
             meResponse.StatusCode,
@@ -101,9 +100,12 @@ public class AccountDeletionHttpTests
             await meResponse.Content.ReadAsStringAsync());
 
         _client.DefaultRequestHeaders.Authorization = null;
-        using var reloginResponse = await _client.PostAsync(
-            "/auth/login",
-            JsonContent(new { email, password }));
+        using var reloginRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/login")
+        {
+            Content = JsonContent(new { email, password })
+        };
+        reloginRequest.Headers.TryAddWithoutValidation("Origin", "http://localhost:3000");
+        using var reloginResponse = await _client.SendAsync(reloginRequest);
         var reloginBody = await reloginResponse.Content.ReadAsStringAsync();
         Assert.That(
             reloginResponse.StatusCode,
@@ -123,6 +125,7 @@ public class AccountDeletionHttpTests
             builder.UseSetting("UseInMemoryStorage", "true");
             builder.UseSetting("JWT_SECRET_KEY", "account-deletion-http-tests-secret-key-32chars");
             builder.UseSetting("Auth:OAuthEnabled", "false");
+            builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost:3000");
         }
     }
 }

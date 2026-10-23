@@ -1,4 +1,3 @@
-
 import { Track } from '@core/types/track';
 import {
   startDemoLiveMockPlayback,
@@ -21,7 +20,7 @@ interface UsePlayerSessionOptions {
   beforeStartSession?: () => Promise<boolean>;
 }
 
-export function usePlayerSession(options: UsePlayerSessionOptions) {
+export const usePlayerSession = (options: UsePlayerSessionOptions) => {
   const { allTracks, isTrackActive, onSessionStart, beforeStartSession } = options;
 
   const { startSession, resetSession, setCurrentTrack } = useProjectStore();
@@ -104,4 +103,4 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     handleStartSession,
     handleResetSession,
   };
-}
+};

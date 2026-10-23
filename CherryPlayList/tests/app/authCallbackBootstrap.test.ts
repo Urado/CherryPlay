@@ -14,9 +14,9 @@ import { WebDemoPlatform } from '@shared/platform/webDemoPlatform';
 import { useAuthStore } from '@shared/stores/authStore';
 import { useUIStore } from '@shared/stores/uiStore';
 
-const exchangeDesktopCodeMock = jest.fn();
-const getCurrentOrganizerMock = jest.fn();
-const invokeMock = jest.fn();
+const exchangeDesktopCodeMock = jest.fn<Promise<string>, unknown[]>();
+const getCurrentOrganizerMock = jest.fn<Promise<{ id: string; name: string } | null>, unknown[]>();
+const invokeMock = jest.fn<Promise<unknown>, unknown[]>();
 
 jest.mock('@shared/services/authService', () => ({
   authService: {
@@ -25,7 +25,7 @@ jest.mock('@shared/services/authService', () => ({
   },
 }));
 
-function createDeferred<T>() {
+const createDeferred = <T>() => {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
   const promise = new Promise<T>((res, rej) => {
@@ -33,9 +33,9 @@ function createDeferred<T>() {
     reject = rej;
   });
   return { promise, resolve, reject };
-}
+};
 
-function createPlatform(): PlatformAPI {
+const createPlatform = (): PlatformAPI => {
   return {
     getPathForFile: () => '',
     invoke: invokeMock,
@@ -48,13 +48,13 @@ function createPlatform(): PlatformAPI {
       onLog: () => () => undefined,
     },
   };
-}
+};
 
-async function flushMicrotasks(): Promise<void> {
+const flushMicrotasks = async (): Promise<void> => {
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
-}
+};
 
 describe('authCallbackBootstrap', () => {
   beforeEach(() => {
@@ -172,9 +172,7 @@ describe('authCallbackBootstrap', () => {
     expect(getBrowserLoginFlowState().status).toBe('failed');
     expect(getBrowserLoginFlowState().error).toContain('Время ожидания истекло');
     expect(
-      useUIStore
-        .getState()
-        .notifications.some((n) => n.message.includes('Время ожидания истекло')),
+      useUIStore.getState().notifications.some((n) => n.message.includes('Время ожидания истекло')),
     ).toBe(true);
 
     resetAuthCallbackBootstrapForTests();
@@ -198,9 +196,9 @@ describe('authCallbackBootstrap', () => {
       status: 'failed',
       error: 'Code already used',
     });
-    expect(
-      useUIStore.getState().notifications.some((n) => n.message === 'Code already used'),
-    ).toBe(true);
+    expect(useUIStore.getState().notifications.some((n) => n.message === 'Code already used')).toBe(
+      true,
+    );
 
     resetAuthCallbackBootstrapForTests();
     secondWait.reject(new Error('stop'));

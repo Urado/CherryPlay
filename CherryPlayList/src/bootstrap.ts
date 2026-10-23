@@ -18,11 +18,11 @@ const PRELOAD_MISSING_ERROR =
   '[CherryPlayList] Electron preload (window.api) не загрузился. ' +
   'Выполните `npm run compile:electron` и перезапустите `npm run dev`.';
 
-function isElectronUserAgent(): boolean {
+const isElectronUserAgent = (): boolean => {
   return typeof navigator !== 'undefined' && /Electron/i.test(navigator.userAgent);
-}
+};
 
-async function waitForElectronApi(timeoutMs: number): Promise<boolean> {
+const waitForElectronApi = async (timeoutMs: number): Promise<boolean> => {
   if (typeof window !== 'undefined' && typeof window.api !== 'undefined') {
     return true;
   }
@@ -36,18 +36,18 @@ async function waitForElectronApi(timeoutMs: number): Promise<boolean> {
   }
 
   return false;
-}
+};
 
-export function isDevAuthCallbackDocumentPath(): boolean {
+export const isDevAuthCallbackDocumentPath = (): boolean => {
   return (
     import.meta.env.DEV &&
     typeof window !== 'undefined' &&
     (window.location.pathname === '/auth/callback' ||
       window.location.pathname === '/auth-callback.html')
   );
-}
+};
 
-export function redirectDevAuthCallbackToStaticPage(): boolean {
+export const redirectDevAuthCallbackToStaticPage = (): boolean => {
   if (!isDevAuthCallbackDocumentPath()) {
     return false;
   }
@@ -58,9 +58,9 @@ export function redirectDevAuthCallbackToStaticPage(): boolean {
 
   window.location.replace(`/auth-callback.html${window.location.search}`);
   return true;
-}
+};
 
-export async function bootstrapApp(): Promise<void> {
+export const bootstrapApp = async (): Promise<void> => {
   if (redirectDevAuthCallbackToStaticPage()) {
     await new Promise<void>(() => {});
     return;
@@ -93,4 +93,4 @@ export async function bootstrapApp(): Promise<void> {
   }
 
   throw new Error(BOOTSTRAP_ERROR);
-}
+};

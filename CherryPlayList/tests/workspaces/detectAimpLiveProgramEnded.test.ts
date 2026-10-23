@@ -4,7 +4,7 @@ import { detectAimpLiveProgramEnded } from '../../src/workspaces/party/detectAim
 describe('detectAimpLiveProgramEnded', () => {
   const nowMs = Date.parse('2026-08-11T12:00:00.000Z');
 
-  function buildLiveEndedState() {
+  const buildLiveEndedState = () => {
     const state = createInitialAimpBridgeState();
     state.liveStreamStarted = true;
     state.connection.phase = 'connected';
@@ -50,7 +50,7 @@ describe('detectAimpLiveProgramEnded', () => {
       sentAt: '2026-08-11T11:59:59.000Z',
     };
     return state;
-  }
+  };
 
   it('returns false when live stream is not started', () => {
     const state = buildLiveEndedState();

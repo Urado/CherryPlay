@@ -3,7 +3,7 @@ const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   collection: 'Подборка',
   fileBrowser: 'Файлы',
   player: 'Проигрывание',
-  'demo-player': 'Предпросмотр (только у вас)',
+  'demo-player': 'Предпрослушивание (только у вас)',
   aimp: 'AIMP',
   'party-editor': 'Настройка вечеринки',
   'party-preview': 'Как видят гости',
@@ -13,7 +13,7 @@ const WORKSPACE_DISPLAY_NAMES_RU: Readonly<Record<string, string>> = {
   autogenerator: 'Автогенератор',
 };
 
-export function getWorkspaceDisplayNameRu(type: string, fallbackName?: string): string {
+export const getWorkspaceDisplayNameRu = (type: string, fallbackName?: string): string => {
   const knownName = WORKSPACE_DISPLAY_NAMES_RU[type];
   if (knownName) {
     return knownName;
@@ -25,4 +25,4 @@ export function getWorkspaceDisplayNameRu(type: string, fallbackName?: string): 
   }
 
   return fallbackName ?? type;
-}
+};

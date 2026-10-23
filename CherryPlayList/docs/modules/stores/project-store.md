@@ -20,6 +20,9 @@
 - `groupSettings: Map<string, ProjectGroupSettings>` - Настройки групп
 - `sessionState: ProjectSessionState` - Состояние сессии (mode, played tracks)
 - `meta: ProjectMeta` - Метаданные (filePath, isDirty, lastSavedAt, linkedParty, **partyTrackDisplay**)
+- `collections: ProjectCollection[]` — подборки проекта (`id`, `name`, `items`)
+- `collectionBindings: Record<workspaceId, collectionId>` — текущие назначения окон
+- `legacyCollectionsMigrationComplete` — флаг завершения однократного переноса доступных старых локальных подборок
 
 ## Основные операции
 
@@ -28,6 +31,8 @@
 - Выделение элементов (single, multiple, range)
 - Undo/Redo через globalHistoryStore
 - Сохранение/загрузка проектов (.cherry формат)
+- Создание и обновление подборок; эти изменения входят в `meta.isDirty`
+- Назначение workspace-зоны подборке; привязки и содержимое persist-ятся вместе с проектом
 - `setPortableMode(value: boolean)` — включает/выключает портативный режим; обновляет `settings.portableMode` и помечает проект как изменённый (в т.ч. из модалки настроек приложения или после успешного **Сохранить как…** с переносимым пакетом)
 
 ## Настройки проекта
@@ -35,3 +40,7 @@
 `settings.portableMode: boolean` (default `false`) — флаг портативного режима. Хранится в `.cherry` файле как часть `ProjectSettings`. Управляется через `setPortableMode` и влияет на последующие **обычные** сохранения; **новый** переносимый пакет выбирается в диалоге **Сохранить как…** (см. [Save/Load](../systems/save-load.md)). Не путать с настройками приложения (`settingsStore`) — это настройка конкретного проекта.
 
 `meta.partyTrackDisplay` (`PartyTrackDisplaySettings`) — отображение имён треков для вечеринки (превью и плейлист для API). Опциональный ключ `partyTrackDisplay` в `.cherry`, персистится вместе с `meta`; обновление через `setPartyTrackDisplaySettings`. Подробнее см. [Party workspace](../workspaces/party.md#отображение-имён-треков-party-track-display) и [`project.ts`](../../../src/core/types/project.ts).
+
+### Подборки
+
+`createCollection`, `updateCollection`, `deleteCollection` и `bindCollectionToWorkspace` работают с сущностями проекта. Удаление workspace отвязывает окно и удаляет его runtime-store, сохраняя подборку. Удаление подборки стирает сущность и все привязки к её ID; активные зоны, привязанные к ней, повторно инициализируются штатной автопривязкой. Все окна, связанные с одним `collectionId`, используют общий список и историю команд. В текущей реализации `projectStoreFactory` оставлен временный адаптер для существующих команд workspace; его удаление запланировано отдельной задачей технического долга. См. [Collections](../workspaces/collections.md).

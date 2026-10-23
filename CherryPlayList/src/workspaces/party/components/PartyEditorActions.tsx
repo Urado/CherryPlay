@@ -23,13 +23,13 @@ export interface PartyEditorActionsProps {
   onMakeReady?: () => void;
 }
 
-export function getPartyEditorActionVisibility(
+export const getPartyEditorActionVisibility = (
   phase: PartyEditorPhase,
   options: {
     isAuthenticated: boolean;
     hasOnOpenLinkParty: boolean;
   },
-): { showCreate: boolean; showLinkParty: boolean; showSave: boolean; showMakeReady: boolean } {
+): { showCreate: boolean; showLinkParty: boolean; showSave: boolean; showMakeReady: boolean } => {
   const showCreate = phase === 'draft-unlinked';
   const showLinkParty =
     phase !== 'completed' && options.hasOnOpenLinkParty && options.isAuthenticated;
@@ -37,20 +37,20 @@ export function getPartyEditorActionVisibility(
   const showMakeReady = phase === 'draft-linked';
 
   return { showCreate, showLinkParty, showSave, showMakeReady };
-}
+};
 
-export function shouldShowPartyLifecycleControls(
+export const shouldShowPartyLifecycleControls = (
   phase: PartyEditorPhase,
   linkedParty: { id: string; shortCode: string } | null | undefined,
-): boolean {
+): boolean => {
   return (
     (phase === 'draft-linked' || phase === 'ready' || phase === 'completed') && linkedParty != null
   );
-}
+};
 
-export function shouldShowPartyCatalogVisibilityControl(phase: PartyEditorPhase): boolean {
+export const shouldShowPartyCatalogVisibilityControl = (phase: PartyEditorPhase): boolean => {
   return phase === 'draft-unlinked' || phase === 'ready' || phase === 'completed';
-}
+};
 
 export const PartyEditorActions: React.FC<PartyEditorActionsProps> = ({
   phase,

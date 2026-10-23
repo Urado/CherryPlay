@@ -1,12 +1,9 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 
-/**
- * Show open dialog for selecting a folder
- */
-async function showOpenDialog(options: {
+const showOpenDialog = async (options: {
   title?: string;
   defaultPath?: string;
-}): Promise<string | null> {
+}): Promise<string | null> => {
   const mainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
 
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -20,16 +17,13 @@ async function showOpenDialog(options: {
   }
 
   return result.filePaths[0];
-}
+};
 
-/**
- * Show save dialog for saving a file
- */
-async function showSaveDialog(options: {
+const showSaveDialog = async (options: {
   title?: string;
   defaultPath?: string;
   filters?: Array<{ name: string; extensions: string[] }>;
-}): Promise<string | null> {
+}): Promise<string | null> => {
   const mainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
 
   const result = await dialog.showSaveDialog(mainWindow, {
@@ -43,16 +37,13 @@ async function showSaveDialog(options: {
   }
 
   return result.filePath;
-}
+};
 
-/**
- * Show open dialog for selecting a file
- */
-async function showOpenFileDialog(options: {
+const showOpenFileDialog = async (options: {
   title?: string;
   defaultPath?: string;
   filters?: Array<{ name: string; extensions: string[] }>;
-}): Promise<string | null> {
+}): Promise<string | null> => {
   const mainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
 
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -67,12 +58,9 @@ async function showOpenFileDialog(options: {
   }
 
   return result.filePaths[0];
-}
+};
 
-/**
- * Register dialog IPC handlers
- */
-export function registerDialogHandlers(): void {
+export const registerDialogHandlers = (): void => {
   ipcMain.handle(
     'dialog:showOpenDialog',
     async (
@@ -146,4 +134,4 @@ export function registerDialogHandlers(): void {
       }
     },
   );
-}
+};

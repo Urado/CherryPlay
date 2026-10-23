@@ -50,7 +50,7 @@ public class PartiesController : ControllerBase
         }
         catch (PartyLimitReachedException ex)
         {
-            return StatusCode(403, ex.Message);
+            return FuturePartyLimit(ex);
         }
         catch (ArgumentException ex)
         {
@@ -140,6 +140,10 @@ public class PartiesController : ControllerBase
         catch (ForbiddenException ex)
         {
             return StatusCode(403, new { code = "forbidden", message = ex.Message });
+        }
+        catch (PartyLimitReachedException ex)
+        {
+            return FuturePartyLimit(ex);
         }
         catch (PartyNotFoundException ex)
         {
@@ -269,4 +273,12 @@ public class PartiesController : ControllerBase
             return StatusCode(500, "An error occurred while updating party lifecycle state");
         }
     }
+
+    private ObjectResult FuturePartyLimit(PartyLimitReachedException exception) =>
+        StatusCode(StatusCodes.Status403Forbidden, new
+        {
+            code = PartyLimitReachedException.ErrorCode,
+            message = exception.Message,
+            limit = exception.Limit,
+        });
 }

@@ -14,13 +14,13 @@ export interface PartyLifecycleControlsProps {
   onTransition: (targetState: PartyLifecycleState) => void;
 }
 
-function isLoadingForTarget(
+const isLoadingForTarget = (
   target: PartyLifecycleState,
   isTransitioning: boolean,
   pendingTransition?: PartyLifecycleState | null,
-): boolean {
+): boolean => {
   return isTransitioning && pendingTransition === target;
-}
+};
 
 export const PartyLifecycleControls = ({
   partyLifecycleState,

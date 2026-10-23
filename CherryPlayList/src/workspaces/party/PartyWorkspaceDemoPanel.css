@@ -284,7 +284,7 @@
   color: var(--text-secondary, #555);
 }
 
-@media (max-width: 1100px) {
+@media (width <= 1100px) {
   .party-workspace-demo-panel {
     max-height: 24%;
   }
@@ -294,7 +294,7 @@
   }
 }
 
-@media (max-width: 860px) {
+@media (width <= 860px) {
   .party-workspace-demo-panel {
     max-height: 20%;
     padding: 10px 12px;

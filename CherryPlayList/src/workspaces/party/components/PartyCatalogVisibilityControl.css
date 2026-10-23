@@ -162,3 +162,22 @@
 .party-catalog-visibility-options--header[aria-busy='true'] {
   cursor: progress;
 }
+
+@media (width <= 720px) {
+  .party-catalog-visibility--header {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .party-catalog-visibility-options--header {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .party-catalog-visibility-options--header .party-catalog-visibility-option {
+    padding: 7px 8px;
+    font-size: 11px;
+    white-space: normal;
+    line-height: 1.25;
+  }
+}

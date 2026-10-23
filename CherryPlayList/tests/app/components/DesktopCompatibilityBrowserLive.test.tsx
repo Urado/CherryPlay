@@ -52,7 +52,7 @@ describe('desktop compatibility in browser Live mode', () => {
       json: () =>
         Promise.resolve({
           desktopCompatibilityWarning: { minVersion: '0.8.0', serverVersion: '0.9.0' },
-            desktopUpdateVersion: '0.8.0',
+          desktopUpdateVersion: '0.8.0',
         }),
     } as Response);
     global.fetch = fetchMock;

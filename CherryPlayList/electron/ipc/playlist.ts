@@ -11,22 +11,22 @@ interface PlaylistData {
   }[];
 }
 
-async function savePlaylist(path: string, data: PlaylistData): Promise<void> {
+const savePlaylist = async (path: string, data: PlaylistData): Promise<void> => {
   await fs.writeFile(path, JSON.stringify(data, null, 2), 'utf-8');
-}
+};
 
-async function loadPlaylist(path: string): Promise<PlaylistData> {
+const loadPlaylist = async (path: string): Promise<PlaylistData> => {
   const content = await fs.readFile(path, 'utf-8');
-  return JSON.parse(content);
-}
+  return JSON.parse(content) as PlaylistData;
+};
 
-export function registerPlaylistHandlers(): void {
+export const registerPlaylistHandlers = (): void => {
   ipcMain.handle('playlist:save', async (_event, payload: { path: string; data: PlaylistData }) => {
     await savePlaylist(payload.path, payload.data);
     return { success: true };
   });
 
   ipcMain.handle('playlist:load', async (_event, payload: { path: string }) => {
-    return await loadPlaylist(payload.path);
+    return loadPlaylist(payload.path);
   });
-}
+};

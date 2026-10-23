@@ -23,10 +23,10 @@ export interface ExportResult {
   failed: Array<{ path: string; error: string }>;
 }
 
-/**
- * Export playlist with number prefix strategy
- */
-async function exportWithNumberPrefix(tracks: Track[], targetPath: string): Promise<ExportResult> {
+const exportWithNumberPrefix = async (
+  tracks: Track[],
+  targetPath: string,
+): Promise<ExportResult> => {
   const result: ExportResult = {
     successful: [],
     failed: [],
@@ -44,7 +44,6 @@ async function exportWithNumberPrefix(tracks: Track[], targetPath: string): Prom
       const destPath = path.join(targetPath, newName);
 
       try {
-        // Check if source file exists before copying
         await fs.access(track.path);
         await copyFileWithRetry(track.path, destPath);
         result.successful.push(track.path);
@@ -60,12 +59,9 @@ async function exportWithNumberPrefix(tracks: Track[], targetPath: string): Prom
   }
 
   return result;
-}
+};
 
-/**
- * Export playlist to AIMP format (M3U8)
- */
-async function exportAIMPPlaylist(
+const exportAIMPPlaylist = async (
   tracks: Track[],
   targetPath: string,
   playlistName: string,
@@ -73,25 +69,22 @@ async function exportAIMPPlaylist(
   playlistPath: string;
   successful: string[];
   failed: Array<{ path: string; error: string }>;
-}> {
+}> => {
   const result: { successful: string[]; failed: Array<{ path: string; error: string }> } = {
     successful: [],
     failed: [],
   };
 
   try {
-    // Create subfolder with playlist name
     const safePlaylistName = safeFileName(playlistName || 'Playlist');
     const playlistFolder = path.join(targetPath, safePlaylistName);
     await ensureFolder(playlistFolder);
 
-    // Copy all tracks with original names
     for (const track of tracks) {
       const fileName = path.basename(track.path);
       const destPath = path.join(playlistFolder, fileName);
 
       try {
-        // Check if source file exists before copying
         await fs.access(track.path);
         await copyFileWithRetry(track.path, destPath);
         result.successful.push(track.path);
@@ -103,18 +96,15 @@ async function exportAIMPPlaylist(
       }
     }
 
-    // Create M3U8 playlist file
     const playlistFilePath = path.join(playlistFolder, `${safePlaylistName}.m3u8`);
     const playlistContent: string[] = ['#EXTM3U'];
 
     for (const track of tracks) {
       const fileName = path.basename(track.path);
-      // Use relative path from playlist file to track file
       const relativePath = getRelativePath(playlistFilePath, path.join(playlistFolder, fileName));
       playlistContent.push(relativePath);
     }
 
-    // Write playlist file with UTF-8 BOM for compatibility
     const bom = '\uFEFF';
     await fs.writeFile(playlistFilePath, bom + playlistContent.join('\n'), 'utf8');
 
@@ -125,12 +115,9 @@ async function exportAIMPPlaylist(
   } catch (error) {
     throw new Error(`AIMP export failed: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Copy tracks into a new folder (with original filenames)
- */
-async function copyTracksToFolder(
+const copyTracksToFolder = async (
   tracks: Track[],
   targetPath: string,
   folderName: string,
@@ -138,7 +125,7 @@ async function copyTracksToFolder(
   folderPath: string;
   successful: string[];
   failed: Array<{ path: string; error: string }>;
-}> {
+}> => {
   const result: { successful: string[]; failed: Array<{ path: string; error: string }> } = {
     successful: [],
     failed: [],
@@ -151,11 +138,25 @@ async function copyTracksToFolder(
 
     for (const track of tracks) {
       const fileName = path.basename(track.path);
-      const destPath = path.join(destinationFolder, fileName);
+      const extension = path.extname(fileName);
+      const baseName = path.basename(fileName, extension);
+      let destPath = path.join(destinationFolder, fileName);
 
       try {
         await fs.access(track.path);
-        await copyFileWithRetry(track.path, destPath);
+        if (path.resolve(track.path) !== path.resolve(destPath)) {
+          let suffix = 2;
+          while (true) {
+            try {
+              await fs.access(destPath);
+              destPath = path.join(destinationFolder, `${baseName}_${suffix}${extension}`);
+              suffix++;
+            } catch {
+              break;
+            }
+          }
+          await copyFileWithRetry(track.path, destPath);
+        }
         result.successful.push(track.path);
       } catch (error) {
         result.failed.push({
@@ -172,12 +173,9 @@ async function copyTracksToFolder(
   } catch (error) {
     throw new Error(`Copy failed: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Register export IPC handlers
- */
-export function registerExportHandlers(): void {
+export const registerExportHandlers = (): void => {
   ipcMain.handle(
     'export:execute',
     async (
@@ -189,7 +187,6 @@ export function registerExportHandlers(): void {
       },
     ) => {
       try {
-        // Validate target path
         if (!validatePath(payload.targetPath)) {
           return {
             success: false,
@@ -197,7 +194,6 @@ export function registerExportHandlers(): void {
           };
         }
 
-        // Validate all track paths
         for (const track of payload.tracks) {
           if (!validatePath(track.path)) {
             return {
@@ -239,7 +235,6 @@ export function registerExportHandlers(): void {
       },
     ) => {
       try {
-        // Validate target path
         if (!validatePath(payload.targetPath)) {
           return {
             success: false,
@@ -247,7 +242,6 @@ export function registerExportHandlers(): void {
           };
         }
 
-        // Validate all track paths
         for (const track of payload.tracks) {
           if (!validatePath(track.path)) {
             return {
@@ -321,4 +315,4 @@ export function registerExportHandlers(): void {
       }
     },
   );
-}
+};

@@ -3,7 +3,6 @@ import { Button, Disclosure } from '@cherryplay/components';
 import type { PartyLifecycleState } from '@shared/services/partyService';
 import React, { useMemo } from 'react';
 
-
 import {
   resetPreviewScenario,
   setPreviewConnectionBreak,
@@ -59,15 +58,15 @@ const CONNECTION_SCENARIOS: { label: string; scenario: PreviewConnectionScenario
   { label: 'Организатор не в сети', scenario: 'organizer_offline' },
 ];
 
-function shouldShowSection(
+const shouldShowSection = (
   section: PartyPreviewScenarioControlsSection,
   target: 'quick' | 'expanded',
-): boolean {
+): boolean => {
   if (section === 'all') {
     return true;
   }
   return section === target;
-}
+};
 
 export const PartyPreviewScenarioControls: React.FC<PartyPreviewScenarioControlsProps> = ({
   variant,

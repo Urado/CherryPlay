@@ -127,12 +127,13 @@ export const PartyQrCode = ({ value, title, style, logoSrc }: PartyQrCodeProps) 
       try {
         image = logoSrc ? await createRoundedImage(logoSrc) : image;
         if (cancelled) return;
-        if (await renderQr(image) && !cancelled) setReady(true);
+        if ((await renderQr(image)) && !cancelled) setReady(true);
       } catch {
         if (cancelled) return;
 
         try {
-          if (await renderQr(createEmptyCenterImage(colors.background)) && !cancelled) setReady(true);
+          if ((await renderQr(createEmptyCenterImage(colors.background))) && !cancelled)
+            setReady(true);
           else if (!cancelled) setError('Не удалось создать QR-код.');
         } catch {
           if (!cancelled) setError('Не удалось создать QR-код.');
@@ -147,7 +148,15 @@ export const PartyQrCode = ({ value, title, style, logoSrc }: PartyQrCodeProps) 
       container.replaceChildren();
       if (qrCodeRef.current === qrCode) qrCodeRef.current = null;
     };
-  }, [value, logoSrc, style.frame, style.accent, functionalAccent, colors.foreground, colors.background]);
+  }, [
+    value,
+    logoSrc,
+    style.frame,
+    style.accent,
+    functionalAccent,
+    colors.foreground,
+    colors.background,
+  ]);
 
   const handleDownload = async () => {
     const qrCode = qrCodeRef.current;
@@ -191,7 +200,10 @@ export const PartyQrCode = ({ value, title, style, logoSrc }: PartyQrCodeProps) 
         className="party-qr-code-download"
         onClick={() => void handleDownload()}
         disabled={!ready}
-        style={{ backgroundColor: style.accent, color: ensureQrContrast(colors.foreground, style.accent).foreground }}
+        style={{
+          backgroundColor: style.accent,
+          color: ensureQrContrast(colors.foreground, style.accent).foreground,
+        }}
       >
         Скачать PNG
       </button>
@@ -200,4 +212,10 @@ export const PartyQrCode = ({ value, title, style, logoSrc }: PartyQrCodeProps) 
 };
 
 const getFileName = (title: string) =>
-  `party-qr-${title.trim().replace(/[^\p{L}\p{N}-]+/gu, '-').replace(/^-|-$/g, '').slice(0, 48) || 'code'}`;
+  `party-qr-${
+    title
+      .trim()
+      .replace(/[^\p{L}\p{N}-]+/gu, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 48) || 'code'
+  }`;

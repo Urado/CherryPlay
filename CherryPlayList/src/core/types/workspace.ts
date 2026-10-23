@@ -1,21 +1,3 @@
-export type WorkspaceId = string; // UUID
+export type WorkspaceId = string;
 
-export type WorkspaceType =
-  | 'playlist'
-  | 'collection'
-  | 'drafts'
-  | 'fileBrowser'
-  | 'database'
-  | 'rules'
-  | 'autogenerator'
-  | 'player'
-  | 'aimp'
-  | 'test1'
-  | 'test2'
-  | 'test3'
-  | 'test4'
-  | 'test5'
-  | 'test6'
-  | 'test7'
-  | 'test8'
-  | string; // для будущих типов
+export type WorkspaceType = string;

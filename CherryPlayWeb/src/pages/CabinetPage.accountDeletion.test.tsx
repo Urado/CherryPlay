@@ -1,21 +1,23 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { LEGAL_PD_CONSENT, LEGAL_TERMS } from '@cherryplay/components';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as testingLibrary from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ConsentEventDto } from '../services/consentEventsService';
+import type { OrganizerDto, PartyDto } from '../types/api';
+
 import { CabinetPage } from './CabinetPage';
 
-const checkAuthMock = vi.fn();
-const logoutMock = vi.fn();
-const deleteOrganizerAccountMock = vi.fn();
-const listConsentEventsMock = vi.fn();
-const createConsentEventsMock = vi.fn();
-const getMyPartiesMock = vi.fn();
-const ensureConsentsMock = vi.fn();
+const checkAuthMock = vi.fn<(...args: unknown[]) => Promise<OrganizerDto | null>>();
+const logoutMock = vi.fn<(...args: unknown[]) => Promise<void>>();
+const deleteOrganizerAccountMock = vi.fn<(...args: unknown[]) => Promise<void>>();
+const listConsentEventsMock = vi.fn<(...args: unknown[]) => Promise<ConsentEventDto[]>>();
+const createConsentEventsMock = vi.fn<(...args: unknown[]) => Promise<ConsentEventDto[]>>();
+const getMyPartiesMock = vi.fn<(...args: unknown[]) => Promise<PartyDto[]>>();
+const ensureConsentsMock = vi.fn<(...args: unknown[]) => Promise<'ok' | 'missing'>>();
 
 vi.mock('../services/authService', () => ({
   authService: {
@@ -61,36 +63,38 @@ vi.mock('../hooks/useThemeAccess', () => ({
 vi.mock('@cherryplay/components', async (importOriginal) => {
   const React = await import('react');
   const actual = await importOriginal<typeof import('@cherryplay/components')>();
+  const MockButton = React.forwardRef<
+    HTMLButtonElement,
+    {
+      children?: React.ReactNode;
+      onClick?: () => void;
+      disabled?: boolean;
+      loading?: boolean;
+      type?: string;
+      variant?: string;
+      size?: string;
+      className?: string;
+      'aria-describedby'?: string;
+      'aria-label'?: string;
+    }
+  >(({ children, onClick, disabled, loading, ...rest }, ref) => {
+    return React.createElement(
+      'button',
+      {
+        type: 'button',
+        onClick,
+        disabled: disabled || loading,
+        ref,
+        ...rest,
+      },
+      children,
+    );
+  });
+  MockButton.displayName = 'MockButton';
   return {
     ...actual,
     ChangePasswordForm: () => React.createElement('div', { 'data-testid': 'change-password-form' }),
-    Button: React.forwardRef<
-      HTMLButtonElement,
-      {
-        children?: React.ReactNode;
-        onClick?: () => void;
-        disabled?: boolean;
-        loading?: boolean;
-        type?: string;
-        variant?: string;
-        size?: string;
-        className?: string;
-        'aria-describedby'?: string;
-        'aria-label'?: string;
-      }
-    >(({ children, onClick, disabled, loading, ...rest }, ref) => {
-      return React.createElement(
-        'button',
-        {
-          type: 'button',
-          onClick,
-          disabled: disabled || loading,
-          ref,
-          ...rest,
-        },
-        children,
-      );
-    }),
+    Button: MockButton,
   };
 });
 
@@ -103,17 +107,15 @@ const LoginProbe = () => {
   });
 };
 
-function ensureAppRoot(): HTMLElement {
-  let root = document.getElementById('root');
-  if (!root) {
-    root = document.createElement('div');
-    root.id = 'root';
-    document.body.appendChild(root);
-  }
+const ensureAppRoot = (): HTMLElement => {
+  const root = document.createElement('div');
+  root.id = 'root';
+  root.dataset.testid = 'app-root';
+  document.body.appendChild(root);
   return root;
-}
+};
 
-function renderCabinet(path = '/cabinet#account') {
+const renderCabinet = (path = '/cabinet#account') => {
   const root = ensureAppRoot();
   return render(
     createElement(
@@ -128,10 +130,13 @@ function renderCabinet(path = '/cabinet#account') {
     ),
     { container: root },
   );
-}
+};
 
 describe('CabinetPage account deletion / privacy UX', () => {
+  afterEach(testingLibrary['cleanup']);
+
   beforeEach(() => {
+    document.body.replaceChildren();
     checkAuthMock.mockReset();
     logoutMock.mockReset();
     deleteOrganizerAccountMock.mockReset();
@@ -166,10 +171,6 @@ describe('CabinetPage account deletion / privacy UX', () => {
     ]);
     logoutMock.mockResolvedValue(undefined);
     deleteOrganizerAccountMock.mockResolvedValue(undefined);
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it('maps consent decisions to Russian labels and mailto privacy contact', async () => {
@@ -214,11 +215,11 @@ describe('CabinetPage account deletion / privacy UX', () => {
 
     const dialog = await screen.findByRole('alertdialog');
     const cancelButton = screen.getByRole('button', { name: 'Отмена' });
-    expect(document.activeElement).toBe(cancelButton);
-
-    const root = document.getElementById('root');
-    expect(root?.hasAttribute('inert')).toBe(true);
-    expect(root?.getAttribute('aria-hidden')).toBe('true');
+    expect(cancelButton.matches(':focus')).toBe(true);
+    const appRoot = screen.getByTestId('app-root');
+    expect(appRoot.hasAttribute('inert')).toBe(true);
+    expect(appRoot.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Выйти' })).toBeNull();
 
     fireEvent.mouseDown(dialog);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
@@ -228,13 +229,14 @@ describe('CabinetPage account deletion / privacy UX', () => {
     await waitFor(() => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
-    expect(root?.hasAttribute('inert')).toBe(false);
-    expect(root?.hasAttribute('aria-hidden')).toBe(false);
-    expect(document.activeElement).toBe(deleteButton);
+    expect(appRoot.hasAttribute('inert')).toBe(false);
+    expect(appRoot.hasAttribute('aria-hidden')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Выйти' })).toBeTruthy();
+    expect(deleteButton.matches(':focus')).toBe(true);
   });
 
   it('requires confirm dialog before withdrawing consents', async () => {
-    createConsentEventsMock.mockResolvedValue(undefined);
+    createConsentEventsMock.mockResolvedValue([]);
     renderCabinet();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Отозвать активные согласия' }));

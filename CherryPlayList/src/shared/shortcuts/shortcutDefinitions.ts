@@ -72,6 +72,6 @@ export const DEFAULT_SHORTCUTS: Record<ShortcutId, ShortcutDefinition> = {
 
 export const ALL_SHORTCUT_IDS = Object.keys(DEFAULT_SHORTCUTS) as ShortcutId[];
 
-export function getShortcutsByCategory(category: ShortcutCategory): ShortcutId[] {
+export const getShortcutsByCategory = (category: ShortcutCategory): ShortcutId[] => {
   return ALL_SHORTCUT_IDS.filter((id) => DEFAULT_SHORTCUTS[id].category === category);
-}
+};

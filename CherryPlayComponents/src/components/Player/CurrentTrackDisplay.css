@@ -51,7 +51,7 @@
 
 .party-current-track-adjacent-name--expanded {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   text-align: right;
   overflow: visible;
   text-overflow: unset;
@@ -122,7 +122,7 @@
 
 .party-current-track-name--expanded {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   overflow: visible;
   text-overflow: unset;
 }
@@ -141,6 +141,23 @@
 
 .party-current-track-time {
   margin-left: auto;
+}
+
+.party-current-track-time-loader {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.12em;
+  animation: party-current-track-time-spin 0.8s linear infinite;
+}
+
+@keyframes party-current-track-time-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .party-current-track-progress {

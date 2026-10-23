@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import { useModalKeyboard } from '@shared/hooks';
+import { dialogService } from '@shared/services/dialogService';
 import {
   InvalidPartyLifecycleTransitionError,
   partyService,
@@ -79,6 +80,7 @@ export const MyPartiesList: React.FC = () => {
   const [transitioningId, setTransitioningId] = useState<string | null>(null);
   const [transitioningTarget, setTransitioningTarget] = useState<PartyLifecycleState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PartyDto | null>(null);
+  const pendingLifecycleConfirmationIds = useRef(new Set<string>());
 
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const deleteCancelRef = useRef<HTMLButtonElement | null>(null);
@@ -252,6 +254,11 @@ export const MyPartiesList: React.FC = () => {
       return;
     }
 
+    if (pendingLifecycleConfirmationIds.current.has(party.id)) {
+      return;
+    }
+    pendingLifecycleConfirmationIds.current.add(party.id);
+
     if (targetState === 'completed') {
       const isCurrentLinked = linkedParty?.id === party.id;
       if (isCurrentLinked) {
@@ -260,13 +267,22 @@ export const MyPartiesList: React.FC = () => {
           playbackSourceState,
         });
         if (availability.isBlockedByLive) {
-          window.alert(
-            availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив',
-          );
+          await dialogService.alert({
+            title: 'Нельзя отправить вечеринку в архив',
+            message: availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив',
+          });
+          pendingLifecycleConfirmationIds.current.delete(party.id);
           return;
         }
       }
-      if (!window.confirm(PARTY_ARCHIVE_CONFIRM_MESSAGE)) {
+      const accepted = await dialogService.confirm({
+        title: 'Отправить вечеринку в архив?',
+        message: PARTY_ARCHIVE_CONFIRM_MESSAGE,
+        confirmLabel: 'В архив',
+        destructive: true,
+      });
+      if (!accepted) {
+        pendingLifecycleConfirmationIds.current.delete(party.id);
         return;
       }
     }
@@ -292,6 +308,7 @@ export const MyPartiesList: React.FC = () => {
     } finally {
       setTransitioningId(null);
       setTransitioningTarget(null);
+      pendingLifecycleConfirmationIds.current.delete(party.id);
     }
   };
 

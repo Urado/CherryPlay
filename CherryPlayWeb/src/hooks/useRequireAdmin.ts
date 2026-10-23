@@ -5,7 +5,7 @@ import { ROUTES } from '../constants/routes';
 import { useConsentGate } from '../contexts/ConsentGateContext';
 import { authService } from '../services/authService';
 
-export function useRequireAdmin() {
+export const useRequireAdmin = () => {
   const navigate = useNavigate();
   const { ensureConsents } = useConsentGate();
   const [checking, setChecking] = useState(true);
@@ -16,19 +16,19 @@ export function useRequireAdmin() {
 
     const check = async () => {
       try {
-        const organizer = (await authService.checkAuth());
+        const organizer = await authService.checkAuth();
 
         if (cancelled) return;
 
         if (!organizer) {
           setIsAdmin(false);
-          navigate(ROUTES.LOGIN, { replace: true });
+          void navigate(ROUTES.LOGIN, { replace: true });
           return;
         }
 
         if (!('role' in organizer) || organizer.role !== 'admin') {
           setIsAdmin(false);
-          navigate(ROUTES.CABINET, {
+          void navigate(ROUTES.CABINET, {
             replace: true,
             state: { deniedToast: 'Доступ запрещен: нужен администратор.' },
           });
@@ -40,7 +40,7 @@ export function useRequireAdmin() {
       } catch {
         if (cancelled) return;
         setIsAdmin(false);
-        navigate(ROUTES.LOGIN, { replace: true });
+        void navigate(ROUTES.LOGIN, { replace: true });
       } finally {
         if (!cancelled) {
           setChecking(false);
@@ -56,4 +56,4 @@ export function useRequireAdmin() {
   }, [navigate, ensureConsents]);
 
   return { checking, isAdmin };
-}
+};

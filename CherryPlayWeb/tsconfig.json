@@ -18,10 +18,12 @@
     "baseUrl": ".",
     "paths": {
       "@cherryplay/components": ["./CherryPlayComponents/src", "../CherryPlayComponents/src"],
-      "@cherryplay/themes": ["./CherryPlayComponents/src/themes", "../CherryPlayComponents/src/themes"]
+      "@cherryplay/themes": [
+        "./CherryPlayComponents/src/themes",
+        "../CherryPlayComponents/src/themes"
+      ]
     }
   },
   "include": ["src", "src/vite-env.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
-

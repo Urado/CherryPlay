@@ -6,13 +6,13 @@ import {
 
 const NEAR_END_TOLERANCE_MS = 2000;
 
-export function detectAimpLiveProgramEnded(
+export const detectAimpLiveProgramEnded = (
   state: Pick<
     AimpBridgeState,
     'liveStreamStarted' | 'playlistSnapshot' | 'playbackSnapshot' | 'connection'
   >,
   nowMs: number = Date.now(),
-): boolean {
+): boolean => {
   if (!state.liveStreamStarted) {
     return false;
   }
@@ -48,4 +48,4 @@ export function detectAimpLiveProgramEnded(
   }
 
   return progressMs >= durationMs - NEAR_END_TOLERANCE_MS;
-}
+};

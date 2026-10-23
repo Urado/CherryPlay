@@ -1,16 +1,14 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, render, waitFor } from '@testing-library/react';
+// @vitest-environment jsdom
+import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConsentGateProvider } from '../contexts/ConsentGateContext';
 
 import { useRequireAdmin } from './useRequireAdmin';
 
-const checkAuthMock = vi.fn();
-const ensureConsentsMock = vi.fn();
+const checkAuthMock = vi.fn<(...args: unknown[]) => Promise<unknown>>();
+const ensureConsentsMock = vi.fn<(...args: unknown[]) => Promise<void>>();
 const ensureConsentsStable = (...args: unknown[]) => ensureConsentsMock(...args);
 
 vi.mock('../services/authService', () => ({
@@ -48,10 +46,6 @@ describe('useRequireAdmin', () => {
     checkAuthMock.mockReset();
     ensureConsentsMock.mockReset();
     ensureConsentsMock.mockResolvedValue(undefined);
-  });
-
-  afterEach(() => {
-    cleanup();
   });
 
   it('calls ensureConsents after admin auth succeeds', async () => {

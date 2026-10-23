@@ -2,7 +2,6 @@ import { isProjectGroup, ProjectItem } from '@core/types/project';
 import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-
 import { DragDropCommand } from '../../modules/dragDrop/types';
 import {
   AddItemsAtPositionsCommand,
@@ -20,11 +19,11 @@ import {
   removeItemsById,
   insertIntoGroup,
 } from '../stores/projectStoreCore';
-import { getProjectStore } from '../stores/projectStoreFactory';
+import { getProjectStore, getStableWorkspaceId } from '../stores/projectStoreFactory';
 import { cloneItems } from '../utils/historyCore';
 import { logger } from '../utils/logger';
 
-function cloneItemWithNewIds(item: ProjectItem): ProjectItem {
+const cloneItemWithNewIds = (item: ProjectItem): ProjectItem => {
   if (isProjectGroup(item)) {
     return {
       ...item,
@@ -33,14 +32,14 @@ function cloneItemWithNewIds(item: ProjectItem): ProjectItem {
     };
   }
   return { ...item, id: uuidv4() };
-}
+};
 
-function insertItemsAtPosition(
+const insertItemsAtPosition = (
   items: ProjectItem[],
   itemsToInsert: ProjectItem[],
   parentId: string | null,
   localIndex: number,
-): ProjectItem[] {
+): ProjectItem[] => {
   if (parentId === null) {
     const newItems = [...items];
     const safeIndex = Math.min(Math.max(0, localIndex), newItems.length);
@@ -49,9 +48,9 @@ function insertItemsAtPosition(
   } else {
     return insertIntoGroup(items, parentId, localIndex, itemsToInsert);
   }
-}
+};
 
-export function useDragDropExecutor() {
+export const useDragDropExecutor = () => {
   const executeMove = useCallback((command: DragDropCommand): boolean => {
     if (command.type !== 'move') {
       logger.error('executeMove: invalid command type', { type: command.type });
@@ -61,10 +60,9 @@ export function useDragDropExecutor() {
     try {
       const { itemIds, sourceWorkspaceId, targetWorkspaceId, targetParentId, targetIndex } =
         command;
-      const isSameWorkspace = sourceWorkspaceId === targetWorkspaceId;
-
       const sourceStore = getProjectStore(sourceWorkspaceId);
       const targetStore = getProjectStore(targetWorkspaceId);
+      const isSameWorkspace = sourceStore === targetStore;
 
       if (!sourceStore || !targetStore) {
         logger.error('executeMove: stores not found', {
@@ -76,7 +74,6 @@ export function useDragDropExecutor() {
 
       const sourceState = sourceStore.getState();
 
-      // Collect items and their positions for history
       const itemsToMove: ProjectItem[] = [];
       const sourcePositions: ItemPosition[] = [];
       for (const id of itemIds) {
@@ -96,13 +93,11 @@ export function useDragDropExecutor() {
         return false;
       }
 
-      // For same-workspace: keep original IDs; for cross-workspace: generate new IDs
       const newItems: ProjectItem[] = isSameWorkspace
         ? cloneItems(itemsToMove)
         : itemsToMove.map(cloneItemWithNewIds);
 
       const sourceItemsBefore = [...sourceState.items];
-      // For same-workspace, source and target state are the same
       const targetItemsBefore = isSameWorkspace
         ? sourceItemsBefore
         : [...targetStore.getState().items];
@@ -113,11 +108,9 @@ export function useDragDropExecutor() {
           targetStore.setState({ _skipHistory: true });
         }
 
-        // Step 1: Remove from source
         const sourceNewItems = removeItemsById(sourceState.items, itemIds);
         sourceStore.setState({ items: sourceNewItems });
 
-        // Step 2: Insert into target (for same-workspace, use the updated state)
         const currentTargetItems = isSameWorkspace
           ? sourceStore.getState().items
           : targetStore.getState().items;
@@ -135,7 +128,6 @@ export function useDragDropExecutor() {
           targetStore.setState({ items: targetNewItems, _skipHistory: false });
         }
 
-        // Build target positions for history command
         const targetParentPath = targetParentId ? [targetParentId] : [];
         const targetPositions: ItemPosition[] = newItems.map((item, i) => ({
           item,
@@ -143,11 +135,10 @@ export function useDragDropExecutor() {
           index: targetIndex + i,
         }));
 
-        // Push composite command for undo/redo
         useGlobalHistoryStore.getState().pushCompositeCommand(
           [
             {
-              workspaceId: sourceWorkspaceId,
+              workspaceId: getStableWorkspaceId(sourceWorkspaceId),
               command: new RemoveItemsAtPositionsCommand(
                 sourcePositions.map((p) => ({
                   item: cloneItems([p.item])[0],
@@ -157,7 +148,7 @@ export function useDragDropExecutor() {
               ),
             },
             {
-              workspaceId: targetWorkspaceId,
+              workspaceId: getStableWorkspaceId(targetWorkspaceId),
               command: new AddItemsAtPositionsCommand(
                 targetPositions.map((p) => ({
                   item: cloneItems([p.item])[0],
@@ -230,7 +221,6 @@ export function useDragDropExecutor() {
         return false;
       }
 
-      // Copy always generates new IDs
       const newItems: ProjectItem[] = itemsToCopy.map(cloneItemWithNewIds);
 
       const targetState = targetStore.getState();
@@ -245,7 +235,6 @@ export function useDragDropExecutor() {
       );
       targetStore.setState({ items: targetNewItems, _skipHistory: false });
 
-      // Build target positions for history command
       const targetParentPath = targetParentId ? [targetParentId] : [];
       const targetPositions: ItemPosition[] = newItems.map((item, i) => ({
         item,
@@ -254,7 +243,7 @@ export function useDragDropExecutor() {
       }));
 
       useGlobalHistoryStore.getState().pushCommand(
-        targetWorkspaceId,
+        getStableWorkspaceId(targetWorkspaceId),
         new AddItemsAtPositionsCommand(
           targetPositions.map((p) => ({
             item: cloneItems([p.item])[0],
@@ -275,4 +264,4 @@ export function useDragDropExecutor() {
   }, []);
 
   return { executeMove, executeCopy };
-}
+};

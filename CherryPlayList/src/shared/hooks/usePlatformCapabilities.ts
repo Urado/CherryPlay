@@ -5,7 +5,6 @@ import {
   type PlatformCapabilities,
 } from '../platform/platformCapabilities';
 
-/** Stable snapshot of platform capabilities for React components (mode does not change at runtime). */
-export function usePlatformCapabilities(): PlatformCapabilities {
+export const usePlatformCapabilities = (): PlatformCapabilities => {
   return useMemo(() => getPlatformCapabilities(), []);
-}
+};

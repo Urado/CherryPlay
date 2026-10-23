@@ -13,9 +13,9 @@ describe('DisableButton', () => {
       </ListRow>,
     );
 
-    expect(
-      screen.getByRole('button', { name: 'Снова включить трек в проигрывание' }),
-    ).toHaveClass('cp-button--tone-danger');
+    expect(screen.getByRole('button', { name: 'Снова включить трек в проигрывание' })).toHaveClass(
+      'cp-button--tone-danger',
+    );
   });
 
   it('keeps the normal tone while the track is included', () => {

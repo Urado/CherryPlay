@@ -13,12 +13,12 @@ import '../../components/PartyDisplay/PartyDisplay.css';
 const SPRING_CROSS_STEP_POSTER_SRC = new URL('./spring-cross-step-poster.jpg', import.meta.url)
   .href;
 
-function canShowCurrentTrack(data: PartyDisplayData): boolean {
+const canShowCurrentTrack = (data: PartyDisplayData): boolean => {
   const state = data.playbackState;
   if (!state?.currentTrackId) return false;
   const track = findTrack(data.playlist.items, state.currentTrackId);
   return track != null && track.type === 'track';
-}
+};
 
 export interface SpringCrossStepPartyDisplayProps {
   data: PartyDisplayData;

@@ -115,9 +115,7 @@ describe('applySyncedPlaylistTrackIds', () => {
       totalDuration: 0,
     });
 
-    useServerPlaylistTrackIdsStore
-      .getState()
-      .setFromIdList(['stale-only'], requestGeneration);
+    useServerPlaylistTrackIdsStore.getState().setFromIdList(['stale-only'], requestGeneration);
 
     const serverTrackIds = useServerPlaylistTrackIdsStore.getState().serverTrackIds;
     expect(serverTrackIds?.has('synced')).toBe(true);

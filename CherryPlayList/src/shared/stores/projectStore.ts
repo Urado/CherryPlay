@@ -11,6 +11,7 @@ import {
   PartyTrackDisplaySettings,
   ProjectGroup,
   ProjectGroupSettings,
+  ProjectCollection,
   ProjectItem,
   ProjectMeta,
   ProjectSessionMode,
@@ -22,7 +23,6 @@ import { LOUDNESS_ALGORITHM_VERSION, Track, type TrackLoudness } from '@core/typ
 import { v4 as uuidv4 } from 'uuid';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
-
 
 import { resetPartyWorkspaceForFreshProject } from '../../workspaces/party/resetPartyWorkspaceForFreshProject';
 import {
@@ -62,6 +62,7 @@ import {
 import {
   registerExternalApplyHandler,
   registerProjectStore,
+  resetCollectionWorkspaceStores,
   type ProjectStore,
 } from './projectStoreFactory';
 
@@ -69,7 +70,7 @@ type PersistedLinkedParty = Pick<LinkedParty, 'id' | 'shortCode'>;
 
 const PROJECT_WORKSPACE_ID = DEFAULT_PLAYLIST_WORKSPACE_ID;
 
-function enqueueLoudnessScanForTracks(tracks: Track[]): void {
+const enqueueLoudnessScanForTracks = (tracks: Track[]): void => {
   void import('./settingsStore').then(({ useSettingsStore }) => {
     if (!useSettingsStore.getState().loudnessNormalizationEnabled) {
       return;
@@ -78,11 +79,14 @@ function enqueueLoudnessScanForTracks(tracks: Track[]): void {
       void loudnessService.scanTracks(tracks);
     });
   });
-}
+};
 
 interface ProjectState {
   name: string;
   items: ProjectItem[];
+  collections: ProjectCollection[];
+  collectionBindings: Record<string, string>;
+  legacyCollectionsMigrationComplete: boolean;
   settings: ProjectSettings;
   trackSettings: Map<string, ProjectTrackSettings>;
   groupSettings: Map<string, ProjectGroupSettings>;
@@ -112,7 +116,16 @@ interface ProjectState {
     partyTrackDisplay?: PartyTrackDisplaySettings;
     partyThemeId?: string;
     partyCustomizationSettings?: Record<string, unknown>;
+    collections?: ProjectCollection[];
+    collectionViewState?: { bindings: Record<string, string> };
   }) => void;
+  createCollection: (name?: string) => string;
+  deleteCollection: (collectionId: string) => void;
+  updateCollection: (collectionId: string, data: Pick<ProjectCollection, 'name' | 'items'>) => void;
+  renameCollection: (collectionId: string, name: string) => void;
+  bindCollectionToWorkspace: (workspaceId: string, collectionId: string) => void;
+  unbindCollectionFromWorkspace: (workspaceId: string) => void;
+  markLegacyCollectionsMigrationComplete: () => void;
   setFilePath: (path: string | null) => void;
   setLinkedParty: (linkedParty: LinkedParty | null) => void;
   setPartyTrackDisplaySettings: (settings: PartyTrackDisplaySettings) => void;
@@ -181,6 +194,7 @@ interface ProjectState {
   resetSession: () => void;
   markTrackAsPlayed: (trackId: string) => void;
   markTracksAsPlayed: (trackIds: string[]) => void;
+  unmarkTracksAsPlayed: (trackIds: string[]) => void;
   setCurrentTrack: (trackId: string | null) => void;
   isTrackPlayed: (trackId: string) => boolean;
   toggleTrackDisabled: (trackId: string) => void;
@@ -194,6 +208,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
     (set, get) => ({
       name: 'New Project',
       items: [],
+      collections: [],
+      collectionBindings: {},
+      legacyCollectionsMigrationComplete: false,
       settings: { ...DEFAULT_PROJECT_SETTINGS },
       trackSettings: new Map(),
       groupSettings: new Map(),
@@ -267,15 +284,19 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({
           name: 'New Project',
           items: [],
+          collections: [],
+          collectionBindings: {},
           settings: { ...DEFAULT_PROJECT_SETTINGS },
           trackSettings: new Map(),
           groupSettings: new Map(),
           sessionState: { ...DEFAULT_SESSION_STATE },
           meta: { ...DEFAULT_PROJECT_META },
+          legacyCollectionsMigrationComplete: true,
           selectedItemIds: new Set(),
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+        resetCollectionWorkspaceStores([], {});
         resetPartyWorkspaceForFreshProject();
       },
 
@@ -283,6 +304,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         set({
           name: data.name,
           items: data.items,
+          collections: data.collections ?? [],
+          collectionBindings: data.collectionViewState?.bindings ?? {},
+          legacyCollectionsMigrationComplete: true,
           settings: data.settings,
           trackSettings: data.trackSettings,
           groupSettings: data.groupSettings,
@@ -303,7 +327,76 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
+        resetCollectionWorkspaceStores(data.collections ?? [], data.collectionViewState?.bindings ?? {});
       },
+
+      createCollection: (name) => {
+        const state = get();
+        const used = new Set(state.collections.map((collection) => collection.name));
+        let number = 1;
+        while (used.has(`Подборка ${number}`)) number += 1;
+        const collection = { id: uuidv4(), name: name ?? `Подборка ${number}`, items: [] };
+        set((current) => ({ collections: [...current.collections, collection] }));
+        get().markAsDirty();
+        return collection.id;
+      },
+
+      deleteCollection: (collectionId) => {
+        const state = get();
+        if (!state.collections.some((collection) => collection.id === collectionId)) return;
+        const collectionBindings = Object.fromEntries(
+          Object.entries(state.collectionBindings).filter(([, boundCollectionId]) =>
+            boundCollectionId !== collectionId,
+          ),
+        );
+        set((current) => ({
+          collections: current.collections.filter((collection) => collection.id !== collectionId),
+          collectionBindings,
+        }));
+        get().markAsDirty();
+      },
+
+      updateCollection: (collectionId, data) => {
+        const state = get();
+        const current = state.collections.find((collection) => collection.id === collectionId);
+        if (!current || (current.name === data.name && current.items === data.items)) return;
+        set((currentState) => ({
+          collections: currentState.collections.map((collection) =>
+            collection.id === collectionId ? { ...collection, ...data } : collection,
+          ),
+        }));
+        get().markAsDirty();
+      },
+
+      renameCollection: (collectionId, name) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const collection = get().collections.find((entry) => entry.id === collectionId);
+        if (!collection || collection.name === trimmed) return;
+        set((state) => ({
+          collections: state.collections.map((entry) =>
+            entry.id === collectionId ? { ...entry, name: trimmed } : entry,
+          ),
+        }));
+        get().markAsDirty();
+      },
+
+      bindCollectionToWorkspace: (workspaceId, collectionId) => {
+        if (!get().collections.some((collection) => collection.id === collectionId)) return;
+        set((state) => ({
+          collectionBindings: { ...state.collectionBindings, [workspaceId]: collectionId },
+        }));
+      },
+
+      unbindCollectionFromWorkspace: (workspaceId) => {
+        if (!(workspaceId in get().collectionBindings)) return;
+        set((state) => {
+          const { [workspaceId]: _removed, ...collectionBindings } = state.collectionBindings;
+          return { collectionBindings };
+        });
+      },
+
+      markLegacyCollectionsMigrationComplete: () => set({ legacyCollectionsMigrationComplete: true }),
 
       setPartyTrackDisplaySettings: (partyTrackDisplay) => {
         set((state) => ({
@@ -1128,6 +1221,24 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         get().markAsDirty();
       },
 
+      unmarkTracksAsPlayed: (trackIds) => {
+        if (trackIds.length === 0) return;
+        set((state) => {
+          const toRemove = new Set(trackIds);
+          const playedTrackIds = state.sessionState.playedTrackIds.filter(
+            (id) => !toRemove.has(id),
+          );
+          if (playedTrackIds.length === state.sessionState.playedTrackIds.length) return state;
+          return {
+            sessionState: {
+              ...state.sessionState,
+              playedTrackIds,
+            },
+          };
+        });
+        get().markAsDirty();
+      },
+
       setCurrentTrack: (trackId) => {
         set((state) => ({
           sessionState: {
@@ -1213,6 +1324,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
       partialize: (state) => ({
         name: state.name,
         items: state.items,
+          collections: state.collections,
+          collectionBindings: state.collectionBindings,
+          legacyCollectionsMigrationComplete: state.legacyCollectionsMigrationComplete,
         settings: state.settings,
         trackSettings: Array.from(state.trackSettings.entries()),
         groupSettings: Array.from(state.groupSettings.entries()),
@@ -1234,6 +1348,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           | Partial<{
               name: string;
               items: ProjectItem[];
+              collections: ProjectCollection[];
+              collectionBindings: Record<string, string>;
+              legacyCollectionsMigrationComplete: boolean;
               settings: ProjectSettings;
               trackSettings: Array<[string, ProjectTrackSettings]>;
               groupSettings: Array<[string, ProjectGroupSettings]>;
@@ -1269,6 +1386,10 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           ...currentState,
           name: state?.name ?? currentState.name,
           items: state?.items ?? currentState.items,
+          collections: state?.collections ?? currentState.collections,
+          collectionBindings: state?.collectionBindings ?? currentState.collectionBindings,
+          legacyCollectionsMigrationComplete:
+            state?.legacyCollectionsMigrationComplete ?? currentState.legacyCollectionsMigrationComplete,
           settings: state?.settings ?? currentState.settings,
           trackSettings: new Map(state?.trackSettings ?? []),
           groupSettings: new Map(state?.groupSettings ?? []),
@@ -1281,7 +1402,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
   ),
 );
 
-export function initializeProjectStoreHistory(): void {
+export const initializeProjectStoreHistory = (): void => {
   registerProjectStore(PROJECT_WORKSPACE_ID, useProjectStore as unknown as ProjectStore);
 
   registerExternalApplyHandler((workspaceId, command, mode) => {
@@ -1290,6 +1411,6 @@ export function initializeProjectStoreHistory(): void {
     }
     return false;
   });
-}
+};
 
 export { PROJECT_WORKSPACE_ID };

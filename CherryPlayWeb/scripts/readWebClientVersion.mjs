@@ -1,11 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
-/**
- * Web client version for X-Client-Version header.
- * Primary source: CherryPlayServer/appsettings.json → ClientCompatibility.ServerVersion
- * Fallback: CherryPlayWeb/package.json version
- */
 export function readWebClientVersion(webRootDir) {
   const appsettingsCandidates = [
     path.join(webRootDir, '../CherryPlayServer/appsettings.json'),

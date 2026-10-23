@@ -17,6 +17,8 @@ import { ClientOutdatedProvider } from './contexts/ClientOutdatedContext';
 import { ConsentGateProvider, useConsentGateOpen } from './contexts/ConsentGateContext';
 import { AdminOrganizerDetailPage } from './pages/admin/AdminOrganizerDetailPage';
 import { AdminOrganizersPage } from './pages/admin/AdminOrganizersPage';
+import { AdminPartiesPage } from './pages/admin/AdminPartiesPage';
+import { AdminPartyDetailPage } from './pages/admin/AdminPartyDetailPage';
 import { CabinetPage } from './pages/CabinetPage';
 import { DownloadPage } from './pages/DownloadPage';
 import { FeedbackPage } from './pages/FeedbackPage';
@@ -47,6 +49,7 @@ const PAGE_TITLES: Record<string, string> = {
   [ROUTES.RESET_PASSWORD]: 'Новый пароль',
   [ROUTES.CABINET]: 'Кабинет организатора',
   [ROUTES.ADMIN_ORGANIZERS]: 'Организаторы',
+  [ROUTES.ADMIN_PARTIES]: 'Вечеринки администрирования',
   [ROUTES.PRIVACY]: 'Политика персональных данных',
   [ROUTES.CONSENT]: 'Согласие на обработку данных',
   [ROUTES.TERMS]: 'Пользовательское соглашение',
@@ -71,6 +74,10 @@ const getDocumentTitle = (pathname: string): string => {
 
   if (/^\/admin\/organizers\/[^/]+$/.test(normalizedPath)) {
     return 'Карточка организатора';
+  }
+
+  if (/^\/admin\/parties\/[^/]+$/.test(normalizedPath)) {
+    return 'Карточка вечеринки';
   }
 
   if (/^\/(privacy|consent|terms|cookies)\/v\/[^/]+$/.test(normalizedPath)) {
@@ -112,8 +119,13 @@ const AppShell = () => {
           <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
           <Route path={ROUTES.RESET_PASSWORD} element={<ResetPasswordPage />} />
           <Route path={ROUTES.CABINET} element={<CabinetPage />} />
-          <Route path={ROUTES.ADMIN_ROOT} element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />} />
+          <Route
+            path={ROUTES.ADMIN_ROOT}
+            element={<Navigate to={ROUTES.ADMIN_ORGANIZERS} replace />}
+          />
           <Route path={ROUTES.ADMIN_ORGANIZERS} element={<AdminOrganizersPage />} />
+          <Route path={ROUTES.ADMIN_PARTIES} element={<AdminPartiesPage />} />
+          <Route path="/admin/parties/:id" element={<AdminPartyDetailPage />} />
           <Route path="/admin/organizers/:id" element={<AdminOrganizerDetailPage />} />
           <Route path={ROUTES.PRIVACY} element={<LegalDocumentPage docKey="privacy" />} />
           <Route path="/privacy/v/:version" element={<LegalDocumentPage docKey="privacy" />} />

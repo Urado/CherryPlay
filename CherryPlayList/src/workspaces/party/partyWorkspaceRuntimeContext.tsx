@@ -17,9 +17,9 @@ const PartyWorkspaceRuntimeContext = createContext<PartyWorkspaceRuntimeValue | 
 const providerRegistry = new Set<symbol>();
 const providerElectionListeners = new Set<() => void>();
 
-function notifyProviderElection() {
+const notifyProviderElection = () => {
   providerElectionListeners.forEach((listener) => listener());
-}
+};
 
 const runtimeStore = {
   runtime: null as PartyWorkspaceRuntimeValue | null,
@@ -28,23 +28,23 @@ const runtimeStore = {
 
 const runtimeStoreListeners = new Set<() => void>();
 
-function subscribeRuntimeStore(listener: () => void) {
+const subscribeRuntimeStore = (listener: () => void) => {
   runtimeStoreListeners.add(listener);
   return () => runtimeStoreListeners.delete(listener);
-}
+};
 
-function getRuntimeStoreEpoch() {
+const getRuntimeStoreEpoch = () => {
   return runtimeStore.epoch;
-}
+};
 
-function setSharedRuntime(runtime: PartyWorkspaceRuntimeValue | null) {
+const setSharedRuntime = (runtime: PartyWorkspaceRuntimeValue | null) => {
   if (runtimeStore.runtime === runtime) {
     return;
   }
   runtimeStore.runtime = runtime;
   runtimeStore.epoch += 1;
   runtimeStoreListeners.forEach((listener) => listener());
-}
+};
 
 const PartyWorkspaceRuntimeHost = () => {
   const runtime = usePartyWorkspaceRuntime();
@@ -60,23 +60,23 @@ const PartyWorkspaceRuntimeHost = () => {
   }, []);
 
   return null;
-}
+};
 
-export function useSharedPartyWorkspaceRuntime(): PartyWorkspaceRuntimeValue | null {
+export const useSharedPartyWorkspaceRuntime = (): PartyWorkspaceRuntimeValue | null => {
   return useSyncExternalStore(
     subscribeRuntimeStore,
     () => runtimeStore.runtime,
     () => runtimeStore.runtime,
   );
-}
+};
 
 export const PartyWorkspaceRuntimeEphemeralHost = () => {
   const isHost = useIsElectedHost();
 
   return isHost ? <PartyWorkspaceRuntimeHost /> : null;
-}
+};
 
-function useIsElectedHost(): boolean {
+const useIsElectedHost = (): boolean => {
   const providerIdRef = useRef(Symbol('party-workspace-runtime-provider'));
   const [isHost, setIsHost] = useState(false);
 
@@ -101,7 +101,7 @@ function useIsElectedHost(): boolean {
   }, []);
 
   return isHost;
-}
+};
 
 export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.ReactNode }) => {
   useSyncExternalStore(subscribeRuntimeStore, getRuntimeStoreEpoch, getRuntimeStoreEpoch);
@@ -118,9 +118,9 @@ export const PartyWorkspaceRuntimeProvider = ({ children }: { children: React.Re
       ) : null}
     </>
   );
-}
+};
 
-export function usePartyWorkspaceRuntimeContext(): PartyWorkspaceRuntimeValue {
+export const usePartyWorkspaceRuntimeContext = (): PartyWorkspaceRuntimeValue => {
   const context = useContext(PartyWorkspaceRuntimeContext);
   if (!context) {
     throw new Error(
@@ -128,4 +128,4 @@ export function usePartyWorkspaceRuntimeContext(): PartyWorkspaceRuntimeValue {
     );
   }
   return context;
-}
+};

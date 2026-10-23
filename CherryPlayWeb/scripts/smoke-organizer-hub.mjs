@@ -64,7 +64,9 @@ async function main() {
   const party = await findParty(token);
   await ensureReady(token, party.id);
   const track = await firstTrackId(party.shortCode);
-  console.log(JSON.stringify({ partyId: party.id, shortCode: party.shortCode, trackId: track.id, mode }));
+  console.log(
+    JSON.stringify({ partyId: party.id, shortCode: party.shortCode, trackId: track.id, mode }),
+  );
 
   const connection = new signalR.HubConnectionBuilder()
     .withUrl(`${API}/partyHub`, { accessTokenFactory: () => token })
@@ -104,8 +106,7 @@ async function main() {
     if (!fs.existsSync(CTRL)) {
       try {
         await connection.invoke('EndSession', party.id);
-      } catch {
-      }
+      } catch {}
       await connection.stop();
       console.log('stopped');
       return;
@@ -132,8 +133,7 @@ async function main() {
     } else if (cmd === 'stop') {
       try {
         await connection.invoke('EndSession', party.id);
-      } catch {
-      }
+      } catch {}
       await connection.stop();
       fs.unlinkSync(CTRL);
       console.log('stopped');

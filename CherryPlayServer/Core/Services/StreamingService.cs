@@ -15,13 +15,15 @@ public class StreamingService : IStreamingService
     private readonly IPlaylistTrackFinder _trackFinder;
     private readonly IPartyDisplayStatusService _partyDisplayStatusService;
     private readonly ILogger<StreamingService> _logger;
+    private readonly IPartyActivityCoordinator _partyActivityCoordinator;
 
     public StreamingService(
         IPartyRepository partyRepository,
         IStreamingRepository streamingRepository,
         IPlaylistTrackFinder trackFinder,
         IPartyDisplayStatusService partyDisplayStatusService,
-        ILogger<StreamingService> logger)
+        ILogger<StreamingService> logger,
+        IPartyActivityCoordinator? partyActivityCoordinator = null)
     {
         _partyRepository = partyRepository ?? throw new ArgumentNullException(nameof(partyRepository));
         _streamingRepository = streamingRepository ?? throw new ArgumentNullException(nameof(streamingRepository));
@@ -29,6 +31,7 @@ public class StreamingService : IStreamingService
         _partyDisplayStatusService = partyDisplayStatusService
             ?? throw new ArgumentNullException(nameof(partyDisplayStatusService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _partyActivityCoordinator = partyActivityCoordinator ?? new PartyActivityCoordinator();
     }
 
     public async Task<PartyStateDto?> GetPartyStateAsync(string shortCode)
@@ -126,7 +129,10 @@ public class StreamingService : IStreamingService
             state.DisabledGroupIds = state.DisabledGroupIds.Where(id => groupIds.Contains(id)).ToList();
     }
 
-    public async Task StartSessionAsync(Guid partyId)
+    public Task StartSessionAsync(Guid partyId) =>
+        _partyActivityCoordinator.ExecuteAsync(partyId, () => StartSessionCoreAsync(partyId));
+
+    private async Task StartSessionCoreAsync(Guid partyId)
     {
         _logger.LogInformation("Starting session for party");
 
@@ -166,7 +172,10 @@ public class StreamingService : IStreamingService
         _logger.LogInformation("Session started for party");
     }
 
-    public async Task EndSessionAsync(Guid partyId)
+    public Task EndSessionAsync(Guid partyId) =>
+        _partyActivityCoordinator.ExecuteAsync(partyId, () => EndSessionCoreAsync(partyId));
+
+    private async Task EndSessionCoreAsync(Guid partyId)
     {
         _logger.LogInformation("Ending session for party");
 
@@ -190,7 +199,10 @@ public class StreamingService : IStreamingService
         _logger.LogInformation("Session ended for party");
     }
 
-    public async Task ResetPlaybackStateAsync(Guid partyId)
+    public Task ResetPlaybackStateAsync(Guid partyId) =>
+        _partyActivityCoordinator.ExecuteAsync(partyId, () => ResetPlaybackStateCoreAsync(partyId));
+
+    private async Task ResetPlaybackStateCoreAsync(Guid partyId)
     {
         _logger.LogInformation("Resetting playback state for party");
 
@@ -230,7 +242,7 @@ public class StreamingService : IStreamingService
         _logger.LogInformation("Playback state reset for party");
     }
 
-    public async Task UpdatePlaybackPositionAsync(Guid partyId, string trackId, double position)
+    public Task UpdatePlaybackPositionAsync(Guid partyId, string trackId, double position)
     {
         if (string.IsNullOrWhiteSpace(trackId))
         {
@@ -242,6 +254,13 @@ public class StreamingService : IStreamingService
             throw new ArgumentException("Position cannot be negative", nameof(position));
         }
 
+        return _partyActivityCoordinator.ExecuteAsync(
+            partyId,
+            () => UpdatePlaybackPositionCoreAsync(partyId, trackId, position));
+    }
+
+    private async Task UpdatePlaybackPositionCoreAsync(Guid partyId, string trackId, double position)
+    {
         _logger.LogDebug("Updating playback position");
 
         var party = await _partyRepository.GetByIdAsync(partyId);
@@ -276,13 +295,20 @@ public class StreamingService : IStreamingService
         await _streamingRepository.SetSessionStateAsync(partyId, state);
     }
 
-    public async Task UpdateFullStateAsync(Guid partyId, PlaybackStateDto stateDto)
+    public Task UpdateFullStateAsync(Guid partyId, PlaybackStateDto stateDto)
     {
         if (stateDto == null)
         {
             throw new ArgumentNullException(nameof(stateDto));
         }
 
+        return _partyActivityCoordinator.ExecuteAsync(
+            partyId,
+            () => UpdateFullStateCoreAsync(partyId, stateDto));
+    }
+
+    private async Task UpdateFullStateCoreAsync(Guid partyId, PlaybackStateDto stateDto)
+    {
         _logger.LogDebug("Updating full state");
 
         var party = await _partyRepository.GetByIdAsync(partyId);

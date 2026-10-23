@@ -1,6 +1,3 @@
-/**
- * Сервис для работы с API вечеринок
- */
 import { API_ENDPOINTS, getApiUrl } from '../config/apiConfig';
 import { isPartyLifecycleState, LIFECYCLE_STATUS_LABELS } from '../constants/partyLifecycle';
 import type {
@@ -18,9 +15,25 @@ import type {
 import { handleApiResponse, parseApiErrorPayload } from '../utils/apiErrorHandler';
 import { apiFetch } from '../utils/apiFetch';
 
-import { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './partyApiErrors';
+import {
+  FuturePartyLimitReachedError,
+  InvalidPartyLifecycleTransitionError,
+  ThemeNotEntitledError,
+} from './partyApiErrors';
 
-function buildThemeEntitlementMessage(payload: ApiErrorPayload): string {
+const FUTURE_PARTY_LIMIT_FALLBACK = 2;
+
+const buildFuturePartyLimitMessage = (limit: number): string => {
+  return `Достигнут лимит: не больше ${limit} будущих вечеринок. Новую будущую вечеринку создать нельзя, и прошедшую нельзя перенести в будущее.`;
+};
+
+const resolveFuturePartyLimit = (limit: unknown): number => {
+  return typeof limit === 'number' && Number.isInteger(limit) && limit > 0
+    ? limit
+    : FUTURE_PARTY_LIMIT_FALLBACK;
+};
+
+const buildThemeEntitlementMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'theme_not_entitled') {
     return payload.detail || payload.message || 'Ошибка доступа к теме';
   }
@@ -31,9 +44,9 @@ function buildThemeEntitlementMessage(payload: ApiErrorPayload): string {
   }
 
   return `Тема недоступна без пакета: ${packageCodes.join(', ')}. Обратитесь к администратору.`;
-}
+};
 
-function buildLifecycleTransitionMessage(payload: ApiErrorPayload): string {
+const buildLifecycleTransitionMessage = (payload: ApiErrorPayload): string => {
   if (payload.code !== 'invalid_lifecycle_transition') {
     return payload.detail || payload.message || 'Недопустимый переход состояния вечеринки';
   }
@@ -47,14 +60,28 @@ function buildLifecycleTransitionMessage(payload: ApiErrorPayload): string {
   }
 
   return payload.message || 'Недопустимый переход состояния вечеринки';
-}
+};
 
-async function throwIfThemeNotEntitled(response: Response): Promise<void> {
+const throwIfFuturePartyLimitReached = async (response: Response): Promise<void> => {
   if (response.status !== 403) {
     return;
   }
 
-  const payload = await parseApiErrorPayload<ApiErrorPayload>(response);
+  const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
+  if (!payload || payload.code !== 'future_party_limit_reached') {
+    return;
+  }
+
+  const limit = resolveFuturePartyLimit(payload.limit);
+  throw new FuturePartyLimitReachedError(buildFuturePartyLimitMessage(limit), limit);
+};
+
+const throwIfThemeNotEntitled = async (response: Response): Promise<void> => {
+  if (response.status !== 403) {
+    return;
+  }
+
+  const payload = await parseApiErrorPayload<ApiErrorPayload>(response.clone());
   if (!payload || payload.code !== 'theme_not_entitled') {
     return;
   }
@@ -66,9 +93,9 @@ async function throwIfThemeNotEntitled(response: Response): Promise<void> {
     : [];
 
   throw new ThemeNotEntitledError(message, themeId, requiredPackageCodes);
-}
+};
 
-async function throwIfInvalidLifecycleTransition(response: Response): Promise<void> {
+const throwIfInvalidLifecycleTransition = async (response: Response): Promise<void> => {
   if (response.status !== 409) {
     return;
   }
@@ -85,12 +112,9 @@ async function throwIfInvalidLifecycleTransition(response: Response): Promise<vo
     : 'draft';
 
   throw new InvalidPartyLifecycleTransitionError(message, currentState, requestedState);
-}
+};
 
 class PartyApiService {
-  /**
-   * Список вечеринок текущего организатора (требует авторизации), включая `draft`.
-   */
   async getMyParties(): Promise<PartyDto[]> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
       method: 'GET',
@@ -101,9 +125,6 @@ class PartyApiService {
     return handleApiResponse<PartyDto[]>(response, 'Ошибка загрузки списка вечеринок');
   }
 
-  /**
-   * Получить вечеринку по id (включая черновик `draft`).
-   */
   async getPartyById(partyId: string): Promise<PartyDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'GET',
@@ -114,9 +135,6 @@ class PartyApiService {
     return handleApiResponse<PartyDto>(response, 'Ошибка загрузки вечеринки');
   }
 
-  /**
-   * Создать вечеринку (требует авторизации)
-   */
   async createParty(dto: CreatePartyDto): Promise<PartyDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.MY), {
       method: 'POST',
@@ -125,13 +143,11 @@ class PartyApiService {
       body: JSON.stringify(dto),
     });
 
+    await throwIfFuturePartyLimitReached(response);
     await throwIfThemeNotEntitled(response);
     return handleApiResponse<PartyDto>(response, 'Ошибка создания вечеринки');
   }
 
-  /**
-   * Обновить метаданные вечеринки (требует авторизации)
-   */
   async updatePartyMetadata(partyId: string, dto: UpdatePartyDto): Promise<void> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'PUT',
@@ -140,13 +156,11 @@ class PartyApiService {
       body: JSON.stringify(dto),
     });
 
+    await throwIfFuturePartyLimitReached(response);
     await throwIfThemeNotEntitled(response);
     await handleApiResponse<void>(response, 'Ошибка обновления вечеринки');
   }
 
-  /**
-   * Удалить вечеринку (требует авторизации)
-   */
   async deleteParty(partyId: string): Promise<void> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.BY_ID(partyId)), {
       method: 'DELETE',
@@ -156,11 +170,6 @@ class PartyApiService {
     await handleApiResponse<void>(response, 'Ошибка удаления вечеринки');
   }
 
-  /**
-   * Перевести вечеринку в целевое состояние жизненного цикла (POST `/api/parties/{partyId}/lifecycle`).
-   * Идемпотентно, если уже в целевом состоянии. При недопустимом переходе — 409
-   * {@link InvalidPartyLifecycleTransitionError}.
-   */
   async transitionPartyLifecycle(
     partyId: string,
     targetState: PartyLifecycleState,
@@ -180,9 +189,6 @@ class PartyApiService {
     return handleApiResponse<PartyDto>(response, 'Ошибка смены состояния вечеринки');
   }
 
-  /**
-   * Получает плейлист первого доступного вечеринки (для демо)
-   */
   async getFirstPartyPlaylist(): Promise<PartyPlaylistDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.FIRST), {
       cache: 'no-cache',
@@ -191,9 +197,6 @@ class PartyApiService {
     return handleApiResponse<PartyPlaylistDto>(response, 'Ошибка загрузки плейлиста');
   }
 
-  /**
-   * Получает публичную информацию о вечеринке
-   */
   async getPublicParty(shortCode: string): Promise<PublicPartyDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.BY_CODE(shortCode)), {
       cache: 'no-cache',
@@ -202,9 +205,6 @@ class PartyApiService {
     return handleApiResponse<PublicPartyDto>(response, 'Ошибка загрузки вечеринки');
   }
 
-  /**
-   * Получает плейлист вечеринки по shortCode
-   */
   async getPartyPlaylist(shortCode: string): Promise<PartyPlaylistDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.PLAYLIST(shortCode)), {
       cache: 'no-cache',
@@ -213,9 +213,6 @@ class PartyApiService {
     return handleApiResponse<PartyPlaylistDto>(response, 'Ошибка загрузки плейлиста');
   }
 
-  /**
-   * Получает полное состояние вечеринки
-   */
   async getPartyState(shortCode: string): Promise<PartyStateDto> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.STATE(shortCode)), {
       cache: 'no-cache',
@@ -224,9 +221,6 @@ class PartyApiService {
     return handleApiResponse<PartyStateDto>(response, 'Ошибка загрузки состояния');
   }
 
-  /**
-   * Получает список всех публичных вечеринок
-   */
   async getAllParties(): Promise<PublicPartyListItemDto[]> {
     const response = await apiFetch(getApiUrl(API_ENDPOINTS.PARTIES.PUBLIC.LIST), {
       cache: 'no-cache',
@@ -241,4 +235,8 @@ class PartyApiService {
 
 export const partyApiService = new PartyApiService();
 
-export { InvalidPartyLifecycleTransitionError, ThemeNotEntitledError } from './partyApiErrors';
+export {
+  FuturePartyLimitReachedError,
+  InvalidPartyLifecycleTransitionError,
+  ThemeNotEntitledError,
+} from './partyApiErrors';

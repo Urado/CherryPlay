@@ -1,6 +1,9 @@
-const mockCreateParty = jest.fn();
-const mockGetPartyUrl = jest.fn();
-const mockCheckServerReachable = jest.fn();
+const mockCreateParty = jest.fn<
+  Promise<{ id: string; shortCode: string; partyLifecycleState: string }>,
+  unknown[]
+>();
+const mockGetPartyUrl = jest.fn<Promise<string>, unknown[]>();
+const mockCheckServerReachable = jest.fn<Promise<boolean>, unknown[]>();
 
 jest.mock('../../src/shared/services/partyService', () => ({
   partyService: {
@@ -25,7 +28,7 @@ import {
   handlePartyCreationFailure,
 } from '../../src/workspaces/party/partyWorkspaceCreateFlow';
 
-function createMockStore() {
+const createMockStore = () => {
   return {
     setPartyVerified: jest.fn(),
     setPartyLifecycleState: jest.fn(),
@@ -33,9 +36,9 @@ function createMockStore() {
     setServerUnreachable: jest.fn(),
     setServerError: jest.fn(),
   };
-}
+};
 
-function createFinalizeDeps() {
+const createFinalizeDeps = () => {
   return {
     loadThemeAccess: jest.fn().mockResolvedValue(undefined),
     checkPartyExists: jest.fn().mockResolvedValue(true),
@@ -43,14 +46,14 @@ function createFinalizeDeps() {
     markAsDirty: jest.fn(),
     addNotification: jest.fn(),
   };
-}
+};
 
-function createFailureDeps() {
+const createFailureDeps = () => {
   return {
     addNotification: jest.fn(),
     startReconnectTimer: jest.fn(),
   };
-}
+};
 
 const createData = {
   name: 'Party',

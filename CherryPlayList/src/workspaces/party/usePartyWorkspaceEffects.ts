@@ -37,7 +37,7 @@ import { resetPartyWorkspaceForFreshProject } from './resetPartyWorkspaceForFres
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
-export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolean) {
+export const usePartyWorkspaceEffects = (isAuth: boolean, networkEnabled: boolean) => {
   const meta = useProjectStore((state) => state.meta);
   const projectIdentityKey = useProjectStore((state) => state.meta.filePath ?? '');
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
@@ -153,11 +153,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
         return false;
       }
     },
-    [
-      networkEnabled,
-      setPartyCustomizationSettingsInMeta,
-      setPartyThemeIdInMeta,
-    ],
+    [networkEnabled, setPartyCustomizationSettingsInMeta, setPartyThemeIdInMeta],
   );
 
   const restoreAfterReconnect = useCallback(
@@ -404,11 +400,7 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     store.setCustomizationSettings(
       resolveLoadedCustomizationSettings(resolvedThemeId, meta.partyCustomizationSettings),
     );
-  }, [
-    meta.partyThemeId,
-    meta.partyCustomizationSettings,
-    projectIdentityKey,
-  ]);
+  }, [meta.partyThemeId, meta.partyCustomizationSettings, projectIdentityKey]);
 
   useEffect(() => {
     if (networkEnabled) {
@@ -633,4 +625,4 @@ export function usePartyWorkspaceEffects(isAuth: boolean, networkEnabled: boolea
     visibleThemeIds,
     lockedThemeInfos,
   };
-}
+};

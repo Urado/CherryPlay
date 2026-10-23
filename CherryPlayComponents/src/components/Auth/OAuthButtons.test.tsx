@@ -4,31 +4,27 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  LEGAL_PD_CONSENT,
-  LEGAL_TERMS,
-  type ConsentInput,
-} from '../../constants/legalDocuments';
+import { LEGAL_PD_CONSENT, LEGAL_TERMS, type ConsentInput } from '../../constants/legalDocuments';
 import { OAUTH_PENDING_CONSENTS_STORAGE_KEY } from '../../constants/oauthPendingConsents';
 import type { AuthService } from '../../types/auth';
 
 import { OAuthButtons } from './OAuthButtons';
 
-function createAuthService(startOAuthFlow = vi.fn()): AuthService {
+const createAuthService = (startOAuthFlow = vi.fn()): AuthService => {
   return {
     login: vi.fn(),
     register: vi.fn(),
     startOAuthFlow,
   };
-}
+};
 
-function getButtonByName(name: RegExp): HTMLButtonElement {
+const getButtonByName = (name: RegExp): HTMLButtonElement => {
   const button = screen.getByRole('button', { name });
   if (!(button instanceof HTMLButtonElement)) {
     throw new Error('Expected a button element');
   }
   return button;
-}
+};
 
 describe('OAuthButtons consent gate', () => {
   afterEach(() => {

@@ -6,7 +6,9 @@ describe('useSelectionWithModifiers', () => {
   it('extends the range from the original selection anchor across repeated Shift clicks', () => {
     const toggleSelection = jest.fn();
     const selectRange = jest.fn();
-    const { result } = renderHook(() => useSelectionWithModifiers({ toggleSelection, selectRange }));
+    const { result } = renderHook(() =>
+      useSelectionWithModifiers({ toggleSelection, selectRange }),
+    );
 
     act(() => result.current.handleToggleSelect('track-2'));
     act(() => result.current.handleToggleSelect('track-5', { shiftKey: true } as React.MouseEvent));

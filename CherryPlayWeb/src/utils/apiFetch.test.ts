@@ -24,17 +24,17 @@ import {
   subscribeConsentRequired,
 } from './consentGateNotifier';
 
-function mockResponse(status: number, body: unknown): Response {
+const mockResponse = (status: number, body: unknown): Response => {
   const text = JSON.stringify(body);
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === CLIENT_OUTDATED_STATUS ? 'Upgrade Required' : 'Error',
     clone: () => mockResponse(status, body),
-    json: async () => body,
-    text: async () => text,
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(text),
   } as Response;
-}
+};
 
 describe('apiFetch', () => {
   beforeEach(() => {
@@ -55,13 +55,15 @@ describe('apiFetch', () => {
 
     await apiFetch('/api/parties', { method: 'GET' });
 
-    expect(fetch).toHaveBeenCalledWith('/api/parties', {
-      method: 'GET',
-      headers: expect.any(Headers),
-    });
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe('/api/parties');
+    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.method).toBe('GET');
+    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.headers).toBeInstanceOf(Headers);
 
-    const init = vi.mocked(fetch).mock.calls[0]?.[1];
-    const headers = init?.headers as Headers;
+    const headers = new Headers(
+      (
+        vi.mocked(fetch).mock.calls[0] as unknown as [RequestInfo | URL, RequestInit] | undefined
+      )?.[1]?.headers,
+    );
     expect(headers.get(CLIENT_VERSION_HEADER)).toBe(CLIENT_VERSION);
     expect(headers.get(CLIENT_APP_HEADER)).toBe(CLIENT_APP_ID);
   });

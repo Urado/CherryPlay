@@ -9,7 +9,6 @@ import {
   type PropsWithChildren,
 } from 'react';
 
-
 import { AUTH_STATE_CHANGED_EVENT, authService } from '../services/authService';
 
 interface SiteAuthState {
@@ -61,9 +60,7 @@ export const SiteAuthProvider = ({ children }: PropsWithChildren) => {
   }, [refreshAuth]);
 
   return (
-    <SiteAuthContext.Provider value={{ organizer, checked }}>
-      {children}
-    </SiteAuthContext.Provider>
+    <SiteAuthContext.Provider value={{ organizer, checked }}>{children}</SiteAuthContext.Provider>
   );
 };
 

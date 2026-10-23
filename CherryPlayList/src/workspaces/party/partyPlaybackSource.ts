@@ -104,12 +104,15 @@ export const resolvePartyPlaybackSourceState = (
   sourceOrInput: AimpSourceSelection | undefined | PartyPlaybackSourceInput,
   context?: Omit<PartyPlaybackSourceInput, 'streamingSource'>,
 ): PartyPlaybackSourceState => {
-  const input = typeof sourceOrInput === 'object' && sourceOrInput !== null
-    ? sourceOrInput
-    : {
-        ...context,
-        streamingSource: sourceOrInput ?? 'cherryPlayPlayer',
-      } as PartyPlaybackSourceInput;
+  const input =
+    typeof sourceOrInput === 'object' && sourceOrInput !== null
+      ? sourceOrInput
+      : ({
+          ...context,
+          streamingSource: sourceOrInput ?? 'cherryPlayPlayer',
+        } as PartyPlaybackSourceInput);
 
-  return getPartyPlaybackSourceAdapter(input.streamingSource ?? 'cherryPlayPlayer').resolveState(input);
+  return getPartyPlaybackSourceAdapter(input.streamingSource ?? 'cherryPlayPlayer').resolveState(
+    input,
+  );
 };

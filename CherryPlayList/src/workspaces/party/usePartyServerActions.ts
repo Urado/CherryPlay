@@ -1,4 +1,3 @@
-
 import {
   InvalidPartyLifecycleTransitionError,
   ThemeNotEntitledError,
@@ -32,16 +31,16 @@ import type { PartyPlaylistBuildParams } from './usePartyPlaylistState';
 
 const getPartyStore = () => usePartyWorkspaceStore.getState();
 
-function resolvePartyNameForServer(
+const resolvePartyNameForServer = (
   store: ReturnType<typeof getPartyStore>,
   projectName: string,
-): string {
+): string => {
   const nameToUse = resolveDisplayPartyName(store.partyName, projectName, 'Вечеринка');
   if (!store.partyName.trim()) {
     store.setPartyName(nameToUse);
   }
   return nameToUse;
-}
+};
 
 type PartyServerEffects = {
   loadThemeAccess: (forceRefresh?: boolean) => Promise<void>;
@@ -50,11 +49,11 @@ type PartyServerEffects = {
   isNetworkEnabled: () => boolean;
 };
 
-export function usePartyServerActions(
+export const usePartyServerActions = (
   isAuth: boolean,
   playlistBuildParams: PartyPlaylistBuildParams,
   effects: PartyServerEffects,
-) {
+) => {
   const meta = useProjectStore((state) => state.meta);
   const projectName = useProjectStore((state) => state.name);
   const setLinkedParty = useProjectStore((state) => state.setLinkedParty);
@@ -302,19 +301,20 @@ export function usePartyServerActions(
   }, [isAuth, meta.linkedParty, addNotification, openModal, effects, handleThemeNotEntitled]);
 
   const handleCopyUrl = useCallback(async () => {
-    const url = meta.linkedParty?.url;
-    if (!url) {
+    const linkedParty = meta.linkedParty;
+    if (!linkedParty?.shortCode) {
       addNotification({
         type: 'error',
-        message: 'URL вечеринки ещё не загружен',
+        message: 'Сначала привяжите вечеринку.',
       });
       return;
     }
     try {
+      const url = await partyService.getPartyUrl(linkedParty.shortCode);
       await copyTextToClipboard(url);
       addNotification({
         type: 'success',
-        message: 'URL скопирован',
+        message: 'Ссылка для гостей скопирована',
       });
     } catch (error) {
       console.error('Failed to copy URL:', error);
@@ -323,7 +323,7 @@ export function usePartyServerActions(
         message: 'Не удалось скопировать URL. Скопируйте ссылку вручную.',
       });
     }
-  }, [meta.linkedParty?.url, addNotification]);
+  }, [meta.linkedParty, addNotification]);
 
   return {
     handleCreateParty,
@@ -333,13 +333,13 @@ export function usePartyServerActions(
     handleCatalogVisibilityChange,
     handleLifecycleTransition,
   };
-}
+};
 
-export function usePartyWorkspaceAuthState() {
+export const usePartyWorkspaceAuthState = () => {
   const authStore = useAuthStore();
   const isAuth = authStore.isAuthenticated();
   const { isOutdated: isClientOutdated, requiredVersion: clientRequiredVersion } =
     useClientOutdatedStore();
 
   return { isAuth, isClientOutdated, clientRequiredVersion };
-}
+};

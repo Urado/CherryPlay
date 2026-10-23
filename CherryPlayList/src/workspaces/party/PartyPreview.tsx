@@ -11,7 +11,6 @@ import {
 import type { PartyLifecycleState } from '@shared/services/partyService';
 import React, { useMemo } from 'react';
 
-
 import { isPlaybackLiveActive, resolvePreviewViewerStatusId } from './partyPreviewLifecycle';
 
 import './PartyPreview.css';

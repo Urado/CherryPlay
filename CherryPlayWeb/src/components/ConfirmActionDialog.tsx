@@ -1,5 +1,5 @@
 import { Button } from '@cherryplay/components';
-import { useEffect, useId, useRef, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 
 import './ConfirmActionDialog.css';
@@ -29,7 +29,7 @@ export const ConfirmActionDialog = ({
 }: ConfirmActionDialogProps) => {
   const titleId = useId();
   const descriptionId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const onCancelRef = useRef(onCancel);
   const confirmingRef = useRef(confirming);
@@ -80,7 +80,7 @@ export const ConfirmActionDialog = ({
     return null;
   }
 
-  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+  const trapFocus = (event: KeyboardEvent<HTMLDialogElement>) => {
     if (event.key !== 'Tab') {
       return;
     }
@@ -102,15 +102,10 @@ export const ConfirmActionDialog = ({
     }
   };
 
-  const ignoreBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      event.preventDefault();
-    }
-  };
-
   return createPortal(
-    <div
+    <dialog
       ref={dialogRef}
+      open
       className="confirm-action-backdrop"
       role="alertdialog"
       aria-modal="true"
@@ -118,7 +113,6 @@ export const ConfirmActionDialog = ({
       aria-describedby={descriptionId}
       tabIndex={-1}
       onKeyDown={trapFocus}
-      onMouseDown={ignoreBackdropClick}
     >
       <div className="confirm-action-modal">
         <h2 id={titleId} className="confirm-action-title">
@@ -151,7 +145,7 @@ export const ConfirmActionDialog = ({
           </Button>
         </div>
       </div>
-    </div>,
+    </dialog>,
     document.body,
   );
 };

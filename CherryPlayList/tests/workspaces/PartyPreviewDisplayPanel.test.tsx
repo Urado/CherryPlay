@@ -15,16 +15,14 @@ jest.mock('../../src/workspaces/party/partyWorkspaceRuntimeContext', () => ({
 
 jest.mock('../../src/workspaces/party/usePartySettingsFormState', () => ({
   usePartySettingsFormState: () => ({
+    editorFields: { partyTitle: '', partySubtitle: '' },
+    editorHandlers: {
+      onPartyTitleChange: jest.fn(),
+      onPartySubtitleChange: jest.fn(),
+    },
     groupDisplayDepth: 3,
     setGroupDisplayDepth: jest.fn(),
-    showTrackDisplay: true,
-    partyTrackDisplay: {},
-    setPartyTrackDisplaySettings: jest.fn(),
   }),
-}));
-
-jest.mock('../../src/workspaces/party/components/PartyTrackDisplaySection', () => ({
-  PartyTrackDisplaySection: () => <div data-testid="track-display-settings" />,
 }));
 
 describe('party preview display settings', () => {
@@ -69,18 +67,18 @@ describe('party preview display settings', () => {
     });
   });
 
-  it('shows configurable depth and track trimming for common themes', () => {
+  it('shows configurable group depth for common themes', () => {
     render(<PartyPreviewDisplayPanel themeId="basic" />);
 
-    expect(screen.getByLabelText('Глубина отображения групп')).toHaveValue('3');
-    expect(screen.getByTestId('track-display-settings')).toBeInTheDocument();
+    expect(screen.getByLabelText('Уровень вложенности')).toHaveValue('3');
+    expect(screen.queryByTestId('track-display-settings')).not.toBeInTheDocument();
   });
 
-  it('keeps Spring depth unavailable while retaining track display settings', () => {
+  it('keeps Spring depth unavailable without track display settings in preview', () => {
     render(<PartyPreviewDisplayPanel themeId="spring-cross-step" />);
 
-    expect(screen.queryByLabelText('Глубина отображения групп')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Уровень вложенности')).not.toBeInTheDocument();
     expect(screen.getByText(/не применяется к теме/)).toBeInTheDocument();
-    expect(screen.getByTestId('track-display-settings')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Отображение треков' })).not.toBeInTheDocument();
   });
 });

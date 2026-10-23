@@ -1,4 +1,5 @@
 import { getApiConfig } from '../config/apiConfig';
+import { getServerUrlSync } from '../config/serverConfig';
 import {
   DEMO_PARTY_ID,
   DEMO_THEME_ACCESS,
@@ -39,9 +40,9 @@ export const PARTY_LIFECYCLE_STATES = ['draft', 'ready', 'completed'] as const;
 
 export type PartyLifecycleState = (typeof PARTY_LIFECYCLE_STATES)[number];
 
-export function isPartyLifecycleState(value: unknown): value is PartyLifecycleState {
+export const isPartyLifecycleState = (value: unknown): value is PartyLifecycleState => {
   return typeof value === 'string' && (PARTY_LIFECYCLE_STATES as readonly string[]).includes(value);
-}
+};
 
 export interface TransitionPartyLifecycleDto {
   partyLifecycleState: PartyLifecycleState;
@@ -406,7 +407,17 @@ class PartyService {
       return getDemoPartyPublicUrl(shortCode);
     }
     const config = await getApiConfig();
-    const serverUrl = config.serverUrl;
+    return this.buildPartyUrl(config.serverUrl, shortCode);
+  }
+
+  getPartyUrlSync(shortCode: string): string {
+    if (isDemoAuthMode()) {
+      return getDemoPartyPublicUrl(shortCode);
+    }
+    return this.buildPartyUrl(getServerUrlSync(), shortCode);
+  }
+
+  private buildPartyUrl(serverUrl: string, shortCode: string): string {
     if (!serverUrl.trim()) {
       return `http://localhost:3000/party/${shortCode}`;
     }

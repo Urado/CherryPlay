@@ -11,9 +11,9 @@ export const DEMO_PERSIST_STORAGE_KEYS = [
   'cherryplaylist-project',
 ] as const;
 
-export async function resetDemoPersistStorage(): Promise<void> {
+export const resetDemoPersistStorage = async (): Promise<void> => {
   const keys = isDemoLiveMode()
     ? DEMO_PERSIST_STORAGE_KEYS.filter((key) => key !== DEMO_AUTH_PERSIST_STORAGE_KEY)
     : DEMO_PERSIST_STORAGE_KEYS;
   await Promise.all(keys.map((key) => electronStorage.removeItem(key)));
-}
+};

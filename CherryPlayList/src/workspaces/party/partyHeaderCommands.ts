@@ -1,3 +1,4 @@
+import { dialogService } from '@shared/services/dialogService';
 import {
   InvalidPartyLifecycleTransitionError,
   ThemeNotEntitledError,
@@ -34,6 +35,8 @@ import { resolvePartyArchiveAvailability } from './resolvePartyArchiveAvailabili
 const getPartyStore = () => {
   return usePartyWorkspaceStore.getState();
 };
+
+const pendingLifecycleRequests = new Set<string>();
 
 const isNetworkEnabledNow = (): boolean => {
   return getOnlineNetworkPolicy({
@@ -180,15 +183,43 @@ export const unarchivePartyFromHeader = async (): Promise<void> => {
     });
     return;
   }
-  if (!window.confirm('Вернуть вечеринку из архива в статус «Ждёт начала»?')) {
+  if (store.isTransitioningLifecycle) {
+    ui.addNotification({
+      type: 'warning',
+      message: 'Смена статуса уже выполняется',
+    });
+    return;
+  }
+  const requestKey = `unarchive:${linkedParty.id}`;
+  if (pendingLifecycleRequests.has(requestKey)) {
+    return;
+  }
+  pendingLifecycleRequests.add(requestKey);
+  const accepted = await dialogService.confirm({
+    title: 'Вернуть вечеринку из архива?',
+    message: 'Перевести вечеринку в статус «Ждёт начала»?',
+    confirmLabel: 'Вернуть',
+  });
+  if (!accepted) {
+    pendingLifecycleRequests.delete(requestKey);
     return;
   }
 
-  store.setPendingLifecycleTransition('ready');
-  store.setIsTransitioningLifecycle(true);
+  const latestStore = getPartyStore();
+  if (
+    latestStore.isTransitioningLifecycle ||
+    latestStore.partyLifecycleState !== 'completed' ||
+    useProjectStore.getState().meta.linkedParty?.id !== linkedParty.id
+  ) {
+    pendingLifecycleRequests.delete(requestKey);
+    return;
+  }
+
+  latestStore.setPendingLifecycleTransition('ready');
+  latestStore.setIsTransitioningLifecycle(true);
   try {
     const party = await partyService.transitionPartyLifecycle(linkedParty.id, 'ready');
-    store.setPartyLifecycleState(party.partyLifecycleState);
+    latestStore.setPartyLifecycleState(party.partyLifecycleState);
   } catch (error) {
     console.error('Failed to unarchive party from header:', error);
     if (isSessionExpiredError(error)) {
@@ -206,8 +237,9 @@ export const unarchivePartyFromHeader = async (): Promise<void> => {
       message: error instanceof Error ? error.message : 'Не удалось вернуть вечеринку из архива',
     });
   } finally {
-    store.setIsTransitioningLifecycle(false);
-    store.setPendingLifecycleTransition(null);
+    latestStore.setIsTransitioningLifecycle(false);
+    latestStore.setPendingLifecycleTransition(null);
+    pendingLifecycleRequests.delete(requestKey);
   }
 };
 
@@ -261,8 +293,17 @@ export const archivePartyFromHeader = async (): Promise<void> => {
     }),
   });
 
+  const requestKey = `archive:${linkedParty.id}`;
+  if (pendingLifecycleRequests.has(requestKey)) {
+    return;
+  }
   if (availability.isBlockedByLive) {
-    window.alert(availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив');
+    pendingLifecycleRequests.add(requestKey);
+    await dialogService.alert({
+      title: 'Нельзя отправить вечеринку в архив',
+      message: availability.blockedExplanation ?? 'Сейчас нельзя отправить вечеринку в архив',
+    });
+    pendingLifecycleRequests.delete(requestKey);
     return;
   }
   if (!availability.canArchive || store.partyLifecycleState !== 'ready') {

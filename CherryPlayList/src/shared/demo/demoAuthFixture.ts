@@ -19,14 +19,14 @@ export const DEMO_ORGANIZER_DTO: OrganizerDto = {
   updatedAt: '2025-01-01T00:00:00.000Z',
 };
 
-export function getDemoOrganizerDto(): OrganizerDto {
+export const getDemoOrganizerDto = (): OrganizerDto => {
   return { ...DEMO_ORGANIZER_DTO };
-}
+};
 
-export function applyDemoAuthSession(): void {
+export const applyDemoAuthSession = (): void => {
   setAuthSessionToken(DEMO_ACCESS_TOKEN);
   useAuthStore.getState().setOrganizer({
     id: DEMO_ORGANIZER_DTO.id,
     name: DEMO_ORGANIZER_DTO.name,
   });
-}
+};

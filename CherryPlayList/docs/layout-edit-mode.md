@@ -4,9 +4,9 @@
 
 **Персистентность дерева и workspace:**
 
-| Среда                            | Поведение                                                                                                                                                                                                                                                                                          |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Electron** (`npm run dev`)     | Состояние workspace (`activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides`, живое `layout`) пишется в Zustand persist (`cherryplaylist-workspaces`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения.                         |
+| Среда                            | Поведение                                                                                                                                                                                                                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Electron** (`npm run dev`)     | Состояние workspace (`activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides`, живое `layout`) пишется в Zustand persist (`cherryplaylist-workspaces`, см. [клиентское persist](./modules/systems/persisted-client-state.md)) и **переживает перезапуск** приложения.          |
 | **Веб-демо** (`npm run dev:web`) | При каждом старте bootstrap **очищает** `cherryplaylist-workspaces` (включая overrides; [AC12](./web-demo.md#что-работает-в-демо), `resetDemoPersistStorage`). Правки **не переживают** полную перезагрузку страницы; **внутри одной сессии** (без F5) persist работает как обычно. |
 
 Флаг **`isLayoutEditMode`** и **`baselineLayout`** между сессиями **не** сохраняются (ни в Electron, ни в веб-демо).
@@ -53,11 +53,11 @@
 
 Меню (только **вне** edit mode, по **▾**):
 
-| Секция             | Содержимое                                                                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Рабочие окна**   | Built-in пресеты с RU-именами и one-line описаниями (см. [layout-system](./modules/systems/layout-system.md)); при override — метка **«изменено»**, ⋯ → **«Сбросить к исходному»** |
-| **Мои**            | Пользовательские workspace; ⋯ → переименовать / удалить                                                                                    |
-| —                  | **Создать с нуля…**                                                                                                                        |
+| Секция           | Содержимое                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Рабочие окна** | Built-in пресеты с RU-именами и one-line описаниями (см. [layout-system](./modules/systems/layout-system.md)); при override — метка **«изменено»**, ⋯ → **«Сбросить к исходному»** |
+| **Мои**          | Пользовательские workspace; ⋯ → переименовать / удалить                                                                                                                            |
+| —                | **Создать с нуля…**                                                                                                                                                                |
 
 Отдельного пункта **Сохранить** нет — сохранение автоматическое (см. ниже). Для встроенных с override доступен **«Сбросить к исходному»** (см. Variant A ниже: active vs inactive).
 
@@ -75,21 +75,21 @@
 | **Переключение workspace** (▾)  | Сначала auto-commit, затем `activateWorkspace`        |
 | **Создать с нуля…** при dirty   | Сначала auto-commit, затем пустой scratch + edit mode |
 
-| Активный workspace | Auto-commit                                                                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **user**           | Обновляет снимок в `userWorkspaces` (`saveCurrentWorkspace`, без toast)                                                                     |
-| **builtin**        | **Variant A** (structure-only): см. таблицу ниже — **без** fork в **Мои** / «Без имени»                                                     |
-| **scratch**        | `saveCurrentWorkspaceAsUnnamed()` → **«Без имени»** или **«Без имени 2»**, … (см. ниже)                                                     |
+| Активный workspace | Auto-commit                                                                             |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| **user**           | Обновляет снимок в `userWorkspaces` (`saveCurrentWorkspace`, без toast)                 |
+| **builtin**        | **Variant A** (structure-only): см. таблицу ниже — **без** fork в **Мои** / «Без имени» |
+| **scratch**        | `saveCurrentWorkspaceAsUnnamed()` → **«Без имени»** или **«Без имени 2»**, … (см. ниже) |
 
 ### Builtin: Variant A (structure-only)
 
 Dirty / commit для **builtin** сравнивает **структуру** (`getLayoutStructureDirtySignature`: состав зон, типы, топология, значимые `workspaceId` — **без** `sizes`), а не полный снимок с размерами.
 
-| Ситуация при auto-commit (builtin)                         | Поведение                                                                                                      |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Структура **изменена** относительно baseline               | Upsert `builtinLayoutOverrides[preset]` (полный layout на момент commit, включая sizes этого commit); pill остаётся на том же `{ kind: 'builtin', preset }` |
-| Структура **не** изменена (в т.ч. только resize dividers) | **No-op** для persist: layout возвращается к **baseline** (фабрика или уже существующий override); в **Мои** ничего не пишется |
-| Esc / выход из ✎ / switch без structural dirty             | То же no-op — **не** создаёт «Без имени»                                                                       |
+| Ситуация при auto-commit (builtin)                        | Поведение                                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Структура **изменена** относительно baseline              | Upsert `builtinLayoutOverrides[preset]` (полный layout на момент commit, включая sizes этого commit); pill остаётся на том же `{ kind: 'builtin', preset }` |
+| Структура **не** изменена (в т.ч. только resize dividers) | **No-op** для persist: layout возвращается к **baseline** (фабрика или уже существующий override); в **Мои** ничего не пишется                              |
+| Esc / выход из ✎ / switch без structural dirty            | То же no-op — **не** создаёт «Без имени»                                                                                                                    |
 
 Активация / rehydrate builtin: `resolveBuiltinLayout` — при override **clone** сохранённого layout, иначе `createLayoutByPreset(preset)` (не field-merge).
 
@@ -263,10 +263,10 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 
 **Probing vs действие пользователя** при `viewport === null`:
 
-| Контекст | Поведение |
-| -------- | --------- |
-| **Availability probing** (`canAddAdjacentWorkspace` — показ air **+** на каждом рендере) | Тихий отказ (`ok: false`); **без** toast и **без** console log |
-| **User-triggered add** (клик по air/полосе/центральному **+**, выбор типа в picker) | Отказ + toast + **console log** (`logAddAdjacentMinSizeViolation` / `logMinSizeViolation`) |
+| Контекст                                                                                 | Поведение                                                                                  |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Availability probing** (`canAddAdjacentWorkspace` — показ air **+** на каждом рендере) | Тихий отказ (`ok: false`); **без** toast и **без** console log                             |
+| **User-triggered add** (клик по air/полосе/центральному **+**, выбор типа в picker)      | Отказ + toast + **console log** (`logAddAdjacentMinSizeViolation` / `logMinSizeViolation`) |
 
 Минимум считается по **min-content** модели (`computeMinLayoutSize`): вдоль оси split — **сумма** минимумов детей, поперёк — **максимум**; доли (`sizes`) на минимум не влияют. Подробности и пример — § «Модель расчёта минимума» в [Layout System](./modules/systems/layout-system.md).
 
@@ -276,7 +276,7 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 
 ### Удаление зоны
 
-1. Кнопка **×** в `WorkspaceLayoutEditShell` вызывает `handleRemoveWorkspace`. Перед удалением может показаться нативный **`window.confirm`** (`getRemoveWorkspaceConfirmMessage`):
+1. Кнопка **×** в `WorkspaceLayoutEditShell` вызывает `handleRemoveWorkspace`. Перед удалением может показаться стилизованный диалог приложения (`getRemoveWorkspaceConfirmMessage`):
    - **последняя** workspace-зона в layout: «Удалить последний workspace «…»? Layout станет пустым.»
    - **единственный** workspace singleton-типа в layout: «Удалить единственный workspace «…» этого типа?»
      В остальных случаях подтверждения нет.
@@ -286,13 +286,13 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 
 ### Ограничения при добавлении
 
-| Ограничение                      | Значение                       | Сообщение пользователю                                            |
-| -------------------------------- | ------------------------------ | ----------------------------------------------------------------- |
-| Максимальная вложенность         | 6 (`MAX_LAYOUT_DEPTH`)         | «Достигнута максимальная вложенность layout»                      |
-| Зон в одном контейнере           | 10 (`MAX_ZONES_PER_CONTAINER`) | «В контейнере уже максимум зон»                                   |
-| Дубликат singleton               | —                              | «Этот workspace уже есть в layout»                                |
-| Неверная сторона для span-полосы | —                              | «Нельзя добавить workspace с этой стороны контейнера»             |
-| Контейнер с одной зоной          | —                              | «Нужно минимум две зоны в ряду» (span-полосы не показываются)     |
+| Ограничение                      | Значение                       | Сообщение пользователю                                                     |
+| -------------------------------- | ------------------------------ | -------------------------------------------------------------------------- |
+| Максимальная вложенность         | 6 (`MAX_LAYOUT_DEPTH`)         | «Достигнута максимальная вложенность layout»                               |
+| Зон в одном контейнере           | 10 (`MAX_ZONES_PER_CONTAINER`) | «В контейнере уже максимум зон»                                            |
+| Дубликат singleton               | —                              | «Этот workspace уже есть в layout»                                         |
+| Неверная сторона для span-полосы | —                              | «Нельзя добавить workspace с этой стороны контейнера»                      |
+| Контейнер с одной зоной          | —                              | «Нужно минимум две зоны в ряду» (span-полосы не показываются)              |
 | Недостаточно места по mins       | `min_size_violation`           | «Недостаточно места. Увеличьте окно или измените пропорции разделителями.» |
 
 ---
@@ -336,7 +336,7 @@ Dirty / commit для **builtin** сравнивает **структуру** (`
 | `src/shared/utils/workspaceLifecycle.ts`                   | `prepareWorkspaceInstance` / `cleanupWorkspaceInstance`                                  |
 | `src/app/components/LayoutWorkspaceArea.tsx`               | Пустой / root workspace / `SplitContainer`                                               |
 | `src/app/components/LayoutEmptyWorkspaceState.tsx`         | Пустой layout в edit mode, picker с ключом `'empty'`                                     |
-| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`, без `test*`)                 |
+| `src/app/components/workspaceLayoutEditOptions.ts`         | Список типов для picker (singleton, без `aimp`, без `test*`)                             |
 | `src/app/components/WorkspacePickerMenu.tsx`               | Portal-меню выбора типа workspace                                                        |
 | `src/app/components/SplitContainer.tsx`                    | Рекурсивный split; container-shell при 2+ зонах в edit mode                              |
 | `src/app/components/WorkspaceLayoutEditShell.tsx`          | Edit-frame workspace, air-регионы, content-frame, удаление                               |

@@ -7,16 +7,18 @@
 
 .party-info-page {
   min-height: 100vh;
-  padding: 4rem 2rem 2rem 2rem;
+  padding: 4rem 2rem 2rem;
   background: var(--bg-primary, #1a1a1a);
   color: var(--text-primary, #ffffff);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
   position: relative;
   box-sizing: border-box;
 }
 
 /* Тема spring-cross-step: свой layout (как страница плейлиста), без лишних отступов */
-.party-info-page[data-theme="spring-cross-step"] {
+.party-info-page[data-theme='spring-cross-step'] {
   padding: 0;
 }
 
@@ -31,7 +33,7 @@
   padding: 1rem 2rem;
 }
 
-.party-info-page[data-theme="spring-cross-step"] .party-info-page-header {
+.party-info-page[data-theme='spring-cross-step'] .party-info-page-header {
   padding: 1rem 1.5rem;
 }
 
@@ -74,7 +76,7 @@
 }
 
 .party-info-title {
-  margin: 0 0 24px 0;
+  margin: 0 0 24px;
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary, #ffffff);
@@ -127,7 +129,9 @@
   text-decoration: none;
   font-weight: 600;
   border: 1px solid var(--border-color, transparent);
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .party-info-link-btn:hover {

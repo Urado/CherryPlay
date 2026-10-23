@@ -28,9 +28,8 @@ export const AccountPopover: React.FC<AccountPopoverProps> = ({
   useEffect(() => {
     const openPopover = () => {
       if (disabled) return;
-      returnFocusRef.current = document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : triggerRef.current;
+      returnFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : triggerRef.current;
       setIsOpen(true);
     };
     window.addEventListener(ACCOUNT_POPOVER_OPEN_EVENT, openPopover);

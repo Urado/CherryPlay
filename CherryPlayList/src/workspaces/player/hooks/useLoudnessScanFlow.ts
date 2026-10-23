@@ -1,4 +1,3 @@
-
 import type { Track } from '@core/types/track';
 import { getPlatformCapabilities } from '@shared/platform';
 import {
@@ -7,11 +6,7 @@ import {
   type LoudnessScanProgress,
 } from '@shared/services';
 import { useSettingsStore } from '@shared/stores';
-import {
-  areGateTracksReady,
-  getGateTracksNotReady,
-  getSessionGateTracks,
-} from '@shared/utils/loudnessSessionGate';
+import { getSessionGateTracks } from '@shared/utils/loudnessSessionGate';
 import { useCallback, useRef, useState } from 'react';
 
 export type LoudnessScanFlowState = {
@@ -35,17 +30,23 @@ const INITIAL_SCAN_STATE: LoudnessScanFlowState = {
 const PENDING_POLL_MS = 200;
 const PENDING_POLL_MAX_ATTEMPTS = 300;
 
-function delay(ms: number): Promise<void> {
+const areGateTracksResolved = (tracks: Track[]): boolean => {
+  return tracks.every(
+    (track) => track.loudness?.status === 'ok' || track.loudness?.status === 'error',
+  );
+};
+
+const delay = (ms: number): Promise<void> => {
   return new Promise((resolve) => {
     window.setTimeout(resolve, ms);
   });
-}
+};
 
-async function waitForPendingGateTracks(
+const waitForPendingGateTracks = async (
   gateTracks: Track[],
   resolveFreshTracks: (tracks: Track[]) => Track[],
   cancelToken: LoudnessCancelToken,
-): Promise<void> {
+): Promise<void> => {
   for (let attempt = 0; attempt < PENDING_POLL_MAX_ATTEMPTS; attempt += 1) {
     if (cancelToken.cancelled) {
       return;
@@ -53,24 +54,15 @@ async function waitForPendingGateTracks(
 
     const freshTracks = resolveFreshTracks(gateTracks);
     const hasPending = freshTracks.some((track) => track.loudness?.status === 'pending');
-    if (!hasPending || areGateTracksReady(freshTracks)) {
+    if (!hasPending || areGateTracksResolved(freshTracks)) {
       return;
     }
 
     await delay(PENDING_POLL_MS);
   }
-}
+};
 
-function buildGateErrorMessage(tracks: Track[]): string | null {
-  const failed = tracks.filter((track) => track.loudness?.status === 'error');
-  if (failed.length === 0) {
-    return null;
-  }
-  const names = failed.map((track) => track.name).join(', ');
-  return `Не удалось проанализировать: ${names}`;
-}
-
-export function useLoudnessScanFlow() {
+export const useLoudnessScanFlow = () => {
   const [scanState, setScanState] = useState<LoudnessScanFlowState>(INITIAL_SCAN_STATE);
   const cancelTokenRef = useRef<LoudnessCancelToken | null>(null);
 
@@ -156,7 +148,7 @@ export function useLoudnessScanFlow() {
       }
 
       const freshBeforeScan = resolveFreshTracks(gateTracks);
-      if (areGateTracksReady(freshBeforeScan)) {
+      if (areGateTracksResolved(freshBeforeScan)) {
         cancelTokenRef.current = null;
         return true;
       }
@@ -169,21 +161,7 @@ export function useLoudnessScanFlow() {
         return false;
       }
 
-      const freshGateTracks = resolveFreshTracks(gateTracks);
-      if (areGateTracksReady(freshGateTracks)) {
-        return true;
-      }
-
-      const notReady = getGateTracksNotReady(freshGateTracks);
-      setScanState({
-        open: true,
-        title: 'Не удалось подготовить громкость',
-        completed: freshGateTracks.length - notReady.length,
-        total: freshGateTracks.length,
-        currentTrackName: notReady[0]?.name ?? null,
-        errorMessage: buildGateErrorMessage(freshGateTracks),
-      });
-      return false;
+      return true;
     },
     [runScan],
   );
@@ -193,4 +171,4 @@ export function useLoudnessScanFlow() {
     cancelScan,
     ensureSessionGateReady,
   };
-}
+};

@@ -13,6 +13,17 @@ export class ThemeNotEntitledError extends Error {
   }
 }
 
+export class FuturePartyLimitReachedError extends Error {
+  readonly code = 'future_party_limit_reached' as const;
+  readonly limit: number;
+
+  constructor(message: string, limit: number) {
+    super(message);
+    this.name = 'FuturePartyLimitReachedError';
+    this.limit = limit;
+  }
+}
+
 export class InvalidPartyLifecycleTransitionError extends Error {
   readonly code = 'invalid_lifecycle_transition' as const;
   readonly currentState: PartyLifecycleState;

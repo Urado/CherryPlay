@@ -28,7 +28,7 @@ export const RegisterPage = () => {
       params.set('return_to', returnTo);
     }
     const query = params.toString();
-    navigate(`${ROUTES.LOGIN}${query ? `?${query}` : ''}`, { replace: true });
+    void navigate(`${ROUTES.LOGIN}${query ? `?${query}` : ''}`, { replace: true });
   }, [desktopMode, navigate, searchParams]);
 
   if (desktopMode) {
@@ -39,7 +39,7 @@ export const RegisterPage = () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const organizer = await authService.checkAuth?.();
     if (organizer) {
-      navigate(ROUTES.CABINET);
+      void navigate(ROUTES.CABINET);
     }
   };
 

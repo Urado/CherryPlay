@@ -21,11 +21,15 @@ const mockProjectState = {
   },
   getAllTracksInOrder: (items?: Array<{ id: string; items?: unknown[] }>) => {
     if (!items?.length) return [];
-    const collect = (values: Array<{ id: string; path?: string; items?: unknown[] }>): Array<{ id: string; path?: string }> => {
+    const collect = (
+      values: Array<{ id: string; path?: string; items?: unknown[] }>,
+    ): Array<{ id: string; path?: string }> => {
       const out: Array<{ id: string; path?: string }> = [];
       for (const value of values) {
         if (Array.isArray(value.items)) {
-          out.push(...collect(value.items as Array<{ id: string; path?: string; items?: unknown[] }>));
+          out.push(
+            ...collect(value.items as Array<{ id: string; path?: string; items?: unknown[] }>),
+          );
         } else {
           out.push(value);
         }
@@ -43,8 +47,10 @@ jest.mock('../../../src/workspaces/player/addPlayedTrackNext', () => ({
 }));
 
 jest.mock('../../../src/shared/stores', () => ({
-  useProjectStore: (selector: (state: typeof mockProjectState) => unknown) => selector(mockProjectState),
-  usePlayerAudioStore: (selector: (state: typeof mockAudioState) => unknown) => selector(mockAudioState),
+  useProjectStore: (selector: (state: typeof mockProjectState) => unknown) =>
+    selector(mockProjectState),
+  usePlayerAudioStore: (selector: (state: typeof mockAudioState) => unknown) =>
+    selector(mockAudioState),
   useUIStore: (selector: (state: { addNotification: typeof mockAddNotification }) => unknown) =>
     selector({ addNotification: mockAddNotification }),
 }));
@@ -75,18 +81,25 @@ describe('TrackActionsDropdown repeat action', () => {
     expect(mockAddPlayedTrackNext).toHaveBeenCalledWith('played', 'current');
     expect(mockAudioState.play).not.toHaveBeenCalled();
     expect(mockAudioState.loadTrack).not.toHaveBeenCalled();
-    expect(mockAddNotification).toHaveBeenCalledWith({ type: 'success', message: 'Добавлен следующим' });
+    expect(mockAddNotification).toHaveBeenCalledWith({
+      type: 'success',
+      message: 'Добавлен следующим',
+    });
     expect(mockClose).toHaveBeenCalledTimes(1);
 
     mockProjectState.sessionState.playedTrackIds = [];
-    rerender(<TrackActionsDropdown trackId="played" anchorRect={new DOMRect()} onClose={mockClose} />);
+    rerender(
+      <TrackActionsDropdown trackId="played" anchorRect={new DOMRect()} onClose={mockClose} />,
+    );
 
     expect(screen.queryByRole('button', { name: 'Добавить следующим' })).not.toBeInTheDocument();
   });
 
   it('does not announce success when the insertion fails', () => {
     mockAddPlayedTrackNext.mockReturnValue(false);
-    render(<TrackActionsDropdown trackId="played" anchorRect={new DOMRect()} onClose={mockClose} />);
+    render(
+      <TrackActionsDropdown trackId="played" anchorRect={new DOMRect()} onClose={mockClose} />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Добавить следующим' }));
 
@@ -128,7 +141,10 @@ describe('TrackActionsDropdown repeat action', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Добавить следующим' }));
     expect(mockAddPlayedGroupNext).toHaveBeenCalledWith('group', 'current');
     expect(mockAddPlayedTrackNext).not.toHaveBeenCalled();
-    expect(mockAddNotification).toHaveBeenCalledWith({ type: 'success', message: 'Добавлен следующим' });
+    expect(mockAddNotification).toHaveBeenCalledWith({
+      type: 'success',
+      message: 'Добавлен следующим',
+    });
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 

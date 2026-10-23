@@ -4,26 +4,26 @@ let isOpen = false;
 let pendingMissing: string[] | undefined;
 const listeners = new Set<ConsentGateListener>();
 
-export function isConsentGateOpen(): boolean {
+export const isConsentGateOpen = (): boolean => {
   return isOpen;
-}
+};
 
-export function getConsentGateMissing(): string[] | undefined {
+export const getConsentGateMissing = (): string[] | undefined => {
   return pendingMissing;
-}
+};
 
-export function notifyConsentRequired(missing?: string[]): void {
+export const notifyConsentRequired = (missing?: string[]): void => {
   isOpen = true;
   pendingMissing = missing;
   listeners.forEach((listener) => listener(missing));
-}
+};
 
-export function clearConsentGateNotifier(): void {
+export const clearConsentGateNotifier = (): void => {
   isOpen = false;
   pendingMissing = undefined;
-}
+};
 
-export function subscribeConsentRequired(listener: ConsentGateListener): () => void {
+export const subscribeConsentRequired = (listener: ConsentGateListener): (() => void) => {
   listeners.add(listener);
 
   if (isOpen) {
@@ -33,10 +33,10 @@ export function subscribeConsentRequired(listener: ConsentGateListener): () => v
   return () => {
     listeners.delete(listener);
   };
-}
+};
 
-export function resetConsentGateNotifier(): void {
+export const resetConsentGateNotifier = (): void => {
   isOpen = false;
   pendingMissing = undefined;
   listeners.clear();
-}
+};

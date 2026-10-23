@@ -22,24 +22,6 @@ import type { PublicPartyListItemDto } from '../types/api';
 import { PartyListCardLink } from './PartyListCardLink';
 import './PartyListPage.css';
 
-const RUSSIAN_CITIES = [
-  'Москва',
-  'Санкт-Петербург',
-  'Новосибирск',
-  'Екатеринбург',
-  'Казань',
-  'Нижний Новгород',
-  'Челябинск',
-  'Самара',
-  'Ростов-на-Дону',
-  'Уфа',
-  'Красноярск',
-  'Воронеж',
-  'Пермь',
-  'Волгоград',
-  'Краснодар',
-];
-
 interface PartyFilters {
   dateFrom: string;
   dateTo: string;
@@ -106,6 +88,25 @@ export const PartyListPage: React.FC = () => {
     city: '',
   });
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const availableCities = useMemo(() => {
+    const citiesByNormalizedName = new Map<string, string>();
+
+    parties.forEach((party) => {
+      const city = party.city?.trim();
+      if (!city) {
+        return;
+      }
+
+      const normalizedCity = city.toLocaleLowerCase('ru-RU');
+      if (!citiesByNormalizedName.has(normalizedCity)) {
+        citiesByNormalizedName.set(normalizedCity, city);
+      }
+    });
+
+    return Array.from(citiesByNormalizedName.values()).sort((left, right) =>
+      left.localeCompare(right, 'ru-RU'),
+    );
+  }, [parties]);
 
   const loadParties = useCallback(async () => {
     try {
@@ -352,7 +353,7 @@ export const PartyListPage: React.FC = () => {
                   onChange={(e) => setFilters((prev) => ({ ...prev, city: e.target.value }))}
                 >
                   <option value="">Любой</option>
-                  {RUSSIAN_CITIES.map((city) => (
+                  {availableCities.map((city) => (
                     <option key={city} value={city}>
                       {city}
                     </option>
@@ -366,7 +367,9 @@ export const PartyListPage: React.FC = () => {
         {parties.length === 0 ? (
           <div className="party-list-empty">
             <p>Нет доступных вечеринок</p>
-            <p className="party-list-empty-hint">Создайте вечеринку в приложении CherryPashkaParty</p>
+            <p className="party-list-empty-hint">
+              Создайте вечеринку в приложении CherryPashkaParty
+            </p>
           </div>
         ) : filteredParties.length === 0 ? (
           <div className="party-list-empty">

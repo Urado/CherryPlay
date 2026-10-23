@@ -1,4 +1,4 @@
-@import '@cherryplay/components/styles/primitives.css';
+@import url('@cherryplay/components/styles/primitives.css');
 @import url('./variables.css');
 @import url('./base.css');
 @import url('./utilities.css');

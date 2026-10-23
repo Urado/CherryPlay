@@ -1,7 +1,7 @@
-@import './playlist.css';
-@import './playlist-item.css';
-@import './player.css';
-@import './party-info.css';
+@import url('./playlist.css');
+@import url('./playlist-item.css');
+@import url('./player.css');
+@import url('./party-info.css');
 
 [data-theme='sakura'] {
   --bg-primary: #fff5f5;
@@ -17,6 +17,7 @@
   --background-opacity: var(--background-opacity, 0.9);
   --canceled-track: color-mix(in srgb, var(--text-primary) 75%, var(--accent-primary) 25%);
   --canceled-track-icon: var(--bg-primary);
+
   background: linear-gradient(135deg, #ffeef5 0%, #fff5f5 50%, #ffeef0 100%);
   color: var(--text-primary);
 }

@@ -145,7 +145,9 @@ describe('addPlayedTrackNext', () => {
 
   it('supports undo and redo while preserving copied settings', () => {
     addPlayedTrackNext('played', 'current');
-    const command = (pushCommand.mock.calls as [string, AddItemsAtPositionsCommand, string][])[0][1];
+    const command = (
+      pushCommand.mock.calls as [string, AddItemsAtPositionsCommand, string][]
+    )[0][1];
     const insertedId = projectState.items[1].id as string;
     const undo = command.undo({
       items: projectState.items as never,
@@ -205,7 +207,11 @@ describe('addPlayedGroupNext', () => {
       name: 'g1',
     });
     expect(inserted.items[0].id).not.toBe('g1');
-    const nested = inserted.items[1] as { id: string; name: string; items: Array<Record<string, unknown>> };
+    const nested = inserted.items[1] as {
+      id: string;
+      name: string;
+      items: Array<Record<string, unknown>>;
+    };
     expect(nested.name).toBe('Nested');
     expect(nested.id).not.toBe('nested-group');
     expect(nested.items[0]).toMatchObject({
@@ -283,7 +289,9 @@ describe('addPlayedGroupNext', () => {
 
   it('supports undo and redo for group copies including nested settings', () => {
     addPlayedGroupNext('played-group', 'current');
-    const command = (pushCommand.mock.calls as [string, AddItemsAtPositionsCommand, string][])[0][1];
+    const command = (
+      pushCommand.mock.calls as [string, AddItemsAtPositionsCommand, string][]
+    )[0][1];
     const inserted = projectState.items[1] as {
       id: string;
       items: Array<Record<string, unknown>>;

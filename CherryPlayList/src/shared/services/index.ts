@@ -69,8 +69,4 @@ export { projectService } from './projectService';
 export type { ProjectStateData } from './projectService';
 export { playlistService } from './playlistService';
 export type { PlaylistData } from './playlistService';
-export {
-  exportCollectionAsJson,
-  copyCollectionTracksToFolder,
-  importCollectionFromJson,
-} from './collectionPersistenceService';
+export { importCollectionFromJson } from './collectionPersistenceService';

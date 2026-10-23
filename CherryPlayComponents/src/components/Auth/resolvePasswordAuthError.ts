@@ -7,14 +7,14 @@ import {
 } from '../../core/utils/authValidation';
 import { getAuthErrorMessage, getAuthHttpStatus } from '../../types/auth';
 
-function isKnownOAuthOnlyMessage(message: string): boolean {
+const isKnownOAuthOnlyMessage = (message: string): boolean => {
   return (
     message === CHANGE_PASSWORD_OAUTH_ONLY ||
     message.includes('только для аккаунта с email и паролем')
   );
-}
+};
 
-export function resolveForgotPasswordError(error: unknown): string {
+export const resolveForgotPasswordError = (error: unknown): string => {
   const status = getAuthHttpStatus(error);
   if (status === 503) {
     return FORGOT_PASSWORD_SERVICE_UNAVAILABLE;
@@ -23,9 +23,9 @@ export function resolveForgotPasswordError(error: unknown): string {
     return AUTH_RATE_LIMITED;
   }
   return getAuthErrorMessage(error) || FORGOT_PASSWORD_SERVICE_UNAVAILABLE;
-}
+};
 
-export function resolveResetPasswordError(error: unknown): string {
+export const resolveResetPasswordError = (error: unknown): string => {
   const status = getAuthHttpStatus(error);
   if (status === 400) {
     const message = getAuthErrorMessage(error);
@@ -38,9 +38,9 @@ export function resolveResetPasswordError(error: unknown): string {
     return AUTH_RATE_LIMITED;
   }
   return getAuthErrorMessage(error) || RESET_PASSWORD_INVALID_TOKEN;
-}
+};
 
-export function resolveChangePasswordError(error: unknown): string {
+export const resolveChangePasswordError = (error: unknown): string => {
   const status = getAuthHttpStatus(error);
   if (status === 401) {
     return CHANGE_PASSWORD_WRONG_CURRENT;
@@ -59,4 +59,4 @@ export function resolveChangePasswordError(error: unknown): string {
     return AUTH_RATE_LIMITED;
   }
   return getAuthErrorMessage(error) || CHANGE_PASSWORD_WRONG_CURRENT;
-}
+};

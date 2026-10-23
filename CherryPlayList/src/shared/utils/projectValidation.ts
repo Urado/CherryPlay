@@ -11,6 +11,7 @@ import {
   SavedProjectGroup,
   SavedProjectItem,
   SavedProjectTrack,
+  SavedProjectCollection,
 } from '@core/types/project';
 import { LOUDNESS_ALGORITHM_VERSION, type TrackLoudnessStatus } from '@core/types/track';
 
@@ -21,30 +22,30 @@ export interface ValidationResult {
   data: ProjectFile | null;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
+const isObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+};
 
-function isArray(value: unknown): value is unknown[] {
+const isArray = (value: unknown): value is unknown[] => {
   return Array.isArray(value);
-}
+};
 
-function isString(value: unknown): value is string {
+const isString = (value: unknown): value is string => {
   return typeof value === 'string';
-}
+};
 
-function isNumber(value: unknown): value is number {
+const isNumber = (value: unknown): value is number => {
   return typeof value === 'number' && !isNaN(value);
-}
+};
 
-function isBoolean(value: unknown): value is boolean {
+const isBoolean = (value: unknown): value is boolean => {
   return typeof value === 'boolean';
-}
+};
 
-function validatePartyCustomizationSettings(
+const validatePartyCustomizationSettings = (
   raw: unknown,
   warnings: string[],
-): Record<string, unknown> | undefined {
+): Record<string, unknown> | undefined => {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -58,9 +59,9 @@ function validatePartyCustomizationSettings(
     warnings.push('Invalid partyCustomizationSettings, omitting');
     return undefined;
   }
-}
+};
 
-function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrackDisplaySettings {
+const validatePartyTrackDisplay = (raw: unknown, warnings: string[]): PartyTrackDisplaySettings => {
   if (!isObject(raw)) {
     warnings.push('Invalid partyTrackDisplay, using defaults');
     return { ...DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS };
@@ -93,20 +94,20 @@ function validatePartyTrackDisplay(raw: unknown, warnings: string[]): PartyTrack
     stripLeadingCharsCount: count,
     stripLeadingCharsDelimiter: delimiter,
   };
-}
+};
 
-function isValidActionAfterTrack(value: unknown): boolean {
+const isValidActionAfterTrack = (value: unknown): boolean => {
   return value === 'next' || value === 'pauseAndNext' || value === 'pause';
-}
+};
 
 const VALID_LOUDNESS_STATUSES: TrackLoudnessStatus[] = ['ok', 'pending', 'error'];
 
-function validateTrackLoudness(
+const validateTrackLoudness = (
   loudness: unknown,
   trackId: string,
   errors: string[],
   warnings: string[],
-): boolean {
+): boolean => {
   if (loudness === undefined) {
     return true;
   }
@@ -156,20 +157,20 @@ function validateTrackLoudness(
   }
 
   return true;
-}
+};
 
-function validateSavedTrack(
+const validateSavedTrack = (
   item: unknown,
   errors: string[],
   warnings: string[],
-): item is SavedProjectTrack {
+): item is SavedProjectTrack => {
   if (!isObject(item)) {
     errors.push('Track item is not an object');
     return false;
   }
 
   if (item.type !== 'track') {
-    errors.push(`Expected track type, got: ${item.type}`);
+    errors.push(`Expected track type, got: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
 
@@ -198,16 +199,16 @@ function validateSavedTrack(
   }
 
   return true;
-}
+};
 
-function validateSavedGroup(item: unknown, errors: string[]): item is SavedProjectGroup {
+const validateSavedGroup = (item: unknown, errors: string[]): item is SavedProjectGroup => {
   if (!isObject(item)) {
     errors.push('Group item is not an object');
     return false;
   }
 
   if (item.type !== 'group') {
-    errors.push(`Expected group type, got: ${item.type}`);
+    errors.push(`Expected group type, got: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
 
@@ -234,13 +235,13 @@ function validateSavedGroup(item: unknown, errors: string[]): item is SavedProje
   }
 
   return true;
-}
+};
 
-function validateSavedItem(
+const validateSavedItem = (
   item: unknown,
   errors: string[],
   warnings: string[],
-): item is SavedProjectItem {
+): item is SavedProjectItem => {
   if (!isObject(item)) {
     errors.push('Item is not an object');
     return false;
@@ -251,12 +252,72 @@ function validateSavedItem(
   } else if (item.type === 'group') {
     return validateSavedGroup(item, errors);
   } else {
-    errors.push(`Unknown item type: ${item.type}`);
+    errors.push(`Unknown item type: ${JSON.stringify(item.type) ?? typeof item.type}`);
     return false;
   }
-}
+};
 
-function validateSettings(settings: unknown, warnings: string[]): ProjectSettings {
+const validateSavedItemGraph = (
+  items: SavedProjectItem[],
+  rootItems: string[],
+  collectionId: string,
+  errors: string[],
+): void => {
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  if (itemsById.size !== items.length) {
+    errors.push(`Collection ${collectionId} has duplicate item ids`);
+    return;
+  }
+  if (new Set(rootItems).size !== rootItems.length || rootItems.some((id) => !itemsById.has(id))) {
+    errors.push(`Collection ${collectionId} has invalid root item references`);
+    return;
+  }
+
+  const parentCounts = new Map<string, number>();
+  rootItems.forEach((id) => parentCounts.set(id, 1));
+  for (const item of items) {
+    if (item.type !== 'group') continue;
+    if (new Set(item.items).size !== item.items.length) {
+      errors.push(`Collection ${collectionId} group ${item.id} has duplicate children`);
+      return;
+    }
+    for (const childId of item.items) {
+      if (!itemsById.has(childId)) {
+        errors.push(`Collection ${collectionId} group ${item.id} references missing item ${childId}`);
+        return;
+      }
+      const count = (parentCounts.get(childId) ?? 0) + 1;
+      if (count > 1) {
+        errors.push(`Collection ${collectionId} item ${childId} has multiple parents`);
+        return;
+      }
+      parentCounts.set(childId, count);
+    }
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string): boolean => {
+    if (visiting.has(id)) return false;
+    if (visited.has(id)) return true;
+    const item = itemsById.get(id);
+    if (!item) return false;
+    visiting.add(id);
+    const isValid = item.type !== 'group' || item.items.every(visit);
+    visiting.delete(id);
+    if (isValid) visited.add(id);
+    return isValid;
+  };
+  if (rootItems.some((id) => !visit(id))) {
+    errors.push(`Collection ${collectionId} contains a group cycle`);
+    return;
+  }
+  if (visited.size !== items.length || [...itemsById.keys()].some((id) => !parentCounts.has(id))) {
+    errors.push(`Collection ${collectionId} contains unreachable items`);
+  }
+};
+
+const validateSettings = (settings: unknown, warnings: string[]): ProjectSettings => {
   const result = { ...DEFAULT_PROJECT_SETTINGS };
 
   if (!isObject(settings)) {
@@ -290,9 +351,9 @@ function validateSettings(settings: unknown, warnings: string[]): ProjectSetting
   }
 
   return result;
-}
+};
 
-function validateSessionState(sessionState: unknown, warnings: string[]): ProjectSessionState {
+const validateSessionState = (sessionState: unknown, warnings: string[]): ProjectSessionState => {
   const result = { ...DEFAULT_SESSION_STATE };
 
   if (!isObject(sessionState)) {
@@ -326,12 +387,12 @@ function validateSessionState(sessionState: unknown, warnings: string[]): Projec
   }
 
   return result;
-}
+};
 
-function validateTrackSettings(
+const validateTrackSettings = (
   trackSettings: unknown,
   warnings: string[],
-): Record<string, ProjectTrackSettings> {
+): Record<string, ProjectTrackSettings> => {
   const result: Record<string, ProjectTrackSettings> = {};
 
   if (!isObject(trackSettings)) {
@@ -362,12 +423,12 @@ function validateTrackSettings(
   }
 
   return result;
-}
+};
 
-function validateGroupSettings(
+const validateGroupSettings = (
   groupSettings: unknown,
   warnings: string[],
-): Record<string, ProjectGroupSettings> {
+): Record<string, ProjectGroupSettings> => {
   const result: Record<string, ProjectGroupSettings> = {};
 
   if (!isObject(groupSettings)) {
@@ -398,9 +459,9 @@ function validateGroupSettings(
   }
 
   return result;
-}
+};
 
-export function validateProjectFile(data: unknown): ValidationResult {
+export const validateProjectFile = (data: unknown): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -413,11 +474,11 @@ export function validateProjectFile(data: unknown): ValidationResult {
     };
   }
 
-  if (data.version !== '2.0') {
+  if (data.version !== '2.0' && data.version !== '2.1') {
     if (data.version === undefined) {
       errors.push('Missing version field');
     } else {
-      errors.push(`Unsupported version: ${data.version}`);
+      errors.push(`Unsupported version: ${JSON.stringify(data.version) ?? typeof data.version}`);
     }
   }
 
@@ -459,6 +520,64 @@ export function validateProjectFile(data: unknown): ValidationResult {
   const trackSettings = validateTrackSettings(data.trackSettings, warnings);
 
   const groupSettings = validateGroupSettings(data.groupSettings, warnings);
+
+  const collections: SavedProjectCollection[] = [];
+  const collectionIds = new Set<string>();
+  if (data.collections !== undefined && !isArray(data.collections)) {
+    errors.push('Invalid collections array');
+  } else if (isArray(data.collections)) {
+    data.collections.forEach((rawCollection, index) => {
+      if (!isObject(rawCollection) || !isString(rawCollection.id) || !rawCollection.id.trim()) {
+        errors.push(`Collection at index ${index} has invalid id`);
+        return;
+      }
+      if (collectionIds.has(rawCollection.id)) {
+        errors.push(`Duplicate collection id ${rawCollection.id}`);
+        return;
+      }
+      if (!isString(rawCollection.name) || !isArray(rawCollection.items) || !isArray(rawCollection.rootItems)) {
+        errors.push(`Collection ${rawCollection.id} has invalid structure`);
+        return;
+      }
+      const savedCollectionItems: SavedProjectItem[] = [];
+      for (const item of rawCollection.items) {
+        if (!validateSavedItem(item, errors, warnings)) return;
+        savedCollectionItems.push(item);
+      }
+      if (!rawCollection.rootItems.every(isString)) {
+        errors.push(`Collection ${rawCollection.id} has invalid rootItems`);
+        return;
+      }
+      validateSavedItemGraph(savedCollectionItems, rawCollection.rootItems, rawCollection.id, errors);
+      collectionIds.add(rawCollection.id);
+      collections.push({
+        id: rawCollection.id,
+        name: rawCollection.name,
+        items: savedCollectionItems,
+        rootItems: rawCollection.rootItems,
+      });
+    });
+  }
+
+  let collectionViewState: ProjectFile['collectionViewState'];
+  if (data.collectionViewState !== undefined) {
+    const rawBindings = isObject(data.collectionViewState) && isObject(data.collectionViewState.bindings)
+      ? data.collectionViewState.bindings
+      : null;
+    if (!rawBindings) {
+      warnings.push('Invalid collectionViewState, omitting');
+    } else {
+      const bindings: Record<string, string> = {};
+      for (const [workspaceId, collectionId] of Object.entries(rawBindings)) {
+        if (isString(workspaceId) && isString(collectionId) && collectionIds.has(collectionId)) {
+          bindings[workspaceId] = collectionId;
+        } else {
+          warnings.push(`Invalid collection binding for ${workspaceId}, omitting`);
+        }
+      }
+      collectionViewState = { bindings };
+    }
+  }
 
   const sessionState = validateSessionState(data.sessionState, warnings);
 
@@ -504,7 +623,7 @@ export function validateProjectFile(data: unknown): ValidationResult {
   }
 
   const projectFile: ProjectFile = {
-    version: '2.0',
+    version: data.version as ProjectFile['version'],
     name,
     items,
     rootItems,
@@ -516,6 +635,8 @@ export function validateProjectFile(data: unknown): ValidationResult {
     partyTrackDisplay,
     ...(partyThemeId !== undefined ? { partyThemeId } : {}),
     ...(partyCustomizationSettings !== undefined ? { partyCustomizationSettings } : {}),
+    ...(data.collections !== undefined || collections.length > 0 ? { collections } : {}),
+    ...(collectionViewState !== undefined ? { collectionViewState } : {}),
   };
 
   return {
@@ -524,27 +645,27 @@ export function validateProjectFile(data: unknown): ValidationResult {
     warnings,
     data: projectFile,
   };
-}
+};
 
-export function validateProjectIntegrity(projectFile: ProjectFile): string[] {
+export const validateProjectIntegrity = (projectFile: ProjectFile): string[] => {
   const warnings: string[] = [];
-  const itemIds = new Set(projectFile.items.map((item) => item.id));
-
-  for (const rootId of projectFile.rootItems) {
-    if (!itemIds.has(rootId)) {
-      warnings.push(`Root item ${rootId} not found in items`);
+  const validateItems = (items: SavedProjectItem[], rootItems: string[], label: string): void => {
+    const itemIds = new Set(items.map((item) => item.id));
+    for (const rootId of rootItems) {
+      if (!itemIds.has(rootId)) warnings.push(`${label} root item ${rootId} not found`);
     }
-  }
-
-  for (const item of projectFile.items) {
-    if (item.type === 'group') {
-      for (const childId of item.items) {
-        if (!itemIds.has(childId)) {
-          warnings.push(`Group ${item.id} references non-existent item ${childId}`);
+    for (const item of items) {
+      if (item.type === 'group') {
+        for (const childId of item.items) {
+          if (!itemIds.has(childId)) warnings.push(`${label} group ${item.id} references missing item ${childId}`);
         }
       }
     }
-  }
+  };
+  validateItems(projectFile.items, projectFile.rootItems, 'Project');
+  projectFile.collections?.forEach((collection) =>
+    validateItems(collection.items, collection.rootItems, `Collection ${collection.id}`),
+  );
 
   return warnings;
-}
+};

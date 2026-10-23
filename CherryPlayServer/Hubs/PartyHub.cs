@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using CherryPlayServer.Core.Interfaces;
+using CherryPlayServer.Core.Services;
 using CherryPlayServer.Core.Options;
 using CherryPlayServer.Infrastructure;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ public partial class PartyHub : Hub
     private readonly PartyDisplayStatusOptions _displayStatusOptions;
     private readonly ILogger<PartyHub> _logger;
     private readonly SignalRConnectionMetrics? _connectionMetrics;
+    private readonly IPartyActivityCoordinator _partyActivityCoordinator;
 
     public PartyHub(
         IStreamingService streamingService,
@@ -37,7 +39,8 @@ public partial class PartyHub : Hub
         IOptions<PartyDisplayStatusOptions> displayStatusOptions,
         ILogger<PartyHub> logger,
         IOrganizerSessionRepository organizerSessionRepository,
-        SignalRConnectionMetrics? connectionMetrics = null)
+        SignalRConnectionMetrics? connectionMetrics = null,
+        IPartyActivityCoordinator? partyActivityCoordinator = null)
     {
         _streamingService = streamingService ?? throw new ArgumentNullException(nameof(streamingService));
         _partyIdValidator = partyIdValidator ?? throw new ArgumentNullException(nameof(partyIdValidator));
@@ -55,6 +58,7 @@ public partial class PartyHub : Hub
             ?? throw new ArgumentNullException(nameof(displayStatusOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _connectionMetrics = connectionMetrics;
+        _partyActivityCoordinator = partyActivityCoordinator ?? new PartyActivityCoordinator();
     }
 
     public override async Task OnConnectedAsync()
@@ -71,7 +75,12 @@ public partial class PartyHub : Hub
         var connectionId = Context.ConnectionId;
         try
         {
-            var partyId = _organizerConnectionTracker.TryRemoveOrganizer(connectionId);
+            var trackedPartyId = _organizerConnectionTracker.GetPartyId(connectionId);
+            var partyId = trackedPartyId.HasValue
+                ? await _partyActivityCoordinator.ExecuteAsync(
+                    trackedPartyId.Value,
+                    () => Task.FromResult(_organizerConnectionTracker.TryRemoveOrganizer(connectionId, trackedPartyId.Value)))
+                : _organizerConnectionTracker.TryRemoveOrganizer(connectionId);
             if (partyId.HasValue)
             {
                 var partyIdStr = partyId.Value.ToString();

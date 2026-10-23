@@ -1,8 +1,3 @@
-/**
- * @deprecated Для фронта рекомендуется использовать единый компонент PartyDisplay.
- * Этот компонент оставлен для обратной совместимости и кастомных композиций.
- * Для темизации используйте компоненты из themes/<themeId>/CurrentTrackDisplay.
- */
 import React from 'react';
 
 import { findTrack } from '../../core/utils/playlist';
@@ -37,6 +32,7 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
 
   const progress =
     playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
+  const duration = playbackState.duration > 0 ? playbackState.duration : currentTrack.duration;
 
   return (
     <div className={`party-current-track-display ${className}`} data-theme={themeId}>
@@ -45,7 +41,16 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
         <div className="party-current-track-meta">
           <span className="party-current-track-status">{getStatusText(playbackState.status)}</span>
           <span className="party-current-track-time">
-            {formatTime(playbackState.position)} / {formatTime(playbackState.duration)}
+            {formatTime(playbackState.position)} /{' '}
+            {duration != null && duration > 0 ? (
+              formatTime(duration)
+            ) : (
+              <span
+                className="party-current-track-time-loader"
+                role="status"
+                aria-label="Загрузка длительности"
+              />
+            )}
           </span>
         </div>
       </div>
@@ -56,7 +61,7 @@ export const CurrentTrackDisplay: React.FC<CurrentTrackDisplayProps> = ({
   );
 };
 
-function getStatusText(status: PlaybackState['status']): string {
+const getStatusText = (status: PlaybackState['status']): string => {
   switch (status) {
     case 'playing':
       return '▶ Воспроизведение';
@@ -67,4 +72,4 @@ function getStatusText(status: PlaybackState['status']): string {
     default:
       return '⏹ Ожидание';
   }
-}
+};

@@ -21,9 +21,10 @@ class MockAudio {
 
   private listeners: Record<string, Listener[]> = {};
 
-  public play = jest.fn().mockImplementation(async () => {
+  public play = jest.fn().mockImplementation(() => {
     this.paused = false;
     this.dispatch('play');
+    return Promise.resolve();
   });
 
   public pause = jest.fn().mockImplementation(() => {
@@ -62,26 +63,24 @@ class MockAudio {
   }
 }
 
-function createMockAdapter(overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter {
+const createMockAdapter = (overrides: Partial<PlatformAudioAdapter> = {}): PlatformAudioAdapter => {
   return {
-    resolveSource: jest.fn(async (source: PlaybackSource) => {
-      if (source.kind === 'url') {
-        return { url: source.url };
-      }
-      return { url: 'cherryplay-audio:///mock' };
-    }),
+    resolveSource: jest.fn((source: PlaybackSource) =>
+      Promise.resolve(
+        source.kind === 'url' ? { url: source.url } : { url: 'cherryplay-audio:///mock' },
+      ),
+    ),
     getDuration: jest.fn().mockResolvedValue(240),
     setSinkId: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
-}
+};
 
-function createTransport(adapter = createMockAdapter()): MediaElementTransport {
+const createTransport = (adapter = createMockAdapter()): MediaElementTransport => {
   return new MediaElementTransport({ id: 'transport-test', adapter });
-}
+};
 
 beforeAll(() => {
-  // @ts-expect-error test mock
   global.Audio = MockAudio as unknown as typeof Audio;
 });
 
@@ -144,6 +143,31 @@ describe('MediaElementTransport', () => {
     audio.paused = false;
     audio.dispatch('canplay');
     expect(transport.getSnapshot().status).toBe('playing');
+  });
+
+  test('ignores play interruption when paused before playback starts', async () => {
+    const transport = createTransport();
+    await transport.load({ kind: 'url', url: 'https://example.com/track.mp3' });
+
+    const audio = MockAudio.lastInstance()!;
+    let rejectPlay: (error: Error) => void = () => undefined;
+    audio.play.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectPlay = reject;
+        }),
+    );
+
+    const playPromise = transport.play();
+    await Promise.resolve();
+    transport.pause();
+    const interruption = new Error('The play() request was interrupted by a call to pause().');
+    interruption.name = 'AbortError';
+    rejectPlay(interruption);
+
+    await expect(playPromise).resolves.toBeUndefined();
+    expect(transport.getSnapshot().status).toBe('paused');
+    expect(transport.getSnapshot().error).toBeNull();
   });
 
   test('seek clamps to duration and updates position', async () => {

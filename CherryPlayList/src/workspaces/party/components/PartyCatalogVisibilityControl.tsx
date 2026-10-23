@@ -81,7 +81,14 @@ export const PartyCatalogVisibilityControl: React.FC<PartyCatalogVisibilityContr
 
   if (isHeader) {
     return (
-      <div className="party-catalog-visibility party-catalog-visibility--header">{options}</div>
+      <div
+        className="party-catalog-visibility party-catalog-visibility--header"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        role="presentation"
+      >
+        {options}
+      </div>
     );
   }
 

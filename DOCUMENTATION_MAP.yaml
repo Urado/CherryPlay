@@ -3,10 +3,10 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-08"
+updated: "2026-10-21"
 summary:
-  total_md_files: 117
-  project_documentation: 89
+  total_md_files: 116
+  project_documentation: 88
   not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
@@ -62,8 +62,6 @@ project_documentation:
         title: "План релиза v1 — границы MVP, эпики, критерии готовности"
       - path: .github/BETA_RELEASE_RUNBOOK.md
         title: "Операторский runbook беты: деплой и откат"
-      - path: TASK_TRACKER.md
-        title: "Трекер задач проекта"
       - path: ADDING_THEME.md
         title: "Как добавить PartyTheme"
       - path: THEMES.md

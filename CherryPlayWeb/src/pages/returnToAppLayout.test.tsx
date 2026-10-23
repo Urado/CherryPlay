@@ -1,8 +1,4 @@
-import {
-  LEGAL_PD_CONSENT,
-  LEGAL_TERMS,
-  stashOAuthPendingConsents,
-} from '@cherryplay/components';
+import { LEGAL_PD_CONSENT, LEGAL_TERMS, stashOAuthPendingConsents } from '@cherryplay/components';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -37,11 +33,7 @@ const renderAt = (path: string, page: ReactNode, route: string) => {
     createElement(
       MemoryRouter,
       { initialEntries: [path] },
-      createElement(
-        Routes,
-        null,
-        createElement(Route, { path: route, element: page }),
-      ),
+      createElement(Routes, null, createElement(Route, { path: route, element: page })),
     ),
   );
 };
@@ -52,9 +44,9 @@ const expectCenteredReturnLayout = (pageClass: string, bodyClass: string) => {
     name: 'нажмите здесь, чтобы вернуться в CherryPashkaParty',
   });
   expect(notice.matches(`.${pageClass} > .${bodyClass} > [role="status"]`)).toBe(true);
-  expect(
-    fallback.matches(`.${pageClass} > .${bodyClass} > .${pageClass}-return-fallback a`),
-  ).toBe(true);
+  expect(fallback.matches(`.${pageClass} > .${bodyClass} > .${pageClass}-return-fallback a`)).toBe(
+    true,
+  );
 };
 
 describe('return-to-app layout', () => {
@@ -105,6 +97,8 @@ describe('return-to-app layout', () => {
       '/oauth/complete',
     );
 
-    await waitFor(() => expectCenteredReturnLayout('oauth-complete-page', 'oauth-complete-page-body'));
+    await waitFor(() =>
+      expectCenteredReturnLayout('oauth-complete-page', 'oauth-complete-page-body'),
+    );
   });
 });

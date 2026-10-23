@@ -29,22 +29,19 @@ export type NeedsScanContext = {
   inFlightTrackIds?: ReadonlySet<string>;
 };
 
-/**
- * Clears persisted `pending` on project load so stale in-progress markers trigger a rescan.
- */
-export function normalizeLoadedLoudness(loudness: TrackLoudness): TrackLoudness | undefined {
+export const normalizeLoadedLoudness = (loudness: TrackLoudness): TrackLoudness | undefined => {
   if (loudness.status === 'pending') {
     return undefined;
   }
   return loudness;
-}
+};
 
-export function needsScan(
+export const needsScan = (
   track: Track,
   settings: Pick<LoudnessSettings, 'loudnessNormalizationEnabled'>,
   options?: NeedsScanOptions,
   context?: NeedsScanContext,
-): boolean {
+): boolean => {
   if (!settings.loudnessNormalizationEnabled) {
     return false;
   }
@@ -74,12 +71,12 @@ export function needsScan(
   }
 
   return false;
-}
+};
 
-function mapAnalyzeResultToTrackLoudness(
+const mapAnalyzeResultToTrackLoudness = (
   result: LoudnessAnalyzeResult,
   fileMtime: number,
-): TrackLoudness {
+): TrackLoudness => {
   if (result.status === 'error') {
     return {
       status: 'error',
@@ -99,7 +96,7 @@ function mapAnalyzeResultToTrackLoudness(
     fileMtime: result.fileMtime ?? fileMtime,
     algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
   };
-}
+};
 
 export type LoudnessServiceDeps = {
   getSettings: () => LoudnessSettings;
@@ -118,7 +115,7 @@ type ScanOrchestrationState = {
   scanChain: Promise<void>;
 };
 
-function createScanOrchestration(): ScanOrchestrationState {
+const createScanOrchestration = (): ScanOrchestrationState => {
   return {
     inFlightTrackIds: new Set(),
     inFlightScanPromises: new Map(),
@@ -126,9 +123,9 @@ function createScanOrchestration(): ScanOrchestrationState {
     scheduledTrackIds: new Set(),
     scanChain: Promise.resolve(),
   };
-}
+};
 
-export function createLoudnessService(deps: LoudnessServiceDeps) {
+export const createLoudnessService = (deps: LoudnessServiceDeps) => {
   const scanState = createScanOrchestration();
 
   const needsScanContext = (): NeedsScanContext => ({
@@ -348,7 +345,7 @@ export function createLoudnessService(deps: LoudnessServiceDeps) {
     scanTrack,
     scanTracks,
   };
-}
+};
 
 const platformAudioAdapter = createDefaultPlatformAudioAdapter();
 

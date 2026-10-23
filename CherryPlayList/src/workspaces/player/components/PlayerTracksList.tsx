@@ -1,4 +1,3 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup, isProjectTrack, ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
@@ -116,7 +115,6 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   setGroupName,
   handleToggleDisabled,
   handleUngroupGroup,
-  handleOpenTrackSettings,
   startTrackPlayback,
   pausePlayback,
   serverTrackIds = null,
@@ -130,7 +128,8 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
   );
 
   const [trackSettingsDropdown, setTrackSettingsDropdown] = useState<{
-    trackId: string;
+    itemId: string;
+    isGroup: boolean;
     anchorRect: DOMRect;
   } | null>(null);
 
@@ -178,15 +177,11 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
 
     return (
       <SettingsButton
-        title={isGroup ? 'Настройки тайминга группы' : 'Настройки тайминга трека'}
+        title="Настройки тайминга"
         indicator={indicator}
         onClick={(e) => {
-          if (isGroup) {
-            handleOpenTrackSettings(item.id);
-          } else {
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setTrackSettingsDropdown({ trackId: item.id, anchorRect: rect });
-          }
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          setTrackSettingsDropdown({ itemId: item.id, isGroup, anchorRect: rect });
         }}
       />
     );
@@ -196,9 +191,11 @@ export const PlayerTracksList: React.FC<PlayerTracksListProps> = ({
     <>
       {trackSettingsDropdown && (
         <TrackSettingsDropdown
-          key={trackSettingsDropdown.trackId}
-          trackId={trackSettingsDropdown.trackId}
+          key={trackSettingsDropdown.itemId}
+          itemId={trackSettingsDropdown.itemId}
+          isGroup={trackSettingsDropdown.isGroup}
           anchorRect={trackSettingsDropdown.anchorRect}
+          getEffectiveTrackSettings={getEffectiveTrackSettings}
           onClose={closeTrackSettingsDropdown}
         />
       )}

@@ -4,7 +4,7 @@ import type { PlayerItemForApi } from '../utils/partyUtils';
 
 import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
-export function collectFlattenedTrackIdsFromApiItems(items: PlayerItemForApi[]): string[] {
+export const collectFlattenedTrackIdsFromApiItems = (items: PlayerItemForApi[]): string[] => {
   const ids: string[] = [];
   for (const item of items) {
     if (item.type === 'track') {
@@ -14,7 +14,7 @@ export function collectFlattenedTrackIdsFromApiItems(items: PlayerItemForApi[]):
     }
   }
   return ids;
-}
+};
 
 interface ServerPlaylistTrackIdsState {
   serverTrackIds: Set<string> | null;
@@ -47,10 +47,10 @@ export const useServerPlaylistTrackIdsStore = create<ServerPlaylistTrackIdsState
   clear: () => set({ serverTrackIds: null }),
 }));
 
-export function applySyncedPlaylistTrackIds(payload: PlaylistForApiPayload): void {
+export const applySyncedPlaylistTrackIds = (payload: PlaylistForApiPayload): void => {
   useServerPlaylistTrackIdsStore.getState().setFromPlaylistItems(payload.items);
-}
+};
 
-export function clearServerPlaylistTrackIds(): void {
+export const clearServerPlaylistTrackIds = (): void => {
   useServerPlaylistTrackIdsStore.getState().clear();
-}
+};

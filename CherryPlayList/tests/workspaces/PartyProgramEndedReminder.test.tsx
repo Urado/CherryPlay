@@ -5,7 +5,7 @@ import React from 'react';
 const mockArchivePartyFromHeader = jest.fn();
 
 jest.mock('../../src/workspaces/party/partyHeaderCommands', () => ({
-  archivePartyFromHeader: (...args: unknown[]) => mockArchivePartyFromHeader(...args),
+  archivePartyFromHeader: (...args: unknown[]) => mockArchivePartyFromHeader(...args) as unknown,
 }));
 
 import { PartyProgramEndedReminder } from '../../src/workspaces/party/PartyProgramEndedReminder';
@@ -33,7 +33,9 @@ describe('PartyProgramEndedReminder', () => {
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Архивировать. Таймер' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Скрыть напоминание об архивировании' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Скрыть напоминание об архивировании' }),
+    ).toBeVisible();
   });
 
   it('archives only after the user confirms the action', () => {

@@ -1,8 +1,9 @@
-
+import { IconButton } from '@cherryplay/components';
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   ItemList,
   DropIndicator,
@@ -21,15 +22,19 @@ import {
   useDragDropExecutor,
 } from '@shared/hooks';
 import { fileService, ipcService } from '@shared/services';
+import { dialogService } from '@shared/services/dialogService';
 import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
 import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
 import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
-import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
+import {
+  runNewProjectWithSessionGuard,
+  stopLocalPlayerSession,
+} from '@shared/utils/newProjectSessionGuard';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import { usePlayerDividers } from '../player/hooks/usePlayerDividers';
 import { usePlayerMode } from '../player/hooks/usePlayerMode';
@@ -48,6 +53,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   workspaceId: _workspaceId,
   zoneId: _zoneId,
 }) => {
+  const clearAllRequestRef = useRef(false);
   const {
     name,
     items,
@@ -213,7 +219,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     let total = 0;
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
-      if (isTrackOrGroupDisabled(track.id)) {
+      const isDisabled =
+        sessionState.disabledTrackIds.includes(track.id) ||
+        sessionState.disabledGroupIds.some((groupId) => getItemPath(track.id).includes(groupId));
+      if (isDisabled) {
         continue;
       }
       total += track.duration || 0;
@@ -227,10 +236,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     return total;
   }, [
     tracks,
-    isTrackOrGroupDisabled,
     getEffectiveTrackSettings,
     sessionState.disabledTrackIds,
     sessionState.disabledGroupIds,
+    getItemPath,
   ]);
 
   const canCreateGroup = useMemo(() => {
@@ -261,31 +270,62 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     }
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
-  const handleClearAll = useCallback(() => {
+  const handleClearAll = useCallback(async () => {
+    if (clearAllRequestRef.current) return;
     if (tracks.length === 0) return;
-    void runNewProjectWithSessionGuard({
-      sessionActive: sessionState.mode === 'session',
-      confirmSessionStop: () =>
-        window.confirm(
-          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Создать новый проект?',
-        ),
-      stopLocally: stopLocalPlayerSession,
-      stopServerSession: () => {
-        const linkedParty = useProjectStore.getState().meta.linkedParty;
-        return enableStreaming && linkedParty
-          ? streamingOrchestrator.endServerSession()
-          : Promise.resolve();
-      },
-      resetProject: newProject,
-      onServerStopFailure: () => {
-        addNotification({
-          type: 'error',
-          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
-          duration: 5000,
-        });
-      },
-    });
+    clearAllRequestRef.current = true;
+    try {
+      await runNewProjectWithSessionGuard({
+        sessionActive: sessionState.mode === 'session',
+        confirmSessionStop: () =>
+          dialogService.confirm({
+            title: 'Остановить сессию и очистить проект?',
+            message:
+              'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Создать новый проект?',
+            confirmLabel: 'Очистить проект',
+            destructive: true,
+          }),
+        stopLocally: stopLocalPlayerSession,
+        stopServerSession: () => {
+          const linkedParty = useProjectStore.getState().meta.linkedParty;
+          return enableStreaming && linkedParty
+            ? streamingOrchestrator.endServerSession()
+            : Promise.resolve();
+        },
+        resetProject: newProject,
+        onServerStopFailure: () => {
+          addNotification({
+            type: 'error',
+            message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
+            duration: 5000,
+          });
+        },
+      });
+    } finally {
+      clearAllRequestRef.current = false;
+    }
   }, [tracks.length, sessionState.mode, newProject, enableStreaming, addNotification]);
+
+  const handleExportTracksToText = useCallback(() => {
+    try {
+      if (tracks.length === 0) {
+        return;
+      }
+
+      const fileContent = tracks.map((track) => track.name).join('\n');
+      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${name || 'tracks'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      logger.error('Failed to export tracks to text file', error);
+    }
+  }, [tracks, name]);
 
   useListShortcuts({
     'list.undo': undo,
@@ -310,7 +350,19 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
         onRemoveSelected={removeSelectedItems}
         canCreateGroup={canCreateGroup}
         onCreateGroup={handleCreateGroup}
-        onClearAll={handleClearAll}
+        onClearAll={() => void handleClearAll()}
+        extraActions={
+          <IconButton
+            onClick={handleExportTracksToText}
+            className="playlist-header-action-icon"
+            title="Список треков в файл…"
+            disabled={tracks.length === 0}
+            aria-label="Список треков в файл"
+            icon={<TextSnippetIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
+        }
       />
 
       <ItemList

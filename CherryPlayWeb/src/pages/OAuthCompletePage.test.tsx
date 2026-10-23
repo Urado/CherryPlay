@@ -1,23 +1,22 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import {
   LEGAL_PD_CONSENT,
   LEGAL_TERMS,
   OAUTH_PENDING_CONSENTS_STORAGE_KEY,
   stashOAuthPendingConsents,
   type ConsentInput,
+  type CreateOAuthAccountResponse,
 } from '@cherryplay/components';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OAuthCompletePage } from './OAuthCompletePage';
 
-const createOAuthAccountMock = vi.fn();
-const issueDesktopAuthCodeMock = vi.fn();
-const ensureConsentsMock = vi.fn();
+const createOAuthAccountMock = vi.fn<(...args: unknown[]) => Promise<CreateOAuthAccountResponse>>();
+const issueDesktopAuthCodeMock = vi.fn<(...args: unknown[]) => Promise<string>>();
+const ensureConsentsMock = vi.fn<(...args: unknown[]) => Promise<'ok' | 'logout' | 'error'>>();
 
 vi.mock('../services/authService', () => ({
   authService: {
@@ -109,7 +108,7 @@ const LocationProbe = () => {
   });
 };
 
-function renderComplete(path: string) {
+const renderComplete = (path: string) => {
   return render(
     createElement(
       MemoryRouter,
@@ -139,7 +138,7 @@ function renderComplete(path: string) {
       ),
     ),
   );
-}
+};
 
 describe('OAuthCompletePage', () => {
   beforeEach(() => {
@@ -151,7 +150,6 @@ describe('OAuthCompletePage', () => {
   });
 
   afterEach(() => {
-    cleanup();
     sessionStorage.clear();
   });
 

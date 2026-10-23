@@ -181,6 +181,7 @@ export interface ApiErrorPayload {
   message?: string;
   detail?: string;
   error?: string;
+  limit?: number;
   themeId?: string;
   requiredPackageCodes?: string[];
   existingEntitlementId?: string;
@@ -204,6 +205,71 @@ export interface AdminOrganizerListResponse {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface AdminPartyListItemDto {
+  id: string;
+  organizerId: string;
+  organizerName: string;
+  isOrganizerDeleted: boolean;
+  name: string;
+  title?: string | null;
+  shortCode: string;
+  city?: string | null;
+  eventDateTime?: string | null;
+  partyLifecycleState: PartyLifecycleState;
+  isListedInCatalog: boolean;
+  isDeleted: boolean;
+  hasActiveSession: boolean;
+  isOrganizerConnected: boolean;
+}
+
+export interface AdminPartyListResponse {
+  items: AdminPartyListItemDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminPartyListQuery {
+  organizerId?: string;
+  query?: string;
+  city?: string;
+  partyLifecycleState?: PartyLifecycleState;
+  isListedInCatalog?: boolean;
+  isDeleted?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminPartyDetailDto extends AdminPartyListItemDto {
+  description?: string | null;
+  subtitle?: string | null;
+  place?: string | null;
+  eventEndDateTime?: string | null;
+  shortDescription?: string | null;
+  timeZone?: string | null;
+  schedule?: string | null;
+  externalLinkUrl?: string | null;
+  externalLinkText?: string | null;
+  danceTags?: string[] | null;
+  partyThemeId: string;
+  playlist: PartyPlaylistDto;
+  playbackState?: PlaybackStateDto | null;
+}
+
+export interface AdminPartyMutationDto {
+  id: string;
+  partyLifecycleState: PartyLifecycleState;
+  isListedInCatalog: boolean;
+}
+
+export interface AdminPartySessionResetDto {
+  id: string;
+  wasReset: boolean;
+  hasActiveSession: boolean;
+  isOrganizerConnected: boolean;
+  playbackState?: PlaybackStateDto | null;
 }
 
 export interface AdminOAuthAccountDto {

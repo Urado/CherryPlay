@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { LEGAL_DOCUMENTS_CONTENT } from './documents';
 
-function allParagraphText(key: 'privacy' | 'consent'): string {
+const allParagraphText = (key: 'privacy' | 'consent'): string => {
   return LEGAL_DOCUMENTS_CONTENT[key].blocks
     .filter((b) => b.type === 'paragraph')
     .map((b) => b.text)
     .join('\n');
-}
+};
 
 describe('legal retention promises', () => {
   it('consent and privacy keep plain-language retention and Cloud.ru dump wording', () => {

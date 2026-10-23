@@ -1,5 +1,5 @@
 import { Button, IconButton, FormInput, InfoIcon } from '@cherryplay/components';
-import { ActionAfterTrack } from '@core/types/project';
+import { ActionAfterTrack, isProjectGroup } from '@core/types/project';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   clampLoudnessQuietGapRangeLu,
@@ -13,13 +13,20 @@ import {
 } from '@shared/contracts/loudness';
 import { useModalKeyboard } from '@shared/hooks';
 import { usePlatformCapabilities } from '@shared/platform';
-import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  getItemPathRecursive,
+  useProjectStore,
+  useSettingsStore,
+  useUIStore,
+} from '@shared/stores';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 export const TrackSettingsModal: React.FC = () => {
   const { closeModal, modal, trackSettingsContext } = useUIStore();
   const {
+    items,
     settings,
+    findItemById,
     setDefaultPauseBetweenTracks,
     setDefaultActionAfterTrack,
     getTrackSettings,
@@ -45,29 +52,91 @@ export const TrackSettingsModal: React.FC = () => {
   const trackId = trackSettingsContext.trackId;
   const groupId = trackSettingsContext.groupId;
   const isGlobal = trackSettingsContext.isGlobal;
-
-  const getResolvedSettings = useCallback(
+  const itemPath = useMemo(
     () =>
-      isGlobal
-        ? {
-            pauseBetweenTracks: defaultPauseBetweenTracks,
-            actionAfterTrack: defaultActionAfterTrack,
-          }
-        : groupId
-          ? getGroupSettings(groupId)
-          : trackId
-            ? getTrackSettings(trackId)
-            : {},
-    [
-      isGlobal,
-      groupId,
-      trackId,
-      defaultPauseBetweenTracks,
-      defaultActionAfterTrack,
-      getGroupSettings,
-      getTrackSettings,
-    ],
+      (groupId
+        ? getItemPathRecursive(items, groupId)
+        : trackId
+          ? getItemPathRecursive(items, trackId)
+          : null) ?? [],
+    [groupId, items, trackId],
   );
+  const ancestorGroupIds = useMemo(
+    () =>
+      itemPath
+        .slice(0, -1)
+        .filter((itemId) => {
+          const item = findItemById(itemId);
+          return item !== null && isProjectGroup(item);
+        })
+        .reverse(),
+    [findItemById, itemPath],
+  );
+
+  const getInheritedGroupSettings = useCallback(() => {
+    for (const ancestorId of ancestorGroupIds) {
+      const ancestorSettings = getGroupSettings(ancestorId);
+      if (
+        ancestorSettings.actionAfterTrack !== null &&
+        ancestorSettings.actionAfterTrack !== undefined
+      ) {
+        return {
+          actionAfterTrack: ancestorSettings.actionAfterTrack,
+          pauseBetweenTracks: ancestorSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks,
+          hasInheritedGroupAction: true,
+        };
+      }
+    }
+    return {
+      actionAfterTrack: defaultActionAfterTrack,
+      pauseBetweenTracks: defaultPauseBetweenTracks,
+      hasInheritedGroupAction: false,
+    };
+  }, [ancestorGroupIds, defaultActionAfterTrack, defaultPauseBetweenTracks, getGroupSettings]);
+
+  const getResolvedSettings = useCallback(() => {
+    if (isGlobal) {
+      return {
+        pauseBetweenTracks: defaultPauseBetweenTracks,
+        actionAfterTrack: defaultActionAfterTrack,
+      };
+    }
+    if (groupId) {
+      const groupSettings = getGroupSettings(groupId);
+      const inherited = getInheritedGroupSettings();
+      return {
+        actionAfterTrack: groupSettings.actionAfterTrack,
+        pauseBetweenTracks:
+          groupSettings.actionAfterTrack !== null && groupSettings.actionAfterTrack !== undefined
+            ? (groupSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks)
+            : inherited.pauseBetweenTracks,
+      };
+    }
+    if (trackId) {
+      const trackSettings = getTrackSettings(trackId);
+      const hasTrackAction =
+        trackSettings.actionAfterTrack !== null && trackSettings.actionAfterTrack !== undefined;
+      const inherited = getInheritedGroupSettings();
+      return {
+        actionAfterTrack: trackSettings.actionAfterTrack,
+        pauseBetweenTracks: hasTrackAction
+          ? (trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks)
+          : inherited.hasInheritedGroupAction
+            ? inherited.pauseBetweenTracks
+            : (trackSettings.pauseBetweenTracks ?? defaultPauseBetweenTracks),
+      };
+    }
+    return {};
+  }, [
+    isGlobal,
+    groupId,
+    trackId,
+    defaultPauseBetweenTracks,
+    defaultActionAfterTrack,
+    getInheritedGroupSettings,
+    getGroupSettings,
+    getTrackSettings,
+  ]);
 
   const [localActionAfterTrack, setLocalActionAfterTrack] = useState<ActionAfterTrack | 'default'>(
     () => getResolvedSettings().actionAfterTrack || 'default',
@@ -115,22 +184,21 @@ export const TrackSettingsModal: React.FC = () => {
   const prevModalRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (modal === 'trackSettings' && prevModalRef.current !== 'trackSettings') {
-      const timeoutId = setTimeout(() => {
-        const resolved = getResolvedSettings();
-        setLocalActionAfterTrack(resolved.actionAfterTrack || 'default');
-        setLocalPauseBetweenTracks(resolved.pauseBetweenTracks ?? defaultPauseBetweenTracks);
-        if (isGlobal) {
-          setLocalPlannedEndTime(timestampToTimeString(plannedEndTime));
-          setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
-          setLocalLoudnessTargetLufs(loudnessTargetLufs);
-          setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
-          setLocalLoudnessQuietGapRangeLu(loudnessQuietGapRangeLu);
-        }
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
+    const isOpening = modal === 'trackSettings' && prevModalRef.current !== 'trackSettings';
     prevModalRef.current = modal;
+    if (!isOpening) {
+      return;
+    }
+    const resolved = getResolvedSettings();
+    setLocalActionAfterTrack(resolved.actionAfterTrack || 'default');
+    setLocalPauseBetweenTracks(resolved.pauseBetweenTracks ?? defaultPauseBetweenTracks);
+    if (isGlobal) {
+      setLocalPlannedEndTime(timestampToTimeString(plannedEndTime));
+      setLocalLoudnessNormalizationEnabled(loudnessNormalizationEnabled);
+      setLocalLoudnessTargetLufs(loudnessTargetLufs);
+      setLocalLoudnessCompressionEnabled(loudnessCompressionEnabled);
+      setLocalLoudnessQuietGapRangeLu(loudnessQuietGapRangeLu);
+    }
   }, [
     modal,
     isGlobal,
@@ -228,6 +296,15 @@ export const TrackSettingsModal: React.FC = () => {
     return 'Настройки трека';
   };
 
+  const inheritedGroupSettings = getInheritedGroupSettings();
+  const inheritedActionAfterTrack = inheritedGroupSettings.actionAfterTrack;
+  const inheritedActionLabel =
+    inheritedActionAfterTrack === 'next'
+      ? 'Без паузы'
+      : inheritedActionAfterTrack === 'pauseAndNext'
+        ? 'Интервал между треками'
+        : 'Пауза в конце трека';
+
   const showPauseInput = localActionAfterTrack === 'pauseAndNext';
 
   return (
@@ -254,6 +331,13 @@ export const TrackSettingsModal: React.FC = () => {
         </div>
 
         <div className="modal-body">
+          {!isGlobal && (
+            <div className="settings-description">
+              {groupId
+                ? `Пустые настройки наследуют действие и интервал ближайшей родительской группы, которая задаёт действие, или глобальные значения. Сейчас: ${inheritedActionLabel}, ${inheritedGroupSettings.pauseBetweenTracks} сек. Индивидуальные настройки трека внутри группы имеют приоритет.`
+                : 'Настройки этого трека имеют приоритет над настройками его группы и значениями по умолчанию.'}
+            </div>
+          )}
           <div className="settings-group">
             <label className="settings-label" htmlFor="track-settings-action">
               Действие после трека
@@ -267,13 +351,7 @@ export const TrackSettingsModal: React.FC = () => {
               id="track-settings-action"
             >
               <option value="default">
-                По умолчанию (
-                {defaultActionAfterTrack === 'next'
-                  ? 'Без паузы'
-                  : defaultActionAfterTrack === 'pauseAndNext'
-                    ? 'Интервал между треками'
-                    : 'Пауза в конце трека'}
-                )
+                {groupId ? 'Наследовать' : 'По умолчанию'} ({inheritedActionLabel})
               </option>
               <option value="pause">Пауза в конце трека</option>
               <option value="next">Без паузы</option>

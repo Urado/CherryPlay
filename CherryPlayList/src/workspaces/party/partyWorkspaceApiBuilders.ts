@@ -3,7 +3,7 @@ import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
 import { CreatePartyDto, type UpdatePartyDto } from '@shared/services/partyService';
 import { buildPlaylistForApiPayload } from '@shared/streaming/buildPlaylistForApiPayload';
-import { convertPlaylistForApi } from '@shared/utils';
+import { convertPlaylistForApi } from '@shared/utils/partyUtils';
 
 import type { PartyWorkspaceState } from './partyWorkspaceStore';
 import { normalizeCustomizationSettings } from './partyWorkspaceUtils';
@@ -32,11 +32,11 @@ type PartyMetadataStoreSlice = Pick<
 type PartyUpdateMetadataStoreSlice = PartyMetadataStoreSlice &
   Pick<PartyWorkspaceState, 'eventEndDateTimeTouched' | 'hasInitialEventEndDateTime'>;
 
-function resolvePartyTimeZone(store: Pick<PartyWorkspaceState, 'timeZone'>): string {
+const resolvePartyTimeZone = (store: Pick<PartyWorkspaceState, 'timeZone'>): string => {
   return store.timeZone.trim() || getDefaultTimeZone();
-}
+};
 
-function buildSharedPartyMetadataFields(store: PartyMetadataStoreSlice, tz: string) {
+const buildSharedPartyMetadataFields = (store: PartyMetadataStoreSlice, tz: string) => {
   return {
     title: store.partyTitle.trim() || undefined,
     subtitle: store.partySubtitle.trim() || undefined,
@@ -51,12 +51,12 @@ function buildSharedPartyMetadataFields(store: PartyMetadataStoreSlice, tz: stri
     schedule: store.schedule.trim() || undefined,
     timeZone: store.timeZone.trim() || undefined,
   };
-}
+};
 
-function resolveEventEndDateTimeForUpdate(
+const resolveEventEndDateTimeForUpdate = (
   store: PartyUpdateMetadataStoreSlice,
   tz: string,
-): string | null | undefined {
+): string | null | undefined => {
   if (!store.eventEndDateTimeTouched) {
     return undefined;
   }
@@ -64,22 +64,22 @@ function resolveEventEndDateTimeForUpdate(
     return store.hasInitialEventEndDateTime ? null : undefined;
   }
   return convertLocalDateTimeToUtc(store.eventEndDateTime, tz);
-}
+};
 
-export function buildPlaylistForApi(params: {
+export const buildPlaylistForApi = (params: {
   streamingSource: string;
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
-}) {
+}) => {
   return buildPlaylistForApiPayload(params);
-}
+};
 
-export function buildCreatePartyDto(
+export const buildCreatePartyDto = (
   store: PartyMetadataStoreSlice,
   playlistForApi: ReturnType<typeof convertPlaylistForApi>,
   options?: { partyName?: string },
-): CreatePartyDto {
+): CreatePartyDto => {
   const tz = resolvePartyTimeZone(store);
   const name = options?.partyName ?? store.partyName;
 
@@ -96,9 +96,9 @@ export function buildCreatePartyDto(
     externalLinkText: store.externalLinkText.trim() || undefined,
     danceTags: store.danceTags.length > 0 ? store.danceTags : undefined,
   };
-}
+};
 
-export function buildUpdatePartyDto(store: PartyUpdateMetadataStoreSlice): UpdatePartyDto {
+export const buildUpdatePartyDto = (store: PartyUpdateMetadataStoreSlice): UpdatePartyDto => {
   const tz = resolvePartyTimeZone(store);
 
   return {
@@ -111,4 +111,4 @@ export function buildUpdatePartyDto(store: PartyUpdateMetadataStoreSlice): Updat
     danceTags: store.danceTags,
     isListedInCatalog: store.isListedInCatalog,
   };
-}
+};

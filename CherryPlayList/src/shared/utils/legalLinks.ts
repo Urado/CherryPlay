@@ -5,7 +5,7 @@ const LEGAL_DOCUMENT_PATHS: Record<LegalDocument, string> = {
   legal: '/legal',
 };
 
-export function resolveLegalWebBaseUrl(configuredWebBaseUrl: string, override?: string): string {
+export const resolveLegalWebBaseUrl = (configuredWebBaseUrl: string, override?: string): string => {
   const selectedBaseUrl = override?.trim() || configuredWebBaseUrl.trim();
   const baseUrl = new URL(selectedBaseUrl);
   if (!['http:', 'https:'].includes(baseUrl.protocol) || baseUrl.username || baseUrl.password) {
@@ -13,13 +13,13 @@ export function resolveLegalWebBaseUrl(configuredWebBaseUrl: string, override?: 
   }
 
   return baseUrl.origin;
-}
+};
 
-export function buildLegalDocumentUrl(webBaseUrl: string, document: LegalDocument): string {
+export const buildLegalDocumentUrl = (webBaseUrl: string, document: LegalDocument): string => {
   const baseUrl = new URL(resolveLegalWebBaseUrl(webBaseUrl));
 
   baseUrl.pathname = LEGAL_DOCUMENT_PATHS[document];
   baseUrl.search = '';
   baseUrl.hash = '';
   return baseUrl.toString();
-}
+};

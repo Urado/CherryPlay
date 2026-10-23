@@ -1,9 +1,9 @@
-
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
 import { createWithEqualityFn } from 'zustand/traditional';
 
 import { demoPlaybackEngine } from '../audio/playback/playbackEngines';
+import { isDemoSharedOutputConflictError } from '../demo/demoSharedOutputConflict';
 import { isLocalFilePlaybackBlocked } from '../demo/guardPlayback';
 import { DEMO_UNAVAILABLE_MESSAGE } from '../platform/demoUnavailable';
 import { formatMissingTrackMessage } from '../utils/fileErrors';
@@ -36,11 +36,7 @@ interface DemoPlayerState {
   error: string | null;
   isDisabled: boolean;
 
-  loadTrack: (
-    track: Track,
-    sourceWorkspaceId: WorkspaceId,
-    autoPlay?: boolean,
-  ) => Promise<number>;
+  loadTrack: (track: Track, sourceWorkspaceId: WorkspaceId, autoPlay?: boolean) => Promise<number>;
   shouldAutoPlayTrack: (
     trackId: string,
     sourceWorkspaceId: WorkspaceId,
@@ -122,7 +118,7 @@ const handleDemoPlayerDeviceNotFound = (): void => {
   useUIStore.getState().addNotification({
     type: 'warning',
     message:
-      'Выбранное аудиоустройство для предпросмотра недоступно. Используется устройство по умолчанию.',
+      'Выбранное аудиоустройство для предпрослушивания недоступно. Используется устройство по умолчанию.',
   });
 };
 
@@ -339,7 +335,18 @@ export const useDemoPlayerStore = createWithEqualityFn<DemoPlayerState>((set, ge
     handleError,
 
     setDisabled: (disabled) => {
-      set({ isDisabled: disabled });
+      set((state) => {
+        const next: Pick<DemoPlayerState, 'isDisabled' | 'error' | 'status'> = {
+          isDisabled: disabled,
+        };
+        if (!disabled && isDemoSharedOutputConflictError(state.error)) {
+          next.error = null;
+          if (state.status === 'error') {
+            next.status = 'paused';
+          }
+        }
+        return next;
+      });
       if (disabled && (get().status === 'playing' || pendingAutoPlay !== null)) {
         get().pause();
       }

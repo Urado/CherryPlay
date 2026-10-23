@@ -35,7 +35,7 @@ describe('MediaElementTransport pause position', () => {
     transport.pause();
 
     expect(transport.getSnapshot()).toMatchObject({ status: 'paused', position: 48.72 });
-    expect(audio.pause).toHaveBeenCalledTimes(2);
+    expect((audio.pause as jest.Mock).mock.calls).toHaveLength(2);
 
     await transport.play();
 

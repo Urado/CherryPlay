@@ -17,7 +17,7 @@ import {
   prepareWorkspaceInstance,
 } from '../../src/shared/utils/workspaceLifecycle';
 
-function createLayoutWithFileBrowser(): { layout: Layout; zone: WorkspaceZone } {
+const createLayoutWithFileBrowser = (): { layout: Layout; zone: WorkspaceZone } => {
   const zone: WorkspaceZone = {
     id: 'fb-zone-1',
     type: 'workspace',
@@ -30,7 +30,7 @@ function createLayoutWithFileBrowser(): { layout: Layout; zone: WorkspaceZone } 
     layout: { version: 1, rootZone: zone },
     zone,
   };
-}
+};
 
 describe('layoutWorkspaceOperations fileBrowser multi-instance', () => {
   it('treats fileBrowser as a non-singleton workspace type', () => {

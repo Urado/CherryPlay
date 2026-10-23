@@ -16,7 +16,7 @@
 | `cherryplaylist-settings`      | `useSettingsStore` (`settingsStore.ts`)                           | Пользовательские настройки приложения               |
 | `cherryplaylist-workspaces`    | `useLayoutStore` (`layoutStore.ts`)                               | Workspace, layout, `builtinLayoutOverrides`         |
 | `cherryplaylist-project`       | `useProjectStore` (`projectStore.ts`)                             | Основной плейлист-проект (главный workspace)        |
-| `cherryplaylist-<workspaceId>` | `ensureProjectStore` с `persist: true` (`projectStoreFactory.ts`) | Отдельные проекты по id workspace (коллекции и др.) |
+| `cherryplaylist-<workspaceId>` | `projectStoreFactory.ts` legacy / другие dynamic stores | Старые локальные записи коллекций и данные тех dynamic stores, которые ещё используют отдельный persist |
 
 Для динамических workspace id — **один ключ на каждый** уникальный `workspaceId`, для которого создан персистентный store.
 
@@ -71,13 +71,13 @@
 
 Изменения дерева layout **не привязаны к файлу проекта** (`.cherry`). Сохраняются на уровне приложения:
 
-| Метод                              | Когда                                                                                          |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…»; builtin — structure-only upsert override / no-op |
-| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`                                            |
-| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **scratch** — новая запись в **Мои** («Без имени» / «Без имени N»)                       |
+| Метод                              | Когда                                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `autoCommitWorkspaceChanges()`     | Перед switch / exit edit / «Создать с нуля…»; builtin — structure-only upsert override / no-op                                         |
+| `saveCurrentWorkspace({ silent })` | Dirty **user** — обновить снимок в `userWorkspaces`                                                                                    |
+| `saveCurrentWorkspaceAsUnnamed()`  | Dirty **scratch** — новая запись в **Мои** («Без имени» / «Без имени N»)                                                               |
 | `clearBuiltinOverride(preset)`     | Удалить override из map; если preset **активен** — пересобрать live layout фабрикой; иначе только map. UI — **«Сбросить к исходному»** |
-| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)                                                    |
+| `saveCurrentWorkspaceAs(name)`     | Явное имя (pill для scratch, импорт и т.д.)                                                                                            |
 
 Оркестрация в UI: `useWorkspaceDirtyGuard.ts` (`requestActivateWorkspace`, `requestExitEditMode`, …). Модальных диалогов нет. Builtin **не** форкается в «Без имени». Исторические «Без имени» от старого auto-fork **не мигрируются**.
 
@@ -90,9 +90,9 @@ Auto-save **scratch** использует `allocateUnnamedWorkspaceName()` (`wo
 
 `isUnnamedWorkspaceName()` распознаёт всю серию для UI (курсив, inline-rename). Имена в `userWorkspaces` хранятся как обычные строки.
 
-### Коллекции vs имя workspace
+### Подборки и layout
 
-Данные коллекций лежат в **`cherryplaylist-<workspaceId>`** по **`workspaceId` из дерева layout**, а не по имени пользовательского workspace. Смена built-in/user workspace пересоздаёт дерево — старые ключи коллекций могут остаться в хранилище. См. [Layout System](./layout-system.md).
+Содержимое и имена подборок хранятся в основном `cherryplaylist-project` persist по стабильному `collectionId`. Карта привязок связывает workspace зоны с подборками; имя пользовательского layout на хранение подборки не влияет. Если layout удалён, данные подборки остаются в проекте. Старые ключи по `workspaceId` мигрируются отдельно — см. [раздел 5](#5-старые-коллекции-по-workspace-cherryplaylist-workspaceid) и [Layout System](./layout-system.md).
 
 **Electron:** после перезапуска восстанавливаются `activeWorkspace`, `userWorkspaces`, `builtinLayoutOverrides` и живое `layout` (для активного builtin layout согласуется с фабрикой + override при rehydrate/activate).
 
@@ -113,6 +113,9 @@ Auto-save **scratch** использует `allocateUnnamedWorkspaceName()` (`wo
 - **`name`**, **`items`**, **`settings`**
 - **`trackSettings`**, **`groupSettings`** — в JSON как массивы пар `[id, value]` (Map сериализуется так в `partialize`)
 - **`sessionState`** — режим сессии, проигранные/отключённые треки и группы, текущий трек, время старта и т.д. (см. типы в `@core/types/project`)
+- **`collections`** — массив `{ id, name, items }` всех подборок проекта
+- **`collectionBindings`** — карта `workspaceId → collectionId`; несколько workspace могут ссылаться на одну подборку
+- **`legacyCollectionsMigrationComplete`** — отметка о завершении однократной миграции доступных прежних коллекций
 - **`meta`** (урезанно для сериализации):
   - `filePath`, `isDirty`, `lastSavedAt`
   - **`linkedParty`** — только `{ id, shortCode }` или `null` (URL в persist не хранится)
@@ -134,9 +137,13 @@ Auto-save **scratch** использует `allocateUnnamedWorkspaceName()` (`wo
 
 ---
 
-## 5. Проекты по workspace (`cherryplaylist-<workspaceId>`)
+## 5. Старые коллекции по workspace (`cherryplaylist-<workspaceId>`)
 
-Используется та же форма данных, что и у основного проекта (через фабрику), но **`meta`** в `partialize` **без** `linkedParty` и **`partyTrackDisplay`** — только путь к файлу и служебные поля (`filePath`, `isDirty`, `lastSavedAt`). Коллекции и другие зоны с `persist: true` получают собственный ключ по своему **`workspaceId`**.
+Новые подборки входят в `collections` основного `cherryplaylist-project` persist и не получают отдельный persist-ключ. Workspace-store адаптеры направляют операции к общей сущности проекта.
+
+При запуске локального проекта однократная миграция ищет старые `cherryplaylist-<workspaceId>` только для collection-зон, присутствующих в текущем layout, сохранённых пользовательских layout и встроенных override. Найденные коллекции переносятся вместе с именем и элементами, а исходные ключи сохраняются. Если workspace ID больше не встречается в этих layout, старая запись остаётся нетронутой, но автоматически не восстанавливается.
+
+Другие dynamic stores могут по-прежнему иметь отдельный persist-ключ; перед добавлением нового такого store см. его модуль и `projectStoreFactory.ts`.
 
 ---
 

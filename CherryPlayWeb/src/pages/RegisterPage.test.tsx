@@ -1,7 +1,5 @@
-/**
- * @vitest-environment jsdom
- */
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+// @vitest-environment jsdom
+import { render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,7 +35,7 @@ const LoginRouteProbe = () => {
   );
 };
 
-function renderRegister(path: string) {
+const renderRegister = (path: string) => {
   return render(
     createElement(
       MemoryRouter,
@@ -53,7 +51,7 @@ function renderRegister(path: string) {
       ),
     ),
   );
-}
+};
 
 describe('RegisterPage desktop SSO', () => {
   beforeEach(() => {
@@ -61,7 +59,6 @@ describe('RegisterPage desktop SSO', () => {
   });
 
   afterEach(() => {
-    cleanup();
     sessionStorage.clear();
   });
 

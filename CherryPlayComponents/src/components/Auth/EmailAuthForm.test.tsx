@@ -5,12 +5,12 @@ import type { AuthService } from '../../types/auth';
 
 import { EmailAuthForm } from './EmailAuthForm';
 
-function createAuthService(): AuthService {
+const createAuthService = (): AuthService => {
   return {
     login: vi.fn(),
     register: vi.fn(),
   };
-}
+};
 
 describe('EmailAuthForm register consent gate', () => {
   it('renders LegalConsentBlock and disabled submit in register mode', () => {

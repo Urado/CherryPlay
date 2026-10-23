@@ -56,10 +56,10 @@ npm run dist:all
 
 **Windows scripts:**
 
-| Script        | Что делает                                                                             | AIMP bridge                                |
-| ------------- | -------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `dist:win`    | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64` | Использует `CHERRYPLAY_AIMP_DLL` override, иначе ищет локальную DLL (Release/Debug), затем fallback в `prebuilt/` |
-| `dist:win:ci` | `build:electron` → `stage:aimp-plugin:prebuilt` → `clean:pack` → `electron-builder --win --x64` | Берёт только DLL из `prebuilt/`; при отсутствии сборка завершается ошибкой |
+| Script        | Что делает                                                                                      | AIMP bridge                                                                                                       |
+| ------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `dist:win`    | `build:electron` → `stage:aimp-plugin` → `clean:pack` → `electron-builder --win --x64`          | Использует `CHERRYPLAY_AIMP_DLL` override, иначе ищет локальную DLL (Release/Debug), затем fallback в `prebuilt/` |
+| `dist:win:ci` | `build:electron` → `stage:aimp-plugin:prebuilt` → `clean:pack` → `electron-builder --win --x64` | Берёт только DLL из `prebuilt/`; при отсутствии сборка завершается ошибкой                                        |
 
 Локально соберите AIMP bridge по инструкции в [CherryPlayAimpPlugin/README.md](../CherryPlayAimpPlugin/README.md) и скопируйте Release x64 DLL в `CherryPlayAimpPlugin/prebuilt/CherryPlayAimpBridge.dll`. Коммитьте DLL вместе с изменениями исходников плагина. GitHub Actions использует эту закоммиченную DLL: CI не скачивает AIMP SDK и не компилирует нативный плагин. В Windows ZIP staging помещает bridge и manifest в каталог плагинов CherryPlayList.
 

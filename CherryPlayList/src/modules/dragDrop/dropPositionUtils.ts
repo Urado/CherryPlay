@@ -4,10 +4,10 @@ import { DisplayItem } from '../../shared/utils/playerItemsUtils';
 
 import { HierarchyPosition, InsertPosition } from './types';
 
-export function collectFlatIndicesForItem(
+export const collectFlatIndicesForItem = (
   itemId: string,
   displayItems: DisplayItem[],
-): Set<number> {
+): Set<number> => {
   const indices = new Set<number>();
 
   const itemIndex = displayItems.findIndex((di) => di.item.id === itemId);
@@ -30,9 +30,12 @@ export function collectFlatIndicesForItem(
   }
 
   return indices;
-}
+};
 
-export function collectAllFlatIndices(rootIds: string[], displayItems: DisplayItem[]): Set<number> {
+export const collectAllFlatIndices = (
+  rootIds: string[],
+  displayItems: DisplayItem[],
+): Set<number> => {
   const allIndices = new Set<number>();
 
   for (const id of rootIds) {
@@ -41,13 +44,13 @@ export function collectAllFlatIndices(rootIds: string[], displayItems: DisplayIt
   }
 
   return allIndices;
-}
+};
 
-export function getRootIdsForDrag(
+export const getRootIdsForDrag = (
   itemId: string,
   selectedIds: Set<string>,
   displayItems: DisplayItem[],
-): string[] {
+): string[] => {
   const idsToProcess =
     selectedIds.has(itemId) && selectedIds.size > 1 ? selectedIds : new Set([itemId]);
 
@@ -80,17 +83,20 @@ export function getRootIdsForDrag(
     const bIdx = displayItems.find((di) => di.item.id === b)?.flatIndex ?? 0;
     return aIdx - bIdx;
   });
-}
+};
 
-export function isDropInsideDragged(targetFlatIndex: number, allFlatIndices: Set<number>): boolean {
+export const isDropInsideDragged = (
+  targetFlatIndex: number,
+  allFlatIndices: Set<number>,
+): boolean => {
   return allFlatIndices.has(targetFlatIndex);
-}
+};
 
-export function calculateDropPosition(
+export const calculateDropPosition = (
   targetFlatIndex: number,
   position: InsertPosition,
   displayItems: DisplayItem[],
-): HierarchyPosition {
+): HierarchyPosition => {
   const targetItem = displayItems[targetFlatIndex];
   if (!targetItem) {
     const rootCount = displayItems.filter((di) => di.parentGroupId === null).length;
@@ -137,12 +143,12 @@ export function calculateDropPosition(
     parentId,
     localIndex: localIndex === -1 ? 0 : localIndex,
   };
-}
+};
 
-export function filterDisplayItems(
+export const filterDisplayItems = (
   displayItems: DisplayItem[],
   indicesToRemove: Set<number>,
-): DisplayItem[] {
+): DisplayItem[] => {
   const filtered: DisplayItem[] = [];
   let newFlatIndex = 0;
 
@@ -156,4 +162,4 @@ export function filterDisplayItems(
   }
 
   return filtered;
-}
+};

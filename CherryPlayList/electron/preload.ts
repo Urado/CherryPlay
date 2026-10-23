@@ -11,17 +11,17 @@ import {
   type AimpSourceSelection,
 } from '../src/shared/contracts/aimp';
 
-function assertBoolean(value: unknown, fieldName: string): asserts value is boolean {
+const assertBoolean = (value: unknown, fieldName: string): asserts value is boolean => {
   if (typeof value !== 'boolean') {
     throw new Error(`${fieldName} must be a boolean`);
   }
-}
+};
 
-function assertAimpSourceSelection(value: unknown): asserts value is AimpSourceSelection {
+const assertAimpSourceSelection = (value: unknown): asserts value is AimpSourceSelection => {
   if (!isAimpSourceSelection(value)) {
     throw new Error('sourceSelection must be "cherryPlayPlayer" or "aimp"');
   }
-}
+};
 
 const VALID_INVOKE_CHANNELS = [
   'fileBrowser:listDirectory',
@@ -62,43 +62,43 @@ const VALID_INVOKE_CHANNELS = [
 
 const VALID_ON_CHANNELS = ['project:save-progress'] as const;
 
-function assertValidInvokeChannel(channel: string): void {
+const assertValidInvokeChannel = (channel: string): void => {
   if (!(VALID_INVOKE_CHANNELS as readonly string[]).includes(channel)) {
     throw new Error(`Invalid IPC channel: ${channel}`);
   }
-}
+};
 
-function assertValidOnChannel(channel: string): void {
+const assertValidOnChannel = (channel: string): void => {
   if (!(VALID_ON_CHANNELS as readonly string[]).includes(channel)) {
     throw new Error(`Invalid IPC channel: ${channel}`);
   }
-}
+};
 
-async function invokeValidatedAimpChannel(
+const invokeValidatedAimpChannel = async (
   channel: 'aimp:getState' | 'aimp:setSourceSelection' | 'aimp:setLiveStreamStarted',
   payload?: unknown,
 ): Promise<{
   success: boolean;
   data?: AimpBridgeState;
   error?: string;
-}> {
-  const response = await ipcRenderer.invoke(channel, payload);
+}> => {
+  const response: unknown = await ipcRenderer.invoke(channel, payload);
   const validationResult = validateAimpBridgeStateResponse(response);
   if (!validationResult.success) {
     throw new Error(validationResult.error.message);
   }
 
   return validationResult.value;
-}
+};
 
-function assertValidAimpState(state: unknown): AimpBridgeState {
+const assertValidAimpState = (state: unknown): AimpBridgeState => {
   const validationResult = validateAimpBridgeState(state);
   if (!validationResult.success) {
     throw new Error(validationResult.error.message);
   }
 
   return validationResult.value;
-}
+};
 
 contextBridge.exposeInMainWorld('api', {
   getPathForFile: (file: File) => {
