@@ -21,6 +21,9 @@ const hasLocalLoopbackPort = (service, mapping) => service?.ports?.length === 1 
 const includesNetwork = (service, network) => Array.isArray(service?.networks)
   ? service.networks.includes(network)
   : Object.hasOwn(service?.networks ?? {}, network);
+const hasReadOnlyVolume = (service, source, target) => (service?.volumes ?? []).some((volume) => typeof volume === 'string'
+  ? volume === `${source}:${target}:ro`
+  : volume.source === source && volume.target === target && volume.read_only === true);
 
 const containsNotificationConfig = (node) => {
   const notificationKeys = new Set([
@@ -176,8 +179,6 @@ const validateConfigurations = async (productionPath, localPath) => {
   const knownHostsMount = tunnelVolumes.find((volume) => volume.target === '/run/ssh/known_hosts');
   const localGrafana = localAdminServices.grafana;
   const localPgadmin = localAdminServices.pgadmin;
-  const grafanaProvisioningMount = (localGrafana.volumes ?? []).find((volume) => volume.target === '/etc/grafana/provisioning');
-  const pgadminServerMount = (localPgadmin.volumes ?? []).find((volume) => volume.target === '/pgadmin4/servers.json');
   const localDatasourceByUid = Object.fromEntries(localAdminDatasources.datasources.map((datasource) => [datasource.uid, datasource]));
   const defaultPgadminServer = pgadminServers.Servers['1'];
 
@@ -191,9 +192,9 @@ const validateConfigurations = async (productionPath, localPath) => {
   assert(localTunnel.environment?.SSH_HOST === '${SSH_HOST:?SSH_HOST is required}' && localTunnel.environment?.SSH_USER === '${SSH_USER:?SSH_USER is required}', 'Local SSH tunnel must require the configured site hostname and SSH user');
   assert(privateKeyMount?.type === 'bind' && privateKeyMount.read_only === true && privateKeyMount.source === '${SSH_PRIVATE_KEY_PATH:?SSH_PRIVATE_KEY_PATH is required}', 'Local SSH private key must be a required read-only bind mount');
   assert(knownHostsMount?.type === 'bind' && knownHostsMount.read_only === true && knownHostsMount.source === '${SSH_KNOWN_HOSTS_PATH:?SSH_KNOWN_HOSTS_PATH is required}', 'Local SSH known_hosts must be a required read-only bind mount');
-  assert(grafanaProvisioningMount?.source === './grafana/provisioning' && grafanaProvisioningMount.read_only === true, 'Local Grafana must load tunnel datasource provisioning');
+  assert(hasReadOnlyVolume(localGrafana, './grafana/provisioning', '/etc/grafana/provisioning'), 'Local Grafana must load tunnel datasource provisioning');
   assert(localDatasourceByUid.prometheus?.url === 'http://ssh-tunnel:9090' && localDatasourceByUid.loki?.url === 'http://ssh-tunnel:3100', 'Local Grafana datasources must use the SSH tunnel');
-  assert(localPgadmin.environment?.PGADMIN_SERVER_JSON_FILE === '/pgadmin4/servers.json' && pgadminServerMount?.source === './pgadmin/servers.json' && pgadminServerMount.read_only === true, 'Local pgAdmin must load the tunnel-connected server definition');
+  assert(localPgadmin.environment?.PGADMIN_SERVER_JSON_FILE === '/pgadmin4/servers.json' && hasReadOnlyVolume(localPgadmin, './pgadmin/servers.json', '/pgadmin4/servers.json'), 'Local pgAdmin must load the tunnel-connected server definition');
   assert(defaultPgadminServer.Host === 'ssh-tunnel' && defaultPgadminServer.Port === 5433, 'Local pgAdmin must use the SSH tunnel for PostgreSQL');
 };
 

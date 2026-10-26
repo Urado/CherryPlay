@@ -29,6 +29,13 @@ mkdir -p "$CONFIG_DIR/home"
 roundtrip_special=$'dollar$literal # hash with spaces "double" \'single\' backslash\\"quote'
 roundtrip_trailing_backslash=$'trailing\\'
 roundtrip_controls=$'first\r\nsecond\ttab'
+if command -v cygpath >/dev/null 2>&1; then
+  roundtrip_home=$(cygpath -w "$CONFIG_DIR/home")
+  roundtrip_docker_config=$(cygpath -w "$DOCKER_CONFIG")
+else
+  roundtrip_home="$CONFIG_DIR/home"
+  roundtrip_docker_config="$DOCKER_CONFIG"
+fi
 write_compose_env CP_ROUNDTRIP_SPECIAL "$roundtrip_special" "$ROUNDTRIP_ENV"
 write_compose_env CP_ROUNDTRIP_TRAILING_BACKSLASH "$roundtrip_trailing_backslash" "$ROUNDTRIP_ENV"
 write_compose_env CP_ROUNDTRIP_CONTROLS "$roundtrip_controls" "$ROUNDTRIP_ENV"
@@ -45,8 +52,8 @@ COMPOSE
 
 (
   unset POSTGRES_PASSWORD JWT_SECRET_KEY PGADMIN_EMAIL PGADMIN_PASSWORD GRAFANA_ADMIN_PASSWORD GRAFANA_HOST_PORT VERSION IMAGE_NAME_SERVER IMAGE_NAME_WEB
-  export HOME="$(cygpath -w "$CONFIG_DIR/home")"
-  export DOCKER_CONFIG="$(cygpath -w "$DOCKER_CONFIG")"
+  export HOME="$roundtrip_home"
+  export DOCKER_CONFIG="$roundtrip_docker_config"
   docker compose --env-file "$ROUNDTRIP_ENV" -f "$ROUNDTRIP_COMPOSE" config --environment
 ) > "$ROUNDTRIP_OUTPUT"
 
