@@ -30,6 +30,7 @@ const VALID_INVOKE_CHANNELS = [
   'audio:getDuration',
   'audio:getFileUrl',
   'audio:analyzeLoudness',
+  'audio:cancelLoudnessScan',
   'audio:statAudioFile',
   'export:execute',
   'export:copyFile',

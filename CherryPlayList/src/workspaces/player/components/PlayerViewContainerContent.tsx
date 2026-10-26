@@ -196,13 +196,14 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     openTrackSettingsModal({ trackId: null, groupId: null, isGlobal: true });
   }, [openTrackSettingsModal]);
 
-  const { getEffectiveTrackSettings, getNextActiveTrack } = usePlayerStateHelpers({
-    allTracks,
-    activePlayerTrackId,
-    getItemPath,
-    findItemById,
-    isTrackActive,
-  });
+  const { getEffectiveTrackSettings, getNextActiveTrack, getNextActiveTracks } =
+    usePlayerStateHelpers({
+      allTracks,
+      activePlayerTrackId,
+      getItemPath,
+      findItemById,
+      isTrackActive,
+    });
 
   const markSkippedDisabledTracks = useCallback(
     (fromIndex: number, toIndex: number) => {
@@ -223,6 +224,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       allTracks,
       getEffectiveTrackSettings,
       getNextActiveTrack,
+      getNextActiveTracks,
       markTrackAsPlayed,
       markSkippedDisabledTracks,
       setCurrentTrack,

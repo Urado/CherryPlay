@@ -368,6 +368,21 @@ class SignalRService {
     console.log('[SignalR] Disconnected');
   }
 
+  async discardCurrentConnection(): Promise<void> {
+    const connection = this.connection;
+    if (!connection) return;
+    Object.values(SignalREvents).forEach((eventName) => connection.off(eventName));
+    try {
+      await connection.stop();
+    } catch (error) {
+      console.error('[SignalR] Error stopping timed-out connection:', error);
+    }
+    if (this.connection === connection) {
+      this.connection = null;
+      this.currentPartyId = null;
+    }
+  }
+
   private async invokeWithLogging<T>(methodName: string, ...args: unknown[]): Promise<T> {
     if (!this.connection) {
       throw new Error('SignalR connection is null');
@@ -419,9 +434,10 @@ class SignalRService {
       hasToken: !!authToken,
     });
 
+    const connection = this.connection;
     try {
       await this.invokeWithLogging('JoinPartyAsOrganizer', partyId, authToken);
-      this.currentPartyId = partyId;
+      if (this.connection === connection) this.currentPartyId = partyId;
       console.log('[SignalR] Successfully joined party as organizer');
     } catch (error) {
       console.error('[SignalR] Failed to join party as organizer:', error);

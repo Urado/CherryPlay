@@ -88,8 +88,18 @@ const createOkLoudness = (overrides: Partial<TrackLoudness> = {}): TrackLoudness
 };
 
 describe('normalizeLoadedLoudness', () => {
-  it('drops persisted pending so tracks are rescanned', () => {
-    expect(normalizeLoadedLoudness({ status: 'pending' })).toBeUndefined();
+  it('preserves pending measurements and manual settings so scans can resume after restart', () => {
+    expect(
+      normalizeLoadedLoudness({
+        status: 'pending',
+        manualGainDb: 4.5,
+        manualCompressionStrength: 0.65,
+      }),
+    ).toEqual({
+      status: 'pending',
+      manualGainDb: 4.5,
+      manualCompressionStrength: 0.65,
+    });
   });
 
   it('keeps ok loudness metadata', () => {

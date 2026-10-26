@@ -55,7 +55,7 @@
 
 **Staleness:** при загрузке и перед сканом `loudnessService.needsScan` сравнивает `fileMtime` с актуальным `mtime` на диске (`audio:statAudioFile`). Несовпадение, `status !== 'ok'`, отсутствие блока или устаревший `algorithmVersion` ⇒ нужен повторный скан.
 
-**Load normalization:** `status: 'pending'` при загрузке сбрасывается (`normalizeLoadedLoudness`) — прерванный скан не блокирует проект.
+**Load normalization:** `normalizeLoadedLoudness` сохраняет `status: 'pending'` и ручные gain/compression overrides. Pending-трек может быть повторно отсканирован после загрузки; уже запланированный или выполняющийся скан не дублируется.
 
 **Portable mode:** `loudness` сериализуется вместе с треком; при копировании файлов в `tracks/` относительные пути и `fileMtime` остаются согласованными с скопированными файлами.
 

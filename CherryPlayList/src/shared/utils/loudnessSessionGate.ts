@@ -1,6 +1,6 @@
 import type { Track } from '@core/types/track';
 
-export const SESSION_GATE_ACTIVE_TRACK_COUNT = 3;
+export const SESSION_GATE_ACTIVE_TRACK_COUNT = 1;
 
 export const getSessionGateTracks = (
   allTracks: Track[],

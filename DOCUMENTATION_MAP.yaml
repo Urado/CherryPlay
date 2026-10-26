@@ -3,10 +3,10 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-21"
+updated: "2026-10-25"
 summary:
-  total_md_files: 116
-  project_documentation: 88
+  total_md_files: 117
+  project_documentation: 89
   not_project_documentation: 28
 
 # Точки входа — с чего начинать чтение по типу задачи
@@ -31,7 +31,7 @@ entry_points:
   add_theme: ADDING_THEME.md
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (88 файлов)
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (89 файлов)
 # Архитектура, контракты, setup, модули, ops — источник правды для разработки.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -151,6 +151,8 @@ project_documentation:
         title: "Пульт вечеринки в шапке — UX as-built (§4–§6 Editor B, §7.5/§7.6 Пауза/Конец; residual §11)"
       - path: CherryPlayList/docs/online-mode-ux-synthesis.md
         title: "Синтез UX онлайн-режима (Онлайн vs Party, пульт, checklist backlog)"
+      - path: CherryPlayList/docs/specs/streaming-recovery-and-loudness-normalization.md
+        title: "As-built recovery трансляции, scan при добавлении и session lookahead; массовая задача отложена"
       - path: CherryPlayList/docs/layout-edit-mode.md
         title: "Режим настройки окон / рабочие пространства"
       - path: CherryPlayList/docs/sonya-review-feedback.md

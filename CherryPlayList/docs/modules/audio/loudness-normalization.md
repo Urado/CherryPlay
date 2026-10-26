@@ -4,6 +4,8 @@
 
 **Capability gate:** `supportsLoudnessAnalysis` — Electron (реальный FFmpeg) и web demo (детерминированные фикстуры без FFmpeg). Capacitor stub: `false`, UI скана disabled/скрыт. Playback-математика (gain, compression strength) **общая** для всех платформ.
 
+При включённой нормализации добавление аудиотреков в основной плейлист, в том числе [перетаскиванием](../systems/drag-and-drop.md), ставит их измерения в scan очередь. Результаты используются для нормализации громкости при playback; см. также [Player](../workspaces/player.md) и [спецификацию recovery и session lookahead](../../specs/streaming-recovery-and-loudness-normalization.md).
+
 См. также: [Playback Engine — слои](./playback-layers.md), [Project Service — track.loudness](../services/project-service.md), [IPC `audio:analyzeLoudness`](../services/ipc-service.md), [Settings Store](../stores/settings-store.md), [Player workspace](../workspaces/player.md), [Platform layer](../platform/README.md), [Android Capacitor brief](../../android-capacitor-brief.md).
 
 ---
@@ -101,13 +103,19 @@ flowchart TB
 
 ### Когда запускается скан
 
-| Триггер          | Где                                             | Условие                                                      |
-| ---------------- | ----------------------------------------------- | ------------------------------------------------------------ |
-| Добавление трека | `projectStore` → `enqueueLoudnessScanForTracks` | `loudnessNormalizationEnabled` && `supportsLoudnessAnalysis` |
-| Session gate     | `usePlayerSession` + `useLoudnessScanFlow`      | Первые 3 active трека перед стартом сессии                   |
-| Per-track rescan | `TrackLoudnessRowControls`                      | Кнопка «Сканировать» в popover                               |
-| Stale metadata   | `needsScan` с `currentMtimeMs`                  | `fileMtime !== mtime` на диске                               |
-| Algorithm bump   | `needsScan`                                     | `algorithmVersion !== LOUDNESS_ALGORITHM_VERSION`            |
+| Триггер                     | Где                                                        | Условие / поведение                                                                                         |
+| --------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Добавление трека            | `projectStore` → `enqueueLoudnessScanForTracks`            | При включённой нормализации и доступном анализе сканируются добавленные треки                               |
+| Включение нормализации      | `settingsStore` → `enqueueProjectLoudnessScan`             | Запускается проход по текущему проекту                                                                       |
+| Гидратация настроек         | `settingsStore` → `onRehydrateStorage`                     | Если нормализация сохранена включённой, запускается проход по текущему проекту                              |
+| Гидратация проекта          | `projectStore` → `onRehydrateStorage`                      | Проверяются треки восстановленного проекта; фактический запуск зависит от настроек и capability             |
+| Загрузка проекта            | `projectStore.loadProject`                                 | Проверяются треки загруженного проекта; фактический запуск зависит от настроек и capability                  |
+| Команды и история           | `projectStore` → обработчик команд                         | После применения команды, включая undo/redo, проверяются треки текущего проекта                             |
+| Session gate                | `usePlayerSession` + `useLoudnessScanFlow`                 | Первый active/current track перед стартом сессии; lookahead следующих трёх работает отдельно                 |
+| Per-track rescan            | `TrackLoudnessRowControls`                                  | Кнопка «Сканировать» в popover                                                                              |
+| Stale metadata              | `needsScan` с `currentMtimeMs`                             | `fileMtime !== mtime` на диске                                                                              |
+| Algorithm bump              | `needsScan`                                                | `algorithmVersion !== LOUDNESS_ALGORITHM_VERSION`                                                          |
+| Session lookahead           | `usePlayerPlayback`                                        | Во время playing в session mode проверяет до 3 следующих active треков; не блокирует текущий track          |
 
 ### `needsScan` (правила)
 
@@ -152,18 +160,18 @@ Gain ограничивается headroom −1 dBTP, чтобы после ус
 
 ### Pending normalization on load
 
-`normalizeLoadedLoudness` (`loudnessService.ts`): при загрузке проекта `status: 'pending'` **сбрасывается** (`undefined`) — прерванный скан не блокирует проект и вызовет rescan через `needsScan`.
+`normalizeLoadedLoudness` (`loudnessService.ts`): при загрузке проекта сохраняет `status: 'pending'` и ручные `manualGainDb` / `manualCompressionStrength`. Pending-трек остаётся подходящим для сканирования после загрузки; уже выполняющийся скан не дублируется.
 
 Вызывается из `projectService.ts` при десериализации треков.
 
 ### Cancel / restore
 
-`createLoudnessService` хранит `pendingPreviousLoudness` перед установкой `pending`:
+`createLoudnessService` хранит `pendingPreviousLoudness` только в памяти перед установкой `pending`:
 
-- **Отмена во время `scanTrack`:** восстанавливается предыдущий `loudness` или `{ status: 'error', errorMessage: 'Scan cancelled' }`
-- **Отмена batch (`scanTracks`):** `restoreCancelledPending` для всех треков, оставшихся в pending map
+- При отмене активного `scanTrack` восстанавливается предыдущее loudness-значение; если его не было, записывается `error: Scan cancelled`.
+- При отмене batch восстанавливаются предыдущие значения для треков, оставшихся в `pendingPreviousLoudness`.
 
-`LoudnessCancelToken.cancelled` используется в `useLoudnessScanFlow` и session gate.
+`LoudnessCancelToken.cancelled` используется в `useLoudnessScanFlow` и session gate для отмены их сканирования.
 
 ---
 
@@ -319,17 +327,17 @@ Fixed: `attack = 0.015`, `release = 1.0`.
 
 ### Player UI (прочее)
 
-| Компонент       | Путь                                       | Назначение                                                                                                                                                                                                          |
-| --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Global settings | `TrackSettingsModal` (`isGlobal`)          | Toggle нормализации, target LUFS, compression, quiet-gap                                                                                                                                                            |
-| Progress modal  | `LoudnessScanProgressModal`                | Прогресс session gate / scan                                                                                                                                                                                        |
-| Row button      | `TrackLoudnessButton`                      | Иконка ok / pending / error / effective gain dB                                                                                                                                                                     |
-| Popover         | `TrackLoudnessPopover`                     | Слайдер усиления (−30…+30 dB, live apply); аккордеон «Технические данные» (LUFS, peak, LRA, тихие участки, расчётное усиление, % компрессии); подсказки — иконка ⓘ (`InfoOutlined`, native `title` tooltip); rescan |
-| Row wiring      | `TrackLoudnessRowControls`                 | Popover + `updateTrackManualGain` + `applyLoudnessChangeToActivePlayback`; подписка на `projectStore` для актуального `track.loudness`                                                                              |
-| Session gate    | `usePlayerSession` + `useLoudnessScanFlow` | Первые **3** active трека (`SESSION_GATE_ACTIVE_TRACK_COUNT`)                                                                                                                                                       |
-| Scan hook       | `useLoudnessScanFlow`                      | Cancel token, gate polling, error messages                                                                                                                                                                          |
+| Компонент         | Путь                                             | Назначение                                                                                                                                                                                                          |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Global settings   | `TrackSettingsModal` (`isGlobal`)                | Toggle нормализации, target LUFS, compression, quiet-gap                                                                                                                                                            |
+| Row button        | `TrackLoudnessButton`                            | Иконка ok / pending / error / effective gain dB                                                                                                                                                                     |
+| Popover           | `TrackLoudnessPopover`                           | Слайдер усиления (−30…+30 dB, live apply); аккордеон «Технические данные» (LUFS, peak, LRA, тихие участки, расчётное усиление, % компрессии); подсказки — иконка ⓘ (`InfoOutlined`, native `title` tooltip); rescan |
+| Row wiring        | `TrackLoudnessRowControls`                       | Popover + `updateTrackManualGain` + `applyLoudnessChangeToActivePlayback`; подписка на `projectStore` для актуального `track.loudness`                                                                              |
+| Session gate      | `usePlayerSession` + `useLoudnessScanFlow`       | Первый active/current track перед стартом; если нужен скан, показывается модалка прогресса                                                                                                                          |
+| Session lookahead | `usePlayerPlayback` + `sessionLoudnessLookahead` | Во время playing в session mode проверяет до **3** следующих active треков; обновляет окно при смене текущего трека/очереди и не блокирует playback                                                                 |
+| Scan hook         | `useLoudnessScanFlow`                            | Cancel token, gate polling, error messages                                                                                                                                                                          |
 
-Session gate utilities: `src/shared/utils/loudnessSessionGate.ts` — `getSessionGateTracks`, `areGateTracksReady`.
+Session gate utility: `src/shared/utils/loudnessSessionGate.ts` — `getSessionGateTracks`, `areGateTracksReady`. Lookahead helper: `src/shared/utils/sessionLoudnessLookahead.ts`.
 
 Подробнее: [Player workspace](../workspaces/player.md).
 
@@ -392,7 +400,8 @@ Renderer-логика (`loudnessService`, `loudnessGain`, `compressionStrength`,
 | `src/shared/stores/settingsStore.ts`                   | User toggles                                       |
 | `src/shared/stores/projectStore.ts`                    | Persist, auto-scan on add, `updateTrackManualGain` |
 | `src/shared/services/projectService.ts`                | Load/save `.cherry`, `normalizeLoadedLoudness`     |
-| `src/shared/utils/loudnessSessionGate.ts`              | Session gate track selection                       |
+| `src/shared/utils/loudnessSessionGate.ts`              | Session gate selection                             |
+| `src/shared/utils/sessionLoudnessLookahead.ts`         | Rolling session lookahead selection                |
 | `src/workspaces/player/hooks/useLoudnessScanFlow.ts`   | Gate scan UX                                       |
 | `src/shared/components/loudness/*`                     | Track loudness UI                                  |
 | `src/workspaces/player/TrackSettingsModal.tsx`         | Global loudness settings (`isGlobal`)              |
@@ -405,9 +414,10 @@ Renderer-логика (`loudnessService`, `loudnessGain`, `compressionStrength`,
 
 ## Как проверить
 
-1. Electron: `npm run dev` — добавить трек → auto-scan (иконка pending → ok с gain dB).
+1. Electron: `npm run dev` — перетащить аудиотрек из File Browser/с диска в основной плейлист при включённой нормализации → auto-scan (иконка pending → ok с gain dB).
 2. Player → шестерёнка («Настройки проигрывания») → включить адаптивную компрессию → воспроизвести тихий трек с большим gain — слышимое сглаживание динамики (strength > 0).
-3. Старт сессии с включённой нормализацией — `LoudnessScanProgressModal` для первых 3 active треков.
-4. Сохранить `.cherry`, перезагрузить — `track.loudness` сохранён; изменить файл на диске → `needsScan` true.
-5. Popover → покрутить слайдер усиления во время playback — gain меняется сразу; «Технические данные» раскрываются по аккордеону.
-6. Web demo (`npm run dev:web` / `dev:web:project`) — Player gear loudness UI доступны; scan возвращает фикстурные профили; `sample.cherry` уже с metadata. Local playback по-прежнему недоступен.
+3. При включённой нормализации и незавершённом измерении первого active/current track запустите session gate: модалка показывает его сканирование, отмена не запускает сессию. Убедитесь, что lookahead следующих до 3 active tracks не задерживает StartSession и не открывает modal.
+4. В session mode проверить rolling lookahead до трёх следующих active треков при старте фактического playback, переходе трека и изменении ближайшей очереди; lookahead не должен блокировать текущий трек. См. [спецификацию](../../specs/streaming-recovery-and-loudness-normalization.md).
+5. Сохранить `.cherry`, перезагрузить — `track.loudness` сохранён; изменить файл на диске → `needsScan` true.
+6. Popover → покрутить слайдер усиления во время playback — gain меняется сразу; «Технические данные» раскрываются по аккордеону.
+7. Web demo (`npm run dev:web` / `dev:web:project`) — Player gear loudness UI доступны; scan возвращает фикстурные профили; `sample.cherry` уже с metadata. Local playback по-прежнему недоступен.

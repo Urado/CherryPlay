@@ -9,6 +9,7 @@
 - **[TECHNICAL.md](../TECHNICAL.md)** — техническая документация: стек, архитектура, структура проекта, IPC, хранение данных, интеграция с сервером и вебом.
 - **[README.md](../README.md)** — описание проекта, основные функции, установка и запуск.
 - **[web-demo.md](web-demo.md)** — веб-демо в браузере: fixtures (`dev:web`, `dev:web:project`) и live (`dev:web:live` / `VITE_DEMO_LIVE`), Vite proxy, Online/сеть, ограничения режима.
+- **[specs/streaming-recovery-and-loudness-normalization.md](specs/streaming-recovery-and-loudness-normalization.md)** — as-built recovery трансляции, сканирование громкости при добавлении треков и session lookahead; массовая фоновая задача отложена для Kanban rework.
 - **[layout-edit-mode.md](layout-edit-mode.md)** — рабочие пространства: pill + ✎ (**«Настроить окна»**), **Рабочие окна** с override (Variant A, **«изменено»**, **«Сбросить к исходному»**), auto-save **Мои**/scratch («Без имени»), добавление/удаление зон.
 - **[party-header-control-ux.md](party-header-control-ux.md)** — пульт вечеринки в шапке: CTA matrix, модал настроек, overlays **Пауза**/**Конец**, archive/unarchive surfaces (as-built §4–§7; residual §11).
 - **[Стандартные UI-блоки CherryPlay](../../CherryPlayComponents/README.md#ui-примитивы-shell)** — общий перечень и API кнопок, раскрывающихся секций, значков и других shell-примитивов.

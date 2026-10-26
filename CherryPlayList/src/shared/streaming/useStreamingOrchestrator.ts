@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { partyService } from '../services/partyService';
 import { signalRService } from '../services/signalRService';
+import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
 import { CherryPlayPlayerBroadcastSource } from './CherryPlayPlayerBroadcastSource';
@@ -41,6 +42,9 @@ export const useStreamingOrchestrator = (
   } = options;
   const enableStreaming = useSettingsStore((state) => state.enableStreaming);
   const streamingSource = useSettingsStore((state) => state.streamingSource);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const organizer = useAuthStore((state) => state.organizer);
+  const [authHydrated, setAuthHydrated] = useState(() => useAuthStore.persist.hasHydrated());
 
   const [hubConnectionState, setHubConnectionState] = useState<signalR.HubConnectionState | null>(
     null,
@@ -77,10 +81,22 @@ export const useStreamingOrchestrator = (
     onReconnectionFailedRef.current = onReconnectionFailed;
   }, [onReconnectionFailed]);
 
+  useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setAuthHydrated(true);
+      return;
+    }
+    return useAuthStore.persist.onFinishHydration(() => setAuthHydrated(true));
+  }, []);
+
   const networkEnabled = isStreamingNetworkEnabled({ enableStreaming });
   const hubAllowed = isStreamingHubAllowed({ enableStreaming });
   const orchestratorActive =
-    hubAllowed && streamingSource === 'cherryPlayPlayer' && partyId !== null;
+    hubAllowed &&
+    streamingSource === 'cherryPlayPlayer' &&
+    partyId !== null &&
+    authHydrated &&
+    Boolean(accessToken && organizer);
 
   const connectionState = networkEnabled && orchestratorActive ? hubConnectionState : null;
 
@@ -129,11 +145,16 @@ export const useStreamingOrchestrator = (
 
     let active = true;
     let timeout: ReturnType<typeof setTimeout> | null = null;
+    let wasReachable: boolean | null = null;
     const refreshConnectionState = async () => {
       const serverReachable = await partyService.checkServerReachable();
       if (!active) {
         return;
       }
+      if (wasReachable === false && serverReachable) {
+        streamingOrchestrator.reconnect(false);
+      }
+      wasReachable = serverReachable;
       setHubConnectionState(
         serverReachable
           ? signalRService.getConnectionState()
@@ -150,6 +171,15 @@ export const useStreamingOrchestrator = (
         clearTimeout(timeout);
       }
     };
+  }, [orchestratorActive]);
+
+  useEffect(() => {
+    if (!orchestratorActive) return;
+    const handleOnline = () => {
+      streamingOrchestrator.reconnect(false);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
   }, [orchestratorActive]);
 
   const reconnect = useCallback(() => {

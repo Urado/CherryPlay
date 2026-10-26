@@ -123,12 +123,22 @@ class IPCService {
     path: string,
     targetLufs: number,
     showNotification: boolean = false,
+    requestId?: string,
   ): Promise<LoudnessAnalyzeResult> {
     return this.invoke<LoudnessAnalyzeResult>(
       'audio:analyzeLoudness',
-      { path, targetLufs },
+      { path, targetLufs, requestId },
       showNotification,
     );
+  }
+
+  async cancelLoudnessScan(requestId: string): Promise<boolean> {
+    const result = await this.invoke<{ cancelled: boolean }>(
+      'audio:cancelLoudnessScan',
+      { requestId },
+      false,
+    );
+    return result.cancelled;
   }
 
   async statAudioFile(path: string, showNotification: boolean = false): Promise<AudioFileStat> {

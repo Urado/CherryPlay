@@ -154,7 +154,6 @@ export const TrackSettingsModal: React.FC = () => {
   );
   const [localLoudnessQuietGapRangeLu, setLocalLoudnessQuietGapRangeLu] =
     useState(loudnessQuietGapRangeLu);
-
   const effectivePause =
     typeof localPauseBetweenTracks === 'number'
       ? localPauseBetweenTracks
@@ -425,7 +424,11 @@ export const TrackSettingsModal: React.FC = () => {
               </div>
 
               <div className="settings-group">
-                <div className="settings-checkbox-group">
+                <div
+                  role="group"
+                  aria-label="Нормализация громкости"
+                  className="settings-checkbox-group"
+                >
                   <input
                     type="checkbox"
                     className="settings-checkbox"
@@ -440,18 +443,16 @@ export const TrackSettingsModal: React.FC = () => {
                     id="track-settings-loudness-normalization"
                     disabled={!supportsLoudnessAnalysis}
                   />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <label
-                      className="settings-checkbox-label"
-                      htmlFor="track-settings-loudness-normalization"
-                    >
-                      Включить нормализацию
-                    </label>
-                    <InfoIcon
-                      className="settings-info-icon"
-                      title="Пересчитывает gain под текущую цель LUFS (не меняет файлы)."
-                    />
-                  </div>
+                  <label
+                    className="settings-checkbox-label"
+                    htmlFor="track-settings-loudness-normalization"
+                  >
+                    Включить нормализацию
+                  </label>
+                  <InfoIcon
+                    className="settings-info-icon"
+                    title="Пересчитывает gain под текущую цель LUFS (не меняет файлы)."
+                  />
                 </div>
               </div>
 

@@ -83,7 +83,7 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 ### Workspaces (не владельцы SignalR)
 
 - **`PlayerViewContainer`** — локальная сессия и UI зоны Проигрывание. **Не** владеет connect/publish/teardown и **не** показывает индикатор SignalR.
-- **`HeaderPlaybackPill`** — session-only UI в шапке (трек/transport + состояние трансляции): виден при `session` и `streamingSource === 'cherryPlayPlayer'` (**не** требует `enableStreaming`). `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect). Текст состояния различает отсутствие привязки, отсутствие сессии и состояние SignalR Hub. Состояние `Connected` подтверждает подключение к Hub, но не получение или доставку трансляции сервером. Prep / readiness lamp в pill **нет**.
+- **`HeaderPlaybackPill`** — session-only UI в шапке (трек/transport + состояние трансляции): виден при `session` и `streamingSource === 'cherryPlayPlayer'` (**не** требует `enableStreaming`). `useCherryPlayStreamingConnection` → **`StreamingConnectionIndicator`** (`connectionState`, reconnect). Текст состояния различает отсутствие привязки, отсутствие сессии и состояние SignalR Hub. `Онлайн` / `Connected` в pill означает только поднятый SignalR transport; это не подтверждает, что organizer join и публикация полного состояния завершились. Prep / recovery-readiness lamp в pill **нет**.
 
 - **`AimpIntegrationController`** — AIMP bridge bootstrap, source selection sync; вызывает `useAimpStreamingOrchestrator`. **Не** содержит параллельного low-level SignalR path.
 
@@ -104,13 +104,8 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 Когда есть `linkedParty`, `enableStreaming === true` и выбран источник:
 
-1. Соответствующий хук (`useStreamingOrchestrator` или `useAimpStreamingOrchestrator`) вызывает `streamingOrchestrator.start({ partyId, broadcastSource, ... })`.
-2. Orchestrator:
-   - `signalRService.connect(token?)`;
-   - `joinPartyAsOrganizer(partyId)`;
-   - подписка на `PlaybackBroadcastSource.subscribe`;
-   - `subscribePartyPlaylistSync` / `subscribeAimpPartyPlaylistSync`;
-   - начальный full-state publish.
+1. CherryPlay-хук ждёт завершения гидрации `useAuthStore.persist` и проверяет авторизацию, прежде чем запускать connection recovery. Поздняя гидрация/изменение auth обновляет текущую конфигурацию; без необходимых auth данных подключение не запускается.
+2. Orchestrator проверяет party через `partyService.checkPartyExists`, затем подключает SignalR, выполняет join и публикует полное актуальное состояние. Сетевые этапы ограничены timeout; recovery-фаза `ready` устанавливается только после join и успешной публикации полного состояния. UI-indicator в header показывает transport state и может отобразить `Онлайн` до завершения recovery. Изменение party/source и новая попытка защищены generation/revision проверками от позднего результата.
 3. В шапке **`HeaderPlaybackPill`** (session + источник CherryPlay) берёт `connectionState` / `reconnect` из **`useCherryPlayStreamingConnection`** и рендерит **`StreamingConnectionIndicator`**. Сводка lifecycle вечеринки — отдельный **`HeaderPartyStatus`** (только при **Онлайн**); см. [party.md — Шапка](../workspaces/party.md#шапка-appheader-статус-и-пульт).
 
 `PlayerViewContainer` **не** вызывает `connect` / `joinPartyAsOrganizer` / store subscriptions напрямую и **не** отображает состояние SignalR.
@@ -130,12 +125,21 @@ Workspaces (Player, AIMP, Party) — **тонкие presentation shells**: по�
 
 **AIMP frozen state:** до нажатия «Старт стриминга» orchestrator может опубликовать snapshot через `syncAimpFrozenState` — parity с прежним поведением, без position в ключе full-state.
 
+CherryPlay-хук раз в две секунды вызывает `partyService.checkServerReachable()` (health request с 5-секундным timeout). Переход health endpoint offline → online и событие `window.online` инициируют recovery; если проход уже выполняется, новый запрос присоединяется к тому же in-flight recovery. См. [техническую спецификацию](../../specs/streaming-recovery-and-loudness-normalization.md).
+
 ### 4. Обработка разрыва связи и переподключения
 
-- `signalRService` обновляет `connectionState`; orchestrator планирует reconnect (`RECONNECT_DELAY_MS`).
-- HTTP 404 existence-check: SignalR не поднимается; `onPartyNotFound` показывает toast, но **`linkedParty` не очищается**. Явная отвязка / recovery-сценарии — продуктовая задача CP-069. Сетевые сбои, таймауты, 5xx тоже не отвязывают party; orchestrator ставит Disconnected и планирует повторный `connectAndSubscribe`.
+- Сетевые и health-triggered события coalesce в один recovery. Recovery повторно проверяет party, подключает SignalR, выполняет join и пытается опубликовать latest full state; ручной reconnect supersede-ит предыдущую попытку и запускает актуальную конфигурацию.
+- Сетевые этапы ограничены timeout; ошибки повторяются с backoff/jitter. Явный 404 не запускает бесконечный retry. Перед recovery учитывается гидрация auth и наличие учётных данных.
+- Фаза orchestrator `ready` означает завершённые join и успешную публикацию latest full-state snapshot. Transport state `Connected`, который читает header indicator, означает только подключение к Hub и не равен recovery readiness. При переходе orchestrator в ready очищается оставшийся retry timer. Если full-state publish не прошёл, orchestrator остаётся в retrying и повторяет recovery; полная синхронизация остаётся необходимым условием готовности.
+- Generation guard отбрасывает completion устаревших party/source/config, revision loop повторяет full-state публикацию, если источник изменился во время отправки.
+- Если organizer join превышает timeout, текущая SignalR connection останавливается до retry. Повтор подключается через новый transport/`ConnectionId`; membership в группе привязано к прежнему connection и очищается при disconnect. `joinPartyAsOrganizer` меняет `currentPartyId` только если завершивший invoke всё ещё относится к текущей connection, поэтому поздний ответ старого transport не меняет active party state.
+
+Фазы, реально публикуемые orchestrator: `connecting`, `joining`, `syncing`, `ready`, `retrying`, `blocked`. `waitingForAuth` присутствует в union типа, но auth hydration/credentials сейчас гейтят запуск в React hook и эта фаза orchestrator-ом не эмитится. Каждый сетевой этап ограничен 8-секундным timeout; reconnect backoff — 10/20/40/60 секунд. Подробнее — [as-built спецификация recovery](../../specs/streaming-recovery-and-loudness-normalization.md).
+
 - Исчерпание SignalR auto-reconnect (CherryPlay): `onReconnectionFailed` → toast (warning) через [`cherryPlayStreamingErrors.ts`](../../../src/shared/streaming/cherryPlayStreamingErrors.ts) с CTA «Переподключить»; параллельно orchestrator продолжает отложенные полные reconnect-попытки, пока streaming `running`.
 - `HeaderPlaybackPill` / `StreamingConnectionIndicator` вызывают `reconnect` из `useCherryPlayStreamingConnection`; таймеры reconnect — в orchestrator.
+- Возврат `window.online` подключён к recovery; подробный as-built контракт см. в [технической спецификации](../../specs/streaming-recovery-and-loudness-normalization.md).
 - Зрители CherryPlayWeb: `OnConnectionStatusChanged`, freeze, см. [docs/integration/streaming.md](../../../../docs/integration/streaming.md).
 
 ### 5. Teardown и смена источника

@@ -9,6 +9,8 @@ import { getPlatformCapabilities } from '../platform/platformCapabilities';
 import { useProjectStore } from '../stores/projectStore';
 import { useSettingsStore } from '../stores/settingsStore';
 
+import { ipcService } from './ipcService';
+
 export { TRACK_GAIN_LINEAR_MIN, TRACK_GAIN_LINEAR_MAX };
 
 export type LoudnessCancelToken = {
@@ -31,7 +33,11 @@ export type NeedsScanContext = {
 
 export const normalizeLoadedLoudness = (loudness: TrackLoudness): TrackLoudness | undefined => {
   if (loudness.status === 'pending') {
-    return undefined;
+    return {
+      status: 'pending',
+      manualGainDb: loudness.manualGainDb,
+      manualCompressionStrength: loudness.manualCompressionStrength,
+    };
   }
   return loudness;
 };
@@ -100,11 +106,28 @@ const mapAnalyzeResultToTrackLoudness = (
 
 export type LoudnessServiceDeps = {
   getSettings: () => LoudnessSettings;
+  getScopeKey?: () => string;
   updateTrackLoudness: (trackId: string, loudness: TrackLoudness) => void;
   getTrackLoudness?: (trackId: string) => TrackLoudness | undefined;
-  analyzeLoudness: (path: string, targetLufs: number) => Promise<LoudnessAnalyzeResult>;
+  analyzeLoudness: (
+    path: string,
+    targetLufs: number,
+    requestId?: string,
+  ) => Promise<LoudnessAnalyzeResult>;
+  cancelLoudnessScan?: (requestId: string) => Promise<boolean>;
   statAudioFile: (path: string) => Promise<{ mtimeMs: number; size: number }>;
   canAnalyze: () => boolean;
+};
+
+export type ScanTrackOptions = {
+  mtimeMs?: number;
+  cancelToken?: LoudnessCancelToken;
+  consumer?: 'sessionLookahead' | 'automatic';
+};
+
+type ScanEntry = {
+  promise: Promise<TrackLoudness>;
+  requestId: string | null;
 };
 
 type ScanOrchestrationState = {
@@ -127,6 +150,30 @@ const createScanOrchestration = (): ScanOrchestrationState => {
 
 export const createLoudnessService = (deps: LoudnessServiceDeps) => {
   const scanState = createScanOrchestration();
+  const scanEntries = new Map<string, ScanEntry>();
+  let requestSequence = 0;
+  let scanGeneration = 0;
+  let activeScope = deps.getScopeKey?.();
+
+  const refreshScope = (): number => {
+    const nextScope = deps.getScopeKey?.();
+    if (nextScope !== activeScope) {
+      scanGeneration += 1;
+      scanEntries.forEach((entry) => {
+        if (entry.requestId) {
+          void deps.cancelLoudnessScan?.(entry.requestId).catch(() => undefined);
+        }
+      });
+      scanEntries.clear();
+      scanState.inFlightTrackIds.clear();
+      scanState.inFlightScanPromises.clear();
+      scanState.pendingPreviousLoudness.clear();
+      scanState.scheduledTrackIds.clear();
+      scanState.scanChain = Promise.resolve();
+      activeScope = nextScope;
+    }
+    return scanGeneration;
+  };
 
   const needsScanContext = (): NeedsScanContext => ({
     inFlightTrackIds: scanState.inFlightTrackIds,
@@ -134,7 +181,10 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
 
   const setPending = (track: Track): void => {
     scanState.pendingPreviousLoudness.set(track.id, track.loudness);
-    deps.updateTrackLoudness(track.id, { ...track.loudness, status: 'pending' });
+    deps.updateTrackLoudness(track.id, {
+      ...(track.loudness ?? {}),
+      status: 'pending',
+    });
   };
 
   const restoreCancelledPending = (trackIds: Iterable<string>): void => {
@@ -166,77 +216,122 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
     };
   };
 
+  const mergeManualSettings = (trackId: string, loudness: TrackLoudness): TrackLoudness => {
+    const latest = deps.getTrackLoudness?.(trackId);
+    return {
+      ...loudness,
+      manualGainDb: latest ? latest.manualGainDb : loudness.manualGainDb,
+      manualCompressionStrength: latest
+        ? latest.manualCompressionStrength
+        : loudness.manualCompressionStrength,
+    };
+  };
+
   const runExecuteScanTrack = async (
     track: Track,
-    mtimeMs?: number,
-    cancelToken?: LoudnessCancelToken,
+    options: ScanTrackOptions,
+    entry: ScanEntry,
+    generation: number,
   ): Promise<TrackLoudness> => {
     scanState.inFlightTrackIds.add(track.id);
     setPending(track);
 
     try {
       const settings = deps.getSettings();
-      const fileMtime = mtimeMs ?? (await deps.statAudioFile(track.path)).mtimeMs;
-      const result = await deps.analyzeLoudness(track.path, settings.loudnessTargetLufs);
-      if (cancelToken?.cancelled) {
+      const fileMtime = options.mtimeMs ?? (await deps.statAudioFile(track.path)).mtimeMs;
+      if (generation !== refreshScope()) return track.loudness ?? { status: 'pending' };
+      const requestId = `loudness-${++requestSequence}-${track.id}`;
+      entry.requestId = requestId;
+      const result = await deps.analyzeLoudness(track.path, settings.loudnessTargetLufs, requestId);
+      if (generation !== refreshScope()) return track.loudness ?? { status: 'pending' };
+      if (scanEntries.get(track.id) !== entry) {
+        return deps.getTrackLoudness?.(track.id) ?? track.loudness ?? { status: 'pending' };
+      }
+      if (options.cancelToken?.cancelled) {
         const previous = scanState.pendingPreviousLoudness.get(track.id);
         if (previous !== undefined) {
-          deps.updateTrackLoudness(track.id, previous);
+          deps.updateTrackLoudness(track.id, mergeManualSettings(track.id, previous));
           scanState.pendingPreviousLoudness.delete(track.id);
           return previous;
         }
         const cancelledLoudness: TrackLoudness = {
-          status: 'error',
-          errorMessage: 'Scan cancelled',
+          status: 'pending',
+          manualGainDb: deps.getTrackLoudness?.(track.id)?.manualGainDb,
+          manualCompressionStrength: deps.getTrackLoudness?.(track.id)?.manualCompressionStrength,
           algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
         };
         deps.updateTrackLoudness(track.id, cancelledLoudness);
         scanState.pendingPreviousLoudness.delete(track.id);
         return cancelledLoudness;
       }
-      const loudness = {
+      const loudness = mergeManualSettings(track.id, {
         ...mapAnalyzeResultToTrackLoudness(result, fileMtime),
         manualGainDb: track.loudness?.manualGainDb,
         manualCompressionStrength: track.loudness?.manualCompressionStrength,
-      };
+      });
       deps.updateTrackLoudness(track.id, loudness);
       scanState.pendingPreviousLoudness.delete(track.id);
       return loudness;
     } catch (error) {
+      if (generation !== refreshScope()) return track.loudness ?? { status: 'pending' };
+      if (scanEntries.get(track.id) !== entry) {
+        return deps.getTrackLoudness?.(track.id) ?? track.loudness ?? { status: 'pending' };
+      }
+      if (options.cancelToken?.cancelled) {
+        const previous = scanState.pendingPreviousLoudness.get(track.id);
+        const pending = previous
+          ? mergeManualSettings(track.id, previous)
+          : mergeManualSettings(track.id, { status: 'pending' });
+        deps.updateTrackLoudness(track.id, pending);
+        return pending;
+      }
+      const previous = scanState.pendingPreviousLoudness.get(track.id);
       const loudness: TrackLoudness = {
+        ...(previous ?? {}),
         status: 'error',
         errorMessage: error instanceof Error ? error.message : 'Loudness scan failed',
         algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
       };
-      deps.updateTrackLoudness(track.id, loudness);
+      deps.updateTrackLoudness(track.id, mergeManualSettings(track.id, loudness));
       scanState.pendingPreviousLoudness.delete(track.id);
       return loudness;
     } finally {
-      scanState.inFlightTrackIds.delete(track.id);
-      scanState.inFlightScanPromises.delete(track.id);
+      if (generation === refreshScope() && scanEntries.get(track.id) === entry) {
+        scanState.inFlightTrackIds.delete(track.id);
+        scanState.inFlightScanPromises.delete(track.id);
+        scanEntries.delete(track.id);
+      }
     }
   };
 
-  const executeScanTrack = (
-    track: Track,
-    mtimeMs?: number,
-    cancelToken?: LoudnessCancelToken,
-  ): Promise<TrackLoudness> => {
+  const executeScanTrack = (track: Track, options: ScanTrackOptions): Promise<TrackLoudness> => {
     const existing = scanState.inFlightScanPromises.get(track.id);
-    if (existing) {
-      return existing;
-    }
+    if (existing) return existing;
 
-    const scanPromise = runExecuteScanTrack(track, mtimeMs, cancelToken);
+    const generation = refreshScope();
+    const entry: ScanEntry = {
+      promise: Promise.resolve({ status: 'pending' }),
+      requestId: null,
+    };
+    scanEntries.set(track.id, entry);
+    const scanPromise = Promise.resolve().then(() =>
+      runExecuteScanTrack(track, options, entry, generation),
+    );
+    entry.promise = scanPromise;
     scanState.inFlightScanPromises.set(track.id, scanPromise);
     return scanPromise;
   };
 
   const scanTrack = async (
     track: Track,
-    mtimeMs?: number,
-    cancelToken?: LoudnessCancelToken,
+    optionsOrMtime?: ScanTrackOptions | number,
+    legacyCancelToken?: LoudnessCancelToken,
   ): Promise<TrackLoudness> => {
+    const options: ScanTrackOptions =
+      typeof optionsOrMtime === 'number'
+        ? { mtimeMs: optionsOrMtime, cancelToken: legacyCancelToken }
+        : (optionsOrMtime ?? {});
+    const generation = refreshScope();
     const settings = deps.getSettings();
     if (!settings.loudnessNormalizationEnabled || !deps.canAnalyze()) {
       return (
@@ -248,16 +343,13 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
     }
 
     const inFlight = scanState.inFlightScanPromises.get(track.id);
-    if (inFlight) {
-      return inFlight;
-    }
+    if (inFlight) return inFlight;
 
     if (scanState.scheduledTrackIds.has(track.id)) {
       await scanState.scanChain;
+      if (generation !== refreshScope()) return track.loudness ?? { status: 'pending' };
       const afterChain = scanState.inFlightScanPromises.get(track.id);
-      if (afterChain) {
-        return afterChain;
-      }
+      if (afterChain) return afterChain;
       const fromStore = deps.getTrackLoudness?.(track.id);
       if (fromStore) {
         return fromStore;
@@ -265,7 +357,7 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
       return track.loudness ?? buildPendingLoudness(track);
     }
 
-    return executeScanTrack(track, mtimeMs, cancelToken);
+    return executeScanTrack(track, options);
   };
 
   const runScanTracks = async (
@@ -295,7 +387,10 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
         continue;
       }
 
-      await executeScanTrack(track, currentMtimeMs, cancelToken);
+      await executeScanTrack(track, {
+        mtimeMs: currentMtimeMs,
+        cancelToken,
+      });
       completed += 1;
       onProgress?.({ completed, total: tracks.length, track });
 
@@ -341,6 +436,22 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
   return {
     needsScan: (track: Track, options?: NeedsScanOptions) =>
       needsScan(track, deps.getSettings(), options, needsScanContext()),
+    isMeasurementCurrent: async (track: Track) => {
+      const generation = refreshScope();
+      try {
+        const stat = await deps.statAudioFile(track.path);
+        if (generation !== refreshScope()) return false;
+        const settings = deps.getSettings();
+        return !needsScan(
+          track,
+          settings,
+          { currentMtimeMs: stat.mtimeMs },
+          { inFlightTrackIds: new Set() },
+        );
+      } catch {
+        return false;
+      }
+    },
     resolveLinearGain: (track: Track) => resolveLinearGain(track, deps.getSettings()),
     scanTrack,
     scanTracks,
@@ -350,6 +461,7 @@ export const createLoudnessService = (deps: LoudnessServiceDeps) => {
 const platformAudioAdapter = createDefaultPlatformAudioAdapter();
 
 export const loudnessService = createLoudnessService({
+  getScopeKey: () => useProjectStore.getState().projectScopeId,
   getSettings: () => {
     const state = useSettingsStore.getState();
     return {
@@ -366,13 +478,21 @@ export const loudnessService = createLoudnessService({
     const item = useProjectStore.getState().findItemById(trackId);
     return item && isProjectTrack(item) ? item.loudness : undefined;
   },
-  analyzeLoudness: async (path, targetLufs) => {
-    const result = await platformAudioAdapter.analyzeLoudness?.(path, targetLufs);
+  analyzeLoudness: async (path, targetLufs, requestId) => {
+    const adapter = platformAudioAdapter as typeof platformAudioAdapter & {
+      analyzeLoudness?: (
+        filePath: string,
+        target: number,
+        id?: string,
+      ) => Promise<LoudnessAnalyzeResult | null>;
+    };
+    const result = await adapter.analyzeLoudness?.(path, targetLufs, requestId);
     if (!result) {
       throw new Error('Loudness analysis unavailable');
     }
     return result;
   },
+  cancelLoudnessScan: (requestId) => ipcService.cancelLoudnessScan(requestId),
   statAudioFile: async (path) => {
     const stat = await platformAudioAdapter.statAudioFile?.(path);
     if (!stat) {

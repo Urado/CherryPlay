@@ -10,7 +10,10 @@ jest.mock('../../../src/shared/services/partyService', () => ({
 }));
 
 jest.mock('../../../src/shared/services/signalRService', () => ({
-  signalRService: { getConnectionState: jest.fn() },
+  signalRService: {
+    getConnectionState: jest.fn(),
+    isServiceConnected: jest.fn().mockReturnValue(true),
+  },
 }));
 
 jest.mock('../../../src/shared/stores', () => ({
@@ -19,9 +22,35 @@ jest.mock('../../../src/shared/stores', () => ({
   ),
 }));
 
+jest.mock('../../../src/shared/stores/authStore', () => ({
+  useAuthStore: Object.assign(
+    (
+      selector: (state: {
+        accessToken: string;
+        organizer: { id: string; name: string };
+      }) => unknown,
+    ) =>
+      selector({
+        accessToken: 'valid-access-token',
+        organizer: { id: 'organizer-1', name: 'Organizer' },
+      }),
+    {
+      getState: () => ({
+        accessToken: 'valid-access-token',
+        organizer: { id: 'organizer-1', name: 'Organizer' },
+      }),
+      persist: {
+        hasHydrated: () => true,
+        onFinishHydration: (_listener: (state: unknown) => void) => () => undefined,
+      },
+    },
+  ),
+}));
+
 jest.mock('../../../src/shared/streaming/streamingOrchestrator', () => ({
   streamingOrchestrator: {
     activeConfig: { streamingSource: 'cherryPlayPlayer' },
+    isReady: true,
     start: jest.fn(),
     teardown: jest.fn(),
     syncLiveSession: jest.fn(),

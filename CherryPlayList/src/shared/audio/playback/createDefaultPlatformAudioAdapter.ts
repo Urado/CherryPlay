@@ -34,9 +34,9 @@ export const createDefaultPlatformAudioAdapter = (): PlatformAudioAdapter => {
       }
     },
 
-    async analyzeLoudness(filePath: string, targetLufs: number) {
+    async analyzeLoudness(filePath: string, targetLufs: number, requestId?: string) {
       try {
-        return await ipcService.analyzeLoudness(filePath, targetLufs, false);
+        return await ipcService.analyzeLoudness(filePath, targetLufs, false, requestId);
       } catch {
         return null;
       }

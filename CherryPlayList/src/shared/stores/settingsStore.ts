@@ -17,6 +17,20 @@ import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/sho
 import { electronStorage } from '../storage/electronStorage';
 import type { TrackItemSizePreset } from '../types/trackItemSize';
 
+const enqueueProjectLoudnessScan = (): void => {
+  void Promise.all([
+    import('./projectStore'),
+    import('../services/loudnessService'),
+    import('./projectStoreCore'),
+  ]).then(([projectModule, loudnessModule, projectCore]) => {
+    if (!useSettingsStore.getState().loudnessNormalizationEnabled) return;
+    const tracks = projectCore.getAllTracksRecursive(
+      projectModule.useProjectStore.getState().items,
+    );
+    void loudnessModule.loudnessService.scanTracks(tracks);
+  });
+};
+
 export type { LoudnessSettings };
 
 interface FileBrowserPathPersistSlice {
@@ -196,7 +210,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
       setStreamingSource: (source) => set({ streamingSource: source }),
-      setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
+      setLoudnessNormalizationEnabled: (enabled) => {
+        set({ loudnessNormalizationEnabled: enabled });
+        if (enabled) enqueueProjectLoudnessScan();
+      },
       setLoudnessTargetLufs: (targetLufs) =>
         set({ loudnessTargetLufs: clampLoudnessTargetLufs(targetLufs) }),
       setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
@@ -258,6 +275,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         if (state) {
           const migrated = migrateFileBrowserPathsOnRehydrate(state);
           useSettingsStore.setState(migrated);
+          if (state.loudnessNormalizationEnabled) enqueueProjectLoudnessScan();
         }
         useSettingsStore.getState().setHasHydrated(true);
       },

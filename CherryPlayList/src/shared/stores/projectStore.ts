@@ -82,6 +82,7 @@ const enqueueLoudnessScanForTracks = (tracks: Track[]): void => {
 };
 
 interface ProjectState {
+  projectScopeId: string;
   name: string;
   items: ProjectItem[];
   collections: ProjectCollection[];
@@ -206,6 +207,7 @@ interface ProjectState {
 export const useProjectStore = createWithEqualityFn<ProjectState>()(
   persist(
     (set, get) => ({
+      projectScopeId: uuidv4(),
       name: 'New Project',
       items: [],
       collections: [],
@@ -251,6 +253,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
           if (result.success && result.newState) {
             set(result.newState);
+            enqueueLoudnessScanForTracks(getAllTracksRecursive(get().items));
             get().markAsDirty();
             return true;
           }
@@ -282,6 +285,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
       newProject: () => {
         set({
+          projectScopeId: uuidv4(),
           name: 'New Project',
           items: [],
           collections: [],
@@ -302,6 +306,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
       loadProject: (data) => {
         set({
+          projectScopeId: uuidv4(),
           name: data.name,
           items: data.items,
           collections: data.collections ?? [],
@@ -327,7 +332,11 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           _skipHistory: false,
         });
         useGlobalHistoryStore.getState().clearHistory();
-        resetCollectionWorkspaceStores(data.collections ?? [], data.collectionViewState?.bindings ?? {});
+        resetCollectionWorkspaceStores(
+          data.collections ?? [],
+          data.collectionViewState?.bindings ?? {},
+        );
+        enqueueLoudnessScanForTracks(getAllTracksRecursive(data.items));
       },
 
       createCollection: (name) => {
@@ -345,8 +354,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         const state = get();
         if (!state.collections.some((collection) => collection.id === collectionId)) return;
         const collectionBindings = Object.fromEntries(
-          Object.entries(state.collectionBindings).filter(([, boundCollectionId]) =>
-            boundCollectionId !== collectionId,
+          Object.entries(state.collectionBindings).filter(
+            ([, boundCollectionId]) => boundCollectionId !== collectionId,
           ),
         );
         set((current) => ({
@@ -396,7 +405,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         });
       },
 
-      markLegacyCollectionsMigrationComplete: () => set({ legacyCollectionsMigrationComplete: true }),
+      markLegacyCollectionsMigrationComplete: () =>
+        set({ legacyCollectionsMigrationComplete: true }),
 
       setPartyTrackDisplaySettings: (partyTrackDisplay) => {
         set((state) => ({
@@ -1324,9 +1334,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
       partialize: (state) => ({
         name: state.name,
         items: state.items,
-          collections: state.collections,
-          collectionBindings: state.collectionBindings,
-          legacyCollectionsMigrationComplete: state.legacyCollectionsMigrationComplete,
+        collections: state.collections,
+        collectionBindings: state.collectionBindings,
+        legacyCollectionsMigrationComplete: state.legacyCollectionsMigrationComplete,
         settings: state.settings,
         trackSettings: Array.from(state.trackSettings.entries()),
         groupSettings: Array.from(state.groupSettings.entries()),
@@ -1384,12 +1394,14 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
         return {
           ...currentState,
+          projectScopeId: uuidv4(),
           name: state?.name ?? currentState.name,
           items: state?.items ?? currentState.items,
           collections: state?.collections ?? currentState.collections,
           collectionBindings: state?.collectionBindings ?? currentState.collectionBindings,
           legacyCollectionsMigrationComplete:
-            state?.legacyCollectionsMigrationComplete ?? currentState.legacyCollectionsMigrationComplete,
+            state?.legacyCollectionsMigrationComplete ??
+            currentState.legacyCollectionsMigrationComplete,
           settings: state?.settings ?? currentState.settings,
           trackSettings: new Map(state?.trackSettings ?? []),
           groupSettings: new Map(state?.groupSettings ?? []),
@@ -1397,6 +1409,9 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
           meta: restoredMeta,
           selectedItemIds: new Set<string>(),
         };
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) enqueueLoudnessScanForTracks(getAllTracksRecursive(state.items));
       },
     },
   ),

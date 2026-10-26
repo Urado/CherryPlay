@@ -111,7 +111,7 @@ Workspace для автоматического последовательног
 
 - `handleStartSession`:
   - проверяет наличие активных треков (авторизация не требуется — сессия запускается без входа в сервис);
-  - при включённой нормализации громкости (`loudnessNormalizationEnabled` + `supportsLoudnessAnalysis`) — **session gate**: ожидает скан первых **3** active треков (или всех, если active < 3) с `loudness.status === 'ok'`; показывает `LoudnessScanProgressModal`; отмена прерывает старт сессии;
+  - при включённой нормализации громкости (`loudnessNormalizationEnabled` + `supportsLoudnessAnalysis`) — **session gate** проверяет первый active/current track; если измерение не готово, показывает модальное окно сканирования, отмена отменяет старт;
   - переводит `sessionState.mode` в `session`;
   - при совпадении аудиоустройств выставляет demo `isDisabled` (звук demo блокируется; кнопка предпрослушивания остаётся — см. выше);
   - запускает воспроизведение первого активного трека;
@@ -133,14 +133,17 @@ Workspace для автоматического последовательног
 
 Недеструктивная нормализация: измерение LUFS (Electron — FFmpeg; web demo — фикстуры), метаданные в `.cherry`, gain и адаптивная компрессия при playback. Подробности — [Нормализация громкости (loudness v1)](../audio/loudness-normalization.md). В web demo UI скана доступен (`supportsLoudnessAnalysis`); реальный local playback — нет.
 
-| UI / поведение           | Где                                                | Описание                                                                                                         |
-| ------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Иконка на строке трека   | `TrackLoudnessButton` / `TrackLoudnessRowControls` | Состояния ok / pending / unscanned / error; popover: слайдер gain (live), аккордеон «Технические данные», rescan |
-| Session gate             | `usePlayerSession` + `loudnessSessionGate`         | Старт сессии блокируется, пока не готовы первые 3 active трека                                                   |
-| Настройки                | `TrackSettingsModal` (`isGlobal`, шестерёнка)      | Вкл/выкл нормализацию, target LUFS, compression, quiet-gap                                                       |
-| Auto-scan при добавлении | `projectStore.enqueueLoudnessScanForTracks`        | Когда нормализация включена и есть `supportsLoudnessAnalysis`                                                    |
+| UI / поведение           | Где                                                | Описание                                                                                                                                             |
+| ------------------------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Иконка на строке трека   | `TrackLoudnessButton` / `TrackLoudnessRowControls` | Состояния ok / pending / unscanned / error; popover: слайдер gain (live), аккордеон «Технические данные», rescan                                     |
+| Session gate             | `usePlayerSession` + `useLoudnessScanFlow`         | Перед стартом проверяет первый active/current track; при необходимости скана может показать модалку                                                  |
+| Session lookahead        | `usePlayerPlayback`                                | Во время playing в сессии проверяет до 3 следующих active треков; не задерживает текущий playback, окно обновляется при смене текущего трека/очереди |
+| Настройки                | `TrackSettingsModal` (`isGlobal`, шестерёнка)      | Вкл/выкл нормализацию, target LUFS, compression, quiet-gap                                                                                           |
+| Auto-scan при добавлении | `projectStore.enqueueLoudnessScanForTracks`        | После добавления аудиотреков, в том числе drag-and-drop, когда нормализация включена и есть `supportsLoudnessAnalysis`                               |
 
 При выключенной фиче или на платформе без `supportsLoudnessAnalysis` иконки скрыты / controls disabled; playback на unity gain.
+
+Session gate перед стартом охватывает только первый active/current track; при необходимости его скана может показать модалку. Lookahead следующих до трёх active tracks запускается независимо после фактического `playing` и переходов между треками: он не входит в `beforeStartSession`, не задерживает `StartSession` и не показывает scan modal. Проверка не привязана к position ticks. См. [спецификацию recovery и session lookahead](../../specs/streaming-recovery-and-loudness-normalization.md) и [Нормализацию громкости](../audio/loudness-normalization.md).
 
 ### Восстановление сессии после перезапуска
 

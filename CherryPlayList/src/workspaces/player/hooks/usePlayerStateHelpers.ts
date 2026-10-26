@@ -95,31 +95,55 @@ export const usePlayerStateHelpers = (options: UsePlayerStateHelpersOptions) => 
     [getEffectiveTrackSettings],
   );
 
-  const getNextActiveTrack = useCallback((): Track | null => {
-    const currentIndex = allTracks.findIndex((t) => t.id === activePlayerTrackId);
-    if (currentIndex === -1) {
-      for (let i = 0; i < allTracks.length; i++) {
+  const getNextActiveTrackAfter = useCallback(
+    (trackId: string | null | undefined): Track | null => {
+      const currentIndex = allTracks.findIndex((track) => track.id === trackId);
+      if (currentIndex === -1) {
+        for (let i = 0; i < allTracks.length; i++) {
+          const track = allTracks[i];
+          if (isTrackActive(track.id)) {
+            return track;
+          }
+        }
+        return null;
+      }
+
+      for (let i = currentIndex + 1; i < allTracks.length; i++) {
         const track = allTracks[i];
         if (isTrackActive(track.id)) {
           return track;
         }
       }
+
       return null;
-    }
+    },
+    [allTracks, isTrackActive],
+  );
 
-    for (let i = currentIndex + 1; i < allTracks.length; i++) {
-      const track = allTracks[i];
-      if (isTrackActive(track.id)) {
-        return track;
+  const getNextActiveTrack = useCallback(
+    (): Track | null => getNextActiveTrackAfter(activePlayerTrackId),
+    [activePlayerTrackId, getNextActiveTrackAfter],
+  );
+
+  const getNextActiveTracks = useCallback(
+    (trackId: string, limit: number): Track[] => {
+      const result: Track[] = [];
+      let currentId: string | null = trackId;
+      while (result.length < limit) {
+        const next = getNextActiveTrackAfter(currentId);
+        if (!next) break;
+        result.push(next);
+        currentId = next.id;
       }
-    }
-
-    return null;
-  }, [allTracks, activePlayerTrackId, isTrackActive]);
+      return result;
+    },
+    [getNextActiveTrackAfter],
+  );
 
   return {
     getEffectiveTrackSettings,
     calculateTrackDurationWithPause,
     getNextActiveTrack,
+    getNextActiveTracks,
   };
 };
