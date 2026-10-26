@@ -1,0 +1,96 @@
+name: cherryplay-local-admin
+
+services:
+  ssh-tunnel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SSH_HOST: ${SSH_HOST:?SSH_HOST is required}
+      SSH_USER: ${SSH_USER:?SSH_USER is required}
+    command: >-
+      cp /run/ssh/id_key /tmp/id_key &&
+      chmod 600 /tmp/id_key &&
+      exec ssh -i /tmp/id_key
+      -o BatchMode=yes
+      -o StrictHostKeyChecking=yes
+      -o UserKnownHostsFile=/run/ssh/known_hosts
+      -o ExitOnForwardFailure=yes
+      -o ServerAliveInterval=30
+      -o ServerAliveCountMax=3
+      -N
+      -L 0.0.0.0:9090:127.0.0.1:19090
+      -L 0.0.0.0:3100:127.0.0.1:13100
+      -L 0.0.0.0:5433:127.0.0.1:5433
+      "$${SSH_USER}@$${SSH_HOST}"
+    volumes:
+      - type: bind
+        source: ${SSH_PRIVATE_KEY_PATH:?SSH_PRIVATE_KEY_PATH is required}
+        target: /run/ssh/id_key
+        read_only: true
+      - type: bind
+        source: ${SSH_KNOWN_HOSTS_PATH:?SSH_KNOWN_HOSTS_PATH is required}
+        target: /run/ssh/known_hosts
+        read_only: true
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:9090/-/ready && wget -q -O /dev/null http://127.0.0.1:3100/ready && nc -z 127.0.0.1 5433
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - local-admin-network
+
+  grafana:
+    image: grafana/grafana:13.1.6
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_ADDR: 0.0.0.0
+      GF_SERVER_HTTP_PORT: 3000
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_METRICS_ENABLED: "true"
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ../monitoring/grafana/provisioning/alerting/alert-rules.yml:/etc/grafana/provisioning/alerting/alert-rules.yml:ro
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - local-admin-network
+
+  pgadmin:
+    image: dpage/pgadmin4:9.18
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?PGADMIN_DEFAULT_EMAIL is required}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD is required}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+    ports:
+      - "127.0.0.1:5051:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - local-admin-network
+
+volumes:
+  grafana_data:
+  pgadmin_data:
+
+networks:
+  local-admin-network:

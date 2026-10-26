@@ -2,7 +2,7 @@ groups:
   - name: cherryplay-availability
     rules:
       - alert: CherryPlayTargetDown
-        expr: up{job=~"cherryplay-server|postgres|host|prometheus|loki|grafana|alloy"} == 0
+        expr: up{job=~"cherryplay-server|postgres|host|prometheus|loki|alloy"} == 0
         for: 2m
         labels:
           severity: warning

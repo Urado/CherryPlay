@@ -2,9 +2,9 @@
 
 Как поднять весь стек (сервер, веб-клиент, десктопное приложение) для локальной разработки.
 
-## Локальный стек с Grafana
+## Локальный стек разработки с Grafana
 
-На Windows с Docker Desktop весь веб-стек и мониторинг запускаются одной командой. Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети.
+На Windows с Docker Desktop версии Docker Compose 2.24.4 или новее весь веб-стек и мониторинг запускаются одной командой. Минимальная версия нужна из-за `!override` в `docker-compose.monitoring.local.yml` ([документация Docker Compose](https://docs.docker.com/reference/compose-file/merge/)). Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети. Для подключения локальных Grafana и pgAdmin к production VPS через SSH используйте отдельный [launcher локальных интерфейсов](SSH_TUNNEL_PGADMIN.md).
 
 В PowerShell из корня репозитория:
 
@@ -39,7 +39,7 @@ Warning **CherryPlay HTTP 5xx** срабатывает при любом 5xx з�
 
 Проверка доступности: `/api/health` сервера должен вернуть HTTP 200; в Grafana раздел **Alerting → Alert rules** должен показывать правила CherryPlay без ошибок вычисления, а оба источника данных — Healthy. Поскольку `/metrics`, Prometheus и Loki не публикуют host ports, проверяйте их через Grafana либо из контейнеров Compose.
 
-Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`); production default — `127.0.0.1:3000`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
+Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana этого dev-стека доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`). Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
 
 ## Проверка monitoring-конфигурации
 

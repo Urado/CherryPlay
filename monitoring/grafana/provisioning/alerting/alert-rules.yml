@@ -171,7 +171,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               editorMode: code
-              expr: min(up{job=~"cherryplay-server|postgres|host|prometheus|loki|grafana|alloy"})
+              expr: min(up{job=~"cherryplay-server|postgres|host|prometheus|loki|alloy"})
               instant: true
               refId: A
           - refId: B

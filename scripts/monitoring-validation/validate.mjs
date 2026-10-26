@@ -13,6 +13,14 @@ const assert = (condition, message) => {
 const parseYaml = async (path) => load(await readText(path));
 const flattenRules = (config) => config.groups.flatMap((group) => group.rules);
 const includesAll = (actual, expected) => expected.every((item) => actual.includes(item));
+const hasLoopbackPort = (service, hostPort, targetPort) => {
+  const ports = service?.ports ?? [];
+  return ports.length === 1 && ports[0].host_ip === '127.0.0.1' && String(ports[0].published) === String(hostPort) && String(ports[0].target) === String(targetPort);
+};
+const hasLocalLoopbackPort = (service, mapping) => service?.ports?.length === 1 && service.ports[0] === mapping;
+const includesNetwork = (service, network) => Array.isArray(service?.networks)
+  ? service.networks.includes(network)
+  : Object.hasOwn(service?.networks ?? {}, network);
 
 const containsNotificationConfig = (node) => {
   const notificationKeys = new Set([
@@ -70,19 +78,19 @@ const validateConfigurations = async (productionPath, localPath) => {
     parseYaml('monitoring/prometheus/alerts.yml'),
     parseYaml('monitoring/loki/config.yml'),
     parseYaml('monitoring/grafana/provisioning/alerting/alert-rules.yml'),
-    parseYaml('monitoring/grafana/provisioning/datasources/datasources.yml'),
-    parseYaml('monitoring/grafana/provisioning/dashboards/dashboards.yml'),
-  ]).then((values) => values.slice(0, 4));
+  ]);
 
-  const expectedJobs = ['cherryplay-server', 'postgres', 'host', 'prometheus', 'loki', 'grafana', 'alloy'];
+  const expectedJobs = ['cherryplay-server', 'postgres', 'host', 'prometheus', 'loki', 'alloy'];
   const actualJobs = prometheus.scrape_configs.map((job) => job.job_name);
-  assert(includesAll(actualJobs, expectedJobs), 'Prometheus scrape jobs are missing an expected monitoring target');
+  assert(includesAll(actualJobs, expectedJobs) && !actualJobs.includes('grafana'), 'Prometheus scrape jobs must retain data targets and omit Grafana');
   assert(prometheus.rule_files.includes('/etc/prometheus/alerts.yml'), 'Prometheus rules file is missing');
   assert((await readText('docker-compose.prod.yml')).includes('--storage.tsdb.retention.time=168h'), 'Prometheus retention is not seven days');
 
   const expectedPrometheusAlerts = ['CherryPlayTargetDown', 'CherryPlayHostDiskAlmostFull', 'CherryPlayHostDiskCritical', 'CherryPlayHostMemoryLow'];
   const actualPrometheusAlerts = prometheusAlerts.groups.flatMap((group) => group.rules.map((rule) => rule.alert));
   assert(includesAll(actualPrometheusAlerts, expectedPrometheusAlerts), 'Prometheus infrastructure alert rules are incomplete');
+  const prometheusAlertExpressions = prometheusAlerts.groups.flatMap((group) => group.rules.map((rule) => rule.expr ?? ''));
+  assert(!prometheusAlertExpressions.some((expression) => /grafana/i.test(expression)), 'Prometheus alert rules must not expect Grafana as a server target');
 
   assert(loki.limits_config.retention_period === '168h', 'Loki retention must be 168 hours');
   assert(loki.limits_config.ingestion_rate_mb === 4 && loki.limits_config.ingestion_burst_size_mb === 8, 'Loki ingestion rate limit changed');
@@ -91,6 +99,8 @@ const validateConfigurations = async (productionPath, localPath) => {
   const expectedGrafanaRules = ['cherryplay-http-5xx', 'cherryplay-log-errors', 'cherryplay-target-down', 'cherryplay-host-disk-warning', 'cherryplay-host-disk-critical', 'cherryplay-host-memory-low'];
   const actualGrafanaRules = grafanaRules.map((rule) => rule.uid);
   assert(includesAll(actualGrafanaRules, expectedGrafanaRules), 'Grafana infrastructure alert rules are incomplete');
+  const grafanaAlertExpressions = grafanaRules.flatMap((rule) => rule.data.map((query) => query.model?.expr ?? ''));
+  assert(!grafanaAlertExpressions.some((expression) => /grafana/i.test(expression)), 'Grafana alert rules must not expect Grafana as a server target');
 
   const applicationErrorRule = grafanaRules.find((rule) => rule.uid === 'cherryplay-log-errors');
   const applicationErrorExpression = applicationErrorRule.data.find((query) => query.refId === 'A').model.expr;
@@ -130,11 +140,17 @@ const validateConfigurations = async (productionPath, localPath) => {
 
   const production = JSON.parse(await readText(productionPath));
   const local = JSON.parse(await readText(localPath));
-  const hasGrafanaLoopback = (config) => config.services.grafana.ports.some((port) => port.host_ip === '127.0.0.1' && port.published === '3001' && port.target === 3000);
-  assert(hasGrafanaLoopback(production), 'Production Grafana must bind to localhost on port 3001');
-  assert(hasGrafanaLoopback(local), 'Local Grafana must bind to localhost on port 3001');
+  const productionCompose = await parseYaml('docker-compose.prod.yml');
+  const localAdmin = await parseYaml('local-admin-tools/compose.yml');
+  const localAdminDatasources = await parseYaml('local-admin-tools/grafana/provisioning/datasources/datasources.yml');
+  const pgadminServers = JSON.parse(await readText('local-admin-tools/pgadmin/servers.json'));
 
-  assert(Object.hasOwn(local.services.grafana.networks, 'cherryplay-network'), 'Grafana must use the CherryPlay network');
+  assert(!Object.hasOwn(production.services, 'grafana') && !Object.hasOwn(production.services, 'pgadmin'), 'Production Compose must not run Grafana or pgAdmin');
+  assert(hasLoopbackPort(production.services.prometheus, '19090', '9090'), 'Production Prometheus must bind only to loopback port 19090');
+  assert(hasLoopbackPort(production.services.loki, '13100', '3100'), 'Production Loki must bind only to loopback port 13100');
+  assert(hasLoopbackPort(production.services.postgres, '5433', '5432'), 'Production PostgreSQL must bind only to loopback port 5433');
+  assert(Object.hasOwn(productionCompose.volumes, 'grafana_data') && Object.hasOwn(productionCompose.volumes, 'pgadmin_data'), 'Production UI data volumes must remain defined for rollback');
+
   assert(Object.hasOwn(local.services.alloy.networks, 'monitoring-internal'), 'Alloy must use the internal monitoring network');
   assert(Object.hasOwn(local.services['docker-socket-proxy'].networks, 'monitoring-internal'), 'Docker socket proxy must use the internal monitoring network');
   assert(local.services['docker-socket-proxy'].volumes.some((volume) => volume.target === '/var/run/docker.sock' && volume.read_only === true), 'Docker socket proxy mount must be read-only');
@@ -143,12 +159,42 @@ const validateConfigurations = async (productionPath, localPath) => {
 
   const localInternalServices = ['prometheus', 'postgres-exporter', 'node-exporter', 'loki', 'alloy', 'docker-socket-proxy'];
   assert(localInternalServices.every((name) => (local.services[name].ports ?? []).length === 0), 'Local monitoring services must not publish ports');
-  const productionInternalServices = ['prometheus', 'postgres-exporter', 'node-exporter', 'loki', 'alloy'];
-  assert(productionInternalServices.every((name) => (production.services[name].ports ?? []).length === 0), 'Production monitoring services must not publish ports');
+  const productionInternalServices = ['postgres-exporter', 'node-exporter', 'alloy'];
+  assert(productionInternalServices.every((name) => (production.services[name].ports ?? []).length === 0), 'Production exporters and Alloy must not publish ports');
 
   const serverPorts = production.services.server.ports;
   assert(serverPorts.length === 1 && serverPorts[0].host_ip === '127.0.0.1' && serverPorts[0].published === '5000' && serverPorts[0].target === 8080, 'Production server must bind only to localhost on port 5000');
   assert(production.services.prometheus.command.includes('--storage.tsdb.retention.time=168h') && production.services.prometheus.command.includes('--storage.tsdb.retention.size=2GB'), 'Production Prometheus retention limits changed');
+
+  const localAdminServices = localAdmin.services;
+  assert(['grafana', 'pgadmin', 'ssh-tunnel'].every((name) => Object.hasOwn(localAdminServices, name)), 'Local admin Compose must provide Grafana, pgAdmin, and an SSH tunnel');
+
+  const localTunnel = localAdminServices['ssh-tunnel'];
+  const tunnelCommand = localTunnel.command;
+  const tunnelVolumes = localTunnel.volumes ?? [];
+  const privateKeyMount = tunnelVolumes.find((volume) => volume.target === '/run/ssh/id_key');
+  const knownHostsMount = tunnelVolumes.find((volume) => volume.target === '/run/ssh/known_hosts');
+  const localGrafana = localAdminServices.grafana;
+  const localPgadmin = localAdminServices.pgadmin;
+  const grafanaProvisioningMount = (localGrafana.volumes ?? []).find((volume) => volume.target === '/etc/grafana/provisioning');
+  const pgadminServerMount = (localPgadmin.volumes ?? []).find((volume) => volume.target === '/pgadmin4/servers.json');
+  const localDatasourceByUid = Object.fromEntries(localAdminDatasources.datasources.map((datasource) => [datasource.uid, datasource]));
+  const defaultPgadminServer = pgadminServers.Servers['1'];
+
+  assert(hasLocalLoopbackPort(localGrafana, '127.0.0.1:3001:3000'), 'Local Grafana must bind only to loopback port 3001');
+  assert(hasLocalLoopbackPort(localPgadmin, '127.0.0.1:5051:80'), 'Local pgAdmin must bind only to loopback port 5051');
+  assert((localTunnel.ports ?? []).length === 0, 'Local SSH tunnel ports must not be published on the host');
+  assert(['grafana', 'pgadmin'].every((name) => localAdminServices[name].depends_on?.['ssh-tunnel']?.condition === 'service_healthy'), 'Local admin interfaces must wait for a healthy SSH tunnel');
+  assert(['grafana', 'pgadmin', 'ssh-tunnel'].every((name) => includesNetwork(localAdminServices[name], 'local-admin-network')), 'Local admin interfaces and tunnel must share the private Compose network');
+  assert(tunnelCommand.includes('0.0.0.0:9090:127.0.0.1:19090') && tunnelCommand.includes('0.0.0.0:3100:127.0.0.1:13100') && tunnelCommand.includes('0.0.0.0:5433:127.0.0.1:5433'), 'Local SSH tunnel must forward only to production loopback endpoints');
+  assert(tunnelCommand.includes('-o StrictHostKeyChecking=yes'), 'Local SSH tunnel must verify the remote host key');
+  assert(localTunnel.environment?.SSH_HOST === '${SSH_HOST:?SSH_HOST is required}' && localTunnel.environment?.SSH_USER === '${SSH_USER:?SSH_USER is required}', 'Local SSH tunnel must require the configured site hostname and SSH user');
+  assert(privateKeyMount?.type === 'bind' && privateKeyMount.read_only === true && privateKeyMount.source === '${SSH_PRIVATE_KEY_PATH:?SSH_PRIVATE_KEY_PATH is required}', 'Local SSH private key must be a required read-only bind mount');
+  assert(knownHostsMount?.type === 'bind' && knownHostsMount.read_only === true && knownHostsMount.source === '${SSH_KNOWN_HOSTS_PATH:?SSH_KNOWN_HOSTS_PATH is required}', 'Local SSH known_hosts must be a required read-only bind mount');
+  assert(grafanaProvisioningMount?.source === './grafana/provisioning' && grafanaProvisioningMount.read_only === true, 'Local Grafana must load tunnel datasource provisioning');
+  assert(localDatasourceByUid.prometheus?.url === 'http://ssh-tunnel:9090' && localDatasourceByUid.loki?.url === 'http://ssh-tunnel:3100', 'Local Grafana datasources must use the SSH tunnel');
+  assert(localPgadmin.environment?.PGADMIN_SERVER_JSON_FILE === '/pgadmin4/servers.json' && pgadminServerMount?.source === './pgadmin/servers.json' && pgadminServerMount.read_only === true, 'Local pgAdmin must load the tunnel-connected server definition');
+  assert(defaultPgadminServer.Host === 'ssh-tunnel' && defaultPgadminServer.Port === 5433, 'Local pgAdmin must use the SSH tunnel for PostgreSQL');
 };
 
 try {

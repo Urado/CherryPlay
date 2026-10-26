@@ -3,6 +3,7 @@ services:
     extends:
       file: docker-compose.prod.yml
       service: prometheus
+    ports: !override []
 
   postgres-exporter:
     extends:
@@ -30,6 +31,7 @@ services:
     extends:
       file: docker-compose.prod.yml
       service: loki
+    ports: !override []
 
   alloy:
     image: grafana/alloy:v1.20.1
@@ -55,11 +57,6 @@ services:
         limits:
           cpus: "0.50"
           memory: 128M
-
-  grafana:
-    extends:
-      file: docker-compose.prod.yml
-      service: grafana
 
   docker-socket-proxy:
     image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0

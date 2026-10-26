@@ -174,9 +174,6 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          PGADMIN_EMAIL: ${{ secrets.PGADMIN_EMAIL }}
-          PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
-          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           DATABASE__AutoMigrateOnStartup: "true"
           CORS_ORIGIN_0: ${{ secrets.CORS_ORIGIN_0 }}
           CORS_ORIGIN_1: ${{ secrets.CORS_ORIGIN_1 }}
@@ -202,9 +199,6 @@ jobs:
           write_env_value GHCR_TOKEN
           write_env_value JWT_SECRET_KEY
           write_env_value POSTGRES_PASSWORD
-          write_env_value PGADMIN_EMAIL
-          write_env_value PGADMIN_PASSWORD
-          write_env_value GRAFANA_ADMIN_PASSWORD
           write_env_value DATABASE__AutoMigrateOnStartup
           write_env_value CORS_ORIGIN_0
           write_env_value CORS_ORIGIN_1
@@ -212,7 +206,7 @@ jobs:
           write_env_value OAUTH_VK_CLIENT_SECRET
           write_env_value RUSENDER_API_TOKEN
           write_env_value RUSENDER_SEND_KEY_ID
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -c '\''set -euo pipefail; cd ~/cherryplay-deploy; umask 077; trap "rm -f .deploy.env" EXIT; cat > .deploy.env; set -a; source .deploy.env; set +a; chmod +x deploy.sh; ./deploy.sh'\''' < "$DEPLOY_ENV_FILE"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -c '\''set -euo pipefail; cd ~/cherryplay-deploy; umask 077; trap "rm -f .deploy.env" EXIT; cat > .deploy.env; set -a; source .deploy.env; set +a; chmod +x deploy.sh; bash deploy.sh'\''' < "$DEPLOY_ENV_FILE"
 
       - name: Deployment status
         if: always()

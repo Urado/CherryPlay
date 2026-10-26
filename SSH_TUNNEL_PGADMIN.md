@@ -1,66 +1,48 @@
-# SSH-туннель к pgAdmin через PowerShell
+# Локальная Grafana и pgAdmin через SSH-туннель
 
-Инструкция для доступа к pgAdmin на сервере через туннель с вашего Windows-ПК. Браузер остаётся на вашем компьютере, трафик идёт через зашифрованное SSH-соединение. Вход на сервер — только по SSH-ключу (сертификату).
+Production Compose оставляет Prometheus, Loki, Alloy, PostgreSQL, exporters и их данные на VPS. Grafana и pgAdmin запускаются локально через Docker Desktop; их обращения к серверным сервисам проходят через SSH-туннель. Интерфейсы опубликованы только на `127.0.0.1` локального компьютера.
 
----
+## Подготовить доступ
 
-## 1. Подключиться с туннелем (по сертификату)
+1. Установите Docker Desktop с Docker Compose и проверьте, что в PowerShell доступна команда `ssh`.
+2. Откройте `local-admin-tools/start-local-admin-tools.ps1` и замените `YOUR_SITE_HOSTNAME`, `YOUR_SSH_USERNAME` и `YOUR_SSH_KEY` на hostname сервера, SSH-пользователя и путь к закрытому ключу. Не помещайте ключ в репозиторий.
+3. Убедитесь, что в `%USERPROFILE%\.ssh\known_hosts` есть проверенная запись для сервера. Сверьте fingerprint ключа сервера по доверенному каналу; не отключайте проверку host key.
+4. Скопируйте `local-admin-tools/.env.example` в `local-admin-tools/.env`. Установите отдельные локальные пароли Grafana и pgAdmin и email для входа в pgAdmin. Не используйте пароль PostgreSQL как пароль входа в UI.
 
-В **PowerShell** выполните (подставьте логин и адрес сервера).
+## Запустить интерфейсы
 
-Если ключ лежит в стандартном месте (`~/.ssh/id_rsa` или `id_ed25519`):
-
-```powershell
-ssh -L 5050:127.0.0.1:5050 ЛОГИН@АДРЕС_СЕРВЕРА
-```
-
-Если ключ в другом файле — укажите его через `-i`:
+В PowerShell из корня репозитория выполните:
 
 ```powershell
-ssh -i "C:\путь\к\вашему\ключу" -L 5050:127.0.0.1:5050 ЛОГИН@АДРЕС_СЕРВЕРА
+& .\local-admin-tools\start-local-admin-tools.ps1
 ```
 
-Формат: **логин** @ **адрес сервера** (домен или IP). Пример: `test@test.ru`.
+Скрипт сначала собирает и запускает SSH-tunnel service. Grafana и pgAdmin стартуют после того, как туннель проверил доступность Prometheus, Loki и PostgreSQL. Откройте:
 
-Окно PowerShell не закрывайте — пока сессия активна, туннель работает.
+- Grafana: [http://localhost:3001](http://localhost:3001). Используйте локальный пароль из `GRAFANA_ADMIN_PASSWORD`; папка **CherryPlay** содержит dashboard **Обзор CherryPlay**.
+- pgAdmin: [http://localhost:5051](http://localhost:5051). Войдите с `PGADMIN_DEFAULT_EMAIL` и `PGADMIN_DEFAULT_PASSWORD` из локального `.env`. Сервер **CherryPlay PostgreSQL** настроен на `ssh-tunnel:5433`; при первом подключении введите пароль `POSTGRES_PASSWORD`, полученный отдельно у владельца базы.
 
----
+Не закрывайте окно PowerShell, пока нужны UI и туннели. Нажмите Enter в окне скрипта, чтобы остановить контейнеры. Если закрыть процесс принудительно, из корня `local-admin-tools` выполните `docker compose --env-file .env -f compose.yml down`.
 
-## 2. Открыть pgAdmin в браузере
+## Серверные порты
 
-Не закрывая PowerShell:
+На VPS Prometheus слушает `127.0.0.1:19090`, Loki — `127.0.0.1:13100`, PostgreSQL — `127.0.0.1:5433`. Они не должны публиковаться на внешнем интерфейсе. SSH-туннель пересылает эти loopback-порты только во внутреннюю сеть локального Compose; локальные UI доступны только на loopback компьютера.
 
-1. Откройте браузер и перейдите по адресу: **`http://localhost:5050`**
-2. Войдите в pgAdmin (логин и пароль из `PGADMIN_EMAIL` и `PGADMIN_PASSWORD`).
+После production deploy проверьте на VPS `docker compose -f docker-compose.prod.yml ps` и `docker compose -f docker-compose.prod.yml logs --tail=100 prometheus loki alloy postgres`. Затем запустите локальный скрипт и проверьте:
 
----
+- Grafana datasource Prometheus и Loki показывают **Healthy**.
+- В dashboard доступны HTTP-метрики и текущие подключения PartyHub; в Explore Loki возвращает свежие серверные логи.
+- pgAdmin открывает сервер PostgreSQL и выполняет read-only запрос, например `SELECT current_database(), now();`.
+- На VPS Prometheus, Loki, Alloy, exporters и PostgreSQL остаются запущены, сайт и health endpoints работают. Команда `ss -lntp` показывает `127.0.0.1:19090`, `127.0.0.1:13100` и `127.0.0.1:5433`; проверьте, что эти порты не опубликованы на публичном интерфейсе и не разрешены в firewall.
 
-## 3. Закончить работу
+Только после успешных проверок остановите старые UI-контейнеры, которые могли остаться от предыдущего production Compose:
 
-В окне PowerShell: **Ctrl+C** или команда **`exit`** — сессия и туннель закроются.
+```bash
+docker rm -f cherryplay-grafana cherryplay-pgadmin
+```
 
----
+Команда удаляет только два контейнера и не удаляет Docker volumes. Текущие compose definitions сохраняют `grafana_data` и `pgadmin_data`; проверьте соответствие имён volumes в `docker volume ls` перед любыми операциями с данными. Не используйте `docker compose down -v`.
 
-## Краткая шпаргалка
+## Откат
 
-| Шаг | Действие                                                                                           |
-| --- | -------------------------------------------------------------------------------------------------- |
-| 1   | В PowerShell: `ssh -L 5050:127.0.0.1:5050 ЛОГИН@АДРЕС_СЕРВЕРА` (при своём ключе — путь через `-i`) |
-| 2   | Окно не закрывать                                                                                  |
-| 3   | В браузере открыть **http://localhost:5050**                                                       |
-| 4   | Войти в pgAdmin, работать с БД                                                                     |
-| 5   | По окончании в PowerShell: `exit`                                                                  |
-
----
-
-## Подключение к PostgreSQL в pgAdmin
-
-После входа в pgAdmin добавьте сервер БД:
-
-1. ПКМ по **Servers** → **Register** → **Server**.
-2. **General** — любое имя (например, `CherryPlay DB`).
-3. **Connection:**
-   - **Host:** `postgres`
-   - **Port:** `5432`
-   - **Username:** `cherryplay`
-   - **Password:** значение `POSTGRES_PASSWORD` (по умолчанию `cherryplay_password`).
+Если локальные интерфейсы или туннель недоступны, остановите локальный compose. Сбор метрик и логов, работа PostgreSQL и приложения на VPS продолжаются. Для временного возврата серверных UI восстановите предыдущую версию `docker-compose.prod.yml` с определениями Grafana и pgAdmin и выполните обычный deploy; сохранённые `grafana_data` и `pgadmin_data` остаются доступными в том же Compose project. После повторной проверки удалите восстановленные UI только согласованным отдельным действием.
