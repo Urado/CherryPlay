@@ -180,7 +180,7 @@ describe('portable package audio across main playlist and collections', () => {
     const collectionFolder = path.join(
       response.data!.folderPath,
       'collections',
-      'Chill--collection-one',
+      'Chill',
     );
     expect(entries.get(path.join(collectionFolder, 'collection.mp3'))).toEqual({
       type: 'file',
@@ -193,7 +193,7 @@ describe('portable package audio across main playlist and collections', () => {
     ) as typeof projectFile;
     expect(saved.items[0].path).toBe('./tracks/main.mp3');
     expect(saved.collections[0].items[0].path).toBe(
-      './collections/Chill--collection-one/collection.mp3',
+      './collections/Chill/collection.mp3',
     );
   });
 });

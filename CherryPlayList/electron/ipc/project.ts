@@ -168,7 +168,24 @@ const collectionFolderName = (collection: NonNullable<ProjectFile['collections']
     throw new Error(`Некорректные данные подборки «${collection.name ?? collection.id}»`);
   }
   const safeName = safePortableFolderSegment(collection.name, 'Подборка');
-  return `${safeName || 'Подборка'}--${collection.id}`;
+  return safeName || 'Подборка';
+};
+
+const collectionFolderNames = (
+  collections: NonNullable<ProjectFile['collections']>,
+): string[] => {
+  const usedNames = new Set<string>();
+  return collections.map((collection) => {
+    const baseName = collectionFolderName(collection);
+    let folderName = baseName;
+    let suffix = 2;
+    while (usedNames.has(folderName.toLowerCase())) {
+      folderName = `${baseName.slice(0, 96)} (${suffix})`;
+      suffix++;
+    }
+    usedNames.add(folderName.toLowerCase());
+    return folderName;
+  });
 };
 
 const isPathUnderDirectory = (directory: string, filePath: string): boolean => {
@@ -249,7 +266,7 @@ const isPortableRelativeTrackPath = (rawPath: string): boolean => {
     return false;
   }
   if (segments[0] === 'collections') {
-    return segments.length > 2 && /--[A-Za-z0-9_-]{1,128}$/.test(segments[1]);
+    return segments.length > 2;
   }
   return segments.length > 1;
 };
@@ -275,8 +292,10 @@ const collectPortableTrackPaths = (projectFile: ProjectFile): Map<string, string
   for (const item of projectFile.items) {
     addPath(item, null);
   }
-  for (const collection of projectFile.collections ?? []) {
-    const folderName = collectionFolderName(collection);
+  const collections = projectFile.collections ?? [];
+  const folderNames = collectionFolderNames(collections);
+  for (const [index, collection] of collections.entries()) {
+    const folderName = folderNames[index];
     for (const item of collection.items) {
       addPath(item, folderName);
     }
@@ -452,7 +471,7 @@ const copyTracksForPortableMode = async (
   const normalizedTracksDir = path.resolve(tracksDir);
   const isWindows = process.platform === 'win32';
   const trackCollectionFolders = buildTrackCollectionFolderMap(projectFile);
-  const collectionFolders = collections.map((collection) => collectionFolderName(collection));
+  const collectionFolders = collectionFolderNames(collections);
   if (strictSourceFiles) {
     for (const [itemIndex, item] of [...projectFile.items, ...collections.flatMap((collection) => collection.items ?? [])].entries()) {
       if (item.type !== 'track') {

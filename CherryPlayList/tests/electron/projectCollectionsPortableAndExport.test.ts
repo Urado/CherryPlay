@@ -247,11 +247,11 @@ describe('project collection portable files', () => {
       ? (virtualEntries.get(response.data!.cherryPath) as { type: 'file'; content: string }).content
       : '') as typeof projectFile;
     const firstCollection = savedFile.collections[0];
-    const collectionFolder = path.join(response.data!.folderPath, 'collections', 'Warm _ up--warm-up-01');
+    const collectionFolder = path.join(response.data!.folderPath, 'collections', 'Warm _ up');
     expect(virtualEntries.get(path.join(collectionFolder, 'shared.mp3'))).toEqual({ type: 'file', content: 'one' });
     expect(virtualEntries.get(path.join(collectionFolder, 'shared_2.mp3'))).toEqual({ type: 'file', content: 'two' });
-    expect(firstCollection.items[0].path).toBe('./collections/Warm _ up--warm-up-01/shared.mp3');
-    expect(firstCollection.items[1].path).toBe('./collections/Warm _ up--warm-up-01/shared_2.mp3');
+    expect(firstCollection.items[0].path).toBe('./collections/Warm _ up/shared.mp3');
+    expect(firstCollection.items[1].path).toBe('./collections/Warm _ up/shared_2.mp3');
     expect(firstCollection.items[2].path).toBe(firstCollection.items[0].path);
     expect(savedFile.collections[1]).toEqual({ id: 'empty-02', name: 'Empty', items: [], rootItems: [] });
     expect(savedFile.collectionViewState).toEqual({ bindings: { windowA: 'warm-up-01' } });
@@ -497,7 +497,7 @@ describe('project collection portable files', () => {
 
   it('removes only obsolete referenced audio and old collection folders after an in-place save', async () => {
     const projectPath = path.join(testRoot, 'workspace', 'project.cherry');
-    const oldAudioPath = path.join(testRoot, 'workspace', 'collections', 'Old name--rename-01', 'old.mp3');
+    const oldAudioPath = path.join(testRoot, 'workspace', 'collections', 'Old name', 'old.mp3');
     const oldProject = {
       version: '2.1',
       name: 'Workspace',
@@ -515,7 +515,7 @@ describe('project collection portable files', () => {
         {
           id: 'rename-01',
           name: 'Old name',
-          items: [{ type: 'track', id: 'old-track', path: './collections/Old name--rename-01/old.mp3', name: 'Old' }],
+          items: [{ type: 'track', id: 'old-track', path: './collections/Old name/old.mp3', name: 'Old' }],
           rootItems: ['old-track'],
         },
       ],
@@ -539,12 +539,12 @@ describe('project collection portable files', () => {
     expect(response.success).toBe(true);
     expect(virtualEntries.has(oldAudioPath)).toBe(false);
     expect(virtualEntries.has(path.dirname(oldAudioPath))).toBe(false);
-    expect(virtualEntries.has(path.join(testRoot, 'workspace', 'collections', 'New name--rename-01'))).toBe(true);
+    expect(virtualEntries.has(path.join(testRoot, 'workspace', 'collections', 'New name'))).toBe(true);
   });
 
   it('rejects collection sources reached through a nested package symlink without changing the project', async () => {
     const projectPath = path.join(testRoot, 'linked-workspace', 'project.cherry');
-    const collectionDir = path.join(testRoot, 'linked-workspace', 'collections', 'Safe--safe-01');
+    const collectionDir = path.join(testRoot, 'linked-workspace', 'collections', 'Safe');
     const nestedSymlink = path.join(collectionDir, 'linked-audio');
     const symlinkAudioPath = path.join(nestedSymlink, 'track.mp3');
     const oldProjectContent = JSON.stringify({
@@ -606,7 +606,7 @@ describe('project collection portable files', () => {
 
   it('rejects collection directory paths as audio files without changing the project', async () => {
     const projectPath = path.join(testRoot, 'directory-workspace', 'project.cherry');
-    const collectionDir = path.join(testRoot, 'directory-workspace', 'collections', 'Safe--safe-02');
+    const collectionDir = path.join(testRoot, 'directory-workspace', 'collections', 'Safe');
     const nestedDirectory = path.join(collectionDir, 'nested');
     const oldProjectContent = JSON.stringify({
       version: '2.1',

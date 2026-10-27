@@ -76,17 +76,28 @@ const checkFileExists = async (filePath: string): Promise<boolean> => {
 const resolveAndCheckTracks = async (
   items: ProjectItem[],
   cherryFilePath: string,
+  options?: { portableCollectionName?: string },
 ): Promise<void> => {
   const baseDir = pathDirname(cherryFilePath);
 
   const processItems = async (projectItems: ProjectItem[]): Promise<void> => {
     for (const item of projectItems) {
       if (isProjectTrack(item)) {
+        const relativePath = item.path;
         if (isRelativePath(item.path)) {
           item.path = resolveRelativePath(baseDir, item.path);
         }
 
         const exists = await checkFileExists(item.path);
+        if (
+          !exists &&
+          options?.portableCollectionName &&
+          relativePath.replace(/\\/g, '/').startsWith('./collections/')
+        ) {
+          throw new Error(
+            `Не удалось открыть переносимый проект: файл трека подборки «${options.portableCollectionName}» не найден. Проверьте, что папка подборки не переименована и пакет не изменён.`,
+          );
+        }
         item.isMissing = !exists;
       } else if (isProjectGroup(item)) {
         await processItems(item.items);
@@ -236,7 +247,11 @@ class ProjectService {
     if (filePath) {
       await resolveAndCheckTracks(projectData.items, filePath);
       for (const collection of projectData.collections ?? []) {
-        await resolveAndCheckTracks(collection.items, filePath);
+        await resolveAndCheckTracks(collection.items, filePath, {
+          portableCollectionName: validationResult.data.settings.portableMode
+            ? collection.name
+            : undefined,
+        });
       }
     }
 
