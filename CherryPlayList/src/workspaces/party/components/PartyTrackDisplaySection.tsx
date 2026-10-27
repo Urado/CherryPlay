@@ -7,7 +7,7 @@ import {
   applyPartyTrackDisplayToTrackName,
   normalizePartyTrackDisplaySettings,
 } from '@shared/utils/partyUtils';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   PARTY_TRACK_DELIMITER_PRESET_CUSTOM,
@@ -46,6 +46,14 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
   onChange,
 }) => {
   const display = resolveDisplaySettings(value);
+  const [isCustomDelimiterSelected, setIsCustomDelimiterSelected] = useState(
+    () =>
+      resolvePartyTrackDelimiterPresetId(display.stripLeadingCharsDelimiter) ===
+      PARTY_TRACK_DELIMITER_PRESET_CUSTOM,
+  );
+  const [customDelimiterInput, setCustomDelimiterInput] = useState(
+    display.stripLeadingCharsDelimiter,
+  );
   const previewName = useMemo(
     () => applyPartyTrackDisplayToTrackName(PREVIEW_SAMPLE_NAME, display),
     [display],
@@ -54,7 +62,13 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
   const mode: PartyTrackStripLeadingMode =
     display.stripLeadingCharsMode === 'untilDelimiter' ? 'untilDelimiter' : 'count';
 
-  const delimiterPresetId = resolvePartyTrackDelimiterPresetId(display.stripLeadingCharsDelimiter);
+  useEffect(() => {
+    setCustomDelimiterInput(display.stripLeadingCharsDelimiter);
+  }, [display.stripLeadingCharsDelimiter]);
+
+  const delimiterPresetId = isCustomDelimiterSelected
+    ? PARTY_TRACK_DELIMITER_PRESET_CUSTOM
+    : resolvePartyTrackDelimiterPresetId(display.stripLeadingCharsDelimiter);
   const showCustomDelimiterInput = delimiterPresetId === PARTY_TRACK_DELIMITER_PRESET_CUSTOM;
 
   return (
@@ -132,14 +146,13 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
                   const nextPreset = e.target.value as PartyTrackDelimiterPresetId;
                   const presetChar = partyTrackDelimiterCharFromPreset(nextPreset);
                   if (presetChar != null) {
+                    setIsCustomDelimiterSelected(false);
+                    setCustomDelimiterInput(presetChar);
                     onChange({ ...display, stripLeadingCharsDelimiter: presetChar });
                     return;
                   }
-                  const fallback =
-                    display.stripLeadingCharsDelimiter.length > 0
-                      ? display.stripLeadingCharsDelimiter.slice(0, 1)
-                      : DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsDelimiter;
-                  onChange({ ...display, stripLeadingCharsDelimiter: fallback });
+                  setIsCustomDelimiterSelected(true);
+                  setCustomDelimiterInput('');
                 }}
               >
                 {PARTY_TRACK_DELIMITER_PRESETS.map((preset) => (
@@ -156,18 +169,15 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
                 <input
                   type="text"
                   className="party-track-display-section__input party-track-display-section__input--delimiter"
-                  maxLength={1}
                   disabled={!display.stripLeadingCharsEnabled}
-                  value={display.stripLeadingCharsDelimiter}
+                  value={customDelimiterInput}
                   onChange={(e) => {
-                    const next = e.target.value;
-                    if (next.length === 0) {
-                      return;
+                    const next = e.target.value.slice(0, 1);
+                    setCustomDelimiterInput(next);
+                    if (next.length > 0) {
+                      setIsCustomDelimiterSelected(true);
+                      onChange({ ...display, stripLeadingCharsDelimiter: next });
                     }
-                    onChange({
-                      ...display,
-                      stripLeadingCharsDelimiter: next.slice(0, 1),
-                    });
                   }}
                 />
               </label>
