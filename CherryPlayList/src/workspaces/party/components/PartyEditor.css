@@ -263,6 +263,17 @@ textarea.party-editor-input {
   width: 100%;
 }
 
+.party-editor-dropdown-theme-independent {
+  --accent-primary: #4a9eff;
+  --bg-hover: #323232;
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #252525;
+  --border-color: #3a3a3a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #8a8a8a;
+}
+
 .party-editor-dropdown-button {
   width: 100%;
   padding: 0;

@@ -66,6 +66,7 @@ export const SettingsModal: React.FC = () => {
   const [pendingImportBundle, setPendingImportBundle] = useState<SettingsExportBundle | null>(null);
   const [exportInProgress, setExportInProgress] = useState(false);
   const [importInProgress, setImportInProgress] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
@@ -86,6 +87,15 @@ export const SettingsModal: React.FC = () => {
   const [legalLinks, setLegalLinks] = useState<{ privacy: string; legal: string } | null>(null);
 
   const prevModalRef = useRef(modal);
+
+  useEffect(() => {
+    if (!settingsSaved) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => setSettingsSaved(false), 5000);
+    return () => clearTimeout(timeoutId);
+  }, [settingsSaved]);
 
   useEffect(() => {
     if (modal !== 'settings') {
@@ -312,11 +322,9 @@ export const SettingsModal: React.FC = () => {
       localStreamingSource === 'aimp' && !canSelectAimp ? 'cherryPlayPlayer' : localStreamingSource,
     );
 
-    addNotification({ type: 'success', message: 'Настройки сохранены' });
-    closeModal();
+    setSettingsSaved(true);
   }, [
     canSelectAimp,
-    closeModal,
     localDemoPlayerDeviceId,
     localEnableStreaming,
     localHourDividerInterval,
@@ -331,10 +339,10 @@ export const SettingsModal: React.FC = () => {
     setShowHourDividers,
     setStreamingSource,
     setTrackItemSizePreset,
-    addNotification,
   ]);
 
   const handleCancel = useCallback(() => {
+    setSettingsSaved(false);
     setLocalTrackItemSizePreset(trackItemSizePreset);
     setLocalHourDividerInterval(hourDividerInterval);
     setLocalShowHourDividers(showHourDividers);
@@ -499,7 +507,7 @@ export const SettingsModal: React.FC = () => {
                 value={localStreamingSource}
                 onChange={(e) => setLocalStreamingSource(e.target.value as AimpSourceSelection)}
               >
-                <option value="cherryPlayPlayer">CherryPlay</option>
+                <option value="cherryPlayPlayer">Это приложение</option>
                 <option value="aimp" disabled={!canSelectAimp && localStreamingSource !== 'aimp'}>
                   AIMP{!canSelectAimp ? ' (недоступен)' : ''}
                 </option>
@@ -708,10 +716,10 @@ export const SettingsModal: React.FC = () => {
               className="modal-button"
               type="button"
               onClick={handleSave}
-              variant="primary"
+              variant={settingsSaved ? 'secondary' : 'primary'}
               size="sm"
             >
-              Сохранить
+              {settingsSaved ? 'Сохранено' : 'Сохранить'}
             </Button>
           </div>
         </div>

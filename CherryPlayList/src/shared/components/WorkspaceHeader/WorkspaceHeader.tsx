@@ -120,8 +120,8 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 <button
                   onClick={onDeselectAll}
                   className="playlist-header-action-icon"
-                  title="Deselect All"
-                  aria-label="Deselect All"
+                  title="Снять выделение"
+                  aria-label="Снять выделение"
                 >
                   <ClearIcon style={{ fontSize: HEADER_ICON_SIZE }} />
                 </button>
@@ -142,7 +142,7 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                     disabled={!canRemoveSelected}
                     title={
                       canRemoveSelected
-                        ? `Delete Selected (${selectedCount})`
+                        ? `Удалить выбранные (${selectedCount})`
                         : 'Нельзя удалить проигранные или текущий трек во время проигрывания'
                     }
                     aria-label="Удалить выбранные"
@@ -157,8 +157,8 @@ export const WorkspaceHeader: React.FC<WorkspaceHeaderProps> = ({
                 <button
                   onClick={onSelectAll}
                   className="playlist-header-action-icon"
-                  title="Select All"
-                  aria-label="Select All"
+                  title="Выбрать всё"
+                  aria-label="Выбрать всё"
                 >
                   <SelectAllIcon style={{ fontSize: HEADER_ICON_SIZE }} />
                 </button>

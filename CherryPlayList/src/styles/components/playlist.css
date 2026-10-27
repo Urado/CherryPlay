@@ -61,16 +61,6 @@
   width: 28px;
 }
 
-.split-zone:has(.collection-picker--open),
-.split-container:has(.collection-picker--open),
-.workspace-zone:has(.collection-picker--open),
-.workspace-zone__body:has(.collection-picker--open),
-.playlist-view:has(.collection-picker--open) {
-  position: relative;
-  z-index: 10;
-  overflow: visible;
-}
-
 .collection-header .collection-picker .workspace-pill__name {
   flex: 1 1 auto;
 }

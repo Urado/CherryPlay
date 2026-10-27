@@ -37,6 +37,7 @@ import {
   SetNameCommand,
 } from '../commands';
 import { electronStorage } from '../storage/electronStorage';
+import { areItemsConsecutive } from '../utils/areItemsConsecutive';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 
 import { useGlobalHistoryStore } from './globalHistoryStore';
@@ -110,6 +111,7 @@ export interface ProjectStoreState {
   updateTrackDuration: (id: string, duration: number) => void;
   markTrackAsMissing: (id: string, isMissing?: boolean) => void;
 
+  canCreateGroup: (itemIds: string[]) => boolean;
   createGroup: (itemIds: string[], name?: string) => string;
   ungroupGroup: (groupId: string) => void;
   removeGroup: (groupId: string) => void;
@@ -510,31 +512,47 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
       }));
     },
 
+    canCreateGroup: (itemIds) => {
+      const state = get();
+      return (
+        state.supportsGroups &&
+        areItemsConsecutive(
+          itemIds,
+          state.items,
+          state.getItemPath,
+          state.findItemById,
+        )
+      );
+    },
+
     createGroup: (itemIds, name) => {
       const state = get();
       if (!state.supportsGroups || itemIds.length < 2) {
         return '';
       }
 
-      const itemIndices: number[] = [];
-      const itemsToGroup: ProjectItem[] = [];
-
-      itemIds.forEach((id) => {
-        const index = state.items.findIndex((item) => item.id === id);
-        if (index !== -1) {
-          itemIndices.push(index);
-          itemsToGroup.push(state.items[index]);
-        }
-      });
-
-      if (itemsToGroup.length < 2) return '';
-
-      const sortedIndices = [...itemIndices].sort((a, b) => a - b);
-      for (let i = 1; i < sortedIndices.length; i++) {
-        if (sortedIndices[i] !== sortedIndices[i - 1] + 1) {
-          return '';
-        }
+      if (!state.canCreateGroup(itemIds)) {
+        return '';
       }
+
+      const firstPath = state.getItemPath(itemIds[0]);
+      const parentId = firstPath.length > 1 ? firstPath[firstPath.length - 2] : null;
+      let parentContainer: ProjectItem[];
+      if (parentId === null) {
+        parentContainer = state.items;
+      } else {
+        const parentGroup = findItemRecursive(state.items, parentId);
+        if (!parentGroup || !isProjectGroup(parentGroup)) return '';
+        parentContainer = parentGroup.items;
+      }
+      const selectedIds = new Set(itemIds);
+      const itemsWithIndices = parentContainer
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => selectedIds.has(item.id));
+      if (itemsWithIndices.length < 2) return '';
+
+      const itemsToGroup = itemsWithIndices.map(({ item }) => item);
+      const sortedIndices = itemsWithIndices.map(({ index }) => index);
 
       const groupId = uuidv4();
       const groupName = name || `Group ${itemsToGroup.length}`;
@@ -546,15 +564,25 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
         items: itemsToGroup.map((item) => cloneItem(item)),
       };
 
-      set((s) => {
-        const newItems = [...s.items];
+      const updateContainer = (items: ProjectItem[]): ProjectItem[] => {
+        const newItems = [...items];
         const sortedIndicesDesc = [...sortedIndices].sort((a, b) => b - a);
         sortedIndicesDesc.forEach((index) => {
           newItems.splice(index, 1);
         });
         newItems.splice(insertIndex, 0, group);
-        return { items: newItems };
-      });
+        return newItems;
+      };
+
+      set((s) => ({
+        items:
+          parentId === null
+            ? updateContainer(s.items)
+            : updateGroupInItems(s.items, parentId, (parentGroup) => ({
+                ...parentGroup,
+                items: updateContainer(parentGroup.items),
+              })),
+      }));
 
       if (!state._skipHistory) {
         useGlobalHistoryStore
@@ -568,6 +596,7 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
               insertIndex,
               cloneItems(itemsToGroup),
               sortedIndices,
+              parentId,
             ),
             `Create group "${groupName}"`,
           );

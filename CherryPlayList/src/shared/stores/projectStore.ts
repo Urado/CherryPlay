@@ -39,6 +39,7 @@ import {
   SetNameCommand,
 } from '../commands';
 import { electronStorage } from '../storage/electronStorage';
+import { areItemsConsecutive } from '../utils/areItemsConsecutive';
 import { cloneItem, cloneItems } from '../utils/historyCore';
 import { normalizePartyTrackDisplaySettings } from '../utils/partyUtils';
 
@@ -158,6 +159,7 @@ interface ProjectState {
   ) => void;
   markTrackAsMissing: (id: string, isMissing?: boolean) => void;
 
+  canCreateGroup: (itemIds: string[]) => boolean;
   createGroup: (itemIds: string[], name?: string) => string;
   ungroupGroup: (groupId: string) => void;
   removeGroup: (groupId: string) => void;
@@ -673,6 +675,16 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         }));
       },
 
+      canCreateGroup: (itemIds) => {
+        const state = get();
+        return areItemsConsecutive(
+          itemIds,
+          state.items,
+          state.getItemPath,
+          state.findItemById,
+        );
+      },
+
       createGroup: (itemIds, name) => {
         const state = get();
         if (itemIds.length === 0) {
@@ -686,14 +698,8 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
         const firstPath = itemPaths[0].path;
         const parentId = firstPath.length > 1 ? firstPath[firstPath.length - 2] : null;
-
-        for (let i = 1; i < itemPaths.length; i++) {
-          const currentPath = itemPaths[i].path;
-          const currentParentId =
-            currentPath.length > 1 ? currentPath[currentPath.length - 2] : null;
-          if (currentParentId !== parentId) {
-            throw new Error('Items must be in the same container to create a group');
-          }
+        if (!state.canCreateGroup(itemIds)) {
+          throw new Error('Items must be consecutive to create a group');
         }
 
         const itemsToGroup: ProjectItem[] = [];
@@ -726,11 +732,6 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
         }
 
         const sortedIndices = [...itemIndices].sort((a, b) => a - b);
-        for (let i = 1; i < sortedIndices.length; i++) {
-          if (sortedIndices[i] !== sortedIndices[i - 1] + 1) {
-            throw new Error('Items must be consecutive to create a group');
-          }
-        }
 
         const itemsWithIndices = itemsToGroup.map((item, idx) => ({
           item,
@@ -771,7 +772,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
         set({ items: newItems });
 
-        if (!state._skipHistory && parentId === null) {
+        if (!state._skipHistory) {
           useGlobalHistoryStore
             .getState()
             .pushCommand(
@@ -783,6 +784,7 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
                 insertIndex,
                 cloneItems(sortedItemsToGroup),
                 sortedIndices,
+                parentId,
               ),
               `Create group "${groupName}"`,
             );

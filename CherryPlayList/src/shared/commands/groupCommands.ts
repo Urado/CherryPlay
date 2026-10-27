@@ -15,32 +15,53 @@ export class CreateGroupCommand implements HistoryCommand {
     private readonly insertIndex: number,
     private readonly originalItems: ProjectItem[],
     private readonly originalIndices: number[],
+    private readonly parentId: string | null = null,
   ) {}
 
   execute(state: ItemsState): CommandResult {
-    const newItems = [...state.items];
-    const sortedIndices = [...this.originalIndices].sort((a, b) => b - a);
-    sortedIndices.forEach((index) => {
-      if (index < newItems.length) {
-        newItems.splice(index, 1);
-      }
-    });
     const group: ProjectGroup = {
       id: this.groupId,
       name: this.groupName,
       items: cloneItems(this.originalItems),
     };
-    newItems.splice(this.insertIndex, 0, group);
+
+    const updateContainer = (items: ProjectItem[]): ProjectItem[] => {
+      const newItems = [...items];
+      const sortedIndices = [...this.originalIndices].sort((a, b) => b - a);
+      sortedIndices.forEach((index) => {
+        if (index < newItems.length) {
+          newItems.splice(index, 1);
+        }
+      });
+      newItems.splice(this.insertIndex, 0, group);
+      return newItems;
+    };
+
+    const newItems =
+      this.parentId === null
+        ? updateContainer(state.items)
+        : updateGroupInItems(state.items, this.parentId, (parentGroup) => ({
+            ...parentGroup,
+            items: updateContainer(parentGroup.items),
+          }));
     return { success: true, newState: { items: newItems } };
   }
 
   undo(state: ItemsState): CommandResult {
-    const newItems = state.items.flatMap((item) => {
+    const removeGroup = (items: ProjectItem[]): ProjectItem[] => items.flatMap((item) => {
       if (isProjectGroup(item) && item.id === this.groupId) {
         return item.items;
       }
       return [item];
     });
+
+    const newItems =
+      this.parentId === null
+        ? removeGroup(state.items)
+        : updateGroupInItems(state.items, this.parentId, (parentGroup) => ({
+            ...parentGroup,
+            items: removeGroup(parentGroup.items),
+          }));
     return { success: true, newState: { items: newItems } };
   }
 }

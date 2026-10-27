@@ -2,7 +2,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface CollectionOption {
   id: string;
@@ -31,6 +32,7 @@ export const CollectionPicker: React.FC<CollectionPickerProps> = ({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -45,6 +47,35 @@ export const CollectionPicker: React.FC<CollectionPickerProps> = ({
     setDraft(name);
   }, [draft, name, onRename]);
 
+  const updateMenuPosition = useCallback(() => {
+    const picker = rootRef.current;
+    if (!picker) return;
+
+    const bounds = picker.getBoundingClientRect();
+    const width = Math.min(Math.max(bounds.width, 280), window.innerWidth - 24);
+    const left = Math.min(Math.max(bounds.left, 12), window.innerWidth - width - 12);
+
+    setMenuStyle({
+      position: 'fixed',
+      top: bounds.bottom + 4,
+      left,
+      width,
+      maxHeight: Math.max(120, window.innerHeight - bounds.bottom - 16),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    updateMenuPosition();
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [open, updateMenuPosition]);
+
   useEffect(() => {
     if (!editing) return;
     inputRef.current?.focus();
@@ -54,7 +85,10 @@ export const CollectionPicker: React.FC<CollectionPickerProps> = ({
   useEffect(() => {
     if (!open) return;
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
+        setOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -120,7 +154,7 @@ export const CollectionPicker: React.FC<CollectionPickerProps> = ({
   };
 
   return (
-    <div className={`workspace-menu collection-picker${open ? ' collection-picker--open' : ''}`} ref={rootRef}>
+    <div className="workspace-menu collection-picker" ref={rootRef}>
       <div className="workspace-pill">
         {editing ? (
           <input
@@ -180,62 +214,65 @@ export const CollectionPicker: React.FC<CollectionPickerProps> = ({
           </button>
         )}
       </div>
-      {open && (
-        <div
-          ref={menuRef}
-          className="workspace-menu__panel collection-picker__panel"
-          role="menu"
-          aria-label="Подборки проекта"
-          tabIndex={-1}
-          onKeyDown={handleMenuKeyDown}
-        >
-          <div className="workspace-menu__section-label" role="presentation">Подборки проекта</div>
-          {collections.map((collection) => (
-            <div className="workspace-menu__row collection-picker__row" key={collection.id}>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={collection.id === collectionId}
-                className="workspace-menu__item collection-picker__select"
-                onClick={() => {
-                  closeMenu();
-                  if (collection.id !== collectionId) onSelect(collection.id);
-                }}
-              >
-                <span className="workspace-menu__item-label-text">{collection.name}</span>
-                {collection.id === collectionId && <CheckIcon className="workspace-menu__check" aria-hidden />}
-              </button>
-              {onDelete && (
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="workspace-menu__panel collection-picker__panel"
+            style={menuStyle}
+            role="menu"
+            aria-label="Подборки проекта"
+            tabIndex={-1}
+            onKeyDown={handleMenuKeyDown}
+          >
+            <div className="workspace-menu__section-label" role="presentation">Подборки проекта</div>
+            {collections.map((collection) => (
+              <div className="workspace-menu__row collection-picker__row" key={collection.id}>
                 <button
                   type="button"
-                  role="menuitem"
-                  className="workspace-menu__item collection-picker__delete"
-                  aria-label={`Удалить подборку ${collection.name}`}
-                  title="Удалить подборку"
+                  role="menuitemradio"
+                  aria-checked={collection.id === collectionId}
+                  className="workspace-menu__item collection-picker__select"
                   onClick={() => {
-                    closeMenu(false);
-                    onDelete(collection.id);
+                    closeMenu();
+                    if (collection.id !== collectionId) onSelect(collection.id);
                   }}
                 >
-                  <CloseIcon aria-hidden />
+                  <span className="workspace-menu__item-label-text">{collection.name}</span>
+                  {collection.id === collectionId && <CheckIcon className="workspace-menu__check" aria-hidden />}
                 </button>
-              )}
-            </div>
-          ))}
-          <div className="workspace-menu__separator" role="separator" />
-          <button
-            type="button"
-            role="menuitem"
-            className="workspace-menu__item"
-            onClick={() => {
-              closeMenu();
-              onCreate();
-            }}
-          >
-            Создать новую подборку
-          </button>
-        </div>
-      )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="workspace-menu__item collection-picker__delete"
+                    aria-label={`Удалить подборку ${collection.name}`}
+                    title="Удалить подборку"
+                    onClick={() => {
+                      closeMenu(false);
+                      onDelete(collection.id);
+                    }}
+                  >
+                    <CloseIcon aria-hidden />
+                  </button>
+                )}
+              </div>
+            ))}
+            <div className="workspace-menu__separator" role="separator" />
+            <button
+              type="button"
+              role="menuitem"
+              className="workspace-menu__item"
+              onClick={() => {
+                closeMenu();
+                onCreate();
+              }}
+            >
+              Создать новую подборку
+            </button>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

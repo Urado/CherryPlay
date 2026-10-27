@@ -32,7 +32,10 @@ import {
   type ProjectStore,
 } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
-import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
+import {
+  logger,
+  getDuplicateTrackIdsByPathAndFilename,
+} from '@shared/utils';
 import { flattenItemsForDisplay } from '@shared/utils/playerItemsUtils';
 import { deleteCollectionAndReinitialize } from '@shared/utils/workspaceLifecycle';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -93,6 +96,7 @@ const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
   const removeItem = collectionStore((s: ProjectStoreState) => s.removeItem);
   const addItems = collectionStore((s: ProjectStoreState) => s.addItems);
   const updateTrackDuration = collectionStore((s: ProjectStoreState) => s.updateTrackDuration);
+  const canCreateGroupInStore = collectionStore((s: ProjectStoreState) => s.canCreateGroup);
   const createGroup = collectionStore((s: ProjectStoreState) => s.createGroup);
   const ungroupGroup = collectionStore((s: ProjectStoreState) => s.ungroupGroup);
   const setGroupName = collectionStore((s: ProjectStoreState) => s.setGroupName);
@@ -237,21 +241,8 @@ const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
   );
 
   const canCreateGroup = useMemo(() => {
-    if (selectedItemIds.size < 2) return false;
-    const selectedIndices: number[] = [];
-    items.forEach((item, index) => {
-      if (selectedItemIds.has(item.id)) {
-        selectedIndices.push(index);
-      }
-    });
-    if (selectedIndices.length < 2) return false;
-    for (let i = 1; i < selectedIndices.length; i++) {
-      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
-        return false;
-      }
-    }
-    return true;
-  }, [selectedItemIds, items]);
+    return canCreateGroupInStore(Array.from(selectedItemIds));
+  }, [selectedItemIds, canCreateGroupInStore]);
 
   const handleCreateGroup = useCallback(() => {
     if (!canCreateGroup) return;

@@ -22,19 +22,16 @@ import {
   useDragDropExecutor,
 } from '@shared/hooks';
 import { fileService, ipcService } from '@shared/services';
-import { dialogService } from '@shared/services/dialogService';
 import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
-import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
-import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
 import {
-  runNewProjectWithSessionGuard,
-  stopLocalPlayerSession,
-} from '@shared/utils/newProjectSessionGuard';
+  logger,
+  getDuplicateTrackIdsByPathAndFilename,
+} from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { usePlayerDividers } from '../player/hooks/usePlayerDividers';
 import { usePlayerMode } from '../player/hooks/usePlayerMode';
@@ -53,7 +50,6 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   workspaceId: _workspaceId,
   zoneId: _zoneId,
 }) => {
-  const clearAllRequestRef = useRef(false);
   const {
     name,
     items,
@@ -71,10 +67,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     updateTrackDuration,
     getItemPath,
     findItemById,
+    canCreateGroup: canCreateGroupInStore,
     createGroup,
     ungroupGroup,
     setGroupName,
-    newProject,
     undo,
     redo,
     isTrackPlayed,
@@ -153,7 +149,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     onError: handleError,
   });
 
-  const { showHourDividers, enableStreaming } = useSettingsStore();
+  const { showHourDividers } = useSettingsStore();
 
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
@@ -243,21 +239,8 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   ]);
 
   const canCreateGroup = useMemo(() => {
-    if (selectedItemIds.size < 2) return false;
-    const selectedIndices: number[] = [];
-    items.forEach((item, index) => {
-      if (selectedItemIds.has(item.id)) {
-        selectedIndices.push(index);
-      }
-    });
-    if (selectedIndices.length < 2) return false;
-    for (let i = 1; i < selectedIndices.length; i++) {
-      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
-        return false;
-      }
-    }
-    return true;
-  }, [selectedItemIds, items]);
+    return canCreateGroupInStore(Array.from(selectedItemIds));
+  }, [selectedItemIds, canCreateGroupInStore]);
 
   const handleCreateGroup = useCallback(() => {
     if (!canCreateGroup) return;
@@ -270,41 +253,11 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     }
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
-  const handleClearAll = useCallback(async () => {
-    if (clearAllRequestRef.current) return;
-    if (tracks.length === 0) return;
-    clearAllRequestRef.current = true;
-    try {
-      await runNewProjectWithSessionGuard({
-        sessionActive: sessionState.mode === 'session',
-        confirmSessionStop: () =>
-          dialogService.confirm({
-            title: 'Остановить сессию и очистить проект?',
-            message:
-              'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Создать новый проект?',
-            confirmLabel: 'Очистить проект',
-            destructive: true,
-          }),
-        stopLocally: stopLocalPlayerSession,
-        stopServerSession: () => {
-          const linkedParty = useProjectStore.getState().meta.linkedParty;
-          return enableStreaming && linkedParty
-            ? streamingOrchestrator.endServerSession()
-            : Promise.resolve();
-        },
-        resetProject: newProject,
-        onServerStopFailure: () => {
-          addNotification({
-            type: 'error',
-            message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
-            duration: 5000,
-          });
-        },
-      });
-    } finally {
-      clearAllRequestRef.current = false;
-    }
-  }, [tracks.length, sessionState.mode, newProject, enableStreaming, addNotification]);
+  const handleClearAll = useCallback(() => {
+    if (items.length === 0) return;
+    selectAll();
+    removeSelectedItems();
+  }, [items.length, selectAll, removeSelectedItems]);
 
   const handleExportTracksToText = useCallback(() => {
     try {
@@ -350,7 +303,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
         onRemoveSelected={removeSelectedItems}
         canCreateGroup={canCreateGroup}
         onCreateGroup={handleCreateGroup}
-        onClearAll={() => void handleClearAll()}
+        onClearAll={handleClearAll}
         extraActions={
           <IconButton
             onClick={handleExportTracksToText}

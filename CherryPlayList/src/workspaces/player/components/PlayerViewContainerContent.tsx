@@ -32,7 +32,6 @@ import {
   isTrackActive as isTrackActiveUtil,
   markSkippedDisabledTracks as markSkippedDisabledTracksUtil,
   canRemoveSelectedItems as canRemoveSelectedItemsUtil,
-  areItemsConsecutive as areItemsConsecutiveUtil,
 } from '../utils/playerStateUtils';
 
 export interface PlayerViewContainerContentProps {
@@ -59,6 +58,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     selectRange,
     getAllTracksInOrder,
     getItemPath,
+    canCreateGroup: canCreateGroupInStore,
     createGroup,
     findItemById,
     updateTrackDuration,
@@ -409,23 +409,15 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     return total;
   })();
 
-  const areItemsConsecutive = useCallback(
-    (itemIds: string[]): boolean => {
-      return areItemsConsecutiveUtil(itemIds, items, getItemPath, findItemById);
-    },
-    [getItemPath, findItemById, items],
-  );
-
   const canCreateGroup = useMemo(() => {
-    if (selectedItemIds.size < 2) return false;
-    return areItemsConsecutive(Array.from(selectedItemIds));
-  }, [selectedItemIds, areItemsConsecutive]);
+    return canCreateGroupInStore(Array.from(selectedItemIds));
+  }, [selectedItemIds, canCreateGroupInStore]);
 
   const handleCreateGroup = useCallback(() => {
     if (selectedItemIds.size < 2) return;
 
     const selectedIds = Array.from(selectedItemIds);
-    if (!areItemsConsecutive(selectedIds)) return;
+    if (!canCreateGroupInStore(selectedIds)) return;
 
     try {
       createGroup(selectedIds);
@@ -433,7 +425,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     } catch (error) {
       logger.error('Failed to create group', error);
     }
-  }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
+  }, [selectedItemIds, canCreateGroupInStore, createGroup, deselectAll]);
 
   useEffect(() => {
     const regenerateUrl = () => {
