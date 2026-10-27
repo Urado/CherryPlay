@@ -56,14 +56,18 @@ const usePlayerAudioStore = Object.assign(
 );
 const useAimpStore = { getState: () => ({ bridgeState: null }) };
 const useDemoPlayerStore = { getState: () => ({ setDisabled: jest.fn() }) };
-const useSettingsStore = {
-  getState: () => ({
-    streamingSource: 'cherryPlayPlayer',
-    loudnessNormalizationEnabled: true,
-    playerAudioDeviceId: 'player-device',
-    demoPlayerAudioDeviceId: 'demo-device',
-  }),
+const settingsState = {
+  streamingSource: 'cherryPlayPlayer',
+  loudnessNormalizationEnabled: true,
+  playerAudioDeviceId: 'player-device',
+  demoPlayerAudioDeviceId: 'demo-device',
 };
+const useSettingsStore = Object.assign(
+  jest.fn((selector?: (state: typeof settingsState) => unknown) =>
+    selector ? selector(settingsState) : settingsState,
+  ),
+  { getState: () => settingsState },
+);
 let endedCallback: (() => void) | undefined;
 
 jest.mock('@shared/services', () => ({
