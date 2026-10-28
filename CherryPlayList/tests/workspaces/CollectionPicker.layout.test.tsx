@@ -1,20 +1,44 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
+
+import { CollectionPicker } from '../../src/workspaces/collection/CollectionPicker';
+
 describe('collection picker header layout', () => {
-  it('lifts every clipping workspace ancestor while the menu is open', () => {
+  it('renders the menu outside clipping workspace containers with fixed positioning', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <div className="workspace-zone" style={{ overflow: 'hidden' }}>
+        <CollectionPicker
+          collectionId="current"
+          name="Вечерний сет"
+          collections={[{ id: 'current', name: 'Вечерний сет' }]}
+          onSelect={jest.fn()}
+          onCreate={jest.fn()}
+          onRename={jest.fn()}
+        />
+      </div>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Подборка: Вечерний сет' }));
+
+    const menu = screen.getByRole('menu', { name: 'Подборки проекта' });
+    expect(document.body).toContainElement(menu);
+    expect(container).not.toContainElement(menu);
+    expect(menu).toHaveStyle({ position: 'fixed' });
+  });
+
+  it('allows collection toolbar content to overflow', () => {
     const stylesheetPath = resolve(__dirname, '../../src/styles/components/playlist.css');
     const stylesheet = readFileSync(stylesheetPath, 'utf8');
     const collectionToolbarRule = stylesheet.match(
       /\.collection-header \.playlist-header-toolbar__primary\s*\{([^}]*)\}/,
     );
-    const openMenuAncestorRule = stylesheet.match(
-      /\.split-zone:has\(\.collection-picker--open\),\s*\.split-container:has\(\.collection-picker--open\),\s*\.workspace-zone:has\(\.collection-picker--open\),\s*\.workspace-zone__body:has\(\.collection-picker--open\),\s*\.playlist-view:has\(\.collection-picker--open\)\s*\{([^}]*)\}/,
-    );
 
     expect(collectionToolbarRule?.[1]).toMatch(/overflow:\s*visible/);
-    expect(openMenuAncestorRule?.[1]).toMatch(/overflow:\s*visible/);
-    expect(openMenuAncestorRule?.[1]).toMatch(/z-index:\s*10/);
   });
 
   it('allocates row width to collection names when delete controls are present', () => {
