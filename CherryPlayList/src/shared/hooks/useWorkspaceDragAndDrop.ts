@@ -2,7 +2,6 @@ import { ProjectItem } from '@core/types/project';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { isCrossWorkspaceOperation } from '../../core/constants/workspace';
 import { Track } from '../../core/types/track';
 import {
   getRootIdsForDrag,
@@ -26,6 +25,12 @@ import {
 import { DisplayItem } from '../utils/playerItemsUtils';
 import { createTrackDrafts } from '../utils/trackFactory';
 
+const isDifferentWorkspaceStore = (sourceWorkspaceId: WorkspaceId, targetWorkspaceId: WorkspaceId) => {
+  const sourceStore = getProjectStore(sourceWorkspaceId);
+  const targetStore = getProjectStore(targetWorkspaceId);
+  return Boolean(sourceStore && targetStore && sourceStore !== targetStore);
+};
+
 export interface WorkspaceDragDropOptions {
   displayItems: DisplayItem[];
   items: ProjectItem[];
@@ -33,7 +38,11 @@ export interface WorkspaceDragDropOptions {
   selectedItemIds: Set<string>;
   workspaceId: WorkspaceId;
   isValidAudioFile: (path: string) => boolean;
-  onAddTracks: (tracks: Omit<Track, 'id'>[]) => void;
+  onAddTracks: (
+    tracks: Omit<Track, 'id'>[],
+    parentId?: string | null,
+    localIndex?: number,
+  ) => void;
   onAddTracksAt: (tracks: Omit<Track, 'id'>[], index: number) => void;
   onTracksAdded?: (targets: Array<{ id: string; path: string }>) => void;
   loadFolderTracks?: (folderPath: string) => Promise<string[]>;
@@ -141,7 +150,7 @@ export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
       const isCrossWorkspace =
         isItemDrag &&
         isItemDragState(draggedItems) &&
-        isCrossWorkspaceOperation(draggedItems.sourceWorkspaceId, workspaceId);
+        isDifferentWorkspaceStore(draggedItems.sourceWorkspaceId, workspaceId);
 
       if (isCrossWorkspace && isItemDragState(draggedItems)) {
         const sourceStore = getProjectStore(draggedItems.sourceWorkspaceId);
@@ -210,7 +219,7 @@ export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
           setDraggedItems({ type: 'files', paths: [], directories: [] });
         }
       } else if (isItemDragState(draggedItems)) {
-        const isCrossWorkspace = isCrossWorkspaceOperation(
+        const isCrossWorkspace = isDifferentWorkspaceStore(
           draggedItems.sourceWorkspaceId,
           workspaceId,
         );
@@ -245,7 +254,7 @@ export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
       if (parentId === null) {
         onAddTracksAt(drafts, localIndex);
       } else {
-        onAddTracks(drafts);
+        onAddTracks(drafts, parentId, localIndex);
       }
     },
     [isValidAudioFile, onAddTracks, onAddTracksAt],
@@ -326,7 +335,9 @@ export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
       }
 
       const { rootIds, allFlatIndices, sourceWorkspaceId } = draggedItems;
-      const isSameWorkspace = sourceWorkspaceId === workspaceId;
+      const sourceStore = getProjectStore(sourceWorkspaceId);
+      const targetStore = getProjectStore(workspaceId);
+      const isSameWorkspace = Boolean(sourceStore && targetStore && sourceStore === targetStore);
 
       if (isSameWorkspace && isDropInsideDragged(targetFlatIndex, allFlatIndices)) {
         logger.warn('executeDrop: cannot drop inside dragged items');

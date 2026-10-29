@@ -27,7 +27,7 @@ export const usePlayerSession = (options: UsePlayerSessionOptions) => {
   const {
     loadTrack: loadPlayerTrack,
     play: playPlayer,
-    pause: pausePlayer,
+    stop: stopPlayer,
     clearPauseTimer,
   } = usePlayerAudioStore();
 
@@ -95,9 +95,9 @@ export const usePlayerSession = (options: UsePlayerSessionOptions) => {
     clearPauseTimer();
     stopDemoLiveMockPlayback();
     resetSession();
-    pausePlayer();
+    stopPlayer();
     useDemoPlayerStore.getState().setDisabled(false);
-  }, [resetSession, pausePlayer, clearPauseTimer]);
+  }, [resetSession, stopPlayer, clearPauseTimer]);
 
   return {
     handleStartSession,

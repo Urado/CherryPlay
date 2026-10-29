@@ -29,6 +29,7 @@ import {
   HistoryCommand,
   ItemsState,
   AddItemsCommand,
+  AddItemsAtPositionsCommand,
   RemoveItemsCommand,
   RemoveNestedItemCommand,
   MoveItemCommand,
@@ -165,6 +166,7 @@ interface ProjectState {
   removeGroup: (groupId: string) => void;
   setGroupName: (groupId: string, name: string) => void;
   addItemToGroup: (groupId: string, itemId: string, index?: number) => void;
+  addItemsToGroup: (groupId: string, items: Omit<Track, 'id'>[], index: number) => Track[];
   removeItemFromGroup: (groupId: string, itemId: string) => void;
   moveItemInGroup: (groupId: string, fromIndex: number, toIndex: number) => void;
 
@@ -895,6 +897,47 @@ export const useProjectStore = createWithEqualityFn<ProjectState>()(
 
         set({ items: updatedItems });
         get().markAsDirty();
+      },
+
+      addItemsToGroup: (groupId, items, index) => {
+        const state = get();
+        const group = findItemRecursive(state.items, groupId);
+        const parentPath = getItemPathRecursive(state.items, groupId);
+        if (!group || !isProjectGroup(group) || !parentPath || items.length === 0) {
+          return [];
+        }
+
+        const tracks = items.map((item) => ({ ...item, id: uuidv4() }));
+        const positions = tracks.map((item, itemIndex) => ({
+          item,
+          parentPath,
+          index: index + itemIndex,
+        }));
+
+        const command = new AddItemsAtPositionsCommand(positions);
+        const result = command.execute({
+          items: state.items,
+          name: state.name,
+          trackSettings: state.trackSettings,
+          groupSettings: state.groupSettings,
+        });
+        if (!result.success || !result.newState?.items) {
+          return [];
+        }
+
+        set(result.newState);
+
+        if (!state._skipHistory) {
+          useGlobalHistoryStore.getState().pushCommand(
+            PROJECT_WORKSPACE_ID,
+            command,
+            `Add ${tracks.length} items to group`,
+          );
+        }
+
+        get().markAsDirty();
+        enqueueLoudnessScanForTracks(tracks);
+        return tracks;
       },
 
       removeItemFromGroup: (groupId, itemId) => {

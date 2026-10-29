@@ -1,5 +1,13 @@
 import { ProjectItem, isProjectGroup, isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
+import type { PlayerAudioStatus } from '@shared/stores/playerAudioStore';
+
+export const isCurrentTrackHighlighted = (
+  trackId: string | null | undefined,
+  activePlayerTrackId: string | null | undefined,
+  playerAudioStatus: PlayerAudioStatus,
+): boolean =>
+  Boolean(trackId) && trackId === activePlayerTrackId && playerAudioStatus !== 'idle';
 
 export const isTrackOrGroupDisabled = (
   itemId: string,

@@ -59,6 +59,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     setName,
     removeItem,
     addItems,
+    addItemsToGroup,
     toggleItemSelection,
     selectAll,
     deselectAll,
@@ -110,10 +111,15 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   });
 
   const handleAddTracks = useCallback(
-    (newTracks: Omit<Track, 'id'>[]) => {
+    (newTracks: Omit<Track, 'id'>[], parentId?: string | null, localIndex?: number) => {
+      if (parentId) {
+        const addedTracks = addItemsToGroup(parentId, newTracks, localIndex ?? 0);
+        loadDurationsForTracks(addedTracks.map(({ id, path }) => ({ id, path })));
+        return;
+      }
       addItems(newTracks);
     },
-    [addItems],
+    [addItems, addItemsToGroup, loadDurationsForTracks],
   );
 
   const handleAddTracksAt = useCallback(

@@ -16,6 +16,7 @@ import {
 import {
   findItemRecursive,
   findItemWithParent,
+  getItemPathRecursive,
   removeItemsById,
   insertIntoGroup,
 } from '../stores/projectStoreCore';
@@ -102,6 +103,25 @@ export const useDragDropExecutor = () => {
         ? sourceItemsBefore
         : [...targetStore.getState().items];
 
+      if (targetParentId !== null) {
+        const targetGroup = findItemRecursive(targetItemsBefore, targetParentId);
+        if (!targetGroup || !isProjectGroup(targetGroup)) {
+          logger.warn('executeMove: target group not found', { targetParentId });
+          return false;
+        }
+
+        if (
+          isSameWorkspace &&
+          getItemPathRecursive(sourceItemsBefore, targetParentId)?.some((id) => itemIds.includes(id))
+        ) {
+          logger.warn('executeMove: cannot move items into their own group or descendant', {
+            itemIds,
+            targetParentId,
+          });
+          return false;
+        }
+      }
+
       try {
         sourceStore.setState({ _skipHistory: true });
         if (!isSameWorkspace) {
@@ -122,9 +142,14 @@ export const useDragDropExecutor = () => {
           targetIndex,
         );
 
+        if (targetParentId !== null && !findItemRecursive(targetNewItems, targetParentId)) {
+          throw new Error(`Target group ${targetParentId} no longer exists`);
+        }
+
         if (isSameWorkspace) {
           sourceStore.setState({ items: targetNewItems, _skipHistory: false });
         } else {
+          sourceStore.setState({ _skipHistory: false });
           targetStore.setState({ items: targetNewItems, _skipHistory: false });
         }
 

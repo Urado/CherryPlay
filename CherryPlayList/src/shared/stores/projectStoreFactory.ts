@@ -27,6 +27,7 @@ import {
   HistoryCommand,
   ItemsState,
   AddItemsCommand,
+  AddItemsAtPositionsCommand,
   RemoveItemsCommand,
   MoveItemCommand,
   MoveItemsCommand,
@@ -100,6 +101,7 @@ export interface ProjectStoreState {
 
   addItem: (item: Omit<Track, 'id'>, index?: number) => void;
   addItems: (items: Omit<Track, 'id'>[], index?: number) => void;
+  addItemsToGroup: (groupId: string, items: Omit<Track, 'id'>[], index: number) => Track[];
   addItemsWithHistory: (items: ProjectItem[], index?: number) => void;
   removeItem: (id: string) => void;
   removeItemsWithHistory: (ids: string[]) => void;
@@ -338,6 +340,44 @@ const createStoreImpl = (options: ProjectStoreOptions): ProjectStore => {
       }
 
       get().markAsDirty();
+    },
+
+    addItemsToGroup: (groupId, items, index) => {
+      const state = get();
+      const group = findItemRecursive(state.items, groupId);
+      const parentPath = getItemPathRecursive(state.items, groupId);
+      if (!state.supportsGroups || !group || !isProjectGroup(group) || !parentPath || items.length === 0) {
+        return [];
+      }
+
+      const availableSlots =
+        state.maxItems === null ? items.length : state.maxItems - state.items.length;
+      if (availableSlots <= 0) return [];
+
+      const tracks = items.slice(0, availableSlots).map((item) => ({ ...item, id: uuidv4() }));
+      const command = new AddItemsAtPositionsCommand(
+        tracks.map((item, itemIndex) => ({
+          item,
+          parentPath,
+          index: index + itemIndex,
+        })),
+      );
+      const result = command.execute({
+        items: state.items,
+        name: state.name,
+        trackSettings: state.trackSettings,
+        groupSettings: state.groupSettings,
+      });
+      if (!result.success || !result.newState?.items) return [];
+
+      set(result.newState);
+      if (!state._skipHistory) {
+        useGlobalHistoryStore
+          .getState()
+          .pushCommand(workspaceId, command, `Add ${tracks.length} items to group`);
+      }
+      get().markAsDirty();
+      return tracks;
     },
 
     addItemsWithHistory: (items, index) => {

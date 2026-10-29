@@ -51,6 +51,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     sessionState,
     removeItem,
     addItem,
+    addItemsToGroup,
     toggleItemSelection,
     selectAll,
     deselectAll,
@@ -96,13 +97,18 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
   });
 
   const handleAddTracks = useCallback(
-    (newTracks: Omit<Track, 'id'>[]) => {
+    (newTracks: Omit<Track, 'id'>[], parentId?: string | null, localIndex?: number) => {
+      if (parentId) {
+        const addedTracks = addItemsToGroup(parentId, newTracks, localIndex ?? 0);
+        loadDurationsForTracks(addedTracks.map(({ id, path }) => ({ id, path })));
+        return;
+      }
       const tracksWithIds = newTracks.map(createTrackWithId);
       tracksWithIds.forEach((track) => addItem(track));
       const targetList = tracksWithIds.map((t) => ({ id: t.id, path: t.path }));
       loadDurationsForTracks(targetList);
     },
-    [addItem, loadDurationsForTracks],
+    [addItem, addItemsToGroup, loadDurationsForTracks],
   );
 
   const handleAddTracksAt = useCallback(
@@ -173,7 +179,11 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     [isTrackPlayed, isTrackOrGroupDisabled],
   );
 
-  const { position: currentTrackPosition, currentTrack: activePlayerTrack } = usePlayerAudioStore();
+  const {
+    position: currentTrackPosition,
+    currentTrack: activePlayerTrack,
+    status: playerAudioStatus,
+  } = usePlayerAudioStore();
   const activePlayerTrackId = activePlayerTrack?.id;
 
   const openTrackSettingsModal = useUIStore((state) => state.openTrackSettingsModal);
@@ -514,6 +524,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         selectedItemIds={selectedItemIds}
         activeTrackId={activeTrackId}
         activePlayerTrackId={activePlayerTrackId}
+        playerAudioStatus={playerAudioStatus}
         playerStatus={playerStatus}
         mode={mode}
         showHourDividers={showHourDividers}

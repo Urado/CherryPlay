@@ -95,6 +95,7 @@ const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
   const setName = collectionStore((s: ProjectStoreState) => s.setName);
   const removeItem = collectionStore((s: ProjectStoreState) => s.removeItem);
   const addItems = collectionStore((s: ProjectStoreState) => s.addItems);
+  const addItemsToGroup = collectionStore((s: ProjectStoreState) => s.addItemsToGroup);
   const updateTrackDuration = collectionStore((s: ProjectStoreState) => s.updateTrackDuration);
   const canCreateGroupInStore = collectionStore((s: ProjectStoreState) => s.canCreateGroup);
   const createGroup = collectionStore((s: ProjectStoreState) => s.createGroup);
@@ -142,8 +143,8 @@ const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
 
   const resolveTrackById = useCallback((id: string) => {
     const storeItems = collectionStoreRef.current.getState().items;
-    return storeItems.filter(isProjectTrack).find((track: Track) => track.id === id);
-  }, []);
+    return getAllTracksInOrder(storeItems).find((track) => track.id === id);
+  }, [getAllTracksInOrder]);
 
   const { loadDurationsForTracks } = useTrackDuration({
     tracks,
@@ -192,8 +193,15 @@ const CollectionWorkspaceView: React.FC<CollectionWorkspaceViewProps> = ({
   }, []);
 
   const addTracksWrapper = useCallback(
-    (newTracks: Omit<Track, 'id'>[]) => addItems(newTracks),
-    [addItems],
+    (newTracks: Omit<Track, 'id'>[], parentId?: string | null, localIndex?: number) => {
+      if (parentId) {
+        const addedTracks = addItemsToGroup(parentId, newTracks, localIndex ?? 0);
+        loadDurationsForTracks(addedTracks.map(({ id, path }) => ({ id, path })));
+        return;
+      }
+      addItems(newTracks);
+    },
+    [addItems, addItemsToGroup, loadDurationsForTracks],
   );
 
   const addTracksAtWrapper = useCallback(
