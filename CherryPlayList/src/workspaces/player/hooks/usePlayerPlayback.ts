@@ -1,6 +1,7 @@
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { Track } from '@core/types/track';
 import { usePlaybackPreview } from '@shared/hooks/usePlaybackPreview';
+import { loudnessService } from '@shared/services/loudnessService';
 import {
   useAimpStore,
   usePlayerAudioStore,
@@ -43,6 +44,7 @@ interface UsePlayerPlaybackOptions {
     pauseBetweenTracks: number;
   };
   getNextActiveTrack: () => Track | null;
+  getNextActiveTracks?: (trackId: string, limit: number) => Track[];
   markTrackAsPlayed: (trackId: string) => void;
   markSkippedDisabledTracks: (fromIndex: number, toIndex: number) => void;
   setCurrentTrack: (trackId: string | null) => void;
@@ -53,12 +55,16 @@ export const usePlayerPlayback = (options: UsePlayerPlaybackOptions) => {
     allTracks,
     getEffectiveTrackSettings,
     getNextActiveTrack,
+    getNextActiveTracks,
     markTrackAsPlayed,
     markSkippedDisabledTracks,
     setCurrentTrack,
   } = options;
 
   const mode = useProjectStore((state) => state.sessionState.mode);
+  const loudnessNormalizationEnabled = useSettingsStore(
+    (state) => state.loudnessNormalizationEnabled !== false,
+  );
   const isPreparationMode = mode === 'preparation';
 
   const {
@@ -84,6 +90,8 @@ export const usePlayerPlayback = (options: UsePlayerPlaybackOptions) => {
   const activePlayerTrackId = activePlayerTrack?.id;
 
   const isProcessingTrackEndRef = useRef(false);
+  const lastLookaheadKeyRef = useRef<string | null>(null);
+  const lookaheadGenerationRef = useRef(0);
 
   const playerStateRef = useRef({
     status: playerAudioStatus,
@@ -96,6 +104,52 @@ export const usePlayerPlayback = (options: UsePlayerPlaybackOptions) => {
       currentTrackId: activePlayerTrackId,
     };
   }, [playerAudioStatus, activePlayerTrackId]);
+
+  useEffect(() => {
+    if (
+      mode !== 'session' ||
+      playerAudioStatus !== 'playing' ||
+      !activePlayerTrackId ||
+      !loudnessNormalizationEnabled
+    ) {
+      return;
+    }
+    const currentIndex = allTracks.findIndex((track) => track.id === activePlayerTrackId);
+    if (currentIndex < 0) return;
+    const nextTracks = getNextActiveTracks
+      ? getNextActiveTracks(activePlayerTrackId, 3)
+      : allTracks.slice(currentIndex + 1, currentIndex + 4);
+    const requestKey = `${activePlayerTrackId}:${nextTracks.map((track) => track.id).join('|')}`;
+    if (lastLookaheadKeyRef.current === requestKey) return;
+    lastLookaheadKeyRef.current = requestKey;
+    const generation = ++lookaheadGenerationRef.current;
+    void (async () => {
+      for (const track of nextTracks) {
+        if (generation !== lookaheadGenerationRef.current) return;
+        let shouldScan = track.loudness?.status !== 'ok';
+        if (!shouldScan && typeof loudnessService.isMeasurementCurrent === 'function') {
+          try {
+            shouldScan = !(await loudnessService.isMeasurementCurrent(track));
+          } catch {
+            shouldScan = true;
+          }
+        }
+        if (generation !== lookaheadGenerationRef.current) return;
+        if (shouldScan) {
+          void loudnessService
+            .scanTrack(track, { consumer: 'sessionLookahead' })
+            .catch(() => undefined);
+        }
+      }
+    })();
+  }, [
+    activePlayerTrackId,
+    allTracks,
+    getNextActiveTracks,
+    loudnessNormalizationEnabled,
+    mode,
+    playerAudioStatus,
+  ]);
 
   const handleTrackEnded = useCallback(async () => {
     if (!activePlayerTrackId || isPreparationMode) {

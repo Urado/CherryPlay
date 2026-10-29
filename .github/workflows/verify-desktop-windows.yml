@@ -50,6 +50,10 @@ jobs:
         working-directory: CherryPlayList
         run: npm ci
 
+      - name: Run CherryPlayList tests
+        working-directory: CherryPlayList
+        run: npm test -- --runInBand
+
       - name: Stamp package version with PR number
         working-directory: CherryPlayList
         shell: bash

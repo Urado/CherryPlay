@@ -8,7 +8,6 @@ import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-/** Downgrade preset `error` severities to `warn` for gradual adoption. */
 export function softenPreset(rules = {}) {
   return Object.fromEntries(
     Object.entries(rules).map(([key, value]) => {
@@ -21,12 +20,10 @@ export function softenPreset(rules = {}) {
   );
 }
 
-/** @deprecated use softenPreset */
 function softenToWarn(rules) {
   return softenPreset(rules);
 }
 
-/** Shared CherryPlay React/TS style rules (barrel ban, arrow FC, import graph). */
 export const cherryPlayStyleRules = {
   'func-style': ['warn', 'expression'],
   'prefer-arrow-callback': 'warn',
@@ -79,17 +76,6 @@ export const cherryPlayStyleRules = {
   'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
 };
 
-/**
- * Unified ESLint flat config for CherryPlay React/TS packages.
- *
- * @param {object} options
- * @param {string} options.tsconfigRootDir Absolute package root (`import.meta.dirname`)
- * @param {string[]} [options.extraIgnores]
- * @param {object} [options.features]
- * @param {boolean} [options.features.jsxA11y=true]
- * @param {boolean} [options.features.includeNodeGlobals=false] Add Node globals to TS/TSX (Electron)
- * @param {import('eslint').Linter.Config[]} [options.extraConfigs] Package-specific overlays (List: electron/security/jest)
- */
 export function createCherryPlayEslintConfig(options) {
   const {
     tsconfigRootDir,
@@ -147,7 +133,6 @@ export function createCherryPlayEslintConfig(options) {
       rules: {
         ...(react.configs.flat.recommended?.rules ?? {}),
         ...(react.configs.flat['jsx-runtime']?.rules ?? {}),
-        // Classic hooks only — flat.recommended in v7 also enables React Compiler rules
         'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'warn',
         ...(enableA11y
@@ -162,7 +147,6 @@ export function createCherryPlayEslintConfig(options) {
           },
         ],
         '@typescript-eslint/no-explicit-any': 'warn',
-        // Soften first-wave type-aware noise while configs stay on recommendedTypeChecked
         '@typescript-eslint/no-unsafe-assignment': 'warn',
         '@typescript-eslint/no-unsafe-member-access': 'warn',
         '@typescript-eslint/no-unsafe-call': 'warn',
@@ -224,7 +208,20 @@ export function createCherryPlayEslintConfig(options) {
       },
     },
     ...extraConfigs,
-    // Prettier last: turn off formatting rules that conflict (Prettier runs separately)
     eslintConfigPrettier,
-  );
+  ).map((config) => {
+    if (!config.rules) return config;
+
+    const rules = Object.fromEntries(
+      Object.entries(config.rules).map(([name, rule]) => {
+        if (rule === 'warn' || rule === 1) return [name, 'error'];
+        if (Array.isArray(rule) && (rule[0] === 'warn' || rule[0] === 1)) {
+          return [name, ['error', ...rule.slice(1)]];
+        }
+        return [name, rule];
+      }),
+    );
+
+    return { ...config, rules };
+  });
 }

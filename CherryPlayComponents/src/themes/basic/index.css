@@ -1,7 +1,7 @@
-@import './playlist.css';
-@import './playlist-item.css';
-@import './player.css';
-@import './party-info.css';
+@import url('./playlist.css');
+@import url('./playlist-item.css');
+@import url('./player.css');
+@import url('./party-info.css');
 
 [data-theme='basic'] {
   --accent-primary: var(--primaryColor);
@@ -10,6 +10,7 @@
   --selected-border: var(--secondaryColor);
   --canceled-track: color-mix(in srgb, var(--text-primary) 70%, var(--accent-primary) 30%);
   --canceled-track-icon: var(--bg-primary);
+
   background: var(--bg-primary);
   color: var(--text-primary);
 }

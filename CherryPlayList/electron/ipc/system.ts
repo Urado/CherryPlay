@@ -6,28 +6,15 @@ import {
 } from '../../src/shared/contracts/windowMins.js';
 import { validatePath } from '../utils/fsHelpers.js';
 
-/**
- * Re-exported app-level window-min floor (single source: shared contracts).
- * Applied when the layout is empty or renderer-computed mins fall below it,
- * so the app always keeps a usable minimum footprint.
- */
 export { APP_MIN_WINDOW_WIDTH, APP_MIN_WINDOW_HEIGHT };
 
-/**
- * Normalize a renderer-provided minimum dimension to a safe integer floored at
- * the given app-level minimum. Non-finite / negative values collapse to the floor.
- */
-function normalizeMinDimension(value: unknown, floor: number): number {
+const normalizeMinDimension = (value: unknown, floor: number): number => {
   const numeric = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : 0;
   return Math.max(floor, numeric);
-}
+};
 
-/**
- * Get system path (documents, music, downloads, etc.)
- */
-function getSystemPath(name: string): string {
+const getSystemPath = (name: string): string => {
   try {
-    // Valid path names (using Electron's app.getPath valid names)
     const validPaths = [
       'home',
       'appData',
@@ -55,13 +42,10 @@ function getSystemPath(name: string): string {
   } catch (error) {
     throw new Error(`Failed to get system path: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Register system IPC handlers
- */
-export function registerSystemHandlers(): void {
-  ipcMain.handle('system:getPath', async (event, payload: { name: string }) => {
+export const registerSystemHandlers = (): void => {
+  ipcMain.handle('system:getPath', (_event, payload: { name: string }) => {
     try {
       const path = getSystemPath(payload.name);
       return {
@@ -92,7 +76,7 @@ export function registerSystemHandlers(): void {
 
   ipcMain.handle(
     'system:setMinimumWindowSize',
-    async (event, payload: { minWidth: number; minHeight: number }) => {
+    (event, payload: { minWidth: number; minHeight: number }) => {
       try {
         const window = BrowserWindow.fromWebContents(event.sender);
         if (!window) {
@@ -145,4 +129,4 @@ export function registerSystemHandlers(): void {
       };
     }
   });
-}
+};

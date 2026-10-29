@@ -40,7 +40,9 @@ jest.mock('fs/promises', () => ({
   access: accessMock,
 }));
 
-jest.mock('music-metadata');
+jest.mock('music-metadata', () => ({
+  parseFile: jest.fn(),
+}));
 
 import { registerAudioHandlers } from '../../electron/ipc/audio';
 import {
@@ -215,7 +217,7 @@ describe('audio IPC handlers', () => {
       expect(createReadStreamMock).toHaveBeenCalledWith(filePath);
     });
 
-    test('preserves case-sensitive base64url payload in pathname', async () => {
+    test('preserves case-sensitive base64url payload in pathname', () => {
       const filePath = 'C:\\Music\\track.mp3';
       const requestUrl = encodePathToCherryplayAudioUrl(filePath);
       const url = new URL(requestUrl);
@@ -226,7 +228,7 @@ describe('audio IPC handlers', () => {
       expect(decodePathFromCherryplayAudioUrl(requestUrl)).toBe(filePath);
     });
 
-    test('legacy hostname form breaks when Chromium lowercases base64url', async () => {
+    test('legacy hostname form breaks when Chromium lowercases base64url', () => {
       const filePath = 'C:\\Music\\track.mp3';
       const payload = encodePathToCherryplayAudioUrl(filePath).split('/').pop()!;
       const legacyBrokenUrl = `cherryplay-audio://${payload.toLowerCase()}/`;

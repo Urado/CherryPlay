@@ -16,7 +16,7 @@ export interface PlatformCapabilities {
 
 let cachedCapabilities: PlatformCapabilities | null = null;
 
-export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities {
+export const derivePlatformCapabilities = (mode: AppMode): PlatformCapabilities => {
   switch (mode) {
     case 'electron':
       return {
@@ -62,21 +62,21 @@ export function derivePlatformCapabilities(mode: AppMode): PlatformCapabilities 
       return _exhaustive;
     }
   }
-}
+};
 
-export function refreshPlatformCapabilities(mode: AppMode): void {
+export const refreshPlatformCapabilities = (mode: AppMode): void => {
   cachedCapabilities = derivePlatformCapabilities(mode);
-}
+};
 
-export function getPlatformCapabilities(): PlatformCapabilities {
+export const getPlatformCapabilities = (): PlatformCapabilities => {
   if (!cachedCapabilities) {
     throw new Error(
       'Platform capabilities are not initialized. Call setPlatform() in bootstrap before use.',
     );
   }
   return cachedCapabilities;
-}
+};
 
-export function resetPlatformCapabilitiesForTests(): void {
+export const resetPlatformCapabilitiesForTests = (): void => {
   cachedCapabilities = null;
-}
+};

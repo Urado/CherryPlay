@@ -137,11 +137,11 @@ Store-специфичная domain-логика при file-not-found (mark mis
 
 Реализовано в `playbackDeviceConflictSync.ts`:
 
-| Режим сессии    | Устройства совпадают | Поведение                                                                                     |
-| --------------- | -------------------- | --------------------------------------------------------------------------------------------- |
-| **preparation** | да                   | Demo **не** блокируется — main и demo могут играть одновременно на одном устройстве (DJ prep) |
+| Режим сессии    | Устройства совпадают | Поведение                                                                                                                                                                                                                                                                                 |
+| --------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **preparation** | да                   | Demo **не** блокируется — main и demo могут играть одновременно на одном устройстве (DJ prep)                                                                                                                                                                                             |
 | **session**     | да                   | Demo `isDisabled = true`; при воспроизведении main — demo pause. **UX:** кнопка предпрослушивания остаётся видимой; клик открывает Demo Player UI с явным «Воспроизведение невозможно» (не silent no-op) — см. [Demo Player](../systems/demo-player.md#предпрослушивание-в-режиме-сессии) |
-| любой           | нет                  | Demo enabled, независимое воспроизведение                                                     |
+| любой           | нет                  | Demo enabled, независимое воспроизведение                                                                                                                                                                                                                                                 |
 
 `null` device id трактуется как «устройство по умолчанию» и считается совпадением.
 
@@ -402,7 +402,7 @@ Legacy `HtmlAudioElementEngine` и селектор `implementation: 'html-audio
 | **F3** | Web Audio engine + loading path (Capacitor Stage 1)  | **Done** — `WebAudioPlaybackEngine` + `MediaElementTransport`; Electron: `audio:getFileUrl` → `cherryplay-audio://` streaming |
 | **F4** | Убрать base64/Blob из цепочки загрузки               | **Done** — stores не вызывают IPC; adapter: `getAudioFileUrl`, без base64/Blob/revoke для `filePath`                          |
 | **F5** | Effects layer (EQ / autogain)                        | **Done (v1)** — `PlaybackEffects` + `applyPlaybackEffects` on load                                                            |
-| **F6** | Loudness normalization (scan + playback gain)        | **Done (v1)** — FFmpeg ebur128, `.cherry` metadata, session gate, Player gear settings |
+| **F6** | Loudness normalization (scan + playback gain)        | **Done (v1)** — FFmpeg ebur128, `.cherry` metadata, session gate, Player gear settings                                        |
 
 ### Следующие шаги (post-F6)
 

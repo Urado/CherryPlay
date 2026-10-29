@@ -28,6 +28,16 @@ public class OrganizerAuthorizationResultHandler : IAuthorizationMiddlewareResul
             return;
         }
 
+        if (hasAdminRequirement && context.Items.ContainsKey("AuthenticationFailed"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            var body = JsonSerializer.Serialize(new { title = "Unauthorized", detail = "Authentication required" },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            await context.Response.WriteAsync(body);
+            return;
+        }
+
         if (authorizeResult.Challenged && hasAdminRequirement)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;

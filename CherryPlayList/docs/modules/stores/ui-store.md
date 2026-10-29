@@ -48,10 +48,10 @@ fileBrowserFocusRequest: {
 } | null;
 ```
 
-| Метод | Поведение |
-|-------|-----------|
+| Метод                                          | Поведение                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
 | `focusFileInBrowser(path, targetWorkspaceId?)` | Разрешает цель через `resolveFileBrowserFocusTarget`, выставляет request |
-| `acknowledgeFileBrowserFocus()` | Сбрасывает request; вызывает matching `FileBrowser` после обработки |
+| `acknowledgeFileBrowserFocus()`                | Сбрасывает request; вызывает matching `FileBrowser` после обработки      |
 
 **Порядок разрешения цели** (`resolveFileBrowserFocusTarget`):
 

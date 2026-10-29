@@ -1,16 +1,29 @@
-const mockGetThemeAccess = jest.fn();
-const mockCheckServerReachable = jest.fn();
+type ThemeAccess = {
+  grantedThemeIds: string[];
+  visibleLockedThemes: unknown[];
+  contactUrl: string;
+};
 
-const partyStoreState = {
-  themeAccess: null as null | {
-    grantedThemeIds: string[];
-    visibleLockedThemes: unknown[];
-    contactUrl: string;
-  },
+type PartyStoreState = {
+  themeAccess: ThemeAccess | null;
+  themeAccessErrorMessage: string | null;
+  isThemeAccessLoading: boolean;
+  serverUnreachable: boolean;
+  setThemeAccess: (value: ThemeAccess | null) => void;
+  setThemeAccessErrorMessage: (value: string | null) => void;
+  setIsThemeAccessLoading: (value: boolean) => void;
+  setServerUnreachable: (value: boolean) => void;
+};
+
+const mockGetThemeAccess = jest.fn<Promise<ThemeAccess>, []>();
+const mockCheckServerReachable = jest.fn<Promise<boolean>, []>();
+
+const partyStoreState: PartyStoreState = {
+  themeAccess: null,
   themeAccessErrorMessage: null as string | null,
   isThemeAccessLoading: false,
   serverUnreachable: false,
-  setThemeAccess: jest.fn((value: typeof partyStoreState.themeAccess) => {
+  setThemeAccess: jest.fn((value) => {
     partyStoreState.themeAccess = value;
   }),
   setThemeAccessErrorMessage: jest.fn((value: string | null) => {

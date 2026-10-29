@@ -20,13 +20,12 @@ interface AudioFileUrl {
   url: string;
 }
 
-/** @deprecated Use {@link getPlatformCapabilities} for feature gating. */
-export function isIpcRendererAvailable(): boolean {
+export const isIpcRendererAvailable = (): boolean => {
   if (!isPlatformInitialized()) {
     return false;
   }
   return getPlatformCapabilities().supportsAimpWorkspace;
-}
+};
 
 class IPCService {
   async invoke<T>(
@@ -124,12 +123,22 @@ class IPCService {
     path: string,
     targetLufs: number,
     showNotification: boolean = false,
+    requestId?: string,
   ): Promise<LoudnessAnalyzeResult> {
     return this.invoke<LoudnessAnalyzeResult>(
       'audio:analyzeLoudness',
-      { path, targetLufs },
+      { path, targetLufs, requestId },
       showNotification,
     );
+  }
+
+  async cancelLoudnessScan(requestId: string): Promise<boolean> {
+    const result = await this.invoke<{ cancelled: boolean }>(
+      'audio:cancelLoudnessScan',
+      { requestId },
+      false,
+    );
+    return result.cancelled;
   }
 
   async statAudioFile(path: string, showNotification: boolean = false): Promise<AudioFileStat> {
@@ -163,17 +172,10 @@ class IPCService {
     return this.invoke<string>('system:getPath', { name });
   }
 
-  /**
-   * Открывает файл или папку в ассоциированном приложении (Проводник для каталога).
-   */
   async openPath(fileOrFolderPath: string): Promise<void> {
     return this.invoke<void>('system:openPath', { path: fileOrFolderPath });
   }
 
-  /**
-   * Updates the Electron main window minimum size from renderer-computed layout mins.
-   * Silent on failure (no user notification) — it is a background shell hint.
-   */
   async setMinimumWindowSize(minWidth: number, minHeight: number): Promise<void> {
     return this.invoke<void>('system:setMinimumWindowSize', { minWidth, minHeight }, false);
   }

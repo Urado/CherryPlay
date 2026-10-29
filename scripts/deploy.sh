@@ -1,5 +1,3 @@
-#!/bin/bash
-
 set -e
 
 RED='\033[0;31m'
@@ -98,10 +96,6 @@ fi
 
 [ -z "$JWT_SECRET_KEY" ] || write_compose_env JWT_SECRET_KEY "$JWT_SECRET_KEY"
 [ -z "$POSTGRES_PASSWORD" ] || write_compose_env POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
-write_compose_env PGADMIN_EMAIL "${PGADMIN_EMAIL:-admin@localhost}"
-write_compose_env PGADMIN_PASSWORD "${PGADMIN_PASSWORD:-changeme}"
-[ -z "$PGADMIN_EMAIL" ] || [ -z "$PGADMIN_PASSWORD" ] && echo -e "${YELLOW}⚠️  PGADMIN_EMAIL или PGADMIN_PASSWORD не заданы — используются значения по умолчанию. Задайте их в GitHub Secrets или .env.production и передеплойте.${NC}"
-[ -z "$GRAFANA_ADMIN_PASSWORD" ] || write_compose_env GRAFANA_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
 [ -z "$DATABASE__AutoMigrateOnStartup" ] || write_compose_env DATABASE__AutoMigrateOnStartup "$DATABASE__AutoMigrateOnStartup"
 [ -z "$CORS_ORIGIN_0" ] || write_compose_env CORS_ORIGIN_0 "$CORS_ORIGIN_0"
 [ -z "$CORS_ORIGIN_1" ] || write_compose_env CORS_ORIGIN_1 "$CORS_ORIGIN_1"
@@ -266,7 +260,7 @@ echo -e "${YELLOW}📊 Service URLs:${NC}"
 echo "  Frontend: http://cherrypashkaparty.ru"
 echo "  Backend API: configured public domain /api (via web proxy)"
 echo "  Swagger UI: http://127.0.0.1:5000/swagger (loopback only; use SSH tunnel)"
-echo "  pgAdmin: http://127.0.0.1:5050 (local only; use SSH tunnel)"
+echo "  pgAdmin: http://localhost:5051 (run local-admin-tools on your workstation)"
 echo ""
 echo -e "${YELLOW}📋 Local access (on server):${NC}"
 echo "  Frontend: http://localhost"

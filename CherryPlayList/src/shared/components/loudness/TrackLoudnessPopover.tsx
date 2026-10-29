@@ -53,13 +53,13 @@ const HINT_GAIN = [
   'Изменения применяются сразу, пока трек играет.',
 ].join(' ');
 
-function hintIntegratedLufs(targetLufs: number): string {
+const hintIntegratedLufs = (targetLufs: number): string => {
   return [
     'Средняя громкость всего трека по стандарту EBU R128 (измеряется при скане FFmpeg).',
     `Чем ниже значение, тем тише трек в среднем; цель нормализации — ${targetLufs} LUFS (настраивается в параметрах приложения).`,
     'Разница между этим числом и целью определяет, насколько сильно трек нужно поднять или опустить.',
   ].join(' ');
-}
+};
 
 const HINT_TRUE_PEAK = [
   'Максимальный пик громкости в файле (dBTP — true peak, с учётом межсэмпловых пиков).',
@@ -73,7 +73,7 @@ const HINT_LRA = [
   'Используется для оценки «тихих участков», если отдельное значение LRA low недоступно.',
 ].join(' ');
 
-function hintQuietPassages(hasLraLow: boolean): string {
+const hintQuietPassages = (hasLraLow: boolean): string => {
   if (hasLraLow) {
     return [
       'Громкость самых тихих ~10% фрагмента трека (LRA low из ebur128).',
@@ -86,15 +86,15 @@ function hintQuietPassages(hasLraLow: boolean): string {
     'Считается по integrated LUFS и LRA или по фиксированному смещению от средней.',
     'После перескана трека значение станет точнее.',
   ].join(' ');
-}
+};
 
-function hintCalculatedGain(targetLufs: number): string {
+const hintCalculatedGain = (targetLufs: number): string => {
   return [
     `Усиление, рассчитанное по скану под текущую цель ${targetLufs} LUFS.`,
     'Учитывается запас по true peak (−1 dBTP): итоговое авто-усиление — минимум из «подгонки по LUFS» и «лимита по пику».',
     'Слайдер «Gain» выше заменяет это значение; «Выставить авто» под слайдером сбрасывает ручную настройку и снова использует расчётное значение.',
   ].join(' ');
-}
+};
 
 const HINT_COMPRESSION = [
   'Сила адаптивной компрессии для этого трека (0–100%), если компрессия включена в настройках.',
@@ -104,9 +104,9 @@ const HINT_COMPRESSION = [
   'Слайдер заменяет авто-расчёт для этого трека; «Выставить авто» снова следует глобальным настройкам.',
 ].join(' ');
 
-export function getTrackLoudnessVisualState(
+export const getTrackLoudnessVisualState = (
   loudness: TrackLoudness | undefined,
-): TrackLoudnessVisualState {
+): TrackLoudnessVisualState => {
   if (!loudness) {
     return 'unscanned';
   }
@@ -117,7 +117,7 @@ export function getTrackLoudnessVisualState(
     return 'ok';
   }
   return 'error';
-}
+};
 
 type FieldInfoIconProps = {
   hint: string;
@@ -135,7 +135,7 @@ const FieldInfoIcon = ({ hint, label = 'Справка' }: FieldInfoIconProps) =
       <InfoOutlinedIcon className="track-loudness-popover__info-icon" aria-hidden />
     </button>
   );
-}
+};
 
 type DetailRowProps = {
   label: string;
@@ -155,7 +155,7 @@ const DetailRow = ({ label, value, hint }: DetailRowProps) => {
       </div>
     </div>
   );
-}
+};
 
 interface TrackLoudnessPopoverProps {
   track: Track;

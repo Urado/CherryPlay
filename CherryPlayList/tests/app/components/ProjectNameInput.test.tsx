@@ -1,3 +1,4 @@
+import { ProjectNameInput } from '@app/components/ProjectNameInput';
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
@@ -25,8 +26,6 @@ jest.mock('@shared/stores', () => ({
     },
   ),
 }));
-
-import { ProjectNameInput } from '@app/components/ProjectNameInput';
 
 describe('ProjectNameInput', () => {
   beforeEach(() => {

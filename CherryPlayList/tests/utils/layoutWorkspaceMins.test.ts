@@ -82,7 +82,8 @@ describe('layoutWorkspaceMins', () => {
 
     it('falls back for unknown workspace types', () => {
       expect(getWorkspaceMinSize('unknown-workspace-type')).toEqual(DEFAULT_WORKSPACE_MIN_SIZE);
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('unknown-workspace-type'));
+      const warnCalls = (logger.warn as jest.Mock).mock.calls as [string][];
+      expect(warnCalls[0]?.[0]).toContain('unknown-workspace-type');
     });
   });
 

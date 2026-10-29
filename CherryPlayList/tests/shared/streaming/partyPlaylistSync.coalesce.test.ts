@@ -3,7 +3,9 @@ const mockUpdatePartyPlaylist = jest.fn();
 let projectState: { items: Array<{ id: string }> } = { items: [] };
 
 jest.mock('../../../src/shared/services/partyService', () => ({
-  partyService: { updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) },
+  partyService: {
+    updatePartyPlaylist: (...args: unknown[]) => mockUpdatePartyPlaylist(...args) as unknown,
+  },
 }));
 
 jest.mock('../../../src/shared/stores/projectStore', () => ({
@@ -21,7 +23,10 @@ jest.mock('../../../src/shared/stores/projectStore', () => ({
 }));
 
 jest.mock('../../../src/shared/stores/aimpStore', () => ({
-  useAimpStore: { getState: () => ({ bridgeState: { liveStreamStarted: false } }), subscribe: () => () => undefined },
+  useAimpStore: {
+    getState: () => ({ bridgeState: { liveStreamStarted: false } }),
+    subscribe: () => () => undefined,
+  },
 }));
 
 import { subscribePartyPlaylistSync } from '../../../src/shared/streaming/partyPlaylistSync';
@@ -42,17 +47,38 @@ describe('subscribePartyPlaylistSync coalescing', () => {
   it('serializes rapid updates and publishes the final duplicate-name snapshot', async () => {
     let resolveFirst: (() => void) | undefined;
     mockUpdatePartyPlaylist
-      .mockImplementationOnce(() => new Promise<void>((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
       .mockResolvedValue(undefined);
     let latest = makePayload('first');
     const onAfterSync = jest.fn();
     const onSynced = jest.fn();
-    const unsubscribe = subscribePartyPlaylistSync('party', () => latest, onAfterSync, undefined, onSynced);
+    const unsubscribe = subscribePartyPlaylistSync(
+      'party',
+      () => latest,
+      onAfterSync,
+      undefined,
+      onSynced,
+    );
 
     listeners[0]();
-    latest = { ...makePayload('second'), items: [...makePayload('first').items, ...makePayload('second').items] };
+    latest = {
+      ...makePayload('second'),
+      items: [...makePayload('first').items, ...makePayload('second').items],
+    };
     listeners[0]();
-    latest = { ...makePayload('third'), items: [...makePayload('first').items, ...makePayload('second').items, ...makePayload('third').items] };
+    latest = {
+      ...makePayload('third'),
+      items: [
+        ...makePayload('first').items,
+        ...makePayload('second').items,
+        ...makePayload('third').items,
+      ],
+    };
     listeners[0]();
 
     expect(mockUpdatePartyPlaylist).toHaveBeenCalledTimes(1);
@@ -60,9 +86,10 @@ describe('subscribePartyPlaylistSync coalescing', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mockUpdatePartyPlaylist).toHaveBeenCalledTimes(2);
-    expect(mockUpdatePartyPlaylist.mock.calls[1][1].items.map((item: { name: string }) => item.name)).toEqual([
-      'Repeat', 'Repeat', 'Repeat',
-    ]);
+    const secondCall = mockUpdatePartyPlaylist.mock.calls[1] as
+      | [string, { items: Array<{ name: string }> }]
+      | undefined;
+    expect(secondCall?.[1].items.map((item) => item.name)).toEqual(['Repeat', 'Repeat', 'Repeat']);
     expect(onAfterSync).toHaveBeenCalledTimes(2);
     expect(onSynced).toHaveBeenCalledTimes(2);
     unsubscribe();

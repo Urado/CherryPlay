@@ -226,7 +226,7 @@ docker-compose down -v
   - Password: `admin`
 - **PostgreSQL**: localhost:5433 (внешний порт, внутри контейнера 5432)
 
-**На продакшен-сервере** pgAdmin не открыт в интернет (порт 5050 привязан к 127.0.0.1). Доступ только через SSH-туннель — см. [SSH_TUNNEL_PGADMIN.md](SSH_TUNNEL_PGADMIN.md) и раздел «Доступ к pgAdmin на сервере» в [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md).
+В production Grafana и pgAdmin запускаются на локальном компьютере (порты `3001` и `5051`) и подключаются к VPS через SSH-туннель. Подготовка и проверка доступа описаны в [SSH_TUNNEL_PGADMIN.md](SSH_TUNNEL_PGADMIN.md) и [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md).
 
 ### Подключение к PostgreSQL через pgAdmin
 

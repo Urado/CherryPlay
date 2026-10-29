@@ -14,7 +14,6 @@ import {
 } from '@shared/services/partyService';
 import React, { useEffect, useRef, useState } from 'react';
 
-
 import { PartyEditorAccordion } from './PartyEditorAccordion';
 
 import './PartyEditor.css';
@@ -82,6 +81,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
             variant="ghost"
             size="sm"
             className={`party-editor-tag-button ${tags.includes(option) ? 'party-editor-tag-button--selected' : ''}`}
+            aria-pressed={tags.includes(option)}
             onClick={() => {
               if (tags.includes(option)) {
                 removeTag(tags.indexOf(option));
@@ -124,8 +124,7 @@ const DanceTagsField: React.FC<DanceTagsFieldProps> = ({
               onChange={(e) => setCustomInput(e.target.value.slice(0, maxTagLength))}
               onKeyDown={handleCustomKeyDown}
               onBlur={(e) => {
-                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
-                  return;
+                if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget)) return;
                 collapseTimeoutRef.current = setTimeout(() => setShowCustomInput(false), 150);
               }}
               placeholder="Другой танец (Enter или запятая)"
@@ -199,7 +198,7 @@ export interface PartyCardFieldsSectionProps {
   onTimeZoneChange?: (timeZone: string) => void;
 }
 
-export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
+export const PartyCatalogCardFields: React.FC<PartyCardFieldsSectionProps> = ({
   eventDateTime,
   eventEndDateTime,
   city,
@@ -209,7 +208,6 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
   externalLinkText,
   danceTags,
   readOnly = false,
-  defaultExpanded = false,
   onEventDateTimeChange,
   onEventEndDateTimeChange,
   onCityChange,
@@ -220,14 +218,42 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
   onTimeZoneChange,
 }) => {
   return (
-    <PartyEditorAccordion title="Карточка в каталоге" defaultExpanded={defaultExpanded}>
+    <>
       <div className="party-editor-fields-group">
         <h4 className="party-editor-fields-group__title">Дата и время</h4>
         <div className="party-editor-fields-group__fields">
-          {onTimeZoneChange && (
+          <div className="party-editor-section">
+            <label className="party-editor-label">
+              Начало
+              <input
+                type="datetime-local"
+                className="party-editor-input"
+                value={eventDateTime}
+                onChange={(e) => onEventDateTimeChange(e.target.value)}
+                readOnly={readOnly}
+                disabled={readOnly}
+              />
+            </label>
+          </div>
+          {onEventEndDateTimeChange && (
             <div className="party-editor-section">
               <label className="party-editor-label">
-                Таймзона
+                Окончание
+                <input
+                  type="datetime-local"
+                  className="party-editor-input"
+                  value={eventEndDateTime}
+                  onChange={(e) => onEventEndDateTimeChange(e.target.value)}
+                  readOnly={readOnly}
+                  disabled={readOnly}
+                />
+              </label>
+            </div>
+          )}
+          {onTimeZoneChange && (
+            <div className="party-editor-section party-editor-section--full">
+              <label className="party-editor-label">
+                Часовой пояс мероприятия
                 <select
                   className="party-editor-input"
                   value={timeZone || getDefaultTimeZone()}
@@ -243,41 +269,13 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
               </label>
             </div>
           )}
-          <div className="party-editor-section">
-            <label className="party-editor-label">
-              Дата и время мероприятия
-              <input
-                type="datetime-local"
-                className="party-editor-input"
-                value={eventDateTime}
-                onChange={(e) => onEventDateTimeChange(e.target.value)}
-                readOnly={readOnly}
-                disabled={readOnly}
-              />
-            </label>
-          </div>
-          {onEventEndDateTimeChange && (
-            <div className="party-editor-section">
-              <label className="party-editor-label">
-                Время окончания
-                <input
-                  type="datetime-local"
-                  className="party-editor-input"
-                  value={eventEndDateTime}
-                  onChange={(e) => onEventEndDateTimeChange(e.target.value)}
-                  readOnly={readOnly}
-                  disabled={readOnly}
-                />
-              </label>
-            </div>
-          )}
         </div>
       </div>
 
       {onCityChange && (
         <div className="party-editor-fields-group">
           <h4 className="party-editor-fields-group__title">Место</h4>
-          <div className="party-editor-fields-group__fields">
+          <div className="party-editor-fields-group__fields party-editor-fields-group__fields--single">
             <div className="party-editor-section">
               <label className="party-editor-label">
                 Город
@@ -329,7 +327,7 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
           <h4 className="party-editor-fields-group__title">Ссылки и теги</h4>
           <div className="party-editor-fields-group__fields">
             {onExternalLinkUrlChange && onExternalLinkTextChange && (
-              <div className="party-editor-section">
+              <div className="party-editor-section party-editor-section--full party-editor-links-row">
                 <label className="party-editor-label">
                   Внешняя ссылка (URL)
                   <input
@@ -377,6 +375,15 @@ export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = ({
           </div>
         </div>
       ) : null}
+    </>
+  );
+};
+
+export const PartyCardFieldsSection: React.FC<PartyCardFieldsSectionProps> = (props) => {
+  const { defaultExpanded = false, ...fieldsProps } = props;
+  return (
+    <PartyEditorAccordion title="Карточка в каталоге" defaultExpanded={defaultExpanded}>
+      <PartyCatalogCardFields {...fieldsProps} />
     </PartyEditorAccordion>
   );
 };

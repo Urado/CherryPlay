@@ -1,4 +1,3 @@
-
 import { WorkspaceId } from '@core/types/workspace';
 import { useSettingsStore } from '@shared/stores';
 import { AimpView } from '@workspaces/aimp/AimpView';

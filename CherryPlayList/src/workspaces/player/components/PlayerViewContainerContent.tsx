@@ -1,4 +1,3 @@
-
 import { DEFAULT_PLAYER_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectGroup } from '@core/types/project';
 import { Track } from '@core/types/track';
@@ -33,7 +32,6 @@ import {
   isTrackActive as isTrackActiveUtil,
   markSkippedDisabledTracks as markSkippedDisabledTracksUtil,
   canRemoveSelectedItems as canRemoveSelectedItemsUtil,
-  areItemsConsecutive as areItemsConsecutiveUtil,
 } from '../utils/playerStateUtils';
 
 export interface PlayerViewContainerContentProps {
@@ -53,6 +51,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     sessionState,
     removeItem,
     addItem,
+    addItemsToGroup,
     toggleItemSelection,
     selectAll,
     deselectAll,
@@ -60,6 +59,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     selectRange,
     getAllTracksInOrder,
     getItemPath,
+    canCreateGroup: canCreateGroupInStore,
     createGroup,
     findItemById,
     updateTrackDuration,
@@ -97,13 +97,18 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
   });
 
   const handleAddTracks = useCallback(
-    (newTracks: Omit<Track, 'id'>[]) => {
+    (newTracks: Omit<Track, 'id'>[], parentId?: string | null, localIndex?: number) => {
+      if (parentId) {
+        const addedTracks = addItemsToGroup(parentId, newTracks, localIndex ?? 0);
+        loadDurationsForTracks(addedTracks.map(({ id, path }) => ({ id, path })));
+        return;
+      }
       const tracksWithIds = newTracks.map(createTrackWithId);
       tracksWithIds.forEach((track) => addItem(track));
       const targetList = tracksWithIds.map((t) => ({ id: t.id, path: t.path }));
       loadDurationsForTracks(targetList);
     },
-    [addItem, loadDurationsForTracks],
+    [addItem, addItemsToGroup, loadDurationsForTracks],
   );
 
   const handleAddTracksAt = useCallback(
@@ -149,10 +154,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     (state) => state.setFromIdList,
   );
 
-  const disabledTracksKey = sessionState.disabledTrackIds.join(',');
-  const disabledGroupsKey = sessionState.disabledGroupIds.join(',');
-  const playedTracksKey = sessionState.playedTrackIds.join(',');
-
   const isPreparationMode = mode === 'preparation';
 
   const { showHourDividers, enableStreaming } = useSettingsStore();
@@ -178,7 +179,11 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     [isTrackPlayed, isTrackOrGroupDisabled],
   );
 
-  const { position: currentTrackPosition, currentTrack: activePlayerTrack } = usePlayerAudioStore();
+  const {
+    position: currentTrackPosition,
+    currentTrack: activePlayerTrack,
+    status: playerAudioStatus,
+  } = usePlayerAudioStore();
   const activePlayerTrackId = activePlayerTrack?.id;
 
   const openTrackSettingsModal = useUIStore((state) => state.openTrackSettingsModal);
@@ -201,13 +206,14 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     openTrackSettingsModal({ trackId: null, groupId: null, isGlobal: true });
   }, [openTrackSettingsModal]);
 
-  const { getEffectiveTrackSettings, getNextActiveTrack } = usePlayerStateHelpers({
-    allTracks,
-    activePlayerTrackId,
-    getItemPath,
-    findItemById,
-    isTrackActive,
-  });
+  const { getEffectiveTrackSettings, getNextActiveTrack, getNextActiveTracks } =
+    usePlayerStateHelpers({
+      allTracks,
+      activePlayerTrackId,
+      getItemPath,
+      findItemById,
+      isTrackActive,
+    });
 
   const markSkippedDisabledTracks = useCallback(
     (fromIndex: number, toIndex: number) => {
@@ -220,15 +226,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         markTrackAsPlayed,
       );
     },
-    [
-      allTracks,
-      isTrackOrGroupDisabled,
-      isTrackPlayed,
-      markTrackAsPlayed,
-      disabledTracksKey,
-      disabledGroupsKey,
-      playedTracksKey,
-    ],
+    [allTracks, isTrackOrGroupDisabled, isTrackPlayed, markTrackAsPlayed],
   );
 
   const { startTrackPlayback, pausePlayback, handleNext, activeTrackId, playerStatus } =
@@ -236,6 +234,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       allTracks,
       getEffectiveTrackSettings,
       getNextActiveTrack,
+      getNextActiveTracks,
       markTrackAsPlayed,
       markSkippedDisabledTracks,
       setCurrentTrack,
@@ -393,7 +392,6 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     isTrackPlayed,
     activePlayerTrackId,
     getAllTracksInOrder,
-    playedTracksKey,
   ]);
 
   const handleRemoveSelectedItems = useCallback(() => {
@@ -403,7 +401,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     removeSelectedItems();
   }, [canRemoveSelectedItems, removeSelectedItems]);
 
-  const totalDuration = useMemo(() => {
+  const totalDuration = (() => {
     let total = 0;
     for (let i = 0; i < allTracks.length; i++) {
       const track = allTracks[i];
@@ -419,31 +417,17 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
       }
     }
     return total;
-  }, [
-    allTracks,
-    isTrackOrGroupDisabled,
-    getEffectiveTrackSettings,
-    disabledTracksKey,
-    disabledGroupsKey,
-  ]);
-
-  const areItemsConsecutive = useCallback(
-    (itemIds: string[]): boolean => {
-      return areItemsConsecutiveUtil(itemIds, items, getItemPath, findItemById);
-    },
-    [getItemPath, findItemById, items],
-  );
+  })();
 
   const canCreateGroup = useMemo(() => {
-    if (selectedItemIds.size < 2) return false;
-    return areItemsConsecutive(Array.from(selectedItemIds));
-  }, [selectedItemIds, areItemsConsecutive]);
+    return canCreateGroupInStore(Array.from(selectedItemIds));
+  }, [selectedItemIds, canCreateGroupInStore]);
 
   const handleCreateGroup = useCallback(() => {
     if (selectedItemIds.size < 2) return;
 
     const selectedIds = Array.from(selectedItemIds);
-    if (!areItemsConsecutive(selectedIds)) return;
+    if (!canCreateGroupInStore(selectedIds)) return;
 
     try {
       createGroup(selectedIds);
@@ -451,7 +435,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
     } catch (error) {
       logger.error('Failed to create group', error);
     }
-  }, [selectedItemIds, areItemsConsecutive, createGroup, deselectAll]);
+  }, [selectedItemIds, canCreateGroupInStore, createGroup, deselectAll]);
 
   useEffect(() => {
     const regenerateUrl = () => {
@@ -527,8 +511,12 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         onCreateGroup={handleCreateGroup}
         onRemoveSelectedItems={handleRemoveSelectedItems}
         onSelectAll={selectAll}
-        onStartSession={handleStartSession}
-        onResetSession={handleResetSession}
+        onStartSession={() => {
+          void handleStartSession();
+        }}
+        onResetSession={() => {
+          void handleResetSession();
+        }}
         onOpenGlobalSettings={handleOpenGlobalSettings}
         onExportTracksToText={handleExportTracksToText}
         displayItems={displayItems}
@@ -536,6 +524,7 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         selectedItemIds={selectedItemIds}
         activeTrackId={activeTrackId}
         activePlayerTrackId={activePlayerTrackId}
+        playerAudioStatus={playerAudioStatus}
         playerStatus={playerStatus}
         mode={mode}
         showHourDividers={showHourDividers}
@@ -562,7 +551,9 @@ export const PlayerViewContainerContent: React.FC<PlayerViewContainerContentProp
         handleOpenTrackSettings={handleOpenTrackSettings}
         startTrackPlayback={startTrackPlayback}
         pausePlayback={pausePlayback}
-        onNext={handleNext}
+        onNext={() => {
+          void handleNext();
+        }}
         serverTrackIds={serverTrackIds}
         jumpToTrack={mode === 'session' ? jumpToTrack : undefined}
       />

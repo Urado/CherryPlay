@@ -75,7 +75,7 @@ const PartySettingsModalOpen: React.FC<PartySettingsModalOpenProps> = ({
           aria-labelledby="party-settings-modal-title"
           tabIndex={-1}
         >
-          <div className="modal-header">
+          <div className="modal-header party-settings-modal-header">
             <h2 className="modal-title" id="party-settings-modal-title">
               Настройки вечеринки
             </h2>

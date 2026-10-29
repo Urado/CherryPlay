@@ -132,67 +132,67 @@ export const CabinetPartyForm = ({
         </p>
       )}
       <FormInput
-          label="Название *"
-          id="party-name"
-          type="text"
-          value={isEditing ? (editForm.name ?? '') : createForm.name}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, name: e.target.value }))
-              : setCreateForm((f) => ({ ...f, name: e.target.value }))
-          }
-          required
-          maxLength={200}
-        />
+        label="Название *"
+        id="party-name"
+        type="text"
+        value={isEditing ? (editForm.name ?? '') : createForm.name}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, name: e.target.value }))
+            : setCreateForm((f) => ({ ...f, name: e.target.value }))
+        }
+        required
+        maxLength={200}
+      />
       <FormInput
-          label="Заголовок (на экране)"
-          id="party-title"
-          type="text"
-          value={isEditing ? (editForm.title ?? '') : (createForm.title ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, title: e.target.value }))
-              : setCreateForm((f) => ({ ...f, title: e.target.value }))
-          }
-          placeholder="Если пусто — показывается название"
-          maxLength={500}
-        />
+        label="Заголовок (на экране)"
+        id="party-title"
+        type="text"
+        value={isEditing ? (editForm.title ?? '') : (createForm.title ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, title: e.target.value }))
+            : setCreateForm((f) => ({ ...f, title: e.target.value }))
+        }
+        placeholder="Если пусто — показывается название"
+        maxLength={500}
+      />
       <FormInput
-          label="Подзаголовок"
-          id="party-subtitle"
-          type="text"
-          value={isEditing ? (editForm.subtitle ?? '') : (createForm.subtitle ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, subtitle: e.target.value }))
-              : setCreateForm((f) => ({ ...f, subtitle: e.target.value }))
-          }
-          placeholder="Строка под заголовком"
-          maxLength={500}
-        />
+        label="Подзаголовок"
+        id="party-subtitle"
+        type="text"
+        value={isEditing ? (editForm.subtitle ?? '') : (createForm.subtitle ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, subtitle: e.target.value }))
+            : setCreateForm((f) => ({ ...f, subtitle: e.target.value }))
+        }
+        placeholder="Строка под заголовком"
+        maxLength={500}
+      />
       <FormSelect
-          label="Тема"
-          id="party-theme"
-          value={selectedThemeId}
-          onChange={(e) => {
-            const nextThemeId = e.target.value;
-            if (lockedByThemeId.has(nextThemeId)) {
-              onSelectLockedTheme(nextThemeId);
-              return;
-            }
-            if (isEditing) {
-              setEditForm((f) => ({ ...f, partyThemeId: nextThemeId }));
-            } else {
-              setCreateForm((f) => ({ ...f, partyThemeId: nextThemeId }));
-            }
-          }}
-        >
-          {selectableThemeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {lockedByThemeId.has(opt.value) ? `🔒 ${opt.label}` : opt.label}
-            </option>
-          ))}
-        </FormSelect>
+        label="Тема"
+        id="party-theme"
+        value={selectedThemeId}
+        onChange={(e) => {
+          const nextThemeId = e.target.value;
+          if (lockedByThemeId.has(nextThemeId)) {
+            onSelectLockedTheme(nextThemeId);
+            return;
+          }
+          if (isEditing) {
+            setEditForm((f) => ({ ...f, partyThemeId: nextThemeId }));
+          } else {
+            setCreateForm((f) => ({ ...f, partyThemeId: nextThemeId }));
+          }
+        }}
+      >
+        {selectableThemeOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {lockedByThemeId.has(opt.value) ? `🔒 ${opt.label}` : opt.label}
+          </option>
+        ))}
+      </FormSelect>
       {themeAccessError && <div className="cabinet-error">{themeAccessError}</div>}
       {!!themeAccess?.visibleLockedThemes.length && (
         <div className="cabinet-theme-locked-list">
@@ -213,154 +213,150 @@ export const CabinetPartyForm = ({
         </div>
       )}
       <FormSelect
-          label="Таймзона"
-          id="party-time-zone"
-          value={
-            isEditing
-              ? (editForm.timeZone ?? getDefaultTimeZone())
-              : (createForm.timeZone ?? getDefaultTimeZone())
+        label="Таймзона"
+        id="party-time-zone"
+        value={
+          isEditing
+            ? (editForm.timeZone ?? getDefaultTimeZone())
+            : (createForm.timeZone ?? getDefaultTimeZone())
+        }
+        onChange={(e) => {
+          const newTz = e.target.value;
+          if (isEditing) {
+            setEditForm((f) => {
+              const currentDisplay = convertUtcToLocalDateTime(
+                f.eventDateTime ?? '',
+                f.timeZone ?? getDefaultTimeZone(),
+              );
+              const newUtc = currentDisplay
+                ? convertLocalDateTimeToUtc(currentDisplay, newTz)
+                : undefined;
+              return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
+            });
+          } else {
+            setCreateForm((f) => {
+              const currentDisplay = convertUtcToLocalDateTime(
+                f.eventDateTime ?? '',
+                f.timeZone ?? getDefaultTimeZone(),
+              );
+              const newUtc = currentDisplay
+                ? convertLocalDateTimeToUtc(currentDisplay, newTz)
+                : undefined;
+              return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
+            });
           }
-          onChange={(e) => {
-            const newTz = e.target.value;
-            if (isEditing) {
-              setEditForm((f) => {
-                const currentDisplay = convertUtcToLocalDateTime(
-                  f.eventDateTime ?? '',
-                  f.timeZone ?? getDefaultTimeZone(),
-                );
-                const newUtc = currentDisplay
-                  ? convertLocalDateTimeToUtc(currentDisplay, newTz)
-                  : undefined;
-                return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
-              });
-            } else {
-              setCreateForm((f) => {
-                const currentDisplay = convertUtcToLocalDateTime(
-                  f.eventDateTime ?? '',
-                  f.timeZone ?? getDefaultTimeZone(),
-                );
-                const newUtc = currentDisplay
-                  ? convertLocalDateTimeToUtc(currentDisplay, newTz)
-                  : undefined;
-                return { ...f, timeZone: newTz, eventDateTime: newUtc ?? undefined };
-              });
-            }
-          }}
-        >
-          {getPopularTimeZones().map((tz) => (
-            <option key={tz.value} value={tz.value}>
-              {tz.label}
-            </option>
-          ))}
-        </FormSelect>
+        }}
+      >
+        {getPopularTimeZones().map((tz) => (
+          <option key={tz.value} value={tz.value}>
+            {tz.label}
+          </option>
+        ))}
+      </FormSelect>
       <FormInput
-          label="Дата мероприятия (по местному времени выбранной таймзоны)"
-          id="party-event-date"
-          type="datetime-local"
-          value={displayedDateTime}
-          onChange={(e) => handleDateTimeChange(e.target.value)}
-        />
+        label="Дата мероприятия (по местному времени выбранной таймзоны)"
+        id="party-event-date"
+        type="datetime-local"
+        value={displayedDateTime}
+        onChange={(e) => handleDateTimeChange(e.target.value)}
+      />
       <FormTextarea
-          label="Описание"
-          id="party-description"
-          value={isEditing ? (editForm.description ?? '') : (createForm.description ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, description: e.target.value }))
-              : setCreateForm((f) => ({ ...f, description: e.target.value }))
-          }
-          rows={3}
-        />
+        label="Описание"
+        id="party-description"
+        value={isEditing ? (editForm.description ?? '') : (createForm.description ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, description: e.target.value }))
+            : setCreateForm((f) => ({ ...f, description: e.target.value }))
+        }
+        rows={3}
+      />
       <FormInput
-          label="Место"
-          id="party-place"
-          type="text"
-          value={isEditing ? (editForm.place ?? '') : (createForm.place ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, place: e.target.value }))
-              : setCreateForm((f) => ({ ...f, place: e.target.value }))
-          }
-        />
+        label="Место"
+        id="party-place"
+        type="text"
+        value={isEditing ? (editForm.place ?? '') : (createForm.place ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, place: e.target.value }))
+            : setCreateForm((f) => ({ ...f, place: e.target.value }))
+        }
+      />
       <FormInput
-          label="Город"
-          id="party-city"
-          type="text"
-          value={isEditing ? (editForm.city ?? '') : (createForm.city ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({ ...f, city: e.target.value }))
-              : setCreateForm((f) => ({ ...f, city: e.target.value }))
-          }
-        />
+        label="Город"
+        id="party-city"
+        type="text"
+        value={isEditing ? (editForm.city ?? '') : (createForm.city ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({ ...f, city: e.target.value }))
+            : setCreateForm((f) => ({ ...f, city: e.target.value }))
+        }
+      />
       <FormTextarea
-          label="Краткое описание (для карточки)"
-          id="party-short-description"
-          value={
-            isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? '')
-          }
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({
-                  ...f,
-                  shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
-                }))
-              : setCreateForm((f) => ({
-                  ...f,
-                  shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
-                }))
-          }
-          rows={2}
-          maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
-          placeholder="Краткое описание для карточки в каталоге"
-        />
+        label="Краткое описание (для карточки)"
+        id="party-short-description"
+        value={isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({
+                ...f,
+                shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
+              }))
+            : setCreateForm((f) => ({
+                ...f,
+                shortDescription: e.target.value.slice(0, MAX_SHORT_DESCRIPTION_LENGTH),
+              }))
+        }
+        rows={2}
+        maxLength={MAX_SHORT_DESCRIPTION_LENGTH}
+        placeholder="Краткое описание для карточки в каталоге"
+      />
       <span className="cabinet-char-count">
-          {
-            (isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? ''))
-              .length
-          }
-          /{MAX_SHORT_DESCRIPTION_LENGTH}
+        {
+          (isEditing ? (editForm.shortDescription ?? '') : (createForm.shortDescription ?? ''))
+            .length
+        }
+        /{MAX_SHORT_DESCRIPTION_LENGTH}
       </span>
       <FormInput
-          label="Ссылка (URL)"
-          id="party-external-link-url"
-          type="url"
-          value={isEditing ? (editForm.externalLinkUrl ?? '') : (createForm.externalLinkUrl ?? '')}
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({
-                  ...f,
-                  externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
-                }))
-              : setCreateForm((f) => ({
-                  ...f,
-                  externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
-                }))
-          }
-          placeholder="https://..."
-          maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
-        />
+        label="Ссылка (URL)"
+        id="party-external-link-url"
+        type="url"
+        value={isEditing ? (editForm.externalLinkUrl ?? '') : (createForm.externalLinkUrl ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({
+                ...f,
+                externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
+              }))
+            : setCreateForm((f) => ({
+                ...f,
+                externalLinkUrl: e.target.value.slice(0, MAX_EXTERNAL_LINK_URL_LENGTH),
+              }))
+        }
+        placeholder="https://..."
+        maxLength={MAX_EXTERNAL_LINK_URL_LENGTH}
+      />
       <FormInput
-          label="Текст ссылки"
-          id="party-external-link-text"
-          type="text"
-          value={
-            isEditing ? (editForm.externalLinkText ?? '') : (createForm.externalLinkText ?? '')
-          }
-          onChange={(e) =>
-            isEditing
-              ? setEditForm((f) => ({
-                  ...f,
-                  externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
-                }))
-              : setCreateForm((f) => ({
-                  ...f,
-                  externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
-                }))
-          }
-          placeholder="Текст ссылки (если пусто — «Ссылка»)"
-          maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
-        />
+        label="Текст ссылки"
+        id="party-external-link-text"
+        type="text"
+        value={isEditing ? (editForm.externalLinkText ?? '') : (createForm.externalLinkText ?? '')}
+        onChange={(e) =>
+          isEditing
+            ? setEditForm((f) => ({
+                ...f,
+                externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
+              }))
+            : setCreateForm((f) => ({
+                ...f,
+                externalLinkText: e.target.value.slice(0, MAX_EXTERNAL_LINK_TEXT_LENGTH),
+              }))
+        }
+        placeholder="Текст ссылки (если пусто — «Ссылка»)"
+        maxLength={MAX_EXTERNAL_LINK_TEXT_LENGTH}
+      />
       <div className="cabinet-form-field">
         <span className="cabinet-form-field-label">Танцевальные теги (макс. {MAX_DANCE_TAGS})</span>
         <div className="cabinet-dance-tags-predefined">
@@ -424,15 +420,13 @@ export const CabinetPartyForm = ({
                   }
                 }}
                 onBlur={(e) => {
-                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget))
-                    return;
+                  if (e.relatedTarget && customBlockRef.current?.contains(e.relatedTarget)) return;
                   collapseTimeoutRef.current = setTimeout(() => setShowCustomTagInput(false), 150);
                 }}
                 placeholder="Другой танец (Enter или запятая)"
                 maxLength={MAX_DANCE_TAG_LENGTH}
                 disabled={danceTags.length >= MAX_DANCE_TAGS}
                 aria-label="Поле для ввода другого танца"
-                autoFocus
               />
               <Button
                 type="button"

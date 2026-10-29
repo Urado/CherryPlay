@@ -1,15 +1,16 @@
 import type { PartyTrackDisplaySettings, ProjectItem } from '@core/types/project';
 import type { AimpPlaylistSnapshotDto } from '@shared/contracts/aimp';
-import { convertAimpPlaylistForApi, convertPlaylistForApi } from '@shared/utils';
+import { convertAimpPlaylistForApi } from '@shared/utils/aimpStreamingAdapter';
+import { convertPlaylistForApi } from '@shared/utils/partyUtils';
 
 import type { PlaylistForApiPayload } from './PlaybackBroadcastSource';
 
 export type PartyPlaylistSource = 'aimp' | 'project';
 
-export function resolvePlaylistSource(params: {
+export const resolvePlaylistSource = (params: {
   streamingSource: string;
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
-}): PartyPlaylistSource {
+}): PartyPlaylistSource => {
   if (
     params.streamingSource === 'aimp' &&
     params.aimpPlaylistSnapshot != null &&
@@ -18,14 +19,14 @@ export function resolvePlaylistSource(params: {
     return 'aimp';
   }
   return 'project';
-}
+};
 
-export function buildPlaylistForApiPayload(params: {
+export const buildPlaylistForApiPayload = (params: {
   streamingSource: string;
   aimpPlaylistSnapshot: AimpPlaylistSnapshotDto | null;
   items: ProjectItem[];
   partyTrackDisplay: PartyTrackDisplaySettings;
-}): PlaylistForApiPayload {
+}): PlaylistForApiPayload => {
   const { streamingSource, aimpPlaylistSnapshot, items, partyTrackDisplay } = params;
   if (
     resolvePlaylistSource({ streamingSource, aimpPlaylistSnapshot }) === 'aimp' &&
@@ -34,4 +35,4 @@ export function buildPlaylistForApiPayload(params: {
     return convertAimpPlaylistForApi(aimpPlaylistSnapshot, partyTrackDisplay);
   }
   return convertPlaylistForApi(items, partyTrackDisplay);
-}
+};

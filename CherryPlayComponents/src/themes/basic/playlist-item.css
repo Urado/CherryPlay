@@ -78,10 +78,7 @@
 }
 
 [data-theme='basic'] .party-playlist-item-row {
-  padding-left: 16px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-right: 16px;
+  padding: 10px 16px;
 }
 
 [data-theme='basic'] .party-playlist-item--current .party-playlist-item-row {
@@ -176,15 +173,12 @@
   }
 
   [data-theme='basic'] .party-playlist-item-row {
-    padding-left: 8px;
+    padding: 8px 10px 8px 8px;
     gap: 8px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-right: 10px;
   }
 
   [data-theme='basic'] .party-playlist-item--current > .party-playlist-item-row {
-    margin: 6px 6px;
+    margin: 6px;
   }
 
   [data-theme='basic'] .party-playlist-item--current .party-playlist-item-row {

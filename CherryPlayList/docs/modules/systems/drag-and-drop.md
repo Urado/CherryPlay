@@ -127,6 +127,8 @@ Drop на Трек 4 (position: 'bottom'):
 | Клонирование ID       | Нет (сохраняются)               | Да (новые UUID) |
 | История               | CompositeAction (source=target) | CompositeAction |
 
+При вставке треков в группу учитывается весь путь вложенных групп. Это относится и к трекам, собранным из раскрытой папки FileBrowser: они добавляются в выбранную группу в порядке списка, а undo/redo восстанавливает исходное и целевое расположение. Повторное использование той же project store через несколько workspace-представлений считается операцией внутри одного хранилища. Перемещение группы в себя или потомка, а также вставка в отсутствующую группу отклоняются до удаления источника.
+
 ## Функциональность
 
 - Перетаскивание внутри workspace (reordering)
@@ -139,14 +141,20 @@ Drop на Трек 4 (position: 'bottom'):
 - Drop на пустую область списка или на нижнюю часть отсечки/между треками: позиция вставки определяется по положению курсора (ItemList передаёт `insertIndex` в `onDrop`/`onDragOver`); расчёт `rawInsertIndex` с учётом `bottom` и конвертация flatIndex → (parentId, localIndex) обеспечивают вставку в нужное место, а не всегда в конец списка
 - Полная поддержка undo/redo через CompositeAction
 
+Для регрессии вставки в группы и перемещения между представлениями можно запустить из `CherryPlayList`:
+
+```bash
+npm test -- --runInBand tests/shared/hooks/useWorkspaceDragAndDrop.folderGroup.test.tsx tests/shared/hooks/useDragDropExecutor.groupAliasMove.test.tsx tests/shared/stores/projectStore.addItemsToGroup.test.ts tests/shared/stores/projectStoreFactory.addItemsToGroup.test.ts
+```
+
 ### Внутренний JSON и нативный OS drop (`DataTransfer.files`)
 
 Два независимых способа передать файлы/папки в track-based workspace (плейлист, коллекция, список треков плеера):
 
-| Источник | Представление в `DataTransfer` | Пути и тип (файл / каталог) |
-| -------- | ------------------------------ | --------------------------- |
-| **FileBrowser** | MIME `application/json`: `type: fileBrowser` (массивы `paths` / `directories`) или устаревший `type: files` | Пути уже в JSON; для этого drop не вызываются `getPathForFile` и `statFile` |
-| **ОС (Проводник и др.)** | Непустой `DataTransfer.files` | Абсолютный путь: `window.api.getPathForFile` (preload — обёртка над Electron `webUtils.getPathForFile`), при необходимости запасной вариант — поле `.path` у `File`; файл или каталог — по IPC **`fileBrowser:statFile`** (как в браузере файлов). Утилиты: `tryParseInternalFileBrowserPayload`, `collectNativePathsFromDataTransfer`, `classifyNativePathsWithStat` в `nativeDataTransferPaths.ts` |
+| Источник                 | Представление в `DataTransfer`                                                                              | Пути и тип (файл / каталог)                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **FileBrowser**          | MIME `application/json`: `type: fileBrowser` (массивы `paths` / `directories`) или устаревший `type: files` | Пути уже в JSON; для этого drop не вызываются `getPathForFile` и `statFile`                                                                                                                                                                                                                                                                                                                          |
+| **ОС (Проводник и др.)** | Непустой `DataTransfer.files`                                                                               | Абсолютный путь: `window.api.getPathForFile` (preload — обёртка над Electron `webUtils.getPathForFile`), при необходимости запасной вариант — поле `.path` у `File`; файл или каталог — по IPC **`fileBrowser:statFile`** (как в браузере файлов). Утилиты: `tryParseInternalFileBrowserPayload`, `collectNativePathsFromDataTransfer`, `classifyNativePathsWithStat` в `nativeDataTransferPaths.ts` |
 
 **Приоритет:** сначала разбирается внутренний JSON (`tryParseInternalFileBrowserPayload`). Если пейлоад распознан, обрабатывается только он; ветка по нативным `files` для этого события **не выполняется** — иначе смешанный drag мог бы подменить пути из FileBrowser данными ОС.
 

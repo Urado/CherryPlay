@@ -69,7 +69,8 @@ public class AdminEntitlementService(IAdminEntitlementRepository repository) : I
         if (active is not null) return new(AdminGrantResultKind.AlreadyActive, active);
         var entitlementId = Guid.NewGuid();
         var now = DateTime.UtcNow;
-        var outcome = await repository.PersistGrantAsync(organizerId, packageId, adminId, note, entitlementId, now);
+        var entitlement = OrganizerEntitlement.CreateAdminGrant(entitlementId, organizerId, packageId, now, note);
+        var outcome = await repository.PersistGrantAsync(entitlement, adminId);
         if (outcome == AdminPersistenceOutcome.Applied)
         {
             var created = await repository.GetEntitlementAsync(entitlementId);

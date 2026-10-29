@@ -8,6 +8,15 @@ alwaysApply: false
 
 Backend integration tests use two different environments. Choose the runner based on the test category.
 
+## Test classification
+
+- Classify tests by the system boundary they exercise, not by whether Docker runs them. Docker describes the execution environment, not the test type.
+- `IntegrationDb` and database-only `ContainerIntegration` tests are database/service integration tests. They exercise backend persistence with real PostgreSQL, without the CherryPlayList or CherryPlayWeb user interfaces.
+- `ContainerIntegration` is a mixed runner category. It includes database-only tests, HTTP/SignalR clients against the running backend, and `WebApplicationFactory`/`TestServer` fixtures backed by PostgreSQL. Check the fixture before describing a test's boundary.
+- Use **backend/API E2E** only with that qualifier for a scenario that starts at the backend's public HTTP/SignalR boundary and reaches its externally observable response, event, or persisted state. This is still backend integration coverage.
+- Reserve unqualified **E2E** or **product E2E** for an automated user journey through the actual CherryPlayList and/or CherryPlayWeb interface, asserting the final user-visible result across the product stack. A test-client API call is not product E2E.
+- Restart, retention, health, and unavailable-database checks are backend system/lifecycle tests, not product E2E. A large scenario or a Docker-based test is not E2E by itself.
+
 ## IntegrationDb
 
 - Tests in the `IntegrationDb` category use `PostgresContainerFixture`. It starts PostgreSQL through Testcontainers when `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` is absent, or connects to the configured admin endpoint when the override is present.
@@ -17,7 +26,8 @@ Backend integration tests use two different environments. Choose the runner base
 ## ContainerIntegration
 
 - `ContainerIntegration` is a mixed category. Database-only tests use `ContainerIntegrationDatabase`; they need `CHERRYPLAY_INTEGRATION_DB_ADMIN_CONNECTION_STRING` pointing to an existing PostgreSQL admin endpoint, where the helper creates and drops isolated databases.
-- HTTP/SignalR tests use `ContainerIntegrationTestContext` to call an already-running backend and connect to its PostgreSQL database for fixture setup and assertions. In addition to the admin connection string, these tests require `CHERRYPLAY_API_BASE_URL` and `CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY`.
+- HTTP/SignalR tests using `ContainerIntegrationTestContext` call an already-running backend and connect to its PostgreSQL database for fixture setup and assertions. They require `CHERRYPLAY_API_BASE_URL` and `CHERRYPLAY_INTEGRATION_JWT_SECRET_KEY` in addition to the admin connection string.
+- Some fixtures, including `ContainerLoginIntegrationTests`, host the application with `WebApplicationFactory`/`TestServer` and use PostgreSQL instead of calling the Compose backend. Do not assume every test in this category exercises the running backend container.
 - Direct `dotnet test` does not provision PostgreSQL or the backend. Set only the variables required by the selected test subset and provide the corresponding running services.
 - The canonical local and CI entry point is `scripts/backend-container-integration.ps1`. It builds and starts the isolated Compose backend/PostgreSQL/test-runner environment and supplies those variables inside the integration-test container. Run it from the repository root:
 

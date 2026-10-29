@@ -1,4 +1,3 @@
-
 import {
   useAimpStore,
   useDemoPlayerStore,
@@ -86,7 +85,7 @@ export const AimpIntegrationController: React.FC = () => {
       }
     };
 
-    syncSource();
+    void syncSource();
 
     return () => {
       cancelled = true;

@@ -4,11 +4,11 @@ let cachedServerUrl: string | null = null;
 let cachedWebBaseUrl: string | null = null;
 let warnedEmptyElectronServerUrl = false;
 
-function isConfiguredServerUrl(value: string | null | undefined): value is string {
+const isConfiguredServerUrl = (value: string | null | undefined): value is string => {
   return value !== undefined && value !== null;
-}
+};
 
-function warnEmptyElectronServerUrlOnce(): void {
+const warnEmptyElectronServerUrlOnce = (): void => {
   if (warnedEmptyElectronServerUrl) {
     return;
   }
@@ -17,42 +17,45 @@ function warnEmptyElectronServerUrlOnce(): void {
     '[serverConfig] Empty serverUrl from Electron config is only intended for web demo same-origin proxy. ' +
       'Electron should set serverUrl in serverConfig.development.json or serverConfig.production.json.',
   );
-}
+};
 
-function cacheElectronServerUrl(data: string): string {
+const cacheElectronServerUrl = (data: string): string => {
   if (data === '') {
     warnEmptyElectronServerUrlOnce();
   }
   cachedServerUrl = data;
   return data;
-}
+};
 
-function getEnvServerUrl(): string | undefined {
-  const value = import.meta.env.VITE_API_URL;
+const getEnvServerUrl = (): string | undefined => {
+  const value: unknown = import.meta.env.VITE_API_URL;
   return isConfiguredServerUrl(value) ? value : undefined;
-}
+};
 
-async function invokeConfig<T>(channel: string, payload?: object): Promise<T | null> {
+const invokeConfig = async <T>(channel: string, payload?: object): Promise<T | null> => {
   if (!isPlatformInitialized()) {
     return null;
   }
 
-  const result = (await getPlatform().invoke(channel, payload)) as
-    | { success: true; data: T }
-    | { success: false; error: string };
-
-  if (result.success && result.data !== undefined) {
-    return result.data;
+  const rawResult: unknown = await getPlatform().invoke(channel, payload);
+  if (!rawResult || typeof rawResult !== 'object') {
+    return null;
   }
 
-  if (result.success === false) {
+  const result = rawResult as { success: unknown; data?: unknown; error?: unknown };
+
+  if (result.success === true && result.data !== undefined) {
+    return result.data as T;
+  }
+
+  if (result.success === false && typeof result.error === 'string') {
     throw new Error(result.error);
   }
 
   return null;
-}
+};
 
-export async function getWebBaseUrl(): Promise<string> {
+export const getWebBaseUrl = async (): Promise<string> => {
   if (cachedWebBaseUrl !== null) {
     return cachedWebBaseUrl;
   }
@@ -75,9 +78,9 @@ export async function getWebBaseUrl(): Promise<string> {
   throw new Error(
     'Web base URL is not configured. Set webBaseUrl in serverConfig.development.json / serverConfig.production.json.',
   );
-}
+};
 
-export function getWebBaseUrlSync(): string {
+export const getWebBaseUrlSync = (): string => {
   if (cachedWebBaseUrl !== null) {
     return cachedWebBaseUrl;
   }
@@ -85,9 +88,9 @@ export function getWebBaseUrlSync(): string {
   throw new Error(
     'Web base URL is not configured. Load webBaseUrl from server config and restart the application.',
   );
-}
+};
 
-export async function getServerUrl(): Promise<string> {
+export const getServerUrl = async (): Promise<string> => {
   const envServerUrl = getEnvServerUrl();
   if (envServerUrl !== undefined) {
     return envServerUrl;
@@ -118,9 +121,9 @@ export async function getServerUrl(): Promise<string> {
   throw new Error(
     'Server URL is not configured. Set VITE_API_URL or serverUrl in serverConfig.development.json / serverConfig.production.json.',
   );
-}
+};
 
-export function getServerUrlSync(): string {
+export const getServerUrlSync = (): string => {
   const envServerUrl = getEnvServerUrl();
   if (envServerUrl !== undefined) {
     return envServerUrl;
@@ -133,9 +136,9 @@ export function getServerUrlSync(): string {
   throw new Error(
     'Server URL is not configured. Set VITE_API_URL or serverUrl in server config and restart the application.',
   );
-}
+};
 
-export async function setServerUrl(serverUrl: string): Promise<boolean> {
+export const setServerUrl = async (serverUrl: string): Promise<boolean> => {
   if (!isPlatformInitialized()) {
     return false;
   }
@@ -150,14 +153,14 @@ export async function setServerUrl(serverUrl: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
+};
 
-export function clearServerUrlCache(): void {
+export const clearServerUrlCache = (): void => {
   cachedServerUrl = null;
   cachedWebBaseUrl = null;
-}
+};
 
-export async function getConfigFilePath(): Promise<string | null> {
+export const getConfigFilePath = async (): Promise<string | null> => {
   if (!isPlatformInitialized()) {
     return null;
   }
@@ -167,9 +170,9 @@ export async function getConfigFilePath(): Promise<string | null> {
   } catch {
     return null;
   }
-}
+};
 
-export async function initializeServerConfig(): Promise<void> {
+export const initializeServerConfig = async (): Promise<void> => {
   if (!isPlatformInitialized()) {
     return;
   }
@@ -194,4 +197,4 @@ export async function initializeServerConfig(): Promise<void> {
     cachedServerUrl = null;
     cachedWebBaseUrl = null;
   }
-}
+};

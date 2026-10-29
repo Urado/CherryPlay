@@ -12,10 +12,7 @@
 }
 
 [data-theme='cyberpunk'] .party-playlist-item-row {
-  padding-left: 14px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-right: 14px;
+  padding: 10px 14px;
 }
 
 [data-theme='cyberpunk'] .party-playlist-item--group {
@@ -161,11 +158,8 @@
   }
 
   [data-theme='cyberpunk'] .party-playlist-item-row {
-    padding-left: 8px;
+    padding: 8px 10px 8px 8px;
     gap: 8px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-right: 10px;
   }
 
   [data-theme='cyberpunk'] .party-playlist-item--current {
@@ -176,6 +170,7 @@
     padding-top: 10px;
     padding-bottom: 10px;
     padding-right: 12px;
+
     --party-playlist-row-inline-start: 12px;
   }
 

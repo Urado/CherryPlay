@@ -3,7 +3,7 @@
 # Обновляйте при добавлении или перемещении .md файлов.
 
 version: "1.0"
-updated: "2026-10-08"
+updated: "2026-10-25"
 summary:
   total_md_files: 117
   project_documentation: 89
@@ -31,7 +31,7 @@ entry_points:
   add_theme: ADDING_THEME.md
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (88 файлов)
+# ПРОЕКТНАЯ ДОКУМЕНТАЦИЯ (89 файлов)
 # Архитектура, контракты, setup, модули, ops — источник правды для разработки.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -62,8 +62,6 @@ project_documentation:
         title: "План релиза v1 — границы MVP, эпики, критерии готовности"
       - path: .github/BETA_RELEASE_RUNBOOK.md
         title: "Операторский runbook беты: деплой и откат"
-      - path: TASK_TRACKER.md
-        title: "Трекер задач проекта"
       - path: ADDING_THEME.md
         title: "Как добавить PartyTheme"
       - path: THEMES.md
@@ -153,6 +151,8 @@ project_documentation:
         title: "Пульт вечеринки в шапке — UX as-built (§4–§6 Editor B, §7.5/§7.6 Пауза/Конец; residual §11)"
       - path: CherryPlayList/docs/online-mode-ux-synthesis.md
         title: "Синтез UX онлайн-режима (Онлайн vs Party, пульт, checklist backlog)"
+      - path: CherryPlayList/docs/specs/streaming-recovery-and-loudness-normalization.md
+        title: "As-built recovery трансляции, scan при добавлении и session lookahead; массовая задача отложена"
       - path: CherryPlayList/docs/layout-edit-mode.md
         title: "Режим настройки окон / рабочие пространства"
       - path: CherryPlayList/docs/sonya-review-feedback.md

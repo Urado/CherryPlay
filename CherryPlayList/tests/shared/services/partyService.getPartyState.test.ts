@@ -17,10 +17,10 @@ const API_URL = 'http://localhost:5000/api';
 const SHORT_CODE = 'abc123';
 const PARTY_ID = '123e4567-e89b-12d3-a456-426614174000';
 
-function mockFetchResponse(
+const mockFetchResponse = (
   body: unknown,
   init: { status?: number; ok?: boolean; statusText?: string } = {},
-): Response {
+): Response => {
   const status = init.status ?? 200;
   const ok = init.ok ?? (status >= 200 && status < 300);
   const serialized = typeof body === 'string' ? body : JSON.stringify(body);
@@ -33,10 +33,10 @@ function mockFetchResponse(
     clone() {
       return this;
     },
-    json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
-    text: async () => serialized,
+    json: () => Promise.resolve(typeof body === 'string' ? (JSON.parse(body) as unknown) : body),
+    text: () => Promise.resolve(serialized),
   } as Response;
-}
+};
 
 describe('partyService.getPartyState', () => {
   beforeEach(() => {
@@ -65,14 +65,15 @@ describe('partyService.getPartyState', () => {
 
     expect(result).toEqual(stateBody);
     expect((result as Record<string, unknown>).partyDisplayStatus).toBe('broadcasting');
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_URL}/parties/public/${SHORT_CODE}/state`,
-      expect.objectContaining({
-        method: 'GET',
-        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
-        cache: 'no-cache',
-      }),
+    const fetchCall = (global.fetch as jest.Mock).mock.calls[0] as
+      | [string, RequestInit]
+      | undefined;
+    expect(fetchCall?.[0]).toBe(`${API_URL}/parties/public/${SHORT_CODE}/state`);
+    expect(fetchCall?.[1].method).toBe('GET');
+    expect(fetchCall?.[1].headers).toEqual(
+      expect.objectContaining({ 'Content-Type': 'application/json' }),
     );
+    expect(fetchCall?.[1].cache).toBe('no-cache');
   });
 
   it('returns null when public state endpoint responds with 404', async () => {

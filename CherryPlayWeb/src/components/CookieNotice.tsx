@@ -8,13 +8,13 @@ import './CookieNotice.css';
 const STORAGE_KEY = 'cherryplay.cookie-notice.dismissed';
 const BODY_CLASS = 'has-cookie-notice';
 
-function readDismissed(): boolean {
+const readDismissed = (): boolean => {
   try {
     return localStorage.getItem(STORAGE_KEY) === '1';
   } catch {
     return false;
   }
-}
+};
 
 export const CookieNotice = () => {
   const [dismissed, setDismissed] = useState(readDismissed);

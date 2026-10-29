@@ -25,9 +25,9 @@ const defaultConnectionValue: CherryPlayStreamingConnectionValue = {
 const CherryPlayStreamingConnectionContext =
   createContext<CherryPlayStreamingConnectionValue>(defaultConnectionValue);
 
-export function useCherryPlayStreamingConnection(): CherryPlayStreamingConnectionValue {
+export const useCherryPlayStreamingConnection = (): CherryPlayStreamingConnectionValue => {
   return useContext(CherryPlayStreamingConnectionContext);
-}
+};
 
 interface CherryPlayStreamingControllerProps {
   children: React.ReactNode;

@@ -7,7 +7,7 @@ const DOCUMENT_PATHS = {
   legal: '/legal',
 } as const;
 
-export function registerLegalHandlers(): void {
+export const registerLegalHandlers = (): void => {
   ipcMain.handle('legal:openDocument', async (_event, payload: { document: unknown }) => {
     try {
       if (payload?.document !== 'privacy' && payload?.document !== 'legal') {
@@ -15,7 +15,11 @@ export function registerLegalHandlers(): void {
       }
 
       const webBaseUrl = new URL(getConfiguredWebBaseUrl());
-      if (!['http:', 'https:'].includes(webBaseUrl.protocol) || webBaseUrl.username || webBaseUrl.password) {
+      if (
+        !['http:', 'https:'].includes(webBaseUrl.protocol) ||
+        webBaseUrl.username ||
+        webBaseUrl.password
+      ) {
         throw new Error('Invalid configured web base URL');
       }
 
@@ -25,7 +29,10 @@ export function registerLegalHandlers(): void {
       await shell.openExternal(webBaseUrl.toString());
       return { success: true };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Failed to open legal page' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to open legal page',
+      };
     }
   });
-}
+};

@@ -4,16 +4,16 @@ import { ipcMain } from 'electron';
 
 import { validatePath } from '../utils/fsHelpers.js';
 
-async function saveSettingsBundle(path: string, bundle: unknown): Promise<void> {
+const saveSettingsBundle = async (path: string, bundle: unknown): Promise<void> => {
   await fs.writeFile(path, JSON.stringify(bundle, null, 2), 'utf-8');
-}
+};
 
-async function loadSettingsBundle(path: string): Promise<unknown> {
+const loadSettingsBundle = async (path: string): Promise<unknown> => {
   const content = await fs.readFile(path, 'utf-8');
   return JSON.parse(content) as unknown;
-}
+};
 
-export function registerSettingsBundleHandlers(): void {
+export const registerSettingsBundleHandlers = (): void => {
   ipcMain.handle(
     'settings:saveBundle',
     async (_event, payload: { path: string; bundle: unknown }) => {
@@ -54,4 +54,4 @@ export function registerSettingsBundleHandlers(): void {
       };
     }
   });
-}
+};

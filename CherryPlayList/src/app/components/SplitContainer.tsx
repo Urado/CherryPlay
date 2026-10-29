@@ -1,4 +1,3 @@
-
 import { MAX_LAYOUT_DEPTH } from '@core/constants/layoutConstraints';
 import { ContainerZone } from '@core/types/layout';
 import DragHandleIcon from '@mui/icons-material/DragHandle';

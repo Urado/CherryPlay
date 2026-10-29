@@ -20,7 +20,7 @@ export const partyWorkspaceLinkedPartyCheck = {
   } | null,
 };
 
-export function clearPartyWorkspaceLinkedPartyCheck(): void {
+export const clearPartyWorkspaceLinkedPartyCheck = (): void => {
   partyWorkspaceLinkedPartyCheck.seq += 1;
   partyWorkspaceLinkedPartyCheck.inFlight = null;
-}
+};

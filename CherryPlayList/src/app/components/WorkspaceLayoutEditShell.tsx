@@ -1,7 +1,7 @@
-
 import { getWorkspaceDisplayNameRu } from '@core/constants/workspaceDisplayNames';
 import { WorkspaceZone, Zone } from '@core/types/layout';
 import CloseIcon from '@mui/icons-material/Close';
+import { dialogService } from '@shared/services/dialogService';
 import { useLayoutStore } from '@shared/stores';
 import { getLayoutAirPickerKey } from '@shared/stores/layoutStore';
 import { getCurrentLayoutViewport } from '@shared/utils/layoutViewportBridge';
@@ -30,15 +30,15 @@ interface ShellDimensions {
 
 const AIR_SIDES: LayoutEditAirSide[] = ['top', 'right', 'bottom', 'left'];
 
-function readShellDimensions(node: HTMLDivElement): ShellDimensions {
+const readShellDimensions = (node: HTMLDivElement): ShellDimensions => {
   const { width, height } = node.getBoundingClientRect();
   const airSizeRaw = getComputedStyle(node).getPropertyValue('--layout-edit-air-size').trim();
   const airSize = Number.parseFloat(airSizeRaw) || 24;
 
   return { width, height, airSize };
-}
+};
 
-function buildCornerDiagonals({ width, height, airSize }: ShellDimensions) {
+const buildCornerDiagonals = ({ width, height, airSize }: ShellDimensions) => {
   if (width <= 0 || height <= 0 || airSize <= 0) {
     return [];
   }
@@ -49,9 +49,9 @@ function buildCornerDiagonals({ width, height, airSize }: ShellDimensions) {
     { x1: width - airSize, y1: height - airSize, x2: width, y2: height },
     { x1: airSize, y1: height - airSize, x2: 0, y2: height },
   ];
-}
+};
 
-function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): string | null {
+const getRemoveWorkspaceConfirmMessage = (zone: WorkspaceZone, rootZone: Zone): string | null => {
   const displayName = getWorkspaceDisplayNameRu(zone.workspaceType);
   const isLastZone = countWorkspaceLeaves(rootZone) <= 1;
   const isSingleton = isSingletonWorkspaceType(zone.workspaceType);
@@ -65,7 +65,7 @@ function getRemoveWorkspaceConfirmMessage(zone: WorkspaceZone, rootZone: Zone): 
   }
 
   return null;
-}
+};
 
 export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> = ({ zone }) => {
   const shellRef = useRef<HTMLDivElement>(null);
@@ -108,10 +108,23 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
     [addAdjacentWorkspace, zone.id],
   );
 
-  const handleRemoveWorkspace = useCallback(() => {
+  const removeRequestRef = useRef(false);
+  const handleRemoveWorkspace = useCallback(async () => {
+    if (removeRequestRef.current) return;
     const confirmMessage = getRemoveWorkspaceConfirmMessage(zone, layout.rootZone);
-    if (confirmMessage && !window.confirm(confirmMessage)) {
-      return;
+    if (confirmMessage) {
+      removeRequestRef.current = true;
+      try {
+        const accepted = await dialogService.confirm({
+          title: 'Удалить рабочее окно?',
+          message: confirmMessage,
+          confirmLabel: 'Удалить',
+          destructive: true,
+        });
+        if (!accepted) return;
+      } finally {
+        removeRequestRef.current = false;
+      }
     }
 
     removeWorkspaceZone(zone.id);
@@ -206,7 +219,7 @@ export const WorkspaceLayoutEditShell: React.FC<WorkspaceLayoutEditShellProps> =
         className="workspace-layout-edit-close"
         title={`Удалить «${workspaceLabel}»`}
         aria-label={`Удалить «${workspaceLabel}»`}
-        onClick={handleRemoveWorkspace}
+        onClick={() => void handleRemoveWorkspace()}
       >
         <CloseIcon fontSize="small" aria-hidden />
       </button>

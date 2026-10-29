@@ -51,6 +51,7 @@ public static class EfToDomainMappers
             PartyThemeId = PartyThemeIdExtensions.ParsePartyThemeIdOrDefault(ef.PartyThemeId),
             CustomizationSettings = DeserializeDictObject(ef.CustomizationSettingsJson),
             IsListedInCatalog = ef.IsListedInCatalog,
+            IsDeleted = ef.IsDeleted,
             CreatedAt = ef.CreatedAt,
             Playlist = new PartyPlaylist(),
             ShortDescription = ef.ShortDescription,

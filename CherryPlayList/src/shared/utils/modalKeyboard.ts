@@ -1,12 +1,4 @@
-/**
- * Shared keyboard contract for CherryPlayList modals:
- * - Enter → primary action (when provided)
- * - Escape → cancel / close
- * - Enter in textarea / contenteditable → newline (not submit)
- * - Enter on overlay / focused button → no duplicate submit
- */
-
-export function shouldIgnoreEnterForPrimary(target: EventTarget | null): boolean {
+export const shouldIgnoreEnterForPrimary = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return true;
   }
@@ -34,8 +26,8 @@ export function shouldIgnoreEnterForPrimary(target: EventTarget | null): boolean
   }
 
   return false;
-}
+};
 
-export function isOverlayKeyboardTarget(event: React.KeyboardEvent<HTMLElement>): boolean {
+export const isOverlayKeyboardTarget = (event: React.KeyboardEvent<HTMLElement>): boolean => {
   return event.target === event.currentTarget;
-}
+};

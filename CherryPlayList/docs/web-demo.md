@@ -6,10 +6,10 @@
 
 Есть **два режима** (переключение только скриптом/env, без toggle в UI):
 
-| Режим | Скрипт | Env | Сервер | Auth / Party | SignalR |
-| ----- | ------ | --- | ------ | ------------ | ------- |
-| **Fixtures** | `npm run dev:web` (+ `dev:web:project`) | `VITE_APP_MODE=demo`, без `VITE_DEMO_LIVE` | Не нужен | Фикстуры (`supportsRealAuth: false`) | Нет |
-| **Live** | `npm run dev:web:live` | `VITE_APP_MODE=demo` + `VITE_DEMO_LIVE=1` | CherryPlayServer на `:5000` | Browser SSO через CherryPlayWeb (`:3000`), как Desktop; party с сервера (`supportsRealAuth: true`) | Да, при **Онлайн** ON |
+| Режим        | Скрипт                                  | Env                                        | Сервер                      | Auth / Party                                                                                       | SignalR               |
+| ------------ | --------------------------------------- | ------------------------------------------ | --------------------------- | -------------------------------------------------------------------------------------------------- | --------------------- |
+| **Fixtures** | `npm run dev:web` (+ `dev:web:project`) | `VITE_APP_MODE=demo`, без `VITE_DEMO_LIVE` | Не нужен                    | Фикстуры (`supportsRealAuth: false`)                                                               | Нет                   |
+| **Live**     | `npm run dev:web:live`                  | `VITE_APP_MODE=demo` + `VITE_DEMO_LIVE=1`  | CherryPlayServer на `:5000` | Browser SSO через CherryPlayWeb (`:3000`), как Desktop; party с сервера (`supportsRealAuth: true`) | Да, при **Онлайн** ON |
 
 `AppMode` в обоих случаях остаётся `'demo'`; live — overlay-флаг (`isDemoLiveMode()` / `VITE_DEMO_LIVE`), не отдельный `AppMode`.
 
@@ -19,12 +19,12 @@
 
 Из каталога `CherryPlayList/` (после `npm install`):
 
-| Команда                   | Назначение                                                                                          |
-| ------------------------- | --------------------------------------------------------------------------------------------------- |
-| `npm run dev:web`         | Fixtures: браузер, демо-платформа, **без** сервера и **без** автозагрузки проекта                   |
-| `npm run dev:web:project` | Fixtures + автозагрузка `public/demo/sample.cherry` при старте                                      |
-| `npm run dev:web:live`    | Live: тот же UI + REST/SignalR через Vite proxy; нужен CherryPlayServer на `:5000`                  |
-| `npm run dev`             | **Electron** (Vite + preload + IPC) — поведение **не изменено** веб-демо                            |
+| Команда                   | Назначение                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev:web`         | Fixtures: браузер, демо-платформа, **без** сервера и **без** автозагрузки проекта  |
+| `npm run dev:web:project` | Fixtures + автозагрузка `public/demo/sample.cherry` при старте                     |
+| `npm run dev:web:live`    | Live: тот же UI + REST/SignalR через Vite proxy; нужен CherryPlayServer на `:5000` |
+| `npm run dev`             | **Electron** (Vite + preload + IPC) — поведение **не изменено** веб-демо           |
 
 После `dev:web` / `dev:web:project` / `dev:web:live` откройте URL dev-сервера (по умолчанию [http://localhost:5173](http://localhost:5173), порт в `vite.config.mjs`).
 
@@ -39,10 +39,10 @@
 
 Внутренний `networkEnabled` (`onlineNetworkPolicy`) **всегда** зеркалит настройку **«Онлайн»** (`enableStreaming`) — в т.ч. в fixtures. Отдельной настройки `networkEnabled` в UI нет.
 
-| Режим | `networkEnabled` | Hub (SignalR) | UI при Online ON |
-| ----- | ---------------- | ------------- | ---------------- |
+| Режим        | `networkEnabled`      | Hub (SignalR)                                                        | UI при Online ON                                                                       |
+| ------------ | --------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | **Fixtures** | `=== enableStreaming` | **Не** стартует (`isStreamingHubAllowed` требует `supportsRealAuth`) | Нет противоречия «Онлайн включён» ↔ «онлайн-функции отключены» из-за hard-disable сети |
-| **Live** | `=== enableStreaming` | Стартует при Online ON и доступном сервере (proxy → `:5000`) | Online OFF → hub неактивен; Online ON + сервер down → баннер недоступности сервера |
+| **Live**     | `=== enableStreaming` | Стартует при Online ON и доступном сервере (proxy → `:5000`)         | Online OFF → hub неактивен; Online ON + сервер down → баннер недоступности сервера     |
 
 В **live** старт сессии («Начать проигрывание») использует **синтетическое** воспроизведение в `playerAudioStore` (трек, status, позиция по таймеру) без реального аудио — чтобы `CherryPlayPlayerBroadcastSource` / orchestrator публиковали состояние в SignalR. Превью в file-browser / demo-player по-прежнему показывает «Не доступно в демо».
 
@@ -92,14 +92,14 @@ Proxy полезен в **live**-режиме (`dev:web:live`). В **fixtures** 
 
 Веб-демо — это `AppMode: 'demo'` и `WebDemoPlatform`, не отдельная ветка проверок в UI. Ограничения задаёт **[capability-матрица](./modules/platform/README.md)** (`derivePlatformCapabilities('demo')`):
 
-| Флаг                                                                                                                                      | Fixtures (`dev:web`) | Live (`dev:web:live`) |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | --------------------- |
-| `usesFixtureFileBrowser`                                                                                                                  | ✓                    | ✓                     |
-| `simulatesExport`                                                                                                                         | ✓                    | ✓                     |
-| `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAudioDeviceSelection`                     | ✗                    | ✗                     |
-| `supportsRealAuth`                                                                                                                        | ✗                    | ✓ (`VITE_DEMO_LIVE=1`) |
-| `supportsAimpWorkspace`                                                                                                                   | ✓ (simulated)        | ✓ (simulated)          |
-| `supportsLoudnessAnalysis`                                                                                                                | ✓ (simulated)        | ✓ (simulated)          |
+| Флаг                                                                                                                  | Fixtures (`dev:web`) | Live (`dev:web:live`)  |
+| --------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------- |
+| `usesFixtureFileBrowser`                                                                                              | ✓                    | ✓                      |
+| `simulatesExport`                                                                                                     | ✓                    | ✓                      |
+| `supportsLocalFilePlayback`, `supportsNativeFileSystem`, `supportsProjectPersistence`, `supportsAudioDeviceSelection` | ✗                    | ✗                      |
+| `supportsRealAuth`                                                                                                    | ✗                    | ✓ (`VITE_DEMO_LIVE=1`) |
+| `supportsAimpWorkspace`                                                                                               | ✓ (simulated)        | ✓ (simulated)          |
+| `supportsLoudnessAnalysis`                                                                                            | ✓ (simulated)        | ✓ (simulated)          |
 
 Для gating в коде используйте `getPlatformCapabilities()`, `isDemoLiveMode()` / `isDemoFixturesMode()` или guards (`guardNativeFileOperation`, `guardPlaybackUnavailable`, `isDemoAuthMode`), **не** `getAppMode() === 'demo'` для feature gating. Косметика демо (баннер, title) может читать `getAppMode()` / live-флаг.
 
@@ -111,12 +111,12 @@ Proxy полезен в **live**-режиме (`dev:web:live`). В **fixtures** 
 
 Скрипты задают флаги через `cross-env`; при ручном запуске Vite используйте те же имена.
 
-| Переменная               | Значение в скриптах                         | Смысл                                                                                                                                                                                                               |
-| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_MODE`          | `demo`                                      | Включает bootstrap с `WebDemoPlatform`                                                                                                                                                                              |
-| `VITE_DEMO_LIVE`         | `1` только в `dev:web:live`                 | Live overlay: `supportsRealAuth`, real login/party, SignalR при Online ON. Без флага (или не `1`) — fixtures                                                                                                        |
-| `VITE_LOAD_DEMO_PROJECT` | `1` только в `dev:web:project`              | После монтирования UI — загрузка как пункт меню **«Учебный демо-проект…»**                                                                                                                                             |
-| `VITE_API_URL`           | опционально                                 | Базовый URL CherryPlayServer. По умолчанию **пусто** — same-origin через [Vite proxy](#vite-dev-proxy-и-cherryplayserver). При непустом значении proxy не используется, нужен CORS на бэкенде                     |
+| Переменная               | Значение в скриптах            | Смысл                                                                                                                                                                                         |
+| ------------------------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_MODE`          | `demo`                         | Включает bootstrap с `WebDemoPlatform`                                                                                                                                                        |
+| `VITE_DEMO_LIVE`         | `1` только в `dev:web:live`    | Live overlay: `supportsRealAuth`, real login/party, SignalR при Online ON. Без флага (или не `1`) — fixtures                                                                                  |
+| `VITE_LOAD_DEMO_PROJECT` | `1` только в `dev:web:project` | После монтирования UI — загрузка как пункт меню **«Учебный демо-проект…»**                                                                                                                    |
+| `VITE_API_URL`           | опционально                    | Базовый URL CherryPlayServer. По умолчанию **пусто** — same-origin через [Vite proxy](#vite-dev-proxy-и-cherryplayserver). При непустом значении proxy не используется, нужен CORS на бэкенде |
 
 Fixtures (без сервера):
 
@@ -144,10 +144,10 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 
 - **Обозреватель файлов** — фикстурное дерево (синтетические пути, без бинарников `.mp3` в репозитории); навигация, хлебные крошки, поиск по фикстурам.
 - **Плейлист** — DnD из обозревателя, переупорядочивание, **undo/redo**.
-- **Коллекции (Collection)** — список треков, DnD, группы, undo/redo (как плейлист); экспорт JSON и копирование треков в папку — **«Не доступно в демо»**.
+- **Коллекции (Collection)** — список треков, DnD, группы, undo/redo (как плейлист). Переименование доступно отдельной кнопкой-карандаш; переименование из меню, JSON-экспорт и копирование файлов в папку не предусмотрены.
 - **Party (fixtures)** — старт **без** `linkedParty` (шапка **«Не создана»** / CTA **«Создать»**); фикстура `demoPartyFixture` (`DEMODK`) доступна через demo-сценарии (в т.ч. legacy **Черновик**); **Онлайн** по умолчанию (`enableStreaming: true`); без SignalR и без зависимости от `:5000`.
 - **Party / auth (live)** — browser SSO через CherryPlayWeb (нужен `:3000` + сервер `:5000`); данные вечеринок с API; SignalR при Online ON через proxy. Гостевой URL (`getPartyUrl`) при пустом `serverUrl` (Vite proxy / same-origin) — `http://localhost:3000/party/{shortCode}`; при непустом `VITE_API_URL` — эвристика host + `:5000`→`:3000` (как в Electron).
-- **Загрузка демо-проекта** — меню **Файл** → **«Учебный демо-проект…»** (`title`: «Загружает учебный демо-проект, не настоящую вечеринку») или `npm run dev:web:project` (fixtures; live-флаг выключен). При `meta.isDirty` — confirm перед отбрасыванием изменений (см. [Save/Load](./modules/systems/save-load.md)).
+- **Загрузка демо-проекта** — меню **Файл** → **«Учебный демо-проект…»** (`title`: «Загружает учебный демо-проект, не настоящую вечеринку») или `npm run dev:web:project` (fixtures; live-флаг выключен). При `meta.isDirty` — диалог приложения перед отбрасыванием изменений (см. [Save/Load](./modules/systems/save-load.md)).
 - **Экспорт** — сценарий UI проходит; IPC возвращает успех без записи файлов на диск; **без** success-toast (модалка закрывается).
 - **Нормализация громкости (simulated)** — `supportsLoudnessAnalysis: true`; Player gear (`TrackSettingsModal` isGlobal) / track controls доступны для UI-работы в `dev:web` / `dev:web:project`. IPC `audio:analyzeLoudness` / `audio:statAudioFile` обслуживает `WebDemoPlatform` через детерминированные профили (`demoLoudnessAnalyzer.ts`), **без** FFmpeg. `sample.cherry` seeded с `track.loudness`. Реальный local playback по-прежнему недоступен. См. [loudness](./modules/audio/loudness-normalization.md), [Platform](./modules/platform/README.md).
 - **Сброс persist** при старте демо (AC12) — `bootstrap.ts` вызывает `resetDemoPersistStorage()` **до** загрузки сторов и удаляет ключи `cherryplaylist-settings`, `cherryplaylist-workspaces` (включая `builtinLayoutOverrides`), `cherryplaylist-layout` (legacy), `cherryplaylist-project` из IndexedDB. Ключ `cherryplaylist-auth`: в **fixtures** тоже очищается; в **live** (`VITE_DEMO_LIVE=1`) **сохраняется**, чтобы сессия переживала F5. Остальные ключи в live по-прежнему сбрасываются — workspace/layout/overrides после полной перезагрузки не восстанавливаются. Подробнее: [клиентское persist](./modules/systems/persisted-client-state.md), [режим редактирования layout](./layout-edit-mode.md).
@@ -162,18 +162,18 @@ cross-env VITE_APP_MODE=demo VITE_DEMO_LIVE=1 VITE_API_URL=http://localhost:5000
 
 (константа `DEMO_UNAVAILABLE_MESSAGE` в `src/shared/platform/demoUnavailable.ts`). В toast это сообщение показывается как **`warning`** (`notifyDemoUnavailable` / `getPlatformUnavailableMessage`), не как `info`.
 
-| Область                    | Fixtures (`dev:web`)                                                                                                                                 | Live (`dev:web:live`)                                                                                          |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Electron / preload**     | Нет `window.api`; IPC через `WebDemoPlatform`                                                                                                        | То же                                                                                                          |
-| **Сохранение проекта**     | **«Не доступно в демо»**                                                                                                                             | То же                                                                                                          |
-| **Реальное аудио**         | Превью/демо-плеер — **«Не доступно в демо»**                                                                                                         | То же                                                                                                          |
-| **Коллекции (Collection)** | Экспорт JSON / копирование / импорт — **«Не доступно в демо»**                                                                                       | То же                                                                                                          |
-| **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`); размеры фикстурного плейлиста — 3, 25 или 100 треков через диагностику AIMP; desktop без изменений | То же                                                                                                          |
-| **Loudness**               | ✓ UI + simulated scan (фикстуры); без FFmpeg; без реального local playback                                                                           | То же                                                                                                          |
-| **Party**                  | Старт без link (**Не создана**); фикстура `DEMODK` через demo-сценарии; без live REST/SignalR                      | REST/SignalR к серверу при Online ON                                                                           |
-| **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Browser SSO как Desktop (`BrowserLoginPanel` → Web `:3000`); callback через `BroadcastChannel`                 |
-| **Трансляция / Онлайн**    | `enableStreaming` ↔ `networkEnabled`; hub **не** стартует                                                                                            | `enableStreaming` ↔ `networkEnabled`; hub при Online ON + `supportsRealAuth`                                   |
-| **Production web build**   | Нет `build:web-demo`                                                                                                                                 | Нет                                                                                                            |
+| Область                    | Fixtures (`dev:web`)                                                                                                                                 | Live (`dev:web:live`)                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Electron / preload**     | Нет `window.api`; IPC через `WebDemoPlatform`                                                                                                        | То же                                                                                          |
+| **Сохранение проекта**     | **«Не доступно в демо»**                                                                                                                             | То же                                                                                          |
+| **Реальное аудио**         | Превью/демо-плеер — **«Не доступно в демо»**                                                                                                         | То же                                                                                          |
+| **Коллекции (Collection)** | Переименование доступно кнопкой-карандаш; действия переименования из меню, JSON-экспорта и копирования файлов в папку не предусмотрены                   | То же                                                                                          |
+| **AIMP**                   | ✓ симулированный bridge (`WebDemoPlatform.aimp`); размеры фикстурного плейлиста — 3, 25 или 100 треков через диагностику AIMP; desktop без изменений | То же                                                                                          |
+| **Loudness**               | ✓ UI + simulated scan (фикстуры); без FFmpeg; без реального local playback                                                                           | То же                                                                                          |
+| **Party**                  | Старт без link (**Не создана**); фикстура `DEMODK` через demo-сценарии; без live REST/SignalR                                                        | REST/SignalR к серверу при Online ON                                                           |
+| **Аккаунт**                | Фейковый «Demo Organizer»; login/OAuth без API                                                                                                       | Browser SSO как Desktop (`BrowserLoginPanel` → Web `:3000`); callback через `BroadcastChannel` |
+| **Трансляция / Онлайн**    | `enableStreaming` ↔ `networkEnabled`; hub **не** стартует                                                                                            | `enableStreaming` ↔ `networkEnabled`; hub при Online ON + `supportsRealAuth`                   |
+| **Production web build**   | Нет `build:web-demo`                                                                                                                                 | Нет                                                                                            |
 
 Вне scope: File System Access API, Android WebView, production web build, переименование `electronStorage`, mp3 в репозитории. CherryPlayWeb нужен в live для browser SSO (как у Desktop).
 

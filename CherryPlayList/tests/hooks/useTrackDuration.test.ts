@@ -39,11 +39,9 @@ describe('useAudioPathDurations', () => {
 describe('useTrackDuration', () => {
   it('loads durations in batches and resolves updates', async () => {
     const tracks = createTracks();
-    const requestDuration = jest.fn(async (path: string) => {
-      if (path === '/a.mp3') return 10;
-      if (path === '/b.mp3') return 20;
-      return 30;
-    });
+    const requestDuration = jest.fn((path: string) =>
+      Promise.resolve(path === '/a.mp3' ? 10 : path === '/b.mp3' ? 20 : 30),
+    );
     const onDurationResolved = jest.fn((id: string, duration: number) => {
       const target = tracks.find((track) => track.id === id);
       if (target) {
@@ -122,7 +120,7 @@ describe('useTrackDuration', () => {
       { ...createTrack('2', '/ignored.txt') },
       { ...createTrack('3', '/with-duration.mp3'), duration: 99 },
     ];
-    const requestDuration = jest.fn(async () => 15);
+    const requestDuration = jest.fn(() => Promise.resolve(15));
     const onDurationResolved = jest.fn();
 
     renderHook(() =>
@@ -169,7 +167,9 @@ describe('useTrackDuration', () => {
     const first = { ...createTrack('1', '/first.mp3') };
     const second = { ...createTrack('2', '/second.mp3') };
     let currentTracks: Track[] = [first];
-    const requestDuration = jest.fn(async (path: string) => (path === '/first.mp3' ? 10 : 25));
+    const requestDuration = jest.fn((path: string) =>
+      Promise.resolve(path === '/first.mp3' ? 10 : 25),
+    );
     const onDurationResolved = jest.fn((id: string, duration: number) => {
       const target = currentTracks.find((track) => track.id === id);
       if (target) {

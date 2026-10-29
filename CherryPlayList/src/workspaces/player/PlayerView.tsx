@@ -1,6 +1,6 @@
-
 import { ProjectItem, ActionAfterTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
+import type { PlayerAudioStatus } from '@shared/stores/playerAudioStore';
 import { DisplayItem } from '@shared/utils/playerItemsUtils';
 import React from 'react';
 
@@ -45,6 +45,7 @@ interface PlayerViewProps {
   selectedItemIds: Set<string>;
   activeTrackId: string | null | undefined;
   activePlayerTrackId: string | null | undefined;
+  playerAudioStatus: PlayerAudioStatus;
   playerStatus: string;
   mode: 'preparation' | 'session';
   showHourDividers: boolean;
@@ -79,10 +80,6 @@ interface PlayerViewProps {
   jumpToTrack?: (trackId: string) => Promise<void>;
 }
 
-/**
- * Презентационный компонент PlayerView
- * Отображает UI плеера, вся логика находится в PlayerViewContainer
- */
 export const PlayerView: React.FC<PlayerViewProps> = ({
   allTracksCount,
   totalDuration,
@@ -104,6 +101,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
   selectedItemIds,
   activeTrackId,
   activePlayerTrackId,
+  playerAudioStatus,
   playerStatus,
   mode,
   showHourDividers,
@@ -160,6 +158,7 @@ export const PlayerView: React.FC<PlayerViewProps> = ({
         selectedItemIds={selectedItemIds}
         activeTrackId={activeTrackId}
         activePlayerTrackId={activePlayerTrackId}
+        playerAudioStatus={playerAudioStatus}
         playerStatus={playerStatus}
         isPreparationMode={isPreparationMode}
         mode={mode}

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -40,6 +40,7 @@ const MAX_TRUE_PEAK_DB = 10;
 export type AnalyzeLoudnessOptions = {
   fileMtime?: number;
   fileSizeBytes?: number;
+  requestId?: string;
 };
 
 export type Ebur128ParseResult = {
@@ -49,26 +50,42 @@ export type Ebur128ParseResult = {
   truePeakDb: number;
 };
 
-let scanQueue: Promise<unknown> = Promise.resolve();
+type ScanTask = {
+  requestId: string;
+  state: 'queued' | 'running' | 'settled';
+  cancelRequested: boolean;
+  processFinished: boolean;
+  child: ChildProcess | null;
+  resolve: (result: LoudnessScanResult) => void;
+  filePath: string;
+  targetLufs: number;
+  options?: AnalyzeLoudnessOptions;
+};
 
-function isFiniteInRange(value: number, min: number, max: number): boolean {
+const MAX_SCAN_REQUEST_ID_LENGTH = 256;
+const scanQueue: ScanTask[] = [];
+const scanTasks = new Map<string, ScanTask>();
+let activeScan: ScanTask | null = null;
+let internalRequestSequence = 0;
+
+const isFiniteInRange = (value: number, min: number, max: number): boolean => {
   return Number.isFinite(value) && value >= min && value <= max;
-}
+};
 
-function isInsideAsarArchive(filePath: string): boolean {
+const isInsideAsarArchive = (filePath: string): boolean => {
   return /(?:^|[/\\])app\.asar[/\\]/.test(filePath);
-}
+};
 
-function parseTpkPeakValues(tpkValues: string): number | null {
+const parseTpkPeakValues = (tpkValues: string): number | null => {
   const peaks = tpkValues
     .trim()
     .split(/\s+/)
     .map((value) => Number.parseFloat(value))
     .filter((value) => Number.isFinite(value));
   return peaks.length > 0 ? Math.max(...peaks) : null;
-}
+};
 
-function parseTruePeakDb(searchText: string): number | null {
+const parseTruePeakDb = (searchText: string): number | null => {
   const peakDbtpMatch = searchText.match(/Peak:\s*([-\d.]+)\s+dBTP/i);
   if (peakDbtpMatch) {
     return Number.parseFloat(peakDbtpMatch[1]);
@@ -90,9 +107,9 @@ function parseTruePeakDb(searchText: string): number | null {
   }
 
   return null;
-}
+};
 
-function computeFfmpegTimeoutMs(fileSizeBytes?: number): number {
+const computeFfmpegTimeoutMs = (fileSizeBytes?: number): number => {
   if (!fileSizeBytes || fileSizeBytes <= 0) {
     return FFMPEG_MAX_TIMEOUT_MS;
   }
@@ -103,9 +120,26 @@ function computeFfmpegTimeoutMs(fileSizeBytes?: number): number {
     FFMPEG_MAX_TIMEOUT_MS,
     Math.max(FFMPEG_MIN_TIMEOUT_MS, Math.round(scaledTimeout)),
   );
-}
+};
 
-export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
+const isValidScanRequestId = (value: unknown): value is string => {
+  return (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= MAX_SCAN_REQUEST_ID_LENGTH
+  );
+};
+
+const createInternalScanRequestId = (): string => {
+  let requestId = '';
+  do {
+    requestId = `loudness-internal-${internalRequestSequence}`;
+    internalRequestSequence += 1;
+  } while (scanTasks.has(requestId));
+  return requestId;
+};
+
+export const parseEbur128Summary = (stderr: string): Ebur128ParseResult | null => {
   const summaryIndex = stderr.lastIndexOf('Summary:');
   const searchText = summaryIndex >= 0 ? stderr.slice(summaryIndex) : stderr;
 
@@ -155,18 +189,18 @@ export function parseEbur128Summary(stderr: string): Ebur128ParseResult | null {
   }
 
   return { integratedLufs, lraLowLufs, lraLu, truePeakDb };
-}
+};
 
-export function computeTrackGainDb(
+export const computeTrackGainDb = (
   integratedLufs: number,
   truePeakDb: number,
   targetLufs: number,
   headroomDbTp: number = HEADROOM_DB_TP,
-): number {
+): number => {
   return computeAutoGainDb(integratedLufs, truePeakDb, targetLufs, headroomDbTp);
-}
+};
 
-function getFfmpegCandidatePaths(): string[] {
+const getFfmpegCandidatePaths = (): string[] => {
   const candidates: string[] = [];
   const staticPath =
     typeof ffmpegStaticPath === 'string' && ffmpegStaticPath.length > 0 ? ffmpegStaticPath : null;
@@ -187,18 +221,24 @@ function getFfmpegCandidatePaths(): string[] {
   }
 
   return [...new Set(candidates)].filter((candidatePath) => !isInsideAsarArchive(candidatePath));
-}
+};
 
-export function resolveFfmpegPath(): string | null {
+export const resolveFfmpegPath = (): string | null => {
   return getFfmpegCandidatePaths().find((candidatePath) => fs.existsSync(candidatePath)) ?? null;
-}
+};
 
-function runFfmpegEbur128(
+const runFfmpegEbur128 = (
   ffmpegPath: string,
   filePath: string,
   fileSizeBytes?: number,
-): Promise<{ stderr: string; exitCode: number | null }> {
+  task?: ScanTask,
+): Promise<{ stderr: string; exitCode: number | null }> => {
   return new Promise((resolve, reject) => {
+    if (task?.cancelRequested) {
+      reject(new Error('Scan cancelled'));
+      return;
+    }
+
     const args = [
       '-hide_banner',
       '-nostats',
@@ -215,6 +255,9 @@ function runFfmpegEbur128(
       windowsHide: true,
       stdio: ['ignore', 'ignore', 'pipe'],
     });
+    if (task) {
+      task.child = child;
+    }
     let stderr = '';
     let settled = false;
 
@@ -225,102 +268,209 @@ function runFfmpegEbur128(
       }
       child.kill();
       settled = true;
+      if (task) {
+        task.child = null;
+        task.processFinished = true;
+      }
       reject(new Error(`FFmpeg loudness scan timed out after ${Math.round(timeoutMs / 1000)}s`));
     }, timeoutMs);
+
+    const settle = (callback: () => void): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (task) {
+        task.child = null;
+        task.processFinished = true;
+      }
+      clearTimeout(timeoutId);
+      callback();
+    };
 
     child.stderr?.on('data', (chunk: Buffer | string) => {
       stderr += chunk.toString();
     });
 
     child.on('error', (error) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timeoutId);
-      reject(error);
+      settle(() => reject(error));
     });
 
     child.on('close', (exitCode) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timeoutId);
-      resolve({ stderr, exitCode });
+      settle(() => resolve({ stderr, exitCode }));
     });
   });
-}
+};
 
-function enqueueScan<T>(task: () => Promise<T>): Promise<T> {
-  const run = scanQueue.then(() => task());
-  scanQueue = run.catch(() => undefined);
-  return run;
-}
-
-function scanError(message: string): LoudnessScanError {
+const scanError = (message: string): LoudnessScanError => {
   return { status: 'error', errorMessage: message };
-}
+};
 
-export async function analyzeLoudness(
+const executeScan = async (
+  task: ScanTask,
+  filePath: string,
+  targetLufs: number,
+  options?: AnalyzeLoudnessOptions,
+): Promise<LoudnessScanResult> => {
+  if (task.cancelRequested) {
+    return scanError('Scan cancelled');
+  }
+
+  const ffmpegPath = resolveFfmpegPath();
+  if (!ffmpegPath) {
+    return scanError('Не удалось проанализировать громкость этого трека.');
+  }
+
+  let fileMtime: number;
+  if (options?.fileMtime !== undefined) {
+    fileMtime = options.fileMtime;
+  } else {
+    try {
+      const stats = await fs.promises.stat(filePath);
+      fileMtime = normalizeStatNumber(stats.mtimeMs);
+    } catch (error) {
+      return scanError(`Failed to read file metadata: ${(error as Error).message}`);
+    }
+  }
+
+  if (task.cancelRequested) {
+    return scanError('Scan cancelled');
+  }
+
+  try {
+    const { stderr, exitCode } = await runFfmpegEbur128(
+      ffmpegPath,
+      filePath,
+      options?.fileSizeBytes,
+      task,
+    );
+
+    if (task.cancelRequested) {
+      return scanError('Scan cancelled');
+    }
+
+    if (exitCode !== 0) {
+      const trimmed = stderr.trim();
+      const tail = trimmed.length > 400 ? trimmed.slice(-400) : trimmed;
+      return scanError(
+        tail.length > 0
+          ? `FFmpeg exited with code ${exitCode}: ${tail}`
+          : `FFmpeg exited with code ${exitCode ?? 'unknown'}`,
+      );
+    }
+
+    const parsed = parseEbur128Summary(stderr);
+    if (!parsed) {
+      return scanError('Failed to parse ebur128 measurement output from FFmpeg stderr');
+    }
+
+    const trackGainDb = computeTrackGainDb(parsed.integratedLufs, parsed.truePeakDb, targetLufs);
+
+    return {
+      status: 'ok',
+      integratedLufs: parsed.integratedLufs,
+      lraLowLufs: parsed.lraLowLufs,
+      lraLu: parsed.lraLu,
+      truePeakDb: parsed.truePeakDb,
+      trackGainDb,
+      fileMtime,
+      algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
+    };
+  } catch (error) {
+    if (task.cancelRequested) {
+      return scanError('Scan cancelled');
+    }
+    return scanError(`Loudness scan failed: ${(error as Error).message}`);
+  }
+};
+
+const pumpScanQueue = (): void => {
+  if (activeScan) {
+    return;
+  }
+
+  const next = scanQueue.shift();
+  if (!next) {
+    return;
+  }
+
+  next.state = 'running';
+  activeScan = next;
+  const finish = (result: LoudnessScanResult): void => {
+    next.state = 'settled';
+    next.child = null;
+    if (scanTasks.get(next.requestId) === next) {
+      scanTasks.delete(next.requestId);
+    }
+    if (activeScan === next) {
+      activeScan = null;
+    }
+    next.resolve(result);
+    pumpScanQueue();
+  };
+  void executeScan(next, next.filePath, next.targetLufs, next.options).then(finish, (error) => {
+    finish(scanError(`Loudness scan failed: ${(error as Error).message}`));
+  });
+};
+
+export const analyzeLoudness = (
   filePath: string,
   targetLufs: number = DEFAULT_TARGET_LUFS,
   options?: AnalyzeLoudnessOptions,
-): Promise<LoudnessScanResult> {
-  return enqueueScan(async () => {
-    const ffmpegPath = resolveFfmpegPath();
-    if (!ffmpegPath) {
-      return scanError('FFmpeg binary not found. Ensure ffmpeg-static is installed and bundled.');
-    }
+): Promise<LoudnessScanResult> => {
+  const requestId = options?.requestId ?? createInternalScanRequestId();
+  if (!isValidScanRequestId(requestId)) {
+    return Promise.resolve(scanError('Invalid loudness scan request ID'));
+  }
+  if (scanTasks.has(requestId)) {
+    return Promise.resolve(scanError('Loudness scan request ID is already in use'));
+  }
 
-    let fileMtime: number;
-    if (options?.fileMtime !== undefined) {
-      fileMtime = options.fileMtime;
-    } else {
-      try {
-        const stats = await fs.promises.stat(filePath);
-        fileMtime = normalizeStatNumber(stats.mtimeMs);
-      } catch (error) {
-        return scanError(`Failed to read file metadata: ${(error as Error).message}`);
-      }
-    }
-
-    try {
-      const { stderr, exitCode } = await runFfmpegEbur128(
-        ffmpegPath,
-        filePath,
-        options?.fileSizeBytes,
-      );
-
-      if (exitCode !== 0) {
-        const trimmed = stderr.trim();
-        const tail = trimmed.length > 400 ? trimmed.slice(-400) : trimmed;
-        return scanError(
-          tail.length > 0
-            ? `FFmpeg exited with code ${exitCode}: ${tail}`
-            : `FFmpeg exited with code ${exitCode ?? 'unknown'}`,
-        );
-      }
-
-      const parsed = parseEbur128Summary(stderr);
-      if (!parsed) {
-        return scanError('Failed to parse ebur128 measurement output from FFmpeg stderr');
-      }
-
-      const trackGainDb = computeTrackGainDb(parsed.integratedLufs, parsed.truePeakDb, targetLufs);
-
-      return {
-        status: 'ok',
-        integratedLufs: parsed.integratedLufs,
-        lraLowLufs: parsed.lraLowLufs,
-        lraLu: parsed.lraLu,
-        truePeakDb: parsed.truePeakDb,
-        trackGainDb,
-        fileMtime,
-        algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
-      };
-    } catch (error) {
-      return scanError(`Loudness scan failed: ${(error as Error).message}`);
-    }
+  return new Promise((resolve) => {
+    const task: ScanTask = {
+      requestId,
+      state: 'queued',
+      cancelRequested: false,
+      processFinished: false,
+      child: null,
+      resolve,
+      filePath,
+      targetLufs,
+      options,
+    };
+    scanTasks.set(requestId, task);
+    scanQueue.push(task);
+    pumpScanQueue();
   });
-}
+};
+
+export const cancelLoudnessScan = (requestId: string): boolean => {
+  if (!isValidScanRequestId(requestId)) {
+    return false;
+  }
+
+  const task = scanTasks.get(requestId);
+  if (!task || task.processFinished) {
+    return false;
+  }
+  if (task.cancelRequested) {
+    return true;
+  }
+
+  task.cancelRequested = true;
+  if (task.state === 'queued') {
+    const queuedIndex = scanQueue.indexOf(task);
+    if (queuedIndex >= 0) {
+      scanQueue.splice(queuedIndex, 1);
+    }
+    task.state = 'settled';
+    if (scanTasks.get(requestId) === task) {
+      scanTasks.delete(requestId);
+    }
+    task.resolve(scanError('Scan cancelled'));
+    return true;
+  }
+
+  task.child?.kill();
+  return true;
+};

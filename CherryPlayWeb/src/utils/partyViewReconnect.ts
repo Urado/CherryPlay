@@ -2,11 +2,11 @@ import type { PartyViewerStatusId, PlaybackState } from '@cherryplay/components'
 
 export const DISCONNECT_FREEZE_MS = 60_000;
 
-export function resolveShowPlayerByStatus(params: {
+export const resolveShowPlayerByStatus = (params: {
   viewerStatusId: PartyViewerStatusId;
   isDisconnectFreezeActive: boolean;
   playbackState: PlaybackState | null;
-}): boolean {
+}): boolean => {
   const { viewerStatusId, isDisconnectFreezeActive, playbackState } = params;
 
   if (viewerStatusId === 'server_unreachable') {
@@ -26,9 +26,9 @@ export function resolveShowPlayerByStatus(params: {
   }
 
   return false;
-}
+};
 
-export function applyOrganizerConnectionStatusChanged(params: {
+export const applyOrganizerConnectionStatusChanged = (params: {
   isOnline: boolean;
   clearSessionTimers: () => void;
   setIsSessionActive: (active: boolean) => void;
@@ -37,7 +37,7 @@ export function applyOrganizerConnectionStatusChanged(params: {
   clearOfflineTimers: () => void;
   scheduleDisconnectFreeze: (fn: () => void, ms: number) => void;
   onOrganizerOnline?: () => void;
-}): void {
+}): void => {
   const {
     isOnline,
     clearSessionTimers,
@@ -63,4 +63,4 @@ export function applyOrganizerConnectionStatusChanged(params: {
     setPlaybackState(null);
     setIsDisconnectFreezeActive(false);
   }, DISCONNECT_FREEZE_MS);
-}
+};

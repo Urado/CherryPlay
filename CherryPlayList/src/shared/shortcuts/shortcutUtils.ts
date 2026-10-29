@@ -43,7 +43,7 @@ const PLAYER_SPACE_NATIVE_CONTROL_SELECTOR = [
 
 const PLAYER_SPACE_DIALOG_SELECTOR = '.modal-overlay, [role="dialog"], [aria-modal="true"]';
 
-export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): boolean {
+export const matchKeyBinding = (event: KeyboardEvent, binding: KeyBinding): boolean => {
   if (event.code !== binding.code) {
     return false;
   }
@@ -66,25 +66,25 @@ export function matchKeyBinding(event: KeyboardEvent, binding: KeyBinding): bool
   }
 
   return true;
-}
+};
 
-export function isInputField(event: KeyboardEvent): boolean {
+export const isInputField = (event: KeyboardEvent): boolean => {
   const target = event.target as HTMLElement | null;
   if (!target) {
     return false;
   }
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-}
+};
 
-export function isInteractiveElement(event: KeyboardEvent): boolean {
+export const isInteractiveElement = (event: KeyboardEvent): boolean => {
   const target = event.target;
   if (!(target instanceof Element)) {
     return false;
   }
   return target.closest(INTERACTIVE_SELECTOR) !== null;
-}
+};
 
-export function shouldBlockPlayerSpaceShortcut(event: KeyboardEvent): boolean {
+export const shouldBlockPlayerSpaceShortcut = (event: KeyboardEvent): boolean => {
   const target = event.target;
   if (!(target instanceof Element)) {
     return false;
@@ -103,26 +103,26 @@ export function shouldBlockPlayerSpaceShortcut(event: KeyboardEvent): boolean {
     return true;
   }
   return false;
-}
+};
 
-export function bindingHasModifier(binding: KeyBinding): boolean {
+export const bindingHasModifier = (binding: KeyBinding): boolean => {
   return (
     binding.ctrlKey === true ||
     binding.metaKey === true ||
     binding.altKey === true ||
     binding.shiftKey === true
   );
-}
+};
 
-export function isActivationKeyBinding(binding: KeyBinding): boolean {
+export const isActivationKeyBinding = (binding: KeyBinding): boolean => {
   return (binding.code === 'Space' || binding.code === 'Enter') && !bindingHasModifier(binding);
-}
+};
 
-export function isMac(): boolean {
+export const isMac = (): boolean => {
   return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-}
+};
 
-export function formatKeyBinding(binding: KeyBinding): string {
+export const formatKeyBinding = (binding: KeyBinding): string => {
   const parts: string[] = [];
 
   if (binding.ctrlKey) {
@@ -140,9 +140,9 @@ export function formatKeyBinding(binding: KeyBinding): string {
   parts.push(codeToKeyName(binding.code));
 
   return parts.join('+');
-}
+};
 
-function codeToKeyName(code: string): string {
+const codeToKeyName = (code: string): string => {
   if (code.startsWith('Key')) {
     return code.slice(3);
   }
@@ -165,9 +165,9 @@ function codeToKeyName(code: string): string {
   };
 
   return specialKeys[code] || code;
-}
+};
 
-export function parseShortcutString(shortcutString: string): KeyBinding | null {
+export const parseShortcutString = (shortcutString: string): KeyBinding | null => {
   const parts = shortcutString.split('+').map((p) => p.trim().toLowerCase());
 
   if (parts.length === 0) {
@@ -206,9 +206,9 @@ export function parseShortcutString(shortcutString: string): KeyBinding | null {
   }
 
   return binding;
-}
+};
 
-function keyNameToCode(keyName: string): string {
+const keyNameToCode = (keyName: string): string => {
   const normalized = keyName.toUpperCase();
 
   if (normalized.length === 1 && normalized >= 'A' && normalized <= 'Z') {
@@ -232,4 +232,4 @@ function keyNameToCode(keyName: string): string {
   };
 
   return specialCodes[normalized] || normalized;
-}
+};

@@ -1,12 +1,13 @@
+import { AccountView } from '@app/components/AccountView';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-const getWebBaseUrlMock = jest.fn();
-const invokeMock = jest.fn();
+const getWebBaseUrlMock = jest.fn<Promise<string>, unknown[]>();
+const invokeMock = jest.fn<Promise<unknown>, unknown[]>();
 const addNotificationMock = jest.fn();
 const onCloseMock = jest.fn();
-const logoutMock = jest.fn();
+const logoutMock = jest.fn<Promise<void>, unknown[]>();
 
 jest.mock('@cherryplay/components', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -83,11 +84,7 @@ jest.mock('@shared/services/authService', () => ({
 
 jest.mock('@shared/stores', () => ({
   useClientOutdatedStore: () => ({ isOutdated: false, requiredVersion: null }),
-  useUIStore: (
-    selector: (s: {
-      addNotification: typeof addNotificationMock;
-    }) => unknown,
-  ) =>
+  useUIStore: (selector: (s: { addNotification: typeof addNotificationMock }) => unknown) =>
     selector({
       addNotification: addNotificationMock,
     }),
@@ -120,8 +117,6 @@ jest.mock('@app/components/MyPartiesList', () => ({
   MyPartiesList: () => null,
 }));
 
-import { AccountView } from '@app/components/AccountView';
-
 describe('AccountView privacy link', () => {
   beforeEach(() => {
     getWebBaseUrlMock.mockReset();
@@ -137,7 +132,9 @@ describe('AccountView privacy link', () => {
     render(<AccountView onClose={onCloseMock} />);
 
     expect(screen.getAllByRole('button')).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Привязать существующую вечеринку' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Привязать существующую вечеринку' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть кабинет на сайте' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeVisible();
   });

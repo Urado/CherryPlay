@@ -1,9 +1,7 @@
-
 import { ProjectItem } from '@core/types/project';
 import { WorkspaceId } from '@core/types/workspace';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { isCrossWorkspaceOperation } from '../../core/constants/workspace';
 import { Track } from '../../core/types/track';
 import {
   getRootIdsForDrag,
@@ -27,6 +25,12 @@ import {
 import { DisplayItem } from '../utils/playerItemsUtils';
 import { createTrackDrafts } from '../utils/trackFactory';
 
+const isDifferentWorkspaceStore = (sourceWorkspaceId: WorkspaceId, targetWorkspaceId: WorkspaceId) => {
+  const sourceStore = getProjectStore(sourceWorkspaceId);
+  const targetStore = getProjectStore(targetWorkspaceId);
+  return Boolean(sourceStore && targetStore && sourceStore !== targetStore);
+};
+
 export interface WorkspaceDragDropOptions {
   displayItems: DisplayItem[];
   items: ProjectItem[];
@@ -34,13 +38,15 @@ export interface WorkspaceDragDropOptions {
   selectedItemIds: Set<string>;
   workspaceId: WorkspaceId;
   isValidAudioFile: (path: string) => boolean;
-  onAddTracks: (tracks: Omit<Track, 'id'>[]) => void;
+  onAddTracks: (
+    tracks: Omit<Track, 'id'>[],
+    parentId?: string | null,
+    localIndex?: number,
+  ) => void;
   onAddTracksAt: (tracks: Omit<Track, 'id'>[], index: number) => void;
   onTracksAdded?: (targets: Array<{ id: string; path: string }>) => void;
   loadFolderTracks?: (folderPath: string) => Promise<string[]>;
-  /** Unified move executor - handles both same-workspace and cross-workspace moves */
   onMove?: (command: DragDropCommand) => boolean;
-  /** Unified copy executor - handles both same-workspace and cross-workspace copies */
   onCopy?: (command: DragDropCommand) => boolean;
   onError?: (message: string) => void;
 }
@@ -48,7 +54,7 @@ export interface WorkspaceDragDropOptions {
 export type TrackWorkspaceDragOptions = WorkspaceDragDropOptions;
 export type PlaylistDragOptions = WorkspaceDragDropOptions;
 
-export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
+export const useWorkspaceDragAndDrop = (options: WorkspaceDragDropOptions) => {
   const {
     displayItems,
     items: _items,
@@ -144,7 +150,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       const isCrossWorkspace =
         isItemDrag &&
         isItemDragState(draggedItems) &&
-        isCrossWorkspaceOperation(draggedItems.sourceWorkspaceId, workspaceId);
+        isDifferentWorkspaceStore(draggedItems.sourceWorkspaceId, workspaceId);
 
       if (isCrossWorkspace && isItemDragState(draggedItems)) {
         const sourceStore = getProjectStore(draggedItems.sourceWorkspaceId);
@@ -213,7 +219,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
           setDraggedItems({ type: 'files', paths: [], directories: [] });
         }
       } else if (isItemDragState(draggedItems)) {
-        const isCrossWorkspace = isCrossWorkspaceOperation(
+        const isCrossWorkspace = isDifferentWorkspaceStore(
           draggedItems.sourceWorkspaceId,
           workspaceId,
         );
@@ -248,9 +254,8 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       if (parentId === null) {
         onAddTracksAt(drafts, localIndex);
       } else {
-        onAddTracks(drafts);
+        onAddTracks(drafts, parentId, localIndex);
       }
-      // Duration loading is done in the parent's onAddTracks/onAddTracksAt (with track ids)
     },
     [isValidAudioFile, onAddTracks, onAddTracksAt],
   );
@@ -330,7 +335,9 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
       }
 
       const { rootIds, allFlatIndices, sourceWorkspaceId } = draggedItems;
-      const isSameWorkspace = sourceWorkspaceId === workspaceId;
+      const sourceStore = getProjectStore(sourceWorkspaceId);
+      const targetStore = getProjectStore(workspaceId);
+      const isSameWorkspace = Boolean(sourceStore && targetStore && sourceStore === targetStore);
 
       if (isSameWorkspace && isDropInsideDragged(targetFlatIndex, allFlatIndices)) {
         logger.warn('executeDrop: cannot drop inside dragged items');
@@ -359,7 +366,6 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
         targetDisplayItems,
       );
 
-      // Unified execution path: always use prepareMoveCommand/prepareCopyCommand + executor
       const isCopyOperation = draggedItems.isCopyMode ?? false;
       const prepareCommand = isCopyOperation ? prepareCopyCommand : prepareMoveCommand;
       const executeCallback = isCopyOperation ? onCopy : onMove;
@@ -568,7 +574,7 @@ export function useWorkspaceDragAndDrop(options: WorkspaceDragDropOptions) {
     handleDragEnd,
     handleDragLeave,
   };
-}
+};
 
 export const useTrackWorkspaceDragAndDrop = useWorkspaceDragAndDrop;
 export const usePlaylistDragAndDrop = useWorkspaceDragAndDrop;

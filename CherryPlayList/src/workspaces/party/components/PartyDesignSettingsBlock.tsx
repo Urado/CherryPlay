@@ -255,7 +255,7 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
           Стиль оформления
         </label>
       )}
-      <div className="party-editor-dropdown" ref={dropdownRef}>
+      <div className="party-editor-dropdown party-editor-dropdown-theme-independent" ref={dropdownRef}>
         <button
           id="theme-selector"
           ref={buttonRef}
@@ -286,7 +286,10 @@ export const PartyDesignSettingsBlock: React.FC<PartyDesignSettingsBlockProps> =
           </div>
         </button>
         {dropdownMenu &&
-          createPortal(<div data-theme={effectiveThemeId}>{dropdownMenu}</div>, document.body)}
+          createPortal(
+            <div className="party-editor-dropdown-theme-independent">{dropdownMenu}</div>,
+            document.body,
+          )}
       </div>
       {showApplyButton && (
         <Button

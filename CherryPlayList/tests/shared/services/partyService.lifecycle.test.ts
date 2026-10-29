@@ -22,8 +22,9 @@ const mockGetAuthState = useAuthStore.getState as jest.MockedFunction<typeof use
 const API_URL = 'http://localhost:5000/api';
 const PARTY_ID = '123e4567-e89b-12d3-a456-426614174000';
 const ACCESS_TOKEN = 'test-access-token';
+const fetchMock = jest.fn<Promise<Response>, Parameters<typeof fetch>>();
 
-function makePartyDto(overrides: Partial<PartyDto> = {}): PartyDto {
+const makePartyDto = (overrides: Partial<PartyDto> = {}): PartyDto => {
   return {
     id: PARTY_ID,
     name: 'Test Party',
@@ -34,12 +35,12 @@ function makePartyDto(overrides: Partial<PartyDto> = {}): PartyDto {
     partyLifecycleState: 'ready',
     ...overrides,
   };
-}
+};
 
-function mockFetchResponse(
+const mockFetchResponse = (
   body: unknown,
   init: { status?: number; ok?: boolean; statusText?: string } = {},
-): Response {
+): Response => {
   const status = init.status ?? 200;
   const ok = init.ok ?? (status >= 200 && status < 300);
   const serialized = typeof body === 'string' ? body : JSON.stringify(body);
@@ -52,10 +53,10 @@ function mockFetchResponse(
     clone() {
       return this;
     },
-    json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
-    text: async () => serialized,
+    json: () => Promise.resolve(typeof body === 'string' ? (JSON.parse(body) as unknown) : body),
+    text: () => Promise.resolve(serialized),
   } as Response;
-}
+};
 
 describe('partyService.transitionPartyLifecycle', () => {
   beforeEach(() => {
@@ -76,32 +77,32 @@ describe('partyService.transitionPartyLifecycle', () => {
       isAuthenticated: () => true,
     });
 
-    global.fetch = jest.fn();
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
   });
 
   it('returns PartyDto on successful lifecycle transition', async () => {
     const party = makePartyDto({ partyLifecycleState: 'ready' });
-    (global.fetch as jest.Mock).mockResolvedValue(mockFetchResponse(party));
+    fetchMock.mockResolvedValue(mockFetchResponse(party));
 
     const result = await partyService.transitionPartyLifecycle(PARTY_ID, 'ready');
 
     expect(result).toEqual(party);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_URL}/parties/${PARTY_ID}/lifecycle`,
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
-        }),
-        body: JSON.stringify({ partyLifecycleState: 'ready' }),
-        cache: 'no-cache',
-      }),
-    );
+    const [requestUrl, request] = fetchMock.mock.calls[0];
+    expect(requestUrl).toBe(`${API_URL}/parties/${PARTY_ID}/lifecycle`);
+    expect(request).toMatchObject({
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ partyLifecycleState: 'ready' }),
+      cache: 'no-cache',
+    });
   });
 
   it('parses 409 invalid_lifecycle_transition into InvalidPartyLifecycleTransitionError', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       mockFetchResponse(
         {
           code: 'invalid_lifecycle_transition',

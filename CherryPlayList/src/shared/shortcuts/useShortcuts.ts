@@ -1,11 +1,13 @@
 import { toggleSessionPlayPause } from '@shared/utils/togglePlayPause';
 import { useEffect, useMemo, useRef } from 'react';
 
-
 import { shortcutManager } from './ShortcutManager';
 import type { ShortcutHandlers, ShortcutId, UseShortcutsOptions } from './shortcutTypes';
 
-export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOptions = {}): void {
+export const useShortcuts = (
+  handlers: ShortcutHandlers,
+  options: UseShortcutsOptions = {},
+): void => {
   const { enabled = true } = options;
 
   const registeredIds = useRef<Set<ShortcutId>>(new Set());
@@ -45,26 +47,26 @@ export function useShortcuts(handlers: ShortcutHandlers, options: UseShortcutsOp
       registeredIds.current.clear();
     };
   }, [handlers, enabled]);
-}
+};
 
-export function useGlobalShortcuts(
+export const useGlobalShortcuts = (
   handlers: Pick<ShortcutHandlers, 'global.save' | 'global.saveAs' | 'global.open' | 'global.new'>,
   options: UseShortcutsOptions = {},
-): void {
+): void => {
   useShortcuts(handlers, options);
-}
+};
 
-export function useListShortcuts(
+export const useListShortcuts = (
   handlers: Pick<
     ShortcutHandlers,
     'list.undo' | 'list.redo' | 'list.delete' | 'list.selectAll' | 'list.escape'
   >,
   options: UseShortcutsOptions = {},
-): void {
+): void => {
   useShortcuts(handlers, options);
-}
+};
 
-export function usePlayerShortcuts(options: UseShortcutsOptions = {}): void {
+export const usePlayerShortcuts = (options: UseShortcutsOptions = {}): void => {
   const handlers = useMemo(
     () => ({
       'player.togglePlay': toggleSessionPlayPause,
@@ -73,4 +75,4 @@ export function usePlayerShortcuts(options: UseShortcutsOptions = {}): void {
   );
 
   useShortcuts(handlers, options);
-}
+};

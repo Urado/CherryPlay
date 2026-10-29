@@ -15,7 +15,7 @@
 
 **Настройки:** центральный модал `PartySettingsModal` (`openPartySettingsModal` из пульта ⚙ / Create / К настройкам). При `draft-unlinked` — только info + видимость + **Создать** / **Привязать**. После link — метаданные (карточка/extended), дизайн, Copy URL, каталог, **Обновить** / legacy Make Ready, приглушённая **В архив** (confirm / blockedByLive / quiet). **Нет** в модале: Publish, Unarchive, return-to-draft.
 
-**Design в превью:** `partySettingsUiStore` (`previewDesignOpen`) + `PartyPreviewDesignNav` (≡) / `PartyPreviewDesignPanel` в `PartyPreviewView` (панель свёрнута по умолчанию; без меню секций). В панели доступны разделы **«Стиль оформления»** и **«Отображение»**. Последний содержит настройку глубины групп плейлиста (default 3; верхние группы глубже лимита скрываются с подъёмом дочерних элементов) и прежнюю настройку обрезания ведущих символов названий треков. Глубина применяется к Basic, Cyberpunk, Sakura и Art Deco; Spring сохраняет текущую собственную отрисовку.
+**Design в превью:** `partySettingsUiStore` (`previewDesignOpen`) + `PartyPreviewDesignNav` (≡) / `PartyPreviewDesignPanel` в `PartyPreviewView` (панель свёрнута по умолчанию; без меню секций). В панели доступны разделы **«Стиль оформления»** и **«Отображение»**. В «Отображении» расположены блоки **«Заголовки»**, **«Названия треков»**, **«Группы»** в этом порядке. «Заголовки» содержит поля заголовка и подзаголовка страницы вечеринки; «Названия треков» — настройки скрытия ведущих символов и пример результата; «Группы» настраивает глубину (default 3; верхние группы глубже лимита скрываются с подъёмом дочерних элементов). Поля заголовков используют общее состояние настроек вечеринки. Глубина применяется к Basic, Cyberpunk, Sakura и Art Deco; Spring сохраняет текущую собственную отрисовку.
 
 **Party Preview:** `PartyPreview` через `usePartyPreviewEffectiveState()`; connectivity-баннеры; всегда нижняя `PartyWorkspaceDemoPanel` `mode="preview"`.
 
@@ -43,7 +43,7 @@ party/
 ├── usePartySettingsFormState.ts   # shared form state for modal + preview design
 ├── PartyEditorView.tsx / PartyPreviewView.tsx
 ├── PartyPreviewDesignPanel.tsx
-├── PartyPreviewDisplayPanel.tsx     # display settings: group depth + track-name prefix trimming
+├── PartyPreviewDisplayPanel.tsx     # preview display panel: group depth only (track names in settings modal)
 ├── PartyWorkspaceDemoPanel.tsx    # thin UI consumer scenario actions (preview mode)
 ```
 

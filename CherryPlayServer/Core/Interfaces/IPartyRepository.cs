@@ -13,6 +13,11 @@ public interface IPartyRepository
     Task<Party> AddAsync(Party party);
     Task<bool> AddIfFuturePartyLimitNotReachedAsync(Party party, DateTime nowUtc, int limit);
     Task UpdateAsync(Party party);
+    Task<bool> UpdateIfFuturePartyLimitNotReachedAsync(
+        Party party,
+        DateTime? previousEventDateTime,
+        DateTime nowUtc,
+        int limit);
     Task DeleteAsync(Guid id);
     Task<Party?> GetFirstAsync();
 }

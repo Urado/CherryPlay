@@ -15,5 +15,4 @@ export const isTrackActionsMenuDisabled = (
   jumpToTrack: ((trackId: string) => Promise<void>) | undefined,
   actionsTargetTrackId: string | undefined,
   activePlayerTrackId: string | null | undefined,
-): boolean =>
-  !jumpToTrack || !actionsTargetTrackId || actionsTargetTrackId === activePlayerTrackId;
+): boolean => !jumpToTrack || !actionsTargetTrackId || actionsTargetTrackId === activePlayerTrackId;

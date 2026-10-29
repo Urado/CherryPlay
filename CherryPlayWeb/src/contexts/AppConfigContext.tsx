@@ -56,10 +56,10 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>;
 };
 
-export function useAppConfig(): AppConfigState {
+export const useAppConfig = (): AppConfigState => {
   const ctx = useContext(AppConfigContext);
   if (ctx == null) {
     throw new Error('useAppConfig must be used within AppConfigProvider');
   }
   return ctx;
-}
+};

@@ -1,13 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using CherryPlayServer.Core;
 using CherryPlayServer.Core.Entities;
+using CherryPlayServer.Core.Enums;
 using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core.Models;
 using CherryPlayServer.Infrastructure.Persistence.Mappings;
 
 namespace CherryPlayServer.Infrastructure.Persistence.Repositories;
 
-public class EfPartyRepository : IPartyRepository
+public class EfPartyRepository : IPartyRepository, IPartyLifecycleRepository, IPartyMetadataRepository
 {
     private readonly AppDbContext _context;
     private readonly ILogger<EfPartyRepository> _logger;
@@ -103,8 +105,7 @@ public class EfPartyRepository : IPartyRepository
         {
             await _context.Database.ExecuteSqlInterpolatedAsync(
                 $"SELECT pg_advisory_xact_lock(hashtextextended({party.OrganizerId.ToString()}, 0))");
-            var futureCount = await _context.Parties.AsNoTracking()
-                .CountAsync(item => item.OrganizerId == party.OrganizerId && !item.IsDeleted && item.EventDateTime > nowUtc);
+            var futureCount = await CountFuturePartiesAsync(party.OrganizerId, nowUtc, excludePartyId: null);
             if (futureCount >= limit)
             {
                 await transaction.CommitAsync();
@@ -132,6 +133,44 @@ public class EfPartyRepository : IPartyRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task<bool> UpdateIfFuturePartyLimitNotReachedAsync(
+        Party party,
+        DateTime? previousEventDateTime,
+        DateTime nowUtc,
+        int limit)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _ = previousEventDateTime;
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock(hashtextextended({party.OrganizerId.ToString()}, 0))");
+            var storedEventDateTime = await _context.Parties.AsNoTracking()
+                .Where(item => item.Id == party.Id && !item.IsDeleted)
+                .Select(item => new { item.EventDateTime })
+                .FirstOrDefaultAsync();
+            if (storedEventDateTime != null &&
+                PartyFutureLimit.EntersFutureSet(storedEventDateTime.EventDateTime, party.EventDateTime, nowUtc))
+            {
+                var futureCount = await CountFuturePartiesAsync(party.OrganizerId, nowUtc, party.Id);
+                if (futureCount >= limit)
+                {
+                    await transaction.CommitAsync();
+                    return false;
+                }
+            }
+
+            await UpdateAsync(party);
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task UpdateAsync(Party party)
     {
         var ef = await _context.Parties
@@ -154,6 +193,55 @@ public class EfPartyRepository : IPartyRepository
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateMetadataAsync(Party party, bool? isListedInCatalog, CancellationToken cancellationToken = default)
+    {
+        var ef = await _context.Parties.FirstOrDefaultAsync(item => item.Id == party.Id && !item.IsDeleted, cancellationToken);
+        if (ef is null)
+        {
+            throw new InvalidOperationException($"Party {party.Id} not found.");
+        }
+
+        party.ApplyTo(ef);
+        if (isListedInCatalog.HasValue)
+        {
+            ef.IsListedInCatalog = isListedInCatalog.Value;
+        }
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> UpdateLifecycleStateAsync(
+        Guid partyId,
+        PartyLifecycleState state,
+        CancellationToken cancellationToken = default)
+    {
+        var party = await _context.Parties
+            .FirstOrDefaultAsync(item => item.Id == partyId && !item.IsDeleted, cancellationToken);
+        if (party is null)
+        {
+            return false;
+        }
+
+        party.PartyLifecycleState = state;
+        party.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    private Task<int> CountFuturePartiesAsync(Guid organizerId, DateTime nowUtc, Guid? excludePartyId)
+    {
+        var query = _context.Parties.AsNoTracking().Where(item =>
+            item.OrganizerId == organizerId &&
+            !item.IsDeleted &&
+            (item.EventDateTime == null || item.EventDateTime > nowUtc));
+        if (excludePartyId.HasValue)
+        {
+            var excludedId = excludePartyId.Value;
+            query = query.Where(item => item.Id != excludedId);
+        }
+
+        return query.CountAsync();
     }
 
     public async Task DeleteAsync(Guid id)

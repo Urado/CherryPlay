@@ -51,7 +51,10 @@ export type { CompositeAction, CommandPart } from './globalHistoryStore';
 
 export {
   ensureProjectStore,
+  ensureCollectionWorkspaceStore,
+  removeCollectionWorkspaceStore,
   getProjectStore,
+  getStableWorkspaceId,
   removeProjectStore,
   getAllProjectStoreIds,
   registerProjectStore,

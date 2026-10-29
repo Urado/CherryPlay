@@ -4,6 +4,7 @@
   height: 100%;
   background: var(--bg-primary, #ffffff);
   color: var(--text-primary, #000000);
+
   --party-playlist-nest-step: 18px;
   --party-playlist-row-inline-start: 24px;
   --party-playlist-tree-line: color-mix(in srgb, var(--border-color, #c8c8c8) 90%, transparent);
@@ -105,9 +106,8 @@
   position: absolute;
   z-index: 1;
   left: calc(
-    var(--party-playlist-row-inline-start, 24px) +
-      (var(--party-playlist-item-nest, 1) - 1) * var(--party-playlist-nest-step, 18px) +
-      (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
+    var(--party-playlist-row-inline-start, 24px) + (var(--party-playlist-item-nest, 1) - 1) *
+      var(--party-playlist-nest-step, 18px) + (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
   );
   top: 0;
   width: 1px;

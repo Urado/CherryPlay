@@ -1,4 +1,3 @@
-
 import { WorkspaceId } from '@core/types/workspace';
 import { getAppMode, isDemoFixturesMode } from '@shared/platform';
 import React from 'react';

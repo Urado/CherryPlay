@@ -63,7 +63,9 @@ const expectConsentItem = (
 
   expect(inputId).toBeDefined();
   expect(summaryId).toBeDefined();
-  expect(html).toContain(`<label class="legal-consent-label" for="${inputId}">${document.checkboxLabel}</label>`);
+  expect(html).toContain(
+    `<label class="legal-consent-label" for="${inputId}">${document.checkboxLabel}</label>`,
+  );
   expect(html).toContain(
     `<p id="${summaryId}" class="legal-consent-summary">${document.summary}</p>`,
   );

@@ -17,7 +17,7 @@ jest.mock('../../../src/shared/audio/playback/applyPlaybackEffects', () => ({
 }));
 
 jest.mock('../../../src/shared/audio/playback/applyPlaybackOutputDeviceWithFallback', () => ({
-  applyPlaybackOutputDeviceWithFallback: jest.fn(async () => undefined),
+  applyPlaybackOutputDeviceWithFallback: jest.fn(() => Promise.resolve()),
 }));
 
 const mockLoudnessSettings = {
@@ -46,16 +46,16 @@ const baseTrack: Track = {
   isMissing: false,
 };
 
-function createMockEngine(): PlaybackEngine & {
+const createMockEngine = (): PlaybackEngine & {
   emitStatus: (status: PlaybackSnapshot['status']) => void;
-} {
+} => {
   let status: PlaybackSnapshot['status'] = 'idle';
   const statusListeners = new Set<(value: PlaybackSnapshot['status']) => void>();
 
   const engine: PlaybackEngine & { emitStatus: (status: PlaybackSnapshot['status']) => void } = {
     id: 'mock',
-    load: jest.fn(async () => undefined),
-    play: jest.fn(async () => undefined),
+    load: jest.fn(() => Promise.resolve()),
+    play: jest.fn(() => Promise.resolve()),
     pause: jest.fn(),
     stop: jest.fn(() => {
       status = 'idle';
@@ -65,7 +65,7 @@ function createMockEngine(): PlaybackEngine & {
     }),
     seek: jest.fn(),
     setVolume: jest.fn(),
-    setOutputDevice: jest.fn(async () => undefined),
+    setOutputDevice: jest.fn(() => Promise.resolve()),
     dispose: jest.fn(),
     getSnapshot: () => ({
       status,
@@ -92,11 +92,12 @@ function createMockEngine(): PlaybackEngine & {
   };
 
   return engine;
-}
+};
 
 describe('createHandleError', () => {
   it('sets error state before stop and ignores idle status from stop', () => {
     const engine = createMockEngine();
+    const stopMock = jest.spyOn(engine, 'stop');
     const calls: string[] = [];
     let storeStatus = 'playing';
 
@@ -132,7 +133,7 @@ describe('createHandleError', () => {
 
     expect(calls).toEqual(['error:playback failed']);
     expect(storeStatus).toBe('error');
-    expect(engine.stop).toHaveBeenCalledTimes(1);
+    expect(stopMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -143,19 +144,20 @@ describe('loadTrackCore', () => {
 
   it('applies playback effects after a successful engine load', async () => {
     const engine = createMockEngine();
+    const loadMock = jest.spyOn(engine, 'load');
 
     await loadTrackCore({
       engine,
       track: baseTrack,
-      applyDevice: jest.fn(async () => undefined),
+      applyDevice: jest.fn(() => Promise.resolve()),
       getDeviceId: () => null,
       markTrackFound: jest.fn(),
-      resolvePrecheck: async (track) => track,
+      resolvePrecheck: (track) => Promise.resolve(track),
       onSuccess: jest.fn(),
       onFileNotFound: jest.fn(),
     });
 
-    expect(engine.load).toHaveBeenCalledWith({ kind: 'filePath', path: baseTrack.path });
+    expect(loadMock).toHaveBeenCalledWith({ kind: 'filePath', path: baseTrack.path });
     expect(mockedApplyPlaybackEffects).toHaveBeenCalledTimes(1);
     expect(mockedApplyPlaybackEffects).toHaveBeenCalledWith(
       engine,
@@ -166,18 +168,16 @@ describe('loadTrackCore', () => {
 
   it('does not apply effects when engine load fails', async () => {
     const engine = createMockEngine();
-    engine.load = jest.fn(async (_source: PlaybackSource) => {
-      throw new Error('decode failed');
-    });
+    engine.load = jest.fn((_source: PlaybackSource) => Promise.reject(new Error('decode failed')));
 
     await expect(
       loadTrackCore({
         engine,
         track: baseTrack,
-        applyDevice: jest.fn(async () => undefined),
+        applyDevice: jest.fn(() => Promise.resolve()),
         getDeviceId: () => null,
         markTrackFound: jest.fn(),
-        resolvePrecheck: async (track) => track,
+        resolvePrecheck: (track) => Promise.resolve(track),
         onSuccess: jest.fn(),
         onFileNotFound: jest.fn(),
       }),

@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "CherryPlay PostgreSQL",
+      "Group": "Servers",
+      "Host": "ssh-tunnel",
+      "Port": 5433,
+      "MaintenanceDB": "cherryplay",
+      "Username": "cherryplay",
+      "SSLMode": "prefer"
+    }
+  }
+}

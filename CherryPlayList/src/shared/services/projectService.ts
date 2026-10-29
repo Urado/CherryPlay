@@ -5,28 +5,25 @@ import {
   LinkedParty,
   PartyTrackDisplaySettings,
   ProjectFile,
-  ProjectGroup,
+  ProjectCollection,
   ProjectGroupSettings,
   ProjectItem,
   ProjectSessionState,
   ProjectSettings,
   ProjectTrackSettings,
-  SavedProjectGroup,
   SavedProjectItem,
-  SavedProjectTrack,
 } from '@core/types/project';
-import { Track } from '@core/types/track';
 import { validateProjectFile, validateProjectIntegrity } from '@shared/utils/projectValidation';
 
 import { ipcService } from './ipcService';
 import { normalizeLoadedLoudness } from './loudnessService';
 
-function pathDirname(filePath: string): string {
+const pathDirname = (filePath: string): string => {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return lastSep >= 0 ? filePath.slice(0, lastSep) : '.';
-}
+};
 
-function resolveRelativePath(baseDir: string, relativePath: string): string {
+const resolveRelativePath = (baseDir: string, relativePath: string): string => {
   const normalizedBase = baseDir.replace(/\\/g, '/');
   const normalizedRel = relativePath.replace(/\\/g, '/');
 
@@ -56,37 +53,51 @@ function resolveRelativePath(baseDir: string, relativePath: string): string {
   }
 
   return resolved;
-}
+};
 
-function isRelativePath(filePath: string): boolean {
+const isRelativePath = (filePath: string): boolean => {
   return (
     filePath.startsWith('./') ||
     filePath.startsWith('../') ||
     filePath.startsWith('.\\') ||
     filePath.startsWith('..\\')
   );
-}
+};
 
-async function checkFileExists(filePath: string): Promise<boolean> {
+const checkFileExists = async (filePath: string): Promise<boolean> => {
   try {
     await ipcService.statFile(filePath);
     return true;
   } catch {
     return false;
   }
-}
+};
 
-async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: string): Promise<void> {
+const resolveAndCheckTracks = async (
+  items: ProjectItem[],
+  cherryFilePath: string,
+  options?: { portableCollectionName?: string },
+): Promise<void> => {
   const baseDir = pathDirname(cherryFilePath);
 
   const processItems = async (projectItems: ProjectItem[]): Promise<void> => {
     for (const item of projectItems) {
       if (isProjectTrack(item)) {
+        const relativePath = item.path;
         if (isRelativePath(item.path)) {
           item.path = resolveRelativePath(baseDir, item.path);
         }
 
         const exists = await checkFileExists(item.path);
+        if (
+          !exists &&
+          options?.portableCollectionName &&
+          relativePath.replace(/\\/g, '/').startsWith('./collections/')
+        ) {
+          throw new Error(
+            `Не удалось открыть переносимый проект: файл трека подборки «${options.portableCollectionName}» не найден. Проверьте, что папка подборки не переименована и пакет не изменён.`,
+          );
+        }
         item.isMissing = !exists;
       } else if (isProjectGroup(item)) {
         await processItems(item.items);
@@ -95,7 +106,7 @@ async function resolveAndCheckTracks(items: ProjectItem[], cherryFilePath: strin
   };
 
   await processItems(items);
-}
+};
 
 export interface ProjectStateData {
   name: string;
@@ -108,7 +119,71 @@ export interface ProjectStateData {
   partyTrackDisplay?: PartyTrackDisplaySettings;
   partyThemeId?: string;
   partyCustomizationSettings?: Record<string, unknown>;
+  collections?: ProjectCollection[];
+  collectionViewState?: { bindings: Record<string, string> };
 }
+
+const serializeItems = (items: ProjectItem[]): { items: SavedProjectItem[]; rootItems: string[] } => {
+  const savedItems: SavedProjectItem[] = [];
+  const processItems = (projectItems: ProjectItem[]): void => {
+    projectItems.forEach((item) => {
+      if (isProjectTrack(item)) {
+        savedItems.push({
+          type: 'track',
+          id: item.id,
+          path: item.path,
+          name: item.name,
+          duration: item.duration,
+          ...(item.loudness !== undefined ? { loudness: item.loudness } : {}),
+        });
+      } else if (isProjectGroup(item)) {
+        processItems(item.items);
+        savedItems.push({
+          type: 'group',
+          id: item.id,
+          name: item.name,
+          items: item.items.map((child) => child.id),
+        });
+      }
+    });
+  };
+  processItems(items);
+  return { items: savedItems, rootItems: items.map((item) => item.id) };
+};
+
+const deserializeItems = (savedItems: SavedProjectItem[], rootItems: string[]): ProjectItem[] => {
+  const itemsById = new Map<string, SavedProjectItem>(savedItems.map((item) => [item.id, item]));
+  const restoreItem = (itemId: string, visited: Set<string>): ProjectItem | null => {
+    if (visited.has(itemId)) return null;
+    visited.add(itemId);
+    const savedItem = itemsById.get(itemId);
+    if (!savedItem) return null;
+    if (savedItem.type === 'track') {
+      const normalizedLoudness = savedItem.loudness !== undefined
+        ? normalizeLoadedLoudness(savedItem.loudness)
+        : undefined;
+      return {
+        id: savedItem.id,
+        path: savedItem.path,
+        name: savedItem.name,
+        duration: savedItem.duration,
+        ...(normalizedLoudness !== undefined ? { loudness: normalizedLoudness } : {}),
+      };
+    }
+    return {
+      id: savedItem.id,
+      name: savedItem.name,
+      items: savedItem.items.flatMap((childId) => {
+        const child = restoreItem(childId, new Set(visited));
+        return child ? [child] : [];
+      }),
+    };
+  };
+  return rootItems.flatMap((itemId) => {
+    const item = restoreItem(itemId, new Set());
+    return item ? [item] : [];
+  });
+};
 
 class ProjectService {
   async saveProject(
@@ -171,46 +246,20 @@ class ProjectService {
 
     if (filePath) {
       await resolveAndCheckTracks(projectData.items, filePath);
+      for (const collection of projectData.collections ?? []) {
+        await resolveAndCheckTracks(collection.items, filePath, {
+          portableCollectionName: validationResult.data.settings.portableMode
+            ? collection.name
+            : undefined,
+        });
+      }
     }
 
     return projectData;
   }
 
   serializeProject(state: ProjectStateData): ProjectFile {
-    const savedItems: SavedProjectItem[] = [];
-    const rootItemIds: string[] = [];
-
-    const processItems = (items: ProjectItem[]): void => {
-      items.forEach((item) => {
-        if (isProjectTrack(item)) {
-          const savedTrack: SavedProjectTrack = {
-            type: 'track',
-            id: item.id,
-            path: item.path,
-            name: item.name,
-            duration: item.duration,
-            ...(item.loudness !== undefined ? { loudness: item.loudness } : {}),
-          };
-          savedItems.push(savedTrack);
-        } else if (isProjectGroup(item)) {
-          processItems(item.items);
-
-          const savedGroup: SavedProjectGroup = {
-            type: 'group',
-            id: item.id,
-            name: item.name,
-            items: item.items.map((child) => child.id),
-          };
-          savedItems.push(savedGroup);
-        }
-      });
-    };
-
-    processItems(state.items);
-
-    state.items.forEach((item) => {
-      rootItemIds.push(item.id);
-    });
+    const serializedItems = serializeItems(state.items);
 
     const trackSettingsRecord: Record<string, ProjectTrackSettings> = {};
     state.trackSettings.forEach((value, key) => {
@@ -223,10 +272,10 @@ class ProjectService {
     });
 
     return {
-      version: '2.0',
+      version: '2.1',
       name: state.name,
-      items: savedItems,
-      rootItems: rootItemIds,
+      items: serializedItems.items,
+      rootItems: serializedItems.rootItems,
       settings: state.settings,
       trackSettings: trackSettingsRecord,
       groupSettings: groupSettingsRecord,
@@ -237,68 +286,21 @@ class ProjectService {
       ...(state.partyCustomizationSettings !== undefined
         ? { partyCustomizationSettings: state.partyCustomizationSettings }
         : {}),
+      ...(state.collections !== undefined
+        ? { collections: state.collections.map((collection) => ({
+            id: collection.id,
+            name: collection.name,
+            ...serializeItems(collection.items),
+          })) }
+        : {}),
+      ...(state.collectionViewState !== undefined
+        ? { collectionViewState: state.collectionViewState }
+        : {}),
     };
   }
 
   deserializeProject(file: ProjectFile): ProjectStateData {
-    const itemsById = new Map<string, SavedProjectItem>();
-    file.items.forEach((item) => {
-      itemsById.set(item.id, item);
-    });
-
-    const restoreItem = (itemId: string, visited: Set<string>): ProjectItem | null => {
-      if (visited.has(itemId)) {
-        console.warn(`Circular reference detected for item ${itemId}`);
-        return null;
-      }
-      visited.add(itemId);
-
-      const savedItem = itemsById.get(itemId);
-      if (!savedItem) {
-        console.warn(`Item ${itemId} not found`);
-        return null;
-      }
-
-      if (savedItem.type === 'track') {
-        const normalizedLoudness =
-          savedItem.loudness !== undefined
-            ? normalizeLoadedLoudness(savedItem.loudness)
-            : undefined;
-        const track: Track = {
-          id: savedItem.id,
-          path: savedItem.path,
-          name: savedItem.name,
-          duration: savedItem.duration,
-          ...(normalizedLoudness !== undefined ? { loudness: normalizedLoudness } : {}),
-        };
-        return track;
-      } else if (savedItem.type === 'group') {
-        const children: ProjectItem[] = [];
-        savedItem.items.forEach((childId) => {
-          const child = restoreItem(childId, new Set(visited));
-          if (child) {
-            children.push(child);
-          }
-        });
-
-        const group: ProjectGroup = {
-          id: savedItem.id,
-          name: savedItem.name,
-          items: children,
-        };
-        return group;
-      }
-
-      return null;
-    };
-
-    const items: ProjectItem[] = [];
-    file.rootItems.forEach((itemId) => {
-      const item = restoreItem(itemId, new Set());
-      if (item) {
-        items.push(item);
-      }
-    });
+    const items = deserializeItems(file.items, file.rootItems);
 
     const trackSettings = new Map<string, ProjectTrackSettings>();
     if (file.trackSettings) {
@@ -325,6 +327,18 @@ class ProjectService {
       partyTrackDisplay: file.partyTrackDisplay ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
       partyThemeId: file.partyThemeId,
       partyCustomizationSettings: file.partyCustomizationSettings,
+      ...(file.collections !== undefined
+        ? {
+            collections: file.collections.map((collection) => ({
+              id: collection.id,
+              name: collection.name,
+              items: deserializeItems(collection.items, collection.rootItems),
+            })),
+          }
+        : {}),
+      ...(file.collectionViewState !== undefined
+        ? { collectionViewState: file.collectionViewState }
+        : {}),
     };
   }
 }

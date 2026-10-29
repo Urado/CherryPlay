@@ -4,7 +4,7 @@ using CherryPlayServer.Hubs;
 
 namespace CherryPlayServer.Infrastructure;
 
-public class PartyHubPlaylistNotifier : IPartyPlaylistNotifier
+public class PartyHubPlaylistNotifier : IPartyPlaylistNotifier, IPartyStateNotifier
 {
     private readonly IHubContext<PartyHub> _hubContext;
     private readonly ILogger<PartyHubPlaylistNotifier> _logger;
@@ -20,5 +20,11 @@ public class PartyHubPlaylistNotifier : IPartyPlaylistNotifier
         var partyIdStr = partyId.ToString();
         _logger.LogDebug("Sending OnPlaylistChanged");
         await _hubContext.Clients.Group(partyIdStr).SendAsync("OnPlaylistChanged", partyIdStr);
+    }
+
+    public async Task NotifyStateChangedAsync(Guid partyId)
+    {
+        var partyIdString = partyId.ToString();
+        await _hubContext.Clients.Group(partyIdString).SendAsync("OnStateChanged", partyIdString);
     }
 }

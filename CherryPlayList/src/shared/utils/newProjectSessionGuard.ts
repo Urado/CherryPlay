@@ -4,7 +4,8 @@ import { usePlayerAudioStore } from '../stores/playerAudioStore';
 
 export interface NewProjectSessionGuardOptions {
   sessionActive: boolean;
-  confirmSessionStop: () => boolean;
+  sessionConfirmed?: boolean;
+  confirmSessionStop: () => boolean | Promise<boolean>;
   stopLocally: () => void;
   stopServerSession: () => Promise<void>;
   resetProject: () => void;
@@ -21,13 +22,14 @@ export const stopLocalPlayerSession = (): void => {
 
 export const runNewProjectWithSessionGuard = async ({
   sessionActive,
+  sessionConfirmed = false,
   confirmSessionStop,
   stopLocally,
   stopServerSession,
   resetProject,
   onServerStopFailure,
 }: NewProjectSessionGuardOptions): Promise<boolean> => {
-  if (sessionActive && !confirmSessionStop()) {
+  if (sessionActive && !sessionConfirmed && !(await confirmSessionStop())) {
     return false;
   }
 

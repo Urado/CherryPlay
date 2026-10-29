@@ -3,21 +3,17 @@ import type { ReactNode } from 'react';
 const LINKABLE =
   /(https:\/\/[^\s<>"'）)]+|mailto:[^\s<>"']+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
 
-/** Trailing sentence punctuation that should not be part of href. */
 const TRAILING_PUNCT = /[;.,:)]+$/;
 
-function splitTrailingPunctuation(value: string): { core: string; trailing: string } {
+const splitTrailingPunctuation = (value: string): { core: string; trailing: string } => {
   const match = TRAILING_PUNCT.exec(value);
   if (!match || match.index === 0) {
     return { core: value, trailing: '' };
   }
   return { core: value.slice(0, match.index), trailing: match[0] };
-}
+};
 
-/**
- * Turns bare https:// and email / mailto: spans into anchors (LegalOperatorPage mailto pattern).
- */
-export function linkifyLegalText(text: string): ReactNode[] {
+export const linkifyLegalText = (text: string): ReactNode[] => {
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -53,4 +49,4 @@ export function linkifyLegalText(text: string): ReactNode[] {
   }
 
   return nodes.length > 0 ? nodes : [text];
-}
+};

@@ -2,9 +2,9 @@
 
 Как поднять весь стек (сервер, веб-клиент, десктопное приложение) для локальной разработки.
 
-## Локальный стек с Grafana
+## Локальный стек разработки с Grafana
 
-На Windows с Docker Desktop весь веб-стек и мониторинг запускаются одной командой. Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети.
+На Windows с Docker Desktop версии Docker Compose 2.24.4 или новее весь веб-стек и мониторинг запускаются одной командой. Минимальная версия нужна из-за `!override` в `docker-compose.monitoring.local.yml` ([документация Docker Compose](https://docs.docker.com/reference/compose-file/merge/)). Grafana открывается по адресу [http://localhost:3001](http://localhost:3001); веб-приложение остаётся на порту 3000. Локальный compose использует dev PostgreSQL из `docker-compose.yml`, production-конфигурации Prometheus, Loki и Grafana, а для чтения Docker Desktop логов — отдельный Alloy-конфиг и Docker API proxy, доступный только внутри Compose-сети. Для подключения локальных Grafana и pgAdmin к production VPS через SSH используйте отдельный [launcher локальных интерфейсов](SSH_TUNNEL_PGADMIN.md).
 
 В PowerShell из корня репозитория:
 
@@ -25,7 +25,7 @@ Prometheus получает метрики backend по внутреннему �
 
 Backend пишет структурированные JSON-логи с уровнем `Information` по умолчанию (сообщения ASP.NET Core ниже `Warning` отфильтрованы). В штатных прикладных событиях используются внутренние `OrganizerId` и `PartyId`, когда они доступны; email, имя, пароль, токены и содержимое запросов или плейлистов в эти события не включаются.
 
-В Grafana откройте папку **CherryPlay** и dashboard **Обзор CherryPlay**. Панель HTTP группирует request rate по классу status code (`2xx`, `3xx`, `4xx`, `5xx`); соседняя панель показывает p95 задержки. Backend метрики `http_requests_received_total` и `http_request_duration_seconds` не должны получать labels с user/request IDs, токенами или полными URL. Внутри Compose Kestrel слушает `0.0.0.0:8080`; `/metrics` доступен Prometheus по адресу `http://server:8080/metrics` и не имеет отдельного host port. Локальный compose публикует общий server port `5000:8080`; поэтому из Windows endpoint доступен на `http://localhost:5000/metrics`. Prometheus scrape target называется `cherryplay-server`.
+В Grafana откройте папку **CherryPlay** и dashboard **Обзор CherryPlay**. Под верхней строкой подключений находится широкий график общего RPS backend за последние 5 минут; ниже график группирует скорость запросов по классу status code (`2xx`, `3xx`, `4xx`, `5xx`), а соседняя панель показывает p95 задержки. Эти данные показывают нагрузку на HTTP API сервера, но не просмотры страниц и загрузку статических файлов сайта. Backend метрики `http_requests_received_total` и `http_request_duration_seconds` не должны получать labels с user/request IDs, токенами или полными URL. Внутри Compose Kestrel слушает `0.0.0.0:8080`; `/metrics` доступен Prometheus по адресу `http://server:8080/metrics` и не имеет отдельного host port. Локальный compose публикует общий server port `5000:8080`; поэтому из Windows endpoint доступен на `http://localhost:5000/metrics`. Prometheus scrape target называется `cherryplay-server`.
 
 Чтобы вручную найти backend errors в Grafana, откройте Explore, выберите Loki и выполните:
 
@@ -39,7 +39,7 @@ Warning **CherryPlay HTTP 5xx** срабатывает при любом 5xx з�
 
 Проверка доступности: `/api/health` сервера должен вернуть HTTP 200; в Grafana раздел **Alerting → Alert rules** должен показывать правила CherryPlay без ошибок вычисления, а оба источника данных — Healthy. Поскольку `/metrics`, Prometheus и Loki не публикуют host ports, проверяйте их через Grafana либо из контейнеров Compose.
 
-Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`); production default — `127.0.0.1:3000`. Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
+Prometheus, Loki, exporters и Docker API proxy не публикуют порты на хосте. Локальная Grafana этого dev-стека доступна на `127.0.0.1:3001` (`GRAFANA_HOST_PORT=3001` в `.env.monitoring.local.example`). Loki настроен на хранение до семи дней и скорость приёма логов 4 MB/s (burst 8 MB), но Docker volume не имеет жёсткой квоты: фактическое использование зависит от объёма и сжатия логов. Доступ к логам доступен из панели Grafana; клиентские access logs Nginx отключены, а правила Alloy дополнительно очищают email, IP-адреса и значения всех query-параметров URL.
 
 ## Проверка monitoring-конфигурации
 

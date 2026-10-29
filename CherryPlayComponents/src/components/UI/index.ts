@@ -1,4 +1,5 @@
 export * from './FormInput';
+export * from './AdaptiveSearchInput';
 export * from './FormSelect';
 export * from './FormTextarea';
 export * from './FormButton';

@@ -1,4 +1,3 @@
-
 import { Track } from '@core/types/track';
 import {
   startDemoLiveMockPlayback,
@@ -21,14 +20,14 @@ interface UsePlayerSessionOptions {
   beforeStartSession?: () => Promise<boolean>;
 }
 
-export function usePlayerSession(options: UsePlayerSessionOptions) {
+export const usePlayerSession = (options: UsePlayerSessionOptions) => {
   const { allTracks, isTrackActive, onSessionStart, beforeStartSession } = options;
 
   const { startSession, resetSession, setCurrentTrack } = useProjectStore();
   const {
     loadTrack: loadPlayerTrack,
     play: playPlayer,
-    pause: pausePlayer,
+    stop: stopPlayer,
     clearPauseTimer,
   } = usePlayerAudioStore();
 
@@ -96,12 +95,12 @@ export function usePlayerSession(options: UsePlayerSessionOptions) {
     clearPauseTimer();
     stopDemoLiveMockPlayback();
     resetSession();
-    pausePlayer();
+    stopPlayer();
     useDemoPlayerStore.getState().setDisabled(false);
-  }, [resetSession, pausePlayer, clearPauseTimer]);
+  }, [resetSession, stopPlayer, clearPauseTimer]);
 
   return {
     handleStartSession,
     handleResetSession,
   };
-}
+};

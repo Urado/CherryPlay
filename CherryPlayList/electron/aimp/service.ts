@@ -36,7 +36,6 @@ import {
 } from '../../src/shared/contracts/aimp.js';
 import { logger } from '../utils/logger.js';
 
-/** Same folder name as AIMP uses for the plugin (DLL basename without extension). */
 const AIMP_BRIDGE_PLUGIN_DIR = 'CherryPlayAimpBridge';
 
 export type { AimpLogEntry };
@@ -44,28 +43,29 @@ export type { AimpLogEntry };
 type AimpStateListener = (state: AimpBridgeState) => void;
 type AimpLogListener = (entry: AimpLogEntry) => void;
 
-function cloneState<T>(value: T): T {
+const cloneState = <T>(value: T): T => {
   if (typeof globalThis.structuredClone === 'function') {
     return globalThis.structuredClone(value);
   }
 
   return JSON.parse(JSON.stringify(value)) as T;
-}
+};
 
-function getPluginsBasePaths(): string[] {
+const getPluginsBasePaths = (): string[] => {
   const pluginsBasePaths = app.isPackaged
     ? [
-        // `extraResources` lands under `resources`, while older builds that used
-        // `extraFiles` place plugins beside the executable. Probe both.
         path.join(path.dirname(process.execPath), 'plugins'),
         path.join(process.resourcesPath, 'plugins'),
       ]
-    : [path.join(fs.realpathSync.native(process.cwd()), 'plugins'), path.join(app.getAppPath(), 'plugins')];
+    : [
+        path.join(fs.realpathSync.native(process.cwd()), 'plugins'),
+        path.join(app.getAppPath(), 'plugins'),
+      ];
 
   return [...new Set(pluginsBasePaths)];
-}
+};
 
-function getAimpPluginManifestPaths(): string[] {
+const getAimpPluginManifestPaths = (): string[] => {
   const underPlugins = getPluginsBasePaths().map((pluginsBasePath) =>
     path.join(pluginsBasePath, AIMP_BRIDGE_PLUGIN_DIR, 'manifest.json'),
   );
@@ -73,28 +73,28 @@ function getAimpPluginManifestPaths(): string[] {
     ? [path.join(path.dirname(process.execPath), AIMP_BRIDGE_PLUGIN_DIR, 'manifest.json')]
     : [];
   return [...new Set([...underPlugins, ...besideExe])];
-}
+};
 
-function resolveAimpPluginManifestPath(): string | null {
+const resolveAimpPluginManifestPath = (): string | null => {
   return getAimpPluginManifestPaths().find((manifestPath) => fs.existsSync(manifestPath)) ?? null;
-}
+};
 
-function getNowIsoString(): string {
+const getNowIsoString = (): string => {
   return new Date().toISOString();
-}
+};
 
-function toDisconnectReason(
+const toDisconnectReason = (
   code: AimpDisconnectReason['code'],
   message: string,
   detail?: string,
-): AimpDisconnectReason {
+): AimpDisconnectReason => {
   return {
     code,
     message,
     detail: detail && detail.trim().length > 0 ? detail : undefined,
     occurredAt: getNowIsoString(),
   };
-}
+};
 
 export class AimpIntegrationService {
   private state = createInitialAimpBridgeState();
@@ -355,19 +355,15 @@ export class AimpIntegrationService {
       logger.error('[AIMP] Named-pipe server error', error);
       this.transientGatingReason = {
         code: 'pipeListenFailed',
-        message: `Failed to listen on AIMP named pipe: ${(error).message}`,
+        message: `Failed to listen on AIMP named pipe: ${error.message}`,
       };
       this.refreshEnvironmentEligibility();
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP named-pipe server failed to listen.',
-        details: (error).message,
+        details: error.message,
       };
-      this.stopListening(
-        'listenFailed',
-        'Named-pipe server listen failed',
-        (error).message,
-      );
+      this.stopListening('listenFailed', 'Named-pipe server listen failed', error.message);
       this.emitState();
     });
 
@@ -478,9 +474,9 @@ export class AimpIntegrationService {
       this.state.connection.protocolError = {
         code: 'invalidEnvelope',
         message: 'AIMP client socket error',
-        details: (error).message,
+        details: error.message,
       };
-      this.closeClient('transportError', 'AIMP client socket error', (error).message);
+      this.closeClient('transportError', 'AIMP client socket error', error.message);
     });
 
     socket.on('close', (hadError: boolean) => {
@@ -995,27 +991,31 @@ export class AimpIntegrationService {
   }
 }
 
-function isObjectWithProtocolVersion(value: unknown): value is {
+const isObjectWithProtocolVersion = (
+  value: unknown,
+): value is {
   protocolVersion: string;
-} {
+} => {
   return (
     typeof value === 'object' &&
     value !== null &&
     'protocolVersion' in value &&
     typeof value.protocolVersion === 'string'
   );
-}
+};
 
-function isHelloHandshakeCandidate(value: unknown): value is {
+const isHelloHandshakeCandidate = (
+  value: unknown,
+): value is {
   type: 'hello';
-} {
+} => {
   return typeof value === 'object' && value !== null && 'type' in value && value.type === 'hello';
-}
+};
 
-function formatHelloAckDetail(protocolError: { message: string; details?: string }): string {
+const formatHelloAckDetail = (protocolError: { message: string; details?: string }): string => {
   return protocolError.details
     ? `${protocolError.message} ${protocolError.details}`
     : protocolError.message;
-}
+};
 
 export const aimpIntegrationService = new AimpIntegrationService();

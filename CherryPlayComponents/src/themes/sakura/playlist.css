@@ -2,11 +2,14 @@
   background: linear-gradient(135deg, #fff5f5 0%, #ffeef0 100%);
   color: #8b4a6b;
   font-family: 'Georgia', 'Times New Roman', serif;
+
   --party-playlist-row-inline-start: 8px;
   --party-playlist-tree-line: transparent;
 }
 
-[data-theme='sakura'].party-playlist-view .party-playlist-group-items > .party-playlist-item::before,
+[data-theme='sakura'].party-playlist-view
+  .party-playlist-group-items
+  > .party-playlist-item::before,
 [data-theme='sakura'].party-playlist-view
   .party-playlist-group-items
   > .party-playlist-item:not(:last-child)::before,

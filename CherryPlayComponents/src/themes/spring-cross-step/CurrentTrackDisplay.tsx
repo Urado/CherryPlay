@@ -15,7 +15,7 @@ export interface SpringCrossStepCurrentTrackDisplayProps {
   themeId?: string;
 }
 
-function getStatusLabel(status: PlaybackState['status']): string {
+const getStatusLabel = (status: PlaybackState['status']): string => {
   switch (status) {
     case 'playing':
       return 'Сейчас играет';
@@ -26,7 +26,7 @@ function getStatusLabel(status: PlaybackState['status']): string {
     default:
       return 'Ожидание трека...';
   }
-}
+};
 
 export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayProps> = ({
   playbackState,
@@ -55,9 +55,7 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
   const hasMultipleTracks = flatTracks.length > 1;
   const prevTrack = currentIndex > 0 ? flatTracks[currentIndex - 1] : null;
   const nextTrack =
-    currentIndex >= 0 && currentIndex < flatTracks.length - 1
-      ? flatTracks[currentIndex + 1]
-      : null;
+    currentIndex >= 0 && currentIndex < flatTracks.length - 1 ? flatTracks[currentIndex + 1] : null;
   const currentDisplayName =
     currentTrack && currentTrack.type === 'track' ? stripLastExtension(currentTrack.name) : '';
   const prevDisplayName = prevTrack ? stripLastExtension(prevTrack.name) : '';
@@ -86,6 +84,7 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
 
   const progress =
     playbackState.duration > 0 ? (playbackState.position / playbackState.duration) * 100 : 0;
+  const duration = playbackState.duration > 0 ? playbackState.duration : currentTrack.duration;
   const isPlaying = playbackState.status === 'playing';
 
   return (
@@ -172,7 +171,15 @@ export const CurrentTrackDisplay: React.FC<SpringCrossStepCurrentTrackDisplayPro
         {currentTrack.path && <div className="party-current-track-meta">{currentTrack.path}</div>}
         <div className="party-current-track-time">
           <span>{formatTime(playbackState.position)}</span>
-          <span>{formatTime(playbackState.duration)}</span>
+          {duration != null && duration > 0 ? (
+            <span>{formatTime(duration)}</span>
+          ) : (
+            <span
+              className="party-current-track-time-loader"
+              role="status"
+              aria-label="Загрузка длительности"
+            />
+          )}
         </div>
         <div className="party-current-track-progress">
           <div className="party-current-track-progress-bar" style={{ width: `${progress}%` }} />

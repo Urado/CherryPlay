@@ -12,6 +12,13 @@ public class InMemoryOrganizerRepository : IOrganizerRepository
 
     public int Count => _organizers.Count(pair => !_softDeleted.ContainsKey(pair.Key));
 
+    public IReadOnlyList<Organizer> GetAllForAdmin() => _organizers.Values
+        .OrderBy(organizer => organizer.CreatedAt)
+        .ThenBy(organizer => organizer.Id)
+        .ToArray();
+
+    public Task<IReadOnlyList<Organizer>> GetAllForAdminAsync() => Task.FromResult(GetAllForAdmin());
+
     public Task<Organizer?> GetByIdAsync(Guid id, bool includeDeleted = false)
     {
         var organizer = Resolve(id);

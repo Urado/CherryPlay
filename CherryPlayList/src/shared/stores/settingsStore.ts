@@ -3,7 +3,6 @@ import type { WorkspaceId } from '@core/types/workspace';
 import { persist } from 'zustand/middleware';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import type { AimpSourceSelection } from '../contracts/aimp';
 import {
   clampLoudnessQuietGapRangeLu,
@@ -17,6 +16,20 @@ import {
 import type { CustomKeyBindings, KeyBinding, ShortcutId } from '../shortcuts/shortcutTypes';
 import { electronStorage } from '../storage/electronStorage';
 import type { TrackItemSizePreset } from '../types/trackItemSize';
+
+const enqueueProjectLoudnessScan = (): void => {
+  void Promise.all([
+    import('./projectStore'),
+    import('../services/loudnessService'),
+    import('./projectStoreCore'),
+  ]).then(([projectModule, loudnessModule, projectCore]) => {
+    if (!useSettingsStore.getState().loudnessNormalizationEnabled) return;
+    const tracks = projectCore.getAllTracksRecursive(
+      projectModule.useProjectStore.getState().items,
+    );
+    void loudnessModule.loudnessService.scanTracks(tracks);
+  });
+};
 
 export type { LoudnessSettings };
 
@@ -62,10 +75,6 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setExportPath: (path: string) => void;
   setExportStrategy: (strategy: 'copyWithNumberPrefix' | 'aimpPlaylist') => void;
   setLastOpenedPlaylist: (path: string) => void;
-  /**
-   * @deprecated Use {@link setFileBrowserPathForWorkspace} with
-   * `DEFAULT_FILEBROWSER_WORKSPACE_ID`. Remove after subtask 04 when no callers remain.
-   */
   setFileBrowserPath: (path: string) => void;
   setTrackItemSizePreset: (preset: TrackItemSizePreset) => void;
   setHourDividerInterval: (interval: number) => void;
@@ -85,9 +94,9 @@ interface SettingsState extends FileBrowserPathPersistSlice {
   setLoudnessQuietGapRangeLu: (quietGapRangeLu: number) => void;
 }
 
-export function migrateFileBrowserPathsOnRehydrate(
+export const migrateFileBrowserPathsOnRehydrate = (
   state: Partial<FileBrowserPathPersistSlice>,
-): FileBrowserPathPersistSlice {
+): FileBrowserPathPersistSlice => {
   const legacyPath = state.fileBrowserPath ?? '';
   const map = { ...(state.fileBrowserPathsByWorkspaceId ?? {}) };
   const defaultId = DEFAULT_FILEBROWSER_WORKSPACE_ID;
@@ -104,7 +113,7 @@ export function migrateFileBrowserPathsOnRehydrate(
     fileBrowserPathsByWorkspaceId: map,
     fileBrowserPath: defaultPath ?? '',
   };
-}
+};
 
 export const useSettingsStore = createWithEqualityFn<SettingsState>()(
   persist(
@@ -182,7 +191,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       setExportStrategy: (strategy) => set({ exportStrategy: strategy }),
       setLastOpenedPlaylist: (path) => set({ lastOpenedPlaylist: path }),
 
-      /** @deprecated Use setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path). */
       setFileBrowserPath: (path) => {
         get().setFileBrowserPathForWorkspace(DEFAULT_FILEBROWSER_WORKSPACE_ID, path);
       },
@@ -202,7 +210,10 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
       resetKeyBindings: () => set({ keyBindings: {} }),
       setEnableStreaming: (enable) => set({ enableStreaming: enable }),
       setStreamingSource: (source) => set({ streamingSource: source }),
-      setLoudnessNormalizationEnabled: (enabled) => set({ loudnessNormalizationEnabled: enabled }),
+      setLoudnessNormalizationEnabled: (enabled) => {
+        set({ loudnessNormalizationEnabled: enabled });
+        if (enabled) enqueueProjectLoudnessScan();
+      },
       setLoudnessTargetLufs: (targetLufs) =>
         set({ loudnessTargetLufs: clampLoudnessTargetLufs(targetLufs) }),
       setLoudnessCompressionEnabled: (enabled) => set({ loudnessCompressionEnabled: enabled }),
@@ -264,6 +275,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsState>()(
         if (state) {
           const migrated = migrateFileBrowserPathsOnRehydrate(state);
           useSettingsStore.setState(migrated);
+          if (state.loudnessNormalizationEnabled) enqueueProjectLoudnessScan();
         }
         useSettingsStore.getState().setHasHydrated(true);
       },

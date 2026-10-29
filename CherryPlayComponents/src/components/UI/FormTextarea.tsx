@@ -25,7 +25,8 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
   ]
     .filter(Boolean)
     .join(' ');
-  const textareaClassName = `form-textarea ${error ? 'form-textarea--error' : ''} ${className}`.trim();
+  const textareaClassName =
+    `form-textarea ${error ? 'form-textarea--error' : ''} ${className}`.trim();
 
   return (
     <div className="form-group">

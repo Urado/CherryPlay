@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockOn = vi.fn();
+const mockOn = vi.fn<(eventName: string, handler: (...args: unknown[]) => void) => void>();
 const mockOff = vi.fn();
 const mockStart = vi.fn().mockResolvedValue(undefined);
 const mockConnection = {

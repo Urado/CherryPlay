@@ -1,3 +1,4 @@
+import { useAuthStore } from '../../src/shared/stores/authStore';
 import { openPartySettingsModal, useUIStore } from '../../src/shared/stores/uiStore';
 import {
   resetPartySettingsUiState,
@@ -26,9 +27,15 @@ describe('partySettingsUiStore', () => {
 describe('openPartySettingsModal', () => {
   beforeEach(() => {
     useUIStore.setState({ modal: null });
+    useAuthStore.getState().clearAuth();
   });
 
-  it('opens partySettings modal', () => {
+  it('opens partySettings modal for an authenticated organizer', () => {
+    useAuthStore.setState({
+      accessToken: 'test-token',
+      organizer: { id: 'test-organizer', name: 'Test Organizer' },
+    });
+
     openPartySettingsModal();
     const state = useUIStore.getState();
     expect(state.modal).toBe('partySettings');

@@ -5,6 +5,7 @@ import {
   type ProjectSettings,
   type ProjectGroupSettings,
   type ProjectTrackSettings,
+  type ProjectCollection,
 } from '@core/types/project';
 import ContactSupportOutlinedIcon from '@mui/icons-material/ContactSupportOutlined';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
@@ -18,6 +19,7 @@ import {
 } from '@shared/platform';
 import { ipcService, projectService } from '@shared/services';
 import type { ProjectStateData } from '@shared/services';
+import { dialogService } from '@shared/services/dialogService';
 import { partyService } from '@shared/services/partyService';
 import { useGlobalShortcuts, usePlayerShortcuts } from '@shared/shortcuts';
 import {
@@ -33,7 +35,6 @@ import {
   stopLocalPlayerSession,
 } from '@shared/utils/newProjectSessionGuard';
 import { isProjectBindingCurrent } from '@shared/utils/projectBinding';
-import { canDiscardUnsavedProjectChanges } from '@shared/utils/projectNavigationGuard';
 import { runProjectSaveTransaction } from '@shared/utils/projectSaveTransaction';
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -58,9 +59,13 @@ const caughtErrorMessage = (error: unknown): string => {
   return 'Неизвестная ошибка';
 };
 
-const confirmDiscardUnsavedChanges = (): boolean => {
-  return window.confirm('В проекте есть несохранённые изменения. Продолжить и отбросить их?');
-};
+const confirmDiscardUnsavedChanges = (): Promise<boolean> =>
+  dialogService.confirm({
+    title: 'Несохранённые изменения',
+    message: 'В проекте есть несохранённые изменения. Продолжить и отбросить их?',
+    confirmLabel: 'Продолжить',
+    destructive: true,
+  });
 
 const directoryOfProjectFile = (filePath: string): string => {
   const lastSep = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
@@ -78,8 +83,20 @@ const projectStateDataForSave = (params: {
     ProjectMeta,
     'linkedParty' | 'partyTrackDisplay' | 'partyThemeId' | 'partyCustomizationSettings'
   >;
+  collections: ProjectCollection[];
+  collectionBindings: Record<string, string>;
 }): ProjectStateData => {
-  const { name, items, settings, trackSettings, groupSettings, sessionState, meta } = params;
+  const {
+    name,
+    items,
+    settings,
+    trackSettings,
+    groupSettings,
+    sessionState,
+    meta,
+    collections,
+    collectionBindings,
+  } = params;
   const linkedParty = meta.linkedParty
     ? { id: meta.linkedParty.id, shortCode: meta.linkedParty.shortCode }
     : undefined;
@@ -94,6 +111,8 @@ const projectStateDataForSave = (params: {
     partyTrackDisplay: meta.partyTrackDisplay,
     partyThemeId: meta.partyThemeId,
     partyCustomizationSettings: meta.partyCustomizationSettings,
+    collections,
+    collectionViewState: { bindings: collectionBindings },
   };
 };
 
@@ -110,9 +129,13 @@ export const AppHeader: React.FC = () => {
   const projectMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const projectMenuTriggerId = useId();
   const projectMenuPanelId = useId();
+  const newProjectRequestRef = useRef(false);
+  const projectLoadRequestRef = useRef(false);
 
   const {
     items,
+    collections,
+    collectionBindings,
     settings,
     trackSettings,
     groupSettings,
@@ -230,43 +253,79 @@ export const AppHeader: React.FC = () => {
     [projectMenuOpen],
   );
 
-  const handleNew = useCallback(() => {
-    const sessionActive = sessionState.mode === 'session';
-    if (
-      !sessionActive &&
-      !canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)
-    ) {
-      return;
-    }
-    void runNewProjectWithSessionGuard({
-      sessionActive,
-      confirmSessionStop: () =>
-        window.confirm(
-          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Текущий проект и несохранённые изменения будут сброшены. Создать новый проект?',
-        ),
-      stopLocally: stopLocalPlayerSession,
-      stopServerSession: () =>
-        enableStreaming && meta.linkedParty
-          ? streamingOrchestrator.endServerSession()
-          : Promise.resolve(),
-      resetProject: newProject,
-      onServerStopFailure: (error) => {
-        addNotification({
-          type: 'error',
-          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
-          duration: 5000,
+  const handleNew = useCallback(async () => {
+    if (newProjectRequestRef.current) return;
+    newProjectRequestRef.current = true;
+    try {
+      let currentProject = useProjectStore.getState();
+      let sessionActive = currentProject.sessionState.mode === 'session';
+      let sessionConfirmed = false;
+      let dirtyConfirmed = false;
+      if (sessionActive) {
+        const accepted = await dialogService.confirm({
+          title: 'Остановить сессию и создать проект?',
+          message:
+            'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Текущий проект и несохранённые изменения будут сброшены. Создать новый проект?',
+          confirmLabel: 'Создать проект',
+          destructive: true,
         });
-        console.error('Failed to end server session before creating a new project', error);
-      },
-    });
-  }, [
-    meta.isDirty,
-    meta.linkedParty,
-    sessionState.mode,
-    newProject,
-    enableStreaming,
-    addNotification,
-  ]);
+        if (!accepted) return;
+        sessionConfirmed = true;
+        dirtyConfirmed = true;
+      } else if (currentProject.meta.isDirty && !(await confirmDiscardUnsavedChanges())) {
+        return;
+      } else if (currentProject.meta.isDirty) {
+        dirtyConfirmed = true;
+      }
+
+      currentProject = useProjectStore.getState();
+      sessionActive = currentProject.sessionState.mode === 'session';
+      if (sessionActive && !sessionConfirmed) {
+        const accepted = await dialogService.confirm({
+          title: 'Остановить сессию и создать проект?',
+          message:
+            'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Текущий проект и несохранённые изменения будут сброшены. Создать новый проект?',
+          confirmLabel: 'Создать проект',
+          destructive: true,
+        });
+        if (!accepted) return;
+        sessionConfirmed = true;
+      }
+
+      currentProject = useProjectStore.getState();
+      if (currentProject.meta.isDirty && !dirtyConfirmed) {
+        if (!(await confirmDiscardUnsavedChanges())) {
+          return;
+        }
+        dirtyConfirmed = true;
+      }
+      currentProject = useProjectStore.getState();
+      sessionActive = currentProject.sessionState.mode === 'session';
+      if (sessionActive && !sessionConfirmed) return;
+
+      await runNewProjectWithSessionGuard({
+        sessionActive,
+        sessionConfirmed,
+        confirmSessionStop: () => Promise.resolve(true),
+        stopLocally: stopLocalPlayerSession,
+        stopServerSession: () =>
+          enableStreaming && currentProject.meta.linkedParty
+            ? streamingOrchestrator.endServerSession()
+            : Promise.resolve(),
+        resetProject: newProject,
+        onServerStopFailure: (error) => {
+          addNotification({
+            type: 'error',
+            message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
+            duration: 5000,
+          });
+          console.error('Failed to end server session before creating a new project', error);
+        },
+      });
+    } finally {
+      newProjectRequestRef.current = false;
+    }
+  }, [newProject, enableStreaming, addNotification]);
 
   const runWithSavingIndicator = useCallback(async (operation: () => Promise<void>) => {
     setIsSaving(true);
@@ -278,10 +337,16 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const handleLoadDemoProject = useCallback(async () => {
-    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
-      return;
+    if (projectLoadRequestRef.current) return;
+    projectLoadRequestRef.current = true;
+    try {
+      if (meta.isDirty && !(await confirmDiscardUnsavedChanges())) {
+        return;
+      }
+      await loadDemoProjectSafe();
+    } finally {
+      projectLoadRequestRef.current = false;
     }
-    await loadDemoProjectSafe();
   }, [meta.isDirty]);
 
   const runSaveAsFromModal = useCallback(
@@ -315,6 +380,8 @@ export const AppHeader: React.FC = () => {
         groupSettings,
         sessionState,
         meta,
+        collections,
+        collectionBindings,
       });
       const projectFile = projectService.serializeProject(stateData);
 
@@ -357,6 +424,8 @@ export const AppHeader: React.FC = () => {
     },
     [
       items,
+      collections,
+      collectionBindings,
       settings,
       trackSettings,
       groupSettings,
@@ -409,6 +478,8 @@ export const AppHeader: React.FC = () => {
             groupSettings,
             sessionState,
             meta,
+            collections,
+            collectionBindings,
           }),
         );
         await projectService.saveProject(quickSavePath, projectFile, {
@@ -426,6 +497,8 @@ export const AppHeader: React.FC = () => {
     runWithSavingIndicator,
     meta,
     items,
+    collections,
+    collectionBindings,
     settings,
     trackSettings,
     groupSettings,
@@ -438,16 +511,17 @@ export const AppHeader: React.FC = () => {
   ]);
 
   const handleLoad = useCallback(async () => {
+    if (projectLoadRequestRef.current) return;
     if (!supportsProjectPersistence) {
       notifyDemoBlocked();
       return;
     }
-
-    if (!canDiscardUnsavedProjectChanges(meta.isDirty, confirmDiscardUnsavedChanges)) {
-      return;
-    }
+    projectLoadRequestRef.current = true;
 
     try {
+      if (meta.isDirty && !(await confirmDiscardUnsavedChanges())) {
+        return;
+      }
       const path = await ipcService.showOpenFileDialog({
         title: 'Открыть проект',
         filters: [{ name: 'Cherry Project', extensions: ['cherry'] }],
@@ -484,6 +558,8 @@ export const AppHeader: React.FC = () => {
       }
     } catch (error) {
       addNotification({ type: 'error', message: `Ошибка загрузки: ${caughtErrorMessage(error)}` });
+    } finally {
+      projectLoadRequestRef.current = false;
     }
   }, [
     loadProject,
@@ -522,7 +598,7 @@ export const AppHeader: React.FC = () => {
       },
       'global.new': () => {
         closeProjectMenu();
-        handleNew();
+        void handleNew();
       },
     }),
     [
@@ -627,7 +703,7 @@ export const AppHeader: React.FC = () => {
                           disabled={isSaving}
                           onClick={() => {
                             closeProjectMenu();
-                            handleNew();
+                            void handleNew();
                           }}
                         >
                           Новый проект
@@ -709,6 +785,17 @@ export const AppHeader: React.FC = () => {
                             Сохранить как…
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          className="project-menu__item"
+                          role="menuitem"
+                          onClick={() => {
+                            closeProjectMenu();
+                            void handleFeedback();
+                          }}
+                        >
+                          Сообщить о проблеме или предложить идею
+                        </button>
                       </div>
                     )}
                   </div>

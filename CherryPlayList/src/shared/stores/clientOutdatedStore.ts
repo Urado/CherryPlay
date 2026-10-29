@@ -26,14 +26,14 @@ export const useClientOutdatedStore = create<ClientOutdatedState>((set) => ({
   resetOutdated: () => set({ isOutdated: false, requiredVersion: null }),
 }));
 
-export function notifyClientOutdated(requiredVersion?: string): void {
+export const notifyClientOutdated = (requiredVersion?: string): void => {
   useClientOutdatedStore.getState().markOutdated(requiredVersion);
-}
+};
 
-export function isClientOutdated(): boolean {
+export const isClientOutdated = (): boolean => {
   return useClientOutdatedStore.getState().isOutdated;
-}
+};
 
-export function resetClientOutdatedState(): void {
+export const resetClientOutdatedState = (): void => {
   useClientOutdatedStore.getState().resetOutdated();
-}
+};

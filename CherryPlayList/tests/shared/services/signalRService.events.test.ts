@@ -80,9 +80,12 @@ jest.mock('../../../src/shared/services/partyService', () => ({
   partyService: {},
 }));
 
-function getHandler(eventName: string): ((...args: unknown[]) => void) | undefined {
-  return mockOn.mock.calls.find(([name]) => name === eventName)?.[1];
-}
+const getHandler = (eventName: string): ((...args: unknown[]) => void) | undefined => {
+  const call = mockOn.mock.calls.find(([name]) => name === eventName) as
+    | [string, (...args: unknown[]) => void]
+    | undefined;
+  return call?.[1];
+};
 
 describe('CherryPlayList signalRService events and invoke', () => {
   beforeEach(async () => {

@@ -1,12 +1,14 @@
-
 import { SettingsImportConfirmDialog } from '@app/components/SettingsImportConfirmDialog';
 import { Button, IconButton } from '@cherryplay/components';
 import CloseIcon from '@mui/icons-material/Close';
-import { APP_VERSION } from '@shared/config';
 import { getWebBaseUrl } from '@shared/config/serverConfig';
 import type { AimpSourceSelection } from '@shared/contracts/aimp';
 import { useModalKeyboard } from '@shared/hooks';
-import { getPlatform, getPlatformUnavailableMessage, usePlatformCapabilities } from '@shared/platform';
+import {
+  getPlatform,
+  getPlatformUnavailableMessage,
+  usePlatformCapabilities,
+} from '@shared/platform';
 import {
   applySettingsImport,
   exportSettingsBundle,
@@ -30,7 +32,13 @@ const DIVIDER_INTERVALS = [
 ];
 
 export const SettingsModal: React.FC = () => {
-  const { modal, closeModal, addNotification } = useUIStore();
+  const {
+    modal,
+    closeModal,
+    addNotification,
+    settingsFocusElementId,
+    clearSettingsFocusElementId,
+  } = useUIStore();
   const hasHydrated = useSettingsStore((s) => s._hasHydrated);
   const {
     trackItemSizePreset,
@@ -58,6 +66,7 @@ export const SettingsModal: React.FC = () => {
   const [pendingImportBundle, setPendingImportBundle] = useState<SettingsExportBundle | null>(null);
   const [exportInProgress, setExportInProgress] = useState(false);
   const [importInProgress, setImportInProgress] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const [localTrackItemSizePreset, setLocalTrackItemSizePreset] = useState(trackItemSizePreset);
@@ -78,6 +87,15 @@ export const SettingsModal: React.FC = () => {
   const [legalLinks, setLegalLinks] = useState<{ privacy: string; legal: string } | null>(null);
 
   const prevModalRef = useRef(modal);
+
+  useEffect(() => {
+    if (!settingsSaved) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => setSettingsSaved(false), 5000);
+    return () => clearTimeout(timeoutId);
+  }, [settingsSaved]);
 
   useEffect(() => {
     if (modal !== 'settings') {
@@ -120,6 +138,20 @@ export const SettingsModal: React.FC = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [modal]);
+
+  useEffect(() => {
+    if (modal !== 'settings' || !settingsFocusElementId || loadingDevices) {
+      return undefined;
+    }
+
+    const focusTarget = document.getElementById(settingsFocusElementId);
+    if (focusTarget instanceof HTMLElement) {
+      focusTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      focusTarget.focus({ preventScroll: true });
+    }
+    clearSettingsFocusElementId();
+    return undefined;
+  }, [modal, settingsFocusElementId, loadingDevices, clearSettingsFocusElementId]);
 
   useEffect(() => {
     if (modal === 'settings' && prevModalRef.current !== 'settings') {
@@ -290,11 +322,9 @@ export const SettingsModal: React.FC = () => {
       localStreamingSource === 'aimp' && !canSelectAimp ? 'cherryPlayPlayer' : localStreamingSource,
     );
 
-    addNotification({ type: 'success', message: 'Настройки сохранены' });
-    closeModal();
+    setSettingsSaved(true);
   }, [
     canSelectAimp,
-    closeModal,
     localDemoPlayerDeviceId,
     localEnableStreaming,
     localHourDividerInterval,
@@ -309,10 +339,10 @@ export const SettingsModal: React.FC = () => {
     setShowHourDividers,
     setStreamingSource,
     setTrackItemSizePreset,
-    addNotification,
   ]);
 
   const handleCancel = useCallback(() => {
+    setSettingsSaved(false);
     setLocalTrackItemSizePreset(trackItemSizePreset);
     setLocalHourDividerInterval(hourDividerInterval);
     setLocalShowHourDividers(showHourDividers);
@@ -477,7 +507,7 @@ export const SettingsModal: React.FC = () => {
                 value={localStreamingSource}
                 onChange={(e) => setLocalStreamingSource(e.target.value as AimpSourceSelection)}
               >
-                <option value="cherryPlayPlayer">CherryPlay</option>
+                <option value="cherryPlayPlayer">Это приложение</option>
                 <option value="aimp" disabled={!canSelectAimp && localStreamingSource !== 'aimp'}>
                   AIMP{!canSelectAimp ? ' (недоступен)' : ''}
                 </option>
@@ -501,7 +531,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="player-audio-device">
-                Куда играет CherryPlay
+                Основное воспроизведение
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -540,7 +570,7 @@ export const SettingsModal: React.FC = () => {
 
             <div className="settings-group">
               <label className="settings-label" htmlFor="demo-player-audio-device">
-                Куда играет прослушивание файлов
+                Предпрослушивание
               </label>
               {loadingDevices ? (
                 <div className="settings-loading">Загрузка устройств...</div>
@@ -583,13 +613,15 @@ export const SettingsModal: React.FC = () => {
               className="settings-section-title"
               style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
             >
-              Резервная копия настроек
+              Резервная копия настроек приложения
             </div>
 
-            <div
-              className="settings-group"
-              style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
-            >
+            <p className="settings-description settings-backup-description">
+              Сохраняет настройки приложения (аудио, интерфейс, онлайн) в JSON. Файл проекта
+              (.cherry) сохраняется отдельно через меню проекта.
+            </p>
+
+            <div className="settings-group settings-backup-actions">
               <Button
                 type="button"
                 className="modal-button"
@@ -635,18 +667,23 @@ export const SettingsModal: React.FC = () => {
 
             <hr className="settings-divider" style={{ marginTop: 16, marginBottom: 12 }} />
 
-            <div className="settings-section-title" style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}>
+            <div
+              className="settings-section-title"
+              style={{ marginBottom: 8, fontWeight: 600, fontSize: '0.95rem' }}
+            >
               Правовая информация
             </div>
 
-            <div className="settings-group">
+            <div className="settings-group settings-legal-links">
               <Button
                 type="button"
                 className="modal-button"
                 variant="secondary"
                 size="sm"
                 disabled={!legalLinks}
-                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'privacy' })}
+                onClick={() =>
+                  void getPlatform().invoke('legal:openDocument', { document: 'privacy' })
+                }
               >
                 Политика персональных данных
               </Button>
@@ -656,13 +693,13 @@ export const SettingsModal: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 disabled={!legalLinks}
-                onClick={() => void getPlatform().invoke('legal:openDocument', { document: 'legal' })}
+                onClick={() =>
+                  void getPlatform().invoke('legal:openDocument', { document: 'legal' })
+                }
               >
                 Реквизиты и контакты
               </Button>
             </div>
-
-            <div className="settings-version">Версия {APP_VERSION}</div>
           </div>
 
           <div className="modal-footer">
@@ -679,10 +716,10 @@ export const SettingsModal: React.FC = () => {
               className="modal-button"
               type="button"
               onClick={handleSave}
-              variant="primary"
+              variant={settingsSaved ? 'secondary' : 'primary'}
               size="sm"
             >
-              Сохранить
+              {settingsSaved ? 'Сохранено' : 'Сохранить'}
             </Button>
           </div>
         </div>

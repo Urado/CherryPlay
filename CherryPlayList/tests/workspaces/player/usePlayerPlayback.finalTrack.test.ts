@@ -29,6 +29,10 @@ const mockProjectState = {
   sessionState: { mode: 'session' },
   meta: { linkedParty: null },
 };
+const mockSettingsState = {
+  streamingSource: 'cherryPlayPlayer',
+  loudnessNormalizationEnabled: true,
+};
 
 jest.mock('@shared/hooks/usePlaybackPreview', () => ({
   usePlaybackPreview: () => ({
@@ -50,7 +54,10 @@ jest.mock('@shared/stores', () => ({
     (selector: (state: typeof mockProjectState) => unknown) => selector(mockProjectState),
     { getState: () => mockProjectState },
   ),
-  useSettingsStore: { getState: () => ({ streamingSource: 'cherryPlayPlayer' }) },
+  useSettingsStore: Object.assign(
+    (selector: (state: typeof mockSettingsState) => unknown) => selector(mockSettingsState),
+    { getState: () => mockSettingsState },
+  ),
 }));
 
 jest.mock('@workspaces/party/partyProgramEndedStore', () => ({

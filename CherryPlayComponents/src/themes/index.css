@@ -1,6 +1,6 @@
-@import './cyberpunk/index.css';
-@import './sakura/index.css';
-@import './art-deco/index.css';
-@import './basic/index.css';
-@import './spring-cross-step/index.css';
-@import './party-controls.css';
+@import url('./cyberpunk/index.css');
+@import url('./sakura/index.css');
+@import url('./art-deco/index.css');
+@import url('./basic/index.css');
+@import url('./spring-cross-step/index.css');
+@import url('./party-controls.css');

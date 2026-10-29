@@ -1,55 +1,91 @@
+import {
+  DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS,
+  type PartyTrackDisplaySettings,
+  type PartyTrackStripLeadingMode,
+} from '@core/types/project';
+import {
+  applyPartyTrackDisplayToTrackName,
+  normalizePartyTrackDisplaySettings,
+} from '@shared/utils/partyUtils';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import type { PartyTrackDisplaySettings, PartyTrackStripLeadingMode } from '@core/types/project';
-import { applyPartyTrackDisplayToTrackName } from '@shared/utils/partyUtils';
-import React, { useMemo } from 'react';
-
-import { PartyEditorAccordion } from './PartyEditorAccordion';
+import {
+  PARTY_TRACK_DELIMITER_PRESET_CUSTOM,
+  PARTY_TRACK_DELIMITER_PRESETS,
+  partyTrackDelimiterCharFromPreset,
+  resolvePartyTrackDelimiterPresetId,
+  type PartyTrackDelimiterPresetId,
+} from './partyTrackDelimiterPresets';
 import './PartyTrackDisplaySection.css';
 
 const PREVIEW_SAMPLE_NAME = '01 — Название трека';
 
+const resolveDisplaySettings = (
+  value: PartyTrackDisplaySettings | Partial<PartyTrackDisplaySettings> | undefined,
+): PartyTrackDisplaySettings =>
+  normalizePartyTrackDisplaySettings({
+    stripLeadingCharsEnabled:
+      value?.stripLeadingCharsEnabled ??
+      DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsEnabled,
+    stripLeadingCharsMode:
+      value?.stripLeadingCharsMode ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsMode,
+    stripLeadingCharsCount:
+      value?.stripLeadingCharsCount ?? DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsCount,
+    stripLeadingCharsDelimiter:
+      value?.stripLeadingCharsDelimiter ??
+      DEFAULT_PARTY_TRACK_DISPLAY_SETTINGS.stripLeadingCharsDelimiter,
+  });
+
 export interface PartyTrackDisplaySectionProps {
-  value: PartyTrackDisplaySettings;
+  value: PartyTrackDisplaySettings | Partial<PartyTrackDisplaySettings> | undefined;
   onChange: (next: PartyTrackDisplaySettings) => void;
-  defaultExpanded?: boolean;
 }
 
 export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> = ({
   value,
   onChange,
-  defaultExpanded = false,
 }) => {
+  const display = resolveDisplaySettings(value);
+  const [isCustomDelimiterSelected, setIsCustomDelimiterSelected] = useState(
+    () =>
+      resolvePartyTrackDelimiterPresetId(display.stripLeadingCharsDelimiter) ===
+      PARTY_TRACK_DELIMITER_PRESET_CUSTOM,
+  );
+  const [customDelimiterInput, setCustomDelimiterInput] = useState(
+    display.stripLeadingCharsDelimiter,
+  );
   const previewName = useMemo(
-    () => applyPartyTrackDisplayToTrackName(PREVIEW_SAMPLE_NAME, value),
-    [value],
+    () => applyPartyTrackDisplayToTrackName(PREVIEW_SAMPLE_NAME, display),
+    [display],
   );
 
   const mode: PartyTrackStripLeadingMode =
-    value.stripLeadingCharsMode === 'untilDelimiter' ? 'untilDelimiter' : 'count';
+    display.stripLeadingCharsMode === 'untilDelimiter' ? 'untilDelimiter' : 'count';
+
+  useEffect(() => {
+    setCustomDelimiterInput(display.stripLeadingCharsDelimiter);
+  }, [display.stripLeadingCharsDelimiter]);
+
+  const delimiterPresetId = isCustomDelimiterSelected
+    ? PARTY_TRACK_DELIMITER_PRESET_CUSTOM
+    : resolvePartyTrackDelimiterPresetId(display.stripLeadingCharsDelimiter);
+  const showCustomDelimiterInput = delimiterPresetId === PARTY_TRACK_DELIMITER_PRESET_CUSTOM;
 
   return (
-    <PartyEditorAccordion
-      title="Отображение треков"
-      defaultExpanded={defaultExpanded}
-      className="party-track-display-section"
-    >
-      <p className="party-track-display-section__hint">
-        Учитывается в превью и в именах треков при публикации плейлиста на сервер. Файлы и проект не
-        переименовываются.
-      </p>
+    <section className="party-track-display-section">
       <div className="party-track-display-section__controls">
         <label className="party-track-display-section__row">
           <input
             type="checkbox"
-            checked={value.stripLeadingCharsEnabled}
-            onChange={(e) => onChange({ ...value, stripLeadingCharsEnabled: e.target.checked })}
+            checked={display.stripLeadingCharsEnabled}
+            onChange={(e) => onChange({ ...display, stripLeadingCharsEnabled: e.target.checked })}
           />
           <span>Скрыть символы с начала имени трека</span>
         </label>
 
         <fieldset
           className="party-track-display-section__mode-fieldset"
-          disabled={!value.stripLeadingCharsEnabled}
+          disabled={!display.stripLeadingCharsEnabled}
         >
           <legend className="party-track-display-section__legend">Способ скрытия</legend>
           <label className="party-track-display-section__row">
@@ -57,7 +93,7 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
               type="radio"
               name="party-track-strip-mode"
               checked={mode === 'count'}
-              onChange={() => onChange({ ...value, stripLeadingCharsMode: 'count' })}
+              onChange={() => onChange({ ...display, stripLeadingCharsMode: 'count' })}
             />
             <span>Число символов</span>
           </label>
@@ -66,7 +102,7 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
               type="radio"
               name="party-track-strip-mode"
               checked={mode === 'untilDelimiter'}
-              onChange={() => onChange({ ...value, stripLeadingCharsMode: 'untilDelimiter' })}
+              onChange={() => onChange({ ...display, stripLeadingCharsMode: 'untilDelimiter' })}
             />
             <span>До символа</span>
           </label>
@@ -81,37 +117,72 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
               min={0}
               max={10_000}
               step={1}
-              disabled={!value.stripLeadingCharsEnabled}
-              value={value.stripLeadingCharsCount}
+              disabled={!display.stripLeadingCharsEnabled}
+              value={display.stripLeadingCharsCount}
               onChange={(e) => {
                 const n = parseInt(e.target.value, 10);
                 onChange({
-                  ...value,
+                  ...display,
                   stripLeadingCharsCount: Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0,
                 });
               }}
             />
           </label>
         ) : (
-          <label className="party-track-display-section__row party-track-display-section__row--number">
-            <span className="party-track-display-section__label">Символ-разделитель</span>
-            <input
-              type="text"
-              className="party-track-display-section__input party-track-display-section__input--delimiter"
-              maxLength={1}
-              disabled={!value.stripLeadingCharsEnabled}
-              value={value.stripLeadingCharsDelimiter}
-              title="По умолчанию пробел; можно указать, например, дефис"
-              onChange={(e) => {
-                const next = e.target.value;
-                onChange({
-                  ...value,
-                  stripLeadingCharsDelimiter:
-                    next.length > 0 ? next.slice(0, 1) : value.stripLeadingCharsDelimiter,
-                });
-              }}
-            />
-          </label>
+          <>
+            <div className="party-track-display-section__row party-track-display-section__row--number">
+              <label
+                className="party-track-display-section__label"
+                htmlFor="party-track-strip-delimiter-preset"
+              >
+                Разделитель
+              </label>
+              <select
+                id="party-track-strip-delimiter-preset"
+                className="party-track-display-section__select"
+                disabled={!display.stripLeadingCharsEnabled}
+                value={delimiterPresetId}
+                onChange={(e) => {
+                  const nextPreset = e.target.value as PartyTrackDelimiterPresetId;
+                  const presetChar = partyTrackDelimiterCharFromPreset(nextPreset);
+                  if (presetChar != null) {
+                    setIsCustomDelimiterSelected(false);
+                    setCustomDelimiterInput(presetChar);
+                    onChange({ ...display, stripLeadingCharsDelimiter: presetChar });
+                    return;
+                  }
+                  setIsCustomDelimiterSelected(true);
+                  setCustomDelimiterInput('');
+                }}
+              >
+                {PARTY_TRACK_DELIMITER_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+                <option value={PARTY_TRACK_DELIMITER_PRESET_CUSTOM}>Другой символ</option>
+              </select>
+            </div>
+            {showCustomDelimiterInput ? (
+              <label className="party-track-display-section__row party-track-display-section__row--number">
+                <span className="party-track-display-section__label">Свой символ</span>
+                <input
+                  type="text"
+                  className="party-track-display-section__input party-track-display-section__input--delimiter"
+                  disabled={!display.stripLeadingCharsEnabled}
+                  value={customDelimiterInput}
+                  onChange={(e) => {
+                    const next = e.target.value.slice(0, 1);
+                    setCustomDelimiterInput(next);
+                    if (next.length > 0) {
+                      setIsCustomDelimiterSelected(true);
+                      onChange({ ...display, stripLeadingCharsDelimiter: next });
+                    }
+                  }}
+                />
+              </label>
+            ) : null}
+          </>
         )}
 
         <div className="party-track-display-section__preview" aria-live="polite">
@@ -121,8 +192,13 @@ export const PartyTrackDisplaySection: React.FC<PartyTrackDisplaySectionProps> =
             →
           </span>
           <span className="party-track-display-section__preview-result">{previewName}</span>
+          {mode === 'untilDelimiter' && display.stripLeadingCharsEnabled ? (
+            <span className="party-track-display-section__preview-note">
+              Разделитель в результат не попадает.
+            </span>
+          ) : null}
         </div>
       </div>
-    </PartyEditorAccordion>
+    </section>
   );
 };

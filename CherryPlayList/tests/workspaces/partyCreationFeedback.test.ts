@@ -3,8 +3,8 @@ const mockGetPartyUrl = jest.fn();
 
 jest.mock('../../src/shared/services/partyService', () => ({
   partyService: {
-    createParty: (...args: unknown[]) => mockCreateParty(...args),
-    getPartyUrl: (...args: unknown[]) => mockGetPartyUrl(...args),
+    createParty: (...args: unknown[]) => mockCreateParty(...args) as unknown,
+    getPartyUrl: (...args: unknown[]) => mockGetPartyUrl(...args) as unknown,
   },
 }));
 
@@ -22,15 +22,15 @@ const createData = {
   playlistData: { items: [], totalDuration: 0, totalTracks: 0 },
 } as CreatePartyDto;
 
-function createStore() {
+const createStore = () => {
   return {
     setPartyVerified: jest.fn(),
     setPartyLifecycleState: jest.fn(),
     setIsListedInCatalog: jest.fn(),
   };
-}
+};
 
-function createDeps() {
+const createDeps = () => {
   return {
     loadThemeAccess: jest.fn().mockResolvedValue(undefined),
     checkPartyExists: jest.fn().mockResolvedValue(true),
@@ -38,7 +38,7 @@ function createDeps() {
     markAsDirty: jest.fn(),
     addNotification: jest.fn(),
   };
-}
+};
 
 describe('party creation feedback', () => {
   beforeEach(() => {

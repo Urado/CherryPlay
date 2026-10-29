@@ -25,7 +25,7 @@ const notifyAuthStateChanged = () => {
   }
 };
 
-async function readAuthErrorMessage(response: Response): Promise<string> {
+const readAuthErrorMessage = async (response: Response): Promise<string> => {
   try {
     const text = await response.text();
     if (!text) {
@@ -49,12 +49,12 @@ async function readAuthErrorMessage(response: Response): Promise<string> {
   } catch {
     return '';
   }
-}
+};
 
-async function throwAuthHttpError(response: Response): Promise<never> {
+const throwAuthHttpError = async (response: Response): Promise<never> => {
   const message = await readAuthErrorMessage(response);
   throw new AuthHttpError(response.status, message);
-}
+};
 
 class AuthService implements IAuthService {
   async checkAuth(): Promise<OrganizerDto | null> {
@@ -257,7 +257,7 @@ class AuthService implements IAuthService {
     return data.code;
   }
 
-  async startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
+  startOAuthFlow(provider: 'telegram' | 'vk' | 'mailru'): Promise<void> {
     const basePath = API_ENDPOINTS.AUTH.OAUTH_START(provider).replace('/start', '/web');
     const params = new URLSearchParams();
     if (isDesktopClientMode()) {
@@ -269,6 +269,7 @@ class AuthService implements IAuthService {
     }
     const query = params.size > 0 ? `?${params.toString()}` : '';
     window.location.href = getApiUrl(`${basePath}${query}`);
+    return Promise.resolve();
   }
 
   async createOAuthAccount(

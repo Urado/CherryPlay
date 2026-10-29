@@ -1,4 +1,4 @@
-export async function copyTextToClipboard(text: string): Promise<void> {
+export const copyTextToClipboard = async (text: string): Promise<void> => {
   const clipboardApi = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
   if (clipboardApi?.writeText) {
     const wrote = await clipboardApi.writeText(text).then(
@@ -36,4 +36,4 @@ export async function copyTextToClipboard(text: string): Promise<void> {
   if (!copied) {
     throw new Error('Clipboard is unavailable');
   }
-}
+};

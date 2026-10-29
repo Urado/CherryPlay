@@ -4,7 +4,6 @@ import { collectComponentPlaylistTrackIds } from '@shared/utils';
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-
 import { DEMO_MOCK_LIVE_PLAYBACK } from './partyPreviewMockPlayback';
 import type { PartyPreviewScenarioState } from './partyPreviewScenarioStore';
 import { usePartyPreviewScenarioStore } from './partyPreviewScenarioStore';
@@ -37,22 +36,22 @@ export interface PartyPreviewEffectiveStateInput {
   visibleThemeIds: readonly PartyThemeId[] | null;
 }
 
-function resolveIsEffectiveThemeUnavailable(
+const resolveIsEffectiveThemeUnavailable = (
   effectiveThemeId: PartyThemeId,
   visibleThemeIds: readonly PartyThemeId[] | null,
-): boolean {
+): boolean => {
   if (!visibleThemeIds) {
     return false;
   }
   return !visibleThemeIds.includes(effectiveThemeId);
-}
+};
 
-export function resolvePartyPreviewEffectiveState(
+export const resolvePartyPreviewEffectiveState = (
   production: PartyPreviewProductionSnapshot,
   scenario: PartyPreviewScenarioState,
   previewTrackIds: readonly string[],
   visibleThemeIds: readonly PartyThemeId[] | null,
-): PartyPreviewEffectiveState {
+): PartyPreviewEffectiveState => {
   const runtimeLifecycleState = production.isLinked ? production.partyLifecycleState : null;
 
   if (scenario.isSynchronized) {
@@ -125,15 +124,15 @@ export function resolvePartyPreviewEffectiveState(
       visibleThemeIds,
     ),
   };
-}
+};
 
 export interface PartyPreviewEffectiveStateResult extends PartyPreviewEffectiveState {
   previewTrackIds: readonly string[];
 }
 
-function selectPartyPreviewScenarioState(
+const selectPartyPreviewScenarioState = (
   state: PartyPreviewScenarioState,
-): PartyPreviewScenarioState {
+): PartyPreviewScenarioState => {
   return {
     isSynchronized: state.isSynchronized,
     mockLiveEnabled: state.mockLiveEnabled,
@@ -143,11 +142,11 @@ function selectPartyPreviewScenarioState(
     themeOverride: state.themeOverride,
     customizationSettingsOverride: state.customizationSettingsOverride,
   };
-}
+};
 
-export function usePartyPreviewEffectiveState(
+export const usePartyPreviewEffectiveState = (
   input: PartyPreviewEffectiveStateInput,
-): PartyPreviewEffectiveStateResult {
+): PartyPreviewEffectiveStateResult => {
   const { production, previewPlaylistData, visibleThemeIds } = input;
   const scenario = usePartyPreviewScenarioStore(selectPartyPreviewScenarioState, shallow);
   const isSynchronized = scenario.isSynchronized;
@@ -193,4 +192,4 @@ export function usePartyPreviewEffectiveState(
     }),
     [effectiveState, previewTrackIds],
   );
-}
+};

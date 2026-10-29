@@ -2,7 +2,6 @@ import { WorkspaceId } from '@core/types/workspace';
 import { v4 as uuidv4 } from 'uuid';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import { HistoryCommand } from '../commands';
 import { logger } from '../utils/logger';
 
@@ -186,18 +185,18 @@ export const useGlobalHistoryStore = createWithEqualityFn<GlobalHistoryState>((s
   },
 }));
 
-export function createMoveDescription(
+export const createMoveDescription = (
   sourceWorkspaceId: WorkspaceId,
   targetWorkspaceId: WorkspaceId,
   count: number,
-): string {
+): string => {
   return `Move ${count} item(s) from ${sourceWorkspaceId} to ${targetWorkspaceId}`;
-}
+};
 
-export function createCopyDescription(
+export const createCopyDescription = (
   sourceWorkspaceId: WorkspaceId,
   targetWorkspaceId: WorkspaceId,
   count: number,
-): string {
+): string => {
   return `Copy ${count} item(s) from ${sourceWorkspaceId} to ${targetWorkspaceId}`;
-}
+};

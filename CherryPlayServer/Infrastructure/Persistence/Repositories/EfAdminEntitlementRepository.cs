@@ -92,17 +92,17 @@ public class EfAdminEntitlementRepository(AppDbContext db) : IAdminEntitlementRe
         return AdminPersistenceOutcome.Applied;
     }
 
-    public async Task<AdminPersistenceOutcome> PersistGrantAsync(Guid organizerId, Guid packageId, Guid adminId, string? note, Guid entitlementId, DateTime now)
+    public async Task<AdminPersistenceOutcome> PersistGrantAsync(OrganizerEntitlement grant, Guid adminId)
     {
-        var package = await db.ThemePackages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == packageId && x.IsActive);
+        var package = await db.ThemePackages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == grant.PackageId && x.IsActive);
         if (package is null) return AdminPersistenceOutcome.NoChange;
 
         await using var transaction = db.Database.IsRelational()
             ? await db.Database.BeginTransactionAsync(IsolationLevel.Serializable)
             : null;
         var active = await db.OrganizerEntitlements.AsNoTracking()
-            .Where(OrganizerEntitlementPredicates.IsActive(now))
-            .FirstOrDefaultAsync(x => x.OrganizerId == organizerId && x.PackageId == packageId);
+            .Where(OrganizerEntitlementPredicates.IsActive(grant.GrantedAt))
+            .FirstOrDefaultAsync(x => x.OrganizerId == grant.OrganizerId && x.PackageId == grant.PackageId);
         if (active is not null)
         {
             if (transaction is not null) await transaction.RollbackAsync();
@@ -111,13 +111,16 @@ public class EfAdminEntitlementRepository(AppDbContext db) : IAdminEntitlementRe
 
         var entitlement = new OrganizerEntitlementEf
         {
-            Id = entitlementId,
-            OrganizerId = organizerId,
-            PackageId = packageId,
-            Kind = "lifetime",
-            Source = "admin_grant",
-            GrantedAt = now,
-            Note = note
+            Id = grant.Id,
+            OrganizerId = grant.OrganizerId,
+            PackageId = grant.PackageId,
+            Kind = ToStorageKind(grant.Kind),
+            Source = ToStorageSource(grant.Source),
+            GrantedAt = grant.GrantedAt,
+            ExpiresAt = grant.ExpiresAt,
+            UsesRemaining = grant.UsesRemaining,
+            RevokedAt = grant.RevokedAt,
+            Note = grant.Note
         };
         db.OrganizerEntitlements.Add(entitlement);
         db.AdminAuditLogs.Add(new AdminAuditLogEf
@@ -125,11 +128,11 @@ public class EfAdminEntitlementRepository(AppDbContext db) : IAdminEntitlementRe
             Id = Guid.NewGuid(),
             AdminId = adminId,
             Action = AdminAuditActionNames.GrantPackage,
-            TargetOrganizerId = organizerId,
-            PackageId = packageId,
+            TargetOrganizerId = grant.OrganizerId,
+            PackageId = grant.PackageId,
             EntitlementId = entitlement.Id,
-            Note = note,
-            CreatedAt = now
+            Note = grant.Note,
+            CreatedAt = grant.GrantedAt
         });
         try
         {
@@ -181,6 +184,11 @@ public class EfAdminEntitlementRepository(AppDbContext db) : IAdminEntitlementRe
             .Join(db.ThemePackages.AsNoTracking(), x => x.PackageId, p => p.Id, (x, p) => new { Entitlement = x, Package = p })
             .FirstOrDefaultAsync();
         return row is null ? null : await ToAdminEntitlement(row.Entitlement, row.Package);
+    }
+
+    public Task<IReadOnlyList<AdminEntitlement>> GetOrganizerEntitlementsAsync(Guid organizerId, bool activeOnly)
+    {
+        return new EfAdminQueryRepository(db).GetOrganizerEntitlementsAsync(organizerId, activeOnly);
     }
 
     public async Task<AdminPersistenceOutcome> PersistLegacyRevokeAsync(Guid organizerId, Guid entitlementId, Guid adminId, string? note, DateTime now)
@@ -291,6 +299,20 @@ public class EfAdminEntitlementRepository(AppDbContext db) : IAdminEntitlementRe
     {
         return new EntitlementRevocation(log.Id, log.EntitlementId, log.AdminId, log.Note, log.CreatedAt);
     }
+
+    private static string ToStorageKind(CherryPlayServer.Core.Enums.EntitlementKind kind) => kind switch
+    {
+        CherryPlayServer.Core.Enums.EntitlementKind.Subscription => "subscription",
+        CherryPlayServer.Core.Enums.EntitlementKind.EventQuota => "event_quota",
+        _ => "lifetime"
+    };
+
+    private static string ToStorageSource(CherryPlayServer.Core.Enums.EntitlementSource source) => source switch
+    {
+        CherryPlayServer.Core.Enums.EntitlementSource.Purchase => "purchase",
+        CherryPlayServer.Core.Enums.EntitlementSource.Trial => "trial",
+        _ => "admin_grant"
+    };
 
     private static bool IsSerializationFailure(Exception exception)
     {

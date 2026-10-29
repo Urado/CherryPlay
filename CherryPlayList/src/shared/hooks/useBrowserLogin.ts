@@ -12,14 +12,14 @@ import { getAppMode, getPlatform, isPlatformInitialized } from '../platform';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../stores/authStore';
 
-function cancelPendingAuthCallback(): void {
+const cancelPendingAuthCallback = (): void => {
   if (!isPlatformInitialized() || getAppMode() !== 'electron') {
     return;
   }
   void getPlatform().invoke('auth:cancelCallback');
-}
+};
 
-export function useBrowserLogin() {
+export const useBrowserLogin = () => {
   const flowState = useSyncExternalStore(
     subscribeBrowserLoginFlow,
     getBrowserLoginFlowState,
@@ -64,4 +64,4 @@ export function useBrowserLogin() {
     retryLogin,
     cancelWaiting,
   };
-}
+};

@@ -112,7 +112,7 @@ run("Server: build (Release)", () =>
 );
 run("Server: tests (fast)", () =>
   exec(
-    `dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --filter "${SERVER_FAST_TEST_FILTER}" --no-build`,
+    `dotnet test CherryPlayServer.Tests/CherryPlayServer.Tests.csproj -c Release --filter "${SERVER_FAST_TEST_FILTER}"`,
   ),
 );
 run("Server: Docker daemon", () => exec("docker info"));
@@ -183,7 +183,7 @@ run("Components: test", () => exec("npm test", componentsDir));
 run("Components: build", () => {
   const outputDirectory = mkdtempSync(join(tmpdir(), "cherryplay-components-build-"));
   try {
-    exec(`npx tsc --outDir "${outputDirectory}"`, componentsDir);
+    exec(`npx tsc -p tsconfig.build.json --outDir "${outputDirectory}"`, componentsDir);
     exec(`node scripts/copy-css.mjs "${outputDirectory}"`, componentsDir);
   } finally {
     rmSync(outputDirectory, { force: true, recursive: true });

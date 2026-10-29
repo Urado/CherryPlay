@@ -31,30 +31,6 @@ services:
           cpus: "1.00"
           memory: 1G
 
-  pgadmin:
-    image: dpage/pgadmin4:9.18
-    container_name: cherryplay-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?PGADMIN_EMAIL is required}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD is required}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    ports:
-      - "127.0.0.1:5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - cherryplay-network
-    restart: unless-stopped
-    logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: 256M
-
   server:
     image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME_SERVER:-owner/repo/server}:${VERSION:?VERSION is required}
     container_name: cherryplay-server
@@ -127,6 +103,8 @@ services:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:19090:9090"
     depends_on:
       - server
       - postgres-exporter
@@ -190,6 +168,8 @@ services:
     volumes:
       - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
       - loki_data:/loki
+    ports:
+      - "127.0.0.1:13100:3100"
     networks:
       - cherryplay-network
     restart: unless-stopped
@@ -220,37 +200,6 @@ services:
         limits:
           cpus: "0.50"
           memory: 128M
-
-  grafana:
-    image: grafana/grafana:13.1.6
-    container_name: cherryplay-grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_HTTP_ADDR: 0.0.0.0
-      GF_SERVER_HTTP_PORT: 3000
-      GF_ANALYTICS_REPORTING_ENABLED: "false"
-      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
-      GF_METRICS_ENABLED: "true"
-    ports:
-      - "127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
-      - loki
-    networks:
-      - cherryplay-network
-    restart: unless-stopped
-    logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: 768M
 
 volumes:
   postgres_data:

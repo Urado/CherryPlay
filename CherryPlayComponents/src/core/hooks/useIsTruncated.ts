@@ -1,17 +1,10 @@
 import { type RefObject, useEffect, useState } from 'react';
 
-/**
- * Returns true when the element's content overflows (scrollWidth > clientWidth).
- * Used to show a clickable ellipsis only when the text is actually truncated.
- * @param ref Ref to the element that displays the (possibly truncated) text.
- * @param enabled When false, does not measure and returns false (e.g. when expanded).
- * @param contentKey When this changes (e.g. display name or stable id), the effect re-runs and re-measures so truncation is updated when the visible text changes.
- */
-export function useIsTruncated(
+export const useIsTruncated = (
   ref: RefObject<HTMLElement | null>,
   enabled: boolean,
   contentKey?: string,
-): boolean {
+): boolean => {
   const [isTruncated, setIsTruncated] = useState(false);
 
   useEffect(() => {
@@ -33,4 +26,4 @@ export function useIsTruncated(
   }, [ref, enabled, contentKey]);
 
   return isTruncated;
-}
+};

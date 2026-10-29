@@ -4,10 +4,10 @@ import type { PartyThemeId } from '../../themes';
 import { resolveBasicThemeCssSettings } from '../../themes/base/colors';
 import { getThemeMetadata } from '../../themes/themeMetadata';
 
-export function usePartyThemeVars(
+export const usePartyThemeVars = (
   partyThemeId: PartyThemeId,
   customizationSettings?: Record<string, unknown>,
-): React.CSSProperties {
+): React.CSSProperties => {
   return useMemo(() => {
     const vars: Record<string, string> = {};
     const metadata = getThemeMetadata(partyThemeId, customizationSettings);
@@ -35,15 +35,13 @@ export function usePartyThemeVars(
       const value = mergedSettings[key as keyof typeof mergedSettings];
       const option = optionByKey.get(key);
       if (value === undefined || value === null) continue;
+      if (typeof value !== 'string' && typeof value !== 'number') continue;
 
-      const transformedValue =
-        option?.transform && (typeof value === 'string' || typeof value === 'number')
-          ? option.transform(value)
-          : String(value);
+      const transformedValue = option?.transform ? option.transform(value) : String(value);
 
       vars[`--${key}`] = transformedValue;
     }
 
     return vars;
   }, [partyThemeId, customizationSettings]);
-}
+};

@@ -21,7 +21,7 @@ const enabledCompressionSettings: LoudnessSettings = {
   loudnessQuietGapRangeLu: 15,
 };
 
-function createOkLoudness(overrides: Partial<TrackLoudness> = {}): TrackLoudness {
+const createOkLoudness = (overrides: Partial<TrackLoudness> = {}): TrackLoudness => {
   return {
     status: 'ok',
     integratedLufs: -20,
@@ -33,16 +33,16 @@ function createOkLoudness(overrides: Partial<TrackLoudness> = {}): TrackLoudness
     algorithmVersion: LOUDNESS_ALGORITHM_VERSION,
     ...overrides,
   };
-}
+};
 
-function createTrack(loudness: TrackLoudness): Track {
+const createTrack = (loudness: TrackLoudness): Track => {
   return {
     id: 'track-1',
     path: 'D:/Music/track.flac',
     name: 'Track',
     loudness,
   };
-}
+};
 
 describe('resolveQuietPassageLufs', () => {
   it('prefers LRA low from scan metadata', () => {

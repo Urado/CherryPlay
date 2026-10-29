@@ -1,6 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
+import QRCodeStyling from 'qr-code-styling';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ensureQrContrast } from '../components/PartyQrCode/ensureQrContrast';
@@ -14,8 +15,9 @@ describe('party QR theme configuration', () => {
 
   it('keeps a theme asset in the theme descriptor and prioritizes an uploaded logo', () => {
     expect(resolvePartyQrImage('spring-cross-step')).toBe('/images/spring-cross-step-poster.jpg');
-    expect(resolvePartyQrImage('spring-cross-step', { qrLogoUrl: ' https://example.test/logo.png ' }))
-      .toBe('https://example.test/logo.png');
+    expect(
+      resolvePartyQrImage('spring-cross-step', { qrLogoUrl: ' https://example.test/logo.png ' }),
+    ).toBe('https://example.test/logo.png');
     expect(resolvePartyQrImage('basic')).toBeUndefined();
   });
 
@@ -25,11 +27,11 @@ describe('party QR theme configuration', () => {
     expect(colors).toEqual({ foreground: '#000000', background: '#ffffff' });
   });
 
-  it('generates SVG QR content with the real styling library', async () => {
-    const QRCodeStyling = (await import('qr-code-styling')).default;
+  it('generates SVG QR content with the real styling library', () => {
     const container = document.createElement('div');
     document.body.append(container);
     const qr = new QRCodeStyling({
+      type: 'svg',
       width: 320,
       height: 320,
       margin: 64,
@@ -40,15 +42,7 @@ describe('party QR theme configuration', () => {
     });
 
     qr.append(container);
-    const image = await qr.getRawData('svg');
-    const svg = image
-      ? await new Promise<string>((resolve, reject: (reason: Error) => void) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-          reader.onerror = () => reject(reader.error ?? new Error('Unable to read generated SVG.'));
-          reader.readAsText(image);
-        })
-      : '';
+    const svg = container.querySelector('svg')?.outerHTML ?? '';
 
     expect(svg).toContain('<svg');
     expect(svg).toContain('<rect');

@@ -133,3 +133,21 @@
   line-height: 1.2;
   white-space: nowrap;
 }
+
+[data-track-item-size='tiny'] .playlist-hour-divider {
+  --playlist-hour-divider-margin-y: 8px;
+  --playlist-hour-divider-gap: 24px;
+  --playlist-hour-divider-label-pad-y: 2px;
+}
+
+[data-track-item-size='tiny'] .playlist-hour-divider-label {
+  font-size: 10px;
+  line-height: 1.2;
+  padding: 2px 3px;
+  border-radius: 2px;
+}
+
+[data-track-item-size='tiny'] .playlist-hour-divider-captions {
+  gap: 4px;
+  max-width: calc(100% - 4px);
+}

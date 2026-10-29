@@ -1,3 +1,4 @@
+import { BrowserLoginPanel } from '@app/components/BrowserLoginPanel';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
@@ -5,7 +6,10 @@ import React from 'react';
 const useBrowserLoginMock = jest.fn();
 
 jest.mock('@shared/hooks/useBrowserLogin', () => ({
-  useBrowserLogin: () => useBrowserLoginMock(),
+  useBrowserLogin: () =>
+    useBrowserLoginMock() as ReturnType<
+      typeof import('@shared/hooks/useBrowserLogin').useBrowserLogin
+    >,
 }));
 
 jest.mock('@cherryplay/components', () => {
@@ -26,8 +30,6 @@ jest.mock('@shared/components', () => {
       ReactActual.createElement('div', { 'data-testid': 'spinner', 'data-size': size }),
   };
 });
-
-import { BrowserLoginPanel } from '@app/components/BrowserLoginPanel';
 
 describe('BrowserLoginPanel', () => {
   const startLogin = jest.fn();

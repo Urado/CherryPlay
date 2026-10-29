@@ -76,8 +76,8 @@
   position: relative;
   padding: 12px 24px;
   padding-left: calc(
-    var(--party-playlist-row-inline-start, 24px) +
-      var(--party-playlist-item-nest, 0) * var(--party-playlist-nest-step, 18px)
+    var(--party-playlist-row-inline-start, 24px) + var(--party-playlist-item-nest, 0) *
+      var(--party-playlist-nest-step, 18px)
   );
   min-width: 0;
 }
@@ -87,9 +87,8 @@
   position: absolute;
   z-index: 1;
   left: calc(
-    var(--party-playlist-row-inline-start, 24px) +
-      (var(--party-playlist-item-nest, 1) - 1) * var(--party-playlist-nest-step, 18px) +
-      (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
+    var(--party-playlist-row-inline-start, 24px) + (var(--party-playlist-item-nest, 1) - 1) *
+      var(--party-playlist-nest-step, 18px) + (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
   );
   top: 50%;
   width: calc(var(--party-playlist-nest-step, 18px) * 0.5);
@@ -174,7 +173,7 @@
 
 .party-playlist-item-name--expanded {
   white-space: normal;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   overflow: visible;
   text-overflow: unset;
 }
@@ -218,13 +217,11 @@
   align-items: center;
   position: relative;
   width: 100%;
-  padding-left: calc(
-    var(--party-playlist-row-inline-start, 24px) +
-      var(--party-playlist-item-nest, 0) * var(--party-playlist-nest-step, 18px)
-  );
-  padding-right: 24px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: 12px 24px 12px
+    calc(
+      var(--party-playlist-row-inline-start, 24px) + var(--party-playlist-item-nest, 0) *
+        var(--party-playlist-nest-step, 18px)
+    );
   box-sizing: border-box;
 }
 
@@ -233,9 +230,8 @@
   position: absolute;
   z-index: 1;
   left: calc(
-    var(--party-playlist-row-inline-start, 24px) +
-      (var(--party-playlist-item-nest, 1) - 1) * var(--party-playlist-nest-step, 18px) +
-      (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
+    var(--party-playlist-row-inline-start, 24px) + (var(--party-playlist-item-nest, 1) - 1) *
+      var(--party-playlist-nest-step, 18px) + (var(--party-playlist-nest-step, 18px) * 0.5) - 0.5px
   );
   top: 50%;
   width: calc(var(--party-playlist-nest-step, 18px) * 0.5);

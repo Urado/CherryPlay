@@ -9,4 +9,5 @@ public interface IOrganizerRepository
     Task<Organizer> AddAsync(Organizer organizer);
     Task UpdateAsync(Organizer organizer);
     Task DeleteAsync(Guid id);
+    Task<IReadOnlyList<Organizer>> GetAllForAdminAsync() => Task.FromResult<IReadOnlyList<Organizer>>(Array.Empty<Organizer>());
 }

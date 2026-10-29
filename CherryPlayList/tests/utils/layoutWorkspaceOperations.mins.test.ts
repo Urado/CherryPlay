@@ -37,11 +37,11 @@ const TEST_WORKSPACE_MODULES: IWorkspaceModule[] = [
   },
 ];
 
-function createWorkspaceZone(
+const createWorkspaceZone = (
   workspaceType: string,
   id = `${workspaceType}-zone`,
   size = 100,
-): WorkspaceZone {
+): WorkspaceZone => {
   return {
     id,
     type: 'workspace',
@@ -49,14 +49,14 @@ function createWorkspaceZone(
     workspaceType,
     size,
   };
-}
+};
 
-function createWorkspaceLayout(workspaceType: string, id?: string): Layout {
+const createWorkspaceLayout = (workspaceType: string, id?: string): Layout => {
   return {
     version: 1,
     rootZone: createWorkspaceZone(workspaceType, id),
   };
-}
+};
 
 describe('layoutWorkspaceOperations min-size feasibility', () => {
   beforeAll(() => {

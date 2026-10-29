@@ -6,6 +6,7 @@ import * as mm from 'music-metadata';
 
 import {
   analyzeLoudness,
+  cancelLoudnessScan,
   DEFAULT_TARGET_LUFS,
   MAX_TARGET_LUFS,
   MIN_TARGET_LUFS,
@@ -20,7 +21,7 @@ type AudioPathValidationResult =
   | { ok: true; resolvedPath: string; stats: Awaited<ReturnType<typeof fs.stat>> }
   | { ok: false; error: string };
 
-async function validateAudioFilePath(userPath: string): Promise<AudioPathValidationResult> {
+const validateAudioFilePath = async (userPath: string): Promise<AudioPathValidationResult> => {
   if (!validatePath(userPath)) {
     return { ok: false, error: 'Invalid path: path traversal detected' };
   }
@@ -45,17 +46,12 @@ async function validateAudioFilePath(userPath: string): Promise<AudioPathValidat
   } catch (error) {
     return { ok: false, error: (error as Error).message };
   }
-}
+};
 
-/**
- * Get audio file duration in seconds
- */
-async function getAudioDuration(filePath: string): Promise<number> {
+const getAudioDuration = async (filePath: string): Promise<number> => {
   try {
-    // Read file metadata
     const metadata = await mm.parseFile(filePath);
 
-    // Get duration in seconds
     if (metadata.format.duration) {
       return Math.floor(metadata.format.duration);
     }
@@ -64,12 +60,19 @@ async function getAudioDuration(filePath: string): Promise<number> {
   } catch (error) {
     throw new Error(`Failed to get audio duration: ${(error as Error).message}`);
   }
-}
+};
 
-/**
- * Register audio IPC handlers
- */
-export function registerAudioHandlers(): void {
+const MAX_LOUDNESS_SCAN_REQUEST_ID_LENGTH = 256;
+
+const isValidLoudnessScanRequestId = (value: unknown): value is string => {
+  return (
+    typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= MAX_LOUDNESS_SCAN_REQUEST_ID_LENGTH
+  );
+};
+
+export const registerAudioHandlers = (): void => {
   ipcMain.handle('audio:getDuration', async (event, payload: { path: string }) => {
     try {
       const validation = await validateAudioFilePath(payload.path);
@@ -121,13 +124,6 @@ export function registerAudioHandlers(): void {
     }
   });
 
-  /**
-   * IPC envelope for loudness analysis (subtask 03 relies on this contract):
-   * - Path / payload validation failures → `{ success: false, error: string }`
-   * - Scan completed (including FFmpeg/parse failures) → `{ success: true, data: LoudnessScanResult }`
-   *   where scan failures use `data.status === 'error'` rather than `success: false`.
-   * - Unexpected handler exceptions → `{ success: false, error: string }`
-   */
   ipcMain.handle(
     'audio:analyzeLoudness',
     async (
@@ -135,9 +131,18 @@ export function registerAudioHandlers(): void {
       payload: {
         path: string;
         targetLufs?: number;
+        requestId?: unknown;
       },
     ) => {
       try {
+        const requestId = payload.requestId;
+        if (requestId !== undefined && !isValidLoudnessScanRequestId(requestId)) {
+          return {
+            success: false,
+            error: 'Invalid loudness scan request ID',
+          };
+        }
+
         const validation = await validateAudioFilePath(payload.path);
         if (!validation.ok) {
           return {
@@ -160,6 +165,7 @@ export function registerAudioHandlers(): void {
         const result = await analyzeLoudness(validation.resolvedPath, targetLufs, {
           fileMtime: normalizeStatNumber(validation.stats.mtimeMs),
           fileSizeBytes: normalizeStatNumber(validation.stats.size),
+          requestId,
         });
         return {
           success: true,
@@ -173,6 +179,27 @@ export function registerAudioHandlers(): void {
       }
     },
   );
+
+  ipcMain.handle('audio:cancelLoudnessScan', (_event, payload: { requestId?: unknown }) => {
+    try {
+      if (!isValidLoudnessScanRequestId(payload?.requestId)) {
+        return {
+          success: false,
+          error: 'Invalid loudness scan request ID',
+        };
+      }
+
+      return {
+        success: true,
+        data: { cancelled: cancelLoudnessScan(payload.requestId) },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  });
 
   ipcMain.handle('audio:statAudioFile', async (event, payload: { path: string }) => {
     try {
@@ -198,4 +225,4 @@ export function registerAudioHandlers(): void {
       };
     }
   });
-}
+};

@@ -1,8 +1,9 @@
-
+import { IconButton } from '@cherryplay/components';
 import { DEFAULT_PLAYLIST_WORKSPACE_ID } from '@core/constants/workspace';
 import { isProjectTrack } from '@core/types/project';
 import { Track } from '@core/types/track';
 import { WorkspaceId } from '@core/types/workspace';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import {
   ItemList,
   DropIndicator,
@@ -25,9 +26,10 @@ import { useListShortcuts } from '@shared/shortcuts';
 import { useProjectStore, useSettingsStore, useUIStore } from '@shared/stores';
 import { isItemDragState } from '@shared/stores/dragDropStore';
 import { usePlayerAudioStore } from '@shared/stores/playerAudioStore';
-import { streamingOrchestrator } from '@shared/streaming/streamingOrchestrator';
-import { logger, getDuplicateTrackIdsByPathAndFilename } from '@shared/utils';
-import { runNewProjectWithSessionGuard, stopLocalPlayerSession } from '@shared/utils/newProjectSessionGuard';
+import {
+  logger,
+  getDuplicateTrackIdsByPathAndFilename,
+} from '@shared/utils';
 import { flattenItemsForDisplay, getTracksFromDisplayItems } from '@shared/utils/playerItemsUtils';
 import React, { useCallback, useMemo } from 'react';
 
@@ -57,6 +59,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     setName,
     removeItem,
     addItems,
+    addItemsToGroup,
     toggleItemSelection,
     selectAll,
     deselectAll,
@@ -65,10 +68,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     updateTrackDuration,
     getItemPath,
     findItemById,
+    canCreateGroup: canCreateGroupInStore,
     createGroup,
     ungroupGroup,
     setGroupName,
-    newProject,
     undo,
     redo,
     isTrackPlayed,
@@ -108,10 +111,15 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   });
 
   const handleAddTracks = useCallback(
-    (newTracks: Omit<Track, 'id'>[]) => {
+    (newTracks: Omit<Track, 'id'>[], parentId?: string | null, localIndex?: number) => {
+      if (parentId) {
+        const addedTracks = addItemsToGroup(parentId, newTracks, localIndex ?? 0);
+        loadDurationsForTracks(addedTracks.map(({ id, path }) => ({ id, path })));
+        return;
+      }
       addItems(newTracks);
     },
-    [addItems],
+    [addItems, addItemsToGroup, loadDurationsForTracks],
   );
 
   const handleAddTracksAt = useCallback(
@@ -147,7 +155,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     onError: handleError,
   });
 
-  const { showHourDividers, enableStreaming } = useSettingsStore();
+  const { showHourDividers } = useSettingsStore();
 
   const isTrackOrGroupDisabled = useCallback(
     (itemId: string): boolean => {
@@ -213,7 +221,10 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     let total = 0;
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
-      if (isTrackOrGroupDisabled(track.id)) {
+      const isDisabled =
+        sessionState.disabledTrackIds.includes(track.id) ||
+        sessionState.disabledGroupIds.some((groupId) => getItemPath(track.id).includes(groupId));
+      if (isDisabled) {
         continue;
       }
       total += track.duration || 0;
@@ -227,28 +238,15 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     return total;
   }, [
     tracks,
-    isTrackOrGroupDisabled,
     getEffectiveTrackSettings,
     sessionState.disabledTrackIds,
     sessionState.disabledGroupIds,
+    getItemPath,
   ]);
 
   const canCreateGroup = useMemo(() => {
-    if (selectedItemIds.size < 2) return false;
-    const selectedIndices: number[] = [];
-    items.forEach((item, index) => {
-      if (selectedItemIds.has(item.id)) {
-        selectedIndices.push(index);
-      }
-    });
-    if (selectedIndices.length < 2) return false;
-    for (let i = 1; i < selectedIndices.length; i++) {
-      if (selectedIndices[i] !== selectedIndices[i - 1] + 1) {
-        return false;
-      }
-    }
-    return true;
-  }, [selectedItemIds, items]);
+    return canCreateGroupInStore(Array.from(selectedItemIds));
+  }, [selectedItemIds, canCreateGroupInStore]);
 
   const handleCreateGroup = useCallback(() => {
     if (!canCreateGroup) return;
@@ -262,30 +260,31 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   }, [canCreateGroup, selectedItemIds, createGroup, deselectAll]);
 
   const handleClearAll = useCallback(() => {
-    if (tracks.length === 0) return;
-    void runNewProjectWithSessionGuard({
-      sessionActive: sessionState.mode === 'session',
-      confirmSessionStop: () =>
-        window.confirm(
-          'Активная сессия будет остановлена: звук прекратится, а трансляция вечеринки завершится. Создать новый проект?',
-        ),
-      stopLocally: stopLocalPlayerSession,
-      stopServerSession: () => {
-        const linkedParty = useProjectStore.getState().meta.linkedParty;
-        return enableStreaming && linkedParty
-          ? streamingOrchestrator.endServerSession()
-          : Promise.resolve();
-      },
-      resetProject: newProject,
-      onServerStopFailure: () => {
-        addNotification({
-          type: 'error',
-          message: 'Сессия остановлена локально, но сервер не подтвердил завершение трансляции',
-          duration: 5000,
-        });
-      },
-    });
-  }, [tracks.length, sessionState.mode, newProject, enableStreaming, addNotification]);
+    if (items.length === 0) return;
+    selectAll();
+    removeSelectedItems();
+  }, [items.length, selectAll, removeSelectedItems]);
+
+  const handleExportTracksToText = useCallback(() => {
+    try {
+      if (tracks.length === 0) {
+        return;
+      }
+
+      const fileContent = tracks.map((track) => track.name).join('\n');
+      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${name || 'tracks'}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      logger.error('Failed to export tracks to text file', error);
+    }
+  }, [tracks, name]);
 
   useListShortcuts({
     'list.undo': undo,
@@ -311,6 +310,18 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
         canCreateGroup={canCreateGroup}
         onCreateGroup={handleCreateGroup}
         onClearAll={handleClearAll}
+        extraActions={
+          <IconButton
+            onClick={handleExportTracksToText}
+            className="playlist-header-action-icon"
+            title="Список треков в файл…"
+            disabled={tracks.length === 0}
+            aria-label="Список треков в файл"
+            icon={<TextSnippetIcon style={{ fontSize: '18px' }} />}
+            variant="ghost"
+            size="sm"
+          />
+        }
       />
 
       <ItemList

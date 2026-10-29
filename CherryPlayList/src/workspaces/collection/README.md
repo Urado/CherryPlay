@@ -2,7 +2,7 @@
 
 ## Описание
 
-Модуль Collection предоставляет функционал для работы с коллекциями треков. Коллекции похожи на плейлисты, но могут иметь динамические ID и поддерживают экспорт в различные форматы.
+Модуль Collection предоставляет функционал для работы с подборками треков внутри проекта. Подборки похожи на плейлисты; переименование доступно через отдельную кнопку-карандаш, а действие переименования из меню, JSON-экспорт и копирование файлов в папку не предусмотрены. Аудио подборок включается в переносимое сохранение проекта; см. [Save / Load](../../../docs/modules/systems/save-load.md).
 
 ## Зависимости
 
@@ -17,11 +17,8 @@
 - `@shared/stores/projectStoreFactory` - создание store для коллекции
 - `@shared/stores/globalHistoryStore` - глобальная история undo/redo
 - `@shared/stores/uiStore` - уведомления
-- `@shared/services/exportService` - экспорт коллекций
 - `@shared/services/fileService` - работа с файлами
 - `@shared/services/ipcService` - IPC коммуникация
-- `@shared/services/collectionPersistenceService` - экспорт JSON, копирование треков, импорт (с guard для web demo)
-- `@shared/services/playlistService` - низкоуровневый IPC save/load JSON
 - `@shared/hooks/useTrackWorkspaceDragAndDrop` - drag-and-drop
 - `@shared/hooks/useTrackDuration` - загрузка длительности треков
 - `@shared/components/ProjectItemRow` - компонент элемента коллекции
@@ -42,13 +39,7 @@
    - Пауза
    - Отображение активного трека
 
-3. **Экспорт**
-   - Экспорт в JSON формат
-   - Копирование треков в папку
-   - Меню экспорта с выбором формата
-
-4. **Редактирование**
-   - Изменение названия коллекции
+3. **История изменений**
    - Undo/Redo операций через глобальную историю
    - Атомарный откат cross-workspace операций
 

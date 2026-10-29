@@ -1,6 +1,4 @@
-/**
- * @vitest-environment jsdom
- */
+// @vitest-environment jsdom
 import { buildRequiredConsentInputs } from '@cherryplay/components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,15 +11,15 @@ vi.mock('../utils/apiFetch', () => ({
   apiFetch: vi.fn(),
 }));
 
-function mockJsonResponse(status: number, body: unknown): Response {
+const mockJsonResponse = (status: number, body: unknown): Response => {
   return {
     ok: status >= 200 && status < 300,
     status,
     statusText: status === 200 || status === 201 ? 'OK' : 'Error',
-    json: async () => body,
-    text: async () => JSON.stringify(body),
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
   } as Response;
-}
+};
 
 describe('authService register with consents', () => {
   beforeEach(() => {
@@ -46,10 +44,11 @@ describe('authService register with consents', () => {
     ).resolves.toBeUndefined();
 
     expect(vi.mocked(apiFetch).mock.calls).toHaveLength(2);
-    expect(String(vi.mocked(apiFetch).mock.calls[0]?.[0])).toContain('/api/organizers');
-    const createBody = JSON.parse(String(vi.mocked(apiFetch).mock.calls[0]?.[1]?.body));
-    expect(createBody.consents).toEqual(consents);
-    expect(String(vi.mocked(apiFetch).mock.calls[1]?.[0])).toContain('/auth/login');
+    expect(vi.mocked(apiFetch).mock.calls[0]?.[0]).toMatch(/\/api\/organizers$/);
+    const requestBody = vi.mocked(apiFetch).mock.calls[0]?.[1]?.body;
+    const createBody: unknown = JSON.parse(typeof requestBody === 'string' ? requestBody : '');
+    expect(createBody).toMatchObject({ consents });
+    expect(vi.mocked(apiFetch).mock.calls[1]?.[0]).toMatch(/\/auth\/login$/);
   });
 
   it('maps email-conflict 409 to RU message without calling login', async () => {
@@ -84,8 +83,8 @@ describe('authService register with consents', () => {
       ok: false,
       status: 409,
       statusText: 'Error',
-      json: async () => ({}),
-      text: async () => '',
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
     } as Response);
 
     await expect(authService.register('a@b.c', 'secret1', 'Name', consents)).rejects.toMatchObject({

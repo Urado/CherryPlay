@@ -1,3 +1,5 @@
+import { AccountPopover } from '@app/components/AccountPopover';
+import { ACCOUNT_POPOVER_OPEN_EVENT } from '@app/components/accountPopoverEvents';
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,9 +8,6 @@ import React from 'react';
 jest.mock('@app/components/AccountView', () => ({
   AccountView: () => <div>Account actions</div>,
 }));
-
-import { AccountPopover } from '@app/components/AccountPopover';
-import { ACCOUNT_POPOVER_OPEN_EVENT } from '@app/components/accountPopoverEvents';
 
 describe('AccountPopover', () => {
   it('ignores global open requests while disabled', () => {

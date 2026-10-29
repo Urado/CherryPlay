@@ -1,16 +1,19 @@
 import { WorkspaceId, WorkspaceType } from '@core/types/workspace';
 import { createWithEqualityFn } from 'zustand/traditional';
 
-
 import {
   DEFAULT_PLAYLIST_WORKSPACE_ID,
   registerWorkspaceType,
   unregisterWorkspaceType,
 } from '../../core/constants/workspace';
+import { dialogService } from '../services/dialogService';
 import { getActiveLayoutSnapshotForFocus } from '../utils/layoutFocusBridge';
 import { resolveFileBrowserFocusTarget } from '../utils/resolveFileBrowserFocusTarget';
 
+import { useAuthStore } from './authStore';
+
 const notificationTimers = new Map<string, NodeJS.Timeout>();
+let partySettingsAuthPromptPending = false;
 
 export type ModalType =
   | 'settings'
@@ -58,6 +61,7 @@ interface UIState {
   activeSource: 'fileBrowser' | 'playlists' | 'db';
   modal: ModalType;
   modalReturnTo: 'partySettings' | null;
+  settingsFocusElementId: string | null;
   trackSettingsContext: TrackSettingsModalContext;
   notifications: Notification[];
   fileBrowserFocusRequest: {
@@ -71,6 +75,8 @@ interface UIState {
 
   setActiveSource: (source: 'fileBrowser' | 'playlists' | 'db') => void;
   openModal: (type: ModalType) => void;
+  openSettingsModal: (focusElementId?: string) => void;
+  clearSettingsFocusElementId: () => void;
   openLinkPartyModal: (returnTo?: 'partySettings') => void;
   openPartySettingsModal: () => void;
   closeModal: () => void;
@@ -93,6 +99,7 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   activeSource: 'fileBrowser',
   modal: null,
   modalReturnTo: null,
+  settingsFocusElementId: null,
   trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
   notifications: [],
   fileBrowserFocusRequest: null,
@@ -102,21 +109,66 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   setActiveSource: (source) => set({ activeSource: source }),
 
-  openModal: (type) => set({ modal: type, modalReturnTo: null }),
+  openModal: (type) => {
+    if (type === 'partySettings') {
+      get().openPartySettingsModal();
+      return;
+    }
+    set({ modal: type, modalReturnTo: null, settingsFocusElementId: null });
+  },
 
-  openLinkPartyModal: (returnTo) => set({ modal: 'linkParty', modalReturnTo: returnTo ?? null }),
+  openSettingsModal: (focusElementId) =>
+    set({
+      modal: 'settings',
+      modalReturnTo: null,
+      settingsFocusElementId: focusElementId ?? null,
+    }),
 
-  openPartySettingsModal: () => set({ modal: 'partySettings', modalReturnTo: null }),
+  clearSettingsFocusElementId: () => set({ settingsFocusElementId: null }),
+
+  openLinkPartyModal: (returnTo) =>
+    set({ modal: 'linkParty', modalReturnTo: returnTo ?? null, settingsFocusElementId: null }),
+
+  openPartySettingsModal: () => {
+    if (useAuthStore.getState().isAuthenticated()) {
+      set({ modal: 'partySettings', modalReturnTo: null, settingsFocusElementId: null });
+      return;
+    }
+    if (partySettingsAuthPromptPending) {
+      return;
+    }
+    partySettingsAuthPromptPending = true;
+    void dialogService
+      .confirm({
+        title: 'Войдите в аккаунт',
+        message: 'Настройки вечеринки доступны после входа в аккаунт.',
+        confirmLabel: 'Войти',
+        cancelLabel: 'Отмена',
+      })
+      .then((confirmed) => {
+        if (confirmed) {
+          get().openModal('account');
+        }
+      })
+      .finally(() => {
+        partySettingsAuthPromptPending = false;
+      });
+  },
 
   closeModal: () =>
     set((state) => ({
       modal: state.modal === 'linkParty' ? state.modalReturnTo : null,
       modalReturnTo: null,
+      settingsFocusElementId: null,
       trackSettingsContext: { trackId: null, groupId: null, isGlobal: false },
     })),
 
   openTrackSettingsModal: (context) =>
-    set({ modal: 'trackSettings', trackSettingsContext: context }),
+    set({
+      modal: 'trackSettings',
+      trackSettingsContext: context,
+      settingsFocusElementId: null,
+    }),
 
   addNotification: (notification) => {
     const id = `notification-${Date.now()}-${Math.random()}`;
@@ -159,7 +211,18 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
 
   addWorkspace: (workspace) => {
     const state = get();
-    if (state.workspaces.some((w) => w.id === workspace.id)) {
+    const existing = state.workspaces.find((entry) => entry.id === workspace.id);
+    if (existing) {
+      if (
+        existing.type === workspace.type
+        && existing.name === workspace.name
+        && existing.zoneId === workspace.zoneId
+      ) return;
+      set({
+        workspaces: state.workspaces.map((entry) =>
+          entry.id === workspace.id ? { ...entry, ...workspace } : entry,
+        ),
+      });
       return;
     }
     registerWorkspaceType(workspace.id, workspace.type);
@@ -223,6 +286,6 @@ export const useUIStore = createWithEqualityFn<UIState>((set, get) => ({
   acknowledgeFileBrowserFocus: () => set({ fileBrowserFocusRequest: null }),
 }));
 
-export function openPartySettingsModal(): void {
+export const openPartySettingsModal = (): void => {
   useUIStore.getState().openPartySettingsModal();
-}
+};

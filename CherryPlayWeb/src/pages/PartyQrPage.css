@@ -96,7 +96,7 @@
 .party-qr-code-spinner {
   width: 2rem;
   height: 2rem;
-  border: 3px solid currentColor;
+  border: 3px solid currentcolor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: party-qr-code-spin 0.8s linear infinite;
@@ -135,7 +135,7 @@
 }
 
 [data-qr-frame='petal'] .party-qr-code-card {
-  border-radius: 2rem 1rem 2rem 1rem;
+  border-radius: 2rem 1rem;
 }
 
 [data-qr-frame='deco'] .party-qr-code-card {

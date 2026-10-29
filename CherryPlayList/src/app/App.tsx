@@ -1,4 +1,3 @@
-
 import { NotificationContainer } from '@shared/components';
 import { initializeServerConfig } from '@shared/config';
 import { useTrackItemSize } from '@shared/hooks';
@@ -15,10 +14,7 @@ import {
   initializeProjectStoreHistory,
 } from '@shared/stores';
 import { clearExpiredAuthSession } from '@shared/utils/authSession';
-import {
-  isTokenExpiringSoon,
-  getDaysUntilExpiration,
-} from '@shared/utils/tokenUtils';
+import { isTokenExpiringSoon, getDaysUntilExpiration } from '@shared/utils/tokenUtils';
 import { TrackSettingsModal } from '@workspaces/player/TrackSettingsModal';
 import React, { useEffect, useRef } from 'react';
 
@@ -30,6 +26,7 @@ import { AppHeader } from './components/AppHeader';
 import { CherryPlayStreamingController } from './components/CherryPlayStreamingController';
 import { DemoModeBanner } from './components/DemoModeBanner';
 import { DemoPlayerShell } from './components/DemoPlayerShell';
+import { DialogHost } from './components/DialogHost';
 import { ExportModal } from './components/ExportModal';
 import { LayoutWorkspaceArea } from './components/LayoutWorkspaceArea';
 import { LinkPartyModal } from './components/LinkPartyModal';
@@ -162,6 +159,7 @@ const App: React.FC = () => {
         <TrackSettingsModal />
         <AccountModal />
         <NotificationContainer />
+        <DialogHost />
         <AppFooter />
       </div>
     </CherryPlayStreamingController>

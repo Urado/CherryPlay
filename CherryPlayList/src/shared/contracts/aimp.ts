@@ -1,6 +1,5 @@
 export const AIMP_PROTOCOL_VERSION = '1.0.0';
 export const AIMP_PROTOCOL_PIPE_NAME = '\\\\.\\pipe\\cherryplay-aimp-v1';
-// The named-pipe transport is newline-delimited JSON (one UTF-8 JSON message per line).
 export const AIMP_PROTOCOL_MESSAGE_DELIMITER = '\n';
 export const AIMP_HEARTBEAT_INTERVAL_MS = 5000;
 export const AIMP_HEARTBEAT_STALE_TIMEOUT_MS = 15000;
@@ -48,7 +47,6 @@ export type AimpProtocolErrorCode =
   | 'payloadTooLarge'
   | 'invalidJson';
 
-/** Log entry for AIMP plugin interaction (main → renderer console). */
 export interface AimpLogEntry {
   timestamp: string;
   level: 'debug' | 'info' | 'warn';
@@ -83,7 +81,6 @@ export interface AimpHelloAckPayload {
 }
 
 export interface AimpPlaylistTrackPayload {
-  /** Optional canonical key from plugin; when present and non-empty, used as track identity */
   trackKey?: string;
   nativeTrackId?: string;
   filePath?: string;
@@ -308,15 +305,15 @@ interface AimpEnvelopeMetadata {
   sentAt: string;
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+};
 
-function createProtocolError(
+const createProtocolError = (
   code: AimpProtocolErrorCode,
   message: string,
   details?: string,
-): AimpValidationFailure {
+): AimpValidationFailure => {
   return {
     success: false,
     error: {
@@ -325,33 +322,33 @@ function createProtocolError(
       details,
     },
   };
-}
+};
 
-function createSuccess<T>(value: T): AimpValidationSuccess<T> {
+const createSuccess = <T>(value: T): AimpValidationSuccess<T> => {
   return {
     success: true,
     value,
   };
-}
+};
 
-function readString(
+const readString = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string> {
+): AimpValidationResult<string> => {
   const value = record[key];
   if (typeof value !== 'string' || value.trim().length === 0) {
     return createProtocolError('invalidPayload', message, `Expected non-empty string at "${key}"`);
   }
 
   return createSuccess(value);
-}
+};
 
-function readValidatedOptionalString(
+const readValidatedOptionalString = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string | undefined> {
+): AimpValidationResult<string | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -362,14 +359,13 @@ function readValidatedOptionalString(
   }
 
   return createSuccess(value);
-}
+};
 
-/** Optional string: missing, null, or empty string are accepted as undefined. */
-function readValidatedOptionalStringAllowEmpty(
+const readValidatedOptionalStringAllowEmpty = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string | undefined> {
+): AimpValidationResult<string | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -383,13 +379,13 @@ function readValidatedOptionalStringAllowEmpty(
   }
   const trimmed = value.trim();
   return createSuccess(trimmed.length > 0 ? trimmed : undefined);
-}
+};
 
-function readValidatedOptionalNullableString(
+const readValidatedOptionalNullableString = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string | null | undefined> {
+): AimpValidationResult<string | null | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -404,13 +400,13 @@ function readValidatedOptionalNullableString(
   }
 
   return createSuccess(value);
-}
+};
 
-function readInteger(
+const readInteger = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<number> {
+): AimpValidationResult<number> => {
   const value = record[key];
   if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
     return createProtocolError(
@@ -421,26 +417,26 @@ function readInteger(
   }
 
   return createSuccess(value);
-}
+};
 
-function readBoolean(
+const readBoolean = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<boolean> {
+): AimpValidationResult<boolean> => {
   const value = record[key];
   if (typeof value !== 'boolean') {
     return createProtocolError('invalidPayload', message, `Expected boolean at "${key}"`);
   }
 
   return createSuccess(value);
-}
+};
 
-function readValidatedOptionalInteger(
+const readValidatedOptionalInteger = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<number | undefined> {
+): AimpValidationResult<number | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -455,13 +451,13 @@ function readValidatedOptionalInteger(
   }
 
   return createSuccess(value);
-}
+};
 
-function readValidatedOptionalNullableInteger(
+const readValidatedOptionalNullableInteger = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<number | null | undefined> {
+): AimpValidationResult<number | null | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -480,13 +476,13 @@ function readValidatedOptionalNullableInteger(
   }
 
   return createSuccess(value);
-}
+};
 
-function readValidatedOptionalBoolean(
+const readValidatedOptionalBoolean = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<boolean | undefined> {
+): AimpValidationResult<boolean | undefined> => {
   if (!(key in record)) {
     return createSuccess(undefined);
   }
@@ -497,25 +493,25 @@ function readValidatedOptionalBoolean(
   }
 
   return createSuccess(value);
-}
+};
 
-function isValidIsoTimestamp(value: string): boolean {
+const isValidIsoTimestamp = (value: string): boolean => {
   return !Number.isNaN(Date.parse(value));
-}
+};
 
-export function isSupportedAimpProtocolVersion(version: string): boolean {
+export const isSupportedAimpProtocolVersion = (version: string): boolean => {
   return (AIMP_SUPPORTED_PROTOCOL_VERSIONS as readonly string[]).includes(version);
-}
+};
 
-export function getAimpProtocolVersionError(actualVersion: string): AimpProtocolError {
+export const getAimpProtocolVersionError = (actualVersion: string): AimpProtocolError => {
   return {
     code: 'unsupportedProtocolVersion',
     message: `Unsupported AIMP protocol version "${actualVersion}"`,
     details: `Supported versions: ${AIMP_SUPPORTED_PROTOCOL_VERSIONS.join(', ')}`,
   };
-}
+};
 
-export function createAimpHelloAckMessage(options: {
+export const createAimpHelloAckMessage = (options: {
   sequence: number;
   accepted: boolean;
   sentAt: string;
@@ -523,7 +519,7 @@ export function createAimpHelloAckMessage(options: {
   serverProtocolVersion?: string;
   errorCode?: AimpHelloAckErrorCode;
   detail?: string;
-}): AimpHelloAckMessage {
+}): AimpHelloAckMessage => {
   const payload: AimpHelloAckPayload = {
     accepted: options.accepted,
     serverProtocolVersion: options.serverProtocolVersion ?? AIMP_PROTOCOL_VERSION,
@@ -545,13 +541,13 @@ export function createAimpHelloAckMessage(options: {
     sentAt: options.sentAt,
     payload,
   };
-}
+};
 
-function readIsoTimestamp(
+const readIsoTimestamp = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string> {
+): AimpValidationResult<string> => {
   const result = readString(record, key, message);
   if (!result.success) {
     return result;
@@ -562,13 +558,13 @@ function readIsoTimestamp(
   }
 
   return result;
-}
+};
 
-function readOptionalNullableIsoTimestamp(
+const readOptionalNullableIsoTimestamp = (
   record: Record<string, unknown>,
   key: string,
   message: string,
-): AimpValidationResult<string | null> {
+): AimpValidationResult<string | null> => {
   const result = readValidatedOptionalNullableString(record, key, message);
   if (!result.success) {
     return result;
@@ -583,12 +579,12 @@ function readOptionalNullableIsoTimestamp(
   }
 
   return createSuccess(result.value);
-}
+};
 
-function validateAimpGatingReason(
+const validateAimpGatingReason = (
   value: unknown,
   messagePrefix: string,
-): AimpValidationResult<AimpGatingReason> {
+): AimpValidationResult<AimpGatingReason> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', `${messagePrefix} must be an object`);
   }
@@ -620,12 +616,12 @@ function validateAimpGatingReason(
     code: code.value as AimpGatingReasonCode,
     message: message.value,
   });
-}
+};
 
-function validateAimpProtocolErrorState(
+const validateAimpProtocolErrorState = (
   value: unknown,
   messagePrefix: string,
-): AimpValidationResult<AimpProtocolError | null> {
+): AimpValidationResult<AimpProtocolError | null> => {
   if (value === null) {
     return createSuccess(null);
   }
@@ -672,12 +668,12 @@ function validateAimpProtocolErrorState(
     message: message.value,
     details: details.value,
   });
-}
+};
 
-function validateAimpDisconnectReasonState(
+const validateAimpDisconnectReasonState = (
   value: unknown,
   messagePrefix: string,
-): AimpValidationResult<AimpDisconnectReason | null> {
+): AimpValidationResult<AimpDisconnectReason | null> => {
   if (value === null) {
     return createSuccess(null);
   }
@@ -714,7 +710,6 @@ function validateAimpDisconnectReasonState(
     return message;
   }
 
-  // Treat absent or empty detail as undefined so IPC/structured-clone never fails validation
   let detailValue: string | undefined;
   if (!('detail' in value) || value.detail === undefined || value.detail === null) {
     detailValue = undefined;
@@ -743,11 +738,11 @@ function validateAimpDisconnectReasonState(
     detail: detailValue,
     occurredAt: occurredAt.value,
   });
-}
+};
 
-function validateAimpEnvironmentEligibility(
+const validateAimpEnvironmentEligibility = (
   value: unknown,
-): AimpValidationResult<AimpEnvironmentEligibility> {
+): AimpValidationResult<AimpEnvironmentEligibility> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP bridge state environment must be an object');
   }
@@ -807,9 +802,11 @@ function validateAimpEnvironmentEligibility(
     architecture: architecture.value,
     gatingReasons,
   });
-}
+};
 
-function validateAimpConnectionState(value: unknown): AimpValidationResult<AimpConnectionStateDto> {
+const validateAimpConnectionState = (
+  value: unknown,
+): AimpValidationResult<AimpConnectionStateDto> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP bridge state connection must be an object');
   }
@@ -926,11 +923,11 @@ function validateAimpConnectionState(value: unknown): AimpValidationResult<AimpC
     disconnectReason: disconnectReason.value,
     protocolError: protocolError.value,
   });
-}
+};
 
-function validateAimpPluginMetadataState(
+const validateAimpPluginMetadataState = (
   value: unknown,
-): AimpValidationResult<AimpPluginMetadataDto | null> {
+): AimpValidationResult<AimpPluginMetadataDto | null> => {
   if (value === null) {
     return createSuccess(null);
   }
@@ -1057,12 +1054,12 @@ function validateAimpPluginMetadataState(
     connectedAt: connectedAt.value,
     lastHelloAt: lastHelloAt.value,
   });
-}
+};
 
-function validateAimpPlaylistTrackDtoState(
+const validateAimpPlaylistTrackDtoState = (
   value: unknown,
   messagePrefix: string,
-): AimpValidationResult<AimpPlaylistTrackDto> {
+): AimpValidationResult<AimpPlaylistTrackDto> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', `${messagePrefix} must be an object`);
   }
@@ -1188,11 +1185,11 @@ function validateAimpPlaylistTrackDtoState(
     order: order.value,
     isActive: isActive.value,
   });
-}
+};
 
-function validateAimpPlaylistSnapshotState(
+const validateAimpPlaylistSnapshotState = (
   value: unknown,
-): AimpValidationResult<AimpPlaylistSnapshotDto | null> {
+): AimpValidationResult<AimpPlaylistSnapshotDto | null> => {
   if (value === null) {
     return createSuccess(null);
   }
@@ -1338,11 +1335,11 @@ function validateAimpPlaylistSnapshotState(
     sentAt: sentAt.value,
     tracks,
   });
-}
+};
 
-function validateAimpPlaybackSnapshotState(
+const validateAimpPlaybackSnapshotState = (
   value: unknown,
-): AimpValidationResult<AimpPlaybackSnapshotDto | null> {
+): AimpValidationResult<AimpPlaybackSnapshotDto | null> => {
   if (value === null) {
     return createSuccess(null);
   }
@@ -1463,11 +1460,11 @@ function validateAimpPlaybackSnapshotState(
     receivedAt: receivedAt.value,
     sentAt: sentAt.value,
   });
-}
+};
 
-function validateAimpCompatibilityCheckpointInputState(
+const validateAimpCompatibilityCheckpointInputState = (
   value: unknown,
-): AimpValidationResult<AimpCompatibilityCheckpointInput> {
+): AimpValidationResult<AimpCompatibilityCheckpointInput> => {
   if (!isPlainObject(value)) {
     return createProtocolError(
       'invalidPayload',
@@ -1687,15 +1684,16 @@ function validateAimpCompatibilityCheckpointInputState(
     playlist,
     playback,
   });
-}
+};
 
-function areJsonEqual(left: unknown, right: unknown): boolean {
+const areJsonEqual = (left: unknown, right: unknown): boolean => {
   return JSON.stringify(left) === JSON.stringify(right);
-}
+};
 
-function omitUndefinedDeep<T>(value: T): T {
+const omitUndefinedDeep = <T>(value: T): T => {
   if (Array.isArray(value)) {
-    return value.map((item) => omitUndefinedDeep(item)) as T;
+    const arrayValue = value as unknown[];
+    return arrayValue.map((item) => omitUndefinedDeep(item)) as unknown as T;
   }
 
   if (isPlainObject(value)) {
@@ -1706,16 +1704,16 @@ function omitUndefinedDeep<T>(value: T): T {
       }
     }
 
-    return nextValue as T;
+    return nextValue as unknown as T;
   }
 
   return value;
-}
+};
 
-function playlistContainsTrackKey(
+const playlistContainsTrackKey = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
   trackKey: string,
-): boolean {
+): boolean => {
   if (!playlistSnapshot?.tracks.length) {
     return false;
   }
@@ -1723,12 +1721,12 @@ function playlistContainsTrackKey(
   return playlistSnapshot.tracks.some(
     (track) => normalizeTrackKeyForComparison(track.trackKey) === normalizedKey,
   );
-}
+};
 
-export function getAimpPlaybackPlaylistConsistencyError(
+export const getAimpPlaybackPlaylistConsistencyError = (
   playlistSnapshot: Pick<AimpPlaylistSnapshotDto, 'tracks'> | null,
   playbackSnapshot: Pick<AimpPlaybackSnapshotDto, 'currentTrackKey'> | null,
-): string | null {
+): string | null => {
   const currentTrackKey = playbackSnapshot?.currentTrackKey ?? null;
   if (playlistSnapshot === null || currentTrackKey === null) {
     return null;
@@ -1739,20 +1737,20 @@ export function getAimpPlaybackPlaylistConsistencyError(
   }
 
   return 'AIMP playbackSnapshot.currentTrackKey must exist in the latest accepted playlistSnapshot.tracks';
-}
+};
 
-export function hasUsableAimpLiveStreamSnapshots(
+export const hasUsableAimpLiveStreamSnapshots = (
   playlistSnapshot: AimpPlaylistSnapshotDto | null,
   playbackSnapshot: AimpPlaybackSnapshotDto | null,
-): boolean {
+): boolean => {
   return (
     playlistSnapshot !== null &&
     playbackSnapshot !== null &&
     getAimpPlaybackPlaylistConsistencyError(playlistSnapshot, playbackSnapshot) === null
   );
-}
+};
 
-export function validateAimpPluginManifest(value: unknown): AimpPluginManifestValidationResult {
+export const validateAimpPluginManifest = (value: unknown): AimpPluginManifestValidationResult => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP manifest must be an object');
   }
@@ -1819,13 +1817,13 @@ export function validateAimpPluginManifest(value: unknown): AimpPluginManifestVa
     supportedArchitectures,
     main: main.value,
   });
-}
+};
 
-function validateTrackReferencePayload(
+const validateTrackReferencePayload = (
   value: unknown,
   key: string,
   message: string,
-): AimpValidationResult<AimpTrackReferencePayload | null | undefined> {
+): AimpValidationResult<AimpTrackReferencePayload | null | undefined> => {
   if (!(key in (value as Record<string, unknown>))) {
     return createSuccess(undefined);
   }
@@ -1902,13 +1900,9 @@ function validateTrackReferencePayload(
     title: title.value,
     durationMs: durationMs.value,
   });
-}
+};
 
-/**
- * Normalizes a track key for comparison (case, Unicode NFC, path separators)
- * so plugin (C++) and desktop (JS) key formats match across locales.
- */
-export function normalizeTrackKeyForComparison(key: string): string {
+export const normalizeTrackKeyForComparison = (key: string): string => {
   const n = (s: string) => s.normalize('NFC').toLowerCase();
   if (key.startsWith('path:')) {
     const pathPart = key.slice(5).replace(/\//g, '\\');
@@ -1921,15 +1915,15 @@ export function normalizeTrackKeyForComparison(key: string): string {
     return 'title-duration:' + n(key.slice('title-duration:'.length));
   }
   return n(key);
-}
+};
 
-function validateCanonicalTrackKeyEcho(
+const validateCanonicalTrackKeyEcho = (
   reference: AimpTrackReferencePayload | null | undefined,
   explicitTrackKey: string | null | undefined,
   messagePrefix: string,
   referenceFieldName: 'activeTrack' | 'currentTrack',
   keyFieldName: 'activeTrackKey' | 'currentTrackKey',
-): AimpValidationResult<null> {
+): AimpValidationResult<null> => {
   if (explicitTrackKey === undefined || explicitTrackKey === null) {
     return createSuccess(null);
   }
@@ -1954,13 +1948,13 @@ function validateCanonicalTrackKeyEcho(
   }
 
   return createSuccess(null);
-}
+};
 
-function validatePlaylistActiveTrackMembership(
+const validatePlaylistActiveTrackMembership = (
   tracks: AimpPlaylistTrackPayload[],
   activeTrack: AimpTrackReferencePayload | null | undefined,
   activeTrackKey: string | null | undefined,
-): AimpValidationResult<null> {
+): AimpValidationResult<null> => {
   const flaggedActiveTracks = tracks.filter((track) => track.isActive === true);
   if (flaggedActiveTracks.length > 1) {
     return createProtocolError(
@@ -2001,11 +1995,11 @@ function validatePlaylistActiveTrackMembership(
   }
 
   return createSuccess(null);
-}
+};
 
-export function validateAimpProtocolMessage(
+export const validateAimpProtocolMessage = (
   value: unknown,
-): AimpValidationResult<AimpProtocolMessage> {
+): AimpValidationResult<AimpProtocolMessage> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidEnvelope', 'AIMP protocol message must be an object');
   }
@@ -2083,11 +2077,11 @@ export function validateAimpProtocolMessage(
         `Unsupported AIMP message type "${typeResult.value}"`,
       );
   }
-}
+};
 
-export function validateAimpServerProtocolMessage(
+export const validateAimpServerProtocolMessage = (
   value: unknown,
-): AimpValidationResult<AimpProtocolServerMessage> {
+): AimpValidationResult<AimpProtocolServerMessage> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidEnvelope', 'AIMP server protocol message must be an object');
   }
@@ -2157,12 +2151,12 @@ export function validateAimpServerProtocolMessage(
         `Unsupported AIMP server message type "${typeResult.value}"`,
       );
   }
-}
+};
 
-function validateHelloMessage(
+const validateHelloMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpHelloMessage> {
+): AimpValidationResult<AimpHelloMessage> => {
   const pluginName = readString(payload, 'pluginName', 'AIMP hello payload requires pluginName');
   if (!pluginName.success) {
     return pluginName;
@@ -2229,12 +2223,12 @@ function validateHelloMessage(
       instanceId: instanceId.value,
     },
   });
-}
+};
 
-function validateHelloAckMessage(
+const validateHelloAckMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpHelloAckMessage> {
+): AimpValidationResult<AimpHelloAckMessage> => {
   const accepted = readBoolean(payload, 'accepted', 'AIMP helloAck payload requires accepted');
   if (!accepted.success) {
     return accepted;
@@ -2317,12 +2311,12 @@ function validateHelloAckMessage(
       detail: detail.value,
     },
   });
-}
+};
 
-function validatePlaylistSnapshotMessage(
+const validatePlaylistSnapshotMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpPlaylistSnapshotMessage> {
+): AimpValidationResult<AimpPlaylistSnapshotMessage> => {
   const playlistId = readString(
     payload,
     'playlistId',
@@ -2516,12 +2510,12 @@ function validatePlaylistSnapshotMessage(
       tracks,
     },
   });
-}
+};
 
-function validatePlaybackSnapshotMessage(
+const validatePlaybackSnapshotMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpPlaybackSnapshotMessage> {
+): AimpValidationResult<AimpPlaybackSnapshotMessage> => {
   const revision = readInteger(payload, 'revision', 'AIMP playbackSnapshot requires revision');
   if (!revision.success) {
     return revision;
@@ -2626,12 +2620,12 @@ function validatePlaybackSnapshotMessage(
       isMuted: isMuted.value,
     },
   });
-}
+};
 
-function validateHeartbeatMessage(
+const validateHeartbeatMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpHeartbeatMessage> {
+): AimpValidationResult<AimpHeartbeatMessage> => {
   const connectionUptimeMs = readInteger(
     payload,
     'connectionUptimeMs',
@@ -2668,12 +2662,12 @@ function validateHeartbeatMessage(
       lastPlaybackRevision: lastPlaybackRevision.value,
     },
   });
-}
+};
 
-function validateGoodbyeMessage(
+const validateGoodbyeMessage = (
   envelope: AimpEnvelopeMetadata,
   payload: Record<string, unknown>,
-): AimpValidationResult<AimpGoodbyeMessage> {
+): AimpValidationResult<AimpGoodbyeMessage> => {
   const reason = readString(payload, 'reason', 'AIMP goodbye requires reason');
   if (!reason.success) {
     return reason;
@@ -2713,12 +2707,14 @@ function validateGoodbyeMessage(
       detail: detail.value,
     },
   });
-}
+};
 
-export function deriveAimpTrackKey(track: AimpTrackReferencePayload | AimpPlaylistTrackPayload): {
+export const deriveAimpTrackKey = (
+  track: AimpTrackReferencePayload | AimpPlaylistTrackPayload,
+): {
   trackKey: string;
   identityStrategy: AimpTrackIdentityStrategy;
-} {
+} => {
   if (track.nativeTrackId) {
     return {
       trackKey: `native:${track.nativeTrackId}`,
@@ -2743,33 +2739,33 @@ export function deriveAimpTrackKey(track: AimpTrackReferencePayload | AimpPlayli
     trackKey: `title-duration:${track.title.toLowerCase()}::${track.durationMs ?? 0}`,
     identityStrategy: 'titleDuration',
   };
-}
+};
 
-export function resolveAimpTrackKeyReference(
+export const resolveAimpTrackKeyReference = (
   reference: AimpTrackReferencePayload | null | undefined,
   legacyTrackKey?: string | null,
-): string | null {
+): string | null => {
   if (reference) {
     return deriveAimpTrackKey(reference).trackKey;
   }
 
   return legacyTrackKey ?? null;
-}
+};
 
-export function resolveAimpTrackKeyFromReference(
+export const resolveAimpTrackKeyFromReference = (
   reference: AimpTrackReferencePayload | null | undefined,
-): string | null {
+): string | null => {
   if (!reference) {
     return null;
   }
 
   return deriveAimpTrackKey(reference).trackKey;
-}
+};
 
-export function normalizeAimpPluginMetadata(
+export const normalizeAimpPluginMetadata = (
   message: AimpHelloMessage,
   connectedAt: string,
-): AimpPluginMetadataDto {
+): AimpPluginMetadataDto => {
   return {
     pluginName: message.payload.pluginName,
     pluginVersion: message.payload.pluginVersion,
@@ -2781,12 +2777,12 @@ export function normalizeAimpPluginMetadata(
     connectedAt,
     lastHelloAt: message.sentAt,
   };
-}
+};
 
-export function normalizeAimpPlaylistSnapshot(
+export const normalizeAimpPlaylistSnapshot = (
   message: AimpPlaylistSnapshotMessage,
   receivedAt: string,
-): AimpPlaylistSnapshotDto {
+): AimpPlaylistSnapshotDto => {
   const payloadActiveKey =
     typeof message.payload.activeTrackKey === 'string' &&
     message.payload.activeTrackKey.trim().length > 0
@@ -2825,7 +2821,6 @@ export function normalizeAimpPlaylistSnapshot(
     tracks.find((track) => track.isActive)?.trackKey ??
     null;
 
-  // Only one track may be active; with duplicate trackKeys, mark only the first match
   let activeMarked = false;
   return {
     playlistId: message.payload.playlistId,
@@ -2842,12 +2837,12 @@ export function normalizeAimpPlaylistSnapshot(
       return { ...track, isActive };
     }),
   };
-}
+};
 
-export function normalizeAimpPlaybackSnapshot(
+export const normalizeAimpPlaybackSnapshot = (
   message: AimpPlaybackSnapshotMessage,
   receivedAt: string,
-): AimpPlaybackSnapshotDto {
+): AimpPlaybackSnapshotDto => {
   return {
     revision: message.payload.revision,
     status: message.payload.status,
@@ -2859,9 +2854,9 @@ export function normalizeAimpPlaybackSnapshot(
     receivedAt,
     sentAt: message.sentAt,
   };
-}
+};
 
-export function createAimpCompatibilityCheckpointInput(
+export const createAimpCompatibilityCheckpointInput = (
   state: Pick<
     AimpBridgeState,
     | 'connection'
@@ -2871,7 +2866,7 @@ export function createAimpCompatibilityCheckpointInput(
     | 'pluginMetadata'
     | 'sourceSelection'
   >,
-): AimpCompatibilityCheckpointInput {
+): AimpCompatibilityCheckpointInput => {
   return {
     source: 'AIMP',
     protocolVersion: AIMP_PROTOCOL_VERSION,
@@ -2906,9 +2901,9 @@ export function createAimpCompatibilityCheckpointInput(
         }
       : null,
   };
-}
+};
 
-export function createInitialAimpBridgeState(): AimpBridgeState {
+export const createInitialAimpBridgeState = (): AimpBridgeState => {
   const environment: AimpEnvironmentEligibility = {
     eligible: false,
     pipeName: AIMP_PROTOCOL_PIPE_NAME,
@@ -2954,15 +2949,15 @@ export function createInitialAimpBridgeState(): AimpBridgeState {
 
   baseState.compatibilityCheckpointInput = createAimpCompatibilityCheckpointInput(baseState);
   return baseState;
-}
+};
 
-export function isAimpSourceSelection(value: unknown): value is AimpSourceSelection {
+export const isAimpSourceSelection = (value: unknown): value is AimpSourceSelection => {
   return value === 'aimp' || value === 'cherryPlayPlayer';
-}
+};
 
-export function validateAimpSourceSelectionPayload(
+export const validateAimpSourceSelectionPayload = (
   value: unknown,
-): AimpValidationResult<{ sourceSelection: AimpSourceSelection }> {
+): AimpValidationResult<{ sourceSelection: AimpSourceSelection }> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP source selection payload must be an object');
   }
@@ -2977,11 +2972,11 @@ export function validateAimpSourceSelectionPayload(
   return createSuccess({
     sourceSelection: value.sourceSelection,
   });
-}
+};
 
-export function validateAimpLiveStreamPayload(
+export const validateAimpLiveStreamPayload = (
   value: unknown,
-): AimpValidationResult<{ liveStreamStarted: boolean }> {
+): AimpValidationResult<{ liveStreamStarted: boolean }> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP live stream payload must be an object');
   }
@@ -2996,9 +2991,9 @@ export function validateAimpLiveStreamPayload(
   return createSuccess({
     liveStreamStarted: value.liveStreamStarted,
   });
-}
+};
 
-export function validateAimpBridgeState(value: unknown): AimpValidationResult<AimpBridgeState> {
+export const validateAimpBridgeState = (value: unknown): AimpValidationResult<AimpBridgeState> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP bridge state must be an object');
   }
@@ -3189,13 +3184,15 @@ export function validateAimpBridgeState(value: unknown): AimpValidationResult<Ai
     playbackSnapshot: playbackSnapshot.value,
     compatibilityCheckpointInput: compatibilityCheckpointInput.value,
   });
-}
+};
 
-export function validateAimpBridgeStateResponse(value: unknown): AimpValidationResult<{
+export const validateAimpBridgeStateResponse = (
+  value: unknown,
+): AimpValidationResult<{
   success: boolean;
   data?: AimpBridgeState;
   error?: string;
-}> {
+}> => {
   if (!isPlainObject(value)) {
     return createProtocolError('invalidPayload', 'AIMP IPC response must be an object');
   }
@@ -3230,4 +3227,4 @@ export function validateAimpBridgeStateResponse(value: unknown): AimpValidationR
     success: false,
     error: error.value,
   });
-}
+};

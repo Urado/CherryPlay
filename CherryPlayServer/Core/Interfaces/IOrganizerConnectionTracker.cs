@@ -1,14 +1,15 @@
 namespace CherryPlayServer.Core.Interfaces;
 
-/// <summary>
-/// Tracks which SignalR connection is the organizer for which party.
-/// Used to notify viewers when the organizer disconnects (e.g. app closed).
-/// </summary>
 public interface IOrganizerConnectionTracker
 {
+    Guid? GetPartyId(string connectionId) => null;
+
     void RegisterOrganizer(string connectionId, Guid partyId);
 
     Guid? TryRemoveOrganizer(string connectionId);
+
+    Guid? TryRemoveOrganizer(string connectionId, Guid expectedPartyId) =>
+        GetPartyId(connectionId) == expectedPartyId ? TryRemoveOrganizer(connectionId) : null;
 
     bool IsOrganizerConnected(Guid partyId);
 

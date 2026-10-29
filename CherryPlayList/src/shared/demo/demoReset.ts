@@ -11,7 +11,7 @@ import { applyDemoAuthSession } from './demoAuthFixture';
 
 export { DEMO_PERSIST_STORAGE_KEYS, resetDemoPersistStorage } from './demoResetStorage';
 
-export function applyDemoStoreDefaults(): void {
+export const applyDemoStoreDefaults = (): void => {
   if (!isDemoFixturesMode() && !isDemoLiveMode()) {
     return;
   }
@@ -34,4 +34,4 @@ export function applyDemoStoreDefaults(): void {
     enableStreaming: DEMO_DEFAULT_ENABLE_STREAMING,
     streamingSource: 'cherryPlayPlayer',
   });
-}
+};

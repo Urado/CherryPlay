@@ -1,15 +1,11 @@
-using CherryPlayServer.Core.Interfaces;
 using CherryPlayServer.Core;
+using CherryPlayServer.Core.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace CherryPlayServer.Core.Extensions;
 
 public static class JwtExtensions
 {
-    /// <summary>
-    /// Validates JWT token and sets OrganizerId in HttpContext.Items if valid.
-    /// Returns true if token is valid and organizer ID was set.
-    /// </summary>
     public static async Task<bool> ValidateAndSetOrganizerContextAsync(
         this IJwtService jwtService,
         HttpContext context,
@@ -32,21 +28,24 @@ public static class JwtExtensions
         }
         catch
         {
-            // Validation failed, return false
+            return false;
         }
 
         return false;
     }
 
-    /// <summary>
-    /// Extracts JWT token from Authorization header or cookie.
-    /// </summary>
     public static string? ExtractTokenFromRequest(this HttpContext context)
     {
         var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith(AuthConstants.BearerPrefix, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(authHeader))
         {
-            return authHeader.Remove(0, AuthConstants.BearerPrefix.Length).Trim();
+            if (!authHeader.StartsWith(AuthConstants.BearerPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var token = authHeader[AuthConstants.BearerPrefix.Length..].Trim();
+            return token.Length == 0 ? null : token;
         }
 
         return context.Request.Cookies[AuthConstants.AuthCookieName];

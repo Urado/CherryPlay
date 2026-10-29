@@ -11,7 +11,7 @@
 - сервер — VM на Cloud.ru; PostgreSQL **self-hosted** Оператором в контейнере `cherryplay-postgres` (не управляемый DBaaS Cloud.ru);
 - отдельного SLA retention управляемых бэкапов Cloud.ru для этой БД **нет**;
 - регулярные бэкапы вне деплоя Оператором **пока не ведутся**;
-- pgAdmin в контейнере `cherryplay-pgadmin`;
+- pgAdmin для production database запускается локально из `local-admin-tools/` и подключается к PostgreSQL через SSH-туннель;
 - локальный restore-стенд через `docker-compose.restore-local.yml`.
 
 **Политика при введении регулярных бэкапов:** retention копий ≤ **30 дней**. Restore может вернуть уже удалённые данные — до возврата в прод повторно применить удаление/очистку (см. OPS § «Восстановление после сбоя»).
@@ -53,16 +53,11 @@ scp -i "C:\path\to\your_key" USER@SERVER:~/cherryplay-deploy/backups/pre-deploy_
 
 ## 1) Как сделать backup базы в проде
 
-### Вариант A (через pgAdmin + SSH-туннель)
+### Вариант A (через локальный pgAdmin)
 
-1. Поднимите SSH-туннель к pgAdmin:
-
-```powershell
-ssh -i "C:\path\to\your_key" -L 5050:127.0.0.1:5050 USER@SERVER
-```
-
-2. Откройте `http://localhost:5050` и войдите в pgAdmin.
-3. Выберите продовую БД и запустите **Backup...**:
+1. Запустите local-admin-tools по [инструкции](SSH_TUNNEL_PGADMIN.md). Подтвердите, что сервер `CherryPlay PostgreSQL` подключается через tunnel, прежде чем запускать backup.
+2. Откройте `http://localhost:5051` и войдите в pgAdmin.
+3. Выберите сервер `CherryPlay PostgreSQL` и базу `cherryplay`, затем запустите **Backup...**:
    - `Format`: `Custom`
    - `Filename`: `/tmp/cherryplay_YYYY-MM-DD.dump`
 
@@ -70,20 +65,13 @@ ssh -i "C:\path\to\your_key" -L 5050:127.0.0.1:5050 USER@SERVER
 
 4. Проверьте, что job завершился без ошибок.
 
-### Как достать backup-файл из контейнера pgAdmin
+### Скопировать backup из локального контейнера pgAdmin
 
-На сервере:
-
-```bash
-docker exec -it cherryplay-pgadmin sh -lc 'ls -lah /tmp'
-docker cp cherryplay-pgadmin:/tmp/cherryplay_YYYY-MM-DD.dump /tmp/cherryplay_YYYY-MM-DD.dump
-ls -lah /tmp/cherryplay_YYYY-MM-DD.dump
-```
-
-Скачать на локальный ПК:
+Из корня репозитория в PowerShell выполните:
 
 ```powershell
-scp -i "C:\path\to\your_key" USER@SERVER:/tmp/cherryplay_YYYY-MM-DD.dump "D:\Backups\cherryplay_YYYY-MM-DD.dump"
+New-Item -ItemType Directory -Force -Path 'D:\Backups' | Out-Null
+docker compose --env-file local-admin-tools/.env -f local-admin-tools/compose.yml cp pgadmin:/tmp/cherryplay_YYYY-MM-DD.dump 'D:\Backups\cherryplay_YYYY-MM-DD.dump'
 ```
 
 ### Быстрая валидация backup после скачивания
@@ -197,5 +185,5 @@ docker compose -f docker-compose.restore-local.yml down -v
 ## Рекомендации по безопасности
 
 - Не храните реальные пароли БД и pgAdmin в репозитории.
-- После любого риска утечки ротируйте пароли (`POSTGRES_PASSWORD`, `PGADMIN_PASSWORD`).
+- После любого риска утечки ротируйте production `POSTGRES_PASSWORD` и локальные пароли из `local-admin-tools/.env`.
 - Минимум раз в месяц делайте тестовый restore и фиксируйте результат в операционном журнале.

@@ -1,14 +1,10 @@
 import type { PlayerItem } from '../../types';
 
-export function sortItemsByDisplayOrder(items: PlayerItem[]): PlayerItem[] {
+export const sortItemsByDisplayOrder = (items: PlayerItem[]): PlayerItem[] => {
   return [...items].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-}
+};
 
-/**
- * Returns a flat array of tracks in display order (depth-first, siblings sorted by displayOrder).
- * Groups are recursed into; only items with type === 'track' are included.
- */
-export function getFlatTracksInDisplayOrder(items: PlayerItem[]): PlayerItem[] {
+export const getFlatTracksInDisplayOrder = (items: PlayerItem[]): PlayerItem[] => {
   const result: PlayerItem[] = [];
   const sorted = sortItemsByDisplayOrder(items);
   for (const item of sorted) {
@@ -19,9 +15,9 @@ export function getFlatTracksInDisplayOrder(items: PlayerItem[]): PlayerItem[] {
     }
   }
   return result;
-}
+};
 
-export function findTrack(items: PlayerItem[], trackId: string): PlayerItem | null {
+export const findTrack = (items: PlayerItem[], trackId: string): PlayerItem | null => {
   for (const item of items) {
     if (item.id === trackId) {
       return item;
@@ -35,4 +31,4 @@ export function findTrack(items: PlayerItem[], trackId: string): PlayerItem | nu
   }
 
   return null;
-}
+};

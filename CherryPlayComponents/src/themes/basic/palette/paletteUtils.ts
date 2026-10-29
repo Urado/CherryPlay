@@ -5,7 +5,7 @@ const WHITE = '#ffffff';
 
 type Rgb = { r: number; g: number; b: number };
 
-export function normalizeHexColor(value: unknown): string | null {
+export const normalizeHexColor = (value: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
   }
@@ -26,9 +26,9 @@ export function normalizeHexColor(value: unknown): string | null {
   }
 
   return null;
-}
+};
 
-function parseHexColor(hex: string): Rgb {
+const parseHexColor = (hex: string): Rgb => {
   const normalized = hex.replace('#', '');
   const value =
     normalized.length === 3
@@ -43,15 +43,15 @@ function parseHexColor(hex: string): Rgb {
     g: (parsed >> 8) & 255,
     b: parsed & 255,
   };
-}
+};
 
-function rgbToHex(rgb: Rgb): string {
+const rgbToHex = (rgb: Rgb): string => {
   const clamp = (v: number): number => Math.max(0, Math.min(255, Math.round(v)));
   const toHex = (v: number): string => clamp(v).toString(16).padStart(2, '0');
   return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
-}
+};
 
-export function mixHexColors(baseHex: string, mixHex: string, mixPercent: number): string {
+export const mixHexColors = (baseHex: string, mixHex: string, mixPercent: number): string => {
   const base = parseHexColor(baseHex);
   const mix = parseHexColor(mixHex);
   const t = Math.max(0, Math.min(1, mixPercent / 100));
@@ -61,23 +61,23 @@ export function mixHexColors(baseHex: string, mixHex: string, mixPercent: number
     g: base.g * (1 - t) + mix.g * t,
     b: base.b * (1 - t) + mix.b * t,
   });
-}
+};
 
-export function mixTowardBlack(hex: string, percent: number): string {
+export const mixTowardBlack = (hex: string, percent: number): string => {
   return mixHexColors(hex, BLACK, percent);
-}
+};
 
-export function mixTowardWhite(hex: string, percent: number): string {
+export const mixTowardWhite = (hex: string, percent: number): string => {
   return mixHexColors(hex, WHITE, percent);
-}
+};
 
-export function withAlpha(hex: string, alpha: number): string {
+export const withAlpha = (hex: string, alpha: number): string => {
   const { r, g, b } = parseHexColor(hex);
   const a = Math.max(0, Math.min(1, alpha));
   return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
+};
 
-export function paletteToCustom(palette: BaseThemeColorPalette): BaseThemeCustomColorPalette {
+export const paletteToCustom = (palette: BaseThemeColorPalette): BaseThemeCustomColorPalette => {
   return {
     accentPrimary: palette.accentPrimary,
     textPrimary: palette.textPrimary,
@@ -85,12 +85,12 @@ export function paletteToCustom(palette: BaseThemeColorPalette): BaseThemeCustom
     trackAreaBackground: palette.trackAreaBackground,
     trackBackground: palette.trackBackground,
   };
-}
+};
 
-export function mergePartialCustomPalette(
+export const mergePartialCustomPalette = (
   partial: Partial<BaseThemeCustomColorPalette> | null | undefined,
   fallback: BaseThemeCustomColorPalette,
-): BaseThemeCustomColorPalette {
+): BaseThemeCustomColorPalette => {
   return {
     accentPrimary: normalizeHexColor(partial?.accentPrimary) ?? fallback.accentPrimary,
     textPrimary: normalizeHexColor(partial?.textPrimary) ?? fallback.textPrimary,
@@ -99,11 +99,11 @@ export function mergePartialCustomPalette(
       normalizeHexColor(partial?.trackAreaBackground) ?? fallback.trackAreaBackground,
     trackBackground: normalizeHexColor(partial?.trackBackground) ?? fallback.trackBackground,
   };
-}
+};
 
-export function isValidFullCustomPalette(
+export const isValidFullCustomPalette = (
   value: Partial<BaseThemeCustomColorPalette> | null | undefined,
-): value is BaseThemeCustomColorPalette {
+): value is BaseThemeCustomColorPalette => {
   return Boolean(
     normalizeHexColor(value?.accentPrimary) &&
     normalizeHexColor(value?.textPrimary) &&
@@ -111,12 +111,12 @@ export function isValidFullCustomPalette(
     normalizeHexColor(value?.trackAreaBackground) &&
     normalizeHexColor(value?.trackBackground),
   );
-}
+};
 
-export function areBasicCustomPalettesEqual(
+export const areBasicCustomPalettesEqual = (
   a: BaseThemeCustomColorPalette,
   b: BaseThemeCustomColorPalette,
-): boolean {
+): boolean => {
   return (
     a.accentPrimary === b.accentPrimary &&
     a.textPrimary === b.textPrimary &&
@@ -124,4 +124,4 @@ export function areBasicCustomPalettesEqual(
     a.trackAreaBackground === b.trackAreaBackground &&
     a.trackBackground === b.trackBackground
   );
-}
+};

@@ -1,7 +1,6 @@
 import { isOverlayKeyboardTarget, shouldIgnoreEnterForPrimary } from '@shared/utils/modalKeyboard';
 import { useCallback, useEffect, useRef } from 'react';
 
-
 export interface UseModalKeyboardOptions {
   enabled: boolean;
   onCancel: () => void;
@@ -11,20 +10,20 @@ export interface UseModalKeyboardOptions {
 
 const modalKeyboardStack: symbol[] = [];
 
-function isModalOverlayElement(target: EventTarget | null): boolean {
+const isModalOverlayElement = (target: EventTarget | null): boolean => {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
 
   return target.classList.contains('modal-overlay');
-}
+};
 
-export function useModalKeyboard({
+export const useModalKeyboard = ({
   enabled,
   onCancel,
   onPrimary,
   primaryDisabled = false,
-}: UseModalKeyboardOptions) {
+}: UseModalKeyboardOptions) => {
   const modalIdRef = useRef<symbol>(Symbol('modalKeyboard'));
   const onCancelRef = useRef(onCancel);
   const onPrimaryRef = useRef(onPrimary);
@@ -118,4 +117,4 @@ export function useModalKeyboard({
   }, []);
 
   return { handleOverlayKeyDown };
-}
+};

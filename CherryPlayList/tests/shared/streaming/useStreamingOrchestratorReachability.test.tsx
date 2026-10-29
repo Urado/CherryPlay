@@ -3,8 +3,6 @@ import { act, renderHook } from '@testing-library/react';
 
 import { partyService } from '../../../src/shared/services/partyService';
 import { signalRService } from '../../../src/shared/services/signalRService';
-import { useSettingsStore } from '../../../src/shared/stores';
-import { streamingOrchestrator } from '../../../src/shared/streaming/streamingOrchestrator';
 import { useStreamingOrchestrator } from '../../../src/shared/streaming/useStreamingOrchestrator';
 
 jest.mock('../../../src/shared/services/partyService', () => ({
@@ -12,7 +10,10 @@ jest.mock('../../../src/shared/services/partyService', () => ({
 }));
 
 jest.mock('../../../src/shared/services/signalRService', () => ({
-  signalRService: { getConnectionState: jest.fn() },
+  signalRService: {
+    getConnectionState: jest.fn(),
+    isServiceConnected: jest.fn().mockReturnValue(true),
+  },
 }));
 
 jest.mock('../../../src/shared/stores', () => ({
@@ -21,9 +22,35 @@ jest.mock('../../../src/shared/stores', () => ({
   ),
 }));
 
+jest.mock('../../../src/shared/stores/authStore', () => ({
+  useAuthStore: Object.assign(
+    (
+      selector: (state: {
+        accessToken: string;
+        organizer: { id: string; name: string };
+      }) => unknown,
+    ) =>
+      selector({
+        accessToken: 'valid-access-token',
+        organizer: { id: 'organizer-1', name: 'Organizer' },
+      }),
+    {
+      getState: () => ({
+        accessToken: 'valid-access-token',
+        organizer: { id: 'organizer-1', name: 'Organizer' },
+      }),
+      persist: {
+        hasHydrated: () => true,
+        onFinishHydration: (_listener: (state: unknown) => void) => () => undefined,
+      },
+    },
+  ),
+}));
+
 jest.mock('../../../src/shared/streaming/streamingOrchestrator', () => ({
   streamingOrchestrator: {
     activeConfig: { streamingSource: 'cherryPlayPlayer' },
+    isReady: true,
     start: jest.fn(),
     teardown: jest.fn(),
     syncLiveSession: jest.fn(),
@@ -34,8 +61,10 @@ jest.mock('../../../src/shared/streaming/streamingOrchestrator', () => ({
 describe('useStreamingOrchestrator server reachability polling', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.mocked(partyService.checkServerReachable).mockResolvedValue(true);
-    jest.mocked(signalRService.getConnectionState).mockReturnValue(signalR.HubConnectionState.Connected);
+    jest.spyOn(partyService, 'checkServerReachable').mockResolvedValue(true);
+    jest
+      .spyOn(signalRService, 'getConnectionState')
+      .mockReturnValue(signalR.HubConnectionState.Connected);
   });
 
   afterEach(() => {
@@ -45,7 +74,7 @@ describe('useStreamingOrchestrator server reachability polling', () => {
   });
 
   it('changes to disconnected when the server becomes unreachable', async () => {
-    const reachability = jest.mocked(partyService.checkServerReachable);
+    const reachability = jest.spyOn(partyService, 'checkServerReachable');
     const { result } = renderHook(() =>
       useStreamingOrchestrator({ partyId: 'party-1', sessionMode: 'preparation' }),
     );

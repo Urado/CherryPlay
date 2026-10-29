@@ -2,11 +2,10 @@ import { useAimpStore, useProjectStore, useSettingsStore } from '@shared/stores'
 import { useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-
 import { buildPartyPublishSyncParts, resolveHeaderPartyPublishHighlight } from './partyPublishSync';
 import { usePartyWorkspaceStore } from './partyWorkspaceStore';
 
-export function usePartyPublishOutOfSync(hasLinkedParty: boolean): boolean {
+export const usePartyPublishOutOfSync = (hasLinkedParty: boolean): boolean => {
   const lastSyncedPublishParts = usePartyWorkspaceStore((state) => state.lastSyncedPublishParts);
   const partyLifecycleState = usePartyWorkspaceStore((state) => state.partyLifecycleState);
   const metadataSlice = usePartyWorkspaceStore(
@@ -60,4 +59,4 @@ export function usePartyPublishOutOfSync(hasLinkedParty: boolean): boolean {
     partyTrackDisplay,
     streamingSource,
   ]);
-}
+};

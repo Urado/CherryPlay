@@ -1,4 +1,3 @@
-
 import { BROWSER_LOGIN_PANEL_TITLE_ID, BrowserLoginPanel } from '@app/components/BrowserLoginPanel';
 import { AuthForm, AUTH_FORM_TITLE_ID } from '@cherryplay/components';
 import { OnlineUnavailablePanel, Spinner } from '@shared/components';
